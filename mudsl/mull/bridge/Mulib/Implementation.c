@@ -74,6 +74,7 @@
 #define MULIB_IMPL_BOOKNAV
 #define MULIB_IMPL_BOOLEANQUERY
 #define MULIB_IMPL_BOOTMGR
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_BOUNDS
 #define MULIB_IMPL_BPF_KERNEL
 #define MULIB_IMPL_BPTREE
@@ -942,7 +943,6 @@
 #define MULIB_IMPL_SHIRAZ
 #define MULIB_IMPL_SHM
 #define MULIB_IMPL_SHOEBOX_CONTRACT
-#define MULIB_IMPL_SHYLOCK_CORE
 #define MULIB_IMPL_SIGNAL
 #define MULIB_IMPL_SIGNATURE
 #define MULIB_IMPL_SIMDMATH
@@ -1294,6 +1294,7 @@
 #include "mulib-booknav.h"
 #include "mulib-booleanquery.h"
 #include "mulib-bootmgr.h"
+#include "mulib-bounded-text.h"
 #include "mulib-bounds.h"
 #include "mulib-bpf-kernel.h"
 #include "mulib-branch-layout.h"
@@ -2149,7 +2150,6 @@
 #include "mulib-shiraz.h"
 #include "mulib-shm.h"
 #include "mulib-shoebox-contract.h"
-#include "mulib-shylock-core.h"
 #include "mulib-signal.h"
 #include "mulib-signature.h"
 #include "mulib-simdmath.h"

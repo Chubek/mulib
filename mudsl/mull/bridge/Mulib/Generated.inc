@@ -65,6 +65,7 @@
 #include "mulib-booknav.h"
 #include "mulib-booleanquery.h"
 #include "mulib-bootmgr.h"
+#include "mulib-bounded-text.h"
 #include "mulib-bounds.h"
 #include "mulib-bpf-kernel.h"
 #include "mulib-branch-layout.h"
@@ -920,7 +921,6 @@
 #include "mulib-shiraz.h"
 #include "mulib-shm.h"
 #include "mulib-shoebox-contract.h"
-#include "mulib-shylock-core.h"
 #include "mulib-signal.h"
 #include "mulib-signature.h"
 #include "mulib-simdmath.h"
@@ -2628,26 +2628,26 @@ typedef mb_t5 mb_t1415(mb_t26, mb_t8, mb_t2, mb_t1416, mb_t28);
 typedef mulib_bootmgr_elf_t mb_t1418;
 typedef mb_t1418 *mb_t1420;
 typedef mb_t5 mb_t1419(mb_t26, mb_t8, mb_t28, mb_t8, mb_t8, mb_t1420);
-typedef mulib_bounds_t mb_t1421;
-typedef mb_t5 mb_t1422(mb_t1421, mb_t12, mb_t12);
-typedef mb_t5 mb_t1423(mb_t1421, mb_t1421);
-typedef mb_t1421 mb_t1424(mb_t1421, mb_t1421);
-typedef mb_t5 mb_t1425(mb_t6, mb_t6);
-typedef mulib_branch_t mb_t1426;
-typedef const mb_t1426 *mb_t1428;
-typedef mb_t5 mb_t1427(mb_t8, mb_t168, mb_t1428, mb_t157, mb_t21, mb_t157);
-typedef mulib_shylock_buffer_t mb_t1429;
-typedef mulib_shylock_span_t mb_t1430;
-typedef mb_t1429 *mb_t1432;
-typedef mb_t5 mb_t1431(mb_t1432, mb_t8);
-typedef mb_t5 mb_t1433(mb_t1432, mb_t26, mb_t8);
-typedef mb_t5 mb_t1434(mb_t1432, mb_t36);
-typedef mb_t5 mb_t1435(mb_t1432, mb_t36, mb_t8);
-typedef mb_t0 mb_t1436(mb_t1432);
-typedef mb_t32 mb_t1437(mb_t36, mb_t8);
-typedef mb_t5 mb_t1438(mb_t32, mb_t8, mb_t36);
-typedef mb_t5 mb_t1439(mb_t36, mb_t8, mb_t36);
-typedef mb_t5 mb_t1440(mb_t36, mb_t112);
+typedef mulib_bounded_text_buffer_t mb_t1421;
+typedef mulib_bounded_text_span_t mb_t1422;
+typedef mb_t1421 *mb_t1424;
+typedef mb_t5 mb_t1423(mb_t1424, mb_t8);
+typedef mb_t5 mb_t1425(mb_t1424, mb_t26, mb_t8);
+typedef mb_t5 mb_t1426(mb_t1424, mb_t36);
+typedef mb_t5 mb_t1427(mb_t1424, mb_t36, mb_t8);
+typedef mb_t0 mb_t1428(mb_t1424);
+typedef mb_t32 mb_t1429(mb_t36, mb_t8);
+typedef mb_t5 mb_t1430(mb_t32, mb_t8, mb_t36);
+typedef mb_t5 mb_t1431(mb_t36, mb_t8, mb_t36);
+typedef mb_t5 mb_t1432(mb_t36, mb_t112);
+typedef mulib_bounds_t mb_t1433;
+typedef mb_t5 mb_t1434(mb_t1433, mb_t12, mb_t12);
+typedef mb_t5 mb_t1435(mb_t1433, mb_t1433);
+typedef mb_t1433 mb_t1436(mb_t1433, mb_t1433);
+typedef mb_t5 mb_t1437(mb_t6, mb_t6);
+typedef mulib_branch_t mb_t1438;
+typedef const mb_t1438 *mb_t1440;
+typedef mb_t5 mb_t1439(mb_t8, mb_t168, mb_t1440, mb_t157, mb_t21, mb_t157);
 typedef mulib_browser_cache_entry_t mb_t1441;
 typedef mb_t1 mb_t1442[1024];
 typedef mb_t1 mb_t1443[256];
@@ -2669,7 +2669,7 @@ typedef mb_t1456 *mb_t1459;
 typedef const mb_t1453 *mb_t1460;
 typedef mb_t5 mb_t1458(mb_t1459, mb_t1460);
 typedef const mb_t1456 *mb_t1462;
-typedef mb_t5 mb_t1461(mb_t1462, mb_t36, mb_t36, mb_t5, mb_t7, mb_t1432);
+typedef mb_t5 mb_t1461(mb_t1462, mb_t36, mb_t36, mb_t5, mb_t7, mb_t1424);
 typedef mb_t0 mb_t1463(mb_t1459);
 typedef mulib_uri_slice_t mb_t1464;
 typedef mulib_uri_t mb_t1465;
@@ -2687,14 +2687,14 @@ typedef mb_t5 mb_t1475(mb_t1476, mb_t1476);
 typedef mulib_fetch_policy_t mb_t1477;
 typedef const mb_t1477 *mb_t1479;
 typedef mb_t5 mb_t1478(mb_t1479, mb_t36);
-typedef mb_t5 mb_t1481(mb_t28, mb_t36, mb_t1432, mb_t236, mb_t32, mb_t8);
+typedef mb_t5 mb_t1481(mb_t28, mb_t36, mb_t1424, mb_t236, mb_t32, mb_t8);
 typedef mb_t1481 *mb_t1480;
 typedef mulib_fetch_client_t mb_t1482;
 typedef const mb_t1482 *mb_t1484;
-typedef mb_t5 mb_t1483(mb_t1484, mb_t36, mb_t1432, mb_t236, mb_t32, mb_t8);
+typedef mb_t5 mb_t1483(mb_t1484, mb_t36, mb_t1424, mb_t236, mb_t32, mb_t8);
 typedef mulib_browser_fetch_t mb_t1485;
 typedef const mb_t1485 *mb_t1487;
-typedef mb_t5 mb_t1486(mb_t1487, mb_t36, mb_t1432, mb_t236, mb_t32, mb_t8);
+typedef mb_t5 mb_t1486(mb_t1487, mb_t36, mb_t1424, mb_t236, mb_t32, mb_t8);
 typedef mulib_html_textstream_kind_t mb_t1488;
 typedef mulib_html_textstream_event_t mb_t1489;
 typedef const mb_t1489 *mb_t1492;
@@ -6387,7 +6387,7 @@ typedef mb_t5 mb_t5177(mb_t28, mb_t28, mb_t36, mb_t8);
 typedef mb_t5177 *mb_t5176;
 typedef const mb_t5173 *mb_t5179;
 typedef mb_t5 mb_t5178(mb_t3180, mb_t5179, mb_t28, mb_t28, mb_t8);
-typedef mb_t5 mb_t5181(mb_t28, mb_t1430, mb_t8);
+typedef mb_t5 mb_t5181(mb_t28, mb_t1422, mb_t8);
 typedef mb_t5181 *mb_t5180;
 typedef mb_t5 mb_t5182(mb_t36, mb_t8, mb_t5180, mb_t28, mb_t8);
 typedef mulib_http2_frame_t mb_t5183;
@@ -8486,7 +8486,7 @@ typedef mb_t7272 *mb_t7276;
 typedef mb_t5 mb_t7275(mb_t7274, mb_t2058, mb_t11, mb_t11, mb_t7276);
 typedef mb_t5 mb_t7277(mb_t7274, mb_t2058, mb_t6, mb_t2023);
 typedef mb_t5 mb_t7278(mb_t7274, mb_t7271, mb_t6, mb_t4922);
-typedef mb_t5 mb_t7279(mb_t36, mb_t8, mb_t1432);
+typedef mb_t5 mb_t7279(mb_t36, mb_t8, mb_t1424);
 typedef mulib_recordbatch_t mb_t7280;
 typedef mb_t7280 *mb_t7282;
 typedef mb_t5 mb_t7281(mb_t7282, mb_t4449);
@@ -9875,20 +9875,20 @@ typedef mb_t8663 *mb_t8665;
 typedef mb_t5 mb_t8664(mb_t36, mb_t8, mb_t8, mb_t8, mb_t36, mb_t8665);
 typedef const mb_t8663 *mb_t8667;
 typedef mb_t5 mb_t8666(mb_t36, mb_t8, mb_t8667);
-typedef mb_t5 mb_t8669(mb_t28, mb_t36, mb_t8, mb_t1432);
+typedef mb_t5 mb_t8669(mb_t28, mb_t36, mb_t8, mb_t1424);
 typedef mb_t8669 *mb_t8668;
-typedef mb_t5 mb_t8670(mb_t36, mb_t36, mb_t36, mb_t8, mb_t1432);
-typedef mb_t5 mb_t8671(mb_t8668, mb_t28, mb_t36, mb_t8, mb_t1432);
+typedef mb_t5 mb_t8670(mb_t36, mb_t36, mb_t36, mb_t8, mb_t1424);
+typedef mb_t5 mb_t8671(mb_t8668, mb_t28, mb_t36, mb_t8, mb_t1424);
 typedef mulib_webextract_candidate_t mb_t8672;
 typedef const mb_t8672 *mb_t8674;
 typedef mb_t5 mb_t8673(mb_t8674, mb_t8, mb_t12, mb_t112, mb_t157);
 typedef mulib_webextract_rule_t mb_t8675;
 typedef const mb_t8675 *mb_t8677;
-typedef mb_t5 mb_t8676(mb_t36, mb_t8, mb_t8677, mb_t1432);
+typedef mb_t5 mb_t8676(mb_t36, mb_t8, mb_t8677, mb_t1424);
 typedef mulib_webextract_span_t mb_t8678;
 typedef mb_t8678 *mb_t8680;
 typedef mb_t5 mb_t8679(mb_t36, mb_t8680);
-typedef mb_t5 mb_t8681(mb_t36, mb_t8, mb_t1432, mb_t8);
+typedef mb_t5 mb_t8681(mb_t36, mb_t8, mb_t1424, mb_t8);
 typedef mb_t5 mb_t8682(mb_t12, mb_t5, mb_t385);
 typedef mb_t5 mb_t8683(mb_t12, mb_t5, mb_t236);
 typedef mb_t5 mb_t8684(mb_t12);
@@ -9917,7 +9917,7 @@ typedef mulib_websearch_provider_config_t mb_t8706;
 typedef mb_t8706 *mb_t8708;
 typedef mb_t5 mb_t8707(mb_t8708, mb_t36, mb_t36, mb_t6);
 typedef const mb_t8706 *mb_t8710;
-typedef mb_t5 mb_t8709(mb_t8710, mb_t36, mb_t6, mb_t1432);
+typedef mb_t5 mb_t8709(mb_t8710, mb_t36, mb_t6, mb_t1424);
 typedef mulib_websearch_provider_t mb_t8711;
 typedef mb_t36 mb_t8712(mb_t8711);
 typedef mb_t5 mb_t8713(mb_t8711);
@@ -24314,266 +24314,266 @@ static void *mb_create_1419(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1419 *functions[] = {mb_cb_1419_0,mb_cb_1419_1,mb_cb_1419_2,mb_cb_1419_3,mb_cb_1419_4,mb_cb_1419_5,mb_cb_1419_6,mb_cb_1419_7};
 int slot = mb_reserve(mb_slots_1419,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1419[slot]; }
 static const size_t mb_args_1419[] = {26,8,28,8,8,1420};
-static void *mb_addr_1421_0(void *object) { return (void*)&((mb_t1421*)object)->minx; }
-static void mb_get_1421_0(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->minx, sizeof(mb_t12)); }
-static void mb_set_1421_0(void *object, const void *value) { memcpy(&((mb_t1421*)object)->minx, value, sizeof(mb_t12)); }
-static void *mb_addr_1421_1(void *object) { return (void*)&((mb_t1421*)object)->miny; }
-static void mb_get_1421_1(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->miny, sizeof(mb_t12)); }
-static void mb_set_1421_1(void *object, const void *value) { memcpy(&((mb_t1421*)object)->miny, value, sizeof(mb_t12)); }
-static void *mb_addr_1421_2(void *object) { return (void*)&((mb_t1421*)object)->maxx; }
-static void mb_get_1421_2(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->maxx, sizeof(mb_t12)); }
-static void mb_set_1421_2(void *object, const void *value) { memcpy(&((mb_t1421*)object)->maxx, value, sizeof(mb_t12)); }
-static void *mb_addr_1421_3(void *object) { return (void*)&((mb_t1421*)object)->maxy; }
-static void mb_get_1421_3(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->maxy, sizeof(mb_t12)); }
-static void mb_set_1421_3(void *object, const void *value) { memcpy(&((mb_t1421*)object)->maxy, value, sizeof(mb_t12)); }
+static void *mb_addr_1421_0(void *object) { return (void*)&((mb_t1421*)object)->data; }
+static void mb_get_1421_0(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->data, sizeof(mb_t32)); }
+static void mb_set_1421_0(void *object, const void *value) { memcpy(&((mb_t1421*)object)->data, value, sizeof(mb_t32)); }
+static void *mb_addr_1421_1(void *object) { return (void*)&((mb_t1421*)object)->len; }
+static void mb_get_1421_1(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->len, sizeof(mb_t8)); }
+static void mb_set_1421_1(void *object, const void *value) { memcpy(&((mb_t1421*)object)->len, value, sizeof(mb_t8)); }
+static void *mb_addr_1421_2(void *object) { return (void*)&((mb_t1421*)object)->cap; }
+static void mb_get_1421_2(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->cap, sizeof(mb_t8)); }
+static void mb_set_1421_2(void *object, const void *value) { memcpy(&((mb_t1421*)object)->cap, value, sizeof(mb_t8)); }
+static void *mb_addr_1421_3(void *object) { return (void*)&((mb_t1421*)object)->limit; }
+static void mb_get_1421_3(const void *object, void *out) { memcpy(out, &((mb_t1421*)object)->limit, sizeof(mb_t8)); }
+static void mb_set_1421_3(void *object, const void *value) { memcpy(&((mb_t1421*)object)->limit, value, sizeof(mb_t8)); }
 static const mb_field mb_fields_1421[] = {
-{"minx",12,mb_addr_1421_0,mb_get_1421_0,mb_set_1421_0},
-{"miny",12,mb_addr_1421_1,mb_get_1421_1,mb_set_1421_1},
-{"maxx",12,mb_addr_1421_2,mb_get_1421_2,mb_set_1421_2},
-{"maxy",12,mb_addr_1421_3,mb_get_1421_3,mb_set_1421_3},
+{"data",32,mb_addr_1421_0,mb_get_1421_0,mb_set_1421_0},
+{"len",8,mb_addr_1421_1,mb_get_1421_1,mb_set_1421_1},
+{"cap",8,mb_addr_1421_2,mb_get_1421_2,mb_set_1421_2},
+{"limit",8,mb_addr_1421_3,mb_get_1421_3,mb_set_1421_3},
 };
-static void mb_indirect_1422(const void *pointer, void *out, void **args) { mb_t1422 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1421*)args[0],*(mb_t12*)args[1],*(mb_t12*)args[2]); }
-static mb_callback_slot mb_slots_1422[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1422_0(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[0],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_1(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[1],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_2(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[2],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_3(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[3],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_4(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[4],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_5(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[5],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_6(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[6],1422,&result,args);return result; }
-static mb_t5 mb_cb_1422_7(mb_t1421 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1422[7],1422,&result,args);return result; }
-static void *mb_create_1422(mull_mb_callback_fn fn, void *user, void *out) {
-mb_t1422 *functions[] = {mb_cb_1422_0,mb_cb_1422_1,mb_cb_1422_2,mb_cb_1422_3,mb_cb_1422_4,mb_cb_1422_5,mb_cb_1422_6,mb_cb_1422_7};
-int slot = mb_reserve(mb_slots_1422,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1422[slot]; }
-static const size_t mb_args_1422[] = {1421,12,12};
-static void mb_indirect_1423(const void *pointer, void *out, void **args) { mb_t1423 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1421*)args[0],*(mb_t1421*)args[1]); }
+static void *mb_addr_1422_0(void *object) { return (void*)&((mb_t1422*)object)->data; }
+static void mb_get_1422_0(const void *object, void *out) { memcpy(out, &((mb_t1422*)object)->data, sizeof(mb_t36)); }
+static void mb_set_1422_0(void *object, const void *value) { memcpy(&((mb_t1422*)object)->data, value, sizeof(mb_t36)); }
+static void *mb_addr_1422_1(void *object) { return (void*)&((mb_t1422*)object)->len; }
+static void mb_get_1422_1(const void *object, void *out) { memcpy(out, &((mb_t1422*)object)->len, sizeof(mb_t8)); }
+static void mb_set_1422_1(void *object, const void *value) { memcpy(&((mb_t1422*)object)->len, value, sizeof(mb_t8)); }
+static const mb_field mb_fields_1422[] = {
+{"data",36,mb_addr_1422_0,mb_get_1422_0,mb_set_1422_0},
+{"len",8,mb_addr_1422_1,mb_get_1422_1,mb_set_1422_1},
+};
+static void mb_indirect_1423(const void *pointer, void *out, void **args) { mb_t1423 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1424*)args[0],*(mb_t8*)args[1]); }
 static mb_callback_slot mb_slots_1423[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1423_0(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[0],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_1(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[1],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_2(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[2],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_3(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[3],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_4(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[4],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_5(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[5],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_6(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[6],1423,&result,args);return result; }
-static mb_t5 mb_cb_1423_7(mb_t1421 a0,mb_t1421 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[7],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_0(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[0],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_1(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[1],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_2(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[2],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_3(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[3],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_4(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[4],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_5(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[5],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_6(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[6],1423,&result,args);return result; }
+static mb_t5 mb_cb_1423_7(mb_t1424 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1423[7],1423,&result,args);return result; }
 static void *mb_create_1423(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1423 *functions[] = {mb_cb_1423_0,mb_cb_1423_1,mb_cb_1423_2,mb_cb_1423_3,mb_cb_1423_4,mb_cb_1423_5,mb_cb_1423_6,mb_cb_1423_7};
 int slot = mb_reserve(mb_slots_1423,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1423[slot]; }
-static const size_t mb_args_1423[] = {1421,1421};
-static void mb_indirect_1424(const void *pointer, void *out, void **args) { mb_t1424 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t1421*)out = fn(*(mb_t1421*)args[0],*(mb_t1421*)args[1]); }
-static mb_callback_slot mb_slots_1424[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t1421 mb_cb_1424_0(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[0],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_1(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[1],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_2(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[2],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_3(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[3],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_4(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[4],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_5(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[5],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_6(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[6],1424,&result,args);return result; }
-static mb_t1421 mb_cb_1424_7(mb_t1421 a0,mb_t1421 a1) { mb_t1421 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1424[7],1424,&result,args);return result; }
-static void *mb_create_1424(mull_mb_callback_fn fn, void *user, void *out) {
-mb_t1424 *functions[] = {mb_cb_1424_0,mb_cb_1424_1,mb_cb_1424_2,mb_cb_1424_3,mb_cb_1424_4,mb_cb_1424_5,mb_cb_1424_6,mb_cb_1424_7};
-int slot = mb_reserve(mb_slots_1424,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1424[slot]; }
-static const size_t mb_args_1424[] = {1421,1421};
-static void mb_indirect_1425(const void *pointer, void *out, void **args) { mb_t1425 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t6*)args[0],*(mb_t6*)args[1]); }
+static const size_t mb_args_1423[] = {1424,8};
+static void mb_indirect_1425(const void *pointer, void *out, void **args) { mb_t1425 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1424*)args[0],*(mb_t26*)args[1],*(mb_t8*)args[2]); }
 static mb_callback_slot mb_slots_1425[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1425_0(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[0],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_1(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[1],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_2(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[2],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_3(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[3],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_4(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[4],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_5(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[5],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_6(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[6],1425,&result,args);return result; }
-static mb_t5 mb_cb_1425_7(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1425[7],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_0(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[0],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_1(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[1],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_2(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[2],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_3(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[3],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_4(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[4],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_5(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[5],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_6(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[6],1425,&result,args);return result; }
+static mb_t5 mb_cb_1425_7(mb_t1424 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1425[7],1425,&result,args);return result; }
 static void *mb_create_1425(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1425 *functions[] = {mb_cb_1425_0,mb_cb_1425_1,mb_cb_1425_2,mb_cb_1425_3,mb_cb_1425_4,mb_cb_1425_5,mb_cb_1425_6,mb_cb_1425_7};
 int slot = mb_reserve(mb_slots_1425,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1425[slot]; }
-static const size_t mb_args_1425[] = {6,6};
-static void *mb_addr_1426_0(void *object) { return (void*)&((mb_t1426*)object)->target; }
-static void mb_get_1426_0(const void *object, void *out) { memcpy(out, &((mb_t1426*)object)->target, sizeof(mb_t8)); }
-static void mb_set_1426_0(void *object, const void *value) { memcpy(&((mb_t1426*)object)->target, value, sizeof(mb_t8)); }
-static void *mb_addr_1426_1(void *object) { return (void*)&((mb_t1426*)object)->short_size; }
-static void mb_get_1426_1(const void *object, void *out) { memcpy(out, &((mb_t1426*)object)->short_size, sizeof(mb_t8)); }
-static void mb_set_1426_1(void *object, const void *value) { memcpy(&((mb_t1426*)object)->short_size, value, sizeof(mb_t8)); }
-static void *mb_addr_1426_2(void *object) { return (void*)&((mb_t1426*)object)->long_size; }
-static void mb_get_1426_2(const void *object, void *out) { memcpy(out, &((mb_t1426*)object)->long_size, sizeof(mb_t8)); }
-static void mb_set_1426_2(void *object, const void *value) { memcpy(&((mb_t1426*)object)->long_size, value, sizeof(mb_t8)); }
-static void *mb_addr_1426_3(void *object) { return (void*)&((mb_t1426*)object)->conditional; }
-static void mb_get_1426_3(const void *object, void *out) { memcpy(out, &((mb_t1426*)object)->conditional, sizeof(mb_t5)); }
-static void mb_set_1426_3(void *object, const void *value) { memcpy(&((mb_t1426*)object)->conditional, value, sizeof(mb_t5)); }
-static const mb_field mb_fields_1426[] = {
-{"target",8,mb_addr_1426_0,mb_get_1426_0,mb_set_1426_0},
-{"short_size",8,mb_addr_1426_1,mb_get_1426_1,mb_set_1426_1},
-{"long_size",8,mb_addr_1426_2,mb_get_1426_2,mb_set_1426_2},
-{"conditional",5,mb_addr_1426_3,mb_get_1426_3,mb_set_1426_3},
-};
-static void mb_indirect_1427(const void *pointer, void *out, void **args) { mb_t1427 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8*)args[0],*(mb_t168*)args[1],*(mb_t1428*)args[2],*(mb_t157*)args[3],*(mb_t21*)args[4],*(mb_t157*)args[5]); }
+static const size_t mb_args_1425[] = {1424,26,8};
+static void mb_indirect_1426(const void *pointer, void *out, void **args) { mb_t1426 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1424*)args[0],*(mb_t36*)args[1]); }
+static mb_callback_slot mb_slots_1426[MULL_MULIB_CALLBACK_SLOTS];
+static mb_t5 mb_cb_1426_0(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[0],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_1(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[1],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_2(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[2],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_3(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[3],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_4(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[4],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_5(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[5],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_6(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[6],1426,&result,args);return result; }
+static mb_t5 mb_cb_1426_7(mb_t1424 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1426[7],1426,&result,args);return result; }
+static void *mb_create_1426(mull_mb_callback_fn fn, void *user, void *out) {
+mb_t1426 *functions[] = {mb_cb_1426_0,mb_cb_1426_1,mb_cb_1426_2,mb_cb_1426_3,mb_cb_1426_4,mb_cb_1426_5,mb_cb_1426_6,mb_cb_1426_7};
+int slot = mb_reserve(mb_slots_1426,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1426[slot]; }
+static const size_t mb_args_1426[] = {1424,36};
+static void mb_indirect_1427(const void *pointer, void *out, void **args) { mb_t1427 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1424*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2]); }
 static mb_callback_slot mb_slots_1427[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1427_0(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[0],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_1(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[1],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_2(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[2],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_3(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[3],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_4(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[4],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_5(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[5],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_6(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[6],1427,&result,args);return result; }
-static mb_t5 mb_cb_1427_7(mb_t8 a0,mb_t168 a1,mb_t1428 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1427[7],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_0(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[0],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_1(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[1],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_2(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[2],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_3(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[3],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_4(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[4],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_5(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[5],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_6(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[6],1427,&result,args);return result; }
+static mb_t5 mb_cb_1427_7(mb_t1424 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1427[7],1427,&result,args);return result; }
 static void *mb_create_1427(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1427 *functions[] = {mb_cb_1427_0,mb_cb_1427_1,mb_cb_1427_2,mb_cb_1427_3,mb_cb_1427_4,mb_cb_1427_5,mb_cb_1427_6,mb_cb_1427_7};
 int slot = mb_reserve(mb_slots_1427,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1427[slot]; }
-static const size_t mb_args_1427[] = {8,168,1428,157,21,157};
-static void *mb_addr_1429_0(void *object) { return (void*)&((mb_t1429*)object)->data; }
-static void mb_get_1429_0(const void *object, void *out) { memcpy(out, &((mb_t1429*)object)->data, sizeof(mb_t32)); }
-static void mb_set_1429_0(void *object, const void *value) { memcpy(&((mb_t1429*)object)->data, value, sizeof(mb_t32)); }
-static void *mb_addr_1429_1(void *object) { return (void*)&((mb_t1429*)object)->len; }
-static void mb_get_1429_1(const void *object, void *out) { memcpy(out, &((mb_t1429*)object)->len, sizeof(mb_t8)); }
-static void mb_set_1429_1(void *object, const void *value) { memcpy(&((mb_t1429*)object)->len, value, sizeof(mb_t8)); }
-static void *mb_addr_1429_2(void *object) { return (void*)&((mb_t1429*)object)->cap; }
-static void mb_get_1429_2(const void *object, void *out) { memcpy(out, &((mb_t1429*)object)->cap, sizeof(mb_t8)); }
-static void mb_set_1429_2(void *object, const void *value) { memcpy(&((mb_t1429*)object)->cap, value, sizeof(mb_t8)); }
-static void *mb_addr_1429_3(void *object) { return (void*)&((mb_t1429*)object)->limit; }
-static void mb_get_1429_3(const void *object, void *out) { memcpy(out, &((mb_t1429*)object)->limit, sizeof(mb_t8)); }
-static void mb_set_1429_3(void *object, const void *value) { memcpy(&((mb_t1429*)object)->limit, value, sizeof(mb_t8)); }
-static const mb_field mb_fields_1429[] = {
-{"data",32,mb_addr_1429_0,mb_get_1429_0,mb_set_1429_0},
-{"len",8,mb_addr_1429_1,mb_get_1429_1,mb_set_1429_1},
-{"cap",8,mb_addr_1429_2,mb_get_1429_2,mb_set_1429_2},
-{"limit",8,mb_addr_1429_3,mb_get_1429_3,mb_set_1429_3},
-};
-static void *mb_addr_1430_0(void *object) { return (void*)&((mb_t1430*)object)->data; }
-static void mb_get_1430_0(const void *object, void *out) { memcpy(out, &((mb_t1430*)object)->data, sizeof(mb_t36)); }
-static void mb_set_1430_0(void *object, const void *value) { memcpy(&((mb_t1430*)object)->data, value, sizeof(mb_t36)); }
-static void *mb_addr_1430_1(void *object) { return (void*)&((mb_t1430*)object)->len; }
-static void mb_get_1430_1(const void *object, void *out) { memcpy(out, &((mb_t1430*)object)->len, sizeof(mb_t8)); }
-static void mb_set_1430_1(void *object, const void *value) { memcpy(&((mb_t1430*)object)->len, value, sizeof(mb_t8)); }
-static const mb_field mb_fields_1430[] = {
-{"data",36,mb_addr_1430_0,mb_get_1430_0,mb_set_1430_0},
-{"len",8,mb_addr_1430_1,mb_get_1430_1,mb_set_1430_1},
-};
-static void mb_indirect_1431(const void *pointer, void *out, void **args) { mb_t1431 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1432*)args[0],*(mb_t8*)args[1]); }
+static const size_t mb_args_1427[] = {1424,36,8};
+static void mb_indirect_1428(const void *pointer, void *out, void **args) { mb_t1428 *fn; memcpy(&fn,pointer,sizeof(fn)); (void)out; fn(*(mb_t1424*)args[0]); }
+static mb_callback_slot mb_slots_1428[MULL_MULIB_CALLBACK_SLOTS];
+static mb_t0 mb_cb_1428_0(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[0],1428,NULL,args); }
+static mb_t0 mb_cb_1428_1(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[1],1428,NULL,args); }
+static mb_t0 mb_cb_1428_2(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[2],1428,NULL,args); }
+static mb_t0 mb_cb_1428_3(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[3],1428,NULL,args); }
+static mb_t0 mb_cb_1428_4(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[4],1428,NULL,args); }
+static mb_t0 mb_cb_1428_5(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[5],1428,NULL,args); }
+static mb_t0 mb_cb_1428_6(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[6],1428,NULL,args); }
+static mb_t0 mb_cb_1428_7(mb_t1424 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1428[7],1428,NULL,args); }
+static void *mb_create_1428(mull_mb_callback_fn fn, void *user, void *out) {
+mb_t1428 *functions[] = {mb_cb_1428_0,mb_cb_1428_1,mb_cb_1428_2,mb_cb_1428_3,mb_cb_1428_4,mb_cb_1428_5,mb_cb_1428_6,mb_cb_1428_7};
+int slot = mb_reserve(mb_slots_1428,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1428[slot]; }
+static const size_t mb_args_1428[] = {1424};
+static void mb_indirect_1429(const void *pointer, void *out, void **args) { mb_t1429 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t32*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1]); }
+static mb_callback_slot mb_slots_1429[MULL_MULIB_CALLBACK_SLOTS];
+static mb_t32 mb_cb_1429_0(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[0],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_1(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[1],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_2(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[2],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_3(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[3],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_4(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[4],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_5(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[5],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_6(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[6],1429,&result,args);return result; }
+static mb_t32 mb_cb_1429_7(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1429[7],1429,&result,args);return result; }
+static void *mb_create_1429(mull_mb_callback_fn fn, void *user, void *out) {
+mb_t1429 *functions[] = {mb_cb_1429_0,mb_cb_1429_1,mb_cb_1429_2,mb_cb_1429_3,mb_cb_1429_4,mb_cb_1429_5,mb_cb_1429_6,mb_cb_1429_7};
+int slot = mb_reserve(mb_slots_1429,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1429[slot]; }
+static const size_t mb_args_1429[] = {36,8};
+static void mb_indirect_1430(const void *pointer, void *out, void **args) { mb_t1430 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t32*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
+static mb_callback_slot mb_slots_1430[MULL_MULIB_CALLBACK_SLOTS];
+static mb_t5 mb_cb_1430_0(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[0],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_1(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[1],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_2(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[2],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_3(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[3],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_4(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[4],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_5(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[5],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_6(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[6],1430,&result,args);return result; }
+static mb_t5 mb_cb_1430_7(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1430[7],1430,&result,args);return result; }
+static void *mb_create_1430(mull_mb_callback_fn fn, void *user, void *out) {
+mb_t1430 *functions[] = {mb_cb_1430_0,mb_cb_1430_1,mb_cb_1430_2,mb_cb_1430_3,mb_cb_1430_4,mb_cb_1430_5,mb_cb_1430_6,mb_cb_1430_7};
+int slot = mb_reserve(mb_slots_1430,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1430[slot]; }
+static const size_t mb_args_1430[] = {32,8,36};
+static void mb_indirect_1431(const void *pointer, void *out, void **args) { mb_t1431 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
 static mb_callback_slot mb_slots_1431[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1431_0(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[0],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_1(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[1],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_2(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[2],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_3(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[3],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_4(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[4],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_5(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[5],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_6(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[6],1431,&result,args);return result; }
-static mb_t5 mb_cb_1431_7(mb_t1432 a0,mb_t8 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1431[7],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_0(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[0],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_1(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[1],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_2(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[2],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_3(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[3],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_4(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[4],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_5(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[5],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_6(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[6],1431,&result,args);return result; }
+static mb_t5 mb_cb_1431_7(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1431[7],1431,&result,args);return result; }
 static void *mb_create_1431(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1431 *functions[] = {mb_cb_1431_0,mb_cb_1431_1,mb_cb_1431_2,mb_cb_1431_3,mb_cb_1431_4,mb_cb_1431_5,mb_cb_1431_6,mb_cb_1431_7};
 int slot = mb_reserve(mb_slots_1431,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1431[slot]; }
-static const size_t mb_args_1431[] = {1432,8};
-static void mb_indirect_1433(const void *pointer, void *out, void **args) { mb_t1433 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1432*)args[0],*(mb_t26*)args[1],*(mb_t8*)args[2]); }
-static mb_callback_slot mb_slots_1433[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1433_0(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[0],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_1(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[1],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_2(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[2],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_3(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[3],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_4(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[4],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_5(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[5],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_6(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[6],1433,&result,args);return result; }
-static mb_t5 mb_cb_1433_7(mb_t1432 a0,mb_t26 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1433[7],1433,&result,args);return result; }
-static void *mb_create_1433(mull_mb_callback_fn fn, void *user, void *out) {
-mb_t1433 *functions[] = {mb_cb_1433_0,mb_cb_1433_1,mb_cb_1433_2,mb_cb_1433_3,mb_cb_1433_4,mb_cb_1433_5,mb_cb_1433_6,mb_cb_1433_7};
-int slot = mb_reserve(mb_slots_1433,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1433[slot]; }
-static const size_t mb_args_1433[] = {1432,26,8};
-static void mb_indirect_1434(const void *pointer, void *out, void **args) { mb_t1434 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1432*)args[0],*(mb_t36*)args[1]); }
+static const size_t mb_args_1431[] = {36,8,36};
+static void mb_indirect_1432(const void *pointer, void *out, void **args) { mb_t1432 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t112*)args[1]); }
+static mb_callback_slot mb_slots_1432[MULL_MULIB_CALLBACK_SLOTS];
+static mb_t5 mb_cb_1432_0(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[0],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_1(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[1],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_2(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[2],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_3(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[3],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_4(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[4],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_5(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[5],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_6(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[6],1432,&result,args);return result; }
+static mb_t5 mb_cb_1432_7(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1432[7],1432,&result,args);return result; }
+static void *mb_create_1432(mull_mb_callback_fn fn, void *user, void *out) {
+mb_t1432 *functions[] = {mb_cb_1432_0,mb_cb_1432_1,mb_cb_1432_2,mb_cb_1432_3,mb_cb_1432_4,mb_cb_1432_5,mb_cb_1432_6,mb_cb_1432_7};
+int slot = mb_reserve(mb_slots_1432,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1432[slot]; }
+static const size_t mb_args_1432[] = {36,112};
+static void *mb_addr_1433_0(void *object) { return (void*)&((mb_t1433*)object)->minx; }
+static void mb_get_1433_0(const void *object, void *out) { memcpy(out, &((mb_t1433*)object)->minx, sizeof(mb_t12)); }
+static void mb_set_1433_0(void *object, const void *value) { memcpy(&((mb_t1433*)object)->minx, value, sizeof(mb_t12)); }
+static void *mb_addr_1433_1(void *object) { return (void*)&((mb_t1433*)object)->miny; }
+static void mb_get_1433_1(const void *object, void *out) { memcpy(out, &((mb_t1433*)object)->miny, sizeof(mb_t12)); }
+static void mb_set_1433_1(void *object, const void *value) { memcpy(&((mb_t1433*)object)->miny, value, sizeof(mb_t12)); }
+static void *mb_addr_1433_2(void *object) { return (void*)&((mb_t1433*)object)->maxx; }
+static void mb_get_1433_2(const void *object, void *out) { memcpy(out, &((mb_t1433*)object)->maxx, sizeof(mb_t12)); }
+static void mb_set_1433_2(void *object, const void *value) { memcpy(&((mb_t1433*)object)->maxx, value, sizeof(mb_t12)); }
+static void *mb_addr_1433_3(void *object) { return (void*)&((mb_t1433*)object)->maxy; }
+static void mb_get_1433_3(const void *object, void *out) { memcpy(out, &((mb_t1433*)object)->maxy, sizeof(mb_t12)); }
+static void mb_set_1433_3(void *object, const void *value) { memcpy(&((mb_t1433*)object)->maxy, value, sizeof(mb_t12)); }
+static const mb_field mb_fields_1433[] = {
+{"minx",12,mb_addr_1433_0,mb_get_1433_0,mb_set_1433_0},
+{"miny",12,mb_addr_1433_1,mb_get_1433_1,mb_set_1433_1},
+{"maxx",12,mb_addr_1433_2,mb_get_1433_2,mb_set_1433_2},
+{"maxy",12,mb_addr_1433_3,mb_get_1433_3,mb_set_1433_3},
+};
+static void mb_indirect_1434(const void *pointer, void *out, void **args) { mb_t1434 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1433*)args[0],*(mb_t12*)args[1],*(mb_t12*)args[2]); }
 static mb_callback_slot mb_slots_1434[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1434_0(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[0],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_1(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[1],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_2(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[2],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_3(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[3],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_4(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[4],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_5(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[5],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_6(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[6],1434,&result,args);return result; }
-static mb_t5 mb_cb_1434_7(mb_t1432 a0,mb_t36 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1434[7],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_0(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[0],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_1(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[1],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_2(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[2],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_3(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[3],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_4(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[4],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_5(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[5],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_6(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[6],1434,&result,args);return result; }
+static mb_t5 mb_cb_1434_7(mb_t1433 a0,mb_t12 a1,mb_t12 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1434[7],1434,&result,args);return result; }
 static void *mb_create_1434(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1434 *functions[] = {mb_cb_1434_0,mb_cb_1434_1,mb_cb_1434_2,mb_cb_1434_3,mb_cb_1434_4,mb_cb_1434_5,mb_cb_1434_6,mb_cb_1434_7};
 int slot = mb_reserve(mb_slots_1434,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1434[slot]; }
-static const size_t mb_args_1434[] = {1432,36};
-static void mb_indirect_1435(const void *pointer, void *out, void **args) { mb_t1435 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1432*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2]); }
+static const size_t mb_args_1434[] = {1433,12,12};
+static void mb_indirect_1435(const void *pointer, void *out, void **args) { mb_t1435 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1433*)args[0],*(mb_t1433*)args[1]); }
 static mb_callback_slot mb_slots_1435[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1435_0(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[0],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_1(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[1],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_2(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[2],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_3(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[3],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_4(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[4],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_5(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[5],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_6(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[6],1435,&result,args);return result; }
-static mb_t5 mb_cb_1435_7(mb_t1432 a0,mb_t36 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1435[7],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_0(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[0],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_1(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[1],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_2(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[2],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_3(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[3],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_4(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[4],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_5(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[5],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_6(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[6],1435,&result,args);return result; }
+static mb_t5 mb_cb_1435_7(mb_t1433 a0,mb_t1433 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1435[7],1435,&result,args);return result; }
 static void *mb_create_1435(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1435 *functions[] = {mb_cb_1435_0,mb_cb_1435_1,mb_cb_1435_2,mb_cb_1435_3,mb_cb_1435_4,mb_cb_1435_5,mb_cb_1435_6,mb_cb_1435_7};
 int slot = mb_reserve(mb_slots_1435,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1435[slot]; }
-static const size_t mb_args_1435[] = {1432,36,8};
-static void mb_indirect_1436(const void *pointer, void *out, void **args) { mb_t1436 *fn; memcpy(&fn,pointer,sizeof(fn)); (void)out; fn(*(mb_t1432*)args[0]); }
+static const size_t mb_args_1435[] = {1433,1433};
+static void mb_indirect_1436(const void *pointer, void *out, void **args) { mb_t1436 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t1433*)out = fn(*(mb_t1433*)args[0],*(mb_t1433*)args[1]); }
 static mb_callback_slot mb_slots_1436[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t0 mb_cb_1436_0(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[0],1436,NULL,args); }
-static mb_t0 mb_cb_1436_1(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[1],1436,NULL,args); }
-static mb_t0 mb_cb_1436_2(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[2],1436,NULL,args); }
-static mb_t0 mb_cb_1436_3(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[3],1436,NULL,args); }
-static mb_t0 mb_cb_1436_4(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[4],1436,NULL,args); }
-static mb_t0 mb_cb_1436_5(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[5],1436,NULL,args); }
-static mb_t0 mb_cb_1436_6(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[6],1436,NULL,args); }
-static mb_t0 mb_cb_1436_7(mb_t1432 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1436[7],1436,NULL,args); }
+static mb_t1433 mb_cb_1436_0(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[0],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_1(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[1],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_2(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[2],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_3(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[3],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_4(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[4],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_5(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[5],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_6(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[6],1436,&result,args);return result; }
+static mb_t1433 mb_cb_1436_7(mb_t1433 a0,mb_t1433 a1) { mb_t1433 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1436[7],1436,&result,args);return result; }
 static void *mb_create_1436(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1436 *functions[] = {mb_cb_1436_0,mb_cb_1436_1,mb_cb_1436_2,mb_cb_1436_3,mb_cb_1436_4,mb_cb_1436_5,mb_cb_1436_6,mb_cb_1436_7};
 int slot = mb_reserve(mb_slots_1436,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1436[slot]; }
-static const size_t mb_args_1436[] = {1432};
-static void mb_indirect_1437(const void *pointer, void *out, void **args) { mb_t1437 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t32*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1]); }
+static const size_t mb_args_1436[] = {1433,1433};
+static void mb_indirect_1437(const void *pointer, void *out, void **args) { mb_t1437 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t6*)args[0],*(mb_t6*)args[1]); }
 static mb_callback_slot mb_slots_1437[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t32 mb_cb_1437_0(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[0],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_1(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[1],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_2(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[2],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_3(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[3],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_4(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[4],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_5(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[5],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_6(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[6],1437,&result,args);return result; }
-static mb_t32 mb_cb_1437_7(mb_t36 a0,mb_t8 a1) { mb_t32 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[7],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_0(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[0],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_1(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[1],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_2(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[2],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_3(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[3],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_4(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[4],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_5(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[5],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_6(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[6],1437,&result,args);return result; }
+static mb_t5 mb_cb_1437_7(mb_t6 a0,mb_t6 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1437[7],1437,&result,args);return result; }
 static void *mb_create_1437(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1437 *functions[] = {mb_cb_1437_0,mb_cb_1437_1,mb_cb_1437_2,mb_cb_1437_3,mb_cb_1437_4,mb_cb_1437_5,mb_cb_1437_6,mb_cb_1437_7};
 int slot = mb_reserve(mb_slots_1437,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1437[slot]; }
-static const size_t mb_args_1437[] = {36,8};
-static void mb_indirect_1438(const void *pointer, void *out, void **args) { mb_t1438 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t32*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
-static mb_callback_slot mb_slots_1438[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1438_0(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[0],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_1(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[1],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_2(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[2],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_3(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[3],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_4(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[4],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_5(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[5],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_6(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[6],1438,&result,args);return result; }
-static mb_t5 mb_cb_1438_7(mb_t32 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1438[7],1438,&result,args);return result; }
-static void *mb_create_1438(mull_mb_callback_fn fn, void *user, void *out) {
-mb_t1438 *functions[] = {mb_cb_1438_0,mb_cb_1438_1,mb_cb_1438_2,mb_cb_1438_3,mb_cb_1438_4,mb_cb_1438_5,mb_cb_1438_6,mb_cb_1438_7};
-int slot = mb_reserve(mb_slots_1438,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1438[slot]; }
-static const size_t mb_args_1438[] = {32,8,36};
-static void mb_indirect_1439(const void *pointer, void *out, void **args) { mb_t1439 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
+static const size_t mb_args_1437[] = {6,6};
+static void *mb_addr_1438_0(void *object) { return (void*)&((mb_t1438*)object)->target; }
+static void mb_get_1438_0(const void *object, void *out) { memcpy(out, &((mb_t1438*)object)->target, sizeof(mb_t8)); }
+static void mb_set_1438_0(void *object, const void *value) { memcpy(&((mb_t1438*)object)->target, value, sizeof(mb_t8)); }
+static void *mb_addr_1438_1(void *object) { return (void*)&((mb_t1438*)object)->short_size; }
+static void mb_get_1438_1(const void *object, void *out) { memcpy(out, &((mb_t1438*)object)->short_size, sizeof(mb_t8)); }
+static void mb_set_1438_1(void *object, const void *value) { memcpy(&((mb_t1438*)object)->short_size, value, sizeof(mb_t8)); }
+static void *mb_addr_1438_2(void *object) { return (void*)&((mb_t1438*)object)->long_size; }
+static void mb_get_1438_2(const void *object, void *out) { memcpy(out, &((mb_t1438*)object)->long_size, sizeof(mb_t8)); }
+static void mb_set_1438_2(void *object, const void *value) { memcpy(&((mb_t1438*)object)->long_size, value, sizeof(mb_t8)); }
+static void *mb_addr_1438_3(void *object) { return (void*)&((mb_t1438*)object)->conditional; }
+static void mb_get_1438_3(const void *object, void *out) { memcpy(out, &((mb_t1438*)object)->conditional, sizeof(mb_t5)); }
+static void mb_set_1438_3(void *object, const void *value) { memcpy(&((mb_t1438*)object)->conditional, value, sizeof(mb_t5)); }
+static const mb_field mb_fields_1438[] = {
+{"target",8,mb_addr_1438_0,mb_get_1438_0,mb_set_1438_0},
+{"short_size",8,mb_addr_1438_1,mb_get_1438_1,mb_set_1438_1},
+{"long_size",8,mb_addr_1438_2,mb_get_1438_2,mb_set_1438_2},
+{"conditional",5,mb_addr_1438_3,mb_get_1438_3,mb_set_1438_3},
+};
+static void mb_indirect_1439(const void *pointer, void *out, void **args) { mb_t1439 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8*)args[0],*(mb_t168*)args[1],*(mb_t1440*)args[2],*(mb_t157*)args[3],*(mb_t21*)args[4],*(mb_t157*)args[5]); }
 static mb_callback_slot mb_slots_1439[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1439_0(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[0],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_1(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[1],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_2(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[2],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_3(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[3],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_4(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[4],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_5(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[5],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_6(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[6],1439,&result,args);return result; }
-static mb_t5 mb_cb_1439_7(mb_t36 a0,mb_t8 a1,mb_t36 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_1439[7],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_0(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[0],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_1(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[1],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_2(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[2],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_3(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[3],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_4(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[4],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_5(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[5],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_6(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[6],1439,&result,args);return result; }
+static mb_t5 mb_cb_1439_7(mb_t8 a0,mb_t168 a1,mb_t1440 a2,mb_t157 a3,mb_t21 a4,mb_t157 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1439[7],1439,&result,args);return result; }
 static void *mb_create_1439(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1439 *functions[] = {mb_cb_1439_0,mb_cb_1439_1,mb_cb_1439_2,mb_cb_1439_3,mb_cb_1439_4,mb_cb_1439_5,mb_cb_1439_6,mb_cb_1439_7};
 int slot = mb_reserve(mb_slots_1439,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1439[slot]; }
-static const size_t mb_args_1439[] = {36,8,36};
-static void mb_indirect_1440(const void *pointer, void *out, void **args) { mb_t1440 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t112*)args[1]); }
-static mb_callback_slot mb_slots_1440[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1440_0(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[0],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_1(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[1],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_2(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[2],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_3(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[3],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_4(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[4],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_5(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[5],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_6(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[6],1440,&result,args);return result; }
-static mb_t5 mb_cb_1440_7(mb_t36 a0,mb_t112 a1) { mb_t5 result = {0};void *args[] = {&a0,&a1}; mb_dispatch(&mb_slots_1440[7],1440,&result,args);return result; }
-static void *mb_create_1440(mull_mb_callback_fn fn, void *user, void *out) {
-mb_t1440 *functions[] = {mb_cb_1440_0,mb_cb_1440_1,mb_cb_1440_2,mb_cb_1440_3,mb_cb_1440_4,mb_cb_1440_5,mb_cb_1440_6,mb_cb_1440_7};
-int slot = mb_reserve(mb_slots_1440,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1440[slot]; }
-static const size_t mb_args_1440[] = {36,112};
+static const size_t mb_args_1439[] = {8,168,1440,157,21,157};
 static void *mb_addr_1441_0(void *object) { return (void*)&((mb_t1441*)object)->url; }
 static void mb_get_1441_0(const void *object, void *out) { memcpy(out, &((mb_t1441*)object)->url, sizeof(mb_t1442)); }
 static void mb_set_1441_0(void *object, const void *value) { memcpy(&((mb_t1441*)object)->url, value, sizeof(mb_t1442)); }
@@ -24584,13 +24584,13 @@ static void *mb_addr_1441_2(void *object) { return (void*)&((mb_t1441*)object)->
 static void mb_get_1441_2(const void *object, void *out) { memcpy(out, &((mb_t1441*)object)->expires, sizeof(mb_t7)); }
 static void mb_set_1441_2(void *object, const void *value) { memcpy(&((mb_t1441*)object)->expires, value, sizeof(mb_t7)); }
 static void *mb_addr_1441_3(void *object) { return (void*)&((mb_t1441*)object)->body; }
-static void mb_get_1441_3(const void *object, void *out) { memcpy(out, &((mb_t1441*)object)->body, sizeof(mb_t1429)); }
-static void mb_set_1441_3(void *object, const void *value) { memcpy(&((mb_t1441*)object)->body, value, sizeof(mb_t1429)); }
+static void mb_get_1441_3(const void *object, void *out) { memcpy(out, &((mb_t1441*)object)->body, sizeof(mb_t1421)); }
+static void mb_set_1441_3(void *object, const void *value) { memcpy(&((mb_t1441*)object)->body, value, sizeof(mb_t1421)); }
 static const mb_field mb_fields_1441[] = {
 {"url",1442,mb_addr_1441_0,mb_get_1441_0,mb_set_1441_0},
 {"etag",1443,mb_addr_1441_1,mb_get_1441_1,mb_set_1441_1},
 {"expires",7,mb_addr_1441_2,mb_get_1441_2,mb_set_1441_2},
-{"body",1429,mb_addr_1441_3,mb_get_1441_3,mb_set_1441_3},
+{"body",1421,mb_addr_1441_3,mb_get_1441_3,mb_set_1441_3},
 };
 static void *mb_addr_1444_0(void *object) { return (void*)&((mb_t1444*)object)->items; }
 static void mb_get_1444_0(const void *object, void *out) { memcpy(out, &((mb_t1444*)object)->items, sizeof(mb_t1445)); }
@@ -24736,20 +24736,20 @@ static void *mb_create_1458(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1458 *functions[] = {mb_cb_1458_0,mb_cb_1458_1,mb_cb_1458_2,mb_cb_1458_3,mb_cb_1458_4,mb_cb_1458_5,mb_cb_1458_6,mb_cb_1458_7};
 int slot = mb_reserve(mb_slots_1458,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1458[slot]; }
 static const size_t mb_args_1458[] = {1459,1460};
-static void mb_indirect_1461(const void *pointer, void *out, void **args) { mb_t1461 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1462*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t5*)args[3],*(mb_t7*)args[4],*(mb_t1432*)args[5]); }
+static void mb_indirect_1461(const void *pointer, void *out, void **args) { mb_t1461 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1462*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t5*)args[3],*(mb_t7*)args[4],*(mb_t1424*)args[5]); }
 static mb_callback_slot mb_slots_1461[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1461_0(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[0],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_1(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[1],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_2(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[2],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_3(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[3],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_4(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[4],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_5(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[5],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_6(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[6],1461,&result,args);return result; }
-static mb_t5 mb_cb_1461_7(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1432 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[7],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_0(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[0],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_1(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[1],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_2(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[2],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_3(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[3],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_4(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[4],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_5(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[5],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_6(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[6],1461,&result,args);return result; }
+static mb_t5 mb_cb_1461_7(mb_t1462 a0,mb_t36 a1,mb_t36 a2,mb_t5 a3,mb_t7 a4,mb_t1424 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1461[7],1461,&result,args);return result; }
 static void *mb_create_1461(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1461 *functions[] = {mb_cb_1461_0,mb_cb_1461_1,mb_cb_1461_2,mb_cb_1461_3,mb_cb_1461_4,mb_cb_1461_5,mb_cb_1461_6,mb_cb_1461_7};
 int slot = mb_reserve(mb_slots_1461,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1461[slot]; }
-static const size_t mb_args_1461[] = {1462,36,36,5,7,1432};
+static const size_t mb_args_1461[] = {1462,36,36,5,7,1424};
 static void mb_indirect_1463(const void *pointer, void *out, void **args) { mb_t1463 *fn; memcpy(&fn,pointer,sizeof(fn)); (void)out; fn(*(mb_t1459*)args[0]); }
 static mb_callback_slot mb_slots_1463[MULL_MULIB_CALLBACK_SLOTS];
 static mb_t0 mb_cb_1463_0(mb_t1459 a0) { void *args[] = {&a0}; mb_dispatch(&mb_slots_1463[0],1463,NULL,args); }
@@ -24944,20 +24944,20 @@ static void *mb_create_1478(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1478 *functions[] = {mb_cb_1478_0,mb_cb_1478_1,mb_cb_1478_2,mb_cb_1478_3,mb_cb_1478_4,mb_cb_1478_5,mb_cb_1478_6,mb_cb_1478_7};
 int slot = mb_reserve(mb_slots_1478,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1478[slot]; }
 static const size_t mb_args_1478[] = {1479,36};
-static void mb_indirect_1481(const void *pointer, void *out, void **args) { mb_t1481 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_indirect_1481(const void *pointer, void *out, void **args) { mb_t1481 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
 static mb_callback_slot mb_slots_1481[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1481_0(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[0],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_1(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[1],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_2(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[2],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_3(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[3],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_4(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[4],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_5(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[5],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_6(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[6],1481,&result,args);return result; }
-static mb_t5 mb_cb_1481_7(mb_t28 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[7],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_0(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[0],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_1(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[1],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_2(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[2],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_3(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[3],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_4(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[4],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_5(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[5],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_6(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[6],1481,&result,args);return result; }
+static mb_t5 mb_cb_1481_7(mb_t28 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1481[7],1481,&result,args);return result; }
 static void *mb_create_1481(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1481 *functions[] = {mb_cb_1481_0,mb_cb_1481_1,mb_cb_1481_2,mb_cb_1481_3,mb_cb_1481_4,mb_cb_1481_5,mb_cb_1481_6,mb_cb_1481_7};
 int slot = mb_reserve(mb_slots_1481,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1481[slot]; }
-static const size_t mb_args_1481[] = {28,36,1432,236,32,8};
+static const size_t mb_args_1481[] = {28,36,1424,236,32,8};
 static void *mb_addr_1482_0(void *object) { return (void*)&((mb_t1482*)object)->policy; }
 static void mb_get_1482_0(const void *object, void *out) { memcpy(out, &((mb_t1482*)object)->policy, sizeof(mb_t1477)); }
 static void mb_set_1482_0(void *object, const void *value) { memcpy(&((mb_t1482*)object)->policy, value, sizeof(mb_t1477)); }
@@ -24972,20 +24972,20 @@ static const mb_field mb_fields_1482[] = {
 {"transport",1480,mb_addr_1482_1,mb_get_1482_1,mb_set_1482_1},
 {"ctx",28,mb_addr_1482_2,mb_get_1482_2,mb_set_1482_2},
 };
-static void mb_indirect_1483(const void *pointer, void *out, void **args) { mb_t1483 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1484*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_indirect_1483(const void *pointer, void *out, void **args) { mb_t1483 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1484*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
 static mb_callback_slot mb_slots_1483[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1483_0(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[0],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_1(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[1],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_2(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[2],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_3(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[3],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_4(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[4],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_5(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[5],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_6(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[6],1483,&result,args);return result; }
-static mb_t5 mb_cb_1483_7(mb_t1484 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[7],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_0(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[0],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_1(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[1],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_2(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[2],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_3(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[3],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_4(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[4],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_5(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[5],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_6(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[6],1483,&result,args);return result; }
+static mb_t5 mb_cb_1483_7(mb_t1484 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1483[7],1483,&result,args);return result; }
 static void *mb_create_1483(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1483 *functions[] = {mb_cb_1483_0,mb_cb_1483_1,mb_cb_1483_2,mb_cb_1483_3,mb_cb_1483_4,mb_cb_1483_5,mb_cb_1483_6,mb_cb_1483_7};
 int slot = mb_reserve(mb_slots_1483,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1483[slot]; }
-static const size_t mb_args_1483[] = {1484,36,1432,236,32,8};
+static const size_t mb_args_1483[] = {1484,36,1424,236,32,8};
 static void *mb_addr_1485_0(void *object) { return (void*)&((mb_t1485*)object)->client; }
 static void mb_get_1485_0(const void *object, void *out) { memcpy(out, &((mb_t1485*)object)->client, sizeof(mb_t1482)); }
 static void mb_set_1485_0(void *object, const void *value) { memcpy(&((mb_t1485*)object)->client, value, sizeof(mb_t1482)); }
@@ -25000,20 +25000,20 @@ static const mb_field mb_fields_1485[] = {
 {"initiator",1471,mb_addr_1485_1,mb_get_1485_1,mb_set_1485_1},
 {"enforce_same_origin",5,mb_addr_1485_2,mb_get_1485_2,mb_set_1485_2},
 };
-static void mb_indirect_1486(const void *pointer, void *out, void **args) { mb_t1486 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1487*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_indirect_1486(const void *pointer, void *out, void **args) { mb_t1486 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t1487*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
 static mb_callback_slot mb_slots_1486[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_1486_0(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[0],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_1(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[1],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_2(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[2],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_3(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[3],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_4(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[4],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_5(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[5],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_6(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[6],1486,&result,args);return result; }
-static mb_t5 mb_cb_1486_7(mb_t1487 a0,mb_t36 a1,mb_t1432 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[7],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_0(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[0],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_1(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[1],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_2(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[2],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_3(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[3],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_4(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[4],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_5(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[5],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_6(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[6],1486,&result,args);return result; }
+static mb_t5 mb_cb_1486_7(mb_t1487 a0,mb_t36 a1,mb_t1424 a2,mb_t236 a3,mb_t32 a4,mb_t8 a5) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4,&a5}; mb_dispatch(&mb_slots_1486[7],1486,&result,args);return result; }
 static void *mb_create_1486(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t1486 *functions[] = {mb_cb_1486_0,mb_cb_1486_1,mb_cb_1486_2,mb_cb_1486_3,mb_cb_1486_4,mb_cb_1486_5,mb_cb_1486_6,mb_cb_1486_7};
 int slot = mb_reserve(mb_slots_1486,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1486[slot]; }
-static const size_t mb_args_1486[] = {1487,36,1432,236,32,8};
+static const size_t mb_args_1486[] = {1487,36,1424,236,32,8};
 static void *mb_addr_1489_0(void *object) { return (void*)&((mb_t1489*)object)->kind; }
 static void mb_get_1489_0(const void *object, void *out) { memcpy(out, &((mb_t1489*)object)->kind, sizeof(mb_t1488)); }
 static void mb_set_1489_0(void *object, const void *value) { memcpy(&((mb_t1489*)object)->kind, value, sizeof(mb_t1488)); }
@@ -25128,11 +25128,11 @@ static void *mb_addr_1501_0(void *object) { return (void*)&((mb_t1501*)object)->
 static void mb_get_1501_0(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->tag, sizeof(mb_t1495)); }
 static void mb_set_1501_0(void *object, const void *value) { memcpy(&((mb_t1501*)object)->tag, value, sizeof(mb_t1495)); }
 static void *mb_addr_1501_1(void *object) { return (void*)&((mb_t1501*)object)->text; }
-static void mb_get_1501_1(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->text, sizeof(mb_t1429)); }
-static void mb_set_1501_1(void *object, const void *value) { memcpy(&((mb_t1501*)object)->text, value, sizeof(mb_t1429)); }
+static void mb_get_1501_1(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->text, sizeof(mb_t1421)); }
+static void mb_set_1501_1(void *object, const void *value) { memcpy(&((mb_t1501*)object)->text, value, sizeof(mb_t1421)); }
 static void *mb_addr_1501_2(void *object) { return (void*)&((mb_t1501*)object)->attributes; }
-static void mb_get_1501_2(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->attributes, sizeof(mb_t1429)); }
-static void mb_set_1501_2(void *object, const void *value) { memcpy(&((mb_t1501*)object)->attributes, value, sizeof(mb_t1429)); }
+static void mb_get_1501_2(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->attributes, sizeof(mb_t1421)); }
+static void mb_set_1501_2(void *object, const void *value) { memcpy(&((mb_t1501*)object)->attributes, value, sizeof(mb_t1421)); }
 static void *mb_addr_1501_3(void *object) { return (void*)&((mb_t1501*)object)->parent; }
 static void mb_get_1501_3(const void *object, void *out) { memcpy(out, &((mb_t1501*)object)->parent, sizeof(mb_t1502)); }
 static void mb_set_1501_3(void *object, const void *value) { memcpy(&((mb_t1501*)object)->parent, value, sizeof(mb_t1502)); }
@@ -25153,8 +25153,8 @@ static void mb_get_1501_8(const void *object, void *out) { memcpy(out, &((mb_t15
 static void mb_set_1501_8(void *object, const void *value) { memcpy(&((mb_t1501*)object)->is_text, value, sizeof(mb_t5)); }
 static const mb_field mb_fields_1501[] = {
 {"tag",1495,mb_addr_1501_0,mb_get_1501_0,mb_set_1501_0},
-{"text",1429,mb_addr_1501_1,mb_get_1501_1,mb_set_1501_1},
-{"attributes",1429,mb_addr_1501_2,mb_get_1501_2,mb_set_1501_2},
+{"text",1421,mb_addr_1501_1,mb_get_1501_1,mb_set_1501_1},
+{"attributes",1421,mb_addr_1501_2,mb_get_1501_2,mb_set_1501_2},
 {"parent",1502,mb_addr_1501_3,mb_get_1501_3,mb_set_1501_3},
 {"first_child",1502,mb_addr_1501_4,mb_get_1501_4,mb_set_1501_4},
 {"last_child",1502,mb_addr_1501_5,mb_get_1501_5,mb_set_1501_5},
@@ -25943,8 +25943,8 @@ mb_t1574 *functions[] = {mb_cb_1574_0,mb_cb_1574_1,mb_cb_1574_2,mb_cb_1574_3,mb_
 int slot = mb_reserve(mb_slots_1574,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_1574[slot]; }
 static const size_t mb_args_1574[] = {1572};
 static void *mb_addr_1575_0(void *object) { return (void*)&((mb_t1575*)object)->bytes; }
-static void mb_get_1575_0(const void *object, void *out) { memcpy(out, &((mb_t1575*)object)->bytes, sizeof(mb_t1429)); }
-static void mb_set_1575_0(void *object, const void *value) { memcpy(&((mb_t1575*)object)->bytes, value, sizeof(mb_t1429)); }
+static void mb_get_1575_0(const void *object, void *out) { memcpy(out, &((mb_t1575*)object)->bytes, sizeof(mb_t1421)); }
+static void mb_set_1575_0(void *object, const void *value) { memcpy(&((mb_t1575*)object)->bytes, value, sizeof(mb_t1421)); }
 static void *mb_addr_1575_1(void *object) { return (void*)&((mb_t1575*)object)->version; }
 static void mb_get_1575_1(const void *object, void *out) { memcpy(out, &((mb_t1575*)object)->version, sizeof(mb_t8)); }
 static void mb_set_1575_1(void *object, const void *value) { memcpy(&((mb_t1575*)object)->version, value, sizeof(mb_t8)); }
@@ -25952,7 +25952,7 @@ static void *mb_addr_1575_2(void *object) { return (void*)&((mb_t1575*)object)->
 static void mb_get_1575_2(const void *object, void *out) { memcpy(out, &((mb_t1575*)object)->hash, sizeof(mb_t8)); }
 static void mb_set_1575_2(void *object, const void *value) { memcpy(&((mb_t1575*)object)->hash, value, sizeof(mb_t8)); }
 static const mb_field mb_fields_1575[] = {
-{"bytes",1429,mb_addr_1575_0,mb_get_1575_0,mb_set_1575_0},
+{"bytes",1421,mb_addr_1575_0,mb_get_1575_0,mb_set_1575_0},
 {"version",8,mb_addr_1575_1,mb_get_1575_1,mb_set_1575_1},
 {"hash",8,mb_addr_1575_2,mb_get_1575_2,mb_set_1575_2},
 };
@@ -41804,13 +41804,13 @@ static void *mb_addr_3075_2(void *object) { return (void*)&((mb_t3075*)object)->
 static void mb_get_3075_2(const void *object, void *out) { memcpy(out, &((mb_t3075*)object)->hash, sizeof(mb_t8)); }
 static void mb_set_3075_2(void *object, const void *value) { memcpy(&((mb_t3075*)object)->hash, value, sizeof(mb_t8)); }
 static void *mb_addr_3075_3(void *object) { return (void*)&((mb_t3075*)object)->body; }
-static void mb_get_3075_3(const void *object, void *out) { memcpy(out, &((mb_t3075*)object)->body, sizeof(mb_t1429)); }
-static void mb_set_3075_3(void *object, const void *value) { memcpy(&((mb_t3075*)object)->body, value, sizeof(mb_t1429)); }
+static void mb_get_3075_3(const void *object, void *out) { memcpy(out, &((mb_t3075*)object)->body, sizeof(mb_t1421)); }
+static void mb_set_3075_3(void *object, const void *value) { memcpy(&((mb_t3075*)object)->body, value, sizeof(mb_t1421)); }
 static const mb_field mb_fields_3075[] = {
 {"url",1442,mb_addr_3075_0,mb_get_3075_0,mb_set_3075_0},
 {"status",6,mb_addr_3075_1,mb_get_3075_1,mb_set_3075_1},
 {"hash",8,mb_addr_3075_2,mb_get_3075_2,mb_set_3075_2},
-{"body",1429,mb_addr_3075_3,mb_get_3075_3,mb_set_3075_3},
+{"body",1421,mb_addr_3075_3,mb_get_3075_3,mb_set_3075_3},
 };
 static void *mb_addr_3076_0(void *object) { return (void*)&((mb_t3076*)object)->items; }
 static void mb_get_3076_0(const void *object, void *out) { memcpy(out, &((mb_t3076*)object)->items, sizeof(mb_t3077)); }
@@ -42790,11 +42790,11 @@ static void *mb_addr_3173_0(void *object) { return (void*)&((mb_t3173*)object)->
 static void mb_get_3173_0(const void *object, void *out) { memcpy(out, &((mb_t3173*)object)->selector, sizeof(mb_t1443)); }
 static void mb_set_3173_0(void *object, const void *value) { memcpy(&((mb_t3173*)object)->selector, value, sizeof(mb_t1443)); }
 static void *mb_addr_3173_1(void *object) { return (void*)&((mb_t3173*)object)->declarations; }
-static void mb_get_3173_1(const void *object, void *out) { memcpy(out, &((mb_t3173*)object)->declarations, sizeof(mb_t1429)); }
-static void mb_set_3173_1(void *object, const void *value) { memcpy(&((mb_t3173*)object)->declarations, value, sizeof(mb_t1429)); }
+static void mb_get_3173_1(const void *object, void *out) { memcpy(out, &((mb_t3173*)object)->declarations, sizeof(mb_t1421)); }
+static void mb_set_3173_1(void *object, const void *value) { memcpy(&((mb_t3173*)object)->declarations, value, sizeof(mb_t1421)); }
 static const mb_field mb_fields_3173[] = {
 {"selector",1443,mb_addr_3173_0,mb_get_3173_0,mb_set_3173_0},
-{"declarations",1429,mb_addr_3173_1,mb_get_3173_1,mb_set_3173_1},
+{"declarations",1421,mb_addr_3173_1,mb_get_3173_1,mb_set_3173_1},
 };
 static void *mb_addr_3174_0(void *object) { return (void*)&((mb_t3174*)object)->rules; }
 static void mb_get_3174_0(const void *object, void *out) { memcpy(out, &((mb_t3174*)object)->rules, sizeof(mb_t3175)); }
@@ -63080,20 +63080,20 @@ static void *mb_create_5178(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t5178 *functions[] = {mb_cb_5178_0,mb_cb_5178_1,mb_cb_5178_2,mb_cb_5178_3,mb_cb_5178_4,mb_cb_5178_5,mb_cb_5178_6,mb_cb_5178_7};
 int slot = mb_reserve(mb_slots_5178,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_5178[slot]; }
 static const size_t mb_args_5178[] = {3180,5179,28,28,8};
-static void mb_indirect_5181(const void *pointer, void *out, void **args) { mb_t5181 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t1430*)args[1],*(mb_t8*)args[2]); }
+static void mb_indirect_5181(const void *pointer, void *out, void **args) { mb_t5181 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t1422*)args[1],*(mb_t8*)args[2]); }
 static mb_callback_slot mb_slots_5181[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_5181_0(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[0],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_1(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[1],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_2(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[2],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_3(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[3],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_4(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[4],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_5(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[5],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_6(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[6],5181,&result,args);return result; }
-static mb_t5 mb_cb_5181_7(mb_t28 a0,mb_t1430 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[7],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_0(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[0],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_1(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[1],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_2(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[2],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_3(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[3],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_4(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[4],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_5(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[5],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_6(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[6],5181,&result,args);return result; }
+static mb_t5 mb_cb_5181_7(mb_t28 a0,mb_t1422 a1,mb_t8 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_5181[7],5181,&result,args);return result; }
 static void *mb_create_5181(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t5181 *functions[] = {mb_cb_5181_0,mb_cb_5181_1,mb_cb_5181_2,mb_cb_5181_3,mb_cb_5181_4,mb_cb_5181_5,mb_cb_5181_6,mb_cb_5181_7};
 int slot = mb_reserve(mb_slots_5181,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_5181[slot]; }
-static const size_t mb_args_5181[] = {28,1430,8};
+static const size_t mb_args_5181[] = {28,1422,8};
 static void mb_indirect_5182(const void *pointer, void *out, void **args) { mb_t5182 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t5180*)args[2],*(mb_t28*)args[3],*(mb_t8*)args[4]); }
 static mb_callback_slot mb_slots_5182[MULL_MULIB_CALLBACK_SLOTS];
 static mb_t5 mb_cb_5182_0(mb_t36 a0,mb_t8 a1,mb_t5180 a2,mb_t28 a3,mb_t8 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_5182[0],5182,&result,args);return result; }
@@ -84538,20 +84538,20 @@ static void *mb_create_7278(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t7278 *functions[] = {mb_cb_7278_0,mb_cb_7278_1,mb_cb_7278_2,mb_cb_7278_3,mb_cb_7278_4,mb_cb_7278_5,mb_cb_7278_6,mb_cb_7278_7};
 int slot = mb_reserve(mb_slots_7278,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_7278[slot]; }
 static const size_t mb_args_7278[] = {7274,7271,6,4922};
-static void mb_indirect_7279(const void *pointer, void *out, void **args) { mb_t7279 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1432*)args[2]); }
+static void mb_indirect_7279(const void *pointer, void *out, void **args) { mb_t7279 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1424*)args[2]); }
 static mb_callback_slot mb_slots_7279[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_7279_0(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[0],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_1(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[1],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_2(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[2],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_3(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[3],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_4(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[4],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_5(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[5],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_6(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[6],7279,&result,args);return result; }
-static mb_t5 mb_cb_7279_7(mb_t36 a0,mb_t8 a1,mb_t1432 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[7],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_0(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[0],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_1(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[1],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_2(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[2],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_3(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[3],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_4(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[4],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_5(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[5],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_6(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[6],7279,&result,args);return result; }
+static mb_t5 mb_cb_7279_7(mb_t36 a0,mb_t8 a1,mb_t1424 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_7279[7],7279,&result,args);return result; }
 static void *mb_create_7279(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t7279 *functions[] = {mb_cb_7279_0,mb_cb_7279_1,mb_cb_7279_2,mb_cb_7279_3,mb_cb_7279_4,mb_cb_7279_5,mb_cb_7279_6,mb_cb_7279_7};
 int slot = mb_reserve(mb_slots_7279,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_7279[slot]; }
-static const size_t mb_args_7279[] = {36,8,1432};
+static const size_t mb_args_7279[] = {36,8,1424};
 static void *mb_addr_7280_0(void *object) { return (void*)&((mb_t7280*)object)->items; }
 static void mb_get_7280_0(const void *object, void *out) { memcpy(out, &((mb_t7280*)object)->items, sizeof(mb_t4451)); }
 static void mb_set_7280_0(void *object, const void *value) { memcpy(&((mb_t7280*)object)->items, value, sizeof(mb_t4451)); }
@@ -98368,48 +98368,48 @@ static void *mb_create_8666(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8666 *functions[] = {mb_cb_8666_0,mb_cb_8666_1,mb_cb_8666_2,mb_cb_8666_3,mb_cb_8666_4,mb_cb_8666_5,mb_cb_8666_6,mb_cb_8666_7};
 int slot = mb_reserve(mb_slots_8666,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8666[slot]; }
 static const size_t mb_args_8666[] = {36,8,8667};
-static void mb_indirect_8669(const void *pointer, void *out, void **args) { mb_t8669 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2],*(mb_t1432*)args[3]); }
+static void mb_indirect_8669(const void *pointer, void *out, void **args) { mb_t8669 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2],*(mb_t1424*)args[3]); }
 static mb_callback_slot mb_slots_8669[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8669_0(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[0],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_1(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[1],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_2(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[2],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_3(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[3],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_4(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[4],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_5(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[5],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_6(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[6],8669,&result,args);return result; }
-static mb_t5 mb_cb_8669_7(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[7],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_0(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[0],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_1(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[1],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_2(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[2],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_3(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[3],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_4(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[4],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_5(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[5],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_6(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[6],8669,&result,args);return result; }
+static mb_t5 mb_cb_8669_7(mb_t28 a0,mb_t36 a1,mb_t8 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8669[7],8669,&result,args);return result; }
 static void *mb_create_8669(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8669 *functions[] = {mb_cb_8669_0,mb_cb_8669_1,mb_cb_8669_2,mb_cb_8669_3,mb_cb_8669_4,mb_cb_8669_5,mb_cb_8669_6,mb_cb_8669_7};
 int slot = mb_reserve(mb_slots_8669,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8669[slot]; }
-static const size_t mb_args_8669[] = {28,36,8,1432};
-static void mb_indirect_8670(const void *pointer, void *out, void **args) { mb_t8670 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1432*)args[4]); }
+static const size_t mb_args_8669[] = {28,36,8,1424};
+static void mb_indirect_8670(const void *pointer, void *out, void **args) { mb_t8670 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1424*)args[4]); }
 static mb_callback_slot mb_slots_8670[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8670_0(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[0],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_1(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[1],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_2(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[2],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_3(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[3],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_4(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[4],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_5(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[5],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_6(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[6],8670,&result,args);return result; }
-static mb_t5 mb_cb_8670_7(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[7],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_0(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[0],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_1(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[1],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_2(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[2],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_3(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[3],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_4(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[4],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_5(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[5],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_6(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[6],8670,&result,args);return result; }
+static mb_t5 mb_cb_8670_7(mb_t36 a0,mb_t36 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8670[7],8670,&result,args);return result; }
 static void *mb_create_8670(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8670 *functions[] = {mb_cb_8670_0,mb_cb_8670_1,mb_cb_8670_2,mb_cb_8670_3,mb_cb_8670_4,mb_cb_8670_5,mb_cb_8670_6,mb_cb_8670_7};
 int slot = mb_reserve(mb_slots_8670,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8670[slot]; }
-static const size_t mb_args_8670[] = {36,36,36,8,1432};
-static void mb_indirect_8671(const void *pointer, void *out, void **args) { mb_t8671 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8668*)args[0],*(mb_t28*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1432*)args[4]); }
+static const size_t mb_args_8670[] = {36,36,36,8,1424};
+static void mb_indirect_8671(const void *pointer, void *out, void **args) { mb_t8671 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8668*)args[0],*(mb_t28*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1424*)args[4]); }
 static mb_callback_slot mb_slots_8671[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8671_0(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[0],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_1(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[1],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_2(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[2],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_3(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[3],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_4(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[4],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_5(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[5],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_6(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[6],8671,&result,args);return result; }
-static mb_t5 mb_cb_8671_7(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1432 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[7],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_0(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[0],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_1(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[1],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_2(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[2],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_3(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[3],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_4(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[4],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_5(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[5],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_6(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[6],8671,&result,args);return result; }
+static mb_t5 mb_cb_8671_7(mb_t8668 a0,mb_t28 a1,mb_t36 a2,mb_t8 a3,mb_t1424 a4) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3,&a4}; mb_dispatch(&mb_slots_8671[7],8671,&result,args);return result; }
 static void *mb_create_8671(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8671 *functions[] = {mb_cb_8671_0,mb_cb_8671_1,mb_cb_8671_2,mb_cb_8671_3,mb_cb_8671_4,mb_cb_8671_5,mb_cb_8671_6,mb_cb_8671_7};
 int slot = mb_reserve(mb_slots_8671,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8671[slot]; }
-static const size_t mb_args_8671[] = {8668,28,36,8,1432};
+static const size_t mb_args_8671[] = {8668,28,36,8,1424};
 static void *mb_addr_8672_0(void *object) { return (void*)&((mb_t8672*)object)->price; }
 static void mb_get_8672_0(const void *object, void *out) { memcpy(out, &((mb_t8672*)object)->price, sizeof(mb_t12)); }
 static void mb_set_8672_0(void *object, const void *value) { memcpy(&((mb_t8672*)object)->price, value, sizeof(mb_t12)); }
@@ -98452,20 +98452,20 @@ static const mb_field mb_fields_8675[] = {
 {"selector",1454,mb_addr_8675_0,mb_get_8675_0,mb_set_8675_0},
 {"max_bytes",8,mb_addr_8675_1,mb_get_8675_1,mb_set_8675_1},
 };
-static void mb_indirect_8676(const void *pointer, void *out, void **args) { mb_t8676 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8677*)args[2],*(mb_t1432*)args[3]); }
+static void mb_indirect_8676(const void *pointer, void *out, void **args) { mb_t8676 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8677*)args[2],*(mb_t1424*)args[3]); }
 static mb_callback_slot mb_slots_8676[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8676_0(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[0],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_1(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[1],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_2(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[2],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_3(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[3],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_4(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[4],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_5(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[5],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_6(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[6],8676,&result,args);return result; }
-static mb_t5 mb_cb_8676_7(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[7],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_0(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[0],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_1(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[1],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_2(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[2],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_3(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[3],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_4(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[4],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_5(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[5],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_6(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[6],8676,&result,args);return result; }
+static mb_t5 mb_cb_8676_7(mb_t36 a0,mb_t8 a1,mb_t8677 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8676[7],8676,&result,args);return result; }
 static void *mb_create_8676(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8676 *functions[] = {mb_cb_8676_0,mb_cb_8676_1,mb_cb_8676_2,mb_cb_8676_3,mb_cb_8676_4,mb_cb_8676_5,mb_cb_8676_6,mb_cb_8676_7};
 int slot = mb_reserve(mb_slots_8676,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8676[slot]; }
-static const size_t mb_args_8676[] = {36,8,8677,1432};
+static const size_t mb_args_8676[] = {36,8,8677,1424};
 static void *mb_addr_8678_0(void *object) { return (void*)&((mb_t8678*)object)->data; }
 static void mb_get_8678_0(const void *object, void *out) { memcpy(out, &((mb_t8678*)object)->data, sizeof(mb_t36)); }
 static void mb_set_8678_0(void *object, const void *value) { memcpy(&((mb_t8678*)object)->data, value, sizeof(mb_t36)); }
@@ -98490,20 +98490,20 @@ static void *mb_create_8679(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8679 *functions[] = {mb_cb_8679_0,mb_cb_8679_1,mb_cb_8679_2,mb_cb_8679_3,mb_cb_8679_4,mb_cb_8679_5,mb_cb_8679_6,mb_cb_8679_7};
 int slot = mb_reserve(mb_slots_8679,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8679[slot]; }
 static const size_t mb_args_8679[] = {36,8680};
-static void mb_indirect_8681(const void *pointer, void *out, void **args) { mb_t8681 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1432*)args[2],*(mb_t8*)args[3]); }
+static void mb_indirect_8681(const void *pointer, void *out, void **args) { mb_t8681 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1424*)args[2],*(mb_t8*)args[3]); }
 static mb_callback_slot mb_slots_8681[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8681_0(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[0],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_1(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[1],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_2(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[2],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_3(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[3],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_4(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[4],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_5(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[5],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_6(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[6],8681,&result,args);return result; }
-static mb_t5 mb_cb_8681_7(mb_t36 a0,mb_t8 a1,mb_t1432 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[7],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_0(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[0],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_1(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[1],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_2(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[2],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_3(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[3],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_4(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[4],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_5(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[5],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_6(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[6],8681,&result,args);return result; }
+static mb_t5 mb_cb_8681_7(mb_t36 a0,mb_t8 a1,mb_t1424 a2,mb_t8 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8681[7],8681,&result,args);return result; }
 static void *mb_create_8681(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8681 *functions[] = {mb_cb_8681_0,mb_cb_8681_1,mb_cb_8681_2,mb_cb_8681_3,mb_cb_8681_4,mb_cb_8681_5,mb_cb_8681_6,mb_cb_8681_7};
 int slot = mb_reserve(mb_slots_8681,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8681[slot]; }
-static const size_t mb_args_8681[] = {36,8,1432,8};
+static const size_t mb_args_8681[] = {36,8,1424,8};
 static void mb_indirect_8682(const void *pointer, void *out, void **args) { mb_t8682 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t12*)args[0],*(mb_t5*)args[1],*(mb_t385*)args[2]); }
 static mb_callback_slot mb_slots_8682[MULL_MULIB_CALLBACK_SLOTS];
 static mb_t5 mb_cb_8682_0(mb_t12 a0,mb_t5 a1,mb_t385 a2) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2}; mb_dispatch(&mb_slots_8682[0],8682,&result,args);return result; }
@@ -98752,20 +98752,20 @@ static void *mb_create_8707(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8707 *functions[] = {mb_cb_8707_0,mb_cb_8707_1,mb_cb_8707_2,mb_cb_8707_3,mb_cb_8707_4,mb_cb_8707_5,mb_cb_8707_6,mb_cb_8707_7};
 int slot = mb_reserve(mb_slots_8707,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8707[slot]; }
 static const size_t mb_args_8707[] = {8708,36,36,6};
-static void mb_indirect_8709(const void *pointer, void *out, void **args) { mb_t8709 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8710*)args[0],*(mb_t36*)args[1],*(mb_t6*)args[2],*(mb_t1432*)args[3]); }
+static void mb_indirect_8709(const void *pointer, void *out, void **args) { mb_t8709 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t5*)out = fn(*(mb_t8710*)args[0],*(mb_t36*)args[1],*(mb_t6*)args[2],*(mb_t1424*)args[3]); }
 static mb_callback_slot mb_slots_8709[MULL_MULIB_CALLBACK_SLOTS];
-static mb_t5 mb_cb_8709_0(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[0],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_1(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[1],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_2(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[2],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_3(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[3],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_4(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[4],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_5(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[5],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_6(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[6],8709,&result,args);return result; }
-static mb_t5 mb_cb_8709_7(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1432 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[7],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_0(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[0],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_1(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[1],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_2(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[2],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_3(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[3],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_4(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[4],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_5(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[5],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_6(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[6],8709,&result,args);return result; }
+static mb_t5 mb_cb_8709_7(mb_t8710 a0,mb_t36 a1,mb_t6 a2,mb_t1424 a3) { mb_t5 result = {0};void *args[] = {&a0,&a1,&a2,&a3}; mb_dispatch(&mb_slots_8709[7],8709,&result,args);return result; }
 static void *mb_create_8709(mull_mb_callback_fn fn, void *user, void *out) {
 mb_t8709 *functions[] = {mb_cb_8709_0,mb_cb_8709_1,mb_cb_8709_2,mb_cb_8709_3,mb_cb_8709_4,mb_cb_8709_5,mb_cb_8709_6,mb_cb_8709_7};
 int slot = mb_reserve(mb_slots_8709,fn,user); if(slot<0) return NULL; memcpy(out,&functions[slot],sizeof(functions[slot])); return &mb_slots_8709[slot]; }
-static const size_t mb_args_8709[] = {8710,36,6,1432};
+static const size_t mb_args_8709[] = {8710,36,6,1424};
 static void mb_indirect_8712(const void *pointer, void *out, void **args) { mb_t8712 *fn; memcpy(&fn,pointer,sizeof(fn)); *(mb_t36*)out = fn(*(mb_t8711*)args[0]); }
 static mb_callback_slot mb_slots_8712[MULL_MULIB_CALLBACK_SLOTS];
 static mb_t36 mb_cb_8712_0(mb_t8711 a0) { mb_t36 result = {0};void *args[] = {&a0}; mb_dispatch(&mb_slots_8712[0],8712,&result,args);return result; }
@@ -102286,26 +102286,26 @@ static const mb_type mb_types[] = {
 {"mulib_bootmgr_elf_t",MULL_MB_RECORD,sizeof(mb_t1418),_Alignof(mb_t1418),MULL_MB_NONE,0,mb_fields_1418,4,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (const void *, unsigned long, void *, unsigned long, unsigned long, mulib_bootmgr_elf_t *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1419,6,mb_indirect_1419,mb_create_1419},
 {"mulib_bootmgr_elf_t *",MULL_MB_POINTER,sizeof(mb_t1420),_Alignof(mb_t1420),1418,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"mulib_bounds_t",MULL_MB_RECORD,sizeof(mb_t1421),_Alignof(mb_t1421),MULL_MB_NONE,0,mb_fields_1421,4,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (struct mulib_bounds, double, double)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1422,3,mb_indirect_1422,mb_create_1422},
-{"int (struct mulib_bounds, struct mulib_bounds)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1423,2,mb_indirect_1423,mb_create_1423},
-{"struct mulib_bounds (struct mulib_bounds, struct mulib_bounds)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,1421,mb_args_1424,2,mb_indirect_1424,mb_create_1424},
-{"int (unsigned int, unsigned int)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1425,2,mb_indirect_1425,mb_create_1425},
-{"mulib_branch_t",MULL_MB_RECORD,sizeof(mb_t1426),_Alignof(mb_t1426),MULL_MB_NONE,0,mb_fields_1426,4,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (unsigned long, const unsigned long *, const mulib_branch_t *, unsigned long *, unsigned char *, unsigned long *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1427,6,mb_indirect_1427,mb_create_1427},
-{"const mulib_branch_t *",MULL_MB_POINTER,sizeof(mb_t1428),_Alignof(mb_t1428),1426,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"mulib_shylock_buffer_t",MULL_MB_RECORD,sizeof(mb_t1429),_Alignof(mb_t1429),MULL_MB_NONE,0,mb_fields_1429,4,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"mulib_shylock_span_t",MULL_MB_RECORD,sizeof(mb_t1430),_Alignof(mb_t1430),MULL_MB_NONE,0,mb_fields_1430,2,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (struct mulib_shylock_buffer *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1431,2,mb_indirect_1431,mb_create_1431},
-{"struct mulib_shylock_buffer *",MULL_MB_POINTER,sizeof(mb_t1432),_Alignof(mb_t1432),1429,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (struct mulib_shylock_buffer *, const void *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1433,3,mb_indirect_1433,mb_create_1433},
-{"int (struct mulib_shylock_buffer *, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1434,2,mb_indirect_1434,mb_create_1434},
-{"int (struct mulib_shylock_buffer *, const char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1435,3,mb_indirect_1435,mb_create_1435},
-{"void (struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,0,mb_args_1436,1,mb_indirect_1436,mb_create_1436},
-{"char *(const char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,32,mb_args_1437,2,mb_indirect_1437,mb_create_1437},
-{"int (char *, unsigned long, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1438,3,mb_indirect_1438,mb_create_1438},
-{"int (const char *, unsigned long, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1439,3,mb_indirect_1439,mb_create_1439},
-{"int (const char *, double *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1440,2,mb_indirect_1440,mb_create_1440},
+{"mulib_bounded_text_buffer_t",MULL_MB_RECORD,sizeof(mb_t1421),_Alignof(mb_t1421),MULL_MB_NONE,0,mb_fields_1421,4,MULL_MB_NONE,NULL,0,NULL,NULL},
+{"mulib_bounded_text_span_t",MULL_MB_RECORD,sizeof(mb_t1422),_Alignof(mb_t1422),MULL_MB_NONE,0,mb_fields_1422,2,MULL_MB_NONE,NULL,0,NULL,NULL},
+{"int (struct mulib_bounded_text_buffer *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1423,2,mb_indirect_1423,mb_create_1423},
+{"struct mulib_bounded_text_buffer *",MULL_MB_POINTER,sizeof(mb_t1424),_Alignof(mb_t1424),1421,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
+{"int (struct mulib_bounded_text_buffer *, const void *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1425,3,mb_indirect_1425,mb_create_1425},
+{"int (struct mulib_bounded_text_buffer *, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1426,2,mb_indirect_1426,mb_create_1426},
+{"int (struct mulib_bounded_text_buffer *, const char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1427,3,mb_indirect_1427,mb_create_1427},
+{"void (struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,0,mb_args_1428,1,mb_indirect_1428,mb_create_1428},
+{"char *(const char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,32,mb_args_1429,2,mb_indirect_1429,mb_create_1429},
+{"int (char *, unsigned long, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1430,3,mb_indirect_1430,mb_create_1430},
+{"int (const char *, unsigned long, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1431,3,mb_indirect_1431,mb_create_1431},
+{"int (const char *, double *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1432,2,mb_indirect_1432,mb_create_1432},
+{"mulib_bounds_t",MULL_MB_RECORD,sizeof(mb_t1433),_Alignof(mb_t1433),MULL_MB_NONE,0,mb_fields_1433,4,MULL_MB_NONE,NULL,0,NULL,NULL},
+{"int (struct mulib_bounds, double, double)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1434,3,mb_indirect_1434,mb_create_1434},
+{"int (struct mulib_bounds, struct mulib_bounds)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1435,2,mb_indirect_1435,mb_create_1435},
+{"struct mulib_bounds (struct mulib_bounds, struct mulib_bounds)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,1433,mb_args_1436,2,mb_indirect_1436,mb_create_1436},
+{"int (unsigned int, unsigned int)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1437,2,mb_indirect_1437,mb_create_1437},
+{"mulib_branch_t",MULL_MB_RECORD,sizeof(mb_t1438),_Alignof(mb_t1438),MULL_MB_NONE,0,mb_fields_1438,4,MULL_MB_NONE,NULL,0,NULL,NULL},
+{"int (unsigned long, const unsigned long *, const mulib_branch_t *, unsigned long *, unsigned char *, unsigned long *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1439,6,mb_indirect_1439,mb_create_1439},
+{"const mulib_branch_t *",MULL_MB_POINTER,sizeof(mb_t1440),_Alignof(mb_t1440),1438,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_browser_cache_entry_t",MULL_MB_RECORD,sizeof(mb_t1441),_Alignof(mb_t1441),MULL_MB_NONE,0,mb_fields_1441,4,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"char[1024]",MULL_MB_ARRAY,sizeof(mb_t1442),_Alignof(mb_t1442),1,1024,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"char[256]",MULL_MB_ARRAY,sizeof(mb_t1443),_Alignof(mb_t1443),1,256,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
@@ -102326,7 +102326,7 @@ static const mb_type mb_types[] = {
 {"int (struct mulib_browser_cookiejar *, const struct mulib_browser_cookie *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1458,2,mb_indirect_1458,mb_create_1458},
 {"struct mulib_browser_cookiejar *",MULL_MB_POINTER,sizeof(mb_t1459),_Alignof(mb_t1459),1456,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"const struct mulib_browser_cookie *",MULL_MB_POINTER,sizeof(mb_t1460),_Alignof(mb_t1460),1453,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const struct mulib_browser_cookiejar *, const char *, const char *, int, long, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1461,6,mb_indirect_1461,mb_create_1461},
+{"int (const struct mulib_browser_cookiejar *, const char *, const char *, int, long, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1461,6,mb_indirect_1461,mb_create_1461},
 {"const struct mulib_browser_cookiejar *",MULL_MB_POINTER,sizeof(mb_t1462),_Alignof(mb_t1462),1456,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"void (struct mulib_browser_cookiejar *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,0,mb_args_1463,1,mb_indirect_1463,mb_create_1463},
 {"mulib_uri_slice_t",MULL_MB_RECORD,sizeof(mb_t1464),_Alignof(mb_t1464),MULL_MB_NONE,0,mb_fields_1464,2,MULL_MB_NONE,NULL,0,NULL,NULL},
@@ -102346,12 +102346,12 @@ static const mb_type mb_types[] = {
 {"int (const struct mulib_fetch_policy *, const char *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1478,2,mb_indirect_1478,mb_create_1478},
 {"const struct mulib_fetch_policy *",MULL_MB_POINTER,sizeof(mb_t1479),_Alignof(mb_t1479),1477,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_fetch_transport_fn",MULL_MB_POINTER,sizeof(mb_t1480),_Alignof(mb_t1480),1481,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (void *, const char *, struct mulib_shylock_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1481,6,mb_indirect_1481,mb_create_1481},
+{"int (void *, const char *, struct mulib_bounded_text_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1481,6,mb_indirect_1481,mb_create_1481},
 {"mulib_fetch_client_t",MULL_MB_RECORD,sizeof(mb_t1482),_Alignof(mb_t1482),MULL_MB_NONE,0,mb_fields_1482,3,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const struct mulib_fetch_client *, const char *, struct mulib_shylock_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1483,6,mb_indirect_1483,mb_create_1483},
+{"int (const struct mulib_fetch_client *, const char *, struct mulib_bounded_text_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1483,6,mb_indirect_1483,mb_create_1483},
 {"const struct mulib_fetch_client *",MULL_MB_POINTER,sizeof(mb_t1484),_Alignof(mb_t1484),1482,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_browser_fetch_t",MULL_MB_RECORD,sizeof(mb_t1485),_Alignof(mb_t1485),MULL_MB_NONE,0,mb_fields_1485,3,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const struct mulib_browser_fetch *, const char *, struct mulib_shylock_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1486,6,mb_indirect_1486,mb_create_1486},
+{"int (const struct mulib_browser_fetch *, const char *, struct mulib_bounded_text_buffer *, unsigned int *, char *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_1486,6,mb_indirect_1486,mb_create_1486},
 {"const struct mulib_browser_fetch *",MULL_MB_POINTER,sizeof(mb_t1487),_Alignof(mb_t1487),1485,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_html_textstream_kind_t",MULL_MB_UNSIGNED,sizeof(mb_t1488),_Alignof(mb_t1488),MULL_MB_NONE,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_html_textstream_event_t",MULL_MB_RECORD,sizeof(mb_t1489),_Alignof(mb_t1489),MULL_MB_NONE,0,mb_fields_1489,4,MULL_MB_NONE,NULL,0,NULL,NULL},
@@ -106046,8 +106046,8 @@ static const mb_type mb_types[] = {
 {"int (const struct mulib_html_tree_node *, const struct mulib_html_dombridge_ops *, void *, void *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5178,5,mb_indirect_5178,mb_create_5178},
 {"const struct mulib_html_dombridge_ops *",MULL_MB_POINTER,sizeof(mb_t5179),_Alignof(mb_t5179),5173,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_html_jsonld_fn",MULL_MB_POINTER,sizeof(mb_t5180),_Alignof(mb_t5180),5181,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (void *, struct mulib_shylock_span, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5181,3,mb_indirect_5181,mb_create_5181},
-{"int (const char *, unsigned long, int (*)(void *, struct mulib_shylock_span, unsigned long), void *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5182,5,mb_indirect_5182,mb_create_5182},
+{"int (void *, struct mulib_bounded_text_span, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5181,3,mb_indirect_5181,mb_create_5181},
+{"int (const char *, unsigned long, int (*)(void *, struct mulib_bounded_text_span, unsigned long), void *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5182,5,mb_indirect_5182,mb_create_5182},
 {"mulib_http2_frame_t",MULL_MB_RECORD,sizeof(mb_t5183),_Alignof(mb_t5183),MULL_MB_NONE,0,mb_fields_5183,5,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (const void *, unsigned long, unsigned long, struct mulib_http2_frame *, unsigned long *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_5184,5,mb_indirect_5184,mb_create_5184},
 {"struct mulib_http2_frame *",MULL_MB_POINTER,sizeof(mb_t5185),_Alignof(mb_t5185),5183,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
@@ -108144,7 +108144,7 @@ static const mb_type mb_types[] = {
 {"struct mulib_raytracing_hit *",MULL_MB_POINTER,sizeof(mb_t7276),_Alignof(mb_t7276),7272,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (const struct mulib_raytracing_scene *, struct mulib_cgeom_ray, unsigned int, struct mulib_linalg_vec3 *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_7277,4,mb_indirect_7277,mb_create_7277},
 {"int (const struct mulib_raytracing_scene *, struct mulib_raytracing_camera, unsigned int, struct mulib_glx *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_7278,4,mb_indirect_7278,mb_create_7278},
-{"int (const char *, unsigned long, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_7279,3,mb_indirect_7279,mb_create_7279},
+{"int (const char *, unsigned long, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_7279,3,mb_indirect_7279,mb_create_7279},
 {"mulib_recordbatch_t",MULL_MB_RECORD,sizeof(mb_t7280),_Alignof(mb_t7280),MULL_MB_NONE,0,mb_fields_7280,3,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (mulib_recordbatch_t *, const mulib_record_t *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_7281,2,mb_indirect_7281,mb_create_7281},
 {"mulib_recordbatch_t *",MULL_MB_POINTER,sizeof(mb_t7282),_Alignof(mb_t7282),7280,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
@@ -109534,19 +109534,19 @@ static const mb_type mb_types[] = {
 {"int (const char *, unsigned long, const struct mulib_webextract_evidence *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8666,3,mb_indirect_8666,mb_create_8666},
 {"const struct mulib_webextract_evidence *",MULL_MB_POINTER,sizeof(mb_t8667),_Alignof(mb_t8667),8663,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_webextract_llm_transport_fn",MULL_MB_POINTER,sizeof(mb_t8668),_Alignof(mb_t8668),8669,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (void *, const char *, unsigned long, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8669,4,mb_indirect_8669,mb_create_8669},
-{"int (const char *, const char *, const char *, unsigned long, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8670,5,mb_indirect_8670,mb_create_8670},
-{"int (int (*)(void *, const char *, unsigned long, struct mulib_shylock_buffer *), void *, const char *, unsigned long, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8671,5,mb_indirect_8671,mb_create_8671},
+{"int (void *, const char *, unsigned long, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8669,4,mb_indirect_8669,mb_create_8669},
+{"int (const char *, const char *, const char *, unsigned long, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8670,5,mb_indirect_8670,mb_create_8670},
+{"int (int (*)(void *, const char *, unsigned long, struct mulib_bounded_text_buffer *), void *, const char *, unsigned long, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8671,5,mb_indirect_8671,mb_create_8671},
 {"mulib_webextract_candidate_t",MULL_MB_RECORD,sizeof(mb_t8672),_Alignof(mb_t8672),MULL_MB_NONE,0,mb_fields_8672,4,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (const struct mulib_webextract_candidate *, unsigned long, double, double *, unsigned long *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8673,5,mb_indirect_8673,mb_create_8673},
 {"const struct mulib_webextract_candidate *",MULL_MB_POINTER,sizeof(mb_t8674),_Alignof(mb_t8674),8672,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_webextract_rule_t",MULL_MB_RECORD,sizeof(mb_t8675),_Alignof(mb_t8675),MULL_MB_NONE,0,mb_fields_8675,2,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const char *, unsigned long, const struct mulib_webextract_rule *, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8676,4,mb_indirect_8676,mb_create_8676},
+{"int (const char *, unsigned long, const struct mulib_webextract_rule *, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8676,4,mb_indirect_8676,mb_create_8676},
 {"const struct mulib_webextract_rule *",MULL_MB_POINTER,sizeof(mb_t8677),_Alignof(mb_t8677),8675,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_webextract_span_t",MULL_MB_RECORD,sizeof(mb_t8678),_Alignof(mb_t8678),MULL_MB_NONE,0,mb_fields_8678,2,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (const char *, struct mulib_webextract_span *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8679,2,mb_indirect_8679,mb_create_8679},
 {"struct mulib_webextract_span *",MULL_MB_POINTER,sizeof(mb_t8680),_Alignof(mb_t8680),8678,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const char *, unsigned long, struct mulib_shylock_buffer *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8681,4,mb_indirect_8681,mb_create_8681},
+{"int (const char *, unsigned long, struct mulib_bounded_text_buffer *, unsigned long)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8681,4,mb_indirect_8681,mb_create_8681},
 {"int (double, int, int *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8682,3,mb_indirect_8682,mb_create_8682},
 {"int (double, int, unsigned int *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8683,3,mb_indirect_8683,mb_create_8683},
 {"int (double)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8684,1,mb_indirect_8684,mb_create_8684},
@@ -109574,7 +109574,7 @@ static const mb_type mb_types[] = {
 {"mulib_websearch_provider_config_t",MULL_MB_RECORD,sizeof(mb_t8706),_Alignof(mb_t8706),MULL_MB_NONE,0,mb_fields_8706,3,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"int (struct mulib_websearch_provider_config *, const char *, const char *, unsigned int)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8707,4,mb_indirect_8707,mb_create_8707},
 {"struct mulib_websearch_provider_config *",MULL_MB_POINTER,sizeof(mb_t8708),_Alignof(mb_t8708),8706,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
-{"int (const struct mulib_websearch_provider_config *, const char *, unsigned int, struct mulib_shylock_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8709,4,mb_indirect_8709,mb_create_8709},
+{"int (const struct mulib_websearch_provider_config *, const char *, unsigned int, struct mulib_bounded_text_buffer *)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,5,mb_args_8709,4,mb_indirect_8709,mb_create_8709},
 {"const struct mulib_websearch_provider_config *",MULL_MB_POINTER,sizeof(mb_t8710),_Alignof(mb_t8710),8706,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"mulib_websearch_provider_t",MULL_MB_UNSIGNED,sizeof(mb_t8711),_Alignof(mb_t8711),MULL_MB_NONE,0,NULL,0,MULL_MB_NONE,NULL,0,NULL,NULL},
 {"const char *(enum mulib_websearch_provider)",MULL_MB_FUNCTION,0,1,MULL_MB_NONE,0,NULL,0,36,mb_args_8712,1,mb_indirect_8712,mb_create_8712},
@@ -109932,7 +109932,7 @@ case 1374: return 1;
 case 1405: return 1;
 case 1409: return 1;
 case 1413: return 1;
-case 1428: return 1;
+case 1440: return 1;
 case 1449: return 1;
 case 1450: return 1;
 case 1460: return 1;
@@ -111514,29 +111514,29 @@ static void mb_fn_823(void *out, void **args) { *(mb_t8*)out = mulib_bootmgr_uef
 static void mb_fn_824(void *out, void **args) { *(mb_t5*)out = mulib_bootmgr_bios_chain(*(mb_t26*)args[0],*(mb_t8*)args[1],*(mb_t2*)args[2],*(mb_t1416*)args[3],*(mb_t28*)args[4]); }
 static void mb_fn_825(void *out, void **args) { *(mb_t5*)out = mulib_bootmgr_sector_valid(*(mb_t26*)args[0],*(mb_t8*)args[1]); }
 static void mb_fn_826(void *out, void **args) { *(mb_t5*)out = mulib_bootmgr_elf_load(*(mb_t26*)args[0],*(mb_t8*)args[1],*(mb_t28*)args[2],*(mb_t8*)args[3],*(mb_t8*)args[4],*(mb_t1420*)args[5]); }
-static void mb_fn_827(void *out, void **args) { *(mb_t5*)out = mulib_bounds_contains(*(mb_t1421*)args[0],*(mb_t12*)args[1],*(mb_t12*)args[2]); }
-static void mb_fn_828(void *out, void **args) { *(mb_t5*)out = mulib_bounds_intersects(*(mb_t1421*)args[0],*(mb_t1421*)args[1]); }
-static void mb_fn_829(void *out, void **args) { *(mb_t1421*)out = mulib_bounds_union(*(mb_t1421*)args[0],*(mb_t1421*)args[1]); }
-static void mb_fn_830(void *out, void **args) { *(mb_t5*)out = mulib_bpf_kernel_array_map(*(mb_t6*)args[0],*(mb_t6*)args[1]); }
-static void mb_fn_831(void *out, void **args) { *(mb_t5*)out = mulib_branch_layout(*(mb_t8*)args[0],*(mb_t168*)args[1],*(mb_t1428*)args[2],*(mb_t157*)args[3],*(mb_t21*)args[4],*(mb_t157*)args[5]); }
-static void mb_fn_832(void *out, void **args) { *(mb_t5*)out = mulib_shylock_reserve(*(mb_t1432*)args[0],*(mb_t8*)args[1]); }
-static void mb_fn_833(void *out, void **args) { *(mb_t5*)out = mulib_shylock_append(*(mb_t1432*)args[0],*(mb_t26*)args[1],*(mb_t8*)args[2]); }
-static void mb_fn_834(void *out, void **args) { *(mb_t5*)out = mulib_shylock_text(*(mb_t1432*)args[0],*(mb_t36*)args[1]); }
-static void mb_fn_835(void *out, void **args) { *(mb_t5*)out = mulib_shylock_json_string(*(mb_t1432*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2]); }
-static void mb_fn_836(void *out, void **args) { (void)out; mulib_shylock_buffer_free(*(mb_t1432*)args[0]); }
-static void mb_fn_837(void *out, void **args) { *(mb_t32*)out = mulib_shylock_dup(*(mb_t36*)args[0],*(mb_t8*)args[1]); }
-static void mb_fn_838(void *out, void **args) { *(mb_t5*)out = mulib_shylock_copy(*(mb_t32*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
-static void mb_fn_839(void *out, void **args) { *(mb_t8*)out = mulib_shylock_hash(*(mb_t26*)args[0],*(mb_t8*)args[1]); }
-static void mb_fn_840(void *out, void **args) { *(mb_t5*)out = mulib_shylock_equal_ci(*(mb_t36*)args[0],*(mb_t36*)args[1]); }
-static void mb_fn_841(void *out, void **args) { *(mb_t5*)out = mulib_shylock_contains_ci(*(mb_t36*)args[0],*(mb_t36*)args[1]); }
-static void mb_fn_842(void *out, void **args) { *(mb_t5*)out = mulib_shylock_contains_span_ci(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
-static void mb_fn_843(void *out, void **args) { *(mb_t5*)out = mulib_shylock_parse_decimal(*(mb_t36*)args[0],*(mb_t112*)args[1]); }
+static void mb_fn_827(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_reserve(*(mb_t1424*)args[0],*(mb_t8*)args[1]); }
+static void mb_fn_828(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_append(*(mb_t1424*)args[0],*(mb_t26*)args[1],*(mb_t8*)args[2]); }
+static void mb_fn_829(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_text(*(mb_t1424*)args[0],*(mb_t36*)args[1]); }
+static void mb_fn_830(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_json_string(*(mb_t1424*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2]); }
+static void mb_fn_831(void *out, void **args) { (void)out; mulib_bounded_text_buffer_free(*(mb_t1424*)args[0]); }
+static void mb_fn_832(void *out, void **args) { *(mb_t32*)out = mulib_bounded_text_dup(*(mb_t36*)args[0],*(mb_t8*)args[1]); }
+static void mb_fn_833(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_copy(*(mb_t32*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
+static void mb_fn_834(void *out, void **args) { *(mb_t8*)out = mulib_bounded_text_hash(*(mb_t26*)args[0],*(mb_t8*)args[1]); }
+static void mb_fn_835(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_equal_ci(*(mb_t36*)args[0],*(mb_t36*)args[1]); }
+static void mb_fn_836(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_contains_ci(*(mb_t36*)args[0],*(mb_t36*)args[1]); }
+static void mb_fn_837(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_contains_span_ci(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2]); }
+static void mb_fn_838(void *out, void **args) { *(mb_t5*)out = mulib_bounded_text_parse_decimal(*(mb_t36*)args[0],*(mb_t112*)args[1]); }
+static void mb_fn_839(void *out, void **args) { *(mb_t5*)out = mulib_bounds_contains(*(mb_t1433*)args[0],*(mb_t12*)args[1],*(mb_t12*)args[2]); }
+static void mb_fn_840(void *out, void **args) { *(mb_t5*)out = mulib_bounds_intersects(*(mb_t1433*)args[0],*(mb_t1433*)args[1]); }
+static void mb_fn_841(void *out, void **args) { *(mb_t1433*)out = mulib_bounds_union(*(mb_t1433*)args[0],*(mb_t1433*)args[1]); }
+static void mb_fn_842(void *out, void **args) { *(mb_t5*)out = mulib_bpf_kernel_array_map(*(mb_t6*)args[0],*(mb_t6*)args[1]); }
+static void mb_fn_843(void *out, void **args) { *(mb_t5*)out = mulib_branch_layout(*(mb_t8*)args[0],*(mb_t168*)args[1],*(mb_t1440*)args[2],*(mb_t157*)args[3],*(mb_t21*)args[4],*(mb_t157*)args[5]); }
 static void mb_fn_844(void *out, void **args) { *(mb_t5*)out = mulib_browser_cache_put(*(mb_t1447*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t7*)args[3],*(mb_t26*)args[4],*(mb_t8*)args[5]); }
 static void mb_fn_845(void *out, void **args) { *(mb_t1449*)out = mulib_browser_cache_get(*(mb_t1450*)args[0],*(mb_t36*)args[1],*(mb_t7*)args[2]); }
 static void mb_fn_846(void *out, void **args) { *(mb_t8*)out = mulib_browser_cache_prune(*(mb_t1447*)args[0],*(mb_t7*)args[1]); }
 static void mb_fn_847(void *out, void **args) { (void)out; mulib_browser_cache_free(*(mb_t1447*)args[0]); }
 static void mb_fn_848(void *out, void **args) { *(mb_t5*)out = mulib_browser_cookiejar_put(*(mb_t1459*)args[0],*(mb_t1460*)args[1]); }
-static void mb_fn_849(void *out, void **args) { *(mb_t5*)out = mulib_browser_cookiejar_header(*(mb_t1462*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t5*)args[3],*(mb_t7*)args[4],*(mb_t1432*)args[5]); }
+static void mb_fn_849(void *out, void **args) { *(mb_t5*)out = mulib_browser_cookiejar_header(*(mb_t1462*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t5*)args[3],*(mb_t7*)args[4],*(mb_t1424*)args[5]); }
 static void mb_fn_850(void *out, void **args) { (void)out; mulib_browser_cookiejar_free(*(mb_t1459*)args[0]); }
 static void mb_fn_851(void *out, void **args) { *(mb_t5*)out = mulib_inte6_parse(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t217*)args[2]); }
 static void mb_fn_852(void *out, void **args) { *(mb_t5*)out = mulib_inte6_format(*(mb_t219*)args[0],*(mb_t32*)args[1],*(mb_t8*)args[2]); }
@@ -111548,8 +111548,8 @@ static void mb_fn_857(void *out, void **args) { *(mb_t32*)out = mulib_uri_resolv
 static void mb_fn_858(void *out, void **args) { *(mb_t5*)out = mulib_browser_origin_parse(*(mb_t36*)args[0],*(mb_t1474*)args[1]); }
 static void mb_fn_859(void *out, void **args) { *(mb_t5*)out = mulib_browser_origin_equal(*(mb_t1476*)args[0],*(mb_t1476*)args[1]); }
 static void mb_fn_860(void *out, void **args) { *(mb_t5*)out = mulib_fetch_policy_check(*(mb_t1479*)args[0],*(mb_t36*)args[1]); }
-static void mb_fn_861(void *out, void **args) { *(mb_t5*)out = mulib_fetch_get(*(mb_t1484*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
-static void mb_fn_862(void *out, void **args) { *(mb_t5*)out = mulib_browser_fetch_get(*(mb_t1487*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_fn_861(void *out, void **args) { *(mb_t5*)out = mulib_fetch_get(*(mb_t1484*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_fn_862(void *out, void **args) { *(mb_t5*)out = mulib_browser_fetch_get(*(mb_t1487*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
 static void mb_fn_863(void *out, void **args) { *(mb_t5*)out = mulib_html_textstream_scan(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1490*)args[2],*(mb_t28*)args[3],*(mb_t8*)args[4]); }
 static void mb_fn_864(void *out, void **args) { *(mb_t5*)out = mulib_html_tokenizer_scan(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1496*)args[2],*(mb_t28*)args[3],*(mb_t8*)args[4]); }
 static void mb_fn_865(void *out, void **args) { *(mb_t5*)out = mulib_html_attribute(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t36*)args[2],*(mb_t432*)args[3],*(mb_t157*)args[4]); }
@@ -113409,7 +113409,7 @@ static void mb_fn_2718(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrap
 static void mb_fn_2719(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrape_url(*(mb_t4349*)args[0],*(mb_t36*)args[1],*(mb_t6*)args[2],*(mb_t32*)args[3],*(mb_t8*)args[4]); }
 static void mb_fn_2720(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrape_parse(*(mb_t4349*)args[0],*(mb_t36*)args[1],*(mb_t8*)args[2],*(mb_t4351*)args[3],*(mb_t8*)args[4],*(mb_t157*)args[5]); }
 static void mb_fn_2721(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrape_search(*(mb_t4349*)args[0],*(mb_t1484*)args[1],*(mb_t36*)args[2],*(mb_t6*)args[3],*(mb_t4351*)args[4],*(mb_t8*)args[5],*(mb_t157*)args[6],*(mb_t236*)args[7]); }
-static void mb_fn_2722(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrape_https_transport(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t1432*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
+static void mb_fn_2722(void *out, void **args) { *(mb_t5*)out = mulib_elvi_scrape_https_transport(*(mb_t28*)args[0],*(mb_t36*)args[1],*(mb_t1424*)args[2],*(mb_t236*)args[3],*(mb_t32*)args[4],*(mb_t8*)args[5]); }
 static void mb_fn_2723(void *out, void **args) { *(mb_t5*)out = mulib_embeddingsdb_put(*(mb_t4363*)args[0],*(mb_t8*)args[1],*(mb_t129*)args[2],*(mb_t8*)args[3]); }
 static void mb_fn_2724(void *out, void **args) { *(mb_t5*)out = mulib_embeddingsdb_delete(*(mb_t4363*)args[0],*(mb_t8*)args[1]); }
 static void mb_fn_2725(void *out, void **args) { *(mb_t5*)out = mulib_embeddingsdb_nearest(*(mb_t4366*)args[0],*(mb_t129*)args[1],*(mb_t8*)args[2],*(mb_t157*)args[3],*(mb_t112*)args[4]); }
@@ -115048,7 +115048,7 @@ static void mb_fn_4357(void *out, void **args) { *(mb_t5*)out = mulib_raytracing
 static void mb_fn_4358(void *out, void **args) { *(mb_t5*)out = mulib_raytracing_intersect(*(mb_t7274*)args[0],*(mb_t2058*)args[1],*(mb_t11*)args[2],*(mb_t11*)args[3],*(mb_t7276*)args[4]); }
 static void mb_fn_4359(void *out, void **args) { *(mb_t5*)out = mulib_raytracing_sample(*(mb_t7274*)args[0],*(mb_t2058*)args[1],*(mb_t6*)args[2],*(mb_t2023*)args[3]); }
 static void mb_fn_4360(void *out, void **args) { *(mb_t5*)out = mulib_raytracing_render(*(mb_t7274*)args[0],*(mb_t7271*)args[1],*(mb_t6*)args[2],*(mb_t4922*)args[3]); }
-static void mb_fn_4361(void *out, void **args) { *(mb_t5*)out = mulib_readability_extract(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1432*)args[2]); }
+static void mb_fn_4361(void *out, void **args) { *(mb_t5*)out = mulib_readability_extract(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1424*)args[2]); }
 static void mb_fn_4362(void *out, void **args) { *(mb_t5*)out = mulib_recordbatch_append(*(mb_t7282*)args[0],*(mb_t4449*)args[1]); }
 static void mb_fn_4363(void *out, void **args) { (void)out; mulib_recordbatch_free(*(mb_t7282*)args[0]); }
 static void mb_fn_4364(void *out, void **args) { *(mb_t5*)out = mulib_redirect_status(*(mb_t5*)args[0]); }
@@ -115886,16 +115886,16 @@ static void mb_fn_5195(void *out, void **args) { (void)out; mulib_web_connection
 static void mb_fn_5196(void *out, void **args) { *(mb_t8*)out = mulib_webarchive_record_header(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t32*)args[2],*(mb_t8*)args[3]); }
 static void mb_fn_5197(void *out, void **args) { *(mb_t5*)out = mulib_webextract_evidence_make(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8*)args[2],*(mb_t8*)args[3],*(mb_t36*)args[4],*(mb_t8665*)args[5]); }
 static void mb_fn_5198(void *out, void **args) { *(mb_t5*)out = mulib_webextract_evidence_verify(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8667*)args[2]); }
-static void mb_fn_5199(void *out, void **args) { *(mb_t5*)out = mulib_webextract_llm_request(*(mb_t36*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1432*)args[4]); }
-static void mb_fn_5200(void *out, void **args) { *(mb_t5*)out = mulib_webextract_llm_call(*(mb_t8668*)args[0],*(mb_t28*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1432*)args[4]); }
+static void mb_fn_5199(void *out, void **args) { *(mb_t5*)out = mulib_webextract_llm_request(*(mb_t36*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1424*)args[4]); }
+static void mb_fn_5200(void *out, void **args) { *(mb_t5*)out = mulib_webextract_llm_call(*(mb_t8668*)args[0],*(mb_t28*)args[1],*(mb_t36*)args[2],*(mb_t8*)args[3],*(mb_t1424*)args[4]); }
 static void mb_fn_5201(void *out, void **args) { *(mb_t5*)out = mulib_webextract_reconcile(*(mb_t8674*)args[0],*(mb_t8*)args[1],*(mb_t12*)args[2],*(mb_t112*)args[3],*(mb_t157*)args[4]); }
-static void mb_fn_5202(void *out, void **args) { *(mb_t5*)out = mulib_webextract_rules_text(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8677*)args[2],*(mb_t1432*)args[3]); }
+static void mb_fn_5202(void *out, void **args) { *(mb_t5*)out = mulib_webextract_rules_text(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8677*)args[2],*(mb_t1424*)args[3]); }
 static void mb_fn_5203(void *out, void **args) { *(mb_t5*)out = mulib_webextract_jsonld(*(mb_t36*)args[0],*(mb_t8680*)args[1]); }
-static void mb_fn_5204(void *out, void **args) { *(mb_t5*)out = mulib_webidl_bindgen_interfaces(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1432*)args[2],*(mb_t8*)args[3]); }
+static void mb_fn_5204(void *out, void **args) { *(mb_t5*)out = mulib_webidl_bindgen_interfaces(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1424*)args[2],*(mb_t8*)args[3]); }
 static void mb_fn_5205(void *out, void **args) { *(mb_t5*)out = mulib_webidl_to_int32(*(mb_t12*)args[0],*(mb_t5*)args[1],*(mb_t385*)args[2]); }
 static void mb_fn_5206(void *out, void **args) { *(mb_t5*)out = mulib_webidl_to_uint32(*(mb_t12*)args[0],*(mb_t5*)args[1],*(mb_t236*)args[2]); }
 static void mb_fn_5207(void *out, void **args) { *(mb_t5*)out = mulib_webidl_to_boolean(*(mb_t12*)args[0]); }
-static void mb_fn_5208(void *out, void **args) { *(mb_t5*)out = mulib_webidl_domstring_utf8(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1432*)args[2]); }
+static void mb_fn_5208(void *out, void **args) { *(mb_t5*)out = mulib_webidl_domstring_utf8(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t1424*)args[2]); }
 static void mb_fn_5209(void *out, void **args) { *(mb_t5*)out = mulib_webidl_generate(*(mb_t3338*)args[0],*(mb_t389*)args[1]); }
 static void mb_fn_5210(void *out, void **args) { *(mb_t5*)out = mulib_webidl_compile(*(mb_t36*)args[0],*(mb_t8*)args[1],*(mb_t8690*)args[2],*(mb_t389*)args[3],*(mb_t8691*)args[4]); }
 static void mb_fn_5211(void *out, void **args) { *(mb_t5*)out = mulib_weblocation_set(*(mb_t8694*)args[0],*(mb_t36*)args[1]); }
@@ -115906,7 +115906,7 @@ static void mb_fn_5215(void *out, void **args) { *(mb_t5*)out = mulib_websearch_
 static void mb_fn_5216(void *out, void **args) { (void)out; mulib_websearch_engine_sort(*(mb_t8704*)args[0]); }
 static void mb_fn_5217(void *out, void **args) { (void)out; mulib_websearch_engine_free(*(mb_t8704*)args[0]); }
 static void mb_fn_5218(void *out, void **args) { *(mb_t5*)out = mulib_websearch_provider_init(*(mb_t8708*)args[0],*(mb_t36*)args[1],*(mb_t36*)args[2],*(mb_t6*)args[3]); }
-static void mb_fn_5219(void *out, void **args) { *(mb_t5*)out = mulib_websearch_provider_url(*(mb_t8710*)args[0],*(mb_t36*)args[1],*(mb_t6*)args[2],*(mb_t1432*)args[3]); }
+static void mb_fn_5219(void *out, void **args) { *(mb_t5*)out = mulib_websearch_provider_url(*(mb_t8710*)args[0],*(mb_t36*)args[1],*(mb_t6*)args[2],*(mb_t1424*)args[3]); }
 static void mb_fn_5220(void *out, void **args) { *(mb_t36*)out = mulib_websearch_provider_name(*(mb_t8711*)args[0]); }
 static void mb_fn_5221(void *out, void **args) { *(mb_t5*)out = mulib_websearch_known(*(mb_t8711*)args[0]); }
 static void mb_fn_5222(void *out, void **args) { *(mb_t5*)out = mulib_cdd_websocket_key(*(mb_t57*)args[0],*(mb_t32*)args[1]); }
@@ -116888,23 +116888,23 @@ static const mb_function mb_functions[] = {
 {"mulib_bootmgr_bios_chain",1415,mb_fn_824},
 {"mulib_bootmgr_sector_valid",1169,mb_fn_825},
 {"mulib_bootmgr_elf_load",1419,mb_fn_826},
-{"mulib_bounds_contains",1422,mb_fn_827},
-{"mulib_bounds_intersects",1423,mb_fn_828},
-{"mulib_bounds_union",1424,mb_fn_829},
-{"mulib_bpf_kernel_array_map",1425,mb_fn_830},
-{"mulib_branch_layout",1427,mb_fn_831},
-{"mulib_shylock_reserve",1431,mb_fn_832},
-{"mulib_shylock_append",1433,mb_fn_833},
-{"mulib_shylock_text",1434,mb_fn_834},
-{"mulib_shylock_json_string",1435,mb_fn_835},
-{"mulib_shylock_buffer_free",1436,mb_fn_836},
-{"mulib_shylock_dup",1437,mb_fn_837},
-{"mulib_shylock_copy",1438,mb_fn_838},
-{"mulib_shylock_hash",1022,mb_fn_839},
-{"mulib_shylock_equal_ci",986,mb_fn_840},
-{"mulib_shylock_contains_ci",986,mb_fn_841},
-{"mulib_shylock_contains_span_ci",1439,mb_fn_842},
-{"mulib_shylock_parse_decimal",1440,mb_fn_843},
+{"mulib_bounded_text_reserve",1423,mb_fn_827},
+{"mulib_bounded_text_append",1425,mb_fn_828},
+{"mulib_bounded_text_text",1426,mb_fn_829},
+{"mulib_bounded_text_json_string",1427,mb_fn_830},
+{"mulib_bounded_text_buffer_free",1428,mb_fn_831},
+{"mulib_bounded_text_dup",1429,mb_fn_832},
+{"mulib_bounded_text_copy",1430,mb_fn_833},
+{"mulib_bounded_text_hash",1022,mb_fn_834},
+{"mulib_bounded_text_equal_ci",986,mb_fn_835},
+{"mulib_bounded_text_contains_ci",986,mb_fn_836},
+{"mulib_bounded_text_contains_span_ci",1431,mb_fn_837},
+{"mulib_bounded_text_parse_decimal",1432,mb_fn_838},
+{"mulib_bounds_contains",1434,mb_fn_839},
+{"mulib_bounds_intersects",1435,mb_fn_840},
+{"mulib_bounds_union",1436,mb_fn_841},
+{"mulib_bpf_kernel_array_map",1437,mb_fn_842},
+{"mulib_branch_layout",1439,mb_fn_843},
 {"mulib_browser_cache_put",1446,mb_fn_844},
 {"mulib_browser_cache_get",1448,mb_fn_845},
 {"mulib_browser_cache_prune",1451,mb_fn_846},
@@ -117551,7 +117551,7 @@ static const mb_function mb_functions[] = {
 {"mulib_ct_add_size",265,mb_fn_1487},
 {"mulib_ct_text_length",2476,mb_fn_1488},
 {"mulib_ct_id_valid",507,mb_fn_1489},
-{"mulib_ct_text_copy",1438,mb_fn_1490},
+{"mulib_ct_text_copy",1430,mb_fn_1490},
 {"mulib_ct_blob_free",2477,mb_fn_1491},
 {"mulib_ct_blob_reserve",2479,mb_fn_1492},
 {"mulib_ct_blob_assign",2480,mb_fn_1493},
@@ -120673,7 +120673,7 @@ static const mb_function mb_functions[] = {
 {"mulib_spellcheck_serialize",7657,mb_fn_4609},
 {"mulib_spellcheck_deserialize",7658,mb_fn_4610},
 {"mulib_spellcheck_dictionary_load",7648,mb_fn_4611},
-{"mulib_spice_parse_number",1440,mb_fn_4612},
+{"mulib_spice_parse_number",1432,mb_fn_4612},
 {"mulib_spice_split_line",7660,mb_fn_4613},
 {"mulib_spice_netlist_parse",7666,mb_fn_4614},
 {"mulib_spice_netlist_find_node",7668,mb_fn_4615},
@@ -120834,7 +120834,7 @@ static const mb_function mb_functions[] = {
 {"mulib_texexpand_define",7921,mb_fn_4770},
 {"mulib_texexpand_once",7923,mb_fn_4771},
 {"mulib_texexpand_destroy",7925,mb_fn_4772},
-{"mulib_texexpr_evaluate",1440,mb_fn_4773},
+{"mulib_texexpr_evaluate",1432,mb_fn_4773},
 {"mulib_texffi_destroy",7929,mb_fn_4774},
 {"mulib_texffi_set",7931,mb_fn_4775},
 {"mulib_texffi_get",7932,mb_fn_4776},
@@ -127783,19 +127783,35 @@ static const mb_symbol mb_symbols_65[] = {
 {"mulib_bootmgr_elf_load",0,826},
 {NULL,0,0}};
 static const mb_symbol mb_symbols_66[] = {
-{"mulib_bounds_t",1,1421},
-{"mulib_bounds_contains",0,827},
-{"mulib_bounds_intersects",0,828},
-{"mulib_bounds_union",0,829},
+{"mulib_bounded_text_buffer_t",1,1421},
+{"mulib_bounded_text_span_t",1,1422},
+{"mulib_bounded_text_reserve",0,827},
+{"mulib_bounded_text_append",0,828},
+{"mulib_bounded_text_text",0,829},
+{"mulib_bounded_text_json_string",0,830},
+{"mulib_bounded_text_buffer_free",0,831},
+{"mulib_bounded_text_dup",0,832},
+{"mulib_bounded_text_copy",0,833},
+{"mulib_bounded_text_hash",0,834},
+{"mulib_bounded_text_equal_ci",0,835},
+{"mulib_bounded_text_contains_ci",0,836},
+{"mulib_bounded_text_contains_span_ci",0,837},
+{"mulib_bounded_text_parse_decimal",0,838},
 {NULL,0,0}};
 static const mb_symbol mb_symbols_67[] = {
-{"mulib_bpf_kernel_array_map",0,830},
+{"mulib_bounds_t",1,1433},
+{"mulib_bounds_contains",0,839},
+{"mulib_bounds_intersects",0,840},
+{"mulib_bounds_union",0,841},
 {NULL,0,0}};
 static const mb_symbol mb_symbols_68[] = {
-{"mulib_branch_t",1,1426},
-{"mulib_branch_layout",0,831},
+{"mulib_bpf_kernel_array_map",0,842},
 {NULL,0,0}};
 static const mb_symbol mb_symbols_69[] = {
+{"mulib_branch_t",1,1438},
+{"mulib_branch_layout",0,843},
+{NULL,0,0}};
+static const mb_symbol mb_symbols_70[] = {
 {"mulib_browser_cache_entry_t",1,1441},
 {"mulib_browser_cache_t",1,1444},
 {"mulib_browser_cache_put",0,844},
@@ -127803,62 +127819,62 @@ static const mb_symbol mb_symbols_69[] = {
 {"mulib_browser_cache_prune",0,846},
 {"mulib_browser_cache_free",0,847},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_70[] = {
+static const mb_symbol mb_symbols_71[] = {
 {"mulib_browser_cookie_t",1,1453},
 {"mulib_browser_cookiejar_t",1,1456},
 {"mulib_browser_cookiejar_put",0,848},
 {"mulib_browser_cookiejar_header",0,849},
 {"mulib_browser_cookiejar_free",0,850},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_71[] = {
+static const mb_symbol mb_symbols_72[] = {
 {"mulib_browser_documentload",0,868},
 {"mulib_browser_documentload_bounded",0,869},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_72[] = {
+static const mb_symbol mb_symbols_73[] = {
 {"mulib_browser_domstream_emit",0,873},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_73[] = {
+static const mb_symbol mb_symbols_74[] = {
 {"mulib_browser_engine_t",1,1531},
 {"mulib_browser_engine_init",0,879},
 {"mulib_browser_engine_navigate",0,880},
 {"mulib_browser_engine_destroy",0,881},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_74[] = {
+static const mb_symbol mb_symbols_75[] = {
 {"mulib_browser_eventloop_t",1,1547},
 {"mulib_browser_eventloop_post",0,886},
 {"mulib_browser_eventloop_step",0,887},
 {"mulib_browser_eventloop_free",0,888},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_75[] = {
+static const mb_symbol mb_symbols_76[] = {
 {"mulib_browser_executionstream_emit",0,889},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_76[] = {
+static const mb_symbol mb_symbols_77[] = {
 {"mulib_browser_fetch_t",1,1485},
 {"mulib_browser_fetch_get",0,862},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_77[] = {
+static const mb_symbol mb_symbols_78[] = {
 {"mulib_browser_layoutstream_emit",0,890},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_78[] = {
+static const mb_symbol mb_symbols_79[] = {
 {"mulib_browser_limits_t",1,1521},
 {"mulib_browser_limits_default",0,874},
 {"mulib_browser_limits_valid",0,875},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_79[] = {
+static const mb_symbol mb_symbols_80[] = {
 {"mulib_browser_navigation_t",1,1526},
 {"mulib_browser_navigation_visit",0,876},
 {"mulib_browser_navigation_move",0,877},
 {"mulib_browser_navigation_free",0,878},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_80[] = {
+static const mb_symbol mb_symbols_81[] = {
 {"mulib_browser_networkstream_emit",0,891},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_81[] = {
+static const mb_symbol mb_symbols_82[] = {
 {"mulib_browser_origin_t",1,1471},
 {"mulib_browser_origin_parse",0,858},
 {"mulib_browser_origin_equal",0,859},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_82[] = {
+static const mb_symbol mb_symbols_83[] = {
 {"MULIB_BROWSER_ALLOW_NETWORK",2,476},
 {"MULIB_BROWSER_ALLOW_STORAGE",2,477},
 {"MULIB_BROWSER_ALLOW_SCRIPT",2,478},
@@ -127870,31 +127886,31 @@ static const mb_symbol mb_symbols_82[] = {
 {"mulib_browser_permissions_grant",0,893},
 {"mulib_browser_permissions_revoke",0,894},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_83[] = {
+static const mb_symbol mb_symbols_84[] = {
 {"mulib_browser_realm_t",1,1558},
 {"mulib_browser_realm_init",0,895},
 {"mulib_browser_realm_same_origin",0,896},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_84[] = {
+static const mb_symbol mb_symbols_85[] = {
 {"mulib_browser_resource_t",1,1563},
 {"mulib_browser_resources_t",1,1564},
 {"mulib_browser_resource_register",0,897},
 {"mulib_browser_resource_complete",0,898},
 {"mulib_browser_resources_free",0,899},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_85[] = {
+static const mb_symbol mb_symbols_86[] = {
 {"mulib_browser_sandbox_t",1,1570},
 {"mulib_browser_sandbox_init",0,900},
 {"mulib_browser_sandbox_charge",0,901},
 {"mulib_browser_sandbox_cancel",0,902},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_86[] = {
+static const mb_symbol mb_symbols_87[] = {
 {"mulib_browser_snapshot_t",1,1575},
 {"mulib_browser_snapshot_make",0,903},
 {"mulib_browser_snapshot_equal",0,904},
 {"mulib_browser_snapshot_free",0,905},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_87[] = {
+static const mb_symbol mb_symbols_88[] = {
 {"MULIB_BROWSER_CHANNEL_TOKEN",2,468},
 {"MULIB_BROWSER_CHANNEL_DOM",2,469},
 {"MULIB_BROWSER_CHANNEL_LAYOUT",2,470},
@@ -127909,14 +127925,14 @@ static const mb_symbol mb_symbols_87[] = {
 {"mulib_browser_stream_emit",0,871},
 {"mulib_browser_stream_free",0,872},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_88[] = {
+static const mb_symbol mb_symbols_89[] = {
 {"mulib_browser_tokenstream_emit",0,906},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_89[] = {
+static const mb_symbol mb_symbols_90[] = {
 {"mulib_browsercontext_t",1,1581},
 {"mulib_browsercontext_init",0,907},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_90[] = {
+static const mb_symbol mb_symbols_91[] = {
 {"MULIB_BROWSERLOCATOR_CSS",2,481},
 {"MULIB_BROWSERLOCATOR_XPATH",2,482},
 {"MULIB_BROWSERLOCATOR_TEXT",2,483},
@@ -127926,15 +127942,15 @@ static const mb_symbol mb_symbols_90[] = {
 {"mulib_browserlocator_init",0,908},
 {"mulib_browserlocator_free",0,909},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_91[] = {
+static const mb_symbol mb_symbols_92[] = {
 {"mulib_browserscreenshot_size",0,910},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_92[] = {
+static const mb_symbol mb_symbols_93[] = {
 {"mulib_browsersnapshot_t",1,1590},
 {"mulib_browsersnapshot_create",0,911},
 {"mulib_browsersnapshot_free",0,912},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_93[] = {
+static const mb_symbol mb_symbols_94[] = {
 {"mulib_browsertools_t",1,1616},
 {"MULIB_BROWSERTOOLS_OK",2,494},
 {"MULIB_BROWSERTOOLS_RESPONSE",2,495},
@@ -127959,29 +127975,29 @@ static const mb_symbol mb_symbols_93[] = {
 {"mulib_browsertools_evaluate",0,930},
 {"mulib_browsertools_targets",0,931},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_94[] = {
+static const mb_symbol mb_symbols_95[] = {
 {"mulib_browsertrace_event_t",1,1633},
 {"mulib_browsertrace_t",1,1634},
 {"mulib_browsertrace_push",0,932},
 {"mulib_browsertrace_get",0,933},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_95[] = {
+static const mb_symbol mb_symbols_96[] = {
 {"mulib_browserwait_t",1,1641},
 {"mulib_browserwait_init",0,934},
 {"mulib_browserwait_poll",0,935},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_96[] = {
+static const mb_symbol mb_symbols_97[] = {
 {"mulib_bson_encode",0,936},
 {"mulib_bson_decode",0,937},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_97[] = {
+static const mb_symbol mb_symbols_98[] = {
 {"mulib_buffer_t",1,387},
 {"mulib_buffer_init",0,230},
 {"mulib_buffer_append",0,231},
 {"mulib_buffer_remove",0,232},
 {"mulib_buffer_free",0,233},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_98[] = {
+static const mb_symbol mb_symbols_99[] = {
 {"mulib_buildgraph_t",1,1647},
 {"mulib_buildgraph_run_t",1,1648},
 {"mulib_buildgraph_step_t",1,1649},
@@ -128029,7 +128045,7 @@ static const mb_symbol mb_symbols_98[] = {
 {"mulib_buildgraph_value",0,954},
 {"mulib_buildgraph_run_destroy",0,955},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_99[] = {
+static const mb_symbol mb_symbols_100[] = {
 {"MULIB_BUILDPARSE_AUTO",2,525},
 {"MULIB_BUILDPARSE_MAKE",2,526},
 {"MULIB_BUILDPARSE_NINJA",2,527},
@@ -128048,7 +128064,7 @@ static const mb_symbol mb_symbols_99[] = {
 {"mulib_buildparse",0,975},
 {"mulib_buildparse_file",0,976},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_100[] = {
+static const mb_symbol mb_symbols_101[] = {
 {"mulib_buildplan_t",1,1698},
 {"MULIB_BUILDPLAN_OK",2,518},
 {"MULIB_BUILDPLAN_INVALID",2,519},
@@ -128081,7 +128097,7 @@ static const mb_symbol mb_symbols_100[] = {
 {"mulib_buildplan_schedule",0,973},
 {"mulib_buildplan_critical_path",0,974},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_101[] = {
+static const mb_symbol mb_symbols_102[] = {
 {"MULIB_BUILDSTATE_OK",2,550},
 {"MULIB_BUILDSTATE_INVALID",2,551},
 {"MULIB_BUILDSTATE_MEMORY",2,552},
@@ -128104,7 +128120,7 @@ static const mb_symbol mb_symbols_101[] = {
 {"mulib_buildstate_probe_fn",1,1761},
 {"mulib_buildstate_is_dirty",0,1004},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_102[] = {
+static const mb_symbol mb_symbols_103[] = {
 {"MULIB_BUILDVM_INPUT",2,558},
 {"MULIB_BUILDVM_LITERAL",2,559},
 {"MULIB_BUILDVM_CONCAT",2,560},
@@ -128123,13 +128139,13 @@ static const mb_symbol mb_symbols_102[] = {
 {"mulib_buildvm_execute",0,1008},
 {"mulib_buildvm_task",0,1009},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_103[] = {
+static const mb_symbol mb_symbols_104[] = {
 {"mulib_bycutils_range",0,1010},
 {"mulib_bycutils_align",0,1011},
 {"mulib_bycutils_load",0,1012},
 {"mulib_bycutils_store",0,1013},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_104[] = {
+static const mb_symbol mb_symbols_105[] = {
 {"MULIB_BC_PUSH",2,569},
 {"MULIB_BC_LOAD",2,570},
 {"MULIB_BC_STORE",2,571},
@@ -128153,33 +128169,33 @@ static const mb_symbol mb_symbols_104[] = {
 {"mulib_bc_result_t",1,1779},
 {"mulib_bytecode_run",0,1014},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_105[] = {
+static const mb_symbol mb_symbols_106[] = {
 {"mulib_bytecode_builder_t",1,1783},
 {"mulib_bytecode_builder_add",0,1015},
 {"mulib_bytecode_builder_patch",0,1016},
 {"mulib_bytecode_builder_free",0,1017},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_106[] = {
+static const mb_symbol mb_symbols_107[] = {
 {"mulib_bytecode_disassemble",0,1018},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_107[] = {
+static const mb_symbol mb_symbols_108[] = {
 {"mulib_bytecode_eval",0,1020},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_108[] = {
+static const mb_symbol mb_symbols_109[] = {
 {"mulib_bytecode_optimize",0,1021},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_109[] = {
+static const mb_symbol mb_symbols_110[] = {
 {"mulib_bytecode_encode",0,1022},
 {"mulib_bytecode_decode",0,1023},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_110[] = {
+static const mb_symbol mb_symbols_111[] = {
 {"mulib_bytecode_verify",0,1019},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_111[] = {
+static const mb_symbol mb_symbols_112[] = {
 {"mulib_bzip2_encode",0,1039},
 {"mulib_bzip2_decode",0,1040},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_112[] = {
+static const mb_symbol mb_symbols_113[] = {
 {"MULIB_CACHE_SORTED",2,602},
 {"MULIB_CACHE_HATTRIE",2,603},
 {"MULIB_CACHE_TRIE",2,604},
@@ -128198,14 +128214,14 @@ static const mb_symbol mb_symbols_112[] = {
 {"mulib_cache_serialize",0,1079},
 {"mulib_cache_deserialize",0,1080},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_113[] = {
+static const mb_symbol mb_symbols_114[] = {
 {"MULIB_CALLCONV_AMD64_SYSV",2,605},
 {"MULIB_CALLCONV_RV64_LP64",2,606},
 {"mulib_callconv_abi_t",1,1868},
 {"mulib_callconv_location_t",1,1869},
 {"mulib_callconv_arguments",0,1081},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_114[] = {
+static const mb_symbol mb_symbols_115[] = {
 {"mulib_capbroker_handler",1,1877},
 {"mulib_capbroker_op_t",1,1879},
 {"mulib_capbroker_hooks_t",1,1880},
@@ -128217,7 +128233,7 @@ static const mb_symbol mb_symbols_114[] = {
 {"mulib_capbroker_finish",0,1089},
 {"MULIB_CAPBROKER_MAX",2,2675},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_115[] = {
+static const mb_symbol mb_symbols_116[] = {
 {"mulib_cassowary_solver_t",1,1892},
 {"mulib_cassowary_term_t",1,1893},
 {"MULIB_CASSOWARY_EQ",2,632},
@@ -128250,14 +128266,14 @@ static const mb_symbol mb_symbols_115[] = {
 {"MULIB_CASSOWARY_STRONG",2,2679},
 {"MULIB_CASSOWARY_NONE",2,2680},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_116[] = {
+static const mb_symbol mb_symbols_117[] = {
 {"mulib_cbor_encode",0,1102},
 {"mulib_cbor_decode",0,1103},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_117[] = {
+static const mb_symbol mb_symbols_118[] = {
 {"mulib_ccweave_generate",0,1104},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_118[] = {
+static const mb_symbol mb_symbols_119[] = {
 {"MULIB_CDD_OK",2,641},
 {"MULIB_CDD_INVALID",2,642},
 {"MULIB_CDD_DUPLICATE",2,643},
@@ -128291,7 +128307,7 @@ static const mb_symbol mb_symbols_118[] = {
 {"MULIB_CDD_MAX_ENTRIES",2,2681},
 {"MULIB_CDD_NONE",2,2682},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_119[] = {
+static const mb_symbol mb_symbols_120[] = {
 {"MULIB_CDD_ADDED",2,653},
 {"MULIB_CDD_REMOVED",2,654},
 {"MULIB_CDD_CHANGED",2,655},
@@ -128299,13 +128315,13 @@ static const mb_symbol mb_symbols_119[] = {
 {"mulib_cdd_change_t",1,1936},
 {"mulib_cdd_diff",0,1114},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_120[] = {
+static const mb_symbol mb_symbols_121[] = {
 {"mulib_cdd_step_fn",1,1948},
 {"mulib_cdd_executor_t",1,1950},
 {"mulib_cdd_exec_report_t",1,1951},
 {"mulib_cdd_execute",0,1119},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_121[] = {
+static const mb_symbol mb_symbols_122[] = {
 {"mulib_cdd_problem_t",1,1939},
 {"mulib_cdd_plan_t",1,1940},
 {"mulib_cdd_problem_valid",0,1115},
@@ -128313,7 +128329,7 @@ static const mb_symbol mb_symbols_121[] = {
 {"mulib_cdd_can_append",0,1117},
 {"mulib_cdd_plan_validate",0,1118},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_122[] = {
+static const mb_symbol mb_symbols_123[] = {
 {"MULIB_CDD_EQ",2,656},
 {"MULIB_CDD_NE",2,657},
 {"MULIB_CDD_LT",2,658},
@@ -128328,37 +128344,37 @@ static const mb_symbol mb_symbols_122[] = {
 {"mulib_cdd_query_matches",0,1121},
 {"mulib_cdd_query_run",0,1122},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_123[] = {
+static const mb_symbol mb_symbols_124[] = {
 {"mulib_cdd_registry_t",1,1963},
 {"mulib_cdd_registry_init",0,1123},
 {"mulib_cdd_registry_view",0,1124},
 {"mulib_cdd_registry_add",0,1125},
 {"mulib_cdd_registry_remove",0,1126},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_124[] = {
+static const mb_symbol mb_symbols_125[] = {
 {"mulib_cdd_resolve_stats_t",1,1971},
 {"mulib_cdd_resolve",0,1127},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_125[] = {
+static const mb_symbol mb_symbols_126[] = {
 {"mulib_cdd_field_t",1,1975},
 {"mulib_cdd_schema_t",1,1976},
 {"mulib_cdd_schema_validate",0,1128},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_126[] = {
+static const mb_symbol mb_symbols_127[] = {
 {"mulib_cff_view_t",1,1980},
 {"mulib_cff_open",0,1129},
 {"mulib_cff_read_u16",0,1130},
 {"mulib_cff_read_u32",0,1131},
 {"mulib_cff_slice",0,1132},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_127[] = {
+static const mb_symbol mb_symbols_128[] = {
 {"mulib_cff2_view_t",1,1988},
 {"mulib_cff2_open",0,1133},
 {"mulib_cff2_read_u16",0,1134},
 {"mulib_cff2_read_u32",0,1135},
 {"mulib_cff2_slice",0,1136},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_128[] = {
+static const mb_symbol mb_symbols_129[] = {
 {"mulib_cfg_edge_t",1,1995},
 {"mulib_cfg_t",1,1996},
 {"mulib_cfg_add",0,1137},
@@ -128368,7 +128384,7 @@ static const mb_symbol mb_symbols_128[] = {
 {"mulib_cfg_postorder",0,1141},
 {"mulib_cfg_free",0,1142},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_129[] = {
+static const mb_symbol mb_symbols_130[] = {
 {"mulib_cgeom_ray_t",1,2058},
 {"mulib_cgeom_aabb_t",1,2059},
 {"mulib_cgeom_sphere_t",1,2060},
@@ -128387,7 +128403,7 @@ static const mb_symbol mb_symbols_129[] = {
 {"mulib_cgeom_convex_hull",0,1201},
 {"mulib_cgeom_distances_squared",0,1202},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_130[] = {
+static const mb_symbol mb_symbols_131[] = {
 {"mulib_cgroup2_t",1,2078},
 {"mulib_cgroup2_limits_t",1,2079},
 {"mulib_cgroup2_create",0,1203},
@@ -128397,7 +128413,7 @@ static const mb_symbol mb_symbols_130[] = {
 {"mulib_cgroup2_kill",0,1207},
 {"mulib_cgroup2_destroy",0,1208},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_131[] = {
+static const mb_symbol mb_symbols_132[] = {
 {"mulib_channel_t",1,2120},
 {"mulib_channel_sender_t",1,2121},
 {"mulib_channel_receiver_t",1,2123},
@@ -128423,10 +128439,10 @@ static const mb_symbol mb_symbols_131[] = {
 {"mulib_channel_receive_case",0,1250},
 {"mulib_channel_select",0,1251},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_132[] = {
+static const mb_symbol mb_symbols_133[] = {
 {"mulib_charset_extract",0,1252},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_133[] = {
+static const mb_symbol mb_symbols_134[] = {
 {"mulib_chart_t",1,2157},
 {"mulib_chart_error_t",1,2158},
 {"mulib_chart_create",0,1274},
@@ -128435,7 +128451,7 @@ static const mb_symbol mb_symbols_133[] = {
 {"mulib_chart_render",0,1277},
 {"mulib_chart_lua",0,1278},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_134[] = {
+static const mb_symbol mb_symbols_135[] = {
 {"MULIB_CHECKSUM_ADLER32",2,690},
 {"MULIB_CHECKSUM_FLETCHER16",2,691},
 {"MULIB_CHECKSUM_FLETCHER32",2,692},
@@ -128469,7 +128485,7 @@ static const mb_symbol mb_symbols_134[] = {
 {"mulib_luhn_digit",0,1295},
 {"mulib_luhn_valid",0,1296},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_135[] = {
+static const mb_symbol mb_symbols_136[] = {
 {"mulib_chem_formula_t",1,2206},
 {"mulib_chem_element_t",1,2207},
 {"mulib_chem_element",0,1317},
@@ -128485,7 +128501,7 @@ static const mb_symbol mb_symbols_135[] = {
 {"mulib_chem_latex",0,1327},
 {"mulib_chem_balance",0,1328},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_136[] = {
+static const mb_symbol mb_symbols_137[] = {
 {"mulib_chemical_item_t",1,2225},
 {"mulib_chemical_list_t",1,2226},
 {"mulib_chemical_push",0,1329},
@@ -128493,16 +128509,16 @@ static const mb_symbol mb_symbols_136[] = {
 {"mulib_chemical_bounds",0,1331},
 {"mulib_chemical_destroy",0,1332},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_137[] = {
+static const mb_symbol mb_symbols_138[] = {
 {"mulib_clamp_i64",0,1333},
 {"mulib_clamp_add_i64",0,1334},
 {"mulib_clamp_sub_i64",0,1335},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_138[] = {
+static const mb_symbol mb_symbols_139[] = {
 {"mulib_classic_bpf_insn_t",1,2235},
 {"mulib_classic_bpf_attach",0,1336},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_139[] = {
+static const mb_symbol mb_symbols_140[] = {
 {"mulib_clickir_edge_t",1,608},
 {"mulib_clickir_program_t",1,609},
 {"mulib_clickir_buffer_t",1,611},
@@ -128517,17 +128533,17 @@ static const mb_symbol mb_symbols_139[] = {
 {"mulib_clickir_to_flow",0,338},
 {"mulib_clickir_flow_free",0,339},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_140[] = {
+static const mb_symbol mb_symbols_141[] = {
 {"mulib_closeditemset_visit_fn",1,2246},
 {"mulib_closeditemset_enumerate",0,1344},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_141[] = {
+static const mb_symbol mb_symbols_142[] = {
 {"mulib_cmachine_t",1,2267},
 {"mulib_cmachine_lower",0,1348},
 {"mulib_cmachine_run",0,1349},
 {"mulib_cmachine_free",0,1350},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_142[] = {
+static const mb_symbol mb_symbols_143[] = {
 {"MULIB_CODEC_OK",2,586},
 {"MULIB_CODEC_EINVAL",2,587},
 {"MULIB_CODEC_EFORMAT",2,588},
@@ -128553,7 +128569,7 @@ static const mb_symbol mb_symbols_142[] = {
 {"mulib_codec_put",0,1037},
 {"mulib_codec_flush",0,1038},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_143[] = {
+static const mb_symbol mb_symbols_144[] = {
 {"MULIB_COFF_OK",2,419},
 {"MULIB_COFF_EINVAL",2,420},
 {"MULIB_COFF_EFORMAT",2,421},
@@ -128571,11 +128587,11 @@ static const mb_symbol mb_symbols_143[] = {
 {"mulib_coff_symbol_name",0,783},
 {"mulib_coff_bytes",0,784},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_144[] = {
+static const mb_symbol mb_symbols_145[] = {
 {"mulib_coff_objdump",0,1416},
 {"mulib_coff_objdump_view",0,1417},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_145[] = {
+static const mb_symbol mb_symbols_146[] = {
 {"mulib_coffbuilder_text",0,1422},
 {"mulib_coffbuilder_t",1,2367},
 {"mulib_coffbuilder_add",0,1423},
@@ -128588,11 +128604,11 @@ static const mb_symbol mb_symbols_145[] = {
 {"mulib_coffbuilder_abi_t",1,2374},
 {"mulib_coffbuilder_finish_abi",0,1426},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_146[] = {
+static const mb_symbol mb_symbols_147[] = {
 {"mulib_coffutils_section",0,1427},
 {"mulib_coffutils_symbol",0,1428},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_147[] = {
+static const mb_symbol mb_symbols_148[] = {
 {"mulib_collision_contact_t",1,2378},
 {"mulib_collision_hit_t",1,2379},
 {"mulib_collision_spheres",0,1429},
@@ -128603,21 +128619,21 @@ static const mb_symbol mb_symbols_147[] = {
 {"mulib_collision_ray_aabb",0,1434},
 {"mulib_collision_ray_triangle",0,1435},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_148[] = {
+static const mb_symbol mb_symbols_149[] = {
 {"mulib_color_rgb_t",1,2389},
 {"mulib_color_hsv_t",1,2390},
 {"mulib_color_to_hsv",0,1436},
 {"mulib_color_from_hsv",0,1437},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_149[] = {
+static const mb_symbol mb_symbols_150[] = {
 {"mulib_colorconvert_compute",0,1438},
 {"mulib_colorconvert_clamp",0,1439},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_150[] = {
+static const mb_symbol mb_symbols_151[] = {
 {"mulib_colormodel_compute",0,1440},
 {"mulib_colormodel_clamp",0,1441},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_151[] = {
+static const mb_symbol mb_symbols_152[] = {
 {"mulib_colorprofile_entry_t",1,2395},
 {"mulib_colorprofile_table_t",1,2396},
 {"mulib_colorprofile_destroy",0,1442},
@@ -128625,24 +128641,24 @@ static const mb_symbol mb_symbols_151[] = {
 {"mulib_colorprofile_get",0,1444},
 {"mulib_colorprofile_erase",0,1445},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_152[] = {
+static const mb_symbol mb_symbols_153[] = {
 {"mulib_column_rdbms_t",1,2404},
 {"mulib_column_rdbms_append",0,1446},
 {"mulib_column_rdbms_column",0,1447},
 {"mulib_column_rdbms_free",0,1448},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_153[] = {
+static const mb_symbol mb_symbols_154[] = {
 {"mulib_columnar_t",1,2410},
 {"mulib_columnar_append",0,1449},
 {"mulib_columnar_get",0,1450},
 {"mulib_columnar_free",0,1451},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_154[] = {
+static const mb_symbol mb_symbols_155[] = {
 {"mulib_columnstats_t",1,2416},
 {"mulib_columnstats_add",0,1452},
 {"mulib_columnstats_may_match",0,1453},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_155[] = {
+static const mb_symbol mb_symbols_156[] = {
 {"mulib_competprice_rival_t",1,2426},
 {"MULIB_COMPETPRICE_WEIGHTED_MEDIAN",2,781},
 {"MULIB_COMPETPRICE_WEIGHTED_MEAN",2,782},
@@ -128655,14 +128671,14 @@ static const mb_symbol mb_symbols_155[] = {
 {"mulib_competprice_result_t",1,2429},
 {"mulib_competprice_recommend",0,1463},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_156[] = {
+static const mb_symbol mb_symbols_157[] = {
 {"mulib_compiler_cache_item_t",1,2434},
 {"mulib_compiler_cache_t",1,2435},
 {"mulib_compiler_cache_put",0,1464},
 {"mulib_compiler_cache_get",0,1465},
 {"mulib_compiler_cache_free",0,1466},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_157[] = {
+static const mb_symbol mb_symbols_158[] = {
 {"mulib_compiler_stage_fn",1,2442},
 {"mulib_compiler_stage_t",1,2444},
 {"mulib_compiler_driver_t",1,2445},
@@ -128670,30 +128686,30 @@ static const mb_symbol mb_symbols_157[] = {
 {"mulib_compiler_driver_run",0,1468},
 {"mulib_compiler_driver_free",0,1469},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_158[] = {
+static const mb_symbol mb_symbols_159[] = {
 {"mulib_compiler_scope_t",1,2453},
 {"mulib_compiler_scope_bind",0,1475},
 {"mulib_compiler_scope_resolve",0,1476},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_159[] = {
+static const mb_symbol mb_symbols_160[] = {
 {"mulib_compiler_test_t",1,2461},
 {"mulib_compiler_test_check",0,1477},
 {"mulib_compiler_test_ok",0,1478},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_160[] = {
+static const mb_symbol mb_symbols_161[] = {
 {"mulib_complex_t",1,2466},
 {"mulib_complex_add",0,1479},
 {"mulib_complex_mul",0,1480},
 {"mulib_complex_abs",0,1481},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_161[] = {
+static const mb_symbol mb_symbols_162[] = {
 {"MULIB_COMPRESSION_IDENTITY",2,787},
 {"MULIB_COMPRESSION_RLE",2,788},
 {"mulib_compression",1,2471},
 {"mulib_compression_encode",0,1484},
 {"mulib_compression_decode",0,1485},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_162[] = {
+static const mb_symbol mb_symbols_163[] = {
 {"MULIB_CONAINERD_START",2,815},
 {"MULIB_CONAINERD_STOP",2,816},
 {"MULIB_CONAINERD_DELETE",2,817},
@@ -128709,12 +128725,12 @@ static const mb_symbol mb_symbols_162[] = {
 {"mulib_conainerd_ipc_reply",0,1525},
 {"mulib_conainerd_ipc_status",0,1526},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_163[] = {
+static const mb_symbol mb_symbols_164[] = {
 {"mulib_concept_t",1,2526},
 {"mulib_conceptlattice_enumerate",0,1527},
 {"mulib_conceptlattice_leq",0,1528},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_164[] = {
+static const mb_symbol mb_symbols_165[] = {
 {"mulib_semaphore_t",1,2530},
 {"mulib_mutex_t",1,2531},
 {"mulib_waitgroup_t",1,2532},
@@ -128752,11 +128768,11 @@ static const mb_symbol mb_symbols_164[] = {
 {"mulib_rwlock_write_unlock",0,1551},
 {"mulib_rwlock_destroy",0,1552},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_165[] = {
+static const mb_symbol mb_symbols_166[] = {
 {"mulib_conditional_probability",0,1553},
 {"mulib_conditional_bayes",0,1554},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_166[] = {
+static const mb_symbol mb_symbols_167[] = {
 {"MULIB_CONFUSE_SECTION",2,829},
 {"MULIB_CONFUSE_LIST",2,830},
 {"MULIB_CONFUSE_STRING",2,831},
@@ -128775,13 +128791,13 @@ static const mb_symbol mb_symbols_166[] = {
 {"mulib_confuse_getreal",0,1561},
 {"mulib_confuse_getbool",0,1562},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_167[] = {
+static const mb_symbol mb_symbols_168[] = {
 {"mulib_conntrack_dump",0,1571},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_168[] = {
+static const mb_symbol mb_symbols_169[] = {
 {"mulib_consteval_eval",0,1577},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_169[] = {
+static const mb_symbol mb_symbols_170[] = {
 {"mulib_constraint_var_t",1,2604},
 {"mulib_constraints_t",1,2605},
 {"mulib_constraints_new",0,1578},
@@ -128790,7 +128806,7 @@ static const mb_symbol mb_symbols_169[] = {
 {"mulib_constraints_type",0,1581},
 {"mulib_constraints_free",0,1582},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_170[] = {
+static const mb_symbol mb_symbols_171[] = {
 {"MULIB_CONTAINER_CREATED",2,810},
 {"MULIB_CONTAINER_RUNNING",2,811},
 {"MULIB_CONTAINER_PAUSED",2,812},
@@ -128814,7 +128830,7 @@ static const mb_symbol mb_symbols_170[] = {
 {"mulib_container_transition",0,1521},
 {"mulib_container_state_name",0,1522},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_171[] = {
+static const mb_symbol mb_symbols_172[] = {
 {"MULIB_CT_OK",2,789},
 {"MULIB_CT_AGAIN",2,790},
 {"MULIB_CT_DONE",2,791},
@@ -128854,7 +128870,7 @@ static const mb_symbol mb_symbols_171[] = {
 {"MULIB_CT_REALLOC",2,2690},
 {"MULIB_CT_FREE",2,2691},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_172[] = {
+static const mb_symbol mb_symbols_173[] = {
 {"MULIB_CONTAINER_IPC_HEADER",2,808},
 {"MULIB_CONTAINER_IPC_RESPONSE",2,809},
 {"mulib_container_ipc_message",1,2482},
@@ -128868,7 +128884,7 @@ static const mb_symbol mb_symbols_172[] = {
 {"mulib_container_ipc_reset",0,1508},
 {"mulib_container_ipc_reader_free",0,1509},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_173[] = {
+static const mb_symbol mb_symbols_174[] = {
 {"mulib_container_jitboost",1,2703},
 {"mulib_container_jitboost_init",0,1626},
 {"mulib_container_jitboost_ops",0,1627},
@@ -128876,14 +128892,14 @@ static const mb_symbol mb_symbols_173[] = {
 {"mulib_container_jitboost_resume",0,1629},
 {"mulib_container_jitboost_inspect",0,1630},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_174[] = {
+static const mb_symbol mb_symbols_175[] = {
 {"mulib_container_kvmboost",1,2734},
 {"mulib_container_kvmboost_init",0,1643},
 {"mulib_container_kvmboost_probe",0,1644},
 {"mulib_container_kvmboost_ops",0,1645},
 {"mulib_container_kvmboost_backend",0,1646},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_175[] = {
+static const mb_symbol mb_symbols_176[] = {
 {"MULIB_CONTAINER_LOG_TRACE",2,890},
 {"MULIB_CONTAINER_LOG_DEBUG",2,891},
 {"MULIB_CONTAINER_LOG_INFO",2,892},
@@ -128898,7 +128914,7 @@ static const mb_symbol mb_symbols_175[] = {
 {"mulib_container_log_next",0,1650},
 {"mulib_container_log_prune",0,1651},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_176[] = {
+static const mb_symbol mb_symbols_177[] = {
 {"MULIB_CONTAINER_NETDEV_IP",2,895},
 {"MULIB_CONTAINER_NETDEV_ETHERNET",2,896},
 {"mulib_container_netdev_kind",1,2757},
@@ -128913,7 +128929,7 @@ static const mb_symbol mb_symbols_176[] = {
 {"mulib_container_netdev_send",0,1658},
 {"mulib_container_netdev_peer",0,1659},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_177[] = {
+static const mb_symbol mb_symbols_178[] = {
 {"mulib_container_network_route",1,2774},
 {"mulib_container_network",1,2775},
 {"mulib_container_network_init",0,1663},
@@ -128925,7 +128941,7 @@ static const mb_symbol mb_symbols_177[] = {
 {"mulib_container_network_check",0,1669},
 {"mulib_container_network_send",0,1670},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_178[] = {
+static const mb_symbol mb_symbols_179[] = {
 {"mulib_container_oixboost",1,2833},
 {"mulib_container_oixboost_init",0,1687},
 {"mulib_container_oixboost_compile",0,1688},
@@ -128933,40 +128949,40 @@ static const mb_symbol mb_symbols_178[] = {
 {"mulib_container_oixboost_backend",0,1690},
 {"mulib_container_oixboost_feed",0,1691},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_179[] = {
+static const mb_symbol mb_symbols_180[] = {
 {"mulib_container_packcoff_object",0,1692},
 {"mulib_container_packcoff_append",0,1693},
 {"mulib_container_packcoff_open",0,1694},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_180[] = {
+static const mb_symbol mb_symbols_181[] = {
 {"mulib_container_packelf_object",0,1704},
 {"mulib_container_packelf_append",0,1705},
 {"mulib_container_packelf_open",0,1706},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_181[] = {
+static const mb_symbol mb_symbols_182[] = {
 {"mulib_container_packmacho_object",0,1714},
 {"mulib_container_packmacho_append",0,1715},
 {"mulib_container_packmacho_open",0,1716},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_182[] = {
+static const mb_symbol mb_symbols_183[] = {
 {"mulib_container_packpe_object",0,1717},
 {"mulib_container_packpe_append",0,1718},
 {"mulib_container_packpe_open",0,1719},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_183[] = {
+static const mb_symbol mb_symbols_184[] = {
 {"mulib_container_packzstd_info",1,2878},
 {"mulib_container_packzstd_pack",0,1725},
 {"mulib_container_packzstd_unpack",0,1726},
 {"mulib_container_packzstd_codec",1,2881},
 {"mulib_container_packzstd_unpack_with",0,1727},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_184[] = {
+static const mb_symbol mb_symbols_185[] = {
 {"mulib_container_qvmboost",1,2898},
 {"mulib_container_qvmboost_init",0,1733},
 {"mulib_container_qvmboost_ops",0,1734},
 {"mulib_container_qvmboost_backend",0,1735},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_185[] = {
+static const mb_symbol mb_symbols_186[] = {
 {"MULIB_CONTAINER_CAP_PAUSE",2,867},
 {"MULIB_CONTAINER_CAP_SIGNAL",2,868},
 {"MULIB_CONTAINER_CAP_ROOTFS",2,869},
@@ -128981,7 +128997,7 @@ static const mb_symbol mb_symbols_185[] = {
 {"mulib_container_runtime_pause",0,1614},
 {"mulib_container_runtime_close",0,1615},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_186[] = {
+static const mb_symbol mb_symbols_187[] = {
 {"mulib_container_stub_transport",1,2902},
 {"MULIB_CONTAINER_STUB_IDLE",2,964},
 {"MULIB_CONTAINER_STUB_SENDING",2,965},
@@ -128996,7 +129012,7 @@ static const mb_symbol mb_symbols_186[] = {
 {"mulib_container_stub_take",0,1739},
 {"mulib_container_stub_free",0,1740},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_187[] = {
+static const mb_symbol mb_symbols_188[] = {
 {"mulib_container_vfs_binding",1,2914},
 {"mulib_container_vfs",1,2915},
 {"mulib_container_vfs_init",0,1741},
@@ -129006,7 +129022,7 @@ static const mb_symbol mb_symbols_187[] = {
 {"mulib_container_vfs_checkpoint",0,1745},
 {"mulib_container_vfs_restore",0,1746},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_188[] = {
+static const mb_symbol mb_symbols_189[] = {
 {"MULIB_CONTAINER2DAEMONPROTO_START",2,969},
 {"MULIB_CONTAINER2DAEMONPROTO_STOP",2,970},
 {"MULIB_CONTAINER2DAEMONPROTO_DELETE",2,971},
@@ -129017,7 +129033,7 @@ static const mb_symbol mb_symbols_188[] = {
 {"mulib_container2daemonproto_encode",0,1747},
 {"mulib_container2daemonproto_decode",0,1748},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_189[] = {
+static const mb_symbol mb_symbols_190[] = {
 {"MULIB_CONTAINERBOOST_CUSTOM",2,879},
 {"MULIB_CONTAINERBOOST_KVM",2,880},
 {"MULIB_CONTAINERBOOST_OIX",2,881},
@@ -129033,7 +129049,7 @@ static const mb_symbol mb_symbols_189[] = {
 {"mulib_containerboost_select",0,1624},
 {"mulib_containerboost_prepare",0,1625},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_190[] = {
+static const mb_symbol mb_symbols_191[] = {
 {"mulib_containerd_options",1,3011},
 {"mulib_containerd",1,3012},
 {"mulib_containerd_default_options",0,1785},
@@ -129044,7 +129060,7 @@ static const mb_symbol mb_symbols_190[] = {
 {"mulib_containerd_dispatch",0,1790},
 {"mulib_containerd_tick",0,1791},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_191[] = {
+static const mb_symbol mb_symbols_192[] = {
 {"MULIB_CONTAINERD_ACCESS_ALL",2,975},
 {"mulib_containerd_principal",1,2930},
 {"mulib_containerd_access_rule",1,2931},
@@ -129055,7 +129071,7 @@ static const mb_symbol mb_symbols_191[] = {
 {"mulib_containerd_accessstub_remove",0,1752},
 {"mulib_containerd_accessstub_check",0,1753},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_192[] = {
+static const mb_symbol mb_symbols_193[] = {
 {"mulib_containerd_cache_entry",1,2942},
 {"mulib_containerd_cache_lease",1,2943},
 {"mulib_containerd_cache",1,2944},
@@ -129067,14 +129083,14 @@ static const mb_symbol mb_symbols_192[] = {
 {"mulib_containerd_cache_remove",0,1759},
 {"mulib_containerd_cache_sweep",0,1760},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_193[] = {
+static const mb_symbol mb_symbols_194[] = {
 {"mulib_containerd_ctrlbridge",1,3022},
 {"mulib_containerd_ctrlbridge_init",0,1792},
 {"mulib_containerd_ctrlbridge_feed",0,1793},
 {"mulib_containerd_ctrlbridge_drain",0,1794},
 {"mulib_containerd_ctrlbridge_free",0,1795},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_194[] = {
+static const mb_symbol mb_symbols_195[] = {
 {"mulib_containerd_mount_lease",1,2997},
 {"mulib_containerd_mount_entry",1,2998},
 {"mulib_containerd_mount",1,2999},
@@ -129086,16 +129102,16 @@ static const mb_symbol mb_symbols_194[] = {
 {"mulib_containerd_mount_remove",0,1783},
 {"mulib_containerd_mount_dispatch",0,1784},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_195[] = {
+static const mb_symbol mb_symbols_196[] = {
 {"mulib_containerinjector_put",0,1796},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_196[] = {
+static const mb_symbol mb_symbols_197[] = {
 {"mulib_containerserverd_dispatch",0,1797},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_197[] = {
+static const mb_symbol mb_symbols_198[] = {
 {"mulib_containerstub_request",0,1798},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_198[] = {
+static const mb_symbol mb_symbols_199[] = {
 {"mulib_containterpool_handle",1,2966},
 {"mulib_containterpool_entry",1,2967},
 {"mulib_containterpool",1,2968},
@@ -129109,16 +129125,16 @@ static const mb_symbol mb_symbols_198[] = {
 {"mulib_containterpool_remove",0,1771},
 {"mulib_containterpool_tick",0,1772},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_199[] = {
+static const mb_symbol mb_symbols_200[] = {
 {"mulib_cookie_pair",0,1799},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_200[] = {
+static const mb_symbol mb_symbols_201[] = {
 {"mulib_cookiejar_t",1,3035},
 {"mulib_cookiejar_set",0,1800},
 {"mulib_cookiejar_get",0,1801},
 {"mulib_cookiejar_free",0,1802},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_201[] = {
+static const mb_symbol mb_symbols_202[] = {
 {"mulib_corpus_t",1,3041},
 {"mulib_corpus_init",0,1803},
 {"mulib_corpus_add",0,1804},
@@ -129126,17 +129142,17 @@ static const mb_symbol mb_symbols_201[] = {
 {"mulib_corpus_count",0,1806},
 {"mulib_corpus_free",0,1807},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_202[] = {
+static const mb_symbol mb_symbols_203[] = {
 {"mulib_cosine_similarity",0,1808},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_203[] = {
+static const mb_symbol mb_symbols_204[] = {
 {"mulib_countmin_t",1,3049},
 {"mulib_countmin_init",0,1809},
 {"mulib_countmin_add",0,1810},
 {"mulib_countmin_estimate",0,1811},
 {"mulib_countmin_free",0,1812},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_204[] = {
+static const mb_symbol mb_symbols_205[] = {
 {"mulib_cowbptree_state_t",1,3056},
 {"mulib_cowbptree_t",1,3057},
 {"mulib_cowbptree_snapshot",0,1813},
@@ -129145,7 +129161,7 @@ static const mb_symbol mb_symbols_204[] = {
 {"mulib_cowbptree_remove",0,1816},
 {"mulib_cowbptree_free",0,1817},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_205[] = {
+static const mb_symbol mb_symbols_206[] = {
 {"MULIB_CPIO_OK",2,980},
 {"MULIB_CPIO_TRAILER",2,981},
 {"MULIB_CPIO_INVALID",2,982},
@@ -129173,14 +129189,14 @@ static const mb_symbol mb_symbols_205[] = {
 {"mulib_cpio_add",0,1822},
 {"mulib_cpio_finish",0,1823},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_206[] = {
+static const mb_symbol mb_symbols_207[] = {
 {"mulib_crawlarchive_record_t",1,3075},
 {"mulib_crawlarchive_t",1,3076},
 {"mulib_crawlarchive_add",0,1824},
 {"mulib_crawlarchive_find",0,1825},
 {"mulib_crawlarchive_free",0,1826},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_207[] = {
+static const mb_symbol mb_symbols_208[] = {
 {"mulib_crawler_job_t",1,3084},
 {"mulib_crawler_t",1,3085},
 {"mulib_crawler_enqueue",0,1827},
@@ -129188,7 +129204,7 @@ static const mb_symbol mb_symbols_207[] = {
 {"mulib_crawler_finish",0,1829},
 {"mulib_crawler_free",0,1830},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_208[] = {
+static const mb_symbol mb_symbols_209[] = {
 {"mulib_crawlqueue_t",1,3092},
 {"mulib_crawlqueue_push",0,1831},
 {"mulib_crawlqueue_next",0,1832},
@@ -129197,7 +129213,7 @@ static const mb_symbol mb_symbols_208[] = {
 {"mulib_crawlqueue_position",0,1835},
 {"mulib_crawlqueue_seek",0,1836},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_209[] = {
+static const mb_symbol mb_symbols_210[] = {
 {"mulib_crc_value",1,3100},
 {"mulib_crc_params",1,3101},
 {"mulib_crc_ctx",1,3102},
@@ -129437,11 +129453,11 @@ static const mb_symbol mb_symbols_209[] = {
 {"mulib_crc_64_xz",0,1954},
 {"mulib_crc_82_darc",0,1955},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_210[] = {
+static const mb_symbol mb_symbols_211[] = {
 {"mulib_crc32_update",0,1500},
 {"mulib_crc32",0,1501},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_211[] = {
+static const mb_symbol mb_symbols_212[] = {
 {"mulib_cron_t",1,3115},
 {"mulib_cron_fn",1,1259},
 {"MULIB_CRON_OK",2,1113},
@@ -129451,7 +129467,7 @@ static const mb_symbol mb_symbols_211[] = {
 {"mulib_cron_dispatch",0,1958},
 {"MULIB_CRON_MAX_SPEC",2,2696},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_212[] = {
+static const mb_symbol mb_symbols_213[] = {
 {"mulib_crossref_entry_t",1,3124},
 {"mulib_crossref_table_t",1,3125},
 {"mulib_crossref_destroy",0,1959},
@@ -129459,7 +129475,7 @@ static const mb_symbol mb_symbols_212[] = {
 {"mulib_crossref_get",0,1961},
 {"mulib_crossref_erase",0,1962},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_213[] = {
+static const mb_symbol mb_symbols_214[] = {
 {"mulib_blake2_ctx",1,3133},
 {"mulib_blake2s_init",0,1963},
 {"mulib_blake2b_init",0,1964},
@@ -129499,7 +129515,7 @@ static const mb_symbol mb_symbols_213[] = {
 {"mulib_pmac_intrinsics",0,1997},
 {"mulib_cryptohash_wipe",0,1998},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_214[] = {
+static const mb_symbol mb_symbols_215[] = {
 {"mulib_csl_entry_t",1,3154},
 {"mulib_csl_table_t",1,3155},
 {"mulib_csl_destroy",0,1999},
@@ -129507,7 +129523,7 @@ static const mb_symbol mb_symbols_214[] = {
 {"mulib_csl_get",0,2001},
 {"mulib_csl_erase",0,2002},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_215[] = {
+static const mb_symbol mb_symbols_216[] = {
 {"mulib_css_style_t",1,2274},
 {"mulib_css_sheet_t",1,2275},
 {"mulib_css_parse_declarations",0,1351},
@@ -129538,41 +129554,41 @@ static const mb_symbol mb_symbols_215[] = {
 {"mulib_css_parse_length",0,1367},
 {"mulib_css_length_pixels",0,1368},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_216[] = {
+static const mb_symbol mb_symbols_217[] = {
 {"mulib_css_box_t",1,3163},
 {"mulib_css_box_valid",0,2003},
 {"mulib_css_box_vertical",0,2004},
 {"mulib_css_box_contains",0,2005},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_217[] = {
+static const mb_symbol mb_symbols_218[] = {
 {"mulib_css_cascade_compute",0,2015},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_218[] = {
+static const mb_symbol mb_symbols_219[] = {
 {"mulib_css_computed_t",1,3168},
 {"mulib_css_computed_defaults",0,2006},
 {"mulib_css_computed_apply",0,2007},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_219[] = {
+static const mb_symbol mb_symbols_220[] = {
 {"mulib_css_flex_distribute",0,2016},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_220[] = {
+static const mb_symbol mb_symbols_221[] = {
 {"mulib_css_grid_cells",0,2017},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_221[] = {
+static const mb_symbol mb_symbols_222[] = {
 {"mulib_css_layoutstream_fn",1,3189},
 {"mulib_css_layoutstream_emit",0,2018},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_222[] = {
+static const mb_symbol mb_symbols_223[] = {
 {"mulib_css_rule_t",1,3173},
 {"mulib_css_parsed_sheet_t",1,3174},
 {"mulib_css_parse_sheet",0,2008},
 {"mulib_css_sheet_free",0,2009},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_223[] = {
+static const mb_symbol mb_symbols_224[] = {
 {"mulib_css_selector_matches",0,2013},
 {"mulib_css_selector_specificity",0,2014},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_224[] = {
+static const mb_symbol mb_symbols_225[] = {
 {"MULIB_CSS_TOKEN_IDENT",2,1115},
 {"MULIB_CSS_TOKEN_STRING",2,1116},
 {"MULIB_CSS_TOKEN_NUMBER",2,1117},
@@ -129582,15 +129598,15 @@ static const mb_symbol mb_symbols_224[] = {
 {"mulib_css_tokenizer_fn",1,3195},
 {"mulib_css_tokenizer_scan",0,2019},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_225[] = {
+static const mb_symbol mb_symbols_226[] = {
 {"mulib_csswriter_write",0,2020},
 {"mulib_csswriter_write_cstr",0,2021},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_226[] = {
+static const mb_symbol mb_symbols_227[] = {
 {"mulib_csv_row_callback",1,3199},
 {"mulib_csv_parse",0,2022},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_227[] = {
+static const mb_symbol mb_symbols_228[] = {
 {"mulib_curses_t",1,3237},
 {"mulib_curses_window_t",1,3238},
 {"mulib_curses_create",0,2045},
@@ -129616,7 +129632,7 @@ static const mb_symbol mb_symbols_227[] = {
 {"mulib_curses_feed",0,2065},
 {"mulib_curses_getkey",0,2066},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_228[] = {
+static const mb_symbol mb_symbols_229[] = {
 {"mulib_daemon_t",1,3260},
 {"MULIB_DAEMON_OK",2,1167},
 {"MULIB_DAEMON_INVALID",2,1168},
@@ -129642,7 +129658,7 @@ static const mb_symbol mb_symbols_228[] = {
 {"mulib_daemon_launch",0,2079},
 {"mulib_daemon_stop",0,2080},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_229[] = {
+static const mb_symbol mb_symbols_230[] = {
 {"mulib_datagram_address_t",1,3279},
 {"mulib_datagram_t",1,3280},
 {"MULIB_DATAGRAM_OK",2,1178},
@@ -129656,7 +129672,7 @@ static const mb_symbol mb_symbols_229[] = {
 {"mulib_datagram_receive",0,2086},
 {"mulib_datagram_close",0,2087},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_230[] = {
+static const mb_symbol mb_symbols_231[] = {
 {"mulib_datalog_t",1,3288},
 {"MULIB_DATALOG_OK",2,1184},
 {"MULIB_DATALOG_INVALID",2,1185},
@@ -129678,12 +129694,12 @@ static const mb_symbol mb_symbols_230[] = {
 {"mulib_datalog_query",0,2094},
 {"mulib_datalog_fact_count",0,2095},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_231[] = {
+static const mb_symbol mb_symbols_232[] = {
 {"mulib_date_is_leap",0,2096},
 {"mulib_date_days_in_month",0,2097},
 {"mulib_date_valid",0,2098},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_232[] = {
+static const mb_symbol mb_symbols_233[] = {
 {"MULIB_DATUM_NULL",2,1190},
 {"MULIB_DATUM_I64",2,1191},
 {"MULIB_DATUM_F64",2,1192},
@@ -129698,30 +129714,30 @@ static const mb_symbol mb_symbols_232[] = {
 {"mulib_datum_clone",0,2103},
 {"mulib_datum_free",0,2104},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_233[] = {
+static const mb_symbol mb_symbols_234[] = {
 {"mulib_dbdeserializer_read",0,2108},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_234[] = {
+static const mb_symbol mb_symbols_235[] = {
 {"mulib_dbindex_t",1,3323},
 {"mulib_dbindex_set",0,2109},
 {"mulib_dbindex_get",0,2110},
 {"mulib_dbindex_remove",0,2111},
 {"mulib_dbindex_free",0,2112},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_235[] = {
+static const mb_symbol mb_symbols_236[] = {
 {"mulib_dbquery_visit_fn",1,3330},
 {"mulib_dbquery_predicate_fn",1,3330},
 {"mulib_dbquery_scan",0,2113},
 {"mulib_dbquery_scan_where",0,2114},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_236[] = {
+static const mb_symbol mb_symbols_237[] = {
 {"mulib_dbschema_field_t",1,3334},
 {"mulib_dbschema_t",1,3335},
 {"mulib_dbschema_identifier",0,2115},
 {"mulib_dbschema_validate",0,2116},
 {"mulib_dbschema_check",0,2117},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_237[] = {
+static const mb_symbol mb_symbols_238[] = {
 {"MULIB_DBFORMAT_JSON",2,1195},
 {"MULIB_DBFORMAT_BSON",2,1196},
 {"MULIB_DBFORMAT_MESSAGEPACK",2,1197},
@@ -129729,17 +129745,17 @@ static const mb_symbol mb_symbols_237[] = {
 {"mulib_dbformat",1,3320},
 {"mulib_dbserializer_write",0,2107},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_238[] = {
+static const mb_symbol mb_symbols_239[] = {
 {"mulib_dbsummary_t",1,3340},
 {"mulib_dbsummary_compute",0,2118},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_239[] = {
+static const mb_symbol mb_symbols_240[] = {
 {"mulib_dbtransaction_t",1,3343},
 {"mulib_dbtransaction_begin",0,2119},
 {"mulib_dbtransaction_commit",0,2120},
 {"mulib_dbtransaction_abort",0,2121},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_240[] = {
+static const mb_symbol mb_symbols_241[] = {
 {"MULIB_DBUS_MORE",2,1199},
 {"MULIB_DBUS_OK",2,1200},
 {"MULIB_DBUS_INVALID",2,1201},
@@ -129756,29 +129772,29 @@ static const mb_symbol mb_symbols_240[] = {
 {"mulib_dbus_encode",0,2136},
 {"mulib_dbus_decode",0,2137},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_241[] = {
+static const mb_symbol mb_symbols_242[] = {
 {"mulib_dbus_auth_external",0,2122},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_242[] = {
+static const mb_symbol mb_symbols_243[] = {
 {"mulib_dbus_client_t",1,3350},
 {"mulib_dbus_client_open",0,2126},
 {"mulib_dbus_client_close",0,2127},
 {"mulib_dbus_client_call",0,2128},
 {"mulib_dbus_client_body_offset",0,2129},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_243[] = {
+static const mb_symbol mb_symbols_244[] = {
 {"mulib_dbus_properties_u32",0,2130},
 {"mulib_dbus_properties_string",0,2131},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_244[] = {
+static const mb_symbol mb_symbols_245[] = {
 {"mulib_dbus_transport_connect",0,2123},
 {"mulib_dbus_transport_write",0,2124},
 {"mulib_dbus_transport_read",0,2125},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_245[] = {
+static const mb_symbol mb_symbols_246[] = {
 {"mulib_dce_mark",0,2139},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_246[] = {
+static const mb_symbol mb_symbols_247[] = {
 {"MULIB_DEFLATE_OK",2,1204},
 {"MULIB_DEFLATE_EINVAL",2,1205},
 {"MULIB_DEFLATE_EFORMAT",2,1206},
@@ -129788,16 +129804,16 @@ static const mb_symbol mb_symbols_246[] = {
 {"mulib_deflate_decode",0,2141},
 {"mulib_deflate_decode_prefix",0,2142},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_247[] = {
+static const mb_symbol mb_symbols_248[] = {
 {"mulib_defuse_inst_t",1,3371},
 {"mulib_defuse_info_t",1,3372},
 {"mulib_defuse_analyze",0,2138},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_248[] = {
+static const mb_symbol mb_symbols_249[] = {
 {"mulib_deltacodec_encode",0,2143},
 {"mulib_deltacodec_decode",0,2144},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_249[] = {
+static const mb_symbol mb_symbols_250[] = {
 {"MULIB_DEPFILE_OK",2,1209},
 {"MULIB_DEPFILE_INVALID",2,1210},
 {"MULIB_DEPFILE_MEMORY",2,1211},
@@ -129811,7 +129827,7 @@ static const mb_symbol mb_symbols_249[] = {
 {"mulib_depfile_parse",0,2145},
 {"mulib_depfile_parse_file",0,2146},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_250[] = {
+static const mb_symbol mb_symbols_251[] = {
 {"MULIB_DEPIR_VALUE",2,1214},
 {"MULIB_DEPIR_BLOCK",2,1215},
 {"MULIB_DEPIR_FUNCTION",2,1216},
@@ -129837,7 +129853,7 @@ static const mb_symbol mb_symbols_250[] = {
 {"mulib_depir_lower",0,2158},
 {"mulib_depir_free",0,2159},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_251[] = {
+static const mb_symbol mb_symbols_252[] = {
 {"mulib_deque_t",1,3419},
 {"mulib_deque_init",0,2160},
 {"mulib_deque_push_front",0,2161},
@@ -129846,7 +129862,7 @@ static const mb_symbol mb_symbols_251[] = {
 {"mulib_deque_pop_back",0,2164},
 {"mulib_deque_free",0,2165},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_252[] = {
+static const mb_symbol mb_symbols_253[] = {
 {"mulib_der_cursor_t",1,3425},
 {"mulib_der_value_t",1,3426},
 {"mulib_der_next",0,2166},
@@ -129855,17 +129871,17 @@ static const mb_symbol mb_symbols_252[] = {
 {"mulib_der_unsigned",0,2169},
 {"mulib_der_u32",0,2170},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_253[] = {
+static const mb_symbol mb_symbols_254[] = {
 {"mulib_descritors_segment",0,2171},
 {"mulib_descritors_gate",0,2172},
 {"mulib_descritors_tss",0,2173},
 {"mulib_descritors_pointer",0,2174},
 {"mulib_descritors_tss_init",0,2175},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_254[] = {
+static const mb_symbol mb_symbols_255[] = {
 {"mulib_devlink_family",0,2180},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_255[] = {
+static const mb_symbol mb_symbols_256[] = {
 {"MULIB_DEXCC_OK",2,249},
 {"MULIB_DEXCC_INVALID",2,250},
 {"MULIB_DEXCC_UNSUPPORTED",2,251},
@@ -129919,7 +129935,7 @@ static const mb_symbol mb_symbols_255[] = {
 {"mulib_dexcc_check_file",0,330},
 {"MULIB_DEXCC_NONE",2,2647},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_256[] = {
+static const mb_symbol mb_symbols_257[] = {
 {"mulib_dfa_t",1,3472},
 {"mulib_nfa_edge_t",1,3473},
 {"mulib_nfa_t",1,3474},
@@ -129936,15 +129952,15 @@ static const mb_symbol mb_symbols_256[] = {
 {"mulib_dfa_serialize",0,2204},
 {"mulib_dfa_deserialize",0,2205},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_257[] = {
+static const mb_symbol mb_symbols_258[] = {
 {"mulib_dhcp4_client_discover",0,2206},
 {"mulib_dhcp4_client_type",0,2207},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_258[] = {
+static const mb_symbol mb_symbols_259[] = {
 {"mulib_dhcp6_client_solicit",0,2208},
 {"mulib_dhcp6_client_option",0,2209},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_259[] = {
+static const mb_symbol mb_symbols_260[] = {
 {"MULIB_DIAG_OK",2,1230},
 {"MULIB_DIAG_ARGUMENT",2,1231},
 {"MULIB_DIAG_MEMORY",2,1232},
@@ -129954,7 +129970,7 @@ static const mb_symbol mb_symbols_259[] = {
 {"mulib_diag_code_t",1,3496},
 {"mulib_diag_message",0,2210},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_260[] = {
+static const mb_symbol mb_symbols_261[] = {
 {"MULIB_DIAG_NOTE",2,1236},
 {"MULIB_DIAG_WARNING",2,1237},
 {"MULIB_DIAG_ERROR",2,1238},
@@ -129964,7 +129980,7 @@ static const mb_symbol mb_symbols_260[] = {
 {"mulib_diagnostic_add",0,2211},
 {"mulib_diagnostic_free",0,2212},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_261[] = {
+static const mb_symbol mb_symbols_262[] = {
 {"mulib_diagram_item_t",1,3505},
 {"mulib_diagram_list_t",1,3506},
 {"mulib_diagram_push",0,2213},
@@ -129972,12 +129988,12 @@ static const mb_symbol mb_symbols_261[] = {
 {"mulib_diagram_bounds",0,2215},
 {"mulib_diagram_destroy",0,2216},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_262[] = {
+static const mb_symbol mb_symbols_263[] = {
 {"mulib_distfield_generate",0,2217},
 {"mulib_distfield_distance",0,2218},
 {"mulib_distfield_coverage",0,2219},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_263[] = {
+static const mb_symbol mb_symbols_264[] = {
 {"mulib_distribcluster_t",1,3674},
 {"mulib_distribcluster_init",0,2306},
 {"mulib_distribcluster_container",0,2307},
@@ -129985,7 +130001,7 @@ static const mb_symbol mb_symbols_263[] = {
 {"mulib_distribcluster_vmm",0,2309},
 {"mulib_distribcluster_execute",0,2310},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_264[] = {
+static const mb_symbol mb_symbols_265[] = {
 {"mulib_distribcomp_t",1,3569},
 {"mulib_distribcomp_worker_t",1,3570},
 {"MULIB_DISTRIBCOMP_PENDING",2,1258},
@@ -130010,7 +130026,7 @@ static const mb_symbol mb_symbols_264[] = {
 {"mulib_distribcomp_worker_step",0,2263},
 {"mulib_distribcomp_worker_handle",0,2264},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_265[] = {
+static const mb_symbol mb_symbols_266[] = {
 {"mulib_distribtask_plan_t",1,3516},
 {"mulib_distribtask_error_t",1,3517},
 {"MULIB_DISTRIBTASK_JSON",2,1239},
@@ -130027,7 +130043,7 @@ static const mb_symbol mb_symbols_265[] = {
 {"mulib_distribtask_lease",0,2228},
 {"mulib_distribtask_identifier",0,2229},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_266[] = {
+static const mb_symbol mb_symbols_267[] = {
 {"MULIB_DNS_END",2,1368},
 {"MULIB_DNS_OK",2,1369},
 {"MULIB_DNS_INVALID",2,1370},
@@ -130073,10 +130089,10 @@ static const mb_symbol mb_symbols_266[] = {
 {"mulib_dns_writer_question",0,2322},
 {"mulib_dns_writer_rr",0,2323},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_267[] = {
+static const mb_symbol mb_symbols_268[] = {
 {"mulib_dns_manager_first_nameserver",0,2311},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_268[] = {
+static const mb_symbol mb_symbols_269[] = {
 {"MULIB_DNSCACHE_MAX_ADDRESSES",2,1394},
 {"mulib_dnscache_result_t",1,3712},
 {"mulib_dnscache_entry_t",1,3714},
@@ -130086,24 +130102,24 @@ static const mb_symbol mb_symbols_268[] = {
 {"mulib_dnscache_get",0,2326},
 {"mulib_dnscache_expire",0,2327},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_269[] = {
+static const mb_symbol mb_symbols_270[] = {
 {"mulib_dnsclient_transport_fn",1,3724},
 {"mulib_dnsclient_query",0,2328},
 {"mulib_dnsclient_validate_query",0,2329},
 {"mulib_dnsclient_validate_reply",0,2330},
 {"mulib_dnsclient_exchange",0,2331},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_270[] = {
+static const mb_symbol mb_symbols_271[] = {
 {"mulib_dnsnmeserver_t",1,3730},
 {"mulib_dnsnmeserver_init",0,2334},
 {"mulib_dnsnmeserver_answer",0,2335},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_271[] = {
+static const mb_symbol mb_symbols_272[] = {
 {"mulib_dnsresolver_t",1,3735},
 {"mulib_dnsresolver_init",0,2336},
 {"mulib_dnsresolver_resolve",0,2337},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_272[] = {
+static const mb_symbol mb_symbols_273[] = {
 {"mulib_docdiff_item_t",1,3739},
 {"mulib_docdiff_list_t",1,3740},
 {"mulib_docdiff_push",0,2338},
@@ -130111,19 +130127,19 @@ static const mb_symbol mb_symbols_272[] = {
 {"mulib_docdiff_bounds",0,2340},
 {"mulib_docdiff_destroy",0,2341},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_273[] = {
+static const mb_symbol mb_symbols_274[] = {
 {"mulib_docid_t",1,8},
 {"mulib_docid_encode",0,2342},
 {"mulib_docid_decode",0,2343},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_274[] = {
+static const mb_symbol mb_symbols_275[] = {
 {"mulib_docincremental_policy_t",1,3749},
 {"mulib_docincremental_init",0,2344},
 {"mulib_docincremental_charge",0,2345},
 {"mulib_docincremental_reset",0,2346},
 {"mulib_docincremental_remaining",0,2347},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_275[] = {
+static const mb_symbol mb_symbols_276[] = {
 {"mulib_docir_ROOT",2,1395},
 {"mulib_docir_SECTION",2,1396},
 {"mulib_docir_PARAGRAPH",2,1397},
@@ -130194,14 +130210,14 @@ static const mb_symbol mb_symbols_275[] = {
 {"mulib_docir_render_snapshot",0,2368},
 {"mulib_docir_destroy",0,2369},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_276[] = {
+static const mb_symbol mb_symbols_277[] = {
 {"mulib_doclength_PT",2,1436},
 {"mulib_doclength_PX",2,1437},
 {"mulib_doclength_IN",2,1438},
 {"mulib_doclength_MM",2,1439},
 {"mulib_doclength_convert",0,2370},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_277[] = {
+static const mb_symbol mb_symbols_278[] = {
 {"mulib_docmetadata_entry_t",1,3790},
 {"mulib_docmetadata_table_t",1,3791},
 {"mulib_docmetadata_destroy",0,2371},
@@ -130209,7 +130225,7 @@ static const mb_symbol mb_symbols_277[] = {
 {"mulib_docmetadata_get",0,2373},
 {"mulib_docmetadata_erase",0,2374},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_278[] = {
+static const mb_symbol mb_symbols_279[] = {
 {"mulib_docnode_item_t",1,3799},
 {"mulib_docnode_list_t",1,3800},
 {"mulib_docnode_push",0,2375},
@@ -130217,12 +130233,12 @@ static const mb_symbol mb_symbols_278[] = {
 {"mulib_docnode_bounds",0,2377},
 {"mulib_docnode_destroy",0,2378},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_279[] = {
+static const mb_symbol mb_symbols_280[] = {
 {"mulib_docnormalize_write",0,2379},
 {"mulib_docnormalize_write_cstr",0,2380},
 {"mulib_docnormalize_tree",0,2381},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_280[] = {
+static const mb_symbol mb_symbols_281[] = {
 {"mulib_docquery_entry_t",1,3809},
 {"mulib_docquery_table_t",1,3810},
 {"mulib_docquery_destroy",0,2382},
@@ -130230,7 +130246,7 @@ static const mb_symbol mb_symbols_280[] = {
 {"mulib_docquery_get",0,2384},
 {"mulib_docquery_erase",0,2385},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_281[] = {
+static const mb_symbol mb_symbols_282[] = {
 {"mulib_docresource_entry_t",1,3818},
 {"mulib_docresource_table_t",1,3819},
 {"mulib_docresource_destroy",0,2386},
@@ -130238,7 +130254,7 @@ static const mb_symbol mb_symbols_281[] = {
 {"mulib_docresource_get",0,2388},
 {"mulib_docresource_erase",0,2389},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_282[] = {
+static const mb_symbol mb_symbols_283[] = {
 {"mulib_docsemantic_entry_t",1,3827},
 {"mulib_docsemantic_table_t",1,3828},
 {"mulib_docsemantic_destroy",0,2390},
@@ -130246,13 +130262,13 @@ static const mb_symbol mb_symbols_282[] = {
 {"mulib_docsemantic_get",0,2392},
 {"mulib_docsemantic_erase",0,2393},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_283[] = {
+static const mb_symbol mb_symbols_284[] = {
 {"mulib_docserialize_write",0,2394},
 {"mulib_docserialize_write_cstr",0,2395},
 {"mulib_docserialize_tree",0,2396},
 {"mulib_docserialize_read",0,2397},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_284[] = {
+static const mb_symbol mb_symbols_285[] = {
 {"mulib_docsource_entry_t",1,3844},
 {"mulib_docsource_table_t",1,3845},
 {"mulib_docsource_destroy",0,2402},
@@ -130261,7 +130277,7 @@ static const mb_symbol mb_symbols_284[] = {
 {"mulib_docsource_erase",0,2405},
 {"mulib_docsource_bind",0,2406},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_285[] = {
+static const mb_symbol mb_symbols_286[] = {
 {"mulib_docstril_t",1,2137},
 {"MULIB_DOCSTRIL_VERSION",2,1484},
 {"MULIB_DOCSTRIL_MAX_DEPTH",2,1485},
@@ -130291,7 +130307,7 @@ static const mb_symbol mb_symbols_285[] = {
 {"mulib_docstrings_style",0,2484},
 {"mulib_docstrings_render",0,2485},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_286[] = {
+static const mb_symbol mb_symbols_287[] = {
 {"mulib_docstyle_entry_t",1,3970},
 {"mulib_docstyle_table_t",1,3971},
 {"mulib_docstyle_destroy",0,2486},
@@ -130299,14 +130315,14 @@ static const mb_symbol mb_symbols_286[] = {
 {"mulib_docstyle_get",0,2488},
 {"mulib_docstyle_erase",0,2489},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_287[] = {
+static const mb_symbol mb_symbols_288[] = {
 {"mulib_documentdb_t",1,3979},
 {"mulib_documentdb_put",0,2490},
 {"mulib_documentdb_get",0,2491},
 {"mulib_documentdb_delete",0,2492},
 {"mulib_documentdb_free",0,2493},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_288[] = {
+static const mb_symbol mb_symbols_289[] = {
 {"mulib_docvalidate_policy_t",1,3986},
 {"mulib_docvalidate_init",0,2494},
 {"mulib_docvalidate_charge",0,2495},
@@ -130314,7 +130330,7 @@ static const mb_symbol mb_symbols_288[] = {
 {"mulib_docvalidate_remaining",0,2497},
 {"mulib_docvalidate_tree",0,2498},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_289[] = {
+static const mb_symbol mb_symbols_290[] = {
 {"mulib_dom_document_t",1,4006},
 {"mulib_dom_node_t",1,4007},
 {"mulib_dom_event_t",1,4008},
@@ -130434,7 +130450,7 @@ static const mb_symbol mb_symbols_289[] = {
 {"MULIB_DOM_XML_NAMESPACE",2,2737},
 {"MULIB_DOM_XMLNS_NAMESPACE",2,2738},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_290[] = {
+static const mb_symbol mb_symbols_291[] = {
 {"MULIB_DOM_MUTATION_INSERT",2,1495},
 {"MULIB_DOM_MUTATION_REMOVE",2,1496},
 {"MULIB_DOM_MUTATION_TEXT",2,1497},
@@ -130445,26 +130461,26 @@ static const mb_symbol mb_symbols_290[] = {
 {"mulib_dom_mutation_push",0,2499},
 {"mulib_dom_mutation_clear",0,2500},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_291[] = {
+static const mb_symbol mb_symbols_292[] = {
 {"mulib_dom_query_first",0,2010},
 {"mulib_dom_query_matches",0,2011},
 {"mulib_dom_query_all",0,2012},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_292[] = {
+static const mb_symbol mb_symbols_293[] = {
 {"mulib_dom_range_t",1,4001},
 {"mulib_dom_range_make",0,2501},
 {"mulib_dom_range_intersect",0,2502},
 {"mulib_dom_range_shift",0,2503},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_293[] = {
+static const mb_symbol mb_symbols_294[] = {
 {"mulib_dominance_t",1,4073},
 {"mulib_dominance_compute",0,2578},
 {"mulib_dominance_test",0,2579},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_294[] = {
+static const mb_symbol mb_symbols_295[] = {
 {"mulib_domserialize_escape",0,2580},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_295[] = {
+static const mb_symbol mb_symbols_296[] = {
 {"MULIB_DRM_OK",2,1530},
 {"MULIB_DRM_EINVAL",2,1531},
 {"MULIB_DRM_EIO",2,1532},
@@ -130498,14 +130514,14 @@ static const mb_symbol mb_symbols_295[] = {
 {"mulib_drm_dumb_unmap",0,2588},
 {"mulib_drm_dumb_destroy",0,2589},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_296[] = {
+static const mb_symbol mb_symbols_297[] = {
 {"mulib_dsdom_t",1,2137},
 {"mulib_dsdom_clone",0,2407},
 {"mulib_dsdom_element",0,2408},
 {"mulib_dsdom_text",0,2409},
 {"mulib_dsdom_find_id",0,2410},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_297[] = {
+static const mb_symbol mb_symbols_298[] = {
 {"mulib_dsim_bitvec_t",1,4103},
 {"mulib_dsim_bitvec_parse",0,2596},
 {"mulib_dsim_bitvec_format",0,2597},
@@ -130518,7 +130534,7 @@ static const mb_symbol mb_symbols_297[] = {
 {"mulib_dsim_bitvec_shift",0,2604},
 {"mulib_dsim_bitvec_concat",0,2605},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_298[] = {
+static const mb_symbol mb_symbols_299[] = {
 {"MULIB_DSIM_0",2,1545},
 {"MULIB_DSIM_1",2,1546},
 {"MULIB_DSIM_X",2,1547},
@@ -130531,7 +130547,7 @@ static const mb_symbol mb_symbols_298[] = {
 {"mulib_dsim_resolve",0,2594},
 {"mulib_dsim_logic4_char",0,2595},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_299[] = {
+static const mb_symbol mb_symbols_300[] = {
 {"mulib_dsim_event_t",1,4111},
 {"mulib_dsim_scheduler_t",1,4112},
 {"mulib_dsim_scheduler_push",0,2606},
@@ -130540,14 +130556,14 @@ static const mb_symbol mb_symbols_299[] = {
 {"mulib_dsim_scheduler_peek",0,2609},
 {"mulib_dsim_scheduler_cancel",0,2610},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_300[] = {
+static const mb_symbol mb_symbols_301[] = {
 {"mulib_dsu_t",1,4121},
 {"mulib_dsu_init",0,2611},
 {"mulib_dsu_find",0,2612},
 {"mulib_dsu_union",0,2613},
 {"mulib_dsu_free",0,2614},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_301[] = {
+static const mb_symbol mb_symbols_302[] = {
 {"mulib_dsymspec_t",1,309},
 {"mulib_dsymspec_error_t",1,310},
 {"mulib_dsymspec_builtin_count",0,175},
@@ -130561,27 +130577,27 @@ static const mb_symbol mb_symbols_301[] = {
 {"mulib_dsymspec_find",0,183},
 {"mulib_dsymspec_encodings",0,184},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_302[] = {
+static const mb_symbol mb_symbols_303[] = {
 {"mulib_dvi_write_rules",0,2615},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_303[] = {
+static const mb_symbol mb_symbols_304[] = {
 {"mulib_dvifont_view_t",1,4128},
 {"mulib_dvifont_open",0,2616},
 {"mulib_dvifont_read_u16",0,2617},
 {"mulib_dvifont_read_u32",0,2618},
 {"mulib_dvifont_slice",0,2619},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_304[] = {
+static const mb_symbol mb_symbols_305[] = {
 {"mulib_dviread_view_t",1,4135},
 {"mulib_dviread_open",0,2620},
 {"mulib_dviread_read_u16",0,2621},
 {"mulib_dviread_read_u32",0,2622},
 {"mulib_dviread_slice",0,2623},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_305[] = {
+static const mb_symbol mb_symbols_306[] = {
 {"mulib_dyegram_svg",0,2432},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_306[] = {
+static const mb_symbol mb_symbols_307[] = {
 {"MULIB_DYNBOX_VOID",2,1549},
 {"MULIB_DYNBOX_SINT8",2,1550},
 {"MULIB_DYNBOX_UINT8",2,1551},
@@ -130640,7 +130656,7 @@ static const mb_symbol mb_symbols_306[] = {
 {"MULIB_DYNBOX_MAX_FIELDS",2,2740},
 {"MULIB_DYNBOX_MAX_BYTES",2,2741},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_307[] = {
+static const mb_symbol mb_symbols_308[] = {
 {"mulib_dyncall_i64_0_fn",1,628},
 {"mulib_dyncall_i64_1_fn",1,630},
 {"mulib_dyncall_i64_2_fn",1,632},
@@ -130654,7 +130670,7 @@ static const mb_symbol mb_symbols_307[] = {
 {"mulib_dyncall_f64_1",0,344},
 {"mulib_dyncall_f64_2",0,345},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_308[] = {
+static const mb_symbol mb_symbols_309[] = {
 {"mulib_dynload_t",1,410},
 {"MULIB_DYNLOAD_OK",2,97},
 {"MULIB_DYNLOAD_EINVAL",2,98},
@@ -130674,34 +130690,34 @@ static const mb_symbol mb_symbols_308[] = {
 {"mulib_dynload_native_name",0,252},
 {"mulib_dynload_close",0,253},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_309[] = {
+static const mb_symbol mb_symbols_310[] = {
 {"mulib_ebpf_instruction_t",1,4171},
 {"mulib_ebpf_validate",0,2635},
 {"mulib_ebpf_run",0,2636},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_310[] = {
+static const mb_symbol mb_symbols_311[] = {
 {"mulib_ecad_connect_count_nodes",0,2639},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_311[] = {
+static const mb_symbol mb_symbols_312[] = {
 {"mulib_ecad_erc_result_t",1,4184},
 {"mulib_ecad_erc_run",0,2640},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_312[] = {
+static const mb_symbol mb_symbols_313[] = {
 {"mulib_ecad_netlist_write",0,2641},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_313[] = {
+static const mb_symbol mb_symbols_314[] = {
 {"mulib_ecad_pcb_link_t",1,4188},
 {"mulib_ecad_pcb_sync_t",1,4189},
 {"mulib_ecad_pcb_sync_add",0,2642},
 {"mulib_ecad_pcb_sync_lookup",0,2643},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_314[] = {
+static const mb_symbol mb_symbols_315[] = {
 {"mulib_ecad_component_t",1,4175},
 {"mulib_ecad_schematic_t",1,4176},
 {"mulib_ecad_schematic_add",0,2637},
 {"mulib_ecad_schematic_valid",0,2638},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_315[] = {
+static const mb_symbol mb_symbols_316[] = {
 {"MULIB_ECAD_PASSIVE",2,1586},
 {"MULIB_ECAD_INPUT",2,1587},
 {"MULIB_ECAD_OUTPUT",2,1588},
@@ -130712,7 +130728,7 @@ static const mb_symbol mb_symbols_315[] = {
 {"mulib_ecad_symbol_t",1,4197},
 {"mulib_ecad_symbol_pin",0,2644},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_316[] = {
+static const mb_symbol mb_symbols_317[] = {
 {"MULIB_EDA_ATTR_INTEGER",2,1591},
 {"MULIB_EDA_ATTR_REAL",2,1592},
 {"MULIB_EDA_ATTR_STRING",2,1593},
@@ -130724,7 +130740,7 @@ static const mb_symbol mb_symbols_316[] = {
 {"mulib_eda_attrs_free",0,2647},
 {"mulib_eda_attrs_remove",0,2648},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_317[] = {
+static const mb_symbol mb_symbols_318[] = {
 {"MULIB_EDA_EQ",2,1594},
 {"MULIB_EDA_LE",2,1595},
 {"MULIB_EDA_GE",2,1596},
@@ -130732,7 +130748,7 @@ static const mb_symbol mb_symbols_317[] = {
 {"mulib_eda_constraint_t",1,4214},
 {"mulib_eda_constraint_check",0,2649},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_318[] = {
+static const mb_symbol mb_symbols_319[] = {
 {"mulib_eda_db_record_t",1,4216},
 {"mulib_eda_design_db_t",1,4217},
 {"mulib_eda_db_put",0,2650},
@@ -130741,14 +130757,14 @@ static const mb_symbol mb_symbols_318[] = {
 {"mulib_eda_db_free",0,2653},
 {"mulib_eda_db_clone",0,2654},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_319[] = {
+static const mb_symbol mb_symbols_320[] = {
 {"mulib_eda_hnode_t",1,4226},
 {"mulib_eda_hierarchy_t",1,4227},
 {"mulib_eda_hierarchy_add",0,2655},
 {"mulib_eda_hierarchy_path",0,2656},
 {"mulib_eda_hierarchy_free",0,2657},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_320[] = {
+static const mb_symbol mb_symbols_321[] = {
 {"mulib_eda_id_t",1,8},
 {"mulib_eda_id_pool_t",1,4234},
 {"mulib_eda_id_pool_init",0,2658},
@@ -130758,7 +130774,7 @@ static const mb_symbol mb_symbols_320[] = {
 {"mulib_eda_id_remove",0,2662},
 {"mulib_eda_id_index",0,2663},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_321[] = {
+static const mb_symbol mb_symbols_322[] = {
 {"mulib_eda_incremental_t",1,4242},
 {"mulib_eda_incremental_init",0,2664},
 {"mulib_eda_incremental_depend",0,2665},
@@ -130766,14 +130782,14 @@ static const mb_symbol mb_symbols_321[] = {
 {"mulib_eda_incremental_clear",0,2667},
 {"mulib_eda_incremental_free",0,2668},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_322[] = {
+static const mb_symbol mb_symbols_323[] = {
 {"mulib_eda_partdef_t",1,4247},
 {"mulib_eda_library_t",1,4249},
 {"mulib_eda_library_register",0,2669},
 {"mulib_eda_library_find",0,2670},
 {"mulib_eda_library_free",0,2671},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_323[] = {
+static const mb_symbol mb_symbols_324[] = {
 {"mulib_eda_terminal_t",1,4257},
 {"mulib_eda_netgraph_t",1,4258},
 {"mulib_eda_netgraph_net",0,2672},
@@ -130783,22 +130799,22 @@ static const mb_symbol mb_symbols_323[] = {
 {"mulib_eda_netgraph_free",0,2676},
 {"mulib_eda_netgraph_merge",0,2677},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_324[] = {
+static const mb_symbol mb_symbols_325[] = {
 {"mulib_eda_object_t",1,4267},
 {"mulib_eda_object_init",0,2678},
 {"mulib_eda_object_rename",0,2679},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_325[] = {
+static const mb_symbol mb_symbols_326[] = {
 {"mulib_eda_project_t",1,4271},
 {"mulib_eda_project_init",0,2680},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_326[] = {
+static const mb_symbol mb_symbols_327[] = {
 {"mulib_eda_quantity_t",1,4284},
 {"mulib_eda_quantity_add",0,2685},
 {"mulib_eda_quantity_mul",0,2686},
 {"mulib_eda_quantity_div",0,2687},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_327[] = {
+static const mb_symbol mb_symbols_328[] = {
 {"MULIB_EDA_OK",2,1597},
 {"MULIB_EDA_INVALID",2,1598},
 {"MULIB_EDA_NOMEM",2,1599},
@@ -130812,20 +130828,20 @@ static const mb_symbol mb_symbols_327[] = {
 {"mulib_eda_code_name",0,2688},
 {"mulib_eda_diagnostic_set",0,2689},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_328[] = {
+static const mb_symbol mb_symbols_329[] = {
 {"mulib_eda_transaction_t",1,4292},
 {"mulib_eda_transaction_begin",0,2690},
 {"mulib_eda_transaction_commit",0,2691},
 {"mulib_eda_transaction_rollback",0,2692},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_329[] = {
+static const mb_symbol mb_symbols_330[] = {
 {"mulib_eda_undo_entry_t",1,4297},
 {"mulib_eda_undo_t",1,4298},
 {"mulib_eda_undo_apply",0,2693},
 {"mulib_eda_undo_back",0,2694},
 {"mulib_eda_undo_forward",0,2695},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_330[] = {
+static const mb_symbol mb_symbols_331[] = {
 {"mulib_eda_dimension_t",1,4275},
 {"mulib_eda_unit_t",1,4277},
 {"mulib_eda_unit_lookup",0,2681},
@@ -130833,7 +130849,7 @@ static const mb_symbol mb_symbols_330[] = {
 {"mulib_eda_convert",0,2683},
 {"mulib_eda_dimension_equal",0,2684},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_331[] = {
+static const mb_symbol mb_symbols_332[] = {
 {"mulib_edbuf_t",1,3890},
 {"mulib_edbuf_mark_t",1,3891},
 {"MULIB_EDBUF_GAP",2,1447},
@@ -130867,11 +130883,11 @@ static const mb_symbol mb_symbols_331[] = {
 {"mulib_edbuf_mark_destroy",0,2451},
 {"mulib_edbuf_mark_offset",0,2452},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_332[] = {
+static const mb_symbol mb_symbols_333[] = {
 {"mulib_edit_distance",0,2696},
 {"mulib_edit_distance_n",0,2697},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_333[] = {
+static const mb_symbol mb_symbols_334[] = {
 {"MULIB_EFI_APPLICATION",2,431},
 {"MULIB_EFI_BOOT_DRIVER",2,432},
 {"MULIB_EFI_RUNTIME_DRIVER",2,433},
@@ -130881,7 +130897,7 @@ static const mb_symbol mb_symbols_333[] = {
 {"mulib_efi_certificate",0,795},
 {"mulib_efi_boot_name",0,796},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_334[] = {
+static const mb_symbol mb_symbols_335[] = {
 {"mulib_egraph_t",1,646},
 {"mulib_egraph_node_t",1,647},
 {"MULIB_EGRAPH_OK",2,284},
@@ -130909,7 +130925,7 @@ static const mb_symbol mb_symbols_334[] = {
 {"mulib_egraph_status_string",0,357},
 {"MULIB_EGRAPH_NONE",2,2648},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_335[] = {
+static const mb_symbol mb_symbols_336[] = {
 {"MULIB_ELF_OK",2,934},
 {"MULIB_ELF_EINVAL",2,935},
 {"MULIB_ELF_EFORMAT",2,936},
@@ -130930,10 +130946,10 @@ static const mb_symbol mb_symbols_335[] = {
 {"mulib_elf_symbol",0,1702},
 {"mulib_elf_symbol_name",0,1703},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_336[] = {
+static const mb_symbol mb_symbols_337[] = {
 {"mulib_elf_objdump",0,2698},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_337[] = {
+static const mb_symbol mb_symbols_338[] = {
 {"mulib_elfbuilder_t",1,2367},
 {"mulib_elfbuilder_add",0,2699},
 {"mulib_elfbuilder_finish",0,2700},
@@ -130951,11 +130967,11 @@ static const mb_symbol mb_symbols_337[] = {
 {"mulib_elfbuilder_abi_info",0,2702},
 {"mulib_elfbuilder_finish_abi",0,2703},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_338[] = {
+static const mb_symbol mb_symbols_339[] = {
 {"mulib_elfutils_section",0,2704},
 {"mulib_elfutils_symbol",0,2705},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_339[] = {
+static const mb_symbol mb_symbols_340[] = {
 {"MULIB_ELVI_ANCHOR_CHILD",2,1624},
 {"MULIB_ELVI_ANCHOR_PARENT",2,1625},
 {"MULIB_ELVI_ANCHOR_ANY",2,1626},
@@ -130979,7 +130995,7 @@ static const mb_symbol mb_symbols_339[] = {
 {"mulib_elvi_scrape_https_t",1,4354},
 {"mulib_elvi_scrape_https_transport",0,2722},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_340[] = {
+static const mb_symbol mb_symbols_341[] = {
 {"mulib_embeddingsdb_entry_t",1,4359},
 {"mulib_embeddingsdb_t",1,4360},
 {"mulib_embeddingsdb_put",0,2723},
@@ -130993,7 +131009,7 @@ static const mb_symbol mb_symbols_340[] = {
 {"mulib_embeddings_hit_t",1,4369},
 {"mulib_embeddingsdb_knn",0,2727},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_341[] = {
+static const mb_symbol mb_symbols_342[] = {
 {"MULIB_EMITTER_LITTLE",2,43},
 {"MULIB_EMITTER_BIG",2,44},
 {"mulib_emitter_order",1,170},
@@ -131010,13 +131026,13 @@ static const mb_symbol mb_symbols_341[] = {
 {"mulib_emitter_patch",0,83},
 {"mulib_emitter_patch_uint",0,84},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_342[] = {
+static const mb_symbol mb_symbols_343[] = {
 {"mulib_encoding_uvarint",0,2728},
 {"mulib_encoding_read_uvarint",0,2729},
 {"mulib_encoding_zigzag",0,2730},
 {"mulib_encoding_unzigzag",0,2731},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_343[] = {
+static const mb_symbol mb_symbols_344[] = {
 {"mulib_endian_load_le32",0,695},
 {"mulib_endian_load_be32",0,696},
 {"mulib_endian_store_le32",0,697},
@@ -131026,16 +131042,16 @@ static const mb_symbol mb_symbols_343[] = {
 {"mulib_endian_store_le64",0,701},
 {"mulib_endian_store_be64",0,702},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_344[] = {
+static const mb_symbol mb_symbols_345[] = {
 {"mulib_entropy",0,124},
 {"mulib_secret_wipe",0,125},
 {"mulib_secret_equal",0,126},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_345[] = {
+static const mb_symbol mb_symbols_346[] = {
 {"mulib_env_present",0,2732},
 {"mulib_env_copy",0,2733},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_346[] = {
+static const mb_symbol mb_symbols_347[] = {
 {"MULIB_EPOLL_READ",2,1635},
 {"MULIB_EPOLL_WRITE",2,1636},
 {"MULIB_EPOLL_PRIORITY",2,1637},
@@ -131053,7 +131069,7 @@ static const mb_symbol mb_symbols_346[] = {
 {"mulib_epoll_wait",0,2738},
 {"mulib_epoll_close",0,2739},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_347[] = {
+static const mb_symbol mb_symbols_348[] = {
 {"MULIB_EPUB_OK",2,1652},
 {"MULIB_EPUB_EINVAL",2,1653},
 {"MULIB_EPUB_EFORMAT",2,1654},
@@ -131073,17 +131089,17 @@ static const mb_symbol mb_symbols_347[] = {
 {"mulib_epub_docir_chapter_t",1,4414},
 {"mulib_epub_write_docir",0,2762},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_348[] = {
+static const mb_symbol mb_symbols_349[] = {
 {"mulib_epubcheck_view_t",1,4417},
 {"mulib_epubcheck_open",0,2763},
 {"mulib_epubcheck_read_u16",0,2764},
 {"mulib_epubcheck_read_u32",0,2765},
 {"mulib_epubcheck_slice",0,2766},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_349[] = {
+static const mb_symbol mb_symbols_350[] = {
 {"mulib_epubwriter_book",0,2767},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_350[] = {
+static const mb_symbol mb_symbols_351[] = {
 {"mulib_eqn_t",1,4425},
 {"MULIB_EQN_NUMBER",2,1659},
 {"MULIB_EQN_IDENTIFIER",2,1660},
@@ -131105,43 +131121,43 @@ static const mb_symbol mb_symbols_350[] = {
 {"mulib_eqn_resolve_fn",1,4438},
 {"mulib_eqn_eval",0,2777},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_351[] = {
+static const mb_symbol mb_symbols_352[] = {
 {"mulib_escape_c",0,2778},
 {"mulib_escape_unc",0,2779},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_352[] = {
+static const mb_symbol mb_symbols_353[] = {
 {"mulib_ethtool_features_block_t",1,4441},
 {"mulib_ethtool_features_get",0,2780},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_353[] = {
+static const mb_symbol mb_symbols_354[] = {
 {"mulib_ethtool_module_info",0,2781},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_354[] = {
+static const mb_symbol mb_symbols_355[] = {
 {"mulib_ethtool_netlink_family",0,2782},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_355[] = {
+static const mb_symbol mb_symbols_356[] = {
 {"mulib_ethtool_stats_sysfs",0,2783},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_356[] = {
+static const mb_symbol mb_symbols_357[] = {
 {"mulib_etl_transform_fn",1,4454},
 {"mulib_etl_transform_apply",0,2788},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_357[] = {
+static const mb_symbol mb_symbols_358[] = {
 {"mulib_euclidean_distance",0,2789},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_358[] = {
+static const mb_symbol mb_symbols_359[] = {
 {"mulib_eventfd_create",0,2790},
 {"mulib_eventfd_read",0,2791},
 {"mulib_eventfd_write",0,2792},
 {"mulib_eventfd_close",0,2793},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_359[] = {
+static const mb_symbol mb_symbols_360[] = {
 {"mulib_evtlistener_event_fn",1,4468},
 {"mulib_evtlistener_t",1,4471},
 {"mulib_evtlistener_push",0,2797},
 {"mulib_evtlistener_listen",0,2798},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_360[] = {
+static const mb_symbol mb_symbols_361[] = {
 {"mulib_evtloop_fn",1,725},
 {"mulib_evtloop_task_t",1,4475},
 {"mulib_evtloop_t",1,4476},
@@ -131150,7 +131166,7 @@ static const mb_symbol mb_symbols_360[] = {
 {"mulib_evtloop_run",0,2801},
 {"mulib_evtloop_free",0,2802},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_361[] = {
+static const mb_symbol mb_symbols_362[] = {
 {"MULIB_EVENT_ENTER",2,1666},
 {"MULIB_EVENT_LEAVE",2,1667},
 {"mulib_event_kind_t",1,4460},
@@ -131160,7 +131176,7 @@ static const mb_symbol mb_symbols_361[] = {
 {"mulib_evtstream_next",0,2795},
 {"mulib_evtstream_next_bounded",0,2796},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_362[] = {
+static const mb_symbol mb_symbols_363[] = {
 {"MULIB_EXEC_AUTO",2,401},
 {"MULIB_EXEC_FORK",2,402},
 {"MULIB_EXEC_SPAWN",2,403},
@@ -131185,7 +131201,7 @@ static const mb_symbol mb_symbols_362[] = {
 {"mulib_exec_run_text",0,718},
 {"mulib_exec_bind",0,719},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_363[] = {
+static const mb_symbol mb_symbols_364[] = {
 {"MULIB_EZJNI_OK",2,81},
 {"MULIB_EZJNI_INVALID",2,82},
 {"MULIB_EZJNI_UNSUPPORTED",2,83},
@@ -131219,7 +131235,7 @@ static const mb_symbol mb_symbols_363[] = {
 {"mulib_ezjni_static_int",0,228},
 {"mulib_ezjni_register",0,229},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_364[] = {
+static const mb_symbol mb_symbols_365[] = {
 {"MULIB_EZNDK_OK",2,89},
 {"MULIB_EZNDK_INVALID",2,90},
 {"MULIB_EZNDK_UNSUPPORTED",2,91},
@@ -131246,7 +131262,7 @@ static const mb_symbol mb_symbols_364[] = {
 {"mulib_ezndk_looper_poll",0,245},
 {"mulib_ezndk_log",0,246},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_365[] = {
+static const mb_symbol mb_symbols_366[] = {
 {"mulib_fca_t",1,2238},
 {"mulib_fca_init",0,1337},
 {"mulib_fca_set",0,1338},
@@ -131254,20 +131270,20 @@ static const mb_symbol mb_symbols_365[] = {
 {"mulib_fca_intent",0,1340},
 {"mulib_fca_closure",0,1341},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_366[] = {
+static const mb_symbol mb_symbols_367[] = {
 {"mulib_fetch_transport_fn",1,1480},
 {"mulib_fetch_client_t",1,1482},
 {"mulib_fetch_get",0,861},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_367[] = {
+static const mb_symbol mb_symbols_368[] = {
 {"mulib_fetch_policy_t",1,1477},
 {"mulib_fetch_policy_check",0,860},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_368[] = {
+static const mb_symbol mb_symbols_369[] = {
 {"mulib_fft",0,2803},
 {"mulib_fft_transform",0,2804},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_369[] = {
+static const mb_symbol mb_symbols_370[] = {
 {"mulib_fiber_t",1,2109},
 {"mulib_fiber_scheduler_t",1,2110},
 {"mulib_fiber_fn",1,725},
@@ -131288,15 +131304,15 @@ static const mb_symbol mb_symbols_369[] = {
 {"mulib_fiber_clear_wake",0,1240},
 {"mulib_fiber_sleep",0,1241},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_370[] = {
+static const mb_symbol mb_symbols_371[] = {
 {"mulib_field_poisson_1d",0,2805},
 {"mulib_field_poisson_field_1d",0,2806},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_371[] = {
+static const mb_symbol mb_symbols_372[] = {
 {"mulib_field_thermal_1d",0,2807},
 {"mulib_field_thermal_flux_1d",0,2808},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_372[] = {
+static const mb_symbol mb_symbols_373[] = {
 {"mulib_figurelayout_item_t",1,4487},
 {"mulib_figurelayout_list_t",1,4488},
 {"mulib_figurelayout_push",0,2809},
@@ -131304,7 +131320,7 @@ static const mb_symbol mb_symbols_372[] = {
 {"mulib_figurelayout_bounds",0,2811},
 {"mulib_figurelayout_destroy",0,2812},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_373[] = {
+static const mb_symbol mb_symbols_374[] = {
 {"MULIB_FILECTL_OK",2,1173},
 {"MULIB_FILECTL_BUSY",2,1174},
 {"MULIB_FILECTL_EINVAL",2,1175},
@@ -131314,7 +131330,7 @@ static const mb_symbol mb_symbols_373[] = {
 {"mulib_filectl_cloexec",0,2082},
 {"mulib_filectl_lock",0,2083},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_374[] = {
+static const mb_symbol mb_symbols_375[] = {
 {"MULIB_FILESERVER_FOUND",2,1668},
 {"MULIB_FILESERVER_NOT_FOUND",2,1669},
 {"MULIB_FILESERVER_FORBIDDEN",2,1670},
@@ -131327,14 +131343,14 @@ static const mb_symbol mb_symbols_374[] = {
 {"mulib_fileserver_path",0,2818},
 {"mulib_fileserver_serve",0,2819},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_375[] = {
+static const mb_symbol mb_symbols_376[] = {
 {"mulib_flatbuffers_table_t",1,4515},
 {"mulib_flatbuffers_table",0,2820},
 {"mulib_flatbuffers_root",0,2821},
 {"mulib_flatbuffers_uint",0,2822},
 {"mulib_flatbuffers_string",0,2823},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_376[] = {
+static const mb_symbol mb_symbols_377[] = {
 {"mulib_floatgraphics_item_t",1,4522},
 {"mulib_floatgraphics_list_t",1,4523},
 {"mulib_floatgraphics_push",0,2824},
@@ -131342,19 +131358,19 @@ static const mb_symbol mb_symbols_376[] = {
 {"mulib_floatgraphics_bounds",0,2826},
 {"mulib_floatgraphics_destroy",0,2827},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_377[] = {
+static const mb_symbol mb_symbols_378[] = {
 {"mulib_flow_graph_t",1,4531},
 {"mulib_flow_graph_add",0,2828},
 {"mulib_flow_graph_depend",0,2829},
 {"mulib_flow_graph_toposort",0,2830},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_378[] = {
+static const mb_symbol mb_symbols_379[] = {
 {"mulib_fmt_aiger_write_ascii",0,2835},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_379[] = {
+static const mb_symbol mb_symbols_380[] = {
 {"mulib_fmt_sv_emit",0,2839},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_380[] = {
+static const mb_symbol mb_symbols_381[] = {
 {"mulib_fontcatalog_entry_t",1,4562},
 {"mulib_fontcatalog_table_t",1,4563},
 {"mulib_fontcatalog_destroy",0,2840},
@@ -131362,7 +131378,7 @@ static const mb_symbol mb_symbols_380[] = {
 {"mulib_fontcatalog_get",0,2842},
 {"mulib_fontcatalog_erase",0,2843},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_381[] = {
+static const mb_symbol mb_symbols_382[] = {
 {"mulib_fontcmap_map_t",1,4571},
 {"mulib_fontcmap_open_format12",0,2844},
 {"mulib_fontcmap_open_subtable",0,2845},
@@ -131370,7 +131386,7 @@ static const mb_symbol mb_symbols_381[] = {
 {"mulib_fontcmap_glyph",0,2847},
 {"mulib_fontcmap_variation",0,2848},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_382[] = {
+static const mb_symbol mb_symbols_383[] = {
 {"mulib_fontdraw_t",1,4577},
 {"mulib_fontdraw_bitmap_t",1,4578},
 {"mulib_fontdraw_point_t",1,4579},
@@ -131388,14 +131404,14 @@ static const mb_symbol mb_symbols_382[] = {
 {"mulib_fontdraw_metrics_t",1,4596},
 {"mulib_fontdraw_metrics",0,2859},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_383[] = {
+static const mb_symbol mb_symbols_384[] = {
 {"mulib_fontembed_view_t",1,4599},
 {"mulib_fontembed_open",0,2860},
 {"mulib_fontembed_read_u16",0,2861},
 {"mulib_fontembed_read_u32",0,2862},
 {"mulib_fontembed_slice",0,2863},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_384[] = {
+static const mb_symbol mb_symbols_385[] = {
 {"mulib_fontfallback_entry_t",1,4606},
 {"mulib_fontfallback_table_t",1,4607},
 {"mulib_fontfallback_destroy",0,2864},
@@ -131403,7 +131419,7 @@ static const mb_symbol mb_symbols_384[] = {
 {"mulib_fontfallback_get",0,2866},
 {"mulib_fontfallback_erase",0,2867},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_385[] = {
+static const mb_symbol mb_symbols_386[] = {
 {"mulib_fontgdef_view_t",1,4615},
 {"mulib_fontgdef_open",0,2868},
 {"mulib_fontgdef_read_u16",0,2869},
@@ -131411,7 +131427,7 @@ static const mb_symbol mb_symbols_385[] = {
 {"mulib_fontgdef_slice",0,2871},
 {"mulib_fontgdef_glyph_class",0,2872},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_386[] = {
+static const mb_symbol mb_symbols_387[] = {
 {"mulib_fontgpos_view_t",1,4623},
 {"mulib_fontgpos_open",0,2873},
 {"mulib_fontgpos_read_u16",0,2874},
@@ -131420,7 +131436,7 @@ static const mb_symbol mb_symbols_386[] = {
 {"mulib_fontgpos_adjustment_t",1,4630},
 {"mulib_fontgpos_pair",0,2877},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_387[] = {
+static const mb_symbol mb_symbols_388[] = {
 {"mulib_fontgsub_view_t",1,4633},
 {"mulib_fontgsub_open",0,2878},
 {"mulib_fontgsub_read_u16",0,2879},
@@ -131428,21 +131444,21 @@ static const mb_symbol mb_symbols_387[] = {
 {"mulib_fontgsub_slice",0,2881},
 {"mulib_fontgsub_substitute",0,2882},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_388[] = {
+static const mb_symbol mb_symbols_389[] = {
 {"mulib_fontkern_pair",0,2883},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_389[] = {
+static const mb_symbol mb_symbols_390[] = {
 {"mulib_fontmetrics_advance",0,2884},
 {"mulib_fontmetrics_signed",0,2885},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_390[] = {
+static const mb_symbol mb_symbols_391[] = {
 {"mulib_fontraster_view_t",1,4645},
 {"mulib_fontraster_open",0,2886},
 {"mulib_fontraster_read_u16",0,2887},
 {"mulib_fontraster_read_u32",0,2888},
 {"mulib_fontraster_slice",0,2889},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_391[] = {
+static const mb_symbol mb_symbols_392[] = {
 {"mulib_fontshape_t",1,4652},
 {"mulib_fontshape_glyph_t",1,4653},
 {"mulib_fontshape_run_t",1,4654},
@@ -131464,7 +131480,7 @@ static const mb_symbol mb_symbols_391[] = {
 {"mulib_fontshape_carets",0,2902},
 {"mulib_fontshape_carets_destroy",0,2903},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_392[] = {
+static const mb_symbol mb_symbols_393[] = {
 {"mulib_fontsubset_item_t",1,4680},
 {"mulib_fontsubset_list_t",1,4681},
 {"mulib_fontsubset_push",0,2904},
@@ -131472,17 +131488,17 @@ static const mb_symbol mb_symbols_392[] = {
 {"mulib_fontsubset_bounds",0,2906},
 {"mulib_fontsubset_destroy",0,2907},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_393[] = {
+static const mb_symbol mb_symbols_394[] = {
 {"mulib_fontvar_view_t",1,4689},
 {"mulib_fontvar_open",0,2908},
 {"mulib_fontvar_read_u16",0,2909},
 {"mulib_fontvar_read_u32",0,2910},
 {"mulib_fontvar_slice",0,2911},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_394[] = {
+static const mb_symbol mb_symbols_395[] = {
 {"mulib_formal_truth_equivalent",0,2917},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_395[] = {
+static const mb_symbol mb_symbols_396[] = {
 {"mulib_formal_clause_t",1,4704},
 {"mulib_formal_cnf_t",1,4706},
 {"mulib_formal_cnf_add",0,2918},
@@ -131492,46 +131508,46 @@ static const mb_symbol mb_symbols_395[] = {
 {"MULIB_FORMAL_MAX_CLAUSES",2,2743},
 {"MULIB_FORMAL_MAX_LITERALS",2,2744},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_396[] = {
+static const mb_symbol mb_symbols_397[] = {
 {"MULIB_FORMAL_SAT_UNKNOWN",2,1682},
 {"MULIB_FORMAL_SAT_UNSAT",2,1683},
 {"MULIB_FORMAL_SAT_SAT",2,1684},
 {"mulib_formal_sat_result_t",1,4714},
 {"mulib_formal_sat_solve",0,2921},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_397[] = {
+static const mb_symbol mb_symbols_398[] = {
 {"mulib_fpga_lut_t",1,4717},
 {"mulib_fpga_lut_eval",0,2922},
 {"mulib_fpga_lut_from_truth",0,2923},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_398[] = {
+static const mb_symbol mb_symbols_399[] = {
 {"mulib_fpga_grid_t",1,4721},
 {"mulib_fpga_route_bfs",0,2924},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_399[] = {
+static const mb_symbol mb_symbols_400[] = {
 {"mulib_fraction_t",1,2202},
 {"mulib_fraction_make",0,1315},
 {"mulib_fraction_add",0,1316},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_400[] = {
+static const mb_symbol mb_symbols_401[] = {
 {"mulib_frame_slot_t",1,4723},
 {"mulib_frame_layout_t",1,4724},
 {"mulib_frame_layout_add",0,2925},
 {"mulib_frame_layout_finish",0,2926},
 {"mulib_frame_layout_free",0,2927},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_401[] = {
+static const mb_symbol mb_symbols_402[] = {
 {"mulib_framebuffer_t",1,4731},
 {"mulib_framebuffer_valid",0,2928},
 {"mulib_framebuffer_pattern",0,2929},
 {"mulib_framebuffer_verify",0,2930},
 {"mulib_framebuffer_rgb",0,2931},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_402[] = {
+static const mb_symbol mb_symbols_403[] = {
 {"mulib_fs_read",0,2932},
 {"mulib_fs_write",0,2933},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_403[] = {
+static const mb_symbol mb_symbols_404[] = {
 {"MULIB_FST_OK",2,1224},
 {"MULIB_FST_NOMATCH",2,1225},
 {"MULIB_FST_INVALID",2,1226},
@@ -131559,7 +131575,7 @@ static const mb_symbol mb_symbols_403[] = {
 {"mulib_fst_deserialize",0,2194},
 {"MULIB_FST_NONE",2,2698},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_404[] = {
+static const mb_symbol mb_symbols_405[] = {
 {"MULIB_FSWATCH_MODIFY",2,1685},
 {"MULIB_FSWATCH_ATTRIB",2,1686},
 {"MULIB_FSWATCH_CLOSE_WRITE",2,1687},
@@ -131599,7 +131615,7 @@ static const mb_symbol mb_symbols_404[] = {
 {"mulib_fswatch_vfs_scan",0,2949},
 {"mulib_fswatch_launch",0,2950},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_405[] = {
+static const mb_symbol mb_symbols_406[] = {
 {"MULIB_FTP_USER",2,1699},
 {"MULIB_FTP_PASS",2,1700},
 {"MULIB_FTP_NOOP",2,1701},
@@ -131616,7 +131632,7 @@ static const mb_symbol mb_symbols_405[] = {
 {"mulib_ftpclient_feed",0,2952},
 {"mulib_ftpclient_request",0,2953},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_406[] = {
+static const mb_symbol mb_symbols_407[] = {
 {"mulib_ftpserver_io",1,4773},
 {"mulib_ftpserver",1,4780},
 {"mulib_ftpserver_init",0,2954},
@@ -131625,7 +131641,7 @@ static const mb_symbol mb_symbols_406[] = {
 {"mulib_ftpserver_read",0,2957},
 {"mulib_ftpserver_finish",0,2958},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_407[] = {
+static const mb_symbol mb_symbols_408[] = {
 {"MULIB_FUSE_GETATTR",2,976},
 {"MULIB_FUSE_READ",2,977},
 {"MULIB_FUSE_WRITE",2,978},
@@ -131641,15 +131657,15 @@ static const mb_symbol mb_symbols_407[] = {
 {"mulib_fuse_session_dispatch",0,1776},
 {"mulib_fuse_session_close",0,1777},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_408[] = {
+static const mb_symbol mb_symbols_409[] = {
 {"mulib_fuzzyquery_distance",0,2959},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_409[] = {
+static const mb_symbol mb_symbols_410[] = {
 {"mulib_galois_objects",0,2960},
 {"mulib_galois_attributes",0,2961},
 {"mulib_galois_object_closure",0,2962},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_410[] = {
+static const mb_symbol mb_symbols_411[] = {
 {"mulib_gc_object_t",1,4788},
 {"mulib_gc_heap_t",1,4791},
 {"mulib_gc_alloc",0,2963},
@@ -131657,14 +131673,14 @@ static const mb_symbol mb_symbols_410[] = {
 {"mulib_gc_collect",0,2965},
 {"mulib_gc_heap_free",0,2966},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_411[] = {
+static const mb_symbol mb_symbols_412[] = {
 {"mulib_gc_roots_t",1,4799},
 {"mulib_gc_roots_add",0,2967},
 {"mulib_gc_roots_remove",0,2968},
 {"mulib_gc_roots_collect",0,2969},
 {"mulib_gc_roots_free",0,2970},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_412[] = {
+static const mb_symbol mb_symbols_413[] = {
 {"mulib_geoindex_point_t",1,4805},
 {"mulib_geoindex_t",1,4806},
 {"mulib_geoindex_add",0,2971},
@@ -131672,13 +131688,13 @@ static const mb_symbol mb_symbols_412[] = {
 {"mulib_geoindex_radius",0,2973},
 {"mulib_geoindex_free",0,2974},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_413[] = {
+static const mb_symbol mb_symbols_414[] = {
 {"mulib_geometry_point_t",1,15},
 {"mulib_geometry_distance",0,0},
 {"mulib_geometry_cross",0,1},
 {"mulib_geometry_polygon_area",0,2},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_414[] = {
+static const mb_symbol mb_symbols_415[] = {
 {"MULIB_GEOSOLVE_VALUE",2,1709},
 {"MULIB_GEOSOLVE_EQUAL",2,1710},
 {"MULIB_GEOSOLVE_DISTANCE2",2,1711},
@@ -131742,7 +131758,7 @@ static const mb_symbol mb_symbols_414[] = {
 {"MULIB_GEOSOLVE_MAX_RESIDUALS",2,2746},
 {"MULIB_GEOSOLVE_MAX_VARIABLES",2,2747},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_415[] = {
+static const mb_symbol mb_symbols_416[] = {
 {"MULIB_GETADDR_OK",2,1745},
 {"MULIB_GETADDR_INVALID",2,1746},
 {"MULIB_GETADDR_LIMIT",2,1747},
@@ -131755,7 +131771,7 @@ static const mb_symbol mb_symbols_415[] = {
 {"mulib_getaddr_format",0,2988},
 {"MULIB_GETADDR_HAS_SYSTEM",2,2748},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_416[] = {
+static const mb_symbol mb_symbols_417[] = {
 {"mulib_git_oid_t",1,1212},
 {"mulib_git_sha1",0,720},
 {"mulib_git_object_id",0,721},
@@ -131766,10 +131782,10 @@ static const mb_symbol mb_symbols_416[] = {
 {"mulib_git_run",0,726},
 {"mulib_git_bind",0,727},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_417[] = {
+static const mb_symbol mb_symbols_418[] = {
 {"mulib_glob_match",0,2934},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_418[] = {
+static const mb_symbol mb_symbols_419[] = {
 {"mulib_glossary_entry_t",1,4850},
 {"mulib_glossary_table_t",1,4851},
 {"mulib_glossary_destroy",0,2989},
@@ -131777,7 +131793,7 @@ static const mb_symbol mb_symbols_418[] = {
 {"mulib_glossary_get",0,2991},
 {"mulib_glossary_erase",0,2992},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_419[] = {
+static const mb_symbol mb_symbols_420[] = {
 {"MULIB_GLR_OK",2,1763},
 {"MULIB_GLR_SYNTAX",2,1764},
 {"MULIB_GLR_INVALID",2,1765},
@@ -131810,7 +131826,7 @@ static const mb_symbol mb_symbols_419[] = {
 {"mulib_glr_status_string",0,3028},
 {"MULIB_GLR_NONE",2,2751},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_420[] = {
+static const mb_symbol mb_symbols_421[] = {
 {"mulib_glx_t",1,4917},
 {"mulib_glx_vertex_t",1,4918},
 {"mulib_glx_fragment_fn",1,4919},
@@ -131833,7 +131849,7 @@ static const mb_symbol mb_symbols_420[] = {
 {"mulib_glx_blit",0,3045},
 {"mulib_glx_rgba",0,3046},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_421[] = {
+static const mb_symbol mb_symbols_422[] = {
 {"mulib_glyph_font_t",1,5016},
 {"mulib_glyph_t",1,5017},
 {"mulib_glyph_run_t",1,5018},
@@ -131846,14 +131862,14 @@ static const mb_symbol mb_symbols_421[] = {
 {"mulib_glyph_run_destroy",0,3092},
 {"mulib_glyph_render",0,3093},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_422[] = {
+static const mb_symbol mb_symbols_423[] = {
 {"mulib_gpu_t",1,181},
 {"mulib_gpu_init",0,204},
 {"mulib_gpu_parse",0,205},
 {"mulib_gpu_free",0,206},
 {"mulib_gpu_emit_text",0,207},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_423[] = {
+static const mb_symbol mb_symbols_424[] = {
 {"mulib_gputest_backend_t",1,5030},
 {"mulib_gputest_config_t",1,5035},
 {"mulib_gputest_result_t",1,5036},
@@ -131862,7 +131878,7 @@ static const mb_symbol mb_symbols_423[] = {
 {"mulib_gputest_verify",0,3096},
 {"mulib_gputest_run",0,3097},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_424[] = {
+static const mb_symbol mb_symbols_425[] = {
 {"mulib_graph_t",1,5043},
 {"mulib_graph_init",0,3098},
 {"mulib_graph_edge",0,3099},
@@ -131871,14 +131887,14 @@ static const mb_symbol mb_symbols_424[] = {
 {"mulib_graph_toposort",0,3102},
 {"mulib_graph_reverse",0,3103},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_425[] = {
+static const mb_symbol mb_symbols_426[] = {
 {"mulib_graphdb_t",1,5052},
 {"mulib_graphdb_visit_fn",1,1670},
 {"mulib_graphdb_edge",0,3104},
 {"mulib_graphdb_neighbors",0,3105},
 {"mulib_graphdb_free",0,3106},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_426[] = {
+static const mb_symbol mb_symbols_427[] = {
 {"mulib_graphql_result_t",1,5097},
 {"mulib_cdd_graphql_result_t",1,5097},
 {"mulib_cdd_graphql_execute",0,3134},
@@ -131886,19 +131902,19 @@ static const mb_symbol mb_symbols_426[] = {
 {"mulib_graphql_execute",0,3136},
 {"mulib_graphql_result_free",0,3137},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_427[] = {
+static const mb_symbol mb_symbols_428[] = {
 {"mulib_graphviz_attr_t",1,5101},
 {"mulib_graphviz_options_t",1,5102},
 {"mulib_graphviz_quote",0,3138},
 {"mulib_graphviz_dot",0,3139},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_428[] = {
+static const mb_symbol mb_symbols_429[] = {
 {"mulib_grid_t",1,2317},
 {"mulib_grid_init",0,1385},
 {"mulib_grid_at",0,1386},
 {"mulib_grid_free",0,1387},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_429[] = {
+static const mb_symbol mb_symbols_430[] = {
 {"mulib_cdd_grpc_frame_t",1,5106},
 {"mulib_cdd_grpc_frame_read",0,3140},
 {"mulib_cdd_grpc_frame_write",0,3141},
@@ -131913,7 +131929,7 @@ static const mb_symbol mb_symbols_429[] = {
 {"mulib_grpc_web_unary",0,3147},
 {"mulib_grpc_web_reply_free",0,3148},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_430[] = {
+static const mb_symbol mb_symbols_431[] = {
 {"MULIB_GSS_OK",2,1752},
 {"MULIB_GSS_INVALID",2,1753},
 {"MULIB_GSS_NOMEM",2,1754},
@@ -131933,7 +131949,7 @@ static const mb_symbol mb_symbols_430[] = {
 {"mulib_gss_edge_count",0,3001},
 {"MULIB_GSS_NONE",2,2749},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_431[] = {
+static const mb_symbol mb_symbols_432[] = {
 {"MULIB_GSSAIR_PHI",2,240},
 {"mulib_gssair_node_t",1,508},
 {"mulib_gssair_input_t",1,509},
@@ -131948,7 +131964,7 @@ static const mb_symbol mb_symbols_431[] = {
 {"mulib_gssair_edge",0,294},
 {"mulib_gssair_lower",0,295},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_432[] = {
+static const mb_symbol mb_symbols_433[] = {
 {"mulib_gvizz_t",1,3876},
 {"mulib_gvizz_edge_t",1,3877},
 {"mulib_gvizz_create",0,2421},
@@ -131963,25 +131979,25 @@ static const mb_symbol mb_symbols_432[] = {
 {"mulib_gvizz_parse",0,2430},
 {"mulib_gvizz_svg",0,2431},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_433[] = {
+static const mb_symbol mb_symbols_434[] = {
 {"mulib_gvn_entry_t",1,5115},
 {"mulib_gvn_t",1,5116},
 {"mulib_gvn_intern",0,3149},
 {"mulib_gvn_free",0,3150},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_434[] = {
+static const mb_symbol mb_symbols_435[] = {
 {"mulib_gzip_encode",0,3151},
 {"mulib_gzip_decode",0,3152},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_435[] = {
+static const mb_symbol mb_symbols_436[] = {
 {"mulib_hamming_distance",0,3153},
 {"mulib_hamming_bits",0,3154},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_436[] = {
+static const mb_symbol mb_symbols_437[] = {
 {"mulib_hash_fnv1a",0,1054},
 {"mulib_hash_string",0,1055},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_437[] = {
+static const mb_symbol mb_symbols_438[] = {
 {"mulib_hattrie_node_t",1,1826},
 {"mulib_hattrie_t",1,1827},
 {"mulib_hattrie_visit_fn",1,1829},
@@ -131993,11 +132009,11 @@ static const mb_symbol mb_symbols_437[] = {
 {"mulib_hattrie_validate",0,1061},
 {"mulib_hattrie_free",0,1062},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_438[] = {
+static const mb_symbol mb_symbols_439[] = {
 {"mulib_hdl_source_t",1,5122},
 {"mulib_hdl_source_linecol",0,3155},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_439[] = {
+static const mb_symbol mb_symbols_440[] = {
 {"MULIB_HDL_EOF",2,1791},
 {"MULIB_HDL_ID",2,1792},
 {"MULIB_HDL_NUMBER",2,1793},
@@ -132009,40 +132025,40 @@ static const mb_symbol mb_symbols_439[] = {
 {"mulib_hdl_lexer_init",0,3156},
 {"mulib_hdl_lexer_next",0,3157},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_440[] = {
+static const mb_symbol mb_symbols_441[] = {
 {"mulib_health_checker_t",1,5135},
 {"mulib_health_checker_record",0,3161},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_441[] = {
+static const mb_symbol mb_symbols_442[] = {
 {"mulib_heap_t",1,5138},
 {"mulib_heap_init",0,3162},
 {"mulib_heap_push",0,3163},
 {"mulib_heap_pop",0,3164},
 {"mulib_heap_free",0,3165},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_442[] = {
+static const mb_symbol mb_symbols_443[] = {
 {"mulib_heaptable_t",1,5143},
 {"mulib_heaptable_insert",0,3166},
 {"mulib_heaptable_get",0,3167},
 {"mulib_heaptable_update",0,3168},
 {"mulib_heaptable_free",0,3169},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_443[] = {
+static const mb_symbol mb_symbols_444[] = {
 {"mulib_hex_encode",0,3170},
 {"mulib_hex_decode",0,3171},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_444[] = {
+static const mb_symbol mb_symbols_445[] = {
 {"mulib_hidden_markov_chain_t",1,1085},
 {"mulib_hidden_markov_chain_valid",0,642},
 {"mulib_hidden_markov_chain_forward",0,643},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_445[] = {
+static const mb_symbol mb_symbols_446[] = {
 {"mulib_histogram_t",1,5151},
 {"mulib_histogram_init",0,3172},
 {"mulib_histogram_add",0,3173},
 {"mulib_histogram_free",0,3174},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_446[] = {
+static const mb_symbol mb_symbols_447[] = {
 {"mulib_histprice_forecast_t",1,5156},
 {"mulib_histprice_ema",0,3175},
 {"mulib_histprice_holt",0,3176},
@@ -132052,23 +132068,23 @@ static const mb_symbol mb_symbols_446[] = {
 {"mulib_histprice_robust_trend",0,3180},
 {"mulib_histprice_ema_mae",0,3181},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_447[] = {
+static const mb_symbol mb_symbols_448[] = {
 {"mulib_hmac",0,3116},
 {"mulib_hkdf_extract",0,3117},
 {"mulib_hkdf_expand",0,3118},
 {"mulib_hkdf_tls13",0,3119},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_448[] = {
+static const mb_symbol mb_symbols_449[] = {
 {"mulib_hll_t",1,5163},
 {"mulib_hll_add",0,3182},
 {"mulib_hll_estimate",0,3183},
 {"mulib_hll_merge",0,3184},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_449[] = {
+static const mb_symbol mb_symbols_450[] = {
 {"mulib_hls_operation_t",1,5170},
 {"mulib_hls_schedule_asap",0,3185},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_450[] = {
+static const mb_symbol mb_symbols_451[] = {
 {"mulib_html_document",0,2749},
 {"mulib_html_body",0,2750},
 {"mulib_html_add",0,2751},
@@ -132078,15 +132094,15 @@ static const mb_symbol mb_symbols_450[] = {
 {"mulib_html_text",0,2755},
 {"mulib_html_docir",0,2756},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_451[] = {
+static const mb_symbol mb_symbols_452[] = {
 {"mulib_html_dombridge_ops_t",1,5173},
 {"mulib_html_dombridge_walk",0,3186},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_452[] = {
+static const mb_symbol mb_symbols_453[] = {
 {"mulib_html_jsonld_fn",1,5180},
 {"mulib_html_jsonld_scan",0,3187},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_453[] = {
+static const mb_symbol mb_symbols_454[] = {
 {"MULIB_HTML_STREAM_START",2,464},
 {"MULIB_HTML_STREAM_END",2,465},
 {"MULIB_HTML_STREAM_TEXT",2,466},
@@ -132096,21 +132112,21 @@ static const mb_symbol mb_symbols_453[] = {
 {"mulib_html_textstream_fn",1,1490},
 {"mulib_html_textstream_scan",0,863},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_454[] = {
+static const mb_symbol mb_symbols_455[] = {
 {"mulib_html_token_t",1,1494},
 {"mulib_html_tokenizer_fn",1,1496},
 {"mulib_html_tokenizer_scan",0,864},
 {"mulib_html_attribute",0,865},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_455[] = {
+static const mb_symbol mb_symbols_456[] = {
 {"mulib_html_tree_node_t",1,1501},
 {"mulib_html_tree_parse",0,866},
 {"mulib_html_tree_free",0,867},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_456[] = {
+static const mb_symbol mb_symbols_457[] = {
 {"mulib_htmlwriter_document",0,3188},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_457[] = {
+static const mb_symbol mb_symbols_458[] = {
 {"MULIB_HTTP_MORE",2,485},
 {"MULIB_HTTP_OK",2,486},
 {"MULIB_HTTP_INVALID",2,487},
@@ -132136,37 +132152,37 @@ static const mb_symbol mb_symbols_457[] = {
 {"mulib_http_stream_finish",0,920},
 {"mulib_http_stream_destroy",0,921},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_458[] = {
+static const mb_symbol mb_symbols_459[] = {
 {"mulib_http1_parse",0,3189},
 {"mulib_http1_serialize",0,3190},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_459[] = {
+static const mb_symbol mb_symbols_460[] = {
 {"mulib_http2_frame_t",1,5183},
 {"mulib_http2_frame_read",0,3191},
 {"mulib_http2_frame_write",0,3192},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_460[] = {
+static const mb_symbol mb_symbols_461[] = {
 {"mulib_http3_frame_t",1,5194},
 {"mulib_http3_frame_read",0,3197},
 {"mulib_http3_frame_write",0,3198},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_461[] = {
+static const mb_symbol mb_symbols_462[] = {
 {"mulib_http_request_create",0,3199},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_462[] = {
+static const mb_symbol mb_symbols_463[] = {
 {"mulib_http_response_create",0,3200},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_463[] = {
+static const mb_symbol mb_symbols_464[] = {
 {"mulib_https_connect_fn",1,4331},
 {"mulib_https_request",0,2715},
 {"mulib_https_stream_request",0,2716},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_464[] = {
+static const mb_symbol mb_symbols_465[] = {
 {"mulib_httpserver_config_t",1,5200},
 {"mulib_httpserver_config_default",0,3201},
 {"mulib_httpserver_config_validate",0,3202},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_465[] = {
+static const mb_symbol mb_symbols_466[] = {
 {"MULIB_HWIL_INPUT",2,1674},
 {"MULIB_HWIL_CONST0",2,1675},
 {"MULIB_HWIL_CONST1",2,1676},
@@ -132182,7 +132198,7 @@ static const mb_symbol mb_symbols_465[] = {
 {"mulib_hwil_module_eval",0,2837},
 {"mulib_hwil_module_valid",0,2838},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_466[] = {
+static const mb_symbol mb_symbols_467[] = {
 {"MULIB_HWIL_BITS",2,1796},
 {"MULIB_HWIL_CLOCK",2,1797},
 {"MULIB_HWIL_MEMORY",2,1798},
@@ -132191,10 +132207,10 @@ static const mb_symbol mb_symbols_466[] = {
 {"mulib_hwil_type_valid",0,3203},
 {"mulib_hwil_type_equal",0,3204},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_467[] = {
+static const mb_symbol mb_symbols_468[] = {
 {"mulib_hwil_module_verify",0,3205},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_468[] = {
+static const mb_symbol mb_symbols_469[] = {
 {"mulib_hwinfo_query_t",1,5209},
 {"mulib_hwinfo_cpu_t",1,5211},
 {"mulib_hwinfo_native",0,3206},
@@ -132202,11 +132218,11 @@ static const mb_symbol mb_symbols_468[] = {
 {"mulib_hwinfo_cache_t",1,5216},
 {"mulib_hwinfo_cache",0,3208},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_469[] = {
+static const mb_symbol mb_symbols_470[] = {
 {"mulib_hybridsearch_hit_t",1,5219},
 {"mulib_hybridsearch_rrf",0,3209},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_470[] = {
+static const mb_symbol mb_symbols_471[] = {
 {"mulib_hyphen_t",1,5239},
 {"MULIB_HYPHEN_DICTIONARY",2,1802},
 {"MULIB_HYPHEN_ORTHOGRAPHIC",2,1803},
@@ -132240,14 +132256,14 @@ static const mb_symbol mb_symbols_470[] = {
 {"mulib_hyphen_serialize",0,3233},
 {"mulib_hyphen_deserialize",0,3234},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_471[] = {
+static const mb_symbol mb_symbols_472[] = {
 {"mulib_icmp_checksum",0,3235},
 {"mulib_icmp_echo",0,3236},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_472[] = {
+static const mb_symbol mb_symbols_473[] = {
 {"mulib_ifft",0,3237},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_473[] = {
+static const mb_symbol mb_symbols_474[] = {
 {"mulib_image2container_limits",1,2957},
 {"mulib_image2container",1,2958},
 {"mulib_image2container_default_limits",0,1761},
@@ -132255,39 +132271,39 @@ static const mb_symbol mb_symbols_473[] = {
 {"mulib_image2container_clone",0,1763},
 {"mulib_image2container_free",0,1764},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_474[] = {
+static const mb_symbol mb_symbols_475[] = {
 {"mulib_imageconvert_view_t",1,5262},
 {"mulib_imageconvert_open",0,3238},
 {"mulib_imageconvert_read_u16",0,3239},
 {"mulib_imageconvert_read_u32",0,3240},
 {"mulib_imageconvert_slice",0,3241},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_475[] = {
+static const mb_symbol mb_symbols_476[] = {
 {"mulib_imagejpeg_dimensions",0,3242},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_476[] = {
+static const mb_symbol mb_symbols_477[] = {
 {"mulib_imagepng_encode_rgb",0,3243},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_477[] = {
+static const mb_symbol mb_symbols_478[] = {
 {"mulib_imagewebp_view_t",1,5271},
 {"mulib_imagewebp_open",0,3244},
 {"mulib_imagewebp_read_u16",0,3245},
 {"mulib_imagewebp_read_u32",0,3246},
 {"mulib_imagewebp_slice",0,3247},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_478[] = {
+static const mb_symbol mb_symbols_479[] = {
 {"mulib_imap_quote",0,3248},
 {"mulib_imapserver_io",1,5278},
 {"mulib_imapserver",1,5281},
 {"mulib_imapserver_init",0,3249},
 {"mulib_imapserver_feed",0,3250},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_479[] = {
+static const mb_symbol mb_symbols_480[] = {
 {"mulib_imgbuilder_report",1,5306},
 {"mulib_imgbuilder_build",0,3263},
 {"mulib_imgbuilder_archive",0,3264},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_480[] = {
+static const mb_symbol mb_symbols_481[] = {
 {"mulib_imgbuildspec",1,5297},
 {"mulib_imgbuildspec_init",0,3256},
 {"mulib_imgbuildspec_free",0,3257},
@@ -132296,7 +132312,7 @@ static const mb_symbol mb_symbols_480[] = {
 {"mulib_imgbuildspec_file",0,3260},
 {"mulib_imgbuildspec_directory",0,3261},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_481[] = {
+static const mb_symbol mb_symbols_482[] = {
 {"MULIB_IMGFORMAT_HEADER_SIZE",2,872},
 {"MULIB_IMGFORMAT_CONFIG_LIMIT",2,873},
 {"MULIB_IMGFORMAT_PORTABLE",2,874},
@@ -132311,9 +132327,9 @@ static const mb_symbol mb_symbols_481[] = {
 {"mulib_imgformat_pack",0,1618},
 {"mulib_imgformat_open",0,1619},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_482[] = {
-{NULL,0,0}};
 static const mb_symbol mb_symbols_483[] = {
+{NULL,0,0}};
+static const mb_symbol mb_symbols_484[] = {
 {"mulib_immgtk_t",1,5323},
 {"mulib_immgtk_input_t",1,5324},
 {"mulib_immgtk_text_fn",1,5325},
@@ -132327,13 +132343,13 @@ static const mb_symbol mb_symbols_483[] = {
 {"mulib_immgtk_active",0,3280},
 {"mulib_immgtk_focus",0,3281},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_484[] = {
+static const mb_symbol mb_symbols_485[] = {
 {"mulib_immgtk_canvas_t",1,5310},
 {"mulib_immgtk_canvas_world_to_screen",0,3265},
 {"mulib_immgtk_canvas_screen_to_world",0,3266},
 {"mulib_immgtk_canvas_zoom_at",0,3267},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_485[] = {
+static const mb_symbol mb_symbols_486[] = {
 {"MULIB_IMMGTK_LINE",2,1820},
 {"MULIB_IMMGTK_RECT",2,1821},
 {"MULIB_IMMGTK_CIRCLE",2,1822},
@@ -132344,11 +132360,11 @@ static const mb_symbol mb_symbols_485[] = {
 {"mulib_immgtk_drawlist_clear",0,3269},
 {"mulib_immgtk_drawlist_free",0,3270},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_486[] = {
+static const mb_symbol mb_symbols_487[] = {
 {"mulib_immgtk_plot_bounds",0,3271},
 {"mulib_immgtk_plot_log_transform",0,3272},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_487[] = {
+static const mb_symbol mb_symbols_488[] = {
 {"MULIB_IMAP_CAPABILITY",2,1823},
 {"MULIB_IMAP_LOGIN",2,1824},
 {"MULIB_IMAP_SELECT",2,1825},
@@ -132360,21 +132376,21 @@ static const mb_symbol mb_symbols_487[] = {
 {"mulib_impaclient_feed",0,3283},
 {"mulib_impaclient_request",0,3284},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_488[] = {
+static const mb_symbol mb_symbols_489[] = {
 {"mulib_import_edge_t",1,5342},
 {"mulib_importgraph_t",1,5343},
 {"mulib_importgraph_add",0,3285},
 {"mulib_importgraph_order",0,3286},
 {"mulib_importgraph_free",0,3287},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_489[] = {
+static const mb_symbol mb_symbols_490[] = {
 {"mulib_index_t",1,5350},
 {"mulib_index_insert",0,3288},
 {"mulib_index_find",0,3289},
 {"mulib_index_remove",0,3290},
 {"mulib_index_free",0,3291},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_490[] = {
+static const mb_symbol mb_symbols_491[] = {
 {"mulib_indexer_entry_t",1,5357},
 {"mulib_indexer_table_t",1,5358},
 {"mulib_indexer_destroy",0,3292},
@@ -132382,25 +132398,25 @@ static const mb_symbol mb_symbols_490[] = {
 {"mulib_indexer_get",0,3294},
 {"mulib_indexer_erase",0,3295},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_491[] = {
+static const mb_symbol mb_symbols_492[] = {
 {"mulib_inet_diag_socket_t",1,5367},
 {"mulib_inet_diag_decode",0,3297},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_492[] = {
+static const mb_symbol mb_symbols_493[] = {
 {"mulib_inet4_t",1,206},
 {"mulib_inet4_parse",0,103},
 {"mulib_inet4_format",0,104},
 {"mulib_inet4_network",0,105},
 {"mulib_inet4_contains",0,106},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_493[] = {
+static const mb_symbol mb_symbols_494[] = {
 {"mulib_inet6_t",1,214},
 {"mulib_inet6_parse",0,107},
 {"mulib_inet6_format",0,108},
 {"mulib_inet6_network",0,109},
 {"mulib_inet6_contains",0,110},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_494[] = {
+static const mb_symbol mb_symbols_495[] = {
 {"mulib_ingest_stream_t",1,5370},
 {"mulib_ingest_record_fn",1,2575},
 {"mulib_ingest_stream_init",0,3298},
@@ -132408,14 +132424,14 @@ static const mb_symbol mb_symbols_494[] = {
 {"mulib_ingest_stream_finish",0,3300},
 {"mulib_ingest_stream_free",0,3301},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_495[] = {
+static const mb_symbol mb_symbols_496[] = {
 {"mulib_ini_callback",1,5376},
 {"mulib_ini_parse",0,3302},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_496[] = {
+static const mb_symbol mb_symbols_497[] = {
 {"mulib_initproc_reap",0,3303},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_497[] = {
+static const mb_symbol mb_symbols_498[] = {
 {"mulib_initsys_t",1,5406},
 {"mulib_initsys_fn",1,1259},
 {"mulib_initsys_create",0,3321},
@@ -132428,7 +132444,7 @@ static const mb_symbol mb_symbols_497[] = {
 {"mulib_initsys_live",0,3328},
 {"mulib_initsys_destroy",0,3329},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_498[] = {
+static const mb_symbol mb_symbols_499[] = {
 {"MULIB_INITSYSUTILS_OK",2,1844},
 {"MULIB_INITSYSUTILS_END",2,1845},
 {"MULIB_INITSYSUTILS_INVALID",2,1846},
@@ -132442,7 +132458,7 @@ static const mb_symbol mb_symbols_498[] = {
 {"mulib_initsysutils_step_t",1,5422},
 {"mulib_initsysutils_run",0,3334},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_499[] = {
+static const mb_symbol mb_symbols_500[] = {
 {"mulib_input_event_t",1,5425},
 {"MULIB_INPUT_SYN",2,1849},
 {"MULIB_INPUT_KEY",2,1850},
@@ -132462,18 +132478,18 @@ static const mb_symbol mb_symbols_499[] = {
 {"mulib_input_grab",0,3338},
 {"mulib_input_read",0,3339},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_500[] = {
+static const mb_symbol mb_symbols_501[] = {
 {"mulib_inte6_t",1,214},
 {"mulib_inte6_parse",0,851},
 {"mulib_inte6_format",0,852},
 {"mulib_inte6_network",0,853},
 {"mulib_inte6_contains",0,854},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_501[] = {
+static const mb_symbol mb_symbols_502[] = {
 {"mulib_interpolate_linear",0,3340},
 {"mulib_interpolate_clamped",0,3341},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_502[] = {
+static const mb_symbol mb_symbols_503[] = {
 {"mulib_invindex_t",1,5436},
 {"mulib_invindex_add",0,3342},
 {"mulib_invindex_at",0,3343},
@@ -132482,14 +132498,14 @@ static const mb_symbol mb_symbols_502[] = {
 {"mulib_invindex_count",0,3346},
 {"mulib_invindex_intersect",0,3347},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_503[] = {
+static const mb_symbol mb_symbols_504[] = {
 {"mulib_io_in8",0,3348},
 {"mulib_io_out8",0,3349},
 {"mulib_io_in32",0,3350},
 {"mulib_io_out32",0,3351},
 {"mulib_io_load_table",0,3352},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_504[] = {
+static const mb_symbol mb_symbols_505[] = {
 {"mulib_ipc_framed_t",1,5449},
 {"mulib_ipc_framed_init",0,3353},
 {"mulib_ipc_now_ms",0,3354},
@@ -132497,7 +132513,7 @@ static const mb_symbol mb_symbols_504[] = {
 {"mulib_ipc_send",0,3356},
 {"mulib_ipc_receive",0,3357},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_505[] = {
+static const mb_symbol mb_symbols_506[] = {
 {"mulib_ipfs_cid_t",1,5456},
 {"mulib_ipfs_cid_encode",0,3360},
 {"mulib_ipfs_cid_decode",0,3361},
@@ -132505,19 +132521,19 @@ static const mb_symbol mb_symbols_505[] = {
 {"mulib_ipfs_cid_parse",0,3363},
 {"mulib_ipfs_verify",0,3364},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_506[] = {
+static const mb_symbol mb_symbols_507[] = {
 {"mulib_ipv6_ndp_t",1,5466},
 {"mulib_ipv6_ndp_parse",0,3365},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_507[] = {
+static const mb_symbol mb_symbols_508[] = {
 {"mulib_ipv6_ra_t",1,5469},
 {"mulib_ipv6_ra_parse",0,3366},
 {"mulib_ipv6_ra_prefix",0,3367},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_508[] = {
+static const mb_symbol mb_symbols_509[] = {
 {"mulib_ir_print",0,3369},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_509[] = {
+static const mb_symbol mb_symbols_510[] = {
 {"MULIB_IR_LITERAL",2,1860},
 {"MULIB_IR_PARAM",2,1861},
 {"MULIB_IR_COPY",2,1862},
@@ -132531,7 +132547,7 @@ static const mb_symbol mb_symbols_509[] = {
 {"mulib_ir_instruction_t",1,5474},
 {"mulib_ir_verify",0,3368},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_510[] = {
+static const mb_symbol mb_symbols_511[] = {
 {"mulib_isched_node_t",1,5478},
 {"mulib_isched_edge_t",1,5479},
 {"mulib_isched_limits_t",1,5480},
@@ -132550,7 +132566,7 @@ static const mb_symbol mb_symbols_510[] = {
 {"mulib_isched_free",0,3372},
 {"mulib_isched_status_string",0,3373},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_511[] = {
+static const mb_symbol mb_symbols_512[] = {
 {"mulib_isel_memo_t",1,5539},
 {"mulib_isel_cover_t",1,5540},
 {"mulib_isel_limits_t",1,5542},
@@ -132562,18 +132578,18 @@ static const mb_symbol mb_symbols_511[] = {
 {"mulib_isel_refresh",0,3398},
 {"mulib_isel_schedule",0,3399},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_512[] = {
+static const mb_symbol mb_symbols_513[] = {
 {"mulib_iterator_t",1,5551},
 {"mulib_iterator_next",0,3400},
 {"mulib_iterator_close",0,3401},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_513[] = {
+static const mb_symbol mb_symbols_514[] = {
 {"mulib_iwd_client_objects",0,3402},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_514[] = {
+static const mb_symbol mb_symbols_515[] = {
 {"mulib_jaccard_similarity",0,3403},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_515[] = {
+static const mb_symbol mb_symbols_516[] = {
 {"mulib_jit_t",1,690},
 {"MULIB_JIT_OK",2,300},
 {"MULIB_JIT_EINVAL",2,301},
@@ -132596,14 +132612,14 @@ static const mb_symbol mb_symbols_515[] = {
 {"mulib_jit_flow_run",0,373},
 {"mulib_jit_flow_destroy",0,374},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_516[] = {
+static const mb_symbol mb_symbols_517[] = {
 {"mulib_joinfilter_t",1,5559},
 {"mulib_joinfilter_init",0,3404},
 {"mulib_joinfilter_add",0,3405},
 {"mulib_joinfilter_maybe",0,3406},
 {"mulib_joinfilter_free",0,3407},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_517[] = {
+static const mb_symbol mb_symbols_518[] = {
 {"MULIB_JSDOM_GET",2,1891},
 {"MULIB_JSDOM_SET",2,1892},
 {"MULIB_JSDOM_CALL",2,1893},
@@ -132612,7 +132628,7 @@ static const mb_symbol mb_symbols_517[] = {
 {"mulib_jsdom_t",1,5569},
 {"mulib_jsdom_invoke",0,3408},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_518[] = {
+static const mb_symbol mb_symbols_519[] = {
 {"MULIB_JSON_NULL",2,54},
 {"MULIB_JSON_BOOL",2,55},
 {"MULIB_JSON_NUMBER",2,56},
@@ -132643,7 +132659,7 @@ static const mb_symbol mb_symbols_518[] = {
 {"mulib_json_parse",0,173},
 {"mulib_json_stringify",0,174},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_519[] = {
+static const mb_symbol mb_symbols_520[] = {
 {"mulib_jsonrpc_reply_t",1,5572},
 {"mulib_cdd_jsonrpc_reply_t",1,5572},
 {"mulib_cdd_jsonrpc_make",0,3409},
@@ -132655,7 +132671,7 @@ static const mb_symbol mb_symbols_519[] = {
 {"mulib_jsonrpc_call",0,3415},
 {"mulib_jsonrpc_reply_free",0,3416},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_520[] = {
+static const mb_symbol mb_symbols_521[] = {
 {"mulib_jvm_method_t",1,707},
 {"mulib_jvm_code_t",1,5578},
 {"mulib_jvm_load_code",0,3417},
@@ -132668,21 +132684,21 @@ static const mb_symbol mb_symbols_520[] = {
 {"mulib_jvm_emit_c",0,3424},
 {"mulib_jvm_destroy",0,3425},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_521[] = {
+static const mb_symbol mb_symbols_522[] = {
 {"mulib_keyremap_t",1,5582},
 {"mulib_keyremap_init",0,3426},
 {"mulib_keyremap_set",0,3427},
 {"mulib_keyremap_apply",0,3428},
 {"MULIB_KEYREMAP_DROP",2,2754},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_522[] = {
+static const mb_symbol mb_symbols_523[] = {
 {"mulib_kf8write_flow_t",1,5589},
 {"mulib_kf8write_fdst",0,3429},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_523[] = {
+static const mb_symbol mb_symbols_524[] = {
 {"mulib_kmm_fit",0,3430},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_524[] = {
+static const mb_symbol mb_symbols_525[] = {
 {"mulib_kvdb_t",1,1808},
 {"MULIB_KVDB_OK",2,593},
 {"MULIB_KVDB_UNCERTAIN",2,594},
@@ -132707,7 +132723,7 @@ static const mb_symbol mb_symbols_524[] = {
 {"mulib_kvdb_at",0,1052},
 {"mulib_kvdb_commit",0,1053},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_525[] = {
+static const mb_symbol mb_symbols_526[] = {
 {"MULIB_KVM_OK",2,884},
 {"MULIB_KVM_EINVAL",2,885},
 {"MULIB_KVM_EIO",2,886},
@@ -132727,13 +132743,13 @@ static const mb_symbol mb_symbols_525[] = {
 {"mulib_kvm_vcpu_close",0,1638},
 {"mulib_kvm_run",0,1639},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_526[] = {
+static const mb_symbol mb_symbols_527[] = {
 {"mulib_kvmcontainer_t",1,2729},
 {"mulib_kvmcontainer_init",0,1640},
 {"mulib_kvmcontainer_open",0,1641},
 {"mulib_kvmcontainer_close",0,1642},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_527[] = {
+static const mb_symbol mb_symbols_528[] = {
 {"mulib_landlock_rule_t",1,5593},
 {"mulib_landlock_abi",0,3431},
 {"mulib_landlock_supported_access",0,3432},
@@ -132755,7 +132771,7 @@ static const mb_symbol mb_symbols_527[] = {
 {"MULIB_LANDLOCK_TRUNCATE",2,2769},
 {"MULIB_LANDLOCK_IOCTL_DEV",2,2770},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_528[] = {
+static const mb_symbol mb_symbols_529[] = {
 {"mulib_latex_t",1,5597},
 {"mulib_latex_begin",0,3434},
 {"mulib_latex_section",0,3435},
@@ -132764,10 +132780,10 @@ static const mb_symbol mb_symbols_528[] = {
 {"mulib_latex_free",0,3438},
 {"mulib_latex_from_docir",0,3439},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_529[] = {
+static const mb_symbol mb_symbols_530[] = {
 {"mulib_latexwriter_document",0,3440},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_530[] = {
+static const mb_symbol mb_symbols_531[] = {
 {"mulib_lattice_rule_t",1,5605},
 {"mulib_lattice_t",1,5606},
 {"mulib_lattice_add_rule",0,3441},
@@ -132776,10 +132792,10 @@ static const mb_symbol mb_symbols_530[] = {
 {"mulib_lattice_meet",0,3444},
 {"mulib_lattice_free",0,3445},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_531[] = {
+static const mb_symbol mb_symbols_532[] = {
 {"mulib_latticequery_filter",0,3446},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_532[] = {
+static const mb_symbol mb_symbols_533[] = {
 {"mulib_layout_rect_t",1,5616},
 {"MULIB_LAYOUT_ROW",2,1894},
 {"MULIB_LAYOUT_COLUMN",2,1895},
@@ -132810,10 +132826,10 @@ static const mb_symbol mb_symbols_532[] = {
 {"mulib_layout_draw_fn",1,5639},
 {"mulib_layout_draw",0,3456},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_533[] = {
+static const mb_symbol mb_symbols_534[] = {
 {"mulib_layoutml_parse",0,3457},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_534[] = {
+static const mb_symbol mb_symbols_535[] = {
 {"mulib_lazystream_t",1,5645},
 {"mulib_lazy_next_fn",1,5646},
 {"mulib_lazy_destroy_fn",1,725},
@@ -132830,15 +132846,15 @@ static const mb_symbol mb_symbols_534[] = {
 {"mulib_lazystream_fold",0,3465},
 {"mulib_lazystream_destroy",0,3466},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_535[] = {
+static const mb_symbol mb_symbols_536[] = {
 {"mulib_levenshtein_distance",0,733},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_536[] = {
+static const mb_symbol mb_symbols_537[] = {
 {"mulib_lexer_t",1,2590},
 {"mulib_lexer_init",0,1573},
 {"mulib_lexer_next",0,1574},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_537[] = {
+static const mb_symbol mb_symbols_538[] = {
 {"MULIB_LEXGEN_LITERAL",2,1905},
 {"MULIB_LEXGEN_DIGITS",2,1906},
 {"MULIB_LEXGEN_IDENT",2,1907},
@@ -132847,7 +132863,7 @@ static const mb_symbol mb_symbols_537[] = {
 {"mulib_lexgen_rule_t",1,5662},
 {"mulib_lexgen_match",0,3467},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_538[] = {
+static const mb_symbol mb_symbols_539[] = {
 {"MULIB_TOKEN_EOF",2,835},
 {"MULIB_TOKEN_IDENTIFIER",2,836},
 {"MULIB_TOKEN_INTEGER",2,837},
@@ -132858,11 +132874,11 @@ static const mb_symbol mb_symbols_538[] = {
 {"mulib_lexical_token_t",1,2587},
 {"mulib_lexical_token_is",0,1572},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_539[] = {
+static const mb_symbol mb_symbols_540[] = {
 {"mulib_lexographic_compare",0,3468},
 {"mulib_lexographic_sort",0,3469},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_540[] = {
+static const mb_symbol mb_symbols_541[] = {
 {"MULIB_LIGATURE_STANDARD",2,1780},
 {"MULIB_LIGATURE_CONTEXTUAL",2,1781},
 {"MULIB_LIGATURE_DISCRETIONARY",2,1782},
@@ -132871,7 +132887,7 @@ static const mb_symbol mb_symbols_540[] = {
 {"mulib_ligature_shape",0,3084},
 {"mulib_ligature_clusters",0,3085},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_541[] = {
+static const mb_symbol mb_symbols_542[] = {
 {"mulib_linalg_vec2_t",1,2006},
 {"mulib_linalg_vec3_t",1,2007},
 {"mulib_linalg_vec4_t",1,2008},
@@ -132911,7 +132927,7 @@ static const mb_symbol mb_symbols_541[] = {
 {"mulib_linalg_quat_matrix",0,1174},
 {"mulib_linalg_quat_slerp",0,1175},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_542[] = {
+static const mb_symbol mb_symbols_543[] = {
 {"MULIB_LINEBREAK_GREEDY",2,1909},
 {"MULIB_LINEBREAK_CHARACTER",2,1910},
 {"MULIB_LINEBREAK_MINIMUM_RAGGEDNESS",2,1911},
@@ -132940,12 +132956,12 @@ static const mb_symbol mb_symbols_542[] = {
 {"mulib_linebreak_knuth_plass",0,3472},
 {"mulib_linebreak_result_free",0,3473},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_543[] = {
+static const mb_symbol mb_symbols_544[] = {
 {"mulib_linear_regression_t",1,5683},
 {"mulib_linear_regression_fit",0,3474},
 {"mulib_linear_regression_predict",0,3475},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_544[] = {
+static const mb_symbol mb_symbols_545[] = {
 {"mulib_linker_t",1,323},
 {"MULIB_LINKER_ABS32",2,60},
 {"MULIB_LINKER_ABS64",2,61},
@@ -132968,7 +132984,7 @@ static const mb_symbol mb_symbols_544[] = {
 {"mulib_linker_symbol_count",0,190},
 {"mulib_linker_relocation_count",0,191},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_545[] = {
+static const mb_symbol mb_symbols_546[] = {
 {"MULIB_LIR_KEEP",2,1888},
 {"MULIB_LIR_BARRIER",2,1889},
 {"MULIB_LIR_VOLATILE",2,1890},
@@ -132984,7 +133000,7 @@ static const mb_symbol mb_symbols_545[] = {
 {"mulib_lir_write",0,3392},
 {"mulib_lir_free",0,3393},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_546[] = {
+static const mb_symbol mb_symbols_547[] = {
 {"mulib_list_node_t",1,5688},
 {"mulib_list_init",0,3476},
 {"mulib_list_empty",0,3477},
@@ -132992,28 +133008,28 @@ static const mb_symbol mb_symbols_546[] = {
 {"mulib_list_prepend",0,3479},
 {"mulib_list_remove",0,3480},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_547[] = {
+static const mb_symbol mb_symbols_548[] = {
 {"mulib_listener_t",1,5694},
 {"mulib_listener_walk",0,3481},
 {"mulib_listener_walk_bounded",0,3482},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_548[] = {
+static const mb_symbol mb_symbols_549[] = {
 {"mulib_liveinterval_t",1,5698},
 {"mulib_liveinterval_valid",0,3483},
 {"mulib_liveinterval_overlap",0,3484},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_549[] = {
+static const mb_symbol mb_symbols_550[] = {
 {"mulib_liveness_t",1,5702},
 {"mulib_liveness_compute",0,3485},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_550[] = {
+static const mb_symbol mb_symbols_551[] = {
 {"mulib_lldp_tlv_t",1,5705},
 {"mulib_lldp_foreach",0,3486},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_551[] = {
+static const mb_symbol mb_symbols_552[] = {
 {"mulib_load_balancer_select",0,3487},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_552[] = {
+static const mb_symbol mb_symbols_553[] = {
 {"mulib_locale_entry_t",1,5711},
 {"mulib_locale_table_t",1,5712},
 {"mulib_locale_destroy",0,3488},
@@ -133021,7 +133037,7 @@ static const mb_symbol mb_symbols_552[] = {
 {"mulib_locale_get",0,3490},
 {"mulib_locale_erase",0,3491},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_553[] = {
+static const mb_symbol mb_symbols_554[] = {
 {"MULIB_LOG_DEBUG",2,1925},
 {"MULIB_LOG_INFO",2,1926},
 {"MULIB_LOG_WARN",2,1927},
@@ -133032,23 +133048,23 @@ static const mb_symbol mb_symbols_553[] = {
 {"mulib_logger_init",0,3492},
 {"mulib_logger_write",0,3493},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_554[] = {
+static const mb_symbol mb_symbols_555[] = {
 {"mulib_loop_t",1,5727},
 {"mulib_loops_t",1,5728},
 {"mulib_loops_find",0,3494},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_555[] = {
+static const mb_symbol mb_symbols_556[] = {
 {"mulib_lowopt_stats_t",1,5522},
 {"mulib_lowopt_evaluate",0,3383},
 {"mulib_lowopt_run",0,3384},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_556[] = {
+static const mb_symbol mb_symbols_557[] = {
 {"mulib_lprowse_source_",2,1929},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_557[] = {
+static const mb_symbol mb_symbols_558[] = {
 {"mulib_lsh_band",0,3495},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_558[] = {
+static const mb_symbol mb_symbols_559[] = {
 {"mulib_lsmtree_t",1,5742},
 {"mulib_lsmtree_put",0,3500},
 {"mulib_lsmtree_get",0,3501},
@@ -133057,17 +133073,17 @@ static const mb_symbol mb_symbols_558[] = {
 {"mulib_lsmtree_recover",0,3504},
 {"mulib_lsmtree_free",0,3505},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_559[] = {
+static const mb_symbol mb_symbols_560[] = {
 {"mulib_lzf_raw_encode",0,3506},
 {"mulib_lzf_raw_decode",0,3507},
 {"mulib_lzf_encode",0,3508},
 {"mulib_lzf_decode",0,3509},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_560[] = {
+static const mb_symbol mb_symbols_561[] = {
 {"mulib_lzip_encode",0,3516},
 {"mulib_lzip_decode",0,3517},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_561[] = {
+static const mb_symbol mb_symbols_562[] = {
 {"mulib_lzma_encode",0,3510},
 {"mulib_lzma_decode",0,3511},
 {"mulib_lzma_raw_encode",0,3512},
@@ -133075,15 +133091,15 @@ static const mb_symbol mb_symbols_561[] = {
 {"mulib_lzma2_encode",0,3514},
 {"mulib_lzma2_decode",0,3515},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_562[] = {
+static const mb_symbol mb_symbols_563[] = {
 {"mulib_lzo1x_encode",0,3518},
 {"mulib_lzo1x_decode",0,3519},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_563[] = {
+static const mb_symbol mb_symbols_564[] = {
 {"mulib_lzop_encode",0,3520},
 {"mulib_lzop_decode",0,3521},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_564[] = {
+static const mb_symbol mb_symbols_565[] = {
 {"MULIB_MACHINE_REGISTER",2,1883},
 {"MULIB_MACHINE_IMMEDIATE",2,1884},
 {"MULIB_MACHINE_WIDE",2,1885},
@@ -133098,7 +133114,7 @@ static const mb_symbol mb_symbols_564[] = {
 {"mulib_machine_select",0,3381},
 {"mulib_machine_emit",0,3382},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_565[] = {
+static const mb_symbol mb_symbols_566[] = {
 {"MULIB_MACHINEBUILD_OK",2,1936},
 {"MULIB_MACHINEBUILD_INVALID",2,1937},
 {"MULIB_MACHINEBUILD_NOMEM",2,1938},
@@ -133118,7 +133134,7 @@ static const mb_symbol mb_symbols_565[] = {
 {"mulib_machinebuild_state_name",0,3527},
 {"mulib_machinebuild_emit_js",0,3528},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_566[] = {
+static const mb_symbol mb_symbols_567[] = {
 {"MULIB_MACHO_OK",2,940},
 {"MULIB_MACHO_EINVAL",2,941},
 {"MULIB_MACHO_EFORMAT",2,942},
@@ -133137,13 +133153,13 @@ static const mb_symbol mb_symbols_566[] = {
 {"mulib_macho_symbol_name",0,1712},
 {"mulib_macho_bytes",0,1713},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_567[] = {
+static const mb_symbol mb_symbols_568[] = {
 {"mulib_macho_objdump",0,3529},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_568[] = {
+static const mb_symbol mb_symbols_569[] = {
 {"mulib_machobuilder_text",0,3530},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_569[] = {
+static const mb_symbol mb_symbols_570[] = {
 {"mulib_machobuilder_t",1,2367},
 {"mulib_machobuilder_add",0,3531},
 {"mulib_machobuilder_finish",0,3532},
@@ -133156,18 +133172,18 @@ static const mb_symbol mb_symbols_569[] = {
 {"mulib_machobuilder_abi_t",1,5769},
 {"mulib_machobuilder_finish_abi",0,3534},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_570[] = {
+static const mb_symbol mb_symbols_571[] = {
 {"mulib_machoutils_section",0,3535},
 {"mulib_machoutils_symbol",0,3536},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_571[] = {
+static const mb_symbol mb_symbols_572[] = {
 {"mulib_manpage_t",1,5773},
 {"mulib_manpage_linux",0,3537},
 {"mulib_manpage_set",0,3538},
 {"mulib_manpage_render",0,3539},
 {"mulib_manpage_destroy",0,3540},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_572[] = {
+static const mb_symbol mb_symbols_573[] = {
 {"mulib_map_entry_t",1,5780},
 {"mulib_map_t",1,5781},
 {"mulib_map_init",0,3541},
@@ -133176,7 +133192,7 @@ static const mb_symbol mb_symbols_572[] = {
 {"mulib_map_remove",0,3544},
 {"mulib_map_free",0,3545},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_573[] = {
+static const mb_symbol mb_symbols_574[] = {
 {"mulib_marionette_sink_fn",1,5789},
 {"mulib_marionette_t",1,5791},
 {"mulib_marionette_init",0,3546},
@@ -133186,17 +133202,17 @@ static const mb_symbol mb_symbols_573[] = {
 {"mulib_marionette_stop",0,3550},
 {"mulib_marionette_tick",0,3551},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_574[] = {
+static const mb_symbol mb_symbols_575[] = {
 {"mulib_markdown_to_html",0,3552},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_575[] = {
+static const mb_symbol mb_symbols_576[] = {
 {"mulib_markov_chain_t",1,1079},
 {"mulib_markov_chain_valid",0,638},
 {"mulib_markov_chain_step",0,639},
 {"mulib_markov_chain_fit",0,640},
 {"mulib_markov_chain_sample",0,641},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_576[] = {
+static const mb_symbol mb_symbols_577[] = {
 {"mulib_mkir_tree_to_spans",0,3590},
 {"mulib_mkir_spans_to_tree",0,3591},
 {"mulib_mkir_tree_to_graph",0,3592},
@@ -133209,7 +133225,7 @@ static const mb_symbol mb_symbols_576[] = {
 {"mulib_mkir_hybrid_anchor",0,3598},
 {"mulib_mkir_hybrid_free",0,3599},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_577[] = {
+static const mb_symbol mb_symbols_578[] = {
 {"MULIB_MKIR_REF_FREE",2,1969},
 {"MULIB_MKIR_REF_NODE",2,1970},
 {"MULIB_MKIR_REF_SPAN",2,1971},
@@ -133234,7 +133250,7 @@ static const mb_symbol mb_symbols_577[] = {
 {"mulib_mkir_graph_validate",0,3588},
 {"mulib_mkir_graph_free",0,3589},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_578[] = {
+static const mb_symbol mb_symbols_579[] = {
 {"mulib_mkir_span_t",1,5847},
 {"mulib_mkir_spans_t",1,5848},
 {"mulib_mkir_run_t",1,5850},
@@ -133248,7 +133264,7 @@ static const mb_symbol mb_symbols_578[] = {
 {"mulib_mkir_runs_free",0,3579},
 {"mulib_mkir_spans_free",0,3580},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_579[] = {
+static const mb_symbol mb_symbols_580[] = {
 {"MULIB_MKIR_T_TEXT",2,1956},
 {"MULIB_MKIR_T_START",2,1957},
 {"MULIB_MKIR_T_END",2,1958},
@@ -133282,7 +133298,7 @@ static const mb_symbol mb_symbols_579[] = {
 {"mulib_mkir_events_walk",0,3571},
 {"mulib_cdd_mkir_events_walk_bounded",0,3572},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_580[] = {
+static const mb_symbol mb_symbols_581[] = {
 {"MULIB_MKIR_DOCUMENT",2,1948},
 {"MULIB_MKIR_ELEMENT",2,1949},
 {"MULIB_MKIR_TEXT",2,1950},
@@ -133307,12 +133323,12 @@ static const mb_symbol mb_symbols_580[] = {
 {"mulib_mkir_tree_free",0,3562},
 {"MULIB_MKIR_NONE",2,2771},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_581[] = {
+static const mb_symbol mb_symbols_582[] = {
 {"mulib_math_gcd",0,3600},
 {"mulib_math_lcm",0,3601},
 {"mulib_math_pow_u64",0,3602},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_582[] = {
+static const mb_symbol mb_symbols_583[] = {
 {"mulib_mathaccent_item_t",1,5897},
 {"mulib_mathaccent_list_t",1,5898},
 {"mulib_mathaccent_push",0,3603},
@@ -133320,7 +133336,7 @@ static const mb_symbol mb_symbols_582[] = {
 {"mulib_mathaccent_bounds",0,3605},
 {"mulib_mathaccent_destroy",0,3606},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_583[] = {
+static const mb_symbol mb_symbols_584[] = {
 {"mulib_mathatom_item_t",1,5906},
 {"mulib_mathatom_list_t",1,5907},
 {"mulib_mathatom_push",0,3607},
@@ -133328,7 +133344,7 @@ static const mb_symbol mb_symbols_583[] = {
 {"mulib_mathatom_bounds",0,3609},
 {"mulib_mathatom_destroy",0,3610},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_584[] = {
+static const mb_symbol mb_symbols_585[] = {
 {"mulib_mathdelimiter_item_t",1,5915},
 {"mulib_mathdelimiter_list_t",1,5916},
 {"mulib_mathdelimiter_push",0,3611},
@@ -133336,7 +133352,7 @@ static const mb_symbol mb_symbols_584[] = {
 {"mulib_mathdelimiter_bounds",0,3613},
 {"mulib_mathdelimiter_destroy",0,3614},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_585[] = {
+static const mb_symbol mb_symbols_586[] = {
 {"mulib_mathfont_entry_t",1,5924},
 {"mulib_mathfont_table_t",1,5925},
 {"mulib_mathfont_destroy",0,3615},
@@ -133344,11 +133360,11 @@ static const mb_symbol mb_symbols_585[] = {
 {"mulib_mathfont_get",0,3617},
 {"mulib_mathfont_erase",0,3618},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_586[] = {
+static const mb_symbol mb_symbols_587[] = {
 {"mulib_mathfraction_metrics_t",1,5933},
 {"mulib_mathfraction_stack",0,3619},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_587[] = {
+static const mb_symbol mb_symbols_588[] = {
 {"mulib_mathir_item_t",1,5936},
 {"mulib_mathir_list_t",1,5937},
 {"mulib_mathir_push",0,3620},
@@ -133356,7 +133372,7 @@ static const mb_symbol mb_symbols_587[] = {
 {"mulib_mathir_bounds",0,3622},
 {"mulib_mathir_destroy",0,3623},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_588[] = {
+static const mb_symbol mb_symbols_589[] = {
 {"mulib_mathlayout_item_t",1,5945},
 {"mulib_mathlayout_list_t",1,5946},
 {"mulib_mathlayout_push",0,3624},
@@ -133364,7 +133380,7 @@ static const mb_symbol mb_symbols_588[] = {
 {"mulib_mathlayout_bounds",0,3626},
 {"mulib_mathlayout_destroy",0,3627},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_589[] = {
+static const mb_symbol mb_symbols_590[] = {
 {"mulib_mathmatrix_item_t",1,5954},
 {"mulib_mathmatrix_list_t",1,5955},
 {"mulib_mathmatrix_push",0,3628},
@@ -133372,7 +133388,7 @@ static const mb_symbol mb_symbols_589[] = {
 {"mulib_mathmatrix_bounds",0,3630},
 {"mulib_mathmatrix_destroy",0,3631},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_590[] = {
+static const mb_symbol mb_symbols_591[] = {
 {"mulib_mathml_error_t",1,2175},
 {"mulib_mathml_new",0,1297},
 {"mulib_mathml_element",0,1298},
@@ -133382,7 +133398,7 @@ static const mb_symbol mb_symbols_590[] = {
 {"mulib_mathml_serialize",0,1302},
 {"MULIB_MATHML_NAMESPACE",2,2686},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_591[] = {
+static const mb_symbol mb_symbols_592[] = {
 {"mulib_mathnumber_entry_t",1,5963},
 {"mulib_mathnumber_table_t",1,5964},
 {"mulib_mathnumber_destroy",0,3632},
@@ -133390,7 +133406,7 @@ static const mb_symbol mb_symbols_591[] = {
 {"mulib_mathnumber_get",0,3634},
 {"mulib_mathnumber_erase",0,3635},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_592[] = {
+static const mb_symbol mb_symbols_593[] = {
 {"mulib_mathoperator_entry_t",1,5972},
 {"mulib_mathoperator_table_t",1,5973},
 {"mulib_mathoperator_destroy",0,3636},
@@ -133398,37 +133414,37 @@ static const mb_symbol mb_symbols_592[] = {
 {"mulib_mathoperator_get",0,3638},
 {"mulib_mathoperator_erase",0,3639},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_593[] = {
+static const mb_symbol mb_symbols_594[] = {
 {"mulib_mathparse_validate",0,3640},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_594[] = {
+static const mb_symbol mb_symbols_595[] = {
 {"mulib_mathradical_ascent",0,3641},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_595[] = {
+static const mb_symbol mb_symbols_596[] = {
 {"mulib_mathscript_offset",0,3642},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_596[] = {
+static const mb_symbol mb_symbols_597[] = {
 {"mulib_mathspacing_compute",0,3643},
 {"mulib_mathspacing_clamp",0,3644},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_597[] = {
+static const mb_symbol mb_symbols_598[] = {
 {"mulib_mathspeech_write",0,3645},
 {"mulib_mathspeech_write_cstr",0,3646},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_598[] = {
+static const mb_symbol mb_symbols_599[] = {
 {"mulib_matrix_t",1,5981},
 {"mulib_matrix_init",0,3647},
 {"mulib_matrix_multiply",0,3648},
 {"mulib_matrix_transpose",0,3649},
 {"mulib_matrix_free",0,3650},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_599[] = {
+static const mb_symbol mb_symbols_600[] = {
 {"mulib_matview_t",1,5988},
 {"mulib_matview_insert",0,3651},
 {"mulib_matview_delete",0,3652},
 {"mulib_matview_avg",0,3653},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_600[] = {
+static const mb_symbol mb_symbols_601[] = {
 {"mulib_cdd_mcp_client_t",1,5993},
 {"mulib_cdd_mcp_client_init",0,3654},
 {"MULIB_CDD_MCP_DISCOVER",2,1976},
@@ -133451,7 +133467,7 @@ static const mb_symbol mb_symbols_600[] = {
 {"mulib_cdd_mcp_client_abandon",0,3658},
 {"mulib_cdd_mcp_client_cancel",0,3659},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_601[] = {
+static const mb_symbol mb_symbols_602[] = {
 {"mulib_cdd_mcp_origin_fn",1,992},
 {"mulib_cdd_mcp_authenticate_fn",1,6034},
 {"mulib_cdd_mcp_http_config_t",1,6036},
@@ -133459,7 +133475,7 @@ static const mb_symbol mb_symbols_601[] = {
 {"mulib_cdd_mcp_client_http_request",0,3665},
 {"mulib_cdd_mcp_client_http_receive",0,3666},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_602[] = {
+static const mb_symbol mb_symbols_603[] = {
 {"MULIB_CDD_MCP_TOOL_OK",2,1988},
 {"MULIB_CDD_MCP_TOOL_ERROR",2,1989},
 {"MULIB_CDD_MCP_TOOL_FAILED",2,1990},
@@ -133485,13 +133501,13 @@ static const mb_symbol mb_symbols_602[] = {
 {"mulib_cdd_mcp_catalog_init",0,3662},
 {"mulib_cdd_mcp_catalog_process",0,3663},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_603[] = {
+static const mb_symbol mb_symbols_604[] = {
 {"mulib_mcu_t",1,181},
 {"mulib_mcu_init",0,607},
 {"mulib_mcu_parse",0,608},
 {"mulib_mcu_free",0,609},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_604[] = {
+static const mb_symbol mb_symbols_605[] = {
 {"mulib_mempool_t",1,6042},
 {"mulib_mempool_create",0,3667},
 {"mulib_mempool_acquire",0,3668},
@@ -133502,7 +133518,7 @@ static const mb_symbol mb_symbols_604[] = {
 {"mulib_mempool_clear",0,3673},
 {"mulib_mempool_destroy",0,3674},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_605[] = {
+static const mb_symbol mb_symbols_606[] = {
 {"MULIB_MEMTABLE_OK",2,411},
 {"MULIB_MEMTABLE_NOTFOUND",2,412},
 {"MULIB_MEMTABLE_EINVAL",2,413},
@@ -133517,13 +133533,13 @@ static const mb_symbol mb_symbols_605[] = {
 {"mulib_memtable_clone",0,757},
 {"mulib_memtable_free",0,758},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_606[] = {
+static const mb_symbol mb_symbols_607[] = {
 {"mulib_memtest_result_t",1,6050},
 {"mulib_memtest_hooks_t",1,6051},
 {"mulib_memtest_run",0,3675},
 {"mulib_memtest_march",0,3676},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_607[] = {
+static const mb_symbol mb_symbols_608[] = {
 {"mulib_memtkx_t",1,6058},
 {"mulib_memtkx_stats_t",1,6059},
 {"mulib_memtkx_create",0,3677},
@@ -133535,11 +133551,11 @@ static const mb_symbol mb_symbols_607[] = {
 {"mulib_memtkx_reset",0,3683},
 {"mulib_memtkx_destroy",0,3684},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_608[] = {
+static const mb_symbol mb_symbols_609[] = {
 {"mulib_messagepack_encode",0,2105},
 {"mulib_messagepack_decode",0,2106},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_609[] = {
+static const mb_symbol mb_symbols_610[] = {
 {"mulib_metapp_t",1,6069},
 {"MULIB_METAPP_OK",2,1995},
 {"MULIB_METAPP_INVALID",2,1996},
@@ -133588,11 +133604,11 @@ static const mb_symbol mb_symbols_609[] = {
 {"mulib_metapp_plugin_file",0,3705},
 {"MULIB_METAPP_PLUGIN_ABI",2,2772},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_610[] = {
+static const mb_symbol mb_symbols_611[] = {
 {"mulib_metrics_t",1,6122},
 {"mulib_metrics_record",0,3706},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_611[] = {
+static const mb_symbol mb_symbols_612[] = {
 {"MULIB_MICROAUDIO_OK",2,2008},
 {"MULIB_MICROAUDIO_INVALID",2,2009},
 {"MULIB_MICROAUDIO_MALFORMED",2,2010},
@@ -133609,7 +133625,7 @@ static const mb_symbol mb_symbols_611[] = {
 {"mulib_microaudio_sine",0,3711},
 {"mulib_microaudio_mix",0,3712},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_612[] = {
+static const mb_symbol mb_symbols_613[] = {
 {"MULIB_MICROCC_NATIVE",2,2014},
 {"MULIB_MICROCC_CLICKIR",2,2015},
 {"MULIB_MICROCC_ANFIR",2,2016},
@@ -133636,7 +133652,7 @@ static const mb_symbol mb_symbols_612[] = {
 {"mulib_microcc_free",0,3716},
 {"mulib_microcc_stage_string",0,3717},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_613[] = {
+static const mb_symbol mb_symbols_614[] = {
 {"MULIB_MICROCHAN_SUBSCRIBE",2,2028},
 {"MULIB_MICROCHAN_UNSUBSCRIBE",2,2029},
 {"MULIB_MICROCHAN_PUBLISH",2,2030},
@@ -133658,7 +133674,7 @@ static const mb_symbol mb_symbols_613[] = {
 {"mulib_microchan_broker_clients",0,3727},
 {"mulib_microchan_broker_destroy",0,3728},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_614[] = {
+static const mb_symbol mb_symbols_615[] = {
 {"mulib_microjs_t",1,6185},
 {"mulib_microjs_object_t",1,6186},
 {"MULIB_MICROJS_NULL",2,2033},
@@ -133699,14 +133715,14 @@ static const mb_symbol mb_symbols_614[] = {
 {"mulib_microjs_set_property",0,3745},
 {"mulib_microjs_collect",0,3746},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_615[] = {
+static const mb_symbol mb_symbols_616[] = {
 {"mulib_microjs_module_t",1,6176},
 {"mulib_microjs_modules_t",1,6177},
 {"mulib_microjs_module_register",0,3729},
 {"mulib_microjs_module_find",0,3730},
 {"mulib_microjs_modules_free",0,3731},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_616[] = {
+static const mb_symbol mb_symbols_617[] = {
 {"MULIB_MICROJS_PROMISE_PENDING",2,473},
 {"MULIB_MICROJS_PROMISE_RESOLVED",2,474},
 {"MULIB_MICROJS_PROMISE_REJECTED",2,475},
@@ -133720,7 +133736,7 @@ static const mb_symbol mb_symbols_616[] = {
 {"mulib_microjs_microtask_drain",0,884},
 {"mulib_microjs_microtask_free",0,885},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_617[] = {
+static const mb_symbol mb_symbols_618[] = {
 {"mulib_microtcl_var_t",1,6215},
 {"mulib_microtcl_t",1,6217},
 {"mulib_micrtcl_t",1,6217},
@@ -133730,11 +133746,11 @@ static const mb_symbol mb_symbols_617[] = {
 {"mulib_microtcl_get",0,3750},
 {"mulib_microtcl_destroy",0,3751},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_618[] = {
+static const mb_symbol mb_symbols_619[] = {
 {"mulib_microtype_compute",0,3752},
 {"mulib_microtype_clamp",0,3753},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_619[] = {
+static const mb_symbol mb_symbols_620[] = {
 {"mulib_midi_event_t",1,863},
 {"mulib_midi_t",1,864},
 {"mulib_midi_init",0,464},
@@ -133745,28 +133761,28 @@ static const mb_symbol mb_symbols_619[] = {
 {"mulib_midi_encode",0,469},
 {"mulib_midi_decode",0,470},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_620[] = {
+static const mb_symbol mb_symbols_621[] = {
 {"mulib_mime_type",0,3754},
 {"mulib_mime_content_type",0,3755},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_621[] = {
+static const mb_symbol mb_symbols_622[] = {
 {"mulib_minhash_init",0,3756},
 {"mulib_minhash_add",0,3757},
 {"mulib_minhash_similarity",0,3758},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_622[] = {
+static const mb_symbol mb_symbols_623[] = {
 {"mulib_minicurl_get",0,3759},
 {"mulib_minicurl_send",0,3760},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_623[] = {
+static const mb_symbol mb_symbols_624[] = {
 {"mulib_miniflac_decode",0,458},
 {"mulib_miniflac_encode",0,459},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_624[] = {
+static const mb_symbol mb_symbols_625[] = {
 {"mulib_minimpeg_encode",0,462},
 {"mulib_minimpeg_decode",0,463},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_625[] = {
+static const mb_symbol mb_symbols_626[] = {
 {"mulib_minincat_read_fn",1,199},
 {"mulib_minincat_write_fn",1,2903},
 {"MULIB_MININCAT_OK",2,2049},
@@ -133776,7 +133792,7 @@ static const mb_symbol mb_symbols_625[] = {
 {"mulib_minincat_result",1,6229},
 {"mulib_minincat_relay",0,3761},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_626[] = {
+static const mb_symbol mb_symbols_627[] = {
 {"mulib_minish_t",1,6231},
 {"mulib_minish_command_fn",1,6233},
 {"mulib_minish_write_fn",1,483},
@@ -133810,7 +133826,7 @@ static const mb_symbol mb_symbols_626[] = {
 {"mulib_minish_status_string",0,3774},
 {"MULIB_MINISH_MAX_NAME",2,2773},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_627[] = {
+static const mb_symbol mb_symbols_628[] = {
 {"MULIB_MINIVM_HALT",2,711},
 {"MULIB_MINIVM_PUSH",2,712},
 {"MULIB_MINIVM_DROP",2,713},
@@ -133859,15 +133875,15 @@ static const mb_symbol mb_symbols_627[] = {
 {"mulib_minivm_run",0,1346},
 {"mulib_minivm_status_string",0,1347},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_628[] = {
+static const mb_symbol mb_symbols_629[] = {
 {"mulib_minivorbis_encode",0,460},
 {"mulib_minivorbis_decode",0,461},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_629[] = {
+static const mb_symbol mb_symbols_630[] = {
 {"mulib_miniwav_decode",0,456},
 {"mulib_miniwav_encode",0,457},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_630[] = {
+static const mb_symbol mb_symbols_631[] = {
 {"MULIB_MINIWGET_OK",2,2064},
 {"MULIB_MINIWGET_INVALID",2,2065},
 {"MULIB_MINIWGET_LIMIT",2,2066},
@@ -133877,7 +133893,7 @@ static const mb_symbol mb_symbols_630[] = {
 {"mulib_miniwget_result",1,6254},
 {"mulib_miniwget_download",0,3775},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_631[] = {
+static const mb_symbol mb_symbols_632[] = {
 {"MULIB_MIR_VOID",2,152},
 {"MULIB_MIR_I64",2,153},
 {"MULIB_MIR_BOOL",2,154},
@@ -134013,7 +134029,7 @@ static const mb_symbol mb_symbols_631[] = {
 {"mulib_mir_native_name",0,289},
 {"MULIB_MIR_NONE",2,2646},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_632[] = {
+static const mb_symbol mb_symbols_633[] = {
 {"MULIB_MMDIFF_OK",2,2070},
 {"MULIB_MMDIFF_INVALID",2,2071},
 {"MULIB_MMDIFF_LIMIT",2,2072},
@@ -134030,7 +134046,7 @@ static const mb_symbol mb_symbols_632[] = {
 {"mulib_mmdiff_make",0,3778},
 {"mulib_mmdiff_apply",0,3779},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_633[] = {
+static const mb_symbol mb_symbols_634[] = {
 {"mulib_mmfile_t",1,6267},
 {"MULIB_MMFILE_OK",2,2076},
 {"MULIB_MMFILE_EINVAL",2,2077},
@@ -134042,7 +134058,7 @@ static const mb_symbol mb_symbols_633[] = {
 {"mulib_mmfile_flush",0,3781},
 {"mulib_mmfile_close",0,3782},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_634[] = {
+static const mb_symbol mb_symbols_635[] = {
 {"MULIB_MOBI_OK",2,372},
 {"MULIB_MOBI_NOTFOUND",2,373},
 {"MULIB_MOBI_EINVAL",2,374},
@@ -134060,17 +134076,17 @@ static const mb_symbol mb_symbols_634[] = {
 {"mulib_mobi_palmdoc_decode",0,617},
 {"mulib_mobi_text",0,618},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_635[] = {
+static const mb_symbol mb_symbols_636[] = {
 {"mulib_mobiwrite_palmdoc",0,3783},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_636[] = {
+static const mb_symbol mb_symbols_637[] = {
 {"mulib_module_entry_t",1,6272},
 {"mulib_module_resolver_t",1,6273},
 {"mulib_module_resolver_add",0,3784},
 {"mulib_module_resolver_get",0,3785},
 {"mulib_module_resolver_free",0,3786},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_637[] = {
+static const mb_symbol mb_symbols_638[] = {
 {"mulib_money_t",1,6280},
 {"mulib_money_valid",0,3787},
 {"mulib_money_make",0,3788},
@@ -134079,7 +134095,7 @@ static const mb_symbol mb_symbols_637[] = {
 {"mulib_money_scale",0,3791},
 {"mulib_money_parse",0,3792},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_638[] = {
+static const mb_symbol mb_symbols_639[] = {
 {"mulib_mop_version",0,3793},
 {"mulib_mop_object_t",1,6288},
 {"mulib_mop_method_fn",1,6293},
@@ -134091,19 +134107,19 @@ static const mb_symbol mb_symbols_638[] = {
 {"mulib_mop_lookup",0,3797},
 {"mulib_mop_call",0,3798},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_639[] = {
+static const mb_symbol mb_symbols_640[] = {
 {"mulib_movingavg_t",1,6302},
 {"mulib_movingavg_init",0,3799},
 {"mulib_movingavg_push",0,3800},
 {"mulib_movingavg_free",0,3801},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_640[] = {
+static const mb_symbol mb_symbols_641[] = {
 {"mulib_mpu_t",1,181},
 {"mulib_mpu_init",0,95},
 {"mulib_mpu_parse",0,96},
 {"mulib_mpu_free",0,97},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_641[] = {
+static const mb_symbol mb_symbols_642[] = {
 {"MULIB_MQUEUE_OK",2,2082},
 {"MULIB_MQUEUE_AGAIN",2,2083},
 {"MULIB_MQUEUE_EINVAL",2,2084},
@@ -134116,7 +134132,7 @@ static const mb_symbol mb_symbols_641[] = {
 {"mulib_mqueue_receive",0,3804},
 {"mulib_mqueue_remove",0,3805},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_642[] = {
+static const mb_symbol mb_symbols_643[] = {
 {"mulib_muburg_node_t",1,5494},
 {"mulib_muburg_rule_t",1,5495},
 {"mulib_muburg_limits_t",1,5496},
@@ -134137,24 +134153,24 @@ static const mb_symbol mb_symbols_642[] = {
 {"mulib_muburg_free",0,3376},
 {"mulib_muburg_status_string",0,3377},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_643[] = {
+static const mb_symbol mb_symbols_644[] = {
 {"mulib_muidl_generate",0,3806},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_644[] = {
+static const mb_symbol mb_symbols_645[] = {
 {"mulib_version",0,3807},
 {"MULIB_VERSION_MAJOR",2,2774},
 {"MULIB_VERSION_MINOR",2,2775},
 {"MULIB_VERSION_PATCH",2,2776},
 {"MULIB_VERSION_STRING",2,2777},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_645[] = {
+static const mb_symbol mb_symbols_646[] = {
 {"mulib_multipart_field",0,3808},
 {"mulib_multipart_part_t",1,6311},
 {"mulib_multipart_encode",0,3809},
 {"mulib_multipart_next",0,3810},
 {"mulib_multipart_part_free",0,3811},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_646[] = {
+static const mb_symbol mb_symbols_647[] = {
 {"mulib_mumq_t",1,3547},
 {"MULIB_MUMQ_OK",2,1247},
 {"MULIB_MUMQ_AGAIN",2,1248},
@@ -134181,10 +134197,10 @@ static const mb_symbol mb_symbols_646[] = {
 {"mulib_mumq_message_free",0,2249},
 {"MULIB_MUMQ_MAX_PAYLOAD",2,2699},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_647[] = {
+static const mb_symbol mb_symbols_648[] = {
 {"mulib_mumq_publish",0,2250},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_648[] = {
+static const mb_symbol mb_symbols_649[] = {
 {"mulib_mumq_server_t",1,6317},
 {"mulib_mumq_authorize_fn",1,6318},
 {"mulib_mumq_server_create",0,3812},
@@ -134193,11 +134209,11 @@ static const mb_symbol mb_symbols_648[] = {
 {"mulib_mumq_server_remove",0,3815},
 {"mulib_mumq_server_step",0,3816},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_649[] = {
+static const mb_symbol mb_symbols_650[] = {
 {"mulib_mumq_subscribe",0,2251},
 {"mulib_mumq_subscribed",0,2252},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_650[] = {
+static const mb_symbol mb_symbols_651[] = {
 {"mulib_mune_version",0,471},
 {"mulib_mune_t",1,876},
 {"MULIB_MUNE_OK",2,349},
@@ -134289,9 +134305,9 @@ static const mb_symbol mb_symbols_650[] = {
 {"mulib_mune_load_bundle",0,521},
 {"mulib_mune_load_bundle_file",0,522},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_651[] = {
-{NULL,0,0}};
 static const mb_symbol mb_symbols_652[] = {
+{NULL,0,0}};
+static const mb_symbol mb_symbols_653[] = {
 {"mulib_musicnotation_item_t",1,6326},
 {"mulib_musicnotation_list_t",1,6327},
 {"mulib_musicnotation_push",0,3817},
@@ -134299,7 +134315,7 @@ static const mb_symbol mb_symbols_652[] = {
 {"mulib_musicnotation_bounds",0,3819},
 {"mulib_musicnotation_destroy",0,3820},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_653[] = {
+static const mb_symbol mb_symbols_654[] = {
 {"MULIB_MUW3_OK",2,1784},
 {"MULIB_MUW3_INVALID",2,1785},
 {"MULIB_MUW3_LIMIT",2,1786},
@@ -134320,7 +134336,7 @@ static const mb_symbol mb_symbols_653[] = {
 {"mulib_muw3_form",0,3126},
 {"mulib_muw3_transport",0,3127},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_654[] = {
+static const mb_symbol mb_symbols_655[] = {
 {"mulib_muw3_engine_t",1,6335},
 {"mulib_muw3_engine_options_t",1,6336},
 {"mulib_muw3_engine_create",0,3821},
@@ -134329,68 +134345,68 @@ static const mb_symbol mb_symbols_654[] = {
 {"mulib_muw3_engine_run",0,3824},
 {"mulib_muw3_engine_run_file",0,3825},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_655[] = {
+static const mb_symbol mb_symbols_656[] = {
 {"mulib_ngram_visit_fn",1,6344},
 {"mulib_ngrams",0,3826},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_656[] = {
+static const mb_symbol mb_symbols_657[] = {
 {"mulib_name_resolution_run",0,3827},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_657[] = {
+static const mb_symbol mb_symbols_658[] = {
 {"mulib_nameserver_t",1,3730},
 {"mulib_nameserver_init",0,2332},
 {"mulib_nameserver_answer",0,2333},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_658[] = {
+static const mb_symbol mb_symbols_659[] = {
 {"mulib_namespace_spec_t",1,6348},
 {"mulib_namespace_enter",0,3828},
 {"mulib_namespace_mount_private",0,3829},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_659[] = {
+static const mb_symbol mb_symbols_660[] = {
 {"mulib_ndjson_t",1,6351},
 {"mulib_ndjson_init",0,3830},
 {"mulib_ndjson_next",0,3831},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_660[] = {
+static const mb_symbol mb_symbols_661[] = {
 {"mulib_net_cap_effective",0,3832},
 {"mulib_net_cap_has",0,3833},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_661[] = {
+static const mb_symbol mb_symbols_662[] = {
 {"mulib_net_cli_format_ipv4",0,3834},
 {"mulib_net_cli_format_json",0,3835},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_662[] = {
+static const mb_symbol mb_symbols_663[] = {
 {"mulib_net_monitor_open",0,3836},
 {"mulib_net_monitor_read",0,3837},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_663[] = {
+static const mb_symbol mb_symbols_664[] = {
 {"mulib_net_profile_t",1,6357},
 {"mulib_net_profile_parse",0,3838},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_664[] = {
+static const mb_symbol mb_symbols_665[] = {
 {"mulib_net_reconcile_result_t",1,6363},
 {"mulib_net_reconcile_check",0,3840},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_665[] = {
+static const mb_symbol mb_symbols_666[] = {
 {"mulib_net_state_t",1,6360},
 {"mulib_net_state_read",0,3839},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_666[] = {
+static const mb_symbol mb_symbols_667[] = {
 {"mulib_net_stats_t",1,6367},
 {"mulib_net_stats_read",0,3841},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_667[] = {
+static const mb_symbol mb_symbols_668[] = {
 {"mulib_netdevice_info_t",1,6370},
 {"mulib_netdevice_list",0,3842},
 {"mulib_netdevice_index",0,3843},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_668[] = {
+static const mb_symbol mb_symbols_669[] = {
 {"mulib_netfilter_log_subscribe",0,3844},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_669[] = {
+static const mb_symbol mb_symbols_670[] = {
 {"mulib_netfilter_queue_bind",0,3845},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_670[] = {
+static const mb_symbol mb_symbols_671[] = {
 {"mulib_netfs_exchange_fn",1,6381},
 {"mulib_netfs_t",1,6383},
 {"mulib_netfs_init",0,3850},
@@ -134400,7 +134416,7 @@ static const mb_symbol mb_symbols_670[] = {
 {"mulib_netfs_stream_exchange",0,3853},
 {"mulib_netfs_stream_serve",0,3854},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_671[] = {
+static const mb_symbol mb_symbols_672[] = {
 {"mulib_netlink_socket_t",1,2574},
 {"mulib_netlink_visit_fn",1,2575},
 {"mulib_netlink_open",0,1563},
@@ -134410,77 +134426,77 @@ static const mb_symbol mb_symbols_671[] = {
 {"mulib_netlink_transact",0,1567},
 {"mulib_netlink_foreach",0,1568},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_672[] = {
+static const mb_symbol mb_symbols_673[] = {
 {"mulib_netlink_async_wait",0,3855},
 {"mulib_netlink_async_recv",0,3856},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_673[] = {
+static const mb_symbol mb_symbols_674[] = {
 {"mulib_netlink_attr_t",1,3439},
 {"mulib_netlink_attr_fn",1,3440},
 {"mulib_netlink_attr_append",0,2176},
 {"mulib_netlink_attr_foreach",0,2177},
 {"mulib_netlink_attr_u32",0,2178},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_674[] = {
+static const mb_symbol mb_symbols_675[] = {
 {"mulib_netlink_error_t",1,6392},
 {"mulib_netlink_extack_parse",0,3857},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_675[] = {
+static const mb_symbol mb_symbols_676[] = {
 {"mulib_netlink_genl_resolve",0,2179},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_676[] = {
+static const mb_symbol mb_symbols_677[] = {
 {"mulib_netlink_policy_t",1,6395},
 {"mulib_netlink_schema_check",0,3858},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_677[] = {
+static const mb_symbol mb_symbols_678[] = {
 {"mulib_netns_open_self",0,3859},
 {"mulib_netns_open_pid",0,3860},
 {"mulib_netns_enter",0,3861},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_678[] = {
+static const mb_symbol mb_symbols_679[] = {
 {"mulib_netpolicy_public_url",0,3863},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_679[] = {
+static const mb_symbol mb_symbols_680[] = {
 {"mulib_networkd_client_links",0,3864},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_680[] = {
+static const mb_symbol mb_symbols_681[] = {
 {"mulib_nextclosure_first",0,1342},
 {"mulib_nextclosure_next",0,1343},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_681[] = {
+static const mb_symbol mb_symbols_682[] = {
 {"mulib_nfnetlink_open",0,1569},
 {"mulib_nfnetlink_send",0,1570},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_682[] = {
+static const mb_symbol mb_symbols_683[] = {
 {"mulib_nftables_tables",0,3865},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_683[] = {
+static const mb_symbol mb_symbols_684[] = {
 {"mulib_nl80211_command",0,3866},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_684[] = {
+static const mb_symbol mb_symbols_685[] = {
 {"mulib_nm_client_state",0,3867},
 {"mulib_nm_client_devices",0,3868},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_685[] = {
+static const mb_symbol mb_symbols_686[] = {
 {"mulib_nm_connection_list",0,3869},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_686[] = {
+static const mb_symbol mb_symbols_687[] = {
 {"mulib_nm_device_interface",0,3870},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_687[] = {
+static const mb_symbol mb_symbols_688[] = {
 {"mulib_nm_secret_agent_unregister",0,3871},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_688[] = {
+static const mb_symbol mb_symbols_689[] = {
 {"mulib_nm_wifi_access_points",0,3872},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_689[] = {
+static const mb_symbol mb_symbols_690[] = {
 {"mulib_num_csc_t",1,6414},
 {"mulib_num_csc_from_triplets",0,3879},
 {"mulib_num_csc_matvec",0,3880},
 {"mulib_num_csc_free",0,3881},
 {"mulib_num_csc_validate",0,3882},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_690[] = {
+static const mb_symbol mb_symbols_691[] = {
 {"mulib_num_csr_t",1,6421},
 {"mulib_num_csr_from_triplets",0,3883},
 {"mulib_num_csr_matvec",0,3884},
@@ -134488,24 +134504,24 @@ static const mb_symbol mb_symbols_690[] = {
 {"mulib_num_csr_validate",0,3886},
 {"mulib_num_csr_transpose",0,3887},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_691[] = {
+static const mb_symbol mb_symbols_692[] = {
 {"mulib_num_dense_t",1,6429},
 {"mulib_num_dense_init",0,3888},
 {"mulib_num_dense_free",0,3889},
 {"mulib_num_dense_solve",0,3890},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_692[] = {
+static const mb_symbol mb_symbols_693[] = {
 {"mulib_num_integrand",1,6434},
 {"mulib_num_integrate_trapezoid",0,3891},
 {"mulib_num_integrate_simpson",0,3892},
 {"mulib_num_integrate_adaptive",0,3893},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_693[] = {
+static const mb_symbol mb_symbols_694[] = {
 {"mulib_num_scalar_fn",1,6434},
 {"mulib_num_bisect",0,3894},
 {"mulib_num_newton",0,3895},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_694[] = {
+static const mb_symbol mb_symbols_695[] = {
 {"mulib_num_triplet_t",1,6403},
 {"mulib_num_sparse_t",1,6404},
 {"mulib_num_sparse_init",0,3873},
@@ -134515,24 +134531,24 @@ static const mb_symbol mb_symbols_694[] = {
 {"mulib_num_sparse_validate",0,3877},
 {"mulib_num_sparse_canonicalize",0,3878},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_695[] = {
+static const mb_symbol mb_symbols_696[] = {
 {"mulib_num_stat_t",1,6440},
 {"mulib_num_stat_push",0,3896},
 {"mulib_num_stat_variance",0,3897},
 {"mulib_num_stat_merge",0,3898},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_696[] = {
+static const mb_symbol mb_symbols_697[] = {
 {"mulib_nvptx_t",1,181},
 {"mulib_nvptx_init",0,3899},
 {"mulib_nvptx_init_ex",0,3900},
 {"mulib_nvptx_free",0,3901},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_697[] = {
+static const mb_symbol mb_symbols_698[] = {
 {"mulib_oauth_authorize",0,3910},
 {"mulib_oauth_state",0,3911},
 {"mulib_oauth_pkce_challenge",0,3912},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_698[] = {
+static const mb_symbol mb_symbols_699[] = {
 {"mulib_oauth2_verify_fn",1,4774},
 {"mulib_oauth2_authorize",0,3902},
 {"mulib_oauth2_state",0,3903},
@@ -134546,7 +134562,7 @@ static const mb_symbol mb_symbols_698[] = {
 {"mulib_oauth2_claims_verify_fn",1,6453},
 {"mulib_oauth2_authorize_claims",0,3909},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_699[] = {
+static const mb_symbol mb_symbols_700[] = {
 {"MULIB_OBJDUMP_HEADERS",2,772},
 {"MULIB_OBJDUMP_SECTIONS",2,773},
 {"MULIB_OBJDUMP_SYMBOLS",2,774},
@@ -134560,64 +134576,62 @@ static const mb_symbol mb_symbols_699[] = {
 {"mulib_objdump_symbol",0,1414},
 {"mulib_objdump_hex",0,1415},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_700[] = {
+static const mb_symbol mb_symbols_701[] = {
 {"mulib_objectdb_t",1,6457},
 {"mulib_objectdb_put",0,3913},
 {"mulib_objectdb_get",0,3914},
 {"mulib_objectdb_delete",0,3915},
 {"mulib_objectdb_free",0,3916},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_701[] = {
+static const mb_symbol mb_symbols_702[] = {
 {"mulib_objfile_t",1,6464},
 {"mulib_objfile_open",0,3917},
 {"mulib_objfile_section",0,3918},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_702[] = {
+static const mb_symbol mb_symbols_703[] = {
 {"mulib_objfilebuilder_t",1,2367},
 {"mulib_objfilebuilder_add",0,1419},
 {"mulib_objfilebuilder_finish",0,1420},
 {"mulib_objfilebuilder_free",0,1421},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_703[] = {
+static const mb_symbol mb_symbols_704[] = {
 {"mulib_objfileinjector_replace",0,3919},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_704[] = {
+static const mb_symbol mb_symbols_705[] = {
 {"mulib_objfileleader_load",0,3920},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_705[] = {
+static const mb_symbol mb_symbols_706[] = {
 {"mulib_objfilelibsearch_find",0,3921},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_706[] = {
+static const mb_symbol mb_symbols_707[] = {
 {"mulib_objfilepacker_add",0,3922},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_707[] = {
+static const mb_symbol mb_symbols_708[] = {
 {"mulib_objfileposindep_rel32",0,3923},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_708[] = {
+static const mb_symbol mb_symbols_709[] = {
 {"MULIB_OBJFILERELOC_ABS32",2,2094},
 {"MULIB_OBJFILERELOC_ABS64",2,2095},
 {"MULIB_OBJFILERELOC_PC32",2,2096},
 {"mulib_objfilereloc_apply",0,3924},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_709[] = {
+static const mb_symbol mb_symbols_710[] = {
 {"mulib_objfilestub_x64_jump",0,3925},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_710[] = {
+static const mb_symbol mb_symbols_711[] = {
 {"mulib_objfilesymloc_find",0,3926},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_711[] = {
+static const mb_symbol mb_symbols_712[] = {
 {"mulib_objfilewriter_section_t",1,2364},
 {"mulib_objfilewriter_write",0,1418},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_712[] = {
+static const mb_symbol mb_symbols_713[] = {
 {"mulib_obs4_ops_t",1,6476},
 {"mulib_obs4_t",1,6479},
 {"mulib_obs4_init",0,3927},
 {"mulib_obs4_handshake",0,3928},
 {"mulib_obs4_stream",0,3929},
 {"mulib_obs4_close",0,3930},
-{NULL,0,0}};
-static const mb_symbol mb_symbols_713[] = {
 {NULL,0,0}};
 static const mb_symbol mb_symbols_714[] = {
 {NULL,0,0}};
@@ -134638,6 +134652,8 @@ static const mb_symbol mb_symbols_721[] = {
 static const mb_symbol mb_symbols_722[] = {
 {NULL,0,0}};
 static const mb_symbol mb_symbols_723[] = {
+{NULL,0,0}};
+static const mb_symbol mb_symbols_724[] = {
 {"MULIB_OIX_BUILD",2,897},
 {"MULIB_OIX_KVM",2,898},
 {"MULIB_OIX_CONFIG_FORMATS",2,899},
@@ -134707,7 +134723,7 @@ static const mb_symbol mb_symbols_723[] = {
 {"MULIB_OIX_MAX_INSTRUCTIONS",2,2694},
 {"MULIB_OIX_RAM_BYTES",2,2695},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_724[] = {
+static const mb_symbol mb_symbols_725[] = {
 {"MULIB_OPENAI_OK",2,2097},
 {"MULIB_OPENAI_INVALID",2,2098},
 {"MULIB_OPENAI_LIMIT",2,2099},
@@ -134733,7 +134749,7 @@ static const mb_symbol mb_symbols_724[] = {
 {"mulib_openai_output_text",0,3942},
 {"mulib_openai_strerror",0,3943},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_725[] = {
+static const mb_symbol mb_symbols_726[] = {
 {"mulib_openai_client_t",1,6510},
 {"mulib_openai_event_t",1,6511},
 {"mulib_openai_event_fn",1,6512},
@@ -134752,7 +134768,7 @@ static const mb_symbol mb_symbols_725[] = {
 {"mulib_openai_tool_fn",1,6529},
 {"mulib_openai_client_run",0,3958},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_726[] = {
+static const mb_symbol mb_symbols_727[] = {
 {"mulib_openai_server_request_t",1,6532},
 {"mulib_openai_writer_t",1,6533},
 {"mulib_openai_write_fn",1,201},
@@ -134771,7 +134787,7 @@ static const mb_symbol mb_symbols_726[] = {
 {"mulib_openai_server_done",0,3968},
 {"mulib_openai_server_part",0,3969},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_727[] = {
+static const mb_symbol mb_symbols_728[] = {
 {"MULIB_CDD_OPENCODE_OK",2,2106},
 {"MULIB_CDD_OPENCODE_INVALID",2,2107},
 {"MULIB_CDD_OPENCODE_LIMIT",2,2108},
@@ -134797,18 +134813,18 @@ static const mb_symbol mb_symbols_727[] = {
 {"mulib_cdd_opencode_response_free",0,3975},
 {"mulib_cdd_opencode_bind",0,3976},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_728[] = {
+static const mb_symbol mb_symbols_729[] = {
 {"mulib_openvpn_packet_t",1,6572},
 {"mulib_openvpn_replay_t",1,6573},
 {"mulib_openvpn_decode",0,3977},
 {"mulib_openvpn_encode",0,3978},
 {"mulib_openvpn_replay_accept",0,3979},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_729[] = {
+static const mb_symbol mb_symbols_730[] = {
 {"mulib_opticalmargin_compute",0,3980},
 {"mulib_opticalmargin_clamp",0,3981},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_730[] = {
+static const mb_symbol mb_symbols_731[] = {
 {"mulib_optml_rules_t",1,6596},
 {"mulib_optml_parse",0,3988},
 {"mulib_optml_rules_free",0,3989},
@@ -134822,7 +134838,7 @@ static const mb_symbol mb_symbols_730[] = {
 {"mulib_optml_write",0,3994},
 {"mulib_optml_free",0,3995},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_731[] = {
+static const mb_symbol mb_symbols_732[] = {
 {"mulib_orhoconv_t",1,5222},
 {"MULIB_ORHOCONV_ONSET",2,1799},
 {"MULIB_ORHOCONV_PREFIX",2,1800},
@@ -134841,7 +134857,7 @@ static const mb_symbol mb_symbols_731[] = {
 {"mulib_orhoconv_serialize",0,3220},
 {"mulib_orhoconv_deserialize",0,3221},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_732[] = {
+static const mb_symbol mb_symbols_733[] = {
 {"MULIB_ORTHOGRAPHIC_PREFIX",2,2142},
 {"MULIB_ORTHOGRAPHIC_SUFFIX",2,2143},
 {"MULIB_ORTHOGRAPHIC_WORD",2,2144},
@@ -134849,11 +134865,11 @@ static const mb_symbol mb_symbols_732[] = {
 {"mulib_orthographic_rule_t",1,6615},
 {"mulib_orthographic_apply",0,3996},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_733[] = {
+static const mb_symbol mb_symbols_734[] = {
 {"mulib_otpath_totp",0,4002},
 {"mulib_otpath_totp_verify",0,4003},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_734[] = {
+static const mb_symbol mb_symbols_735[] = {
 {"mulib_otpauth_config_t",1,6618},
 {"mulib_otpauth_replay_t",1,6619},
 {"mulib_otpauth_base32",0,3997},
@@ -134862,32 +134878,32 @@ static const mb_symbol mb_symbols_734[] = {
 {"mulib_otpauth_totp",0,4000},
 {"mulib_otpauth_totp_verify",0,4001},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_735[] = {
+static const mb_symbol mb_symbols_736[] = {
 {"mulib_p2pproto_encode",0,4004},
 {"mulib_p2pproto_decode",0,4005},
 {"mulib_p2pproto_select",0,4006},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_736[] = {
+static const mb_symbol mb_symbols_737[] = {
 {"mulib_packet_socket_open",0,4007},
 {"mulib_packet_socket_receive",0,4008},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_737[] = {
+static const mb_symbol mb_symbols_738[] = {
 {"mulib_packetfiter_view_t",1,2767},
 {"mulib_packetfiter_parse",0,1660},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_738[] = {
+static const mb_symbol mb_symbols_739[] = {
 {"mulib_packetrules_rule_t",1,2770},
 {"mulib_packetrules_validate",0,1661},
 {"mulib_packetrules_apply",0,1662},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_739[] = {
+static const mb_symbol mb_symbols_740[] = {
 {"mulib_packetstream_t",1,6629},
 {"mulib_packetstream_init",0,4009},
 {"mulib_packetstream_feed",0,4010},
 {"mulib_packetstream_encode",0,4011},
 {"mulib_packetstream_finished",0,4012},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_740[] = {
+static const mb_symbol mb_symbols_741[] = {
 {"MULIB_PACKETVM_LD8",2,2145},
 {"MULIB_PACKETVM_LD16",2,2146},
 {"MULIB_PACKETVM_LD32",2,2147},
@@ -134898,7 +134914,7 @@ static const mb_symbol mb_symbols_740[] = {
 {"mulib_packetvm_validate",0,4013},
 {"mulib_packetvm_run",0,4014},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_741[] = {
+static const mb_symbol mb_symbols_742[] = {
 {"mulib_pagebalance_item_t",1,6640},
 {"mulib_pagebalance_list_t",1,6641},
 {"mulib_pagebalance_push",0,4015},
@@ -134906,7 +134922,7 @@ static const mb_symbol mb_symbols_741[] = {
 {"mulib_pagebalance_bounds",0,4017},
 {"mulib_pagebalance_destroy",0,4018},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_742[] = {
+static const mb_symbol mb_symbols_743[] = {
 {"mulib_pagebib_entry_t",1,6649},
 {"mulib_pagebib_table_t",1,6650},
 {"mulib_pagebib_destroy",0,4019},
@@ -134914,11 +134930,11 @@ static const mb_symbol mb_symbols_742[] = {
 {"mulib_pagebib_get",0,4021},
 {"mulib_pagebib_erase",0,4022},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_743[] = {
+static const mb_symbol mb_symbols_744[] = {
 {"mulib_pagecolumns_rect_t",1,6658},
 {"mulib_pagecolumns_divide",0,4023},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_744[] = {
+static const mb_symbol mb_symbols_745[] = {
 {"mulib_pagefloat_item_t",1,6661},
 {"mulib_pagefloat_list_t",1,6662},
 {"mulib_pagefloat_push",0,4024},
@@ -134926,7 +134942,7 @@ static const mb_symbol mb_symbols_744[] = {
 {"mulib_pagefloat_bounds",0,4026},
 {"mulib_pagefloat_destroy",0,4027},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_745[] = {
+static const mb_symbol mb_symbols_746[] = {
 {"mulib_pagefootnote_item_t",1,6670},
 {"mulib_pagefootnote_list_t",1,6671},
 {"mulib_pagefootnote_push",0,4028},
@@ -134934,15 +134950,15 @@ static const mb_symbol mb_symbols_745[] = {
 {"mulib_pagefootnote_bounds",0,4030},
 {"mulib_pagefootnote_destroy",0,4031},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_746[] = {
+static const mb_symbol mb_symbols_747[] = {
 {"mulib_pageframe_rect_t",1,6679},
 {"mulib_pageframe_inner",0,4032},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_747[] = {
+static const mb_symbol mb_symbols_748[] = {
 {"mulib_pagegrid_compute",0,4033},
 {"mulib_pagegrid_clamp",0,4034},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_748[] = {
+static const mb_symbol mb_symbols_749[] = {
 {"mulib_pageindex_entry_t",1,6682},
 {"mulib_pageindex_table_t",1,6683},
 {"mulib_pageindex_destroy",0,4035},
@@ -134950,7 +134966,7 @@ static const mb_symbol mb_symbols_748[] = {
 {"mulib_pageindex_get",0,4037},
 {"mulib_pageindex_erase",0,4038},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_749[] = {
+static const mb_symbol mb_symbols_750[] = {
 {"mulib_pagekeep_item_t",1,6691},
 {"mulib_pagekeep_list_t",1,6692},
 {"mulib_pagekeep_push",0,4039},
@@ -134958,7 +134974,7 @@ static const mb_symbol mb_symbols_749[] = {
 {"mulib_pagekeep_bounds",0,4041},
 {"mulib_pagekeep_destroy",0,4042},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_750[] = {
+static const mb_symbol mb_symbols_751[] = {
 {"mulib_pagemargin_item_t",1,6700},
 {"mulib_pagemargin_list_t",1,6701},
 {"mulib_pagemargin_push",0,4043},
@@ -134966,7 +134982,7 @@ static const mb_symbol mb_symbols_750[] = {
 {"mulib_pagemargin_bounds",0,4045},
 {"mulib_pagemargin_destroy",0,4046},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_751[] = {
+static const mb_symbol mb_symbols_752[] = {
 {"mulib_pageref_entry_t",1,6709},
 {"mulib_pageref_table_t",1,6710},
 {"mulib_pageref_destroy",0,4047},
@@ -134974,7 +134990,7 @@ static const mb_symbol mb_symbols_751[] = {
 {"mulib_pageref_get",0,4049},
 {"mulib_pageref_erase",0,4050},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_752[] = {
+static const mb_symbol mb_symbols_753[] = {
 {"mulib_pagetemplate_entry_t",1,6718},
 {"mulib_pagetemplate_table_t",1,6719},
 {"mulib_pagetemplate_destroy",0,4051},
@@ -134982,7 +134998,7 @@ static const mb_symbol mb_symbols_752[] = {
 {"mulib_pagetemplate_get",0,4053},
 {"mulib_pagetemplate_erase",0,4054},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_753[] = {
+static const mb_symbol mb_symbols_754[] = {
 {"mulib_pagetoc_entry_t",1,6727},
 {"mulib_pagetoc_table_t",1,6728},
 {"mulib_pagetoc_destroy",0,4055},
@@ -134990,7 +135006,7 @@ static const mb_symbol mb_symbols_753[] = {
 {"mulib_pagetoc_get",0,4057},
 {"mulib_pagetoc_erase",0,4058},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_754[] = {
+static const mb_symbol mb_symbols_755[] = {
 {"mulib_pagewidow_item_t",1,6736},
 {"mulib_pagewidow_list_t",1,6737},
 {"mulib_pagewidow_push",0,4059},
@@ -134998,7 +135014,7 @@ static const mb_symbol mb_symbols_754[] = {
 {"mulib_pagewidow_bounds",0,4061},
 {"mulib_pagewidow_destroy",0,4062},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_755[] = {
+static const mb_symbol mb_symbols_756[] = {
 {"mulib_paging_canonical",0,4063},
 {"mulib_paging_index",0,4064},
 {"mulib_paging_entry",0,4065},
@@ -135010,7 +135026,7 @@ static const mb_symbol mb_symbols_755[] = {
 {"MULIB_PAGING_USER",2,2780},
 {"MULIB_PAGING_NX",2,2781},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_756[] = {
+static const mb_symbol mb_symbols_757[] = {
 {"mulib_paleography_t",1,6759},
 {"mulib_paleography_error_t",1,6760},
 {"mulib_paleography_native_fn",1,6761},
@@ -135032,21 +135048,21 @@ static const mb_symbol mb_symbols_756[] = {
 {"mulib_paleography_encoding",0,4087},
 {"mulib_paleography_latex",0,4088},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_757[] = {
+static const mb_symbol mb_symbols_758[] = {
 {"mulib_palmdb_record_t",1,6784},
 {"mulib_palmdb_write",0,4089},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_758[] = {
+static const mb_symbol mb_symbols_759[] = {
 {"mulib_pandocast_from_docstril",0,2419},
 {"mulib_pandocast_serialize",0,2420},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_759[] = {
+static const mb_symbol mb_symbols_760[] = {
 {"mulib_parallel_fn",1,6810},
 {"mulib_parallel_map_fn",1,6812},
 {"mulib_parallel_for",0,4107},
 {"mulib_parallel_map",0,4108},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_760[] = {
+static const mb_symbol mb_symbols_761[] = {
 {"mulib_parallel_sh_job_t",1,6787},
 {"mulib_parallel_sh_channel_t",1,6788},
 {"mulib_parallel_sh_t",1,6789},
@@ -135077,7 +135093,7 @@ static const mb_symbol mb_symbols_760[] = {
 {"mulib_parallel_sh_lua_file",0,4105},
 {"mulib_parallel_sh_main",0,4106},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_761[] = {
+static const mb_symbol mb_symbols_762[] = {
 {"mulib_parsec_parser_t",1,52},
 {"mulib_parsec_predicate_fn",1,64},
 {"MULIB_PARSEC_EMPTY",2,3},
@@ -135143,7 +135159,7 @@ static const mb_symbol mb_symbols_761[] = {
 {"mulib_parser_parse",0,41},
 {"mulib_parser_parse_to_walker",0,42},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_762[] = {
+static const mb_symbol mb_symbols_763[] = {
 {"MULIB_PRATT_LITERAL",2,841},
 {"MULIB_PRATT_NAME",2,842},
 {"MULIB_PRATT_NEG",2,843},
@@ -135160,7 +135176,7 @@ static const mb_symbol mb_symbols_762[] = {
 {"mulib_parser_pratt_parse",0,1575},
 {"mulib_parser_pratt_free",0,1576},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_763[] = {
+static const mb_symbol mb_symbols_764[] = {
 {"mulib_pass_fn",1,2442},
 {"mulib_pass_t",1,6816},
 {"mulib_passmanager_t",1,6817},
@@ -135168,12 +135184,12 @@ static const mb_symbol mb_symbols_763[] = {
 {"mulib_passmanager_run",0,4110},
 {"mulib_passmanager_free",0,4111},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_764[] = {
+static const mb_symbol mb_symbols_765[] = {
 {"mulib_path_basename",0,4112},
 {"mulib_path_extension",0,4113},
 {"mulib_path_join",0,4114},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_765[] = {
+static const mb_symbol mb_symbols_766[] = {
 {"MULIB_PATHDB_MAX_DEPTH",2,2160},
 {"mulib_pathdb_entry",1,6823},
 {"mulib_pathdb",1,6824},
@@ -135187,47 +135203,47 @@ static const mb_symbol mb_symbols_765[] = {
 {"mulib_pathdb_save",0,4121},
 {"mulib_pathdb_load",0,4122},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_766[] = {
+static const mb_symbol mb_symbols_767[] = {
 {"mulib_pcap_write_global",0,4123},
 {"mulib_pcap_write_record",0,4124},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_767[] = {
+static const mb_symbol mb_symbols_768[] = {
 {"mulib_pcb_board_t",1,6846},
 {"mulib_pcb_board_init",0,4128},
 {"mulib_pcb_board_add_trace",0,4129},
 {"mulib_pcb_board_free",0,4130},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_768[] = {
+static const mb_symbol mb_symbols_769[] = {
 {"mulib_pcb_bom_line_t",1,6852},
 {"mulib_pcb_bom_t",1,6853},
 {"mulib_pcb_bom_add",0,4131},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_769[] = {
+static const mb_symbol mb_symbols_770[] = {
 {"mulib_pcb_drc_violation_t",1,6857},
 {"mulib_pcb_drc_segments",0,4132},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_770[] = {
+static const mb_symbol mb_symbols_771[] = {
 {"mulib_pcb_drill_t",1,6861},
 {"mulib_pcb_excellon_write",0,4133},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_771[] = {
+static const mb_symbol mb_symbols_772[] = {
 {"mulib_pcb_point_t",1,6841},
 {"mulib_pcb_segment_t",1,6842},
 {"mulib_pcb_point_segment_distance",0,4125},
 {"mulib_pcb_segment_distance",0,4126},
 {"mulib_pcb_segments_violate",0,4127},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_772[] = {
+static const mb_symbol mb_symbols_773[] = {
 {"mulib_pcb_gerber_write",0,4134},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_773[] = {
+static const mb_symbol mb_symbols_774[] = {
 {"mulib_pcb_microstrip_impedance",0,4136},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_774[] = {
+static const mb_symbol mb_symbols_775[] = {
 {"mulib_pcb_placement_t",1,6865},
 {"mulib_pcb_pnp_write",0,4137},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_775[] = {
+static const mb_symbol mb_symbols_776[] = {
 {"mulib_pci_read_t",1,6868},
 {"mulib_pci_device_t",1,6870},
 {"mulib_pci_visit_t",1,6871},
@@ -135235,7 +135251,7 @@ static const mb_symbol mb_symbols_775[] = {
 {"mulib_pci_ecam",0,4139},
 {"mulib_pci_capability",0,4140},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_776[] = {
+static const mb_symbol mb_symbols_777[] = {
 {"MULIB_PDF_OK",2,2161},
 {"MULIB_PDF_EINVAL",2,2162},
 {"MULIB_PDF_ENOMEM",2,2163},
@@ -135250,7 +135266,7 @@ static const mb_symbol mb_symbols_776[] = {
 {"mulib_pdf_write",0,4146},
 {"mulib_pdf_free",0,4147},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_777[] = {
+static const mb_symbol mb_symbols_778[] = {
 {"mulib_pdfannot_entry_t",1,6889},
 {"mulib_pdfannot_table_t",1,6890},
 {"mulib_pdfannot_destroy",0,4148},
@@ -135258,24 +135274,24 @@ static const mb_symbol mb_symbols_777[] = {
 {"mulib_pdfannot_get",0,4150},
 {"mulib_pdfannot_erase",0,4151},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_778[] = {
+static const mb_symbol mb_symbols_779[] = {
 {"mulib_pdfcanvas_write_text",0,4152},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_779[] = {
+static const mb_symbol mb_symbols_780[] = {
 {"mulib_pdffont_view_t",1,6899},
 {"mulib_pdffont_open",0,4153},
 {"mulib_pdffont_read_u16",0,4154},
 {"mulib_pdffont_read_u32",0,4155},
 {"mulib_pdffont_slice",0,4156},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_780[] = {
+static const mb_symbol mb_symbols_781[] = {
 {"mulib_pdfimage_view_t",1,6906},
 {"mulib_pdfimage_open",0,4157},
 {"mulib_pdfimage_read_u16",0,4158},
 {"mulib_pdfimage_read_u32",0,4159},
 {"mulib_pdfimage_slice",0,4160},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_781[] = {
+static const mb_symbol mb_symbols_782[] = {
 {"mulib_pdfmetadata_entry_t",1,6913},
 {"mulib_pdfmetadata_table_t",1,6914},
 {"mulib_pdfmetadata_destroy",0,4161},
@@ -135283,7 +135299,7 @@ static const mb_symbol mb_symbols_781[] = {
 {"mulib_pdfmetadata_get",0,4163},
 {"mulib_pdfmetadata_erase",0,4164},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_782[] = {
+static const mb_symbol mb_symbols_783[] = {
 {"mulib_pdfoutline_entry_t",1,6922},
 {"mulib_pdfoutline_table_t",1,6923},
 {"mulib_pdfoutline_destroy",0,4165},
@@ -135291,7 +135307,7 @@ static const mb_symbol mb_symbols_782[] = {
 {"mulib_pdfoutline_get",0,4167},
 {"mulib_pdfoutline_erase",0,4168},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_783[] = {
+static const mb_symbol mb_symbols_784[] = {
 {"mulib_pdfstructure_entry_t",1,6931},
 {"mulib_pdfstructure_table_t",1,6932},
 {"mulib_pdfstructure_destroy",0,4169},
@@ -135299,7 +135315,7 @@ static const mb_symbol mb_symbols_783[] = {
 {"mulib_pdfstructure_get",0,4171},
 {"mulib_pdfstructure_erase",0,4172},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_784[] = {
+static const mb_symbol mb_symbols_785[] = {
 {"MULIB_PE_OK",2,425},
 {"MULIB_PE_EINVAL",2,426},
 {"MULIB_PE_EFORMAT",2,427},
@@ -135319,13 +135335,13 @@ static const mb_symbol mb_symbols_784[] = {
 {"mulib_pe_directory",0,791},
 {"mulib_pe_rva",0,792},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_785[] = {
+static const mb_symbol mb_symbols_786[] = {
 {"mulib_pe_objdump",0,4173},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_786[] = {
+static const mb_symbol mb_symbols_787[] = {
 {"mulib_pearson_similarity",0,4174},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_787[] = {
+static const mb_symbol mb_symbols_788[] = {
 {"mulib_pebuilder_text",0,4175},
 {"mulib_pebuilder_t",1,2367},
 {"mulib_pebuilder_add",0,4176},
@@ -135339,7 +135355,7 @@ static const mb_symbol mb_symbols_787[] = {
 {"mulib_pebuilder_text_abi",0,4179},
 {"mulib_pebuilder_finish_abi",0,4180},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_788[] = {
+static const mb_symbol mb_symbols_789[] = {
 {"mulib_peephole_facts_t",1,6580},
 {"MULIB_PEEPHOLE_FOLD",2,2116},
 {"MULIB_PEEPHOLE_A",2,2117},
@@ -135374,7 +135390,7 @@ static const mb_symbol mb_symbols_788[] = {
 {"mulib_peephole_validate",0,3983},
 {"mulib_peephole_apply",0,3984},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_789[] = {
+static const mb_symbol mb_symbols_790[] = {
 {"mulib_peg_t",1,6943},
 {"mulib_peg_error_t",1,6944},
 {"mulib_peg_compile",0,4181},
@@ -135385,11 +135401,11 @@ static const mb_symbol mb_symbols_789[] = {
 {"mulib_peg_rule_action",0,4186},
 {"mulib_peg_run",0,4187},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_790[] = {
+static const mb_symbol mb_symbols_791[] = {
 {"mulib_perf_now",0,709},
 {"mulib_perf_elapsed",0,710},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_791[] = {
+static const mb_symbol mb_symbols_792[] = {
 {"MULIB_PERLPOD_TEXT",2,2169},
 {"MULIB_PERLPOD_HTML",2,2170},
 {"mulib_perlpod_format_t",1,6953},
@@ -135404,11 +135420,11 @@ static const mb_symbol mb_symbols_791[] = {
 {"mulib_perlpod_limits_t",1,6956},
 {"mulib_perlpod_render",0,4188},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_792[] = {
+static const mb_symbol mb_symbols_793[] = {
 {"mulib_peutils_section",0,4189},
 {"mulib_peutils_symbol",0,4190},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_793[] = {
+static const mb_symbol mb_symbols_794[] = {
 {"MULIB_PGLAYOUT_LAYOUT",2,1775},
 {"MULIB_PGLAYOUT_TEXTBLOCK",2,1776},
 {"MULIB_PGLAYOUT_TEXT",2,1777},
@@ -135450,25 +135466,25 @@ static const mb_symbol mb_symbols_793[] = {
 {"mulib_pglayout_deserialize",0,3076},
 {"MULIB_PGLAYOUT_MAX_MEASUREMENTS",2,2752},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_794[] = {
+static const mb_symbol mb_symbols_795[] = {
 {"mulib_phonetic_soundex",0,4191},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_795[] = {
+static const mb_symbol mb_symbols_796[] = {
 {"mulib_phrasequery_match",0,4194},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_796[] = {
+static const mb_symbol mb_symbols_797[] = {
 {"mulib_physreg_t",1,6969},
 {"mulib_physreg_validate",0,4195},
 {"mulib_physreg_pick",0,4196},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_797[] = {
+static const mb_symbol mb_symbols_798[] = {
 {"mulib_pipeline_item_t",1,6973},
 {"mulib_pipeline_stage_fn",1,6974},
 {"mulib_pipeline_release_fn",1,6977},
 {"mulib_pipeline_stage_t",1,6979},
 {"mulib_pipeline_run",0,4197},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_798[] = {
+static const mb_symbol mb_symbols_799[] = {
 {"mulib_plot2d_item_t",1,6982},
 {"mulib_plot2d_list_t",1,6983},
 {"mulib_plot2d_push",0,4198},
@@ -135476,10 +135492,10 @@ static const mb_symbol mb_symbols_798[] = {
 {"mulib_plot2d_bounds",0,4200},
 {"mulib_plot2d_destroy",0,4201},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_799[] = {
+static const mb_symbol mb_symbols_800[] = {
 {"mulib_polkit_client_name_has_owner",0,4202},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_800[] = {
+static const mb_symbol mb_symbols_801[] = {
 {"mulib_polytask_t",1,6999},
 {"mulib_polytask_plan_t",1,7000},
 {"mulib_polytask_result_t",1,7001},
@@ -135492,12 +135508,12 @@ static const mb_symbol mb_symbols_800[] = {
 {"mulib_polytask_tasks",0,4212},
 {"mulib_polytask_plan_destroy",0,4213},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_801[] = {
+static const mb_symbol mb_symbols_802[] = {
 {"mulib_popcount_u64",0,4214},
 {"mulib_popcount_clz",0,4215},
 {"mulib_popcount_ctz",0,4216},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_802[] = {
+static const mb_symbol mb_symbols_803[] = {
 {"mulib_port_os",0,140},
 {"mulib_port_cpu",0,141},
 {"mulib_port_little_endian",0,142},
@@ -135509,15 +135525,15 @@ static const mb_symbol mb_symbols_802[] = {
 {"MULIB_PORT_POSIX",2,2644},
 {"MULIB_PORT_LINUX",2,2645},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_803[] = {
+static const mb_symbol mb_symbols_804[] = {
 {"mulib_positions_t",1,6963},
 {"mulib_positions_add",0,4192},
 {"mulib_positions_free",0,4193},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_804[] = {
+static const mb_symbol mb_symbols_805[] = {
 {"mulib_postdominance_compute",0,4217},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_805[] = {
+static const mb_symbol mb_symbols_806[] = {
 {"mulib_posting_t",1,1302},
 {"mulib_postings_t",1,1303},
 {"mulib_postings_put",0,773},
@@ -135525,7 +135541,7 @@ static const mb_symbol mb_symbols_805[] = {
 {"mulib_postings_remove",0,775},
 {"mulib_postings_free",0,776},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_806[] = {
+static const mb_symbol mb_symbols_807[] = {
 {"mulib_prettydoc_t",1,7015},
 {"mulib_pretty_id_t",1,6},
 {"MULIB_PRETTY_TEXT",2,2180},
@@ -135621,7 +135637,7 @@ static const mb_symbol mb_symbols_806[] = {
 {"mulib_pretty_session_view",0,4243},
 {"MULIB_PRETTY_NONE",2,2782},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_807[] = {
+static const mb_symbol mb_symbols_808[] = {
 {"MULIB_PRETTY_PLAIN",2,2234},
 {"MULIB_PRETTY_HTML_MATHML",2,2235},
 {"MULIB_PRETTY_LATEX",2,2236},
@@ -135630,27 +135646,27 @@ static const mb_symbol mb_symbols_807[] = {
 {"mulib_pretty_emit",0,4244},
 {"mulib_pretty_render",0,4245},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_808[] = {
+static const mb_symbol mb_symbols_809[] = {
 {"mulib_pretty_parse_expr",0,4246},
 {"mulib_pretty_render_expr",0,4247},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_809[] = {
+static const mb_symbol mb_symbols_810[] = {
 {"mulib_price_causal_result_t",1,7063},
 {"mulib_price_causal_did",0,4248},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_810[] = {
+static const mb_symbol mb_symbols_811[] = {
 {"mulib_price_confidence_combine",0,4249},
 {"mulib_price_confidence_deviation",0,4250},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_811[] = {
+static const mb_symbol mb_symbols_812[] = {
 {"mulib_price_demand_model_t",1,7066},
 {"mulib_price_demand_fit",0,4251},
 {"mulib_price_demand_predict",0,4252},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_812[] = {
+static const mb_symbol mb_symbols_813[] = {
 {"mulib_price_ensemble_blend",0,4253},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_813[] = {
+static const mb_symbol mb_symbols_814[] = {
 {"MULIB_PRICE_FORECAST_NAIVE",2,2238},
 {"MULIB_PRICE_FORECAST_EMA",2,2239},
 {"MULIB_PRICE_FORECAST_DRIFT",2,2240},
@@ -135659,17 +135675,17 @@ static const mb_symbol mb_symbols_813[] = {
 {"mulib_price_forecast",0,4261},
 {"mulib_price_forecast_mae",0,4262},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_814[] = {
+static const mb_symbol mb_symbols_815[] = {
 {"mulib_price_history_t",1,7075},
 {"mulib_price_history_add",0,4256},
 {"mulib_price_history_range",0,4257},
 {"mulib_price_history_free",0,4258},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_815[] = {
+static const mb_symbol mb_symbols_816[] = {
 {"mulib_price_match_gtin",0,4263},
 {"mulib_price_match_score",0,4264},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_816[] = {
+static const mb_symbol mb_symbols_817[] = {
 {"MULIB_PRICE_MONITOR_NO_CHANGE",2,2242},
 {"MULIB_PRICE_MONITOR_UP",2,2243},
 {"MULIB_PRICE_MONITOR_DOWN",2,2244},
@@ -135677,21 +135693,21 @@ static const mb_symbol mb_symbols_816[] = {
 {"mulib_price_monitor_event_t",1,7090},
 {"mulib_price_monitor_compare",0,4265},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_817[] = {
+static const mb_symbol mb_symbols_818[] = {
 {"mulib_price_normalize_input_t",1,7093},
 {"mulib_price_normalize",0,4266},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_818[] = {
+static const mb_symbol mb_symbols_819[] = {
 {"mulib_price_observation_t",1,7071},
 {"mulib_price_observation_validate",0,4254},
 {"mulib_price_observation_same_offer",0,4255},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_819[] = {
+static const mb_symbol mb_symbols_820[] = {
 {"mulib_price_point_t",1,7082},
 {"mulib_price_timeseries_build",0,4259},
 {"mulib_price_timeseries_interpolate",0,4260},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_820[] = {
+static const mb_symbol mb_symbols_821[] = {
 {"MULIB_PRICEOPT_LINEAR",2,2246},
 {"MULIB_PRICEOPT_ISOELASTIC",2,2247},
 {"MULIB_PRICEOPT_LOGISTIC",2,2248},
@@ -135708,17 +135724,17 @@ static const mb_symbol mb_symbols_820[] = {
 {"mulib_priceopt_candidates",0,4270},
 {"mulib_priceopt_ucb",0,4271},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_821[] = {
+static const mb_symbol mb_symbols_822[] = {
 {"mulib_prime_is_prime",0,4272},
 {"mulib_prime_next",0,4273},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_822[] = {
+static const mb_symbol mb_symbols_823[] = {
 {"mulib_probability_valid",0,630},
 {"mulib_probability_normalize",0,631},
 {"mulib_probability_entropy",0,632},
 {"mulib_probability_logsumexp",0,633},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_823[] = {
+static const mb_symbol mb_symbols_824[] = {
 {"mulib_process_t",1,1184},
 {"mulib_process_io_t",1,1185},
 {"mulib_process_status_t",1,1186},
@@ -135735,7 +135751,7 @@ static const mb_symbol mb_symbols_823[] = {
 {"mulib_process_wait",0,707},
 {"mulib_process_terminate",0,708},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_824[] = {
+static const mb_symbol mb_symbols_825[] = {
 {"MULIB_PROCFS_STAT_LIMIT",2,2251},
 {"MULIB_PROCFS_STATUS_LIMIT",2,2252},
 {"MULIB_PROCFS_COMM_CAP",2,2253},
@@ -135754,14 +135770,14 @@ static const mb_symbol mb_symbols_824[] = {
 {"mulib_procfs_query",0,4276},
 {"mulib_procfs_query_native",0,4277},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_825[] = {
+static const mb_symbol mb_symbols_826[] = {
 {"mulib_protobuf_field_t",1,7119},
 {"mulib_protobuf_read",0,4278},
 {"mulib_protobuf_write",0,4279},
 {"mulib_protobuf_zigzag",0,4280},
 {"mulib_protobuf_unzigzag",0,4281},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_826[] = {
+static const mb_symbol mb_symbols_827[] = {
 {"mulib_prowse_control_t",1,7182},
 {"mulib_prowse_control_options_t",1,7183},
 {"mulib_prowse_control_create",0,4311},
@@ -135784,7 +135800,7 @@ static const mb_symbol mb_symbols_826[] = {
 {"mulib_prowse_control_editor",0,4328},
 {"mulib_prowse_control_repl",0,4329},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_827[] = {
+static const mb_symbol mb_symbols_828[] = {
 {"MULIB_PROWSE_CDP",2,2261},
 {"MULIB_PROWSE_WEBDRIVER",2,2262},
 {"MULIB_PROWSE_MARIONETTE",2,2263},
@@ -135818,14 +135834,14 @@ static const mb_symbol mb_symbols_827[] = {
 {"mulib_prowse_reply_free",0,4291},
 {"mulib_prowse_strerror",0,4292},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_828[] = {
+static const mb_symbol mb_symbols_829[] = {
 {"mulib_pwdauth_record_t",1,7203},
 {"mulib_pwdauth_create",0,4330},
 {"mulib_pwdauth_verify",0,4331},
 {"MULIB_PWDAUTH_MIN_ITERATIONS",2,2783},
 {"MULIB_PWDAUTH_MAX_ITERATIONS",2,2784},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_829[] = {
+static const mb_symbol mb_symbols_830[] = {
 {"MULIB_BIND_VOID",2,2303},
 {"MULIB_BIND_SCHAR",2,2304},
 {"MULIB_BIND_UCHAR",2,2305},
@@ -135860,38 +135876,38 @@ static const mb_symbol mb_symbols_829[] = {
 {"MULIB_BIND_MAX_NAME",2,2787},
 {"MULIB_BIND_MAX_TEXT",2,2788},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_830[] = {
+static const mb_symbol mb_symbols_831[] = {
 {"mulib_qa_case_t",1,7218},
 {"mulib_qa_corpus_t",1,7219},
 {"mulib_qa_corpus_add",0,4335},
 {"mulib_qa_corpus_find",0,4336},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_831[] = {
+static const mb_symbol mb_symbols_832[] = {
 {"mulib_qa_repro_t",1,7226},
 {"mulib_qa_repro_init",0,4337},
 {"mulib_qa_repro_hash",0,4338},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_832[] = {
+static const mb_symbol mb_symbols_833[] = {
 {"mulib_queryaggregate_t",1,7231},
 {"mulib_queryaggregate_add",0,4339},
 {"mulib_queryaggregate_merge",0,4340},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_833[] = {
+static const mb_symbol mb_symbols_834[] = {
 {"mulib_queryexpr_compare",0,4341},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_834[] = {
+static const mb_symbol mb_symbols_835[] = {
 {"mulib_queryjoin_row_t",1,7237},
 {"mulib_queryjoin_hit_t",1,7238},
 {"mulib_queryjoin_merge",0,4342},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_835[] = {
+static const mb_symbol mb_symbols_836[] = {
 {"mulib_queue_t",1,7242},
 {"mulib_queue_init",0,4343},
 {"mulib_queue_push",0,4344},
 {"mulib_queue_pop",0,4345},
 {"mulib_queue_free",0,4346},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_836[] = {
+static const mb_symbol mb_symbols_837[] = {
 {"mulib_quic_varint_read",0,3193},
 {"mulib_quic_varint_write",0,3194},
 {"mulib_quic_stream_t",1,5189},
@@ -135899,7 +135915,7 @@ static const mb_symbol mb_symbols_836[] = {
 {"mulib_quic_stream_write",0,3196},
 {"MULIB_QUIC_MAX_INTEGER",2,2753},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_837[] = {
+static const mb_symbol mb_symbols_838[] = {
 {"MULIB_QVM_HALT",2,946},
 {"MULIB_QVM_CONST",2,947},
 {"MULIB_QVM_MOVE",2,948},
@@ -135928,7 +135944,7 @@ static const mb_symbol mb_symbols_837[] = {
 {"mulib_qvm_reset",0,1731},
 {"mulib_qvm_run",0,1732},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_838[] = {
+static const mb_symbol mb_symbols_839[] = {
 {"mulib_range_t",1,7248},
 {"mulib_range_const",0,4347},
 {"mulib_range_join",0,4348},
@@ -135936,7 +135952,7 @@ static const mb_symbol mb_symbols_838[] = {
 {"mulib_range_sub",0,4350},
 {"mulib_range_mul",0,4351},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_839[] = {
+static const mb_symbol mb_symbols_840[] = {
 {"mulib_rangeindex_entry_t",1,7251},
 {"mulib_rangeindex_t",1,7252},
 {"mulib_rangeindex_insert",0,4352},
@@ -135944,12 +135960,12 @@ static const mb_symbol mb_symbols_839[] = {
 {"mulib_rangeindex_overlap",0,4353},
 {"mulib_rangeindex_free",0,4354},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_840[] = {
+static const mb_symbol mb_symbols_841[] = {
 {"mulib_rate_limit_t",1,7259},
 {"mulib_rate_limit_init",0,4355},
 {"mulib_rate_limit_take",0,4356},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_841[] = {
+static const mb_symbol mb_symbols_842[] = {
 {"mulib_raytracing_material_t",1,7263},
 {"MULIB_RAYTRACING_SPHERE",2,2325},
 {"MULIB_RAYTRACING_TRIANGLE",2,2326},
@@ -135964,10 +135980,10 @@ static const mb_symbol mb_symbols_841[] = {
 {"mulib_raytracing_sample",0,4359},
 {"mulib_raytracing_render",0,4360},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_842[] = {
+static const mb_symbol mb_symbols_843[] = {
 {"mulib_readability_extract",0,4361},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_843[] = {
+static const mb_symbol mb_symbols_844[] = {
 {"mulib_readline_t",1,7153},
 {"MULIB_READLINE_OK",2,2276},
 {"MULIB_READLINE_LINE",2,2277},
@@ -136022,7 +136038,7 @@ static const mb_symbol mb_symbols_843[] = {
 {"mulib_readline_terminal",0,4309},
 {"mulib_readline_read",0,4310},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_844[] = {
+static const mb_symbol mb_symbols_845[] = {
 {"mulib_record_field_t",1,4445},
 {"mulib_record_t",1,4446},
 {"mulib_record_get",0,2784},
@@ -136030,29 +136046,29 @@ static const mb_symbol mb_symbols_844[] = {
 {"mulib_record_clone",0,2786},
 {"mulib_record_free",0,2787},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_845[] = {
+static const mb_symbol mb_symbols_846[] = {
 {"mulib_recordbatch_t",1,7280},
 {"mulib_recordbatch_append",0,4362},
 {"mulib_recordbatch_free",0,4363},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_846[] = {
+static const mb_symbol mb_symbols_847[] = {
 {"mulib_redirect_status",0,4364},
 {"mulib_redirect_post_to_get",0,4365},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_847[] = {
+static const mb_symbol mb_symbols_848[] = {
 {"MULIB_REGALLOC_LINEAR",2,2327},
 {"MULIB_REGALLOC_GRAPH",2,2328},
 {"mulib_regalloc_algorithm_t",1,7288},
 {"mulib_regalloc_allocate",0,4368},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_848[] = {
+static const mb_symbol mb_symbols_849[] = {
 {"mulib_regalloc_graph",0,4366},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_849[] = {
+static const mb_symbol mb_symbols_850[] = {
 {"mulib_regalloc_location_t",1,7285},
 {"mulib_regalloc_linear",0,4367},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_850[] = {
+static const mb_symbol mb_symbols_851[] = {
 {"mulib_regex_t",1,7290},
 {"mulib_regex_error_t",1,7291},
 {"mulib_regex_match_t",1,7292},
@@ -136061,16 +136077,16 @@ static const mb_symbol mb_symbols_850[] = {
 {"mulib_regex_search",0,4371},
 {"mulib_regex_full_match",0,4372},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_851[] = {
+static const mb_symbol mb_symbols_852[] = {
 {"mulib_regpressure_peak",0,4373},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_852[] = {
+static const mb_symbol mb_symbols_853[] = {
 {"mulib_replace_all",0,4374},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_853[] = {
+static const mb_symbol mb_symbols_854[] = {
 {"mulib_resolved_client_dns",0,4375},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_854[] = {
+static const mb_symbol mb_symbols_855[] = {
 {"mulib_rest_response_t",1,5092},
 {"mulib_cdd_rest_response_t",1,5092},
 {"mulib_cdd_rest_request",0,3128},
@@ -136080,10 +136096,10 @@ static const mb_symbol mb_symbols_854[] = {
 {"mulib_rest_url_query",0,3132},
 {"mulib_rest_response_free",0,3133},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_855[] = {
+static const mb_symbol mb_symbols_856[] = {
 {"mulib_revproxy_forward",0,4376},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_856[] = {
+static const mb_symbol mb_symbols_857[] = {
 {"MULIB_REWRITE_NODE",2,291},
 {"MULIB_REWRITE_VARIABLE",2,292},
 {"mulib_rewrite_kind_t",1,670},
@@ -136104,57 +136120,57 @@ static const mb_symbol mb_symbols_856[] = {
 {"MULIB_REWRITE_PATTERN_LIMIT",2,2649},
 {"MULIB_REWRITE_VARIABLE_LIMIT",2,2650},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_857[] = {
+static const mb_symbol mb_symbols_858[] = {
 {"mulib_rewrite_url",0,4377},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_858[] = {
+static const mb_symbol mb_symbols_859[] = {
 {"mulib_rf_microstrip_z0",0,4135},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_859[] = {
+static const mb_symbol mb_symbols_860[] = {
 {"mulib_rf_smith_xy",0,4381},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_860[] = {
+static const mb_symbol mb_symbols_861[] = {
 {"mulib_rf_complex_t",1,7305},
 {"mulib_rf_s11_from_impedance",0,4378},
 {"mulib_rf_impedance_from_s11",0,4379},
 {"mulib_rf_s11_vswr",0,4380},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_861[] = {
+static const mb_symbol mb_symbols_862[] = {
 {"mulib_ring_t",1,7310},
 {"mulib_ring_init",0,4382},
 {"mulib_ring_write",0,4383},
 {"mulib_ring_read",0,4384},
 {"mulib_ring_free",0,4385},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_862[] = {
+static const mb_symbol mb_symbols_863[] = {
 {"mulib_riscv64_t",1,181},
 {"mulib_riscv64_init",0,4386},
 {"mulib_riscv64_init_ex",0,4387},
 {"mulib_riscv64_free",0,4388},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_863[] = {
+static const mb_symbol mb_symbols_864[] = {
 {"mulib_rle_encode",0,1482},
 {"mulib_rle_decode",0,1483},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_864[] = {
+static const mb_symbol mb_symbols_865[] = {
 {"mulib_rlecol_run_t",1,7316},
 {"mulib_rlecol_encode",0,4389},
 {"mulib_rlecol_decode",0,4390},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_865[] = {
+static const mb_symbol mb_symbols_866[] = {
 {"mulib_rng_t",1,7321},
 {"mulib_rng_seed",0,4391},
 {"mulib_rng_next",0,4392},
 {"mulib_rng_unit",0,4393},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_866[] = {
+static const mb_symbol mb_symbols_867[] = {
 {"mulib_robots_allowed",0,4394},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_867[] = {
+static const mb_symbol mb_symbols_868[] = {
 {"mulib_roman_format",0,4395},
 {"mulib_roman_parse",0,4396},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_868[] = {
+static const mb_symbol mb_symbols_869[] = {
 {"mulib_rootfs_t",1,2651},
 {"mulib_rootfs_init",0,1598},
 {"mulib_rootfs_import",0,1599},
@@ -136169,7 +136185,7 @@ static const mb_symbol mb_symbols_868[] = {
 {"mulib_rootfs_merge",0,1608},
 {"mulib_rootfs_free",0,1609},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_869[] = {
+static const mb_symbol mb_symbols_870[] = {
 {"MULIB_ROOTFS_BUILD_DIRECTORY",2,1816},
 {"MULIB_ROOTFS_BUILD_FILE",2,1817},
 {"MULIB_ROOTFS_BUILD_REMOVE",2,1818},
@@ -136183,78 +136199,78 @@ static const mb_symbol mb_symbols_869[] = {
 {"mulib_rootfs_buildspec_clone",0,3254},
 {"mulib_rootfs_buildspec_apply",0,3255},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_870[] = {
+static const mb_symbol mb_symbols_871[] = {
 {"mulib_rootfsbuilder_export",0,3262},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_871[] = {
+static const mb_symbol mb_symbols_872[] = {
 {"mulib_row_rdbms_t",1,7328},
 {"mulib_row_rdbms_put",0,4397},
 {"mulib_row_rdbms_get",0,4398},
 {"mulib_row_rdbms_delete",0,4399},
 {"mulib_row_rdbms_free",0,4400},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_872[] = {
+static const mb_symbol mb_symbols_873[] = {
 {"mulib_rpc_handler_t",1,7335},
 {"mulib_rpc_method_t",1,7337},
 {"mulib_rpc_dispatch",0,4401},
 {"mulib_rpc_process",0,4402},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_873[] = {
+static const mb_symbol mb_symbols_874[] = {
 {"mulib_rtnl_request",0,4403},
 {"mulib_rtnl_dump",0,4404},
 {"mulib_rtnl_link_kind",0,4405},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_874[] = {
+static const mb_symbol mb_symbols_875[] = {
 {"mulib_rtnl_address_dump",0,4406},
 {"mulib_rtnl_address_change",0,4407},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_875[] = {
+static const mb_symbol mb_symbols_876[] = {
 {"mulib_rtnl_bridge_dump",0,4411},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_876[] = {
+static const mb_symbol mb_symbols_877[] = {
 {"mulib_rtnl_link_index",0,4408},
 {"mulib_rtnl_link_set_up",0,4409},
 {"mulib_rtnl_link_dump",0,4410},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_877[] = {
+static const mb_symbol mb_symbols_878[] = {
 {"mulib_rtnl_neighbor_dump",0,4412},
 {"mulib_rtnl_neighbor_change",0,4413},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_878[] = {
+static const mb_symbol mb_symbols_879[] = {
 {"mulib_rtnl_nexthop_dump",0,4414},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_879[] = {
+static const mb_symbol mb_symbols_880[] = {
 {"mulib_rtnl_nsid_dump",0,4415},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_880[] = {
+static const mb_symbol mb_symbols_881[] = {
 {"mulib_rtnl_qdisc_dump",0,4416},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_881[] = {
+static const mb_symbol mb_symbols_882[] = {
 {"mulib_rtnl_route_dump",0,4417},
 {"mulib_rtnl_route_change",0,4418},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_882[] = {
+static const mb_symbol mb_symbols_883[] = {
 {"mulib_rtnl_rule_dump",0,4419},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_883[] = {
+static const mb_symbol mb_symbols_884[] = {
 {"mulib_rtnl_tc_dump",0,4420},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_884[] = {
+static const mb_symbol mb_symbols_885[] = {
 {"mulib_rtnl_tunnel_dump",0,4421},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_885[] = {
+static const mb_symbol mb_symbols_886[] = {
 {"mulib_rtnl_veth_dump",0,4422},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_886[] = {
+static const mb_symbol mb_symbols_887[] = {
 {"mulib_rtnl_vlan_dump",0,4423},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_887[] = {
+static const mb_symbol mb_symbols_888[] = {
 {"mulib_rtnl_vrf_dump",0,4424},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_888[] = {
+static const mb_symbol mb_symbols_889[] = {
 {"mulib_rubybind_generate",0,4425},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_889[] = {
+static const mb_symbol mb_symbols_890[] = {
 {"mulib_sandbox_launch_t",1,7359},
 {"mulib_sandbox_process_t",1,7360},
 {"mulib_sandbox_exit_t",1,7361},
@@ -136266,7 +136282,7 @@ static const mb_symbol mb_symbols_889[] = {
 {"mulib_sandbox_process_poll",0,4437},
 {"mulib_sandbox_process_stop",0,4438},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_890[] = {
+static const mb_symbol mb_symbols_891[] = {
 {"MULIB_SB_OK",2,607},
 {"MULIB_SB_AGAIN",2,608},
 {"MULIB_SB_UNCERTAIN",2,609},
@@ -136304,7 +136320,7 @@ static const mb_symbol mb_symbols_890[] = {
 {"MULIB_SB_ENFORCE_ALL",2,2673},
 {"MULIB_SB_BASELINE",2,2674},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_891[] = {
+static const mb_symbol mb_symbols_892[] = {
 {"mulib_sat_t",1,7372},
 {"MULIB_SAT_SAT",2,2329},
 {"MULIB_SAT_UNSAT",2,2330},
@@ -136319,7 +136335,7 @@ static const mb_symbol mb_symbols_891[] = {
 {"mulib_sat_value",0,4443},
 {"mulib_sat_variables",0,4444},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_892[] = {
+static const mb_symbol mb_symbols_893[] = {
 {"MULIB_SCAN_EQ",2,2334},
 {"MULIB_SCAN_NE",2,2335},
 {"MULIB_SCAN_LT",2,2336},
@@ -136329,60 +136345,60 @@ static const mb_symbol mb_symbols_892[] = {
 {"mulib_scan_predicate_t",1,7381},
 {"mulib_scanvec_double",0,4445},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_893[] = {
+static const mb_symbol mb_symbols_894[] = {
 {"mulib_schedutils_current",0,4446},
 {"mulib_schedutils_yield",0,4447},
 {"mulib_schedutils_next",0,4448},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_894[] = {
+static const mb_symbol mb_symbols_895[] = {
 {"mulib_schemaorg_offer_t",1,7384},
 {"mulib_schemaorg_offer_parse",0,4449},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_895[] = {
+static const mb_symbol mb_symbols_896[] = {
 {"mulib_scrape_text",0,4459},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_896[] = {
+static const mb_symbol mb_symbols_897[] = {
 {"mulib_scrape_metadata_get",0,4450},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_897[] = {
+static const mb_symbol mb_symbols_898[] = {
 {"mulib_scrape_readable",0,4451},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_898[] = {
+static const mb_symbol mb_symbols_899[] = {
 {"mulib_scrape_rule_t",1,7387},
 {"mulib_scrape_rule_init",0,4452},
 {"mulib_scrape_rule_free",0,4453},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_899[] = {
+static const mb_symbol mb_symbols_900[] = {
 {"mulib_scrape_schema_string",0,4454},
 {"mulib_scrape_schema_integer",0,4455},
 {"mulib_scrape_schema_real",0,4456},
 {"mulib_scrape_schema_boolean",0,4457},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_900[] = {
+static const mb_symbol mb_symbols_901[] = {
 {"mulib_scrape_table_cells",0,4458},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_901[] = {
+static const mb_symbol mb_symbols_902[] = {
 {"mulib_search_kmp",0,4467},
 {"mulib_search_match_fn",1,6810},
 {"mulib_search_all",0,4468},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_902[] = {
+static const mb_symbol mb_symbols_903[] = {
 {"mulib_search_query_url",0,4460},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_903[] = {
+static const mb_symbol mb_symbols_904[] = {
 {"mulib_search_rank_count",0,4461},
 {"mulib_search_rank_words",0,4462},
 {"mulib_search_rank_fields",0,4463},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_904[] = {
+static const mb_symbol mb_symbols_905[] = {
 {"mulib_search_serp_href",0,4464},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_905[] = {
+static const mb_symbol mb_symbols_906[] = {
 {"mulib_search_session_t",1,7397},
 {"mulib_search_session_init",0,4465},
 {"mulib_search_session_next",0,4466},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_906[] = {
+static const mb_symbol mb_symbols_907[] = {
 {"mulib_seccomp_check_t",1,7347},
 {"mulib_seccomp_rule_t",1,7348},
 {"mulib_seccomp_policy_t",1,7350},
@@ -136395,7 +136411,7 @@ static const mb_symbol mb_symbols_906[] = {
 {"MULIB_SECCOMP_MAX_RULES",2,2789},
 {"MULIB_SECCOMP_MAX_CHECKS",2,2790},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_907[] = {
+static const mb_symbol mb_symbols_908[] = {
 {"MULIB_SELECT_READ",2,329},
 {"MULIB_SELECT_WRITE",2,330},
 {"MULIB_SELECT_EXCEPT",2,331},
@@ -136403,12 +136419,12 @@ static const mb_symbol mb_symbols_907[] = {
 {"mulib_select_limit",0,417},
 {"mulib_select_wait",0,418},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_908[] = {
+static const mb_symbol mb_symbols_909[] = {
 {"mulib_semilattice_join",0,4469},
 {"mulib_semilattice_meet",0,4470},
 {"mulib_semilattice_leq",0,4471},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_909[] = {
+static const mb_symbol mb_symbols_910[] = {
 {"MULIB_SEMIRING_BOOLEAN",2,2340},
 {"MULIB_SEMIRING_NATURAL",2,2341},
 {"MULIB_SEMIRING_MIN_PLUS",2,2342},
@@ -136419,12 +136435,12 @@ static const mb_symbol mb_symbols_909[] = {
 {"mulib_semiring_add",0,4474},
 {"mulib_semiring_mul",0,4475},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_910[] = {
+static const mb_symbol mb_symbols_911[] = {
 {"mulib_semver_t",1,7406},
 {"mulib_semver_parse",0,4476},
 {"mulib_semver_compare",0,4477},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_911[] = {
+static const mb_symbol mb_symbols_912[] = {
 {"mulib_set_t",1,7410},
 {"mulib_set_init",0,4478},
 {"mulib_set_add",0,4479},
@@ -136432,13 +136448,13 @@ static const mb_symbol mb_symbols_911[] = {
 {"mulib_set_remove",0,4481},
 {"mulib_set_free",0,4482},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_912[] = {
+static const mb_symbol mb_symbols_913[] = {
 {"mulib_security_equal",0,540},
 {"mulib_security_token",0,541},
 {"mulib_security_path",0,542},
 {"mulib_security_ascii_equal",0,543},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_913[] = {
+static const mb_symbol mb_symbols_914[] = {
 {"MULIB_SEXPR_ATOM",2,2344},
 {"MULIB_SEXPR_LIST",2,2345},
 {"mulib_sexpr_kind_t",1,7416},
@@ -136449,7 +136465,7 @@ static const mb_symbol mb_symbols_913[] = {
 {"mulib_sexpr_render",0,4486},
 {"mulib_sexpr_destroy",0,4487},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_914[] = {
+static const mb_symbol mb_symbols_915[] = {
 {"mulib_sfnt_font_t",1,7425},
 {"mulib_sfnt_face_t",1,7426},
 {"mulib_sfnt_open",0,4488},
@@ -136458,7 +136474,7 @@ static const mb_symbol mb_symbols_914[] = {
 {"mulib_sfnt_open_face",0,4491},
 {"mulib_sfnt_face_table",0,4492},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_915[] = {
+static const mb_symbol mb_symbols_916[] = {
 {"MULIB_SHA0",2,536},
 {"MULIB_SHA1",2,537},
 {"MULIB_SHA224",2,538},
@@ -136498,7 +136514,7 @@ static const mb_symbol mb_symbols_915[] = {
 {"mulib_shake128",0,997},
 {"mulib_shake256",0,998},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_916[] = {
+static const mb_symbol mb_symbols_917[] = {
 {"mulib_shaderx_t",1,7436},
 {"mulib_shaderx_expr_t",1,6},
 {"MULIB_SHADERX_FLOAT",2,2346},
@@ -136544,14 +136560,14 @@ static const mb_symbol mb_symbols_916[] = {
 {"mulib_shaderx_parse",0,4501},
 {"mulib_shaderx_emit",0,4502},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_917[] = {
+static const mb_symbol mb_symbols_918[] = {
 {"mulib_shadowsocks_aead_fn",1,7456},
 {"mulib_shadowsocks_t",1,7458},
 {"mulib_shadowsocks_init",0,4503},
 {"mulib_shadowsocks_seal",0,4504},
 {"mulib_shadowsocks_open",0,4505},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_918[] = {
+static const mb_symbol mb_symbols_919[] = {
 {"mulib_shebang_sh_macro_t",1,7463},
 {"mulib_shebang_sh_filter_t",1,7464},
 {"mulib_shebang_sh_t",1,7465},
@@ -136574,7 +136590,7 @@ static const mb_symbol mb_symbols_918[] = {
 {"mulib_shebang_sh_lua_file",0,4515},
 {"mulib_shebang_sh_main",0,4516},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_919[] = {
+static const mb_symbol mb_symbols_920[] = {
 {"MULIB_SHIRAZ_OK",2,2379},
 {"MULIB_SHIRAZ_DONE",2,2380},
 {"MULIB_SHIRAZ_AGAIN",2,2381},
@@ -136621,14 +136637,14 @@ static const mb_symbol mb_symbols_919[] = {
 {"mulib_shiraz_registry_get",0,4541},
 {"mulib_shiraz_registry_delete",0,4542},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_920[] = {
+static const mb_symbol mb_symbols_921[] = {
 {"mulib_shm_t",1,7522},
 {"mulib_shm_create",0,4543},
 {"mulib_shm_attach",0,4544},
 {"mulib_shm_remove",0,4545},
 {"mulib_shm_close",0,4546},
 {NULL,0,0}};
-static const mb_symbol mb_symbols_921[] = {
+static const mb_symbol mb_symbols_922[] = {
 {"MULIB_SHOEBOX_OK",2,2390},
 {"MULIB_SHOEBOX_INVALID",2,2391},
 {"MULIB_SHOEBOX_ABI",2,2392},
@@ -136649,22 +136665,6 @@ static const mb_symbol mb_symbols_921[] = {
 {"mulib_shoebox_write_all",0,4550},
 {"mulib_shoebox_getenv",0,4551},
 {"MULIB_SHOEBOX_ABI_VERSION",2,2791},
-{NULL,0,0}};
-static const mb_symbol mb_symbols_922[] = {
-{"mulib_shylock_buffer_t",1,1429},
-{"mulib_shylock_span_t",1,1430},
-{"mulib_shylock_reserve",0,832},
-{"mulib_shylock_append",0,833},
-{"mulib_shylock_text",0,834},
-{"mulib_shylock_json_string",0,835},
-{"mulib_shylock_buffer_free",0,836},
-{"mulib_shylock_dup",0,837},
-{"mulib_shylock_copy",0,838},
-{"mulib_shylock_hash",0,839},
-{"mulib_shylock_equal_ci",0,840},
-{"mulib_shylock_contains_ci",0,841},
-{"mulib_shylock_contains_span_ci",0,842},
-{"mulib_shylock_parse_decimal",0,843},
 {NULL,0,0}};
 static const mb_symbol mb_symbols_923[] = {
 {"mulib_signal_handler",1,7543},
@@ -139667,7 +139667,6 @@ static const mb_library mb_libraries[] = {
 {"aes","mulib-aes.h",mb_symbols_6,4},
 {"aes-gcm","mulib-aes-gcm.h",mb_symbols_7,5},
 {"alloc","mulib-alloc.h",mb_symbols_8,12},
-{"amb3r-base","mulib-amb3r-base.h",NULL,0},
 {"amd64","mulib-amd64.h",mb_symbols_9,9},
 {"amdgpu","mulib-amdgpu.h",mb_symbols_10,4},
 {"androidlibs","mulib-androidlibs.h",mb_symbols_11,62},
@@ -139756,54 +139755,55 @@ static const mb_library mb_libraries[] = {
 {"booknav","mulib-booknav.h",mb_symbols_63,6},
 {"booleanquery","mulib-booleanquery.h",mb_symbols_64,5},
 {"bootmgr","mulib-bootmgr.h",mb_symbols_65,14},
-{"bounds","mulib-bounds.h",mb_symbols_66,4},
-{"bpf-kernel","mulib-bpf-kernel.h",mb_symbols_67,1},
-{"branch-layout","mulib-branch-layout.h",mb_symbols_68,2},
-{"browser-cache","mulib-browser-cache.h",mb_symbols_69,6},
-{"browser-cookiejar","mulib-browser-cookiejar.h",mb_symbols_70,5},
-{"browser-documentload","mulib-browser-documentload.h",mb_symbols_71,2},
-{"browser-domstream","mulib-browser-domstream.h",mb_symbols_72,1},
-{"browser-engine","mulib-browser-engine.h",mb_symbols_73,4},
-{"browser-eventloop","mulib-browser-eventloop.h",mb_symbols_74,4},
-{"browser-executionstream","mulib-browser-executionstream.h",mb_symbols_75,1},
-{"browser-fetch","mulib-browser-fetch.h",mb_symbols_76,2},
-{"browser-layoutstream","mulib-browser-layoutstream.h",mb_symbols_77,1},
-{"browser-limits","mulib-browser-limits.h",mb_symbols_78,3},
-{"browser-navigation","mulib-browser-navigation.h",mb_symbols_79,4},
-{"browser-networkstream","mulib-browser-networkstream.h",mb_symbols_80,1},
-{"browser-origin","mulib-browser-origin.h",mb_symbols_81,3},
-{"browser-permissions","mulib-browser-permissions.h",mb_symbols_82,10},
-{"browser-realm","mulib-browser-realm.h",mb_symbols_83,3},
-{"browser-resource","mulib-browser-resource.h",mb_symbols_84,5},
-{"browser-sandbox","mulib-browser-sandbox.h",mb_symbols_85,4},
-{"browser-snapshot","mulib-browser-snapshot.h",mb_symbols_86,4},
-{"browser-stream","mulib-browser-stream.h",mb_symbols_87,13},
-{"browser-tokenstream","mulib-browser-tokenstream.h",mb_symbols_88,1},
-{"browsercontext","mulib-browsercontext.h",mb_symbols_89,2},
-{"browserlocator","mulib-browserlocator.h",mb_symbols_90,8},
-{"browserscreenshot","mulib-browserscreenshot.h",mb_symbols_91,1},
-{"browsersnapshot","mulib-browsersnapshot.h",mb_symbols_92,3},
-{"browsertools","mulib-browsertools.h",mb_symbols_93,23},
-{"browsertrace","mulib-browsertrace.h",mb_symbols_94,4},
-{"browserwait","mulib-browserwait.h",mb_symbols_95,3},
-{"bson","mulib-bson.h",mb_symbols_96,2},
-{"buffer","mulib-buffer.h",mb_symbols_97,5},
-{"buildgraph","mulib-buildgraph.h",mb_symbols_98,46},
-{"buildparse","mulib-buildparse.h",mb_symbols_99,17},
-{"buildplan","mulib-buildplan.h",mb_symbols_100,31},
-{"buildstate","mulib-buildstate.h",mb_symbols_101,21},
-{"buildvm","mulib-buildvm.h",mb_symbols_102,17},
-{"bycutils","mulib-bycutils.h",mb_symbols_103,4},
-{"bytecode","mulib-bytecode.h",mb_symbols_104,22},
-{"bytecode-builder","mulib-bytecode-builder.h",mb_symbols_105,4},
-{"bytecode-disasm","mulib-bytecode-disasm.h",mb_symbols_106,1},
-{"bytecode-eval","mulib-bytecode-eval.h",mb_symbols_107,1},
-{"bytecode-opt","mulib-bytecode-opt.h",mb_symbols_108,1},
-{"bytecode-serialize","mulib-bytecode-serialize.h",mb_symbols_109,2},
-{"bytecode-verify","mulib-bytecode-verify.h",mb_symbols_110,1},
-{"bzip2","mulib-bzip2.h",mb_symbols_111,2},
-{"cache","mulib-cache.h",mb_symbols_112,17},
-{"callconv","mulib-callconv.h",mb_symbols_113,5},
+{"bounded-text","mulib-bounded-text.h",mb_symbols_66,14},
+{"bounds","mulib-bounds.h",mb_symbols_67,4},
+{"bpf-kernel","mulib-bpf-kernel.h",mb_symbols_68,1},
+{"branch-layout","mulib-branch-layout.h",mb_symbols_69,2},
+{"browser-cache","mulib-browser-cache.h",mb_symbols_70,6},
+{"browser-cookiejar","mulib-browser-cookiejar.h",mb_symbols_71,5},
+{"browser-documentload","mulib-browser-documentload.h",mb_symbols_72,2},
+{"browser-domstream","mulib-browser-domstream.h",mb_symbols_73,1},
+{"browser-engine","mulib-browser-engine.h",mb_symbols_74,4},
+{"browser-eventloop","mulib-browser-eventloop.h",mb_symbols_75,4},
+{"browser-executionstream","mulib-browser-executionstream.h",mb_symbols_76,1},
+{"browser-fetch","mulib-browser-fetch.h",mb_symbols_77,2},
+{"browser-layoutstream","mulib-browser-layoutstream.h",mb_symbols_78,1},
+{"browser-limits","mulib-browser-limits.h",mb_symbols_79,3},
+{"browser-navigation","mulib-browser-navigation.h",mb_symbols_80,4},
+{"browser-networkstream","mulib-browser-networkstream.h",mb_symbols_81,1},
+{"browser-origin","mulib-browser-origin.h",mb_symbols_82,3},
+{"browser-permissions","mulib-browser-permissions.h",mb_symbols_83,10},
+{"browser-realm","mulib-browser-realm.h",mb_symbols_84,3},
+{"browser-resource","mulib-browser-resource.h",mb_symbols_85,5},
+{"browser-sandbox","mulib-browser-sandbox.h",mb_symbols_86,4},
+{"browser-snapshot","mulib-browser-snapshot.h",mb_symbols_87,4},
+{"browser-stream","mulib-browser-stream.h",mb_symbols_88,13},
+{"browser-tokenstream","mulib-browser-tokenstream.h",mb_symbols_89,1},
+{"browsercontext","mulib-browsercontext.h",mb_symbols_90,2},
+{"browserlocator","mulib-browserlocator.h",mb_symbols_91,8},
+{"browserscreenshot","mulib-browserscreenshot.h",mb_symbols_92,1},
+{"browsersnapshot","mulib-browsersnapshot.h",mb_symbols_93,3},
+{"browsertools","mulib-browsertools.h",mb_symbols_94,23},
+{"browsertrace","mulib-browsertrace.h",mb_symbols_95,4},
+{"browserwait","mulib-browserwait.h",mb_symbols_96,3},
+{"bson","mulib-bson.h",mb_symbols_97,2},
+{"buffer","mulib-buffer.h",mb_symbols_98,5},
+{"buildgraph","mulib-buildgraph.h",mb_symbols_99,46},
+{"buildparse","mulib-buildparse.h",mb_symbols_100,17},
+{"buildplan","mulib-buildplan.h",mb_symbols_101,31},
+{"buildstate","mulib-buildstate.h",mb_symbols_102,21},
+{"buildvm","mulib-buildvm.h",mb_symbols_103,17},
+{"bycutils","mulib-bycutils.h",mb_symbols_104,4},
+{"bytecode","mulib-bytecode.h",mb_symbols_105,22},
+{"bytecode-builder","mulib-bytecode-builder.h",mb_symbols_106,4},
+{"bytecode-disasm","mulib-bytecode-disasm.h",mb_symbols_107,1},
+{"bytecode-eval","mulib-bytecode-eval.h",mb_symbols_108,1},
+{"bytecode-opt","mulib-bytecode-opt.h",mb_symbols_109,1},
+{"bytecode-serialize","mulib-bytecode-serialize.h",mb_symbols_110,2},
+{"bytecode-verify","mulib-bytecode-verify.h",mb_symbols_111,1},
+{"bzip2","mulib-bzip2.h",mb_symbols_112,2},
+{"cache","mulib-cache.h",mb_symbols_113,17},
+{"callconv","mulib-callconv.h",mb_symbols_114,5},
 {"canvas-camera","mulib-canvas-camera.h",NULL,0},
 {"canvas-command","mulib-canvas-command.h",NULL,0},
 {"canvas-gizmo","mulib-canvas-gizmo.h",NULL,0},
@@ -139814,41 +139814,41 @@ static const mb_library mb_libraries[] = {
 {"canvas-selection","mulib-canvas-selection.h",NULL,0},
 {"canvas-tile","mulib-canvas-tile.h",NULL,0},
 {"canvas-viewport","mulib-canvas-viewport.h",NULL,0},
-{"capbroker","mulib-capbroker.h",mb_symbols_114,10},
-{"cassowary-solver","mulib-cassowary-solver.h",mb_symbols_115,31},
-{"cbor","mulib-cbor.h",mb_symbols_116,2},
-{"ccweave","mulib-ccweave.h",mb_symbols_117,1},
-{"cdd-catalogue","mulib-cdd-catalogue.h",mb_symbols_118,32},
-{"cdd-diff","mulib-cdd-diff.h",mb_symbols_119,6},
-{"cdd-execute","mulib-cdd-execute.h",mb_symbols_120,4},
-{"cdd-plan","mulib-cdd-plan.h",mb_symbols_121,6},
-{"cdd-query","mulib-cdd-query.h",mb_symbols_122,13},
-{"cdd-registry","mulib-cdd-registry.h",mb_symbols_123,5},
-{"cdd-resolve","mulib-cdd-resolve.h",mb_symbols_124,2},
-{"cdd-schema","mulib-cdd-schema.h",mb_symbols_125,3},
-{"cff","mulib-cff.h",mb_symbols_126,5},
-{"cff2","mulib-cff2.h",mb_symbols_127,5},
-{"cfg","mulib-cfg.h",mb_symbols_128,8},
-{"cgeom","mulib-cgeom.h",mb_symbols_129,17},
-{"cgroup2","mulib-cgroup2.h",mb_symbols_130,8},
-{"channel","mulib-channel.h",mb_symbols_131,24},
-{"charset","mulib-charset.h",mb_symbols_132,1},
-{"chart","mulib-chart.h",mb_symbols_133,7},
-{"checksum","mulib-checksum.h",mb_symbols_134,32},
-{"chem","mulib-chem.h",mb_symbols_135,14},
-{"chemical","mulib-chemical.h",mb_symbols_136,6},
-{"clamp","mulib-clamp.h",mb_symbols_137,3},
-{"classic-bpf","mulib-classic-bpf.h",mb_symbols_138,2},
-{"clickir","mulib-clickir.h",mb_symbols_139,13},
-{"closeditemset","mulib-closeditemset.h",mb_symbols_140,2},
-{"cmachine","mulib-cmachine.h",mb_symbols_141,4},
-{"codec-core","mulib-codec-core.h",mb_symbols_142,24},
-{"coff","mulib-coff.h",mb_symbols_143,16},
-{"coff-objdump","mulib-coff-objdump.h",mb_symbols_144,2},
-{"coffbuilder","mulib-coffbuilder.h",mb_symbols_145,11},
-{"coffutils","mulib-coffutils.h",mb_symbols_146,2},
-{"collision","mulib-collision.h",mb_symbols_147,9},
-{"color","mulib-color.h",mb_symbols_148,4},
+{"capbroker","mulib-capbroker.h",mb_symbols_115,10},
+{"cassowary-solver","mulib-cassowary-solver.h",mb_symbols_116,31},
+{"cbor","mulib-cbor.h",mb_symbols_117,2},
+{"ccweave","mulib-ccweave.h",mb_symbols_118,1},
+{"cdd-catalogue","mulib-cdd-catalogue.h",mb_symbols_119,32},
+{"cdd-diff","mulib-cdd-diff.h",mb_symbols_120,6},
+{"cdd-execute","mulib-cdd-execute.h",mb_symbols_121,4},
+{"cdd-plan","mulib-cdd-plan.h",mb_symbols_122,6},
+{"cdd-query","mulib-cdd-query.h",mb_symbols_123,13},
+{"cdd-registry","mulib-cdd-registry.h",mb_symbols_124,5},
+{"cdd-resolve","mulib-cdd-resolve.h",mb_symbols_125,2},
+{"cdd-schema","mulib-cdd-schema.h",mb_symbols_126,3},
+{"cff","mulib-cff.h",mb_symbols_127,5},
+{"cff2","mulib-cff2.h",mb_symbols_128,5},
+{"cfg","mulib-cfg.h",mb_symbols_129,8},
+{"cgeom","mulib-cgeom.h",mb_symbols_130,17},
+{"cgroup2","mulib-cgroup2.h",mb_symbols_131,8},
+{"channel","mulib-channel.h",mb_symbols_132,24},
+{"charset","mulib-charset.h",mb_symbols_133,1},
+{"chart","mulib-chart.h",mb_symbols_134,7},
+{"checksum","mulib-checksum.h",mb_symbols_135,32},
+{"chem","mulib-chem.h",mb_symbols_136,14},
+{"chemical","mulib-chemical.h",mb_symbols_137,6},
+{"clamp","mulib-clamp.h",mb_symbols_138,3},
+{"classic-bpf","mulib-classic-bpf.h",mb_symbols_139,2},
+{"clickir","mulib-clickir.h",mb_symbols_140,13},
+{"closeditemset","mulib-closeditemset.h",mb_symbols_141,2},
+{"cmachine","mulib-cmachine.h",mb_symbols_142,4},
+{"codec-core","mulib-codec-core.h",mb_symbols_143,24},
+{"coff","mulib-coff.h",mb_symbols_144,16},
+{"coff-objdump","mulib-coff-objdump.h",mb_symbols_145,2},
+{"coffbuilder","mulib-coffbuilder.h",mb_symbols_146,11},
+{"coffutils","mulib-coffutils.h",mb_symbols_147,2},
+{"collision","mulib-collision.h",mb_symbols_148,9},
+{"color","mulib-color.h",mb_symbols_149,4},
 {"color-adaptation","mulib-color-adaptation.h",NULL,0},
 {"color-cube","mulib-color-cube.h",NULL,0},
 {"color-curves","mulib-color-curves.h",NULL,0},
@@ -139864,19 +139864,19 @@ static const mb_library mb_libraries[] = {
 {"color-vectorscope","mulib-color-vectorscope.h",NULL,0},
 {"color-waveform","mulib-color-waveform.h",NULL,0},
 {"color-wheels","mulib-color-wheels.h",NULL,0},
-{"colorconvert","mulib-colorconvert.h",mb_symbols_149,2},
-{"colormodel","mulib-colormodel.h",mb_symbols_150,2},
-{"colorprofile","mulib-colorprofile.h",mb_symbols_151,6},
-{"column-rdbms","mulib-column-rdbms.h",mb_symbols_152,4},
-{"columnar","mulib-columnar.h",mb_symbols_153,4},
-{"columnstats","mulib-columnstats.h",mb_symbols_154,3},
-{"competprice","mulib-competprice.h",mb_symbols_155,11},
-{"compiler-cache","mulib-compiler-cache.h",mb_symbols_156,5},
-{"compiler-driver","mulib-compiler-driver.h",mb_symbols_157,6},
-{"compiler-scope","mulib-compiler-scope.h",mb_symbols_158,3},
-{"compiler-test","mulib-compiler-test.h",mb_symbols_159,3},
-{"complex","mulib-complex.h",mb_symbols_160,4},
-{"compression","mulib-compression.h",mb_symbols_161,5},
+{"colorconvert","mulib-colorconvert.h",mb_symbols_150,2},
+{"colormodel","mulib-colormodel.h",mb_symbols_151,2},
+{"colorprofile","mulib-colorprofile.h",mb_symbols_152,6},
+{"column-rdbms","mulib-column-rdbms.h",mb_symbols_153,4},
+{"columnar","mulib-columnar.h",mb_symbols_154,4},
+{"columnstats","mulib-columnstats.h",mb_symbols_155,3},
+{"competprice","mulib-competprice.h",mb_symbols_156,11},
+{"compiler-cache","mulib-compiler-cache.h",mb_symbols_157,5},
+{"compiler-driver","mulib-compiler-driver.h",mb_symbols_158,6},
+{"compiler-scope","mulib-compiler-scope.h",mb_symbols_159,3},
+{"compiler-test","mulib-compiler-test.h",mb_symbols_160,3},
+{"complex","mulib-complex.h",mb_symbols_161,4},
+{"compression","mulib-compression.h",mb_symbols_162,5},
 {"compute-buffer","mulib-compute-buffer.h",NULL,0},
 {"compute-cache","mulib-compute-cache.h",NULL,0},
 {"compute-core","mulib-compute-core.h",NULL,0},
@@ -139892,141 +139892,141 @@ static const mb_library mb_libraries[] = {
 {"compute-sync","mulib-compute-sync.h",NULL,0},
 {"compute-vulkan","mulib-compute-vulkan.h",NULL,0},
 {"compute-webgpu","mulib-compute-webgpu.h",NULL,0},
-{"conainerd-ipc","mulib-conainerd-ipc.h",mb_symbols_162,14},
-{"conceptlattice","mulib-conceptlattice.h",mb_symbols_163,3},
-{"concurrency-prim","mulib-concurrency-prim.h",mb_symbols_164,36},
-{"conditional_probablity","mulib-conditional_probablity.h",mb_symbols_165,2},
-{"confuse","mulib-confuse.h",mb_symbols_166,17},
-{"conntrack","mulib-conntrack.h",mb_symbols_167,1},
-{"consteval","mulib-consteval.h",mb_symbols_168,1},
-{"constraints","mulib-constraints.h",mb_symbols_169,7},
-{"container","mulib-container.h",mb_symbols_170,22},
-{"container-core","mulib-container-core.h",mb_symbols_171,38},
-{"container-ipc","mulib-container-ipc.h",mb_symbols_172,12},
-{"container-jitboost","mulib-container-jitboost.h",mb_symbols_173,6},
-{"container-kvmboost","mulib-container-kvmboost.h",mb_symbols_174,5},
-{"container-log","mulib-container-log.h",mb_symbols_175,13},
-{"container-netdev","mulib-container-netdev.h",mb_symbols_176,13},
-{"container-network","mulib-container-network.h",mb_symbols_177,10},
-{"container-oixboost","mulib-container-oixboost.h",mb_symbols_178,6},
-{"container-packcoff","mulib-container-packcoff.h",mb_symbols_179,3},
-{"container-packelf","mulib-container-packelf.h",mb_symbols_180,3},
-{"container-packmacho","mulib-container-packmacho.h",mb_symbols_181,3},
-{"container-packpe","mulib-container-packpe.h",mb_symbols_182,3},
-{"container-packzstd","mulib-container-packzstd.h",mb_symbols_183,5},
-{"container-qvmboost","mulib-container-qvmboost.h",mb_symbols_184,4},
-{"container-runtime","mulib-container-runtime.h",mb_symbols_185,13},
-{"container-stub","mulib-container-stub.h",mb_symbols_186,13},
-{"container-vfs","mulib-container-vfs.h",mb_symbols_187,8},
-{"container2daemonproto","mulib-container2daemonproto.h",mb_symbols_188,9},
-{"containerboost","mulib-containerboost.h",mb_symbols_189,14},
-{"containerd","mulib-containerd.h",mb_symbols_190,9},
-{"containerd-accessstub","mulib-containerd-accessstub.h",mb_symbols_191,9},
-{"containerd-cache","mulib-containerd-cache.h",mb_symbols_192,10},
-{"containerd-ctrlbridge","mulib-containerd-ctrlbridge.h",mb_symbols_193,5},
-{"containerd-mount","mulib-containerd-mount.h",mb_symbols_194,10},
-{"containerinjector","mulib-containerinjector.h",mb_symbols_195,1},
-{"containerserverd","mulib-containerserverd.h",mb_symbols_196,1},
-{"containerstub","mulib-containerstub.h",mb_symbols_197,1},
-{"containterpool","mulib-containterpool.h",mb_symbols_198,12},
-{"cookie","mulib-cookie.h",mb_symbols_199,1},
-{"cookiejar","mulib-cookiejar.h",mb_symbols_200,4},
-{"corpus","mulib-corpus.h",mb_symbols_201,6},
-{"cosine_similarity","mulib-cosine_similarity.h",mb_symbols_202,1},
-{"countmin","mulib-countmin.h",mb_symbols_203,5},
-{"cowb+tree","mulib-cowb+tree.h",mb_symbols_204,7},
-{"cpio","mulib-cpio.h",mb_symbols_205,26},
-{"crawlarchive","mulib-crawlarchive.h",mb_symbols_206,5},
-{"crawler","mulib-crawler.h",mb_symbols_207,6},
-{"crawlqueue","mulib-crawlqueue.h",mb_symbols_208,7},
-{"crc","mulib-crc.h",mb_symbols_209,238},
-{"crc32","mulib-crc32.h",mb_symbols_210,2},
-{"cron","mulib-cron.h",mb_symbols_211,8},
-{"crossref","mulib-crossref.h",mb_symbols_212,6},
-{"cryptohash","mulib-cryptohash.h",mb_symbols_213,38},
-{"csl","mulib-csl.h",mb_symbols_214,6},
-{"css","mulib-css.h",mb_symbols_215,29},
-{"css-box","mulib-css-box.h",mb_symbols_216,4},
-{"css-cascade","mulib-css-cascade.h",mb_symbols_217,1},
-{"css-computed","mulib-css-computed.h",mb_symbols_218,3},
-{"css-flex","mulib-css-flex.h",mb_symbols_219,1},
-{"css-grid","mulib-css-grid.h",mb_symbols_220,1},
-{"css-layoutstream","mulib-css-layoutstream.h",mb_symbols_221,2},
-{"css-parser","mulib-css-parser.h",mb_symbols_222,4},
-{"css-selector","mulib-css-selector.h",mb_symbols_223,2},
-{"css-tokenizer","mulib-css-tokenizer.h",mb_symbols_224,8},
-{"csswriter","mulib-csswriter.h",mb_symbols_225,2},
-{"csv","mulib-csv.h",mb_symbols_226,2},
-{"curses","mulib-curses.h",mb_symbols_227,24},
-{"daemon","mulib-daemon.h",mb_symbols_228,24},
-{"datagram","mulib-datagram.h",mb_symbols_229,12},
-{"datalog","mulib-datalog.h",mb_symbols_230,20},
-{"date","mulib-date.h",mb_symbols_231,3},
-{"datum","mulib-datum.h",mb_symbols_232,13},
-{"dbdesializer","mulib-dbdesializer.h",mb_symbols_233,1},
-{"dbindex","mulib-dbindex.h",mb_symbols_234,5},
-{"dbquery","mulib-dbquery.h",mb_symbols_235,4},
-{"dbschema","mulib-dbschema.h",mb_symbols_236,5},
-{"dbserializer","mulib-dbserializer.h",mb_symbols_237,6},
-{"dbsummary","mulib-dbsummary.h",mb_symbols_238,2},
-{"dbtransaction","mulib-dbtransaction.h",mb_symbols_239,4},
-{"dbus","mulib-dbus.h",mb_symbols_240,15},
-{"dbus-auth","mulib-dbus-auth.h",mb_symbols_241,1},
-{"dbus-client","mulib-dbus-client.h",mb_symbols_242,5},
-{"dbus-properties","mulib-dbus-properties.h",mb_symbols_243,2},
-{"dbus-transport","mulib-dbus-transport.h",mb_symbols_244,3},
-{"dce","mulib-dce.h",mb_symbols_245,1},
-{"deflate","mulib-deflate.h",mb_symbols_246,8},
-{"defuse","mulib-defuse.h",mb_symbols_247,3},
-{"deltacodec","mulib-deltacodec.h",mb_symbols_248,2},
-{"depfile","mulib-depfile.h",mb_symbols_249,12},
-{"depir","mulib-depir.h",mb_symbols_250,24},
-{"deque","mulib-deque.h",mb_symbols_251,7},
-{"der","mulib-der.h",mb_symbols_252,7},
-{"descritors","mulib-descritors.h",mb_symbols_253,5},
-{"devlink","mulib-devlink.h",mb_symbols_254,1},
-{"dexcc","mulib-dexcc.h",mb_symbols_255,52},
-{"dfa","mulib-dfa.h",mb_symbols_256,15},
-{"dhcp4-client","mulib-dhcp4-client.h",mb_symbols_257,2},
-{"dhcp6-client","mulib-dhcp6-client.h",mb_symbols_258,2},
-{"diag","mulib-diag.h",mb_symbols_259,8},
-{"diagnostic","mulib-diagnostic.h",mb_symbols_260,8},
-{"diagram","mulib-diagram.h",mb_symbols_261,6},
-{"distfield","mulib-distfield.h",mb_symbols_262,3},
-{"distribcluster","mulib-distribcluster.h",mb_symbols_263,6},
-{"distribcomp","mulib-distribcomp.h",mb_symbols_264,23},
-{"distribtask","mulib-distribtask.h",mb_symbols_265,15},
+{"conainerd-ipc","mulib-conainerd-ipc.h",mb_symbols_163,14},
+{"conceptlattice","mulib-conceptlattice.h",mb_symbols_164,3},
+{"concurrency-prim","mulib-concurrency-prim.h",mb_symbols_165,36},
+{"conditional_probablity","mulib-conditional_probablity.h",mb_symbols_166,2},
+{"confuse","mulib-confuse.h",mb_symbols_167,17},
+{"conntrack","mulib-conntrack.h",mb_symbols_168,1},
+{"consteval","mulib-consteval.h",mb_symbols_169,1},
+{"constraints","mulib-constraints.h",mb_symbols_170,7},
+{"container","mulib-container.h",mb_symbols_171,22},
+{"container-core","mulib-container-core.h",mb_symbols_172,38},
+{"container-ipc","mulib-container-ipc.h",mb_symbols_173,12},
+{"container-jitboost","mulib-container-jitboost.h",mb_symbols_174,6},
+{"container-kvmboost","mulib-container-kvmboost.h",mb_symbols_175,5},
+{"container-log","mulib-container-log.h",mb_symbols_176,13},
+{"container-netdev","mulib-container-netdev.h",mb_symbols_177,13},
+{"container-network","mulib-container-network.h",mb_symbols_178,10},
+{"container-oixboost","mulib-container-oixboost.h",mb_symbols_179,6},
+{"container-packcoff","mulib-container-packcoff.h",mb_symbols_180,3},
+{"container-packelf","mulib-container-packelf.h",mb_symbols_181,3},
+{"container-packmacho","mulib-container-packmacho.h",mb_symbols_182,3},
+{"container-packpe","mulib-container-packpe.h",mb_symbols_183,3},
+{"container-packzstd","mulib-container-packzstd.h",mb_symbols_184,5},
+{"container-qvmboost","mulib-container-qvmboost.h",mb_symbols_185,4},
+{"container-runtime","mulib-container-runtime.h",mb_symbols_186,13},
+{"container-stub","mulib-container-stub.h",mb_symbols_187,13},
+{"container-vfs","mulib-container-vfs.h",mb_symbols_188,8},
+{"container2daemonproto","mulib-container2daemonproto.h",mb_symbols_189,9},
+{"containerboost","mulib-containerboost.h",mb_symbols_190,14},
+{"containerd","mulib-containerd.h",mb_symbols_191,9},
+{"containerd-accessstub","mulib-containerd-accessstub.h",mb_symbols_192,9},
+{"containerd-cache","mulib-containerd-cache.h",mb_symbols_193,10},
+{"containerd-ctrlbridge","mulib-containerd-ctrlbridge.h",mb_symbols_194,5},
+{"containerd-mount","mulib-containerd-mount.h",mb_symbols_195,10},
+{"containerinjector","mulib-containerinjector.h",mb_symbols_196,1},
+{"containerserverd","mulib-containerserverd.h",mb_symbols_197,1},
+{"containerstub","mulib-containerstub.h",mb_symbols_198,1},
+{"containterpool","mulib-containterpool.h",mb_symbols_199,12},
+{"cookie","mulib-cookie.h",mb_symbols_200,1},
+{"cookiejar","mulib-cookiejar.h",mb_symbols_201,4},
+{"corpus","mulib-corpus.h",mb_symbols_202,6},
+{"cosine_similarity","mulib-cosine_similarity.h",mb_symbols_203,1},
+{"countmin","mulib-countmin.h",mb_symbols_204,5},
+{"cowb+tree","mulib-cowb+tree.h",mb_symbols_205,7},
+{"cpio","mulib-cpio.h",mb_symbols_206,26},
+{"crawlarchive","mulib-crawlarchive.h",mb_symbols_207,5},
+{"crawler","mulib-crawler.h",mb_symbols_208,6},
+{"crawlqueue","mulib-crawlqueue.h",mb_symbols_209,7},
+{"crc","mulib-crc.h",mb_symbols_210,238},
+{"crc32","mulib-crc32.h",mb_symbols_211,2},
+{"cron","mulib-cron.h",mb_symbols_212,8},
+{"crossref","mulib-crossref.h",mb_symbols_213,6},
+{"cryptohash","mulib-cryptohash.h",mb_symbols_214,38},
+{"csl","mulib-csl.h",mb_symbols_215,6},
+{"css","mulib-css.h",mb_symbols_216,29},
+{"css-box","mulib-css-box.h",mb_symbols_217,4},
+{"css-cascade","mulib-css-cascade.h",mb_symbols_218,1},
+{"css-computed","mulib-css-computed.h",mb_symbols_219,3},
+{"css-flex","mulib-css-flex.h",mb_symbols_220,1},
+{"css-grid","mulib-css-grid.h",mb_symbols_221,1},
+{"css-layoutstream","mulib-css-layoutstream.h",mb_symbols_222,2},
+{"css-parser","mulib-css-parser.h",mb_symbols_223,4},
+{"css-selector","mulib-css-selector.h",mb_symbols_224,2},
+{"css-tokenizer","mulib-css-tokenizer.h",mb_symbols_225,8},
+{"csswriter","mulib-csswriter.h",mb_symbols_226,2},
+{"csv","mulib-csv.h",mb_symbols_227,2},
+{"curses","mulib-curses.h",mb_symbols_228,24},
+{"daemon","mulib-daemon.h",mb_symbols_229,24},
+{"datagram","mulib-datagram.h",mb_symbols_230,12},
+{"datalog","mulib-datalog.h",mb_symbols_231,20},
+{"date","mulib-date.h",mb_symbols_232,3},
+{"datum","mulib-datum.h",mb_symbols_233,13},
+{"dbdesializer","mulib-dbdesializer.h",mb_symbols_234,1},
+{"dbindex","mulib-dbindex.h",mb_symbols_235,5},
+{"dbquery","mulib-dbquery.h",mb_symbols_236,4},
+{"dbschema","mulib-dbschema.h",mb_symbols_237,5},
+{"dbserializer","mulib-dbserializer.h",mb_symbols_238,6},
+{"dbsummary","mulib-dbsummary.h",mb_symbols_239,2},
+{"dbtransaction","mulib-dbtransaction.h",mb_symbols_240,4},
+{"dbus","mulib-dbus.h",mb_symbols_241,15},
+{"dbus-auth","mulib-dbus-auth.h",mb_symbols_242,1},
+{"dbus-client","mulib-dbus-client.h",mb_symbols_243,5},
+{"dbus-properties","mulib-dbus-properties.h",mb_symbols_244,2},
+{"dbus-transport","mulib-dbus-transport.h",mb_symbols_245,3},
+{"dce","mulib-dce.h",mb_symbols_246,1},
+{"deflate","mulib-deflate.h",mb_symbols_247,8},
+{"defuse","mulib-defuse.h",mb_symbols_248,3},
+{"deltacodec","mulib-deltacodec.h",mb_symbols_249,2},
+{"depfile","mulib-depfile.h",mb_symbols_250,12},
+{"depir","mulib-depir.h",mb_symbols_251,24},
+{"deque","mulib-deque.h",mb_symbols_252,7},
+{"der","mulib-der.h",mb_symbols_253,7},
+{"descritors","mulib-descritors.h",mb_symbols_254,5},
+{"devlink","mulib-devlink.h",mb_symbols_255,1},
+{"dexcc","mulib-dexcc.h",mb_symbols_256,52},
+{"dfa","mulib-dfa.h",mb_symbols_257,15},
+{"dhcp4-client","mulib-dhcp4-client.h",mb_symbols_258,2},
+{"dhcp6-client","mulib-dhcp6-client.h",mb_symbols_259,2},
+{"diag","mulib-diag.h",mb_symbols_260,8},
+{"diagnostic","mulib-diagnostic.h",mb_symbols_261,8},
+{"diagram","mulib-diagram.h",mb_symbols_262,6},
+{"distfield","mulib-distfield.h",mb_symbols_263,3},
+{"distribcluster","mulib-distribcluster.h",mb_symbols_264,6},
+{"distribcomp","mulib-distribcomp.h",mb_symbols_265,23},
+{"distribtask","mulib-distribtask.h",mb_symbols_266,15},
 {"dmabuf","mulib-dmabuf.h",NULL,0},
-{"dns","mulib-dns.h",mb_symbols_266,44},
-{"dns-manager","mulib-dns-manager.h",mb_symbols_267,1},
-{"dnscache","mulib-dnscache.h",mb_symbols_268,8},
-{"dnsclient","mulib-dnsclient.h",mb_symbols_269,5},
-{"dnsnmeserver","mulib-dnsnmeserver.h",mb_symbols_270,3},
-{"dnsresolver","mulib-dnsresolver.h",mb_symbols_271,3},
-{"docdiff","mulib-docdiff.h",mb_symbols_272,6},
-{"docid","mulib-docid.h",mb_symbols_273,3},
-{"docincremental","mulib-docincremental.h",mb_symbols_274,5},
-{"docir","mulib-docir.h",mb_symbols_275,69},
-{"doclength","mulib-doclength.h",mb_symbols_276,5},
-{"docmetadata","mulib-docmetadata.h",mb_symbols_277,6},
-{"docnode","mulib-docnode.h",mb_symbols_278,6},
-{"docnormalize","mulib-docnormalize.h",mb_symbols_279,3},
-{"docquery","mulib-docquery.h",mb_symbols_280,6},
-{"docresource","mulib-docresource.h",mb_symbols_281,6},
-{"docsemantic","mulib-docsemantic.h",mb_symbols_282,6},
-{"docserialize","mulib-docserialize.h",mb_symbols_283,4},
-{"docsource","mulib-docsource.h",mb_symbols_284,7},
-{"docstring","mulib-docstring.h",mb_symbols_285,28},
-{"docstyle","mulib-docstyle.h",mb_symbols_286,6},
-{"documentdb","mulib-documentdb.h",mb_symbols_287,5},
-{"docvalidate","mulib-docvalidate.h",mb_symbols_288,6},
-{"dom","mulib-dom.h",mb_symbols_289,118},
-{"dom-mutation","mulib-dom-mutation.h",mb_symbols_290,9},
-{"dom-query","mulib-dom-query.h",mb_symbols_291,3},
-{"dom-range","mulib-dom-range.h",mb_symbols_292,4},
-{"dominance","mulib-dominance.h",mb_symbols_293,3},
-{"domserialize","mulib-domserialize.h",mb_symbols_294,1},
-{"drm","mulib-drm.h",mb_symbols_295,32},
+{"dns","mulib-dns.h",mb_symbols_267,44},
+{"dns-manager","mulib-dns-manager.h",mb_symbols_268,1},
+{"dnscache","mulib-dnscache.h",mb_symbols_269,8},
+{"dnsclient","mulib-dnsclient.h",mb_symbols_270,5},
+{"dnsnmeserver","mulib-dnsnmeserver.h",mb_symbols_271,3},
+{"dnsresolver","mulib-dnsresolver.h",mb_symbols_272,3},
+{"docdiff","mulib-docdiff.h",mb_symbols_273,6},
+{"docid","mulib-docid.h",mb_symbols_274,3},
+{"docincremental","mulib-docincremental.h",mb_symbols_275,5},
+{"docir","mulib-docir.h",mb_symbols_276,69},
+{"doclength","mulib-doclength.h",mb_symbols_277,5},
+{"docmetadata","mulib-docmetadata.h",mb_symbols_278,6},
+{"docnode","mulib-docnode.h",mb_symbols_279,6},
+{"docnormalize","mulib-docnormalize.h",mb_symbols_280,3},
+{"docquery","mulib-docquery.h",mb_symbols_281,6},
+{"docresource","mulib-docresource.h",mb_symbols_282,6},
+{"docsemantic","mulib-docsemantic.h",mb_symbols_283,6},
+{"docserialize","mulib-docserialize.h",mb_symbols_284,4},
+{"docsource","mulib-docsource.h",mb_symbols_285,7},
+{"docstring","mulib-docstring.h",mb_symbols_286,28},
+{"docstyle","mulib-docstyle.h",mb_symbols_287,6},
+{"documentdb","mulib-documentdb.h",mb_symbols_288,5},
+{"docvalidate","mulib-docvalidate.h",mb_symbols_289,6},
+{"dom","mulib-dom.h",mb_symbols_290,118},
+{"dom-mutation","mulib-dom-mutation.h",mb_symbols_291,9},
+{"dom-query","mulib-dom-query.h",mb_symbols_292,3},
+{"dom-range","mulib-dom-range.h",mb_symbols_293,4},
+{"dominance","mulib-dominance.h",mb_symbols_294,3},
+{"domserialize","mulib-domserialize.h",mb_symbols_295,1},
+{"drm","mulib-drm.h",mb_symbols_296,32},
 {"drm-atomic","mulib-drm-atomic.h",NULL,0},
 {"drm-framebuffer","mulib-drm-framebuffer.h",NULL,0},
 {"drm-gem","mulib-drm-gem.h",NULL,0},
@@ -140036,8 +140036,8 @@ static const mb_library mb_libraries[] = {
 {"drm-prime","mulib-drm-prime.h",NULL,0},
 {"drm-session","mulib-drm-session.h",NULL,0},
 {"drm-syncobj","mulib-drm-syncobj.h",NULL,0},
-{"dsdom","mulib-dsdom.h",mb_symbols_296,5},
-{"dsim-bitvec","mulib-dsim-bitvec.h",mb_symbols_297,11},
+{"dsdom","mulib-dsdom.h",mb_symbols_297,5},
+{"dsim-bitvec","mulib-dsim-bitvec.h",mb_symbols_298,11},
 {"dsim-bytecode","mulib-dsim-bytecode.h",NULL,0},
 {"dsim-clock","mulib-dsim-clock.h",NULL,0},
 {"dsim-cosim","mulib-dsim-cosim.h",NULL,0},
@@ -140046,118 +140046,118 @@ static const mb_library mb_libraries[] = {
 {"dsim-delta","mulib-dsim-delta.h",NULL,0},
 {"dsim-driver","mulib-dsim-driver.h",NULL,0},
 {"dsim-engine","mulib-dsim-engine.h",NULL,0},
-{"dsim-logic4","mulib-dsim-logic4.h",mb_symbols_298,11},
+{"dsim-logic4","mulib-dsim-logic4.h",mb_symbols_299,11},
 {"dsim-memory","mulib-dsim-memory.h",NULL,0},
 {"dsim-process","mulib-dsim-process.h",NULL,0},
 {"dsim-region","mulib-dsim-region.h",NULL,0},
 {"dsim-resolve","mulib-dsim-resolve.h",NULL,0},
-{"dsim-scheduler","mulib-dsim-scheduler.h",mb_symbols_299,7},
+{"dsim-scheduler","mulib-dsim-scheduler.h",mb_symbols_300,7},
 {"dsim-sequential","mulib-dsim-sequential.h",NULL,0},
 {"dsim-signal","mulib-dsim-signal.h",NULL,0},
 {"dsim-testbench","mulib-dsim-testbench.h",NULL,0},
 {"dsim-trigger","mulib-dsim-trigger.h",NULL,0},
-{"dsu","mulib-dsu.h",mb_symbols_300,5},
-{"dsymspec","mulib-dsymspec.h",mb_symbols_301,12},
-{"dvi","mulib-dvi.h",mb_symbols_302,1},
-{"dvifont","mulib-dvifont.h",mb_symbols_303,5},
-{"dviread","mulib-dviread.h",mb_symbols_304,5},
-{"dyegram","mulib-dyegram.h",mb_symbols_305,1},
-{"dynbox","mulib-dynbox.h",mb_symbols_306,57},
-{"dyncall","mulib-dyncall.h",mb_symbols_307,12},
-{"dynload","mulib-dynload.h",mb_symbols_308,18},
-{"ebpf","mulib-ebpf.h",mb_symbols_309,3},
+{"dsu","mulib-dsu.h",mb_symbols_301,5},
+{"dsymspec","mulib-dsymspec.h",mb_symbols_302,12},
+{"dvi","mulib-dvi.h",mb_symbols_303,1},
+{"dvifont","mulib-dvifont.h",mb_symbols_304,5},
+{"dviread","mulib-dviread.h",mb_symbols_305,5},
+{"dyegram","mulib-dyegram.h",mb_symbols_306,1},
+{"dynbox","mulib-dynbox.h",mb_symbols_307,57},
+{"dyncall","mulib-dyncall.h",mb_symbols_308,12},
+{"dynload","mulib-dynload.h",mb_symbols_309,18},
+{"ebpf","mulib-ebpf.h",mb_symbols_310,3},
 {"ecad-annotation","mulib-ecad-annotation.h",NULL,0},
 {"ecad-bus","mulib-ecad-bus.h",NULL,0},
-{"ecad-connect","mulib-ecad-connect.h",mb_symbols_310,1},
+{"ecad-connect","mulib-ecad-connect.h",mb_symbols_311,1},
 {"ecad-elaborate","mulib-ecad-elaborate.h",NULL,0},
-{"ecad-erc","mulib-ecad-erc.h",mb_symbols_311,2},
+{"ecad-erc","mulib-ecad-erc.h",mb_symbols_312,2},
 {"ecad-flatten","mulib-ecad-flatten.h",NULL,0},
 {"ecad-hittest","mulib-ecad-hittest.h",NULL,0},
 {"ecad-instance","mulib-ecad-instance.h",NULL,0},
 {"ecad-kicad","mulib-ecad-kicad.h",NULL,0},
-{"ecad-netlist","mulib-ecad-netlist.h",mb_symbols_312,1},
-{"ecad-pcb-sync","mulib-ecad-pcb-sync.h",mb_symbols_313,4},
+{"ecad-netlist","mulib-ecad-netlist.h",mb_symbols_313,1},
+{"ecad-pcb-sync","mulib-ecad-pcb-sync.h",mb_symbols_314,4},
 {"ecad-pin","mulib-ecad-pin.h",NULL,0},
 {"ecad-port","mulib-ecad-port.h",NULL,0},
 {"ecad-power","mulib-ecad-power.h",NULL,0},
-{"ecad-schematic","mulib-ecad-schematic.h",mb_symbols_314,4},
+{"ecad-schematic","mulib-ecad-schematic.h",mb_symbols_315,4},
 {"ecad-sheet","mulib-ecad-sheet.h",NULL,0},
 {"ecad-snap","mulib-ecad-snap.h",NULL,0},
-{"ecad-symbol","mulib-ecad-symbol.h",mb_symbols_315,9},
+{"ecad-symbol","mulib-ecad-symbol.h",mb_symbols_316,9},
 {"ecad-wire","mulib-ecad-wire.h",NULL,0},
 {"ecad-wire-route","mulib-ecad-wire-route.h",NULL,0},
-{"eda-attributes","mulib-eda-attributes.h",mb_symbols_316,10},
+{"eda-attributes","mulib-eda-attributes.h",mb_symbols_317,10},
 {"eda-catalogue","mulib-eda-catalogue.h",NULL,0},
 {"eda-changeset","mulib-eda-changeset.h",NULL,0},
-{"eda-constraints","mulib-eda-constraints.h",mb_symbols_317,6},
+{"eda-constraints","mulib-eda-constraints.h",mb_symbols_318,6},
 {"eda-dependency","mulib-eda-dependency.h",NULL,0},
-{"eda-design-db","mulib-eda-design-db.h",mb_symbols_318,7},
+{"eda-design-db","mulib-eda-design-db.h",mb_symbols_319,7},
 {"eda-diagnostics","mulib-eda-diagnostics.h",NULL,0},
 {"eda-diff","mulib-eda-diff.h",NULL,0},
 {"eda-handles","mulib-eda-handles.h",NULL,0},
-{"eda-hierarchy","mulib-eda-hierarchy.h",mb_symbols_319,5},
-{"eda-ids","mulib-eda-ids.h",mb_symbols_320,8},
-{"eda-incremental","mulib-eda-incremental.h",mb_symbols_321,6},
+{"eda-hierarchy","mulib-eda-hierarchy.h",mb_symbols_320,5},
+{"eda-ids","mulib-eda-ids.h",mb_symbols_321,8},
+{"eda-incremental","mulib-eda-incremental.h",mb_symbols_322,6},
 {"eda-job","mulib-eda-job.h",NULL,0},
 {"eda-journal","mulib-eda-journal.h",NULL,0},
-{"eda-library","mulib-eda-library.h",mb_symbols_322,5},
+{"eda-library","mulib-eda-library.h",mb_symbols_323,5},
 {"eda-merge","mulib-eda-merge.h",NULL,0},
-{"eda-netgraph","mulib-eda-netgraph.h",mb_symbols_323,8},
-{"eda-object","mulib-eda-object.h",mb_symbols_324,3},
+{"eda-netgraph","mulib-eda-netgraph.h",mb_symbols_324,8},
+{"eda-object","mulib-eda-object.h",mb_symbols_325,3},
 {"eda-parametric","mulib-eda-parametric.h",NULL,0},
-{"eda-project","mulib-eda-project.h",mb_symbols_325,2},
+{"eda-project","mulib-eda-project.h",mb_symbols_326,2},
 {"eda-properties","mulib-eda-properties.h",NULL,0},
-{"eda-quantity","mulib-eda-quantity.h",mb_symbols_326,4},
+{"eda-quantity","mulib-eda-quantity.h",mb_symbols_327,4},
 {"eda-query","mulib-eda-query.h",NULL,0},
 {"eda-revision","mulib-eda-revision.h",NULL,0},
 {"eda-selection","mulib-eda-selection.h",NULL,0},
 {"eda-serialize","mulib-eda-serialize.h",NULL,0},
-{"eda-status","mulib-eda-status.h",mb_symbols_327,12},
+{"eda-status","mulib-eda-status.h",mb_symbols_328,12},
 {"eda-store","mulib-eda-store.h",NULL,0},
-{"eda-transaction","mulib-eda-transaction.h",mb_symbols_328,4},
-{"eda-undo","mulib-eda-undo.h",mb_symbols_329,5},
-{"eda-units","mulib-eda-units.h",mb_symbols_330,6},
+{"eda-transaction","mulib-eda-transaction.h",mb_symbols_329,4},
+{"eda-undo","mulib-eda-undo.h",mb_symbols_330,5},
+{"eda-units","mulib-eda-units.h",mb_symbols_331,6},
 {"eda-validate","mulib-eda-validate.h",NULL,0},
 {"eda-variants","mulib-eda-variants.h",NULL,0},
-{"edbuf","mulib-edbuf.h",mb_symbols_331,32},
-{"edit_distance","mulib-edit_distance.h",mb_symbols_332,2},
-{"efi","mulib-efi.h",mb_symbols_333,8},
-{"egraph","mulib-egraph.h",mb_symbols_334,26},
-{"elf","mulib-elf.h",mb_symbols_335,19},
-{"elf-objdump","mulib-elf-objdump.h",mb_symbols_336,1},
-{"elfbuilder","mulib-elfbuilder.h",mb_symbols_337,16},
-{"elfutils","mulib-elfutils.h",mb_symbols_338,2},
-{"elvi-scrape","mulib-elvi-scrape.h",mb_symbols_339,22},
-{"embeddingsdb","mulib-embeddingsdb.h",mb_symbols_340,12},
-{"emitter","mulib-emitter.h",mb_symbols_341,15},
-{"encoding","mulib-encoding.h",mb_symbols_342,4},
-{"endian","mulib-endian.h",mb_symbols_343,8},
-{"entropy","mulib-entropy.h",mb_symbols_344,3},
-{"env","mulib-env.h",mb_symbols_345,2},
-{"epoll","mulib-epoll.h",mb_symbols_346,16},
-{"epub","mulib-epub.h",mb_symbols_347,18},
-{"epubcheck","mulib-epubcheck.h",mb_symbols_348,5},
-{"epubwriter","mulib-epubwriter.h",mb_symbols_349,1},
-{"eqn","mulib-eqn.h",mb_symbols_350,20},
-{"escape","mulib-escape.h",mb_symbols_351,2},
-{"ethtool-features","mulib-ethtool-features.h",mb_symbols_352,2},
-{"ethtool-module","mulib-ethtool-module.h",mb_symbols_353,1},
-{"ethtool-netlink","mulib-ethtool-netlink.h",mb_symbols_354,1},
-{"ethtool-stats","mulib-ethtool-stats.h",mb_symbols_355,1},
-{"etl-transform","mulib-etl-transform.h",mb_symbols_356,2},
-{"euclidean_distance","mulib-euclidean_distance.h",mb_symbols_357,1},
-{"eventfd","mulib-eventfd.h",mb_symbols_358,4},
-{"evtlistener","mulib-evtlistener.h",mb_symbols_359,4},
-{"evtloop","mulib-evtloop.h",mb_symbols_360,7},
-{"evtstream","mulib-evtstream.h",mb_symbols_361,8},
-{"exec","mulib-exec.h",mb_symbols_362,23},
-{"ezjni","mulib-ezjni.h",mb_symbols_363,32},
-{"ezndk","mulib-ezndk.h",mb_symbols_364,25},
-{"fca","mulib-fca.h",mb_symbols_365,6},
-{"fetch","mulib-fetch.h",mb_symbols_366,3},
-{"fetch-policy","mulib-fetch-policy.h",mb_symbols_367,2},
-{"fft","mulib-fft.h",mb_symbols_368,2},
-{"fiber","mulib-fiber.h",mb_symbols_369,19},
+{"edbuf","mulib-edbuf.h",mb_symbols_332,32},
+{"edit_distance","mulib-edit_distance.h",mb_symbols_333,2},
+{"efi","mulib-efi.h",mb_symbols_334,8},
+{"egraph","mulib-egraph.h",mb_symbols_335,26},
+{"elf","mulib-elf.h",mb_symbols_336,19},
+{"elf-objdump","mulib-elf-objdump.h",mb_symbols_337,1},
+{"elfbuilder","mulib-elfbuilder.h",mb_symbols_338,16},
+{"elfutils","mulib-elfutils.h",mb_symbols_339,2},
+{"elvi-scrape","mulib-elvi-scrape.h",mb_symbols_340,22},
+{"embeddingsdb","mulib-embeddingsdb.h",mb_symbols_341,12},
+{"emitter","mulib-emitter.h",mb_symbols_342,15},
+{"encoding","mulib-encoding.h",mb_symbols_343,4},
+{"endian","mulib-endian.h",mb_symbols_344,8},
+{"entropy","mulib-entropy.h",mb_symbols_345,3},
+{"env","mulib-env.h",mb_symbols_346,2},
+{"epoll","mulib-epoll.h",mb_symbols_347,16},
+{"epub","mulib-epub.h",mb_symbols_348,18},
+{"epubcheck","mulib-epubcheck.h",mb_symbols_349,5},
+{"epubwriter","mulib-epubwriter.h",mb_symbols_350,1},
+{"eqn","mulib-eqn.h",mb_symbols_351,20},
+{"escape","mulib-escape.h",mb_symbols_352,2},
+{"ethtool-features","mulib-ethtool-features.h",mb_symbols_353,2},
+{"ethtool-module","mulib-ethtool-module.h",mb_symbols_354,1},
+{"ethtool-netlink","mulib-ethtool-netlink.h",mb_symbols_355,1},
+{"ethtool-stats","mulib-ethtool-stats.h",mb_symbols_356,1},
+{"etl-transform","mulib-etl-transform.h",mb_symbols_357,2},
+{"euclidean_distance","mulib-euclidean_distance.h",mb_symbols_358,1},
+{"eventfd","mulib-eventfd.h",mb_symbols_359,4},
+{"evtlistener","mulib-evtlistener.h",mb_symbols_360,4},
+{"evtloop","mulib-evtloop.h",mb_symbols_361,7},
+{"evtstream","mulib-evtstream.h",mb_symbols_362,8},
+{"exec","mulib-exec.h",mb_symbols_363,23},
+{"ezjni","mulib-ezjni.h",mb_symbols_364,32},
+{"ezndk","mulib-ezndk.h",mb_symbols_365,25},
+{"fca","mulib-fca.h",mb_symbols_366,6},
+{"fetch","mulib-fetch.h",mb_symbols_367,3},
+{"fetch-policy","mulib-fetch-policy.h",mb_symbols_368,2},
+{"fft","mulib-fft.h",mb_symbols_369,2},
+{"fiber","mulib-fiber.h",mb_symbols_370,19},
 {"field-boundary","mulib-field-boundary.h",NULL,0},
 {"field-capacitance","mulib-field-capacitance.h",NULL,0},
 {"field-current","mulib-field-current.h",NULL,0},
@@ -140170,37 +140170,37 @@ static const mb_library mb_libraries[] = {
 {"field-magnetostatic","mulib-field-magnetostatic.h",NULL,0},
 {"field-material","mulib-field-material.h",NULL,0},
 {"field-mesh","mulib-field-mesh.h",NULL,0},
-{"field-poisson","mulib-field-poisson.h",mb_symbols_370,2},
-{"field-thermal","mulib-field-thermal.h",mb_symbols_371,2},
-{"figurelayout","mulib-figurelayout.h",mb_symbols_372,6},
-{"filectl","mulib-filectl.h",mb_symbols_373,8},
-{"fileserver","mulib-fileserver.h",mb_symbols_374,11},
-{"flatbuffers","mulib-flatbuffers.h",mb_symbols_375,5},
-{"floatgraphics","mulib-floatgraphics.h",mb_symbols_376,6},
-{"flow-graph","mulib-flow-graph.h",mb_symbols_377,4},
-{"fmt-aiger","mulib-fmt-aiger.h",mb_symbols_378,1},
-{"fmt-sv","mulib-fmt-sv.h",mb_symbols_379,1},
-{"fontcatalog","mulib-fontcatalog.h",mb_symbols_380,6},
-{"fontcmap","mulib-fontcmap.h",mb_symbols_381,6},
-{"fontdraw","mulib-fontdraw.h",mb_symbols_382,16},
-{"fontembed","mulib-fontembed.h",mb_symbols_383,5},
-{"fontfallback","mulib-fontfallback.h",mb_symbols_384,6},
-{"fontgdef","mulib-fontgdef.h",mb_symbols_385,6},
-{"fontgpos","mulib-fontgpos.h",mb_symbols_386,7},
-{"fontgsub","mulib-fontgsub.h",mb_symbols_387,6},
-{"fontkern","mulib-fontkern.h",mb_symbols_388,1},
-{"fontmetrics","mulib-fontmetrics.h",mb_symbols_389,2},
-{"fontraster","mulib-fontraster.h",mb_symbols_390,5},
-{"fontshape","mulib-fontshape.h",mb_symbols_391,20},
-{"fontsubset","mulib-fontsubset.h",mb_symbols_392,6},
-{"fontvar","mulib-fontvar.h",mb_symbols_393,5},
+{"field-poisson","mulib-field-poisson.h",mb_symbols_371,2},
+{"field-thermal","mulib-field-thermal.h",mb_symbols_372,2},
+{"figurelayout","mulib-figurelayout.h",mb_symbols_373,6},
+{"filectl","mulib-filectl.h",mb_symbols_374,8},
+{"fileserver","mulib-fileserver.h",mb_symbols_375,11},
+{"flatbuffers","mulib-flatbuffers.h",mb_symbols_376,5},
+{"floatgraphics","mulib-floatgraphics.h",mb_symbols_377,6},
+{"flow-graph","mulib-flow-graph.h",mb_symbols_378,4},
+{"fmt-aiger","mulib-fmt-aiger.h",mb_symbols_379,1},
+{"fmt-sv","mulib-fmt-sv.h",mb_symbols_380,1},
+{"fontcatalog","mulib-fontcatalog.h",mb_symbols_381,6},
+{"fontcmap","mulib-fontcmap.h",mb_symbols_382,6},
+{"fontdraw","mulib-fontdraw.h",mb_symbols_383,16},
+{"fontembed","mulib-fontembed.h",mb_symbols_384,5},
+{"fontfallback","mulib-fontfallback.h",mb_symbols_385,6},
+{"fontgdef","mulib-fontgdef.h",mb_symbols_386,6},
+{"fontgpos","mulib-fontgpos.h",mb_symbols_387,7},
+{"fontgsub","mulib-fontgsub.h",mb_symbols_388,6},
+{"fontkern","mulib-fontkern.h",mb_symbols_389,1},
+{"fontmetrics","mulib-fontmetrics.h",mb_symbols_390,2},
+{"fontraster","mulib-fontraster.h",mb_symbols_391,5},
+{"fontshape","mulib-fontshape.h",mb_symbols_392,20},
+{"fontsubset","mulib-fontsubset.h",mb_symbols_393,6},
+{"fontvar","mulib-fontvar.h",mb_symbols_394,5},
 {"formal-aig-cnf","mulib-formal-aig-cnf.h",NULL,0},
 {"formal-assertion","mulib-formal-assertion.h",NULL,0},
 {"formal-assume","mulib-formal-assume.h",NULL,0},
 {"formal-bmc","mulib-formal-bmc.h",NULL,0},
 {"formal-cdc","mulib-formal-cdc.h",NULL,0},
-{"formal-cec","mulib-formal-cec.h",mb_symbols_394,1},
-{"formal-cnf","mulib-formal-cnf.h",mb_symbols_395,8},
+{"formal-cec","mulib-formal-cec.h",mb_symbols_395,1},
+{"formal-cnf","mulib-formal-cnf.h",mb_symbols_396,8},
 {"formal-counterexample","mulib-formal-counterexample.h",NULL,0},
 {"formal-ctl","mulib-formal-ctl.h",NULL,0},
 {"formal-kinduction","mulib-formal-kinduction.h",NULL,0},
@@ -140209,7 +140209,7 @@ static const mb_library mb_libraries[] = {
 {"formal-pdr","mulib-formal-pdr.h",NULL,0},
 {"formal-proof","mulib-formal-proof.h",NULL,0},
 {"formal-rdc","mulib-formal-rdc.h",NULL,0},
-{"formal-sat","mulib-formal-sat.h",mb_symbols_396,5},
+{"formal-sat","mulib-formal-sat.h",mb_symbols_397,5},
 {"formal-sec","mulib-formal-sec.h",NULL,0},
 {"formal-transition","mulib-formal-transition.h",NULL,0},
 {"fpga-architecture","mulib-fpga-architecture.h",NULL,0},
@@ -140217,28 +140217,28 @@ static const mb_library mb_libraries[] = {
 {"fpga-constraints","mulib-fpga-constraints.h",NULL,0},
 {"fpga-fasm","mulib-fpga-fasm.h",NULL,0},
 {"fpga-grid","mulib-fpga-grid.h",NULL,0},
-{"fpga-lut","mulib-fpga-lut.h",mb_symbols_397,3},
+{"fpga-lut","mulib-fpga-lut.h",mb_symbols_398,3},
 {"fpga-pack","mulib-fpga-pack.h",NULL,0},
 {"fpga-pathfinder","mulib-fpga-pathfinder.h",NULL,0},
 {"fpga-place","mulib-fpga-place.h",NULL,0},
-{"fpga-route","mulib-fpga-route.h",mb_symbols_398,2},
+{"fpga-route","mulib-fpga-route.h",mb_symbols_399,2},
 {"fpga-rrgraph","mulib-fpga-rrgraph.h",NULL,0},
 {"fpga-timing","mulib-fpga-timing.h",NULL,0},
-{"fraction","mulib-fraction.h",mb_symbols_399,3},
-{"frame-layout","mulib-frame-layout.h",mb_symbols_400,5},
-{"framebuffer","mulib-framebuffer.h",mb_symbols_401,5},
-{"fs","mulib-fs.h",mb_symbols_402,2},
-{"fst","mulib-fst.h",mb_symbols_403,26},
-{"fswatch","mulib-fswatch.h",mb_symbols_404,38},
-{"ftpclient","mulib-ftpclient.h",mb_symbols_405,15},
-{"ftpserver","mulib-ftpserver.h",mb_symbols_406,7},
-{"fuse","mulib-fuse.h",mb_symbols_407,14},
-{"fuzzyquery","mulib-fuzzyquery.h",mb_symbols_408,1},
-{"galois","mulib-galois.h",mb_symbols_409,3},
+{"fraction","mulib-fraction.h",mb_symbols_400,3},
+{"frame-layout","mulib-frame-layout.h",mb_symbols_401,5},
+{"framebuffer","mulib-framebuffer.h",mb_symbols_402,5},
+{"fs","mulib-fs.h",mb_symbols_403,2},
+{"fst","mulib-fst.h",mb_symbols_404,26},
+{"fswatch","mulib-fswatch.h",mb_symbols_405,38},
+{"ftpclient","mulib-ftpclient.h",mb_symbols_406,15},
+{"ftpserver","mulib-ftpserver.h",mb_symbols_407,7},
+{"fuse","mulib-fuse.h",mb_symbols_408,14},
+{"fuzzyquery","mulib-fuzzyquery.h",mb_symbols_409,1},
+{"galois","mulib-galois.h",mb_symbols_410,3},
 {"gbm","mulib-gbm.h",NULL,0},
-{"gc","mulib-gc.h",mb_symbols_410,6},
-{"gc-roots","mulib-gc-roots.h",mb_symbols_411,5},
-{"geoindex","mulib-geoindex.h",mb_symbols_412,6},
+{"gc","mulib-gc.h",mb_symbols_411,6},
+{"gc-roots","mulib-gc-roots.h",mb_symbols_412,5},
+{"geoindex","mulib-geoindex.h",mb_symbols_413,6},
 {"geom-bezier","mulib-geom-bezier.h",NULL,0},
 {"geom-bspline","mulib-geom-bspline.h",NULL,0},
 {"geom-cloner","mulib-geom-cloner.h",NULL,0},
@@ -140249,14 +140249,15 @@ static const mb_library mb_libraries[] = {
 {"geom-nurbs","mulib-geom-nurbs.h",NULL,0},
 {"geom-sdf","mulib-geom-sdf.h",NULL,0},
 {"geom-tessellate","mulib-geom-tessellate.h",NULL,0},
-{"geometry","mulib-geometry.h",mb_symbols_413,4},
-{"geosolve","mulib-geosolve.h",mb_symbols_414,62},
-{"getaddr","mulib-getaddr.h",mb_symbols_415,11},
-{"git","mulib-git.h",mb_symbols_416,9},
-{"glob","mulib-glob.h",mb_symbols_417,1},
-{"glossary","mulib-glossary.h",mb_symbols_418,6},
-{"glr","mulib-glr.h",mb_symbols_419,31},
-{"glx","mulib-glx.h",mb_symbols_420,21},
+{"geom2-core","mulib-geom2-core.h",NULL,0},
+{"geometry","mulib-geometry.h",mb_symbols_414,4},
+{"geosolve","mulib-geosolve.h",mb_symbols_415,62},
+{"getaddr","mulib-getaddr.h",mb_symbols_416,11},
+{"git","mulib-git.h",mb_symbols_417,9},
+{"glob","mulib-glob.h",mb_symbols_418,1},
+{"glossary","mulib-glossary.h",mb_symbols_419,6},
+{"glr","mulib-glr.h",mb_symbols_420,31},
+{"glx","mulib-glx.h",mb_symbols_421,21},
 {"glx-antialias","mulib-glx-antialias.h",NULL,0},
 {"glx-atlas","mulib-glx-atlas.h",NULL,0},
 {"glx-backend-drm","mulib-glx-backend-drm.h",NULL,0},
@@ -140318,17 +140319,18 @@ static const mb_library mb_libraries[] = {
 {"glx-unix","mulib-glx-unix.h",NULL,0},
 {"glx-vulkan","mulib-glx-vulkan.h",NULL,0},
 {"glx-window","mulib-glx-window.h",NULL,0},
-{"glyph","mulib-glyph.h",mb_symbols_421,11},
-{"gpu","mulib-gpu.h",mb_symbols_422,5},
-{"gputest","mulib-gputest.h",mb_symbols_423,7},
-{"graph","mulib-graph.h",mb_symbols_424,7},
-{"graphdb","mulib-graphdb.h",mb_symbols_425,5},
-{"graphql","mulib-graphql.h",mb_symbols_426,6},
-{"graphviz","mulib-graphviz.h",mb_symbols_427,4},
-{"grid","mulib-grid.h",mb_symbols_428,4},
-{"grpc","mulib-grpc.h",mb_symbols_429,13},
-{"gss","mulib-gss.h",mb_symbols_430,18},
-{"gssair","mulib-gssair.h",mb_symbols_431,13},
+{"glyph","mulib-glyph.h",mb_symbols_422,11},
+{"gpu","mulib-gpu.h",mb_symbols_423,5},
+{"gputest","mulib-gputest.h",mb_symbols_424,7},
+{"graph","mulib-graph.h",mb_symbols_425,7},
+{"graph-core","mulib-graph-core.h",NULL,0},
+{"graphdb","mulib-graphdb.h",mb_symbols_426,5},
+{"graphql","mulib-graphql.h",mb_symbols_427,6},
+{"graphviz","mulib-graphviz.h",mb_symbols_428,4},
+{"grid","mulib-grid.h",mb_symbols_429,4},
+{"grpc","mulib-grpc.h",mb_symbols_430,13},
+{"gss","mulib-gss.h",mb_symbols_431,18},
+{"gssair","mulib-gssair.h",mb_symbols_432,13},
 {"gui-accessibility","mulib-gui-accessibility.h",NULL,0},
 {"gui-animation","mulib-gui-animation.h",NULL,0},
 {"gui-app","mulib-gui-app.h",NULL,0},
@@ -140354,12 +140356,12 @@ static const mb_library mb_libraries[] = {
 {"gui-theme","mulib-gui-theme.h",NULL,0},
 {"gui-tray","mulib-gui-tray.h",NULL,0},
 {"gui-undo","mulib-gui-undo.h",NULL,0},
-{"gvizz","mulib-gvizz.h",mb_symbols_432,13},
-{"gvn","mulib-gvn.h",mb_symbols_433,4},
-{"gzip","mulib-gzip.h",mb_symbols_434,2},
-{"hamming_distance","mulib-hamming_distance.h",mb_symbols_435,2},
-{"hash","mulib-hash.h",mb_symbols_436,2},
-{"hattrie","mulib-hattrie.h",mb_symbols_437,10},
+{"gvizz","mulib-gvizz.h",mb_symbols_433,13},
+{"gvn","mulib-gvn.h",mb_symbols_434,4},
+{"gzip","mulib-gzip.h",mb_symbols_435,2},
+{"hamming_distance","mulib-hamming_distance.h",mb_symbols_436,2},
+{"hash","mulib-hash.h",mb_symbols_437,2},
+{"hattrie","mulib-hattrie.h",mb_symbols_438,10},
 {"hdl-ast","mulib-hdl-ast.h",NULL,0},
 {"hdl-consteval","mulib-hdl-consteval.h",NULL,0},
 {"hdl-elaborate","mulib-hdl-elaborate.h",NULL,0},
@@ -140367,38 +140369,38 @@ static const mb_library mb_libraries[] = {
 {"hdl-preprocessor","mulib-hdl-preprocessor.h",NULL,0},
 {"hdl-sdc","mulib-hdl-sdc.h",NULL,0},
 {"hdl-sdf","mulib-hdl-sdf.h",NULL,0},
-{"hdl-source","mulib-hdl-source.h",mb_symbols_438,2},
+{"hdl-source","mulib-hdl-source.h",mb_symbols_439,2},
 {"hdl-symboltable","mulib-hdl-symboltable.h",NULL,0},
 {"hdl-systemverilog-lex","mulib-hdl-systemverilog-lex.h",NULL,0},
 {"hdl-timescale","mulib-hdl-timescale.h",NULL,0},
-{"hdl-verilog-lex","mulib-hdl-verilog-lex.h",mb_symbols_439,10},
+{"hdl-verilog-lex","mulib-hdl-verilog-lex.h",mb_symbols_440,10},
 {"hdl-vhdl-lex","mulib-hdl-vhdl-lex.h",NULL,0},
 {"hdl-width","mulib-hdl-width.h",NULL,0},
-{"health_checker","mulib-health_checker.h",mb_symbols_440,2},
-{"heap","mulib-heap.h",mb_symbols_441,5},
-{"heaptable","mulib-heaptable.h",mb_symbols_442,5},
-{"hex","mulib-hex.h",mb_symbols_443,2},
-{"hidden_markov_chain","mulib-hidden_markov_chain.h",mb_symbols_444,3},
-{"histogram","mulib-histogram.h",mb_symbols_445,4},
-{"histprice","mulib-histprice.h",mb_symbols_446,8},
-{"hkdf","mulib-hkdf.h",mb_symbols_447,4},
-{"hll","mulib-hll.h",mb_symbols_448,4},
-{"hls-schedule","mulib-hls-schedule.h",mb_symbols_449,2},
-{"html","mulib-html.h",mb_symbols_450,8},
-{"html-dombridge","mulib-html-dombridge.h",mb_symbols_451,2},
-{"html-jsonld","mulib-html-jsonld.h",mb_symbols_452,2},
-{"html-textstream","mulib-html-textstream.h",mb_symbols_453,8},
-{"html-tokenizer","mulib-html-tokenizer.h",mb_symbols_454,4},
-{"html-treebuilder","mulib-html-treebuilder.h",mb_symbols_455,3},
-{"htmlwriter","mulib-htmlwriter.h",mb_symbols_456,1},
-{"http","mulib-http.h",mb_symbols_457,24},
-{"http1","mulib-http1.h",mb_symbols_458,2},
-{"http2","mulib-http2.h",mb_symbols_459,3},
-{"http3","mulib-http3.h",mb_symbols_460,3},
-{"http_request","mulib-http_request.h",mb_symbols_461,1},
-{"http_response","mulib-http_response.h",mb_symbols_462,1},
-{"https","mulib-https.h",mb_symbols_463,3},
-{"httpserver_config","mulib-httpserver_config.h",mb_symbols_464,3},
+{"health_checker","mulib-health_checker.h",mb_symbols_441,2},
+{"heap","mulib-heap.h",mb_symbols_442,5},
+{"heaptable","mulib-heaptable.h",mb_symbols_443,5},
+{"hex","mulib-hex.h",mb_symbols_444,2},
+{"hidden_markov_chain","mulib-hidden_markov_chain.h",mb_symbols_445,3},
+{"histogram","mulib-histogram.h",mb_symbols_446,4},
+{"histprice","mulib-histprice.h",mb_symbols_447,8},
+{"hkdf","mulib-hkdf.h",mb_symbols_448,4},
+{"hll","mulib-hll.h",mb_symbols_449,4},
+{"hls-schedule","mulib-hls-schedule.h",mb_symbols_450,2},
+{"html","mulib-html.h",mb_symbols_451,8},
+{"html-dombridge","mulib-html-dombridge.h",mb_symbols_452,2},
+{"html-jsonld","mulib-html-jsonld.h",mb_symbols_453,2},
+{"html-textstream","mulib-html-textstream.h",mb_symbols_454,8},
+{"html-tokenizer","mulib-html-tokenizer.h",mb_symbols_455,4},
+{"html-treebuilder","mulib-html-treebuilder.h",mb_symbols_456,3},
+{"htmlwriter","mulib-htmlwriter.h",mb_symbols_457,1},
+{"http","mulib-http.h",mb_symbols_458,24},
+{"http1","mulib-http1.h",mb_symbols_459,2},
+{"http2","mulib-http2.h",mb_symbols_460,3},
+{"http3","mulib-http3.h",mb_symbols_461,3},
+{"http_request","mulib-http_request.h",mb_symbols_462,1},
+{"http_response","mulib-http_response.h",mb_symbols_463,1},
+{"https","mulib-https.h",mb_symbols_464,3},
+{"httpserver_config","mulib-httpserver_config.h",mb_symbols_465,3},
 {"hwil-attribute","mulib-hwil-attribute.h",NULL,0},
 {"hwil-builder","mulib-hwil-builder.h",NULL,0},
 {"hwil-cell","mulib-hwil-cell.h",NULL,0},
@@ -140409,7 +140411,7 @@ static const mb_library mb_libraries[] = {
 {"hwil-instance","mulib-hwil-instance.h",NULL,0},
 {"hwil-lower","mulib-hwil-lower.h",NULL,0},
 {"hwil-memory","mulib-hwil-memory.h",NULL,0},
-{"hwil-module","mulib-hwil-module.h",mb_symbols_465,14},
+{"hwil-module","mulib-hwil-module.h",mb_symbols_466,14},
 {"hwil-pass","mulib-hwil-pass.h",NULL,0},
 {"hwil-port","mulib-hwil-port.h",NULL,0},
 {"hwil-process","mulib-hwil-process.h",NULL,0},
@@ -140419,22 +140421,22 @@ static const mb_library mb_libraries[] = {
 {"hwil-rewrite","mulib-hwil-rewrite.h",NULL,0},
 {"hwil-serialize","mulib-hwil-serialize.h",NULL,0},
 {"hwil-text","mulib-hwil-text.h",NULL,0},
-{"hwil-types","mulib-hwil-types.h",mb_symbols_466,7},
+{"hwil-types","mulib-hwil-types.h",mb_symbols_467,7},
 {"hwil-use-def","mulib-hwil-use-def.h",NULL,0},
 {"hwil-value","mulib-hwil-value.h",NULL,0},
-{"hwil-verify","mulib-hwil-verify.h",mb_symbols_467,1},
+{"hwil-verify","mulib-hwil-verify.h",mb_symbols_468,1},
 {"hwil-wire","mulib-hwil-wire.h",NULL,0},
-{"hwinfo","mulib-hwinfo.h",mb_symbols_468,6},
-{"hybridsearch","mulib-hybridsearch.h",mb_symbols_469,2},
-{"hyphen","mulib-hyphen.h",mb_symbols_470,32},
-{"icmp","mulib-icmp.h",mb_symbols_471,2},
-{"ifft","mulib-ifft.h",mb_symbols_472,1},
-{"image2container","mulib-image2container.h",mb_symbols_473,6},
-{"imageconvert","mulib-imageconvert.h",mb_symbols_474,5},
-{"imagejpeg","mulib-imagejpeg.h",mb_symbols_475,1},
-{"imagepng","mulib-imagepng.h",mb_symbols_476,1},
-{"imagewebp","mulib-imagewebp.h",mb_symbols_477,5},
-{"imapserver","mulib-imapserver.h",mb_symbols_478,5},
+{"hwinfo","mulib-hwinfo.h",mb_symbols_469,6},
+{"hybridsearch","mulib-hybridsearch.h",mb_symbols_470,2},
+{"hyphen","mulib-hyphen.h",mb_symbols_471,32},
+{"icmp","mulib-icmp.h",mb_symbols_472,2},
+{"ifft","mulib-ifft.h",mb_symbols_473,1},
+{"image2container","mulib-image2container.h",mb_symbols_474,6},
+{"imageconvert","mulib-imageconvert.h",mb_symbols_475,5},
+{"imagejpeg","mulib-imagejpeg.h",mb_symbols_476,1},
+{"imagepng","mulib-imagepng.h",mb_symbols_477,1},
+{"imagewebp","mulib-imagewebp.h",mb_symbols_478,5},
+{"imapserver","mulib-imapserver.h",mb_symbols_479,5},
 {"img-blend","mulib-img-blend.h",NULL,0},
 {"img-blur","mulib-img-blur.h",NULL,0},
 {"img-convolve","mulib-img-convolve.h",NULL,0},
@@ -140453,12 +140455,12 @@ static const mb_library mb_libraries[] = {
 {"img-tracking","mulib-img-tracking.h",NULL,0},
 {"img-transform","mulib-img-transform.h",NULL,0},
 {"img-warp","mulib-img-warp.h",NULL,0},
-{"imgbuilder","mulib-imgbuilder.h",mb_symbols_479,3},
-{"imgbuildspec","mulib-imgbuildspec.h",mb_symbols_480,7},
-{"imgformat","mulib-imgformat.h",mb_symbols_481,13},
-{"imgtrackerd","mulib-imgtrackerd.h",mb_symbols_482,0},
-{"immgtk","mulib-immgtk.h",mb_symbols_483,12},
-{"immgtk-canvas","mulib-immgtk-canvas.h",mb_symbols_484,4},
+{"imgbuilder","mulib-imgbuilder.h",mb_symbols_480,3},
+{"imgbuildspec","mulib-imgbuildspec.h",mb_symbols_481,7},
+{"imgformat","mulib-imgformat.h",mb_symbols_482,13},
+{"imgtrackerd","mulib-imgtrackerd.h",mb_symbols_483,0},
+{"immgtk","mulib-immgtk.h",mb_symbols_484,12},
+{"immgtk-canvas","mulib-immgtk-canvas.h",mb_symbols_485,4},
 {"immgtk-clipper","mulib-immgtk-clipper.h",NULL,0},
 {"immgtk-codeeditor","mulib-immgtk-codeeditor.h",NULL,0},
 {"immgtk-colorpicker","mulib-immgtk-colorpicker.h",NULL,0},
@@ -140466,7 +140468,7 @@ static const mb_library mb_libraries[] = {
 {"immgtk-curveeditor","mulib-immgtk-curveeditor.h",NULL,0},
 {"immgtk-dnd","mulib-immgtk-dnd.h",NULL,0},
 {"immgtk-dock","mulib-immgtk-dock.h",NULL,0},
-{"immgtk-drawlist","mulib-immgtk-drawlist.h",mb_symbols_485,9},
+{"immgtk-drawlist","mulib-immgtk-drawlist.h",mb_symbols_486,9},
 {"immgtk-drawlist-bridge","mulib-immgtk-drawlist-bridge.h",NULL,0},
 {"immgtk-extensions","mulib-immgtk-extensions.h",NULL,0},
 {"immgtk-filebrowser","mulib-immgtk-filebrowser.h",NULL,0},
@@ -140480,7 +140482,7 @@ static const mb_library mb_libraries[] = {
 {"immgtk-native","mulib-immgtk-native.h",NULL,0},
 {"immgtk-nav","mulib-immgtk-nav.h",NULL,0},
 {"immgtk-nodeeditor","mulib-immgtk-nodeeditor.h",NULL,0},
-{"immgtk-plot","mulib-immgtk-plot.h",mb_symbols_486,2},
+{"immgtk-plot","mulib-immgtk-plot.h",mb_symbols_487,2},
 {"immgtk-plot-3d","mulib-immgtk-plot-3d.h",NULL,0},
 {"immgtk-plot-axis","mulib-immgtk-plot-axis.h",NULL,0},
 {"immgtk-plot-contour","mulib-immgtk-plot-contour.h",NULL,0},
@@ -140504,19 +140506,19 @@ static const mb_library mb_libraries[] = {
 {"immgtk-timeline","mulib-immgtk-timeline.h",NULL,0},
 {"immgtk-viewport","mulib-immgtk-viewport.h",NULL,0},
 {"immgtk-window","mulib-immgtk-window.h",NULL,0},
-{"impaclient","mulib-impaclient.h",mb_symbols_487,10},
-{"importgraph","mulib-importgraph.h",mb_symbols_488,5},
-{"index","mulib-index.h",mb_symbols_489,5},
-{"indexer","mulib-indexer.h",mb_symbols_490,6},
-{"inet-diag","mulib-inet-diag.h",mb_symbols_491,2},
-{"inet4","mulib-inet4.h",mb_symbols_492,5},
-{"inet6","mulib-inet6.h",mb_symbols_493,5},
-{"ingest-stream","mulib-ingest-stream.h",mb_symbols_494,6},
-{"ini","mulib-ini.h",mb_symbols_495,2},
-{"initproc","mulib-initproc.h",mb_symbols_496,1},
-{"initsys","mulib-initsys.h",mb_symbols_497,11},
-{"initsysutils","mulib-initsysutils.h",mb_symbols_498,12},
-{"input","mulib-input.h",mb_symbols_499,18},
+{"impaclient","mulib-impaclient.h",mb_symbols_488,10},
+{"importgraph","mulib-importgraph.h",mb_symbols_489,5},
+{"index","mulib-index.h",mb_symbols_490,5},
+{"indexer","mulib-indexer.h",mb_symbols_491,6},
+{"inet-diag","mulib-inet-diag.h",mb_symbols_492,2},
+{"inet4","mulib-inet4.h",mb_symbols_493,5},
+{"inet6","mulib-inet6.h",mb_symbols_494,5},
+{"ingest-stream","mulib-ingest-stream.h",mb_symbols_495,6},
+{"ini","mulib-ini.h",mb_symbols_496,2},
+{"initproc","mulib-initproc.h",mb_symbols_497,1},
+{"initsys","mulib-initsys.h",mb_symbols_498,11},
+{"initsysutils","mulib-initsysutils.h",mb_symbols_499,12},
+{"input","mulib-input.h",mb_symbols_500,18},
 {"input-compose","mulib-input-compose.h",NULL,0},
 {"input-gamepad","mulib-input-gamepad.h",NULL,0},
 {"input-gesture","mulib-input-gesture.h",NULL,0},
@@ -140528,121 +140530,122 @@ static const mb_library mb_libraries[] = {
 {"input-touch","mulib-input-touch.h",NULL,0},
 {"instrument-scpi","mulib-instrument-scpi.h",NULL,0},
 {"instrument-transport","mulib-instrument-transport.h",NULL,0},
-{"inte6","mulib-inte6.h",mb_symbols_500,5},
-{"interpolate","mulib-interpolate.h",mb_symbols_501,2},
-{"invindex","mulib-invindex.h",mb_symbols_502,7},
-{"io","mulib-io.h",mb_symbols_503,5},
-{"ipc-framed","mulib-ipc-framed.h",mb_symbols_504,6},
-{"ipfs","mulib-ipfs.h",mb_symbols_505,6},
-{"ipv6-ndp","mulib-ipv6-ndp.h",mb_symbols_506,2},
-{"ipv6-ra","mulib-ipv6-ra.h",mb_symbols_507,3},
-{"ir-print","mulib-ir-print.h",mb_symbols_508,1},
-{"ir-verify","mulib-ir-verify.h",mb_symbols_509,12},
-{"isched","mulib-isched.h",mb_symbols_510,17},
-{"isel","mulib-isel.h",mb_symbols_511,10},
-{"iterator","mulib-iterator.h",mb_symbols_512,3},
-{"iwd-client","mulib-iwd-client.h",mb_symbols_513,1},
-{"jaccard_similarity","mulib-jaccard_similarity.h",mb_symbols_514,1},
-{"jit","mulib-jit.h",mb_symbols_515,21},
-{"joinfilter","mulib-joinfilter.h",mb_symbols_516,5},
-{"jsdom","mulib-jsdom.h",mb_symbols_517,7},
-{"json","mulib-json.h",mb_symbols_518,29},
-{"jsonrpc","mulib-jsonrpc.h",mb_symbols_519,10},
+{"inte6","mulib-inte6.h",mb_symbols_501,5},
+{"interpolate","mulib-interpolate.h",mb_symbols_502,2},
+{"invindex","mulib-invindex.h",mb_symbols_503,7},
+{"io","mulib-io.h",mb_symbols_504,5},
+{"ipc-framed","mulib-ipc-framed.h",mb_symbols_505,6},
+{"ipfs","mulib-ipfs.h",mb_symbols_506,6},
+{"ipv6-ndp","mulib-ipv6-ndp.h",mb_symbols_507,2},
+{"ipv6-ra","mulib-ipv6-ra.h",mb_symbols_508,3},
+{"ir-print","mulib-ir-print.h",mb_symbols_509,1},
+{"ir-verify","mulib-ir-verify.h",mb_symbols_510,12},
+{"isched","mulib-isched.h",mb_symbols_511,17},
+{"isel","mulib-isel.h",mb_symbols_512,10},
+{"iterator","mulib-iterator.h",mb_symbols_513,3},
+{"iwd-client","mulib-iwd-client.h",mb_symbols_514,1},
+{"jaccard_similarity","mulib-jaccard_similarity.h",mb_symbols_515,1},
+{"jit","mulib-jit.h",mb_symbols_516,21},
+{"joinfilter","mulib-joinfilter.h",mb_symbols_517,5},
+{"jsdom","mulib-jsdom.h",mb_symbols_518,7},
+{"json","mulib-json.h",mb_symbols_519,29},
+{"jsonrpc","mulib-jsonrpc.h",mb_symbols_520,10},
 {"jupyter-wire","mulib-jupyter-wire.h",NULL,0},
-{"jvm","mulib-jvm.h",mb_symbols_520,11},
+{"jvm","mulib-jvm.h",mb_symbols_521,11},
 {"kernel-fusion","mulib-kernel-fusion.h",NULL,0},
 {"kernel-glsl","mulib-kernel-glsl.h",NULL,0},
 {"kernel-ir","mulib-kernel-ir.h",NULL,0},
 {"kernel-legalize","mulib-kernel-legalize.h",NULL,0},
 {"kernel-memory","mulib-kernel-memory.h",NULL,0},
+{"kernel-substrates","mulib-kernel-substrates.h",NULL,0},
 {"kernel-types","mulib-kernel-types.h",NULL,0},
 {"kernel-uniformity","mulib-kernel-uniformity.h",NULL,0},
 {"kernel-validate","mulib-kernel-validate.h",NULL,0},
 {"kernel-vectorize","mulib-kernel-vectorize.h",NULL,0},
 {"kernel-wgsl","mulib-kernel-wgsl.h",NULL,0},
-{"keyremap","mulib-keyremap.h",mb_symbols_521,5},
-{"kf8write","mulib-kf8write.h",mb_symbols_522,2},
-{"kmm","mulib-kmm.h",mb_symbols_523,1},
-{"kvdb","mulib-kvdb.h",mb_symbols_524,23},
-{"kvm","mulib-kvm.h",mb_symbols_525,18},
-{"kvmcontainer","mulib-kvmcontainer.h",mb_symbols_526,4},
-{"landlock","mulib-landlock.h",mb_symbols_527,20},
-{"latex","mulib-latex.h",mb_symbols_528,7},
-{"latexwriter","mulib-latexwriter.h",mb_symbols_529,1},
-{"lattice","mulib-lattice.h",mb_symbols_530,7},
-{"latticequery","mulib-latticequery.h",mb_symbols_531,1},
-{"layout","mulib-layout.h",mb_symbols_532,29},
-{"layoutml","mulib-layoutml.h",mb_symbols_533,1},
-{"lazystream","mulib-lazystream.h",mb_symbols_534,15},
-{"levenshtein","mulib-levenshtein.h",mb_symbols_535,1},
-{"lexer","mulib-lexer.h",mb_symbols_536,3},
-{"lexgen","mulib-lexgen.h",mb_symbols_537,7},
-{"lexical-token","mulib-lexical-token.h",mb_symbols_538,9},
-{"lexographic_sort","mulib-lexographic_sort.h",mb_symbols_539,2},
-{"ligature","mulib-ligature.h",mb_symbols_540,7},
-{"linalg","mulib-linalg.h",mb_symbols_541,38},
-{"linebreak","mulib-linebreak.h",mb_symbols_542,27},
-{"liner_regression","mulib-liner_regression.h",mb_symbols_543,3},
-{"linker","mulib-linker.h",mb_symbols_544,21},
-{"lir","mulib-lir.h",mb_symbols_545,14},
-{"list","mulib-list.h",mb_symbols_546,6},
-{"listener","mulib-listener.h",mb_symbols_547,3},
-{"liveintervals","mulib-liveintervals.h",mb_symbols_548,3},
-{"liveness","mulib-liveness.h",mb_symbols_549,2},
-{"lldp","mulib-lldp.h",mb_symbols_550,2},
-{"load_balancer","mulib-load_balancer.h",mb_symbols_551,1},
-{"locale","mulib-locale.h",mb_symbols_552,6},
-{"logger","mulib-logger.h",mb_symbols_553,9},
-{"loops","mulib-loops.h",mb_symbols_554,3},
-{"lowopt","mulib-lowopt.h",mb_symbols_555,3},
-{"lprowse","mulib-lprowse.h",mb_symbols_556,1},
-{"lsh","mulib-lsh.h",mb_symbols_557,1},
-{"lsmtree","mulib-lsmtree.h",mb_symbols_558,7},
-{"lzf","mulib-lzf.h",mb_symbols_559,4},
-{"lzip","mulib-lzip.h",mb_symbols_560,2},
-{"lzma","mulib-lzma.h",mb_symbols_561,6},
-{"lzo","mulib-lzo.h",mb_symbols_562,2},
-{"lzop","mulib-lzop.h",mb_symbols_563,2},
-{"machine","mulib-machine.h",mb_symbols_564,13},
-{"machinebuild","mulib-machinebuild.h",mb_symbols_565,18},
-{"macho","mulib-macho.h",mb_symbols_566,17},
-{"macho-objdump","mulib-macho-objdump.h",mb_symbols_567,1},
-{"machobuidler","mulib-machobuidler.h",mb_symbols_568,1},
-{"machobuilder","mulib-machobuilder.h",mb_symbols_569,11},
-{"machoutils","mulib-machoutils.h",mb_symbols_570,2},
-{"manpage","mulib-manpage.h",mb_symbols_571,5},
-{"map","mulib-map.h",mb_symbols_572,7},
-{"marionette","mulib-marionette.h",mb_symbols_573,8},
-{"markdown","mulib-markdown.h",mb_symbols_574,1},
-{"markov_chain","mulib-markov_chain.h",mb_symbols_575,5},
-{"markup-bridge","mulib-markup-bridge.h",mb_symbols_576,11},
-{"markup-graph","mulib-markup-graph.h",mb_symbols_577,23},
-{"markup-spans","mulib-markup-spans.h",mb_symbols_578,12},
-{"markup-stream","mulib-markup-stream.h",mb_symbols_579,32},
-{"markup-tree","mulib-markup-tree.h",mb_symbols_580,23},
-{"math","mulib-math.h",mb_symbols_581,3},
-{"mathaccent","mulib-mathaccent.h",mb_symbols_582,6},
-{"mathatom","mulib-mathatom.h",mb_symbols_583,6},
-{"mathdelimiter","mulib-mathdelimiter.h",mb_symbols_584,6},
-{"mathfont","mulib-mathfont.h",mb_symbols_585,6},
-{"mathfraction","mulib-mathfraction.h",mb_symbols_586,2},
-{"mathir","mulib-mathir.h",mb_symbols_587,6},
-{"mathlayout","mulib-mathlayout.h",mb_symbols_588,6},
-{"mathmatrix","mulib-mathmatrix.h",mb_symbols_589,6},
-{"mathml","mulib-mathml.h",mb_symbols_590,8},
-{"mathnumber","mulib-mathnumber.h",mb_symbols_591,6},
-{"mathoperator","mulib-mathoperator.h",mb_symbols_592,6},
-{"mathparse","mulib-mathparse.h",mb_symbols_593,1},
-{"mathradical","mulib-mathradical.h",mb_symbols_594,1},
-{"mathscript","mulib-mathscript.h",mb_symbols_595,1},
-{"mathspacing","mulib-mathspacing.h",mb_symbols_596,2},
-{"mathspeech","mulib-mathspeech.h",mb_symbols_597,2},
-{"matrix","mulib-matrix.h",mb_symbols_598,5},
-{"matview","mulib-matview.h",mb_symbols_599,4},
-{"mcp-client","mulib-mcp-client.h",mb_symbols_600,21},
-{"mcp-http","mulib-mcp-http.h",mb_symbols_601,6},
-{"mcp-server","mulib-mcp-server.h",mb_symbols_602,24},
-{"mcu","mulib-mcu.h",mb_symbols_603,4},
+{"keyremap","mulib-keyremap.h",mb_symbols_522,5},
+{"kf8write","mulib-kf8write.h",mb_symbols_523,2},
+{"kmm","mulib-kmm.h",mb_symbols_524,1},
+{"kvdb","mulib-kvdb.h",mb_symbols_525,23},
+{"kvm","mulib-kvm.h",mb_symbols_526,18},
+{"kvmcontainer","mulib-kvmcontainer.h",mb_symbols_527,4},
+{"landlock","mulib-landlock.h",mb_symbols_528,20},
+{"latex","mulib-latex.h",mb_symbols_529,7},
+{"latexwriter","mulib-latexwriter.h",mb_symbols_530,1},
+{"lattice","mulib-lattice.h",mb_symbols_531,7},
+{"latticequery","mulib-latticequery.h",mb_symbols_532,1},
+{"layout","mulib-layout.h",mb_symbols_533,29},
+{"layoutml","mulib-layoutml.h",mb_symbols_534,1},
+{"lazystream","mulib-lazystream.h",mb_symbols_535,15},
+{"levenshtein","mulib-levenshtein.h",mb_symbols_536,1},
+{"lexer","mulib-lexer.h",mb_symbols_537,3},
+{"lexgen","mulib-lexgen.h",mb_symbols_538,7},
+{"lexical-token","mulib-lexical-token.h",mb_symbols_539,9},
+{"lexographic_sort","mulib-lexographic_sort.h",mb_symbols_540,2},
+{"ligature","mulib-ligature.h",mb_symbols_541,7},
+{"linalg","mulib-linalg.h",mb_symbols_542,38},
+{"linebreak","mulib-linebreak.h",mb_symbols_543,27},
+{"liner_regression","mulib-liner_regression.h",mb_symbols_544,3},
+{"linker","mulib-linker.h",mb_symbols_545,21},
+{"lir","mulib-lir.h",mb_symbols_546,14},
+{"list","mulib-list.h",mb_symbols_547,6},
+{"listener","mulib-listener.h",mb_symbols_548,3},
+{"liveintervals","mulib-liveintervals.h",mb_symbols_549,3},
+{"liveness","mulib-liveness.h",mb_symbols_550,2},
+{"lldp","mulib-lldp.h",mb_symbols_551,2},
+{"load_balancer","mulib-load_balancer.h",mb_symbols_552,1},
+{"locale","mulib-locale.h",mb_symbols_553,6},
+{"logger","mulib-logger.h",mb_symbols_554,9},
+{"loops","mulib-loops.h",mb_symbols_555,3},
+{"lowopt","mulib-lowopt.h",mb_symbols_556,3},
+{"lprowse","mulib-lprowse.h",mb_symbols_557,1},
+{"lsh","mulib-lsh.h",mb_symbols_558,1},
+{"lsmtree","mulib-lsmtree.h",mb_symbols_559,7},
+{"lzf","mulib-lzf.h",mb_symbols_560,4},
+{"lzip","mulib-lzip.h",mb_symbols_561,2},
+{"lzma","mulib-lzma.h",mb_symbols_562,6},
+{"lzo","mulib-lzo.h",mb_symbols_563,2},
+{"lzop","mulib-lzop.h",mb_symbols_564,2},
+{"machine","mulib-machine.h",mb_symbols_565,13},
+{"machinebuild","mulib-machinebuild.h",mb_symbols_566,18},
+{"macho","mulib-macho.h",mb_symbols_567,17},
+{"macho-objdump","mulib-macho-objdump.h",mb_symbols_568,1},
+{"machobuidler","mulib-machobuidler.h",mb_symbols_569,1},
+{"machobuilder","mulib-machobuilder.h",mb_symbols_570,11},
+{"machoutils","mulib-machoutils.h",mb_symbols_571,2},
+{"manpage","mulib-manpage.h",mb_symbols_572,5},
+{"map","mulib-map.h",mb_symbols_573,7},
+{"marionette","mulib-marionette.h",mb_symbols_574,8},
+{"markdown","mulib-markdown.h",mb_symbols_575,1},
+{"markov_chain","mulib-markov_chain.h",mb_symbols_576,5},
+{"markup-bridge","mulib-markup-bridge.h",mb_symbols_577,11},
+{"markup-graph","mulib-markup-graph.h",mb_symbols_578,23},
+{"markup-spans","mulib-markup-spans.h",mb_symbols_579,12},
+{"markup-stream","mulib-markup-stream.h",mb_symbols_580,32},
+{"markup-tree","mulib-markup-tree.h",mb_symbols_581,23},
+{"math","mulib-math.h",mb_symbols_582,3},
+{"mathaccent","mulib-mathaccent.h",mb_symbols_583,6},
+{"mathatom","mulib-mathatom.h",mb_symbols_584,6},
+{"mathdelimiter","mulib-mathdelimiter.h",mb_symbols_585,6},
+{"mathfont","mulib-mathfont.h",mb_symbols_586,6},
+{"mathfraction","mulib-mathfraction.h",mb_symbols_587,2},
+{"mathir","mulib-mathir.h",mb_symbols_588,6},
+{"mathlayout","mulib-mathlayout.h",mb_symbols_589,6},
+{"mathmatrix","mulib-mathmatrix.h",mb_symbols_590,6},
+{"mathml","mulib-mathml.h",mb_symbols_591,8},
+{"mathnumber","mulib-mathnumber.h",mb_symbols_592,6},
+{"mathoperator","mulib-mathoperator.h",mb_symbols_593,6},
+{"mathparse","mulib-mathparse.h",mb_symbols_594,1},
+{"mathradical","mulib-mathradical.h",mb_symbols_595,1},
+{"mathscript","mulib-mathscript.h",mb_symbols_596,1},
+{"mathspacing","mulib-mathspacing.h",mb_symbols_597,2},
+{"mathspeech","mulib-mathspeech.h",mb_symbols_598,2},
+{"matrix","mulib-matrix.h",mb_symbols_599,5},
+{"matview","mulib-matview.h",mb_symbols_600,4},
+{"mcp-client","mulib-mcp-client.h",mb_symbols_601,21},
+{"mcp-http","mulib-mcp-http.h",mb_symbols_602,6},
+{"mcp-server","mulib-mcp-server.h",mb_symbols_603,24},
+{"mcu","mulib-mcu.h",mb_symbols_604,4},
 {"media-av1","mulib-media-av1.h",NULL,0},
 {"media-bufferpool","mulib-media-bufferpool.h",NULL,0},
 {"media-clock","mulib-media-clock.h",NULL,0},
@@ -140668,10 +140671,10 @@ static const mb_library mb_libraries[] = {
 {"media-timebase","mulib-media-timebase.h",NULL,0},
 {"media-vp9","mulib-media-vp9.h",NULL,0},
 {"memfd","mulib-memfd.h",NULL,0},
-{"mempool","mulib-mempool.h",mb_symbols_604,9},
-{"memtable","mulib-memtable.h",mb_symbols_605,13},
-{"memtest","mulib-memtest.h",mb_symbols_606,4},
-{"memtkx","mulib-memtkx.h",mb_symbols_607,10},
+{"mempool","mulib-mempool.h",mb_symbols_605,9},
+{"memtable","mulib-memtable.h",mb_symbols_606,13},
+{"memtest","mulib-memtest.h",mb_symbols_607,4},
+{"memtkx","mulib-memtkx.h",mb_symbols_608,10},
 {"mesh-adjacency","mulib-mesh-adjacency.h",NULL,0},
 {"mesh-attributes","mulib-mesh-attributes.h",NULL,0},
 {"mesh-boolean","mulib-mesh-boolean.h",NULL,0},
@@ -140690,57 +140693,57 @@ static const mb_library mb_libraries[] = {
 {"mesh-subdivide","mulib-mesh-subdivide.h",NULL,0},
 {"mesh-triangulate","mulib-mesh-triangulate.h",NULL,0},
 {"mesh-uv","mulib-mesh-uv.h",NULL,0},
-{"messagepack","mulib-messagepack.h",mb_symbols_608,2},
-{"metapp","mulib-metapp.h",mb_symbols_609,47},
-{"metrics","mulib-metrics.h",mb_symbols_610,2},
-{"microaudio","mulib-microaudio.h",mb_symbols_611,15},
-{"microcc","mulib-microcc.h",mb_symbols_612,25},
-{"microchan","mulib-microchan.h",mb_symbols_613,20},
-{"microjs","mulib-microjs.h",mb_symbols_614,39},
-{"microjs-module","mulib-microjs-module.h",mb_symbols_615,5},
-{"microjs-promise","mulib-microjs-promise.h",mb_symbols_616,12},
-{"microtcl","mulib-microtcl.h",mb_symbols_617,8},
-{"microtype","mulib-microtype.h",mb_symbols_618,2},
-{"midi","mulib-midi.h",mb_symbols_619,9},
-{"mime","mulib-mime.h",mb_symbols_620,2},
-{"minhash","mulib-minhash.h",mb_symbols_621,3},
-{"minicurl","mulib-minicurl.h",mb_symbols_622,2},
-{"miniflac","mulib-miniflac.h",mb_symbols_623,2},
-{"minimpeg","mulib-minimpeg.h",mb_symbols_624,2},
-{"minincat","mulib-minincat.h",mb_symbols_625,8},
-{"minish","mulib-minish.h",mb_symbols_626,32},
-{"minivm","mulib-minivm.h",mb_symbols_627,47},
-{"minivorbis","mulib-minivorbis.h",mb_symbols_628,2},
-{"miniwav","mulib-miniwav.h",mb_symbols_629,2},
-{"miniwget","mulib-miniwget.h",mb_symbols_630,8},
-{"mir","mulib-mir.h",mb_symbols_631,134},
-{"mmdiff","mulib-mmdiff.h",mb_symbols_632,15},
-{"mmfile","mulib-mmfile.h",mb_symbols_633,10},
-{"mobi","mulib-mobi.h",mb_symbols_634,16},
-{"mobiwrite","mulib-mobiwrite.h",mb_symbols_635,1},
-{"module-resolver","mulib-module-resolver.h",mb_symbols_636,5},
-{"money","mulib-money.h",mb_symbols_637,7},
-{"mop","mulib-mop.h",mb_symbols_638,10},
-{"movingavg","mulib-movingavg.h",mb_symbols_639,4},
-{"mpu","mulib-mpu.h",mb_symbols_640,4},
-{"mqueue","mulib-mqueue.h",mb_symbols_641,11},
-{"muburg","mulib-muburg.h",mb_symbols_642,19},
-{"muidl","mulib-muidl.h",mb_symbols_643,1},
-{"mulib","mulib-mulib.h",mb_symbols_644,5},
-{"multipart","mulib-multipart.h",mb_symbols_645,5},
-{"mumq","mulib-mumq.h",mb_symbols_646,25},
-{"mumq-publisher","mulib-mumq-publisher.h",mb_symbols_647,1},
-{"mumq-server","mulib-mumq-server.h",mb_symbols_648,7},
-{"mumq-subscriber","mulib-mumq-subscriber.h",mb_symbols_649,2},
-{"mune","mulib-mune.h",mb_symbols_650,90},
-{"mune-opencode-client","mune-opencode-client.h",mb_symbols_651,0},
-{"musicnotation","mulib-musicnotation.h",mb_symbols_652,6},
-{"muw3","mulib-muw3.h",mb_symbols_653,19},
-{"muw3-mune","mulib-muw3-mune.h",mb_symbols_654,7},
-{"n-grams","mulib-n-grams.h",mb_symbols_655,2},
-{"name-resolution","mulib-name-resolution.h",mb_symbols_656,1},
-{"nameserver","mulib-nameserver.h",mb_symbols_657,3},
-{"namespace","mulib-namespace.h",mb_symbols_658,3},
+{"messagepack","mulib-messagepack.h",mb_symbols_609,2},
+{"metapp","mulib-metapp.h",mb_symbols_610,47},
+{"metrics","mulib-metrics.h",mb_symbols_611,2},
+{"microaudio","mulib-microaudio.h",mb_symbols_612,15},
+{"microcc","mulib-microcc.h",mb_symbols_613,25},
+{"microchan","mulib-microchan.h",mb_symbols_614,20},
+{"microjs","mulib-microjs.h",mb_symbols_615,39},
+{"microjs-module","mulib-microjs-module.h",mb_symbols_616,5},
+{"microjs-promise","mulib-microjs-promise.h",mb_symbols_617,12},
+{"microtcl","mulib-microtcl.h",mb_symbols_618,8},
+{"microtype","mulib-microtype.h",mb_symbols_619,2},
+{"midi","mulib-midi.h",mb_symbols_620,9},
+{"mime","mulib-mime.h",mb_symbols_621,2},
+{"minhash","mulib-minhash.h",mb_symbols_622,3},
+{"minicurl","mulib-minicurl.h",mb_symbols_623,2},
+{"miniflac","mulib-miniflac.h",mb_symbols_624,2},
+{"minimpeg","mulib-minimpeg.h",mb_symbols_625,2},
+{"minincat","mulib-minincat.h",mb_symbols_626,8},
+{"minish","mulib-minish.h",mb_symbols_627,32},
+{"minivm","mulib-minivm.h",mb_symbols_628,47},
+{"minivorbis","mulib-minivorbis.h",mb_symbols_629,2},
+{"miniwav","mulib-miniwav.h",mb_symbols_630,2},
+{"miniwget","mulib-miniwget.h",mb_symbols_631,8},
+{"mir","mulib-mir.h",mb_symbols_632,134},
+{"mmdiff","mulib-mmdiff.h",mb_symbols_633,15},
+{"mmfile","mulib-mmfile.h",mb_symbols_634,10},
+{"mobi","mulib-mobi.h",mb_symbols_635,16},
+{"mobiwrite","mulib-mobiwrite.h",mb_symbols_636,1},
+{"module-resolver","mulib-module-resolver.h",mb_symbols_637,5},
+{"money","mulib-money.h",mb_symbols_638,7},
+{"mop","mulib-mop.h",mb_symbols_639,10},
+{"movingavg","mulib-movingavg.h",mb_symbols_640,4},
+{"mpu","mulib-mpu.h",mb_symbols_641,4},
+{"mqueue","mulib-mqueue.h",mb_symbols_642,11},
+{"muburg","mulib-muburg.h",mb_symbols_643,19},
+{"muidl","mulib-muidl.h",mb_symbols_644,1},
+{"mulib","mulib-mulib.h",mb_symbols_645,5},
+{"multipart","mulib-multipart.h",mb_symbols_646,5},
+{"mumq","mulib-mumq.h",mb_symbols_647,25},
+{"mumq-publisher","mulib-mumq-publisher.h",mb_symbols_648,1},
+{"mumq-server","mulib-mumq-server.h",mb_symbols_649,7},
+{"mumq-subscriber","mulib-mumq-subscriber.h",mb_symbols_650,2},
+{"mune","mulib-mune.h",mb_symbols_651,90},
+{"mune-opencode-client","mune-opencode-client.h",mb_symbols_652,0},
+{"musicnotation","mulib-musicnotation.h",mb_symbols_653,6},
+{"muw3","mulib-muw3.h",mb_symbols_654,19},
+{"muw3-mune","mulib-muw3-mune.h",mb_symbols_655,7},
+{"n-grams","mulib-n-grams.h",mb_symbols_656,2},
+{"name-resolution","mulib-name-resolution.h",mb_symbols_657,1},
+{"nameserver","mulib-nameserver.h",mb_symbols_658,3},
+{"namespace","mulib-namespace.h",mb_symbols_659,3},
 {"nb-cell","mulib-nb-cell.h",NULL,0},
 {"nb-completion","mulib-nb-completion.h",NULL,0},
 {"nb-core","mulib-nb-core.h",NULL,0},
@@ -140766,31 +140769,31 @@ static const mb_library mb_libraries[] = {
 {"nb-virtualize","mulib-nb-virtualize.h",NULL,0},
 {"nb-window","mulib-nb-window.h",NULL,0},
 {"nb-worker","mulib-nb-worker.h",NULL,0},
-{"ndjson","mulib-ndjson.h",mb_symbols_659,3},
-{"net-cap","mulib-net-cap.h",mb_symbols_660,2},
-{"net-cli-format","mulib-net-cli-format.h",mb_symbols_661,2},
-{"net-monitor","mulib-net-monitor.h",mb_symbols_662,2},
-{"net-profile","mulib-net-profile.h",mb_symbols_663,2},
-{"net-reconcile","mulib-net-reconcile.h",mb_symbols_664,2},
-{"net-state","mulib-net-state.h",mb_symbols_665,2},
-{"net-stats","mulib-net-stats.h",mb_symbols_666,2},
-{"netdevice","mulib-netdevice.h",mb_symbols_667,3},
-{"netfilter-log","mulib-netfilter-log.h",mb_symbols_668,1},
-{"netfilter-queue","mulib-netfilter-queue.h",mb_symbols_669,1},
-{"netfs","mulib-netfs.h",mb_symbols_670,8},
-{"netlink","mulib-netlink.h",mb_symbols_671,8},
-{"netlink-async","mulib-netlink-async.h",mb_symbols_672,2},
-{"netlink-attr","mulib-netlink-attr.h",mb_symbols_673,5},
-{"netlink-extack","mulib-netlink-extack.h",mb_symbols_674,2},
-{"netlink-genl","mulib-netlink-genl.h",mb_symbols_675,1},
-{"netlink-schema","mulib-netlink-schema.h",mb_symbols_676,2},
-{"netns","mulib-netns.h",mb_symbols_677,3},
-{"netpolicy","mulib-netpolicy.h",mb_symbols_678,1},
-{"networkd-client","mulib-networkd-client.h",mb_symbols_679,1},
-{"nextclosure","mulib-nextclosure.h",mb_symbols_680,2},
-{"nfnetlink","mulib-nfnetlink.h",mb_symbols_681,2},
-{"nftables","mulib-nftables.h",mb_symbols_682,1},
-{"nl80211","mulib-nl80211.h",mb_symbols_683,1},
+{"ndjson","mulib-ndjson.h",mb_symbols_660,3},
+{"net-cap","mulib-net-cap.h",mb_symbols_661,2},
+{"net-cli-format","mulib-net-cli-format.h",mb_symbols_662,2},
+{"net-monitor","mulib-net-monitor.h",mb_symbols_663,2},
+{"net-profile","mulib-net-profile.h",mb_symbols_664,2},
+{"net-reconcile","mulib-net-reconcile.h",mb_symbols_665,2},
+{"net-state","mulib-net-state.h",mb_symbols_666,2},
+{"net-stats","mulib-net-stats.h",mb_symbols_667,2},
+{"netdevice","mulib-netdevice.h",mb_symbols_668,3},
+{"netfilter-log","mulib-netfilter-log.h",mb_symbols_669,1},
+{"netfilter-queue","mulib-netfilter-queue.h",mb_symbols_670,1},
+{"netfs","mulib-netfs.h",mb_symbols_671,8},
+{"netlink","mulib-netlink.h",mb_symbols_672,8},
+{"netlink-async","mulib-netlink-async.h",mb_symbols_673,2},
+{"netlink-attr","mulib-netlink-attr.h",mb_symbols_674,5},
+{"netlink-extack","mulib-netlink-extack.h",mb_symbols_675,2},
+{"netlink-genl","mulib-netlink-genl.h",mb_symbols_676,1},
+{"netlink-schema","mulib-netlink-schema.h",mb_symbols_677,2},
+{"netns","mulib-netns.h",mb_symbols_678,3},
+{"netpolicy","mulib-netpolicy.h",mb_symbols_679,1},
+{"networkd-client","mulib-networkd-client.h",mb_symbols_680,1},
+{"nextclosure","mulib-nextclosure.h",mb_symbols_681,2},
+{"nfnetlink","mulib-nfnetlink.h",mb_symbols_682,2},
+{"nftables","mulib-nftables.h",mb_symbols_683,1},
+{"nl80211","mulib-nl80211.h",mb_symbols_684,1},
 {"nle-clip","mulib-nle-clip.h",NULL,0},
 {"nle-edit","mulib-nle-edit.h",NULL,0},
 {"nle-edl","mulib-nle-edl.h",NULL,0},
@@ -140803,11 +140806,11 @@ static const mb_library mb_libraries[] = {
 {"nle-timeline","mulib-nle-timeline.h",NULL,0},
 {"nle-track","mulib-nle-track.h",NULL,0},
 {"nle-transition","mulib-nle-transition.h",NULL,0},
-{"nm-client","mulib-nm-client.h",mb_symbols_684,2},
-{"nm-connection","mulib-nm-connection.h",mb_symbols_685,1},
-{"nm-device","mulib-nm-device.h",mb_symbols_686,1},
-{"nm-secret-agent","mulib-nm-secret-agent.h",mb_symbols_687,1},
-{"nm-wifi","mulib-nm-wifi.h",mb_symbols_688,1},
+{"nm-client","mulib-nm-client.h",mb_symbols_685,2},
+{"nm-connection","mulib-nm-connection.h",mb_symbols_686,1},
+{"nm-device","mulib-nm-device.h",mb_symbols_687,1},
+{"nm-secret-agent","mulib-nm-secret-agent.h",mb_symbols_688,1},
+{"nm-wifi","mulib-nm-wifi.h",mb_symbols_689,1},
 {"nodegraph-cache","mulib-nodegraph-cache.h",NULL,0},
 {"nodegraph-compile","mulib-nodegraph-compile.h",NULL,0},
 {"nodegraph-core","mulib-nodegraph-core.h",NULL,0},
@@ -140829,106 +140832,107 @@ static const mb_library mb_libraries[] = {
 {"num-colamd","mulib-num-colamd.h",NULL,0},
 {"num-complex-lu","mulib-num-complex-lu.h",NULL,0},
 {"num-condition","mulib-num-condition.h",NULL,0},
-{"num-csc","mulib-num-csc.h",mb_symbols_689,5},
-{"num-csr","mulib-num-csr.h",mb_symbols_690,6},
+{"num-core","mulib-num-core.h",NULL,0},
+{"num-csc","mulib-num-csc.h",mb_symbols_690,5},
+{"num-csr","mulib-num-csr.h",mb_symbols_691,6},
 {"num-dae","mulib-num-dae.h",NULL,0},
-{"num-dense","mulib-num-dense.h",mb_symbols_691,4},
+{"num-dense","mulib-num-dense.h",mb_symbols_692,4},
 {"num-eigensolver","mulib-num-eigensolver.h",NULL,0},
 {"num-gmres","mulib-num-gmres.h",NULL,0},
-{"num-integration","mulib-num-integration.h",mb_symbols_692,4},
+{"num-integration","mulib-num-integration.h",mb_symbols_693,4},
 {"num-jacobian","mulib-num-jacobian.h",NULL,0},
 {"num-linesearch","mulib-num-linesearch.h",NULL,0},
 {"num-newton","mulib-num-newton.h",NULL,0},
 {"num-precondition","mulib-num-precondition.h",NULL,0},
-{"num-rootfind","mulib-num-rootfind.h",mb_symbols_693,3},
-{"num-sparse","mulib-num-sparse.h",mb_symbols_694,8},
+{"num-rootfind","mulib-num-rootfind.h",mb_symbols_694,3},
+{"num-sparse","mulib-num-sparse.h",mb_symbols_695,8},
 {"num-sparse-ldlt","mulib-num-sparse-ldlt.h",NULL,0},
 {"num-sparse-lu","mulib-num-sparse-lu.h",NULL,0},
-{"num-statistics","mulib-num-statistics.h",mb_symbols_695,4},
+{"num-statistics","mulib-num-statistics.h",mb_symbols_696,4},
 {"num-symbolic","mulib-num-symbolic.h",NULL,0},
 {"num-trapezoid","mulib-num-trapezoid.h",NULL,0},
-{"nvptx","mulib-nvptx.h",mb_symbols_696,4},
-{"oauth","mulib-oauth.h",mb_symbols_697,3},
-{"oauth2","mulib-oauth2.h",mb_symbols_698,12},
-{"objdump","mulib-objdump.h",mb_symbols_699,12},
-{"objectdb","mulib-objectdb.h",mb_symbols_700,5},
-{"objfile","mulib-objfile.h",mb_symbols_701,3},
-{"objfilebuilder","mulib-objfilebuilder.h",mb_symbols_702,4},
-{"objfileinjector","mulib-objfileinjector.h",mb_symbols_703,1},
-{"objfileleader","mulib-objfileleader.h",mb_symbols_704,1},
-{"objfilelibsearch","mulib-objfilelibsearch.h",mb_symbols_705,1},
-{"objfilepacker","mulib-objfilepacker.h",mb_symbols_706,1},
-{"objfileposindep","mulib-objfileposindep.h",mb_symbols_707,1},
-{"objfilereloc","mulib-objfilereloc.h",mb_symbols_708,4},
-{"objfilestub","mulib-objfilestub.h",mb_symbols_709,1},
-{"objfilesymloc","mulib-objfilesymloc.h",mb_symbols_710,1},
-{"objfilewriter","mulib-objfilewriter.h",mb_symbols_711,2},
-{"obs4","mulib-obs4.h",mb_symbols_712,6},
-{"ocicontainer","mulib-ocicontainer.h",mb_symbols_713,0},
-{"ocicontaineripc","mulib-ocicontaineripc.h",mb_symbols_714,0},
-{"ocicontainermetadata","mulib-ocicontainermetadata.h",mb_symbols_715,0},
-{"ocicontainernetwork","mulib-ocicontainernetwork.h",mb_symbols_716,0},
-{"ocicontainernetwrork","mulib-ocicontainernetwrork.h",mb_symbols_717,0},
-{"ocicontainerruntime","mulib-ocicontainerruntime.h",mb_symbols_718,0},
-{"ocicontainervfs","mulib-ocicontainervfs.h",mb_symbols_719,0},
-{"ocicontainervolume","mulib-ocicontainervolume.h",mb_symbols_720,0},
-{"ociimage","mulib-ociimage.h",mb_symbols_721,0},
-{"ociimagebuilder","mulib-ociimagebuilder.h",mb_symbols_722,0},
-{"oix","mulib-oix.h",mb_symbols_723,68},
-{"openai","mulib-openai.h",mb_symbols_724,24},
-{"openai-client","mulib-openai-client.h",mb_symbols_725,17},
-{"openai-server","mulib-openai-server.h",mb_symbols_726,17},
-{"opencode-client","mulib-opencode-client.h",mb_symbols_727,24},
-{"openvpn","mulib-openvpn.h",mb_symbols_728,5},
-{"opticalmargin","mulib-opticalmargin.h",mb_symbols_729,2},
-{"optml","mulib-optml.h",mb_symbols_730,12},
-{"orhoconv","mulib-orhoconv.h",mb_symbols_731,17},
-{"orthographic_rules","mulib-orthographic_rules.h",mb_symbols_732,6},
-{"otpath","mulib-otpath.h",mb_symbols_733,2},
-{"otpauth","mulib-otpauth.h",mb_symbols_734,7},
-{"p2pproto","mulib-p2pproto.h",mb_symbols_735,3},
-{"packet-socket","mulib-packet-socket.h",mb_symbols_736,2},
-{"packetfiter","mulib-packetfiter.h",mb_symbols_737,2},
-{"packetrules","mulib-packetrules.h",mb_symbols_738,3},
-{"packetstream","mulib-packetstream.h",mb_symbols_739,5},
-{"packetvm","mulib-packetvm.h",mb_symbols_740,9},
-{"pagebalance","mulib-pagebalance.h",mb_symbols_741,6},
-{"pagebib","mulib-pagebib.h",mb_symbols_742,6},
-{"pagecolumns","mulib-pagecolumns.h",mb_symbols_743,2},
-{"pagefloat","mulib-pagefloat.h",mb_symbols_744,6},
-{"pagefootnote","mulib-pagefootnote.h",mb_symbols_745,6},
-{"pageframe","mulib-pageframe.h",mb_symbols_746,2},
-{"pagegrid","mulib-pagegrid.h",mb_symbols_747,2},
-{"pageindex","mulib-pageindex.h",mb_symbols_748,6},
-{"pagekeep","mulib-pagekeep.h",mb_symbols_749,6},
-{"pagemargin","mulib-pagemargin.h",mb_symbols_750,6},
-{"pageref","mulib-pageref.h",mb_symbols_751,6},
-{"pagetemplate","mulib-pagetemplate.h",mb_symbols_752,6},
-{"pagetoc","mulib-pagetoc.h",mb_symbols_753,6},
-{"pagewidow","mulib-pagewidow.h",mb_symbols_754,6},
-{"paging","mulib-paging.h",mb_symbols_755,10},
-{"paleography","mulib-paleography.h",mb_symbols_756,20},
-{"palmdb","mulib-palmdb.h",mb_symbols_757,2},
-{"pandocast","mulib-pandocast.h",mb_symbols_758,2},
-{"parallel","mulib-parallel.h",mb_symbols_759,4},
-{"parallel-sh","mulib-parallel-sh.h",mb_symbols_760,29},
-{"parsec","mulib-parsec.h",mb_symbols_761,64},
-{"parser-pratt","mulib-parser-pratt.h",mb_symbols_762,15},
-{"passmanager","mulib-passmanager.h",mb_symbols_763,6},
-{"path","mulib-path.h",mb_symbols_764,3},
-{"pathdb","mulib-pathdb.h",mb_symbols_765,12},
-{"pcap","mulib-pcap.h",mb_symbols_766,2},
-{"pcb-board","mulib-pcb-board.h",mb_symbols_767,4},
-{"pcb-bom","mulib-pcb-bom.h",mb_symbols_768,3},
+{"nvptx","mulib-nvptx.h",mb_symbols_697,4},
+{"oauth","mulib-oauth.h",mb_symbols_698,3},
+{"oauth2","mulib-oauth2.h",mb_symbols_699,12},
+{"objdump","mulib-objdump.h",mb_symbols_700,12},
+{"objectdb","mulib-objectdb.h",mb_symbols_701,5},
+{"objfile","mulib-objfile.h",mb_symbols_702,3},
+{"objfilebuilder","mulib-objfilebuilder.h",mb_symbols_703,4},
+{"objfileinjector","mulib-objfileinjector.h",mb_symbols_704,1},
+{"objfileleader","mulib-objfileleader.h",mb_symbols_705,1},
+{"objfilelibsearch","mulib-objfilelibsearch.h",mb_symbols_706,1},
+{"objfilepacker","mulib-objfilepacker.h",mb_symbols_707,1},
+{"objfileposindep","mulib-objfileposindep.h",mb_symbols_708,1},
+{"objfilereloc","mulib-objfilereloc.h",mb_symbols_709,4},
+{"objfilestub","mulib-objfilestub.h",mb_symbols_710,1},
+{"objfilesymloc","mulib-objfilesymloc.h",mb_symbols_711,1},
+{"objfilewriter","mulib-objfilewriter.h",mb_symbols_712,2},
+{"obs4","mulib-obs4.h",mb_symbols_713,6},
+{"ocicontainer","mulib-ocicontainer.h",mb_symbols_714,0},
+{"ocicontaineripc","mulib-ocicontaineripc.h",mb_symbols_715,0},
+{"ocicontainermetadata","mulib-ocicontainermetadata.h",mb_symbols_716,0},
+{"ocicontainernetwork","mulib-ocicontainernetwork.h",mb_symbols_717,0},
+{"ocicontainernetwrork","mulib-ocicontainernetwrork.h",mb_symbols_718,0},
+{"ocicontainerruntime","mulib-ocicontainerruntime.h",mb_symbols_719,0},
+{"ocicontainervfs","mulib-ocicontainervfs.h",mb_symbols_720,0},
+{"ocicontainervolume","mulib-ocicontainervolume.h",mb_symbols_721,0},
+{"ociimage","mulib-ociimage.h",mb_symbols_722,0},
+{"ociimagebuilder","mulib-ociimagebuilder.h",mb_symbols_723,0},
+{"oix","mulib-oix.h",mb_symbols_724,68},
+{"openai","mulib-openai.h",mb_symbols_725,24},
+{"openai-client","mulib-openai-client.h",mb_symbols_726,17},
+{"openai-server","mulib-openai-server.h",mb_symbols_727,17},
+{"opencode-client","mulib-opencode-client.h",mb_symbols_728,24},
+{"openvpn","mulib-openvpn.h",mb_symbols_729,5},
+{"opticalmargin","mulib-opticalmargin.h",mb_symbols_730,2},
+{"optml","mulib-optml.h",mb_symbols_731,12},
+{"orhoconv","mulib-orhoconv.h",mb_symbols_732,17},
+{"orthographic_rules","mulib-orthographic_rules.h",mb_symbols_733,6},
+{"otpath","mulib-otpath.h",mb_symbols_734,2},
+{"otpauth","mulib-otpauth.h",mb_symbols_735,7},
+{"p2pproto","mulib-p2pproto.h",mb_symbols_736,3},
+{"packet-socket","mulib-packet-socket.h",mb_symbols_737,2},
+{"packetfiter","mulib-packetfiter.h",mb_symbols_738,2},
+{"packetrules","mulib-packetrules.h",mb_symbols_739,3},
+{"packetstream","mulib-packetstream.h",mb_symbols_740,5},
+{"packetvm","mulib-packetvm.h",mb_symbols_741,9},
+{"pagebalance","mulib-pagebalance.h",mb_symbols_742,6},
+{"pagebib","mulib-pagebib.h",mb_symbols_743,6},
+{"pagecolumns","mulib-pagecolumns.h",mb_symbols_744,2},
+{"pagefloat","mulib-pagefloat.h",mb_symbols_745,6},
+{"pagefootnote","mulib-pagefootnote.h",mb_symbols_746,6},
+{"pageframe","mulib-pageframe.h",mb_symbols_747,2},
+{"pagegrid","mulib-pagegrid.h",mb_symbols_748,2},
+{"pageindex","mulib-pageindex.h",mb_symbols_749,6},
+{"pagekeep","mulib-pagekeep.h",mb_symbols_750,6},
+{"pagemargin","mulib-pagemargin.h",mb_symbols_751,6},
+{"pageref","mulib-pageref.h",mb_symbols_752,6},
+{"pagetemplate","mulib-pagetemplate.h",mb_symbols_753,6},
+{"pagetoc","mulib-pagetoc.h",mb_symbols_754,6},
+{"pagewidow","mulib-pagewidow.h",mb_symbols_755,6},
+{"paging","mulib-paging.h",mb_symbols_756,10},
+{"paleography","mulib-paleography.h",mb_symbols_757,20},
+{"palmdb","mulib-palmdb.h",mb_symbols_758,2},
+{"pandocast","mulib-pandocast.h",mb_symbols_759,2},
+{"parallel","mulib-parallel.h",mb_symbols_760,4},
+{"parallel-sh","mulib-parallel-sh.h",mb_symbols_761,29},
+{"parsec","mulib-parsec.h",mb_symbols_762,64},
+{"parser-pratt","mulib-parser-pratt.h",mb_symbols_763,15},
+{"passmanager","mulib-passmanager.h",mb_symbols_764,6},
+{"path","mulib-path.h",mb_symbols_765,3},
+{"pathdb","mulib-pathdb.h",mb_symbols_766,12},
+{"pcap","mulib-pcap.h",mb_symbols_767,2},
+{"pcb-board","mulib-pcb-board.h",mb_symbols_768,4},
+{"pcb-bom","mulib-pcb-bom.h",mb_symbols_769,3},
 {"pcb-dfm","mulib-pcb-dfm.h",NULL,0},
 {"pcb-dft","mulib-pcb-dft.h",NULL,0},
 {"pcb-diffpair","mulib-pcb-diffpair.h",NULL,0},
-{"pcb-drc","mulib-pcb-drc.h",mb_symbols_769,2},
-{"pcb-excellon","mulib-pcb-excellon.h",mb_symbols_770,2},
+{"pcb-drc","mulib-pcb-drc.h",mb_symbols_770,2},
+{"pcb-excellon","mulib-pcb-excellon.h",mb_symbols_771,2},
 {"pcb-footprint","mulib-pcb-footprint.h",NULL,0},
-{"pcb-geometry","mulib-pcb-geometry.h",mb_symbols_771,5},
-{"pcb-gerber","mulib-pcb-gerber.h",mb_symbols_772,1},
-{"pcb-impedance","mulib-pcb-impedance.h",mb_symbols_773,1},
+{"pcb-geometry","mulib-pcb-geometry.h",mb_symbols_772,5},
+{"pcb-gerber","mulib-pcb-gerber.h",mb_symbols_773,1},
+{"pcb-impedance","mulib-pcb-impedance.h",mb_symbols_774,1},
 {"pcb-ipc2581","mulib-pcb-ipc2581.h",NULL,0},
 {"pcb-kicad","mulib-pcb-kicad.h",NULL,0},
 {"pcb-lengthmatch","mulib-pcb-lengthmatch.h",NULL,0},
@@ -140936,7 +140940,7 @@ static const mb_library mb_libraries[] = {
 {"pcb-pad","mulib-pcb-pad.h",NULL,0},
 {"pcb-panelize","mulib-pcb-panelize.h",NULL,0},
 {"pcb-placement","mulib-pcb-placement.h",NULL,0},
-{"pcb-pnp","mulib-pcb-pnp.h",mb_symbols_774,2},
+{"pcb-pnp","mulib-pcb-pnp.h",mb_symbols_775,2},
 {"pcb-pour","mulib-pcb-pour.h",NULL,0},
 {"pcb-ratsnest","mulib-pcb-ratsnest.h",NULL,0},
 {"pcb-router","mulib-pcb-router.h",NULL,0},
@@ -140946,27 +140950,27 @@ static const mb_library mb_libraries[] = {
 {"pcb-thermal-relief","mulib-pcb-thermal-relief.h",NULL,0},
 {"pcb-via","mulib-pcb-via.h",NULL,0},
 {"pcb-zone","mulib-pcb-zone.h",NULL,0},
-{"pci","mulib-pci.h",mb_symbols_775,6},
-{"pdf","mulib-pdf.h",mb_symbols_776,13},
-{"pdfannot","mulib-pdfannot.h",mb_symbols_777,6},
-{"pdfcanvas","mulib-pdfcanvas.h",mb_symbols_778,1},
-{"pdffont","mulib-pdffont.h",mb_symbols_779,5},
-{"pdfimage","mulib-pdfimage.h",mb_symbols_780,5},
-{"pdfmetadata","mulib-pdfmetadata.h",mb_symbols_781,6},
-{"pdfoutline","mulib-pdfoutline.h",mb_symbols_782,6},
-{"pdfstructure","mulib-pdfstructure.h",mb_symbols_783,6},
-{"pe","mulib-pe.h",mb_symbols_784,18},
-{"pe-objdump","mulib-pe-objdump.h",mb_symbols_785,1},
-{"pearson_similarity","mulib-pearson_similarity.h",mb_symbols_786,1},
-{"pebuilder","mulib-pebuilder.h",mb_symbols_787,12},
-{"peephole","mulib-peephole.h",mb_symbols_788,33},
-{"peg","mulib-peg.h",mb_symbols_789,9},
-{"perf","mulib-perf.h",mb_symbols_790,2},
-{"perlpod","mulib-perlpod.h",mb_symbols_791,13},
-{"peutils","mulib-peutils.h",mb_symbols_792,2},
-{"pglayout","mulib-pglayout.h",mb_symbols_793,40},
-{"phonetic_utils","mulib-phonetic_utils.h",mb_symbols_794,1},
-{"phrasequery","mulib-phrasequery.h",mb_symbols_795,1},
+{"pci","mulib-pci.h",mb_symbols_776,6},
+{"pdf","mulib-pdf.h",mb_symbols_777,13},
+{"pdfannot","mulib-pdfannot.h",mb_symbols_778,6},
+{"pdfcanvas","mulib-pdfcanvas.h",mb_symbols_779,1},
+{"pdffont","mulib-pdffont.h",mb_symbols_780,5},
+{"pdfimage","mulib-pdfimage.h",mb_symbols_781,5},
+{"pdfmetadata","mulib-pdfmetadata.h",mb_symbols_782,6},
+{"pdfoutline","mulib-pdfoutline.h",mb_symbols_783,6},
+{"pdfstructure","mulib-pdfstructure.h",mb_symbols_784,6},
+{"pe","mulib-pe.h",mb_symbols_785,18},
+{"pe-objdump","mulib-pe-objdump.h",mb_symbols_786,1},
+{"pearson_similarity","mulib-pearson_similarity.h",mb_symbols_787,1},
+{"pebuilder","mulib-pebuilder.h",mb_symbols_788,12},
+{"peephole","mulib-peephole.h",mb_symbols_789,33},
+{"peg","mulib-peg.h",mb_symbols_790,9},
+{"perf","mulib-perf.h",mb_symbols_791,2},
+{"perlpod","mulib-perlpod.h",mb_symbols_792,13},
+{"peutils","mulib-peutils.h",mb_symbols_793,2},
+{"pglayout","mulib-pglayout.h",mb_symbols_794,40},
+{"phonetic_utils","mulib-phonetic_utils.h",mb_symbols_795,1},
+{"phrasequery","mulib-phrasequery.h",mb_symbols_796,1},
 {"physical-def","mulib-physical-def.h",NULL,0},
 {"physical-lef","mulib-physical-lef.h",NULL,0},
 {"physics-broadphase","mulib-physics-broadphase.h",NULL,0},
@@ -140978,72 +140982,72 @@ static const mb_library mb_libraries[] = {
 {"physics-rigidbody","mulib-physics-rigidbody.h",NULL,0},
 {"physics-solver","mulib-physics-solver.h",NULL,0},
 {"physics-world","mulib-physics-world.h",NULL,0},
-{"physreg","mulib-physreg.h",mb_symbols_796,3},
-{"pipeline","mulib-pipeline.h",mb_symbols_797,5},
+{"physreg","mulib-physreg.h",mb_symbols_797,3},
+{"pipeline","mulib-pipeline.h",mb_symbols_798,5},
 {"place-analytical","mulib-place-analytical.h",NULL,0},
 {"place-anneal","mulib-place-anneal.h",NULL,0},
 {"place-floorplan","mulib-place-floorplan.h",NULL,0},
 {"place-legalize","mulib-place-legalize.h",NULL,0},
-{"plot2d","mulib-plot2d.h",mb_symbols_798,6},
-{"polkit-client","mulib-polkit-client.h",mb_symbols_799,1},
-{"polytask","mulib-polytask.h",mb_symbols_800,11},
-{"popcount","mulib-popcount.h",mb_symbols_801,3},
-{"port","mulib-port.h",mb_symbols_802,10},
-{"positions","mulib-positions.h",mb_symbols_803,3},
-{"postdominance","mulib-postdominance.h",mb_symbols_804,1},
-{"postings","mulib-postings.h",mb_symbols_805,6},
-{"prettydoc","mulib-prettydoc.h",mb_symbols_806,94},
-{"prettyemit","mulib-prettyemit.h",mb_symbols_807,7},
-{"prettysexpr","mulib-prettysexpr.h",mb_symbols_808,2},
-{"price-causal","mulib-price-causal.h",mb_symbols_809,2},
-{"price-confidence","mulib-price-confidence.h",mb_symbols_810,2},
-{"price-demand","mulib-price-demand.h",mb_symbols_811,3},
-{"price-ensemble","mulib-price-ensemble.h",mb_symbols_812,1},
-{"price-forecast","mulib-price-forecast.h",mb_symbols_813,7},
-{"price-history","mulib-price-history.h",mb_symbols_814,4},
-{"price-match","mulib-price-match.h",mb_symbols_815,2},
-{"price-monitor","mulib-price-monitor.h",mb_symbols_816,6},
-{"price-normalize","mulib-price-normalize.h",mb_symbols_817,2},
-{"price-observation","mulib-price-observation.h",mb_symbols_818,3},
-{"price-timeseries","mulib-price-timeseries.h",mb_symbols_819,3},
-{"priceopt","mulib-priceopt.h",mb_symbols_820,15},
-{"prime","mulib-prime.h",mb_symbols_821,2},
-{"probability","mulib-probability.h",mb_symbols_822,4},
-{"process","mulib-process.h",mb_symbols_823,15},
-{"procfs","mulib-procfs.h",mb_symbols_824,17},
+{"plot2d","mulib-plot2d.h",mb_symbols_799,6},
+{"polkit-client","mulib-polkit-client.h",mb_symbols_800,1},
+{"polytask","mulib-polytask.h",mb_symbols_801,11},
+{"popcount","mulib-popcount.h",mb_symbols_802,3},
+{"port","mulib-port.h",mb_symbols_803,10},
+{"positions","mulib-positions.h",mb_symbols_804,3},
+{"postdominance","mulib-postdominance.h",mb_symbols_805,1},
+{"postings","mulib-postings.h",mb_symbols_806,6},
+{"prettydoc","mulib-prettydoc.h",mb_symbols_807,94},
+{"prettyemit","mulib-prettyemit.h",mb_symbols_808,7},
+{"prettysexpr","mulib-prettysexpr.h",mb_symbols_809,2},
+{"price-causal","mulib-price-causal.h",mb_symbols_810,2},
+{"price-confidence","mulib-price-confidence.h",mb_symbols_811,2},
+{"price-demand","mulib-price-demand.h",mb_symbols_812,3},
+{"price-ensemble","mulib-price-ensemble.h",mb_symbols_813,1},
+{"price-forecast","mulib-price-forecast.h",mb_symbols_814,7},
+{"price-history","mulib-price-history.h",mb_symbols_815,4},
+{"price-match","mulib-price-match.h",mb_symbols_816,2},
+{"price-monitor","mulib-price-monitor.h",mb_symbols_817,6},
+{"price-normalize","mulib-price-normalize.h",mb_symbols_818,2},
+{"price-observation","mulib-price-observation.h",mb_symbols_819,3},
+{"price-timeseries","mulib-price-timeseries.h",mb_symbols_820,3},
+{"priceopt","mulib-priceopt.h",mb_symbols_821,15},
+{"prime","mulib-prime.h",mb_symbols_822,2},
+{"probability","mulib-probability.h",mb_symbols_823,4},
+{"process","mulib-process.h",mb_symbols_824,15},
+{"procfs","mulib-procfs.h",mb_symbols_825,17},
 {"project-history","mulib-project-history.h",NULL,0},
 {"project-journal","mulib-project-journal.h",NULL,0},
 {"project-migrate","mulib-project-migrate.h",NULL,0},
 {"project-package","mulib-project-package.h",NULL,0},
 {"project-store","mulib-project-store.h",NULL,0},
-{"protobuf","mulib-protobuf.h",mb_symbols_825,5},
-{"prowse-control","mulib-prowse-control.h",mb_symbols_826,21},
-{"prowse-protocol","mulib-prowse-protocol.h",mb_symbols_827,32},
+{"protobuf","mulib-protobuf.h",mb_symbols_826,5},
+{"prowse-control","mulib-prowse-control.h",mb_symbols_827,21},
+{"prowse-protocol","mulib-prowse-protocol.h",mb_symbols_828,32},
 {"pty","mulib-pty.h",NULL,0},
-{"pwdauth","mulib-pwdauth.h",mb_symbols_828,5},
-{"pybind","mulib-pybind.h",mb_symbols_829,33},
-{"qa-corpus","mulib-qa-corpus.h",mb_symbols_830,4},
-{"qa-repro","mulib-qa-repro.h",mb_symbols_831,3},
-{"queryaggregate","mulib-queryaggregate.h",mb_symbols_832,3},
-{"queryexpr","mulib-queryexpr.h",mb_symbols_833,1},
-{"queryjoin","mulib-queryjoin.h",mb_symbols_834,3},
-{"queue","mulib-queue.h",mb_symbols_835,5},
-{"quic","mulib-quic.h",mb_symbols_836,6},
-{"qvm","mulib-qvm.h",mb_symbols_837,27},
-{"range-analysis","mulib-range-analysis.h",mb_symbols_838,6},
-{"rangeindex","mulib-rangeindex.h",mb_symbols_839,6},
-{"rate_limit","mulib-rate_limit.h",mb_symbols_840,3},
-{"raytracing","mulib-raytracing.h",mb_symbols_841,13},
-{"readability","mulib-readability.h",mb_symbols_842,1},
-{"readline","mulib-readline.h",mb_symbols_843,53},
-{"record","mulib-record.h",mb_symbols_844,6},
-{"recordbatch","mulib-recordbatch.h",mb_symbols_845,3},
-{"redirect","mulib-redirect.h",mb_symbols_846,2},
-{"regalloc","mulib-regalloc.h",mb_symbols_847,4},
-{"regalloc-graph","mulib-regalloc-graph.h",mb_symbols_848,1},
-{"regalloc-linear","mulib-regalloc-linear.h",mb_symbols_849,2},
-{"regex","mulib-regex.h",mb_symbols_850,7},
-{"regpressure","mulib-regpressure.h",mb_symbols_851,1},
+{"pwdauth","mulib-pwdauth.h",mb_symbols_829,5},
+{"pybind","mulib-pybind.h",mb_symbols_830,33},
+{"qa-corpus","mulib-qa-corpus.h",mb_symbols_831,4},
+{"qa-repro","mulib-qa-repro.h",mb_symbols_832,3},
+{"queryaggregate","mulib-queryaggregate.h",mb_symbols_833,3},
+{"queryexpr","mulib-queryexpr.h",mb_symbols_834,1},
+{"queryjoin","mulib-queryjoin.h",mb_symbols_835,3},
+{"queue","mulib-queue.h",mb_symbols_836,5},
+{"quic","mulib-quic.h",mb_symbols_837,6},
+{"qvm","mulib-qvm.h",mb_symbols_838,27},
+{"range-analysis","mulib-range-analysis.h",mb_symbols_839,6},
+{"rangeindex","mulib-rangeindex.h",mb_symbols_840,6},
+{"rate_limit","mulib-rate_limit.h",mb_symbols_841,3},
+{"raytracing","mulib-raytracing.h",mb_symbols_842,13},
+{"readability","mulib-readability.h",mb_symbols_843,1},
+{"readline","mulib-readline.h",mb_symbols_844,53},
+{"record","mulib-record.h",mb_symbols_845,6},
+{"recordbatch","mulib-recordbatch.h",mb_symbols_846,3},
+{"redirect","mulib-redirect.h",mb_symbols_847,2},
+{"regalloc","mulib-regalloc.h",mb_symbols_848,4},
+{"regalloc-graph","mulib-regalloc-graph.h",mb_symbols_849,1},
+{"regalloc-linear","mulib-regalloc-linear.h",mb_symbols_850,2},
+{"regex","mulib-regex.h",mb_symbols_851,7},
+{"regpressure","mulib-regpressure.h",mb_symbols_852,1},
 {"render-bsdf","mulib-render-bsdf.h",NULL,0},
 {"render-bvh","mulib-render-bvh.h",NULL,0},
 {"render-bvhbuild","mulib-render-bvhbuild.h",NULL,0},
@@ -141059,9 +141063,9 @@ static const mb_library mb_libraries[] = {
 {"render-scene","mulib-render-scene.h",NULL,0},
 {"render-shadow","mulib-render-shadow.h",NULL,0},
 {"render-texture","mulib-render-texture.h",NULL,0},
-{"replace","mulib-replace.h",mb_symbols_852,1},
-{"resolved-client","mulib-resolved-client.h",mb_symbols_853,1},
-{"rest","mulib-rest.h",mb_symbols_854,8},
+{"replace","mulib-replace.h",mb_symbols_853,1},
+{"resolved-client","mulib-resolved-client.h",mb_symbols_854,1},
+{"rest","mulib-rest.h",mb_symbols_855,8},
 {"retgtk","mulib-retgtk.h",NULL,0},
 {"retgtk-anchor","mulib-retgtk-anchor.h",NULL,0},
 {"retgtk-binding","mulib-retgtk-binding.h",NULL,0},
@@ -141120,84 +141124,83 @@ static const mb_library mb_libraries[] = {
 {"retgtk-uiml","mulib-retgtk-uiml.h",NULL,0},
 {"retgtk-widget","mulib-retgtk-widget.h",NULL,0},
 {"retgtk-window","mulib-retgtk-window.h",NULL,0},
-{"revproxy","mulib-revproxy.h",mb_symbols_855,1},
-{"rewrite","mulib-rewrite.h",mb_symbols_856,19},
-{"rewrite_url","mulib-rewrite_url.h",mb_symbols_857,1},
+{"revproxy","mulib-revproxy.h",mb_symbols_856,1},
+{"rewrite","mulib-rewrite.h",mb_symbols_857,19},
+{"rewrite_url","mulib-rewrite_url.h",mb_symbols_858,1},
 {"rf-matching","mulib-rf-matching.h",NULL,0},
-{"rf-microstrip","mulib-rf-microstrip.h",mb_symbols_858,1},
+{"rf-microstrip","mulib-rf-microstrip.h",mb_symbols_859,1},
 {"rf-network","mulib-rf-network.h",NULL,0},
-{"rf-smith","mulib-rf-smith.h",mb_symbols_859,1},
-{"rf-sparams","mulib-rf-sparams.h",mb_symbols_860,4},
+{"rf-smith","mulib-rf-smith.h",mb_symbols_860,1},
+{"rf-sparams","mulib-rf-sparams.h",mb_symbols_861,4},
 {"rf-tolerance","mulib-rf-tolerance.h",NULL,0},
 {"rf-touchstone","mulib-rf-touchstone.h",NULL,0},
 {"rf-transmission","mulib-rf-transmission.h",NULL,0},
 {"richtext","mulib-richtext.h",NULL,0},
-{"ring","mulib-ring.h",mb_symbols_861,5},
-{"riscv64","mulib-riscv64.h",mb_symbols_862,4},
-{"rle","mulib-rle.h",mb_symbols_863,2},
-{"rlecol","mulib-rlecol.h",mb_symbols_864,3},
-{"rng","mulib-rng.h",mb_symbols_865,4},
-{"robots","mulib-robots.h",mb_symbols_866,1},
-{"roman","mulib-roman.h",mb_symbols_867,2},
-{"rootfs","mulib-rootfs.h",mb_symbols_868,13},
-{"rootfs-buildspec","mulib-rootfs-buildspec.h",mb_symbols_869,12},
-{"rootfsbuilder","mulib-rootfsbuilder.h",mb_symbols_870,1},
+{"ring","mulib-ring.h",mb_symbols_862,5},
+{"riscv64","mulib-riscv64.h",mb_symbols_863,4},
+{"rle","mulib-rle.h",mb_symbols_864,2},
+{"rlecol","mulib-rlecol.h",mb_symbols_865,3},
+{"rng","mulib-rng.h",mb_symbols_866,4},
+{"robots","mulib-robots.h",mb_symbols_867,1},
+{"roman","mulib-roman.h",mb_symbols_868,2},
+{"rootfs","mulib-rootfs.h",mb_symbols_869,13},
+{"rootfs-buildspec","mulib-rootfs-buildspec.h",mb_symbols_870,12},
+{"rootfsbuilder","mulib-rootfsbuilder.h",mb_symbols_871,1},
 {"route-detailed","mulib-route-detailed.h",NULL,0},
 {"route-global","mulib-route-global.h",NULL,0},
 {"route-negotiated","mulib-route-negotiated.h",NULL,0},
-{"row-rdbms","mulib-row-rdbms.h",mb_symbols_871,5},
-{"rpc","mulib-rpc.h",mb_symbols_872,4},
-{"rtnl","mulib-rtnl.h",mb_symbols_873,3},
-{"rtnl-address","mulib-rtnl-address.h",mb_symbols_874,2},
-{"rtnl-bridge","mulib-rtnl-bridge.h",mb_symbols_875,1},
-{"rtnl-link","mulib-rtnl-link.h",mb_symbols_876,3},
-{"rtnl-neighbor","mulib-rtnl-neighbor.h",mb_symbols_877,2},
-{"rtnl-nexthop","mulib-rtnl-nexthop.h",mb_symbols_878,1},
-{"rtnl-nsid","mulib-rtnl-nsid.h",mb_symbols_879,1},
-{"rtnl-qdisc","mulib-rtnl-qdisc.h",mb_symbols_880,1},
-{"rtnl-route","mulib-rtnl-route.h",mb_symbols_881,2},
-{"rtnl-rule","mulib-rtnl-rule.h",mb_symbols_882,1},
-{"rtnl-tc","mulib-rtnl-tc.h",mb_symbols_883,1},
-{"rtnl-tunnel","mulib-rtnl-tunnel.h",mb_symbols_884,1},
-{"rtnl-veth","mulib-rtnl-veth.h",mb_symbols_885,1},
-{"rtnl-vlan","mulib-rtnl-vlan.h",mb_symbols_886,1},
-{"rtnl-vrf","mulib-rtnl-vrf.h",mb_symbols_887,1},
-{"rubybind","mulib-rubybind.h",mb_symbols_888,1},
-{"sandbox-process","mulib-sandbox-process.h",mb_symbols_889,10},
-{"sandbox-profile","mulib-sandbox-profile.h",mb_symbols_890,36},
-{"sat","mulib-sat.h",mb_symbols_891,13},
-{"scanvec","mulib-scanvec.h",mb_symbols_892,8},
-{"schedutils","mulib-schedutils.h",mb_symbols_893,3},
-{"schemaorg","mulib-schemaorg.h",mb_symbols_894,2},
-{"scrape","mulib-scrape.h",mb_symbols_895,1},
-{"scrape-metadata","mulib-scrape-metadata.h",mb_symbols_896,1},
-{"scrape-readable","mulib-scrape-readable.h",mb_symbols_897,1},
-{"scrape-rule","mulib-scrape-rule.h",mb_symbols_898,3},
-{"scrape-schema","mulib-scrape-schema.h",mb_symbols_899,4},
-{"scrape-table","mulib-scrape-table.h",mb_symbols_900,1},
-{"search","mulib-search.h",mb_symbols_901,3},
-{"search-query","mulib-search-query.h",mb_symbols_902,1},
-{"search-rank","mulib-search-rank.h",mb_symbols_903,3},
-{"search-serp","mulib-search-serp.h",mb_symbols_904,1},
-{"search-session","mulib-search-session.h",mb_symbols_905,3},
+{"row-rdbms","mulib-row-rdbms.h",mb_symbols_872,5},
+{"rpc","mulib-rpc.h",mb_symbols_873,4},
+{"rtnl","mulib-rtnl.h",mb_symbols_874,3},
+{"rtnl-address","mulib-rtnl-address.h",mb_symbols_875,2},
+{"rtnl-bridge","mulib-rtnl-bridge.h",mb_symbols_876,1},
+{"rtnl-link","mulib-rtnl-link.h",mb_symbols_877,3},
+{"rtnl-neighbor","mulib-rtnl-neighbor.h",mb_symbols_878,2},
+{"rtnl-nexthop","mulib-rtnl-nexthop.h",mb_symbols_879,1},
+{"rtnl-nsid","mulib-rtnl-nsid.h",mb_symbols_880,1},
+{"rtnl-qdisc","mulib-rtnl-qdisc.h",mb_symbols_881,1},
+{"rtnl-route","mulib-rtnl-route.h",mb_symbols_882,2},
+{"rtnl-rule","mulib-rtnl-rule.h",mb_symbols_883,1},
+{"rtnl-tc","mulib-rtnl-tc.h",mb_symbols_884,1},
+{"rtnl-tunnel","mulib-rtnl-tunnel.h",mb_symbols_885,1},
+{"rtnl-veth","mulib-rtnl-veth.h",mb_symbols_886,1},
+{"rtnl-vlan","mulib-rtnl-vlan.h",mb_symbols_887,1},
+{"rtnl-vrf","mulib-rtnl-vrf.h",mb_symbols_888,1},
+{"rubybind","mulib-rubybind.h",mb_symbols_889,1},
+{"sandbox-process","mulib-sandbox-process.h",mb_symbols_890,10},
+{"sandbox-profile","mulib-sandbox-profile.h",mb_symbols_891,36},
+{"sat","mulib-sat.h",mb_symbols_892,13},
+{"scanvec","mulib-scanvec.h",mb_symbols_893,8},
+{"schedutils","mulib-schedutils.h",mb_symbols_894,3},
+{"schemaorg","mulib-schemaorg.h",mb_symbols_895,2},
+{"scrape","mulib-scrape.h",mb_symbols_896,1},
+{"scrape-metadata","mulib-scrape-metadata.h",mb_symbols_897,1},
+{"scrape-readable","mulib-scrape-readable.h",mb_symbols_898,1},
+{"scrape-rule","mulib-scrape-rule.h",mb_symbols_899,3},
+{"scrape-schema","mulib-scrape-schema.h",mb_symbols_900,4},
+{"scrape-table","mulib-scrape-table.h",mb_symbols_901,1},
+{"search","mulib-search.h",mb_symbols_902,3},
+{"search-query","mulib-search-query.h",mb_symbols_903,1},
+{"search-rank","mulib-search-rank.h",mb_symbols_904,3},
+{"search-serp","mulib-search-serp.h",mb_symbols_905,1},
+{"search-session","mulib-search-session.h",mb_symbols_906,3},
 {"seat","mulib-seat.h",NULL,0},
-{"seccomp","mulib-seccomp.h",mb_symbols_906,11},
-{"select","mulib-select.h",mb_symbols_907,6},
-{"semilattice","mulib-semilattice.h",mb_symbols_908,3},
-{"semiring","mulib-semiring.h",mb_symbols_909,9},
-{"semver","mulib-semver.h",mb_symbols_910,3},
-{"set","mulib-set.h",mb_symbols_911,6},
-{"seurity","mulib-seurity.h",mb_symbols_912,4},
-{"sexpr","mulib-sexpr.h",mb_symbols_913,9},
-{"sfnt","mulib-sfnt.h",mb_symbols_914,7},
-{"sha","mulib-sha.h",mb_symbols_915,38},
-{"shaderx","mulib-shaderx.h",mb_symbols_916,44},
-{"shadowsocks","mulib-shadowsocks.h",mb_symbols_917,5},
-{"shebang-sh","mulib-shebang-sh.h",mb_symbols_918,21},
-{"shiraz","mulib-shiraz.h",mb_symbols_919,45},
-{"shm","mulib-shm.h",mb_symbols_920,5},
-{"shoebox-contract","mulib-shoebox-contract.h",mb_symbols_921,20},
-{"shylock-core","mulib-shylock-core.h",mb_symbols_922,14},
+{"seccomp","mulib-seccomp.h",mb_symbols_907,11},
+{"select","mulib-select.h",mb_symbols_908,6},
+{"semilattice","mulib-semilattice.h",mb_symbols_909,3},
+{"semiring","mulib-semiring.h",mb_symbols_910,9},
+{"semver","mulib-semver.h",mb_symbols_911,3},
+{"set","mulib-set.h",mb_symbols_912,6},
+{"seurity","mulib-seurity.h",mb_symbols_913,4},
+{"sexpr","mulib-sexpr.h",mb_symbols_914,9},
+{"sfnt","mulib-sfnt.h",mb_symbols_915,7},
+{"sha","mulib-sha.h",mb_symbols_916,38},
+{"shaderx","mulib-shaderx.h",mb_symbols_917,44},
+{"shadowsocks","mulib-shadowsocks.h",mb_symbols_918,5},
+{"shebang-sh","mulib-shebang-sh.h",mb_symbols_919,21},
+{"shiraz","mulib-shiraz.h",mb_symbols_920,45},
+{"shm","mulib-shm.h",mb_symbols_921,5},
+{"shoebox-contract","mulib-shoebox-contract.h",mb_symbols_922,20},
 {"signal","mulib-signal.h",mb_symbols_923,4},
 {"signature","mulib-signature.h",mb_symbols_924,2},
 {"simdmath","mulib-simdmath.h",mb_symbols_925,15},
@@ -141275,6 +141278,7 @@ static const mb_library mb_libraries[] = {
 {"statsprice","mulib-statsprice.h",mb_symbols_967,11},
 {"statsproc","mulib-statsproc.h",mb_symbols_968,9},
 {"stopwords","mulib-stopwords.h",mb_symbols_969,2},
+{"storage-core","mulib-storage-core.h",NULL,0},
 {"strbuf","mulib-strbuf.h",mb_symbols_970,6},
 {"strpool","mulib-strpool.h",mb_symbols_971,10},
 {"stylesheet","mulib-stylesheet.h",mb_symbols_972,6},
@@ -141772,11 +141776,13 @@ static const mb_alias mb_aliases[] = {
 {"mulib_bootmgr_elf_t",1418},
 {"mulib_bootmgr_entry_t",1401},
 {"mulib_bootmgr_platform_t",1408},
-{"mulib_bounds_t",1421},
+{"mulib_bounded_text_buffer_t",1421},
+{"mulib_bounded_text_span_t",1422},
+{"mulib_bounds_t",1433},
 {"mulib_bptree_node_t",1061},
 {"mulib_bptree_t",1062},
 {"mulib_bptree_visit_fn",1033},
-{"mulib_branch_t",1426},
+{"mulib_branch_t",1438},
 {"mulib_browser_cache_entry_t",1441},
 {"mulib_browser_cache_t",1444},
 {"mulib_browser_channel_t",1508},
@@ -143213,8 +143219,6 @@ static const mb_alias mb_aliases[] = {
 {"mulib_shoebox_context_t",7532},
 {"mulib_shoebox_io_t",7527},
 {"mulib_shoebox_main_fn",7533},
-{"mulib_shylock_buffer_t",1429},
-{"mulib_shylock_span_t",1430},
 {"mulib_signal_guard",7545},
 {"mulib_signal_handler",7543},
 {"mulib_simdmath_f4_t",2046},

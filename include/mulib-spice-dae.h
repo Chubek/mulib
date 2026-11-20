@@ -1,17 +1,27 @@
-/* MuLIB / Amb3r: spice-dae. C11 single-header kernel.
+/* MuLIB: spice-dae. C11 single-header kernel.
  * Define MULIB_IMPL_SPICE_DAE in exactly one implementation translation unit.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_SPICE_DAE_H
 #define MULIB_SPICE_DAE_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
 #include "mulib-spice-mna.h"
 #include "mulib-num-dae.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int mulib_spice_dae_step(const ma_mna *m,const double *previous,double dt,double *next);
+int mulib_spice_dae_step(const mulib_spice_mna *m,const double *previous,double dt,double *next);
 #ifdef __cplusplus
 }
 #endif
@@ -21,7 +31,7 @@ int mulib_spice_dae_step(const ma_mna *m,const double *previous,double dt,double
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_spice_dae_step(const ma_mna *m,const double *previous,double dt,double *next){if(!m)return 0;return mulib_num_dae_step(m->n,m->c,m->g,m->b,previous,dt,next);}
+int mulib_spice_dae_step(const mulib_spice_mna *m,const double *previous,double dt,double *next){if(!m)return 0;return mulib_num_dae_step(m->n,m->c,m->g,m->b,previous,dt,next);}
 #ifdef __cplusplus
 }
 #endif

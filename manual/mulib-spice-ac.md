@@ -37,7 +37,7 @@ cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_ac.c -lm -o /tmp/te
 
 ## Provenance
 
-Original implementation prepared for Amb3r/MuLIB. No external code was copied. The full requested roadmap is larger than this implemented subset; this module claims only its documented profile.
+No external code was copied. This MuLIB module implements only the bounded profile documented above; it does not claim broader standards conformance.
 
 <!-- manual-interface -->
 ## Public header reference

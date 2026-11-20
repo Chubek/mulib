@@ -63,5 +63,5 @@ still flags six existing broken links in the virtio/VMM manuals to
   installed seccomp bytecode. Its bootstrap and dependencies must be trusted
   and pinned by the supervisor. An independent security review is required
   before admitting hostile third-party production plugins.
-- The [independent Shylock worker follow-up](../on1x/docs/shylock-worker-followup.md)
-  tracks application integration, not C11 kernel verification.
+- Application worker orchestration and data-plane policy are separate from
+  this C11 kernel verification.

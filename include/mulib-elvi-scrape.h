@@ -102,7 +102,7 @@ typedef struct mulib_elvi_scrape_https {
  * Never follows redirects or retries rate limits. Body must be initialized;
  * outputs remain unchanged on failure. Callbacks must not mutate the adapter. */
 int mulib_elvi_scrape_https_transport(void *ctx, const char *url,
-    mulib_shylock_buffer_t *body, unsigned *status, char *type, size_t cap);
+    mulib_bounded_text_buffer_t *body, unsigned *status, char *type, size_t cap);
 #ifdef __cplusplus
 }
 #endif
@@ -801,7 +801,7 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
                              mulib_elvi_scrape_result_t *results,size_t cap,
                              size_t *count,unsigned *http_status) {
   char url[8192],ct[128]={0};unsigned status=0;int ok=0;
-  mulib_shylock_buffer_t body={0};mulib_fetch_client_t safe;
+  mulib_bounded_text_buffer_t body={0};mulib_fetch_client_t safe;
   if(!p||!client||!count||(!results&&cap)||!client->transport||
      !mulib_elvi_scrape_url(p,query,limit,url,sizeof url))return 0;
   safe=*client;
@@ -817,7 +817,7 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
   if(body.len && !body.data)goto done;
   ok=mulib_elvi_scrape_parse(p,body.data,body.len,results,
                               cap<limit?cap:limit,count);
- done:mulib_shylock_buffer_free(&body);return ok;
+ done:mulib_bounded_text_buffer_free(&body);return ok;
 }
 static int melvi_connect_(void *ctx,const mulib_uri_t *endpoint,mulib_tsl_t *session) {
   mulib_elvi_scrape_https_t *tls=(mulib_elvi_scrape_https_t *)ctx;
@@ -834,7 +834,7 @@ static int melvi_connect_(void *ctx,const mulib_uri_t *endpoint,mulib_tsl_t *ses
   return 1;
 }
 int mulib_elvi_scrape_https_transport(void *ctx,const char *url,
-    mulib_shylock_buffer_t *body,unsigned *status,char *type,size_t cap) {
+    mulib_bounded_text_buffer_t *body,unsigned *status,char *type,size_t cap) {
   mulib_elvi_scrape_https_t *tls=(mulib_elvi_scrape_https_t *)ctx;
   mulib_http_message_t message={0};mulib_webclient_options_t options={0};
   char host[256];const char *ct,*encoding;size_t cursor=0,limit;int ok=0;
@@ -854,7 +854,7 @@ int mulib_elvi_scrape_https_transport(void *ctx,const char *url,
   if(encoding && (!mulib_webscan_equal_(encoding,strlen(encoding),"identity") ||
       mulib_http_header_next(&message,"Content-Encoding",&cursor)))goto done;
   if(!ct)ct="";
-  if(strlen(ct)>=cap || !mulib_shylock_append(body,message.body,message.body_length))goto done;
+  if(strlen(ct)>=cap || !mulib_bounded_text_append(body,message.body,message.body_length))goto done;
   memcpy(type,ct,strlen(ct)+1);*status=message.status;ok=1;
  done:mulib_http_message_free(&message);return ok;
 }

@@ -105,7 +105,7 @@ for JSON/Vec/core-Parsec retain their narrower source-pinned ExoML recipes.
 Explicit fixture selection also retains a primary kernel's source-pinned recipe,
 required exports and evidence obligations. ElviScrape enables only its six-API
 profile and full HTTPS dependency closure, leaves the optional owned parser off,
-and records `shylock-core`'s C math-library link requirement.
+and records `bounded-text`'s C math-library link requirement.
 Mune also uses a source-pinned recipe, explicitly activating the owned parser's
 `MULIB_IMPL_PARSER` switch and checking all 52 public exports. Its header, manual
 and three Lua-runtime regression/evidence files are locked build inputs; this

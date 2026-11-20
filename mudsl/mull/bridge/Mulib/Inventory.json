@@ -9,7 +9,6 @@
     "mulib-aes-gcm.h",
     "mulib-aes.h",
     "mulib-alloc.h",
-    "mulib-amb3r-base.h",
     "mulib-amd64.h",
     "mulib-amdgpu.h",
     "mulib-androidlibs.h",
@@ -98,6 +97,7 @@
     "mulib-booknav.h",
     "mulib-booleanquery.h",
     "mulib-bootmgr.h",
+    "mulib-bounded-text.h",
     "mulib-bounds.h",
     "mulib-bpf-kernel.h",
     "mulib-branch-layout.h",
@@ -591,6 +591,7 @@
     "mulib-geom-nurbs.h",
     "mulib-geom-sdf.h",
     "mulib-geom-tessellate.h",
+    "mulib-geom2-core.h",
     "mulib-geometry.h",
     "mulib-geosolve.h",
     "mulib-getaddr.h",
@@ -663,6 +664,7 @@
     "mulib-glyph.h",
     "mulib-gpu.h",
     "mulib-gputest.h",
+    "mulib-graph-core.h",
     "mulib-graph.h",
     "mulib-graphdb.h",
     "mulib-graphql.h",
@@ -897,6 +899,7 @@
     "mulib-kernel-ir.h",
     "mulib-kernel-legalize.h",
     "mulib-kernel-memory.h",
+    "mulib-kernel-substrates.h",
     "mulib-kernel-types.h",
     "mulib-kernel-uniformity.h",
     "mulib-kernel-validate.h",
@@ -1170,6 +1173,7 @@
     "mulib-num-colamd.h",
     "mulib-num-complex-lu.h",
     "mulib-num-condition.h",
+    "mulib-num-core.h",
     "mulib-num-csc.h",
     "mulib-num-csr.h",
     "mulib-num-dae.h",
@@ -1538,7 +1542,6 @@
     "mulib-shiraz.h",
     "mulib-shm.h",
     "mulib-shoebox-contract.h",
-    "mulib-shylock-core.h",
     "mulib-signal.h",
     "mulib-signature.h",
     "mulib-simdmath.h",
@@ -1616,6 +1619,7 @@
     "mulib-statsprice.h",
     "mulib-statsproc.h",
     "mulib-stopwords.h",
+    "mulib-storage-core.h",
     "mulib-strbuf.h",
     "mulib-strpool.h",
     "mulib-stylesheet.h",
@@ -1962,7 +1966,7 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 1961,
+  "libraries": 1965,
   "functions": 5373,
   "declared_functions": 7283,
   "types": 8927,
@@ -1977,13 +1981,15 @@
     "MULIB_ASDL_PRODUCT_TYPE",
     "MULIB_ASDL_SEQ",
     "MULIB_ASDL_SUM_TYPE",
+    "MULIB_STORAGE_MAX",
+    "MULIB_STORAGE_MIN",
     "MULIB_TERM_RGB",
     "MULIB_UEFI_ERROR",
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "fc72d82dfa1c8eb4d25a54dcb2a9df8b62463c3e07e9adf80ba1e2ca4bbc3c7b",
-  "legacy_policy": "0b3d4877e0fa102fca528adbb1dae570be799a4e53fe6487908b6f7d864fe142",
+  "fingerprint": "27d9771984421d893f88ffc6fdb37f55adce000d790d6452c7909dc578c68aec",
+  "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -2161,48 +2167,6 @@
         "mulib_alloc_resize_array",
         "mulib_alloc_strdup_n",
         "mulib_alloc_valid"
-      ]
-    },
-    "amb3r-base": {
-      "header": "mulib-amb3r-base.h",
-      "profile": "discovery-only",
-      "functions": [],
-      "declarations": [
-        "ma_alloc",
-        "ma_box_hit",
-        "ma_box_valid",
-        "ma_bytes_append",
-        "ma_bytes_free",
-        "ma_cabs",
-        "ma_cadd",
-        "ma_cdiv",
-        "ma_cmul",
-        "ma_cross",
-        "ma_csr_mv",
-        "ma_csr_valid",
-        "ma_csub",
-        "ma_dijkstra",
-        "ma_dist",
-        "ma_dot",
-        "ma_find",
-        "ma_finite",
-        "ma_grid_route",
-        "ma_mul",
-        "ma_norm",
-        "ma_point_valid",
-        "ma_poly_inside",
-        "ma_push",
-        "ma_rand",
-        "ma_read_u64",
-        "ma_reserve",
-        "ma_seg_dist",
-        "ma_solve",
-        "ma_strdup",
-        "ma_topo",
-        "ma_uniform",
-        "ma_union",
-        "ma_word",
-        "ma_write_u64"
       ]
     },
     "amd64": {
@@ -3556,6 +3520,38 @@
         "mulib_bootmgr_sector_valid",
         "mulib_bootmgr_select",
         "mulib_bootmgr_uefi_application"
+      ]
+    },
+    "bounded-text": {
+      "header": "mulib-bounded-text.h",
+      "profile": "legacy-raw",
+      "functions": [
+        "mulib_bounded_text_reserve",
+        "mulib_bounded_text_append",
+        "mulib_bounded_text_text",
+        "mulib_bounded_text_json_string",
+        "mulib_bounded_text_buffer_free",
+        "mulib_bounded_text_dup",
+        "mulib_bounded_text_copy",
+        "mulib_bounded_text_hash",
+        "mulib_bounded_text_equal_ci",
+        "mulib_bounded_text_contains_ci",
+        "mulib_bounded_text_contains_span_ci",
+        "mulib_bounded_text_parse_decimal"
+      ],
+      "declarations": [
+        "mulib_bounded_text_append",
+        "mulib_bounded_text_buffer_free",
+        "mulib_bounded_text_contains_ci",
+        "mulib_bounded_text_contains_span_ci",
+        "mulib_bounded_text_copy",
+        "mulib_bounded_text_dup",
+        "mulib_bounded_text_equal_ci",
+        "mulib_bounded_text_hash",
+        "mulib_bounded_text_json_string",
+        "mulib_bounded_text_parse_decimal",
+        "mulib_bounded_text_reserve",
+        "mulib_bounded_text_text"
       ]
     },
     "bounds": {
@@ -8380,10 +8376,10 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_sim_less",
         "mulib_dsim_engine_free",
         "mulib_dsim_engine_run",
-        "mulib_dsim_engine_schedule"
+        "mulib_dsim_engine_schedule",
+        "mulib_dsim_sim_less"
       ]
     },
     "dsim-logic4": {
@@ -10439,9 +10435,9 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_aig_cnf_lit",
-        "ma_cnf_clause",
         "mulib_formal_aig_cnf",
+        "mulib_formal_aig_cnf_lit",
+        "mulib_formal_cnf_clause",
         "mulib_formal_cnf_free"
       ]
     },
@@ -10622,7 +10618,7 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_fasm_name",
+        "mulib_fpga_fasm_name",
         "mulib_fpga_fasm_parse",
         "mulib_fpga_fasm_write"
       ]
@@ -11049,6 +11045,20 @@
       "functions": [],
       "declarations": [
         "mulib_geom_tessellate"
+      ]
+    },
+    "geom2-core": {
+      "header": "mulib-geom2-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_geom2_box_overlap",
+        "mulib_geom2_box_valid",
+        "mulib_geom2_distance",
+        "mulib_geom2_orient",
+        "mulib_geom2_point_valid",
+        "mulib_geom2_polygon_contains",
+        "mulib_geom2_segment_distance"
       ]
     },
     "geometry": {
@@ -11972,6 +11982,18 @@
         "mulib_graph_init",
         "mulib_graph_reverse",
         "mulib_graph_toposort"
+      ]
+    },
+    "graph-core": {
+      "header": "mulib-graph-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_graph_dijkstra",
+        "mulib_graph_edges_toposort",
+        "mulib_graph_grid_route",
+        "mulib_graph_set_find",
+        "mulib_graph_set_union"
       ]
     },
     "graphdb": {
@@ -12941,10 +12963,10 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_hw_mask",
-        "ma_hw_node_valid",
         "mulib_hwil_context_add",
-        "mulib_hwil_context_free"
+        "mulib_hwil_context_free",
+        "mulib_hwil_hw_mask",
+        "mulib_hwil_hw_node_valid"
       ]
     },
     "hwil-elaborate": {
@@ -14700,6 +14722,12 @@
         "mulib_kernel_memory_alias",
         "mulib_kernel_memory_valid"
       ]
+    },
+    "kernel-substrates": {
+      "header": "mulib-kernel-substrates.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": []
     },
     "kernel-types": {
       "header": "mulib-kernel-types.h",
@@ -18449,6 +18477,26 @@
         "mulib_num_condition_residual"
       ]
     },
+    "num-core": {
+      "header": "mulib-num-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_num_all_finite",
+        "mulib_num_complex_abs",
+        "mulib_num_complex_add",
+        "mulib_num_complex_div",
+        "mulib_num_complex_mul",
+        "mulib_num_complex_sub",
+        "mulib_num_csr_view_matvec",
+        "mulib_num_csr_view_valid",
+        "mulib_num_dense_reference_solve",
+        "mulib_num_dot",
+        "mulib_num_norm",
+        "mulib_num_rng_next",
+        "mulib_num_rng_uniform"
+      ]
+    },
     "num-csc": {
       "header": "mulib-num-csc.h",
       "profile": "legacy-raw",
@@ -18476,9 +18524,9 @@
         "mulib_num_csr_transpose"
       ],
       "declarations": [
-        "mulib_num_csr_borrow_amb3r",
+        "mulib_num_csr_borrow_view",
+        "mulib_num_csr_copy_from_view",
         "mulib_num_csr_free",
-        "mulib_num_csr_from_amb3r",
         "mulib_num_csr_from_triplets",
         "mulib_num_csr_matvec",
         "mulib_num_csr_transpose",
@@ -18616,8 +18664,8 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_lu_get",
-        "ma_lu_set",
+        "mulib_num_lu_get",
+        "mulib_num_lu_set",
         "mulib_num_sparse_lu_factor",
         "mulib_num_sparse_lu_free",
         "mulib_num_sparse_lu_solve"
@@ -20480,8 +20528,8 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_place_cost",
-        "mulib_place_anneal"
+        "mulib_place_anneal",
+        "mulib_place_cost"
       ]
     },
     "place-floorplan": {
@@ -23242,38 +23290,6 @@
         "mulib_shoebox_write_all"
       ]
     },
-    "shylock-core": {
-      "header": "mulib-shylock-core.h",
-      "profile": "legacy-raw",
-      "functions": [
-        "mulib_shylock_reserve",
-        "mulib_shylock_append",
-        "mulib_shylock_text",
-        "mulib_shylock_json_string",
-        "mulib_shylock_buffer_free",
-        "mulib_shylock_dup",
-        "mulib_shylock_copy",
-        "mulib_shylock_hash",
-        "mulib_shylock_equal_ci",
-        "mulib_shylock_contains_ci",
-        "mulib_shylock_contains_span_ci",
-        "mulib_shylock_parse_decimal"
-      ],
-      "declarations": [
-        "mulib_shylock_append",
-        "mulib_shylock_buffer_free",
-        "mulib_shylock_contains_ci",
-        "mulib_shylock_contains_span_ci",
-        "mulib_shylock_copy",
-        "mulib_shylock_dup",
-        "mulib_shylock_equal_ci",
-        "mulib_shylock_hash",
-        "mulib_shylock_json_string",
-        "mulib_shylock_parse_decimal",
-        "mulib_shylock_reserve",
-        "mulib_shylock_text"
-      ]
-    },
     "signal": {
       "header": "mulib-signal.h",
       "profile": "legacy-raw",
@@ -23773,13 +23789,13 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_mna_nodes",
-        "ma_mna_pair",
         "mulib_spice_mna_capacitance",
         "mulib_spice_mna_conductance",
         "mulib_spice_mna_current",
         "mulib_spice_mna_free",
         "mulib_spice_mna_init",
+        "mulib_spice_mna_nodes",
+        "mulib_spice_mna_pair",
         "mulib_spice_mna_solve",
         "mulib_spice_mna_voltage",
         "mulib_spice_sparse_mna_add",
@@ -24325,6 +24341,23 @@
         "mulib_stopwords_contains"
       ]
     },
+    "storage-core": {
+      "header": "mulib-storage-core.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_storage_alloc",
+        "mulib_storage_bytes_append",
+        "mulib_storage_bytes_free",
+        "mulib_storage_identifier_valid",
+        "mulib_storage_push",
+        "mulib_storage_read_u64le",
+        "mulib_storage_reserve",
+        "mulib_storage_size_mul",
+        "mulib_storage_string_dup",
+        "mulib_storage_write_u64le"
+      ]
+    },
     "strbuf": {
       "header": "mulib-strbuf.h",
       "profile": "legacy-raw",
@@ -24552,8 +24585,8 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_aig_and",
-        "ma_aig_input",
+        "mulib_synth_aig_graph_and",
+        "mulib_synth_aig_graph_input",
         "mulib_synth_aig_rewrite",
         "mulib_synth_aig_rewrite_free"
       ]
@@ -24678,7 +24711,7 @@
       "profile": "discovery-only",
       "functions": [],
       "declarations": [
-        "ma_qm_search",
+        "mulib_synth_qm_search",
         "mulib_synth_quinemccluskey"
       ]
     },
@@ -29545,7 +29578,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "00501e7b41e8c7358b1aea71d541975cbc62d9cd4d44419dc720133115b3ca21",
-    "Implementation.c": "4b33010c4ea31e25f828ad231cb536de8599ba199e82ca0fb49009a28ce61f7b"
+    "Generated.inc": "b4d913ef753d773e154adfdeb95c3c5d8f6fd4b30d5bd86a8e8e51c031bc8219",
+    "Implementation.c": "41aa3937518d042c1ebe690dca21f1056af0ccf6d6eeb161f8883a75110ccc35"
   }
 }

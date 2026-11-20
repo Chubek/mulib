@@ -20,7 +20,7 @@ Include `include/mulib-html-dombridge.h`. Define the following switches in exact
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_HTML_DOMBRIDGE`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_HTML_DOMBRIDGE`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must

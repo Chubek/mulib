@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 1960 headers, 2355 direct dependency edges.
+Inventory: 1964 headers, 2582 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -24,7 +24,6 @@ Compatibility group: `parsec`, `peg`.
 | [abstun](mulib-abstun.md) | none |
 | [acpi](mulib-acpi.md) | none |
 | [adler32](mulib-adler32.md) | none |
-| [amb3r-base](amb3r-kernels.md) | none |
 | [arena](mulib-arena.md) | none |
 | [argparse](mulib-argparse.md) | none |
 | [artifact](mulib-artifact.md) | none |
@@ -365,6 +364,7 @@ Compatibility group: `parsec`, `peg`.
 | [stats](mulib-stats.md) | none |
 | [statsproc](mulib-statsproc.md) | none |
 | [stopwords](mulib-stopwords.md) | none |
+| [storage-core](engineering-kernels.md) | none |
 | [strbuf](mulib-strbuf.md) | none |
 | [symboltable](mulib-symboltable.md) | none |
 | [syntax-tree](mulib-syntax-tree.md) | none |
@@ -430,7 +430,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (614 modules)
+## Stratum 1 (501 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -455,6 +455,7 @@ Compatibility group: `parsec`, `peg`.
 | [blockidx](mulib-blockidx.md) | `bycutils`, `memtable` |
 | [booknav](mulib-booknav.md) | `typecore` |
 | [booleanquery](mulib-booleanquery.md) | `postings` |
+| [bounded-text](mulib-bounded-text.md) | `utf8` |
 | [browser-domstream](mulib-browser-domstream.md) | `browser-stream` |
 | [browser-eventloop](mulib-browser-eventloop.md) | `microjs-promise` |
 | [browser-executionstream](mulib-browser-executionstream.md) | `browser-stream` |
@@ -470,16 +471,7 @@ Compatibility group: `parsec`, `peg`.
 | [bytecode-opt](mulib-bytecode-opt.md) | `bytecode` |
 | [bytecode-serialize](mulib-bytecode-serialize.md) | `bytecode` |
 | [bytecode-verify](mulib-bytecode-verify.md) | `bytecode` |
-| [canvas-camera](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-command](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-gizmo](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-grid](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-hittest](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-layer](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-lod](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-selection](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-tile](amb3r-kernels.md) | `amb3r-base` |
-| [canvas-viewport](amb3r-kernels.md) | `amb3r-base` |
+| [canvas-lod](engineering-kernels.md) | `storage-core` |
 | [capbroker](mulib-capbroker.md) | `sandbox-profile` |
 | [ccweave](mulib-ccweave.md) | `mir`, `strbuf` |
 | [cdd-diff](mulib-cdd-diff.md) | `cdd-catalogue` |
@@ -548,47 +540,33 @@ Compatibility group: `parsec`, `peg`.
 | [drm-session](mulib-gfx-drm.md) | `drm-kms` |
 | [drm-syncobj](mulib-gfx-drm.md) | `drm-kms` |
 | [dsim-bitvec](mulib-dsim-bitvec.md) | `dsim-logic4` |
-| [dsim-bytecode](amb3r-kernels.md) | `amb3r-base` |
-| [dsim-cosim](amb3r-kernels.md) | `amb3r-base` |
-| [dsim-coverage](amb3r-kernels.md) | `amb3r-base` |
-| [dsim-delta](amb3r-kernels.md) | `amb3r-base` |
-| [dsim-region](amb3r-kernels.md) | `amb3r-base` |
-| [dsim-resolve](amb3r-kernels.md) | `amb3r-base` |
+| [dsim-bytecode](engineering-kernels.md) | `storage-core` |
+| [dsim-coverage](engineering-kernels.md) | `storage-core` |
+| [dsim-region](engineering-kernels.md) | `storage-core` |
+| [dsim-resolve](engineering-kernels.md) | `storage-core` |
 | [dsim-scheduler](mulib-dsim-scheduler.md) | `dsim-logic4` |
-| [dsim-testbench](amb3r-kernels.md) | `amb3r-base` |
 | [dvi](mulib-dvi.md) | `typecore` |
 | [dvifont](mulib-dvifont.md) | `typecore` |
 | [dviread](mulib-dviread.md) | `typecore` |
-| [ecad-annotation](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-bus](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-annotation](engineering-kernels.md) | `storage-core` |
+| [ecad-bus](engineering-kernels.md) | `storage-core` |
 | [ecad-connect](mulib-ecad-connect.md) | `ecad-schematic` |
-| [ecad-elaborate](amb3r-kernels.md) | `amb3r-base` |
 | [ecad-erc](mulib-ecad-erc.md) | `ecad-schematic` |
-| [ecad-hittest](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-instance](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-kicad](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-kicad](engineering-kernels.md) | `storage-core` |
 | [ecad-netlist](mulib-ecad-netlist.md) | `ecad-schematic` |
-| [ecad-pin](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-port](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-power](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-sheet](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-snap](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-wire-route](amb3r-kernels.md) | `amb3r-base` |
-| [ecad-wire](amb3r-kernels.md) | `amb3r-base` |
-| [eda-catalogue](amb3r-kernels.md) | `amb3r-base` |
-| [eda-dependency](amb3r-kernels.md) | `amb3r-base` |
-| [eda-diagnostics](amb3r-kernels.md) | `amb3r-base` |
-| [eda-handles](amb3r-kernels.md) | `amb3r-base` |
-| [eda-job](amb3r-kernels.md) | `amb3r-base` |
+| [ecad-port](engineering-kernels.md) | `storage-core` |
+| [ecad-power](engineering-kernels.md) | `storage-core` |
+| [eda-catalogue](engineering-kernels.md) | `storage-core` |
+| [eda-diagnostics](engineering-kernels.md) | `storage-core` |
+| [eda-handles](engineering-kernels.md) | `storage-core` |
+| [eda-job](engineering-kernels.md) | `storage-core` |
 | [eda-object](mulib-eda-object.md) | `eda-ids` |
-| [eda-parametric](amb3r-kernels.md) | `amb3r-base` |
-| [eda-properties](amb3r-kernels.md) | `amb3r-base` |
+| [eda-properties](engineering-kernels.md) | `storage-core` |
 | [eda-quantity](mulib-eda-quantity.md) | `eda-units` |
-| [eda-selection](amb3r-kernels.md) | `amb3r-base` |
-| [eda-store](amb3r-kernels.md) | `amb3r-base` |
+| [eda-selection](engineering-kernels.md) | `storage-core` |
 | [eda-transaction](mulib-eda-transaction.md) | `eda-design-db` |
 | [eda-undo](mulib-eda-undo.md) | `eda-design-db` |
-| [eda-variants](amb3r-kernels.md) | `amb3r-base` |
+| [eda-variants](engineering-kernels.md) | `storage-core` |
 | [edit_distance](mulib-edit_distance.md) | `levenshtein` |
 | [elf](mulib-elf.md) | `endian` |
 | [epubcheck](mulib-epubcheck.md) | `typecore` |
@@ -596,15 +574,10 @@ Compatibility group: `parsec`, `peg`.
 | [ezndk](mulib-ezndk.md) | `buffer` |
 | [fft](mulib-fft.md) | `complex` |
 | [fiber](mulib-fiber.md) | `xthreads` |
-| [field-boundary](amb3r-kernels.md) | `amb3r-base` |
-| [field-capacitance](amb3r-kernels.md) | `amb3r-base` |
-| [field-current](amb3r-kernels.md) | `amb3r-base` |
-| [field-electrothermal](amb3r-kernels.md) | `amb3r-base` |
-| [field-fdm](amb3r-kernels.md) | `amb3r-base` |
-| [field-fdtd](amb3r-kernels.md) | `amb3r-base` |
-| [field-inductance](amb3r-kernels.md) | `amb3r-base` |
-| [field-material](amb3r-kernels.md) | `amb3r-base` |
-| [field-mesh](amb3r-kernels.md) | `amb3r-base` |
+| [field-capacitance](engineering-kernels.md) | `storage-core` |
+| [field-electrothermal](engineering-kernels.md) | `storage-core` |
+| [field-inductance](engineering-kernels.md) | `storage-core` |
+| [field-material](engineering-kernels.md) | `storage-core` |
 | [figurelayout](mulib-figurelayout.md) | `typecore` |
 | [flatbuffers](mulib-flatbuffers.md) | `binfile`, `bycutils` |
 | [floatgraphics](mulib-floatgraphics.md) | `typecore` |
@@ -622,27 +595,17 @@ Compatibility group: `parsec`, `peg`.
 | [fontraster](mulib-fontraster.md) | `typecore` |
 | [fontsubset](mulib-fontsubset.md) | `typecore` |
 | [fontvar](mulib-fontvar.md) | `typecore` |
-| [formal-assertion](amb3r-kernels.md) | `amb3r-base` |
-| [formal-cdc](amb3r-kernels.md) | `amb3r-base` |
 | [formal-cec](mulib-formal-cec.md) | `synth-truthtable` |
-| [formal-counterexample](amb3r-kernels.md) | `amb3r-base` |
-| [formal-ltl](amb3r-kernels.md) | `amb3r-base` |
-| [formal-rdc](amb3r-kernels.md) | `amb3r-base` |
 | [formal-sat](mulib-formal-sat.md) | `formal-cnf` |
-| [formal-sec](amb3r-kernels.md) | `amb3r-base` |
-| [formal-transition](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-architecture](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-bitstream](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-constraints](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-fasm](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-grid](amb3r-kernels.md) | `amb3r-base` |
+| [fpga-bitstream](engineering-kernels.md) | `storage-core` |
+| [fpga-constraints](engineering-kernels.md) | `storage-core` |
+| [fpga-fasm](engineering-kernels.md) | `storage-core` |
 | [fpga-lut](mulib-fpga-lut.md) | `synth-truthtable` |
-| [fpga-pack](amb3r-kernels.md) | `amb3r-base` |
-| [fpga-timing](amb3r-kernels.md) | `amb3r-base` |
 | [fst](mulib-fst.md) | `buffer`, `crc32`, `endian`, `vec` |
 | [fuse](mulib-fuse.md) | `container-core`, `vfs` |
 | [galois](mulib-galois.md) | `fca` |
 | [gc-roots](mulib-gc-roots.md) | `gc` |
+| [geom2-core](engineering-kernels.md) | `storage-core` |
 | [glossary](mulib-glossary.md) | `typecore` |
 | [glx-atlas](mulib-gfx-font-image.md) | `glx-core` |
 | [glx-blend](mulib-gfx-raster.md) | `glx-core` |
@@ -667,21 +630,21 @@ Compatibility group: `parsec`, `peg`.
 | [glx-transform](mulib-gfx-path.md) | `glx-core` |
 | [glx-vulkan](mulib-glx-vulkan.md) | `glx-core` |
 | [glx](mulib-glx.md) | `drm`, `linalg` |
+| [graph-core](engineering-kernels.md) | `storage-core` |
 | [graphdb](mulib-graphdb.md) | `memtable` |
 | [graphviz](mulib-graphviz.md) | `graph`, `strbuf`, `utf8` |
 | [gss](mulib-gss.md) | `vec` |
 | [gssair](mulib-gssair.md) | `mir` |
 | [hattrie](mulib-hattrie.md) | `hash` |
-| [hdl-ast](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-elaborate](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-liberty](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-preprocessor](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-sdc](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-sdf](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-symboltable](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-systemverilog-lex](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-timescale](amb3r-kernels.md) | `amb3r-base` |
-| [hdl-vhdl-lex](amb3r-kernels.md) | `amb3r-base` |
+| [hdl-ast](engineering-kernels.md) | `storage-core` |
+| [hdl-liberty](engineering-kernels.md) | `storage-core` |
+| [hdl-preprocessor](engineering-kernels.md) | `storage-core` |
+| [hdl-sdc](engineering-kernels.md) | `storage-core` |
+| [hdl-sdf](engineering-kernels.md) | `storage-core` |
+| [hdl-symboltable](engineering-kernels.md) | `storage-core` |
+| [hdl-systemverilog-lex](engineering-kernels.md) | `storage-core` |
+| [hdl-timescale](engineering-kernels.md) | `storage-core` |
+| [hdl-vhdl-lex](engineering-kernels.md) | `storage-core` |
 | [health_checker](mulib-health_checker.md) | `upstream` |
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [histprice](mulib-histprice.md) | `statsproc` |
@@ -689,11 +652,9 @@ Compatibility group: `parsec`, `peg`.
 | [html-tokenizer](mulib-html-tokenizer.md) | `html-textstream` |
 | [htmlwriter](mulib-htmlwriter.md) | `typecore` |
 | [http2](mulib-http2.md) | `buffer` |
-| [hwil-clock](amb3r-kernels.md) | `amb3r-base` |
-| [hwil-context](amb3r-kernels.md) | `amb3r-base` |
+| [hwil-clock](engineering-kernels.md) | `storage-core` |
+| [hwil-context](engineering-kernels.md) | `storage-core` |
 | [hwil-module](mulib-hwil-module.md) | `dsim-logic4` |
-| [hwil-region](amb3r-kernels.md) | `amb3r-base` |
-| [hwil-wire](amb3r-kernels.md) | `amb3r-base` |
 | [imageconvert](mulib-imageconvert.md) | `typecore` |
 | [imagejpeg](mulib-imagejpeg.md) | `typecore` |
 | [imagewebp](mulib-imagewebp.md) | `typecore` |
@@ -709,7 +670,7 @@ Compatibility group: `parsec`, `peg`.
 | [input-mouse](mulib-gfx-input.md) | `glx-core` |
 | [input-tablet](mulib-gfx-input.md) | `glx-core` |
 | [input-touch](mulib-gfx-input.md) | `glx-core` |
-| [instrument-transport](amb3r-kernels.md) | `amb3r-base` |
+| [instrument-transport](engineering-kernels.md) | `storage-core` |
 | [invindex](mulib-invindex.md) | `buffer`, `bycutils`, `memtable` |
 | [ipc-framed](mulib-ipc-framed.md) | `sandbox-profile` |
 | [ipfs](mulib-ipfs.md) | `varint` |
@@ -768,27 +729,10 @@ Compatibility group: `parsec`, `peg`.
 | [netpolicy](mulib-netpolicy.md) | `urlcanon` |
 | [nextclosure](mulib-nextclosure.md) | `fca` |
 | [nfnetlink](mulib-nfnetlink.md) | `netlink` |
-| [num-adaptive](amb3r-kernels.md) | `amb3r-base` |
-| [num-amd](amb3r-kernels.md) | `amb3r-base` |
-| [num-autodiff](amb3r-kernels.md) | `amb3r-base` |
-| [num-bdf](amb3r-kernels.md) | `amb3r-base` |
-| [num-bicgstab](amb3r-kernels.md) | `amb3r-base` |
-| [num-cholesky](amb3r-kernels.md) | `amb3r-base` |
-| [num-colamd](amb3r-kernels.md) | `amb3r-base` |
-| [num-complex-lu](amb3r-kernels.md) | `amb3r-base` |
-| [num-condition](amb3r-kernels.md) | `amb3r-base` |
+| [num-autodiff](engineering-kernels.md) | `storage-core` |
+| [num-core](engineering-kernels.md) | `storage-core` |
 | [num-csc](mulib-num-csc.md) | `num-sparse` |
-| [num-csr](mulib-num-csr.md) | `amb3r-base`, `num-sparse` |
-| [num-dae](amb3r-kernels.md) | `amb3r-base` |
-| [num-eigensolver](amb3r-kernels.md) | `amb3r-base` |
-| [num-gmres](amb3r-kernels.md) | `amb3r-base` |
-| [num-jacobian](amb3r-kernels.md) | `amb3r-base` |
-| [num-linesearch](amb3r-kernels.md) | `amb3r-base` |
-| [num-newton](amb3r-kernels.md) | `amb3r-base` |
-| [num-precondition](amb3r-kernels.md) | `amb3r-base` |
-| [num-sparse-lu](amb3r-kernels.md) | `amb3r-base` |
-| [num-symbolic](amb3r-kernels.md) | `amb3r-base` |
-| [num-trapezoid](amb3r-kernels.md) | `amb3r-base` |
+| [num-linesearch](engineering-kernels.md) | `storage-core` |
 | [objectdb](mulib-objectdb.md) | `memtable` |
 | [objfilelibsearch](mulib-objfilelibsearch.md) | `binfile` |
 | [objfilepacker](mulib-objfilepacker.md) | `buffer` |
@@ -820,25 +764,10 @@ Compatibility group: `parsec`, `peg`.
 | [parallel](mulib-parallel.md) | `taskpool` |
 | [pathdb](mulib-pathdb.md) | `vfs` |
 | [pcb-board](mulib-pcb-board.md) | `pcb-geometry` |
-| [pcb-diffpair](amb3r-kernels.md) | `amb3r-base` |
 | [pcb-drc](mulib-pcb-drc.md) | `pcb-geometry` |
 | [pcb-gerber](mulib-pcb-gerber.md) | `pcb-geometry` |
 | [pcb-impedance](mulib-pcb-impedance.md) | `rf-microstrip` |
-| [pcb-kicad](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-lengthmatch](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-netclass](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-pad](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-panelize](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-placement](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-pour](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-ratsnest](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-router](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-shove](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-spatial](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-stackup](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-thermal-relief](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-via](amb3r-kernels.md) | `amb3r-base` |
-| [pcb-zone](amb3r-kernels.md) | `amb3r-base` |
+| [pcb-stackup](engineering-kernels.md) | `storage-core` |
 | [pdf](mulib-pdf.md) | `buffer`, `strbuf` |
 | [pdfannot](mulib-pdfannot.md) | `typecore` |
 | [pdfcanvas](mulib-pdfcanvas.md) | `typecore` |
@@ -849,12 +778,7 @@ Compatibility group: `parsec`, `peg`.
 | [pdfstructure](mulib-pdfstructure.md) | `typecore` |
 | [perlpod](mulib-perlpod.md) | `strbuf`, `utf8` |
 | [phrasequery](mulib-phrasequery.md) | `positions` |
-| [physical-def](amb3r-kernels.md) | `amb3r-base` |
-| [physical-lef](amb3r-kernels.md) | `amb3r-base` |
-| [place-analytical](amb3r-kernels.md) | `amb3r-base` |
-| [place-anneal](amb3r-kernels.md) | `amb3r-base` |
-| [place-floorplan](amb3r-kernels.md) | `amb3r-base` |
-| [place-legalize](amb3r-kernels.md) | `amb3r-base` |
+| [physical-def](engineering-kernels.md) | `storage-core` |
 | [plot2d](mulib-plot2d.md) | `typecore` |
 | [price-normalize](mulib-price-normalize.md) | `money` |
 | [price-observation](mulib-price-observation.md) | `money` |
@@ -870,45 +794,25 @@ Compatibility group: `parsec`, `peg`.
 | [regpressure](mulib-regpressure.md) | `liveintervals` |
 | [rewrite](mulib-rewrite.md) | `egraph` |
 | [rewrite_url](mulib-rewrite_url.md) | `seurity` |
-| [rf-matching](amb3r-kernels.md) | `amb3r-base` |
-| [rf-network](amb3r-kernels.md) | `amb3r-base` |
 | [rf-smith](mulib-rf-smith.md) | `rf-sparams` |
-| [rf-tolerance](amb3r-kernels.md) | `amb3r-base` |
-| [rf-touchstone](amb3r-kernels.md) | `amb3r-base` |
-| [rf-transmission](amb3r-kernels.md) | `amb3r-base` |
-| [route-detailed](amb3r-kernels.md) | `amb3r-base` |
 | [rtnl](mulib-rtnl.md) | `netlink` |
 | [scrape](mulib-scrape.md) | `scrape-readable` |
 | [seccomp](mulib-seccomp.md) | `sandbox-profile` |
 | [sfnt](mulib-sfnt.md) | `typecore` |
-| [shylock-core](mulib-shylock-core.md) | `utf8` |
 | [signature](mulib-signature.md) | `der`, `entropy`, `sha` |
 | [simdmath](mulib-simdmath.md) | `linalg` |
 | [smt](mulib-smt.md) | `sat` |
 | [smtpclient](mulib-smtpclient.md) | `smtpserver` |
 | [sock-diag](mulib-sock-diag.md) | `netlink` |
 | [spice-c](mulib-spice-c.md) | `spice-stamp` |
-| [spice-checkpoint](amb3r-kernels.md) | `amb3r-base` |
-| [spice-convergence](amb3r-kernels.md) | `amb3r-base` |
-| [spice-elaborate](amb3r-kernels.md) | `amb3r-base` |
-| [spice-fourier](amb3r-kernels.md) | `amb3r-base` |
 | [spice-independent](mulib-spice-independent.md) | `spice-stamp` |
-| [spice-model](amb3r-kernels.md) | `amb3r-base` |
-| [spice-montecarlo](amb3r-kernels.md) | `amb3r-base` |
-| [spice-mosfet](amb3r-kernels.md) | `amb3r-base` |
+| [spice-model](engineering-kernels.md) | `storage-core` |
+| [spice-mosfet](engineering-kernels.md) | `storage-core` |
 | [spice-netlist](mulib-spice-netlist.md) | `spice-lexer` |
-| [spice-noise](amb3r-kernels.md) | `amb3r-base` |
-| [spice-params](amb3r-kernels.md) | `amb3r-base` |
-| [spice-pz](amb3r-kernels.md) | `amb3r-base` |
+| [spice-params](engineering-kernels.md) | `storage-core` |
 | [spice-r](mulib-spice-r.md) | `spice-stamp` |
-| [spice-rawfile](amb3r-kernels.md) | `amb3r-base` |
-| [spice-sensitivity](amb3r-kernels.md) | `amb3r-base` |
-| [spice-sourcewave](amb3r-kernels.md) | `amb3r-base` |
-| [spice-subckt](amb3r-kernels.md) | `amb3r-base` |
-| [spice-sweep](amb3r-kernels.md) | `amb3r-base` |
-| [spice-switch](amb3r-kernels.md) | `amb3r-base` |
-| [spice-temperature](amb3r-kernels.md) | `amb3r-base` |
-| [spice-tline](amb3r-kernels.md) | `amb3r-base` |
+| [spice-switch](engineering-kernels.md) | `storage-core` |
+| [spice-temperature](engineering-kernels.md) | `storage-core` |
 | [sppf](mulib-sppf.md) | `vec` |
 | [sql](mulib-sql.md) | `buffer`, `memtable`, `strbuf` |
 | [sqlite-format](mulib-sqlite-format.md) | `buffer`, `endian` |
@@ -918,16 +822,14 @@ Compatibility group: `parsec`, `peg`.
 | [statsprice](mulib-statsprice.md) | `statsproc` |
 | [superinstr](mulib-superinstr.md) | `mir`, `strbuf` |
 | [svgpaint](mulib-svgpaint.md) | `typecore` |
-| [synth-aig-rewrite](amb3r-kernels.md) | `amb3r-base` |
-| [synth-bdd](amb3r-kernels.md) | `amb3r-base` |
-| [synth-cellmap](amb3r-kernels.md) | `amb3r-base` |
-| [synth-fsm](amb3r-kernels.md) | `amb3r-base` |
-| [synth-memory](amb3r-kernels.md) | `amb3r-base` |
-| [synth-mig](amb3r-kernels.md) | `amb3r-base` |
-| [synth-npn](amb3r-kernels.md) | `amb3r-base` |
-| [synth-quinemccluskey](amb3r-kernels.md) | `amb3r-base` |
-| [synth-retime](amb3r-kernels.md) | `amb3r-base` |
-| [synth-xag](amb3r-kernels.md) | `amb3r-base` |
+| [synth-aig-rewrite](engineering-kernels.md) | `storage-core` |
+| [synth-bdd](engineering-kernels.md) | `storage-core` |
+| [synth-memory](engineering-kernels.md) | `storage-core` |
+| [synth-mig](engineering-kernels.md) | `storage-core` |
+| [synth-npn](engineering-kernels.md) | `storage-core` |
+| [synth-quinemccluskey](engineering-kernels.md) | `storage-core` |
+| [synth-retime](engineering-kernels.md) | `storage-core` |
+| [synth-xag](engineering-kernels.md) | `storage-core` |
 | [sysfonts](mulib-sysfonts.md) | `dynload` |
 | [sysfs](mulib-sysfs.md) | `vfs` |
 | [tablelayout](mulib-tablelayout.md) | `typecore` |
@@ -974,13 +876,7 @@ Compatibility group: `parsec`, `peg`.
 | [textrace](mulib-textrace.md) | `typecore` |
 | [texvalue](mulib-texvalue.md) | `typecore` |
 | [texvlist](mulib-texvlist.md) | `typecore` |
-| [timing-clock](amb3r-kernels.md) | `amb3r-base` |
-| [timing-corner](amb3r-kernels.md) | `amb3r-base` |
-| [timing-elmore](amb3r-kernels.md) | `amb3r-base` |
-| [timing-graph](amb3r-kernels.md) | `amb3r-base` |
-| [timing-parasitic](amb3r-kernels.md) | `amb3r-base` |
-| [timing-slack](amb3r-kernels.md) | `amb3r-base` |
-| [timing-spef](amb3r-kernels.md) | `amb3r-base` |
+| [timing-parasitic](engineering-kernels.md) | `storage-core` |
 | [toc](mulib-toc.md) | `typecore` |
 | [trie_traversal](mulib-trie_traversal.md) | `trie` |
 | [ttf](mulib-ttf.md) | `typecore` |
@@ -1022,18 +918,9 @@ Compatibility group: `parsec`, `peg`.
 | [vmmdev](mulib-vmmdev.md) | `endian` |
 | [vterm](mulib-vterm.md) | `grid`, `utf8` |
 | [wal](mulib-wal.md) | `buffer`, `bycutils`, `crc32` |
-| [wave-correlation](amb3r-kernels.md) | `amb3r-base` |
 | [wave-decimate](mulib-wave-decimate.md) | `wave-signal` |
-| [wave-expression](amb3r-kernels.md) | `amb3r-base` |
-| [wave-eye](amb3r-kernels.md) | `amb3r-base` |
-| [wave-fst](amb3r-kernels.md) | `amb3r-base` |
-| [wave-histogram](amb3r-kernels.md) | `amb3r-base` |
-| [wave-index](amb3r-kernels.md) | `amb3r-base` |
-| [wave-jitter](amb3r-kernels.md) | `amb3r-base` |
+| [wave-fst](engineering-kernels.md) | `storage-core` |
 | [wave-measure](mulib-wave-measure.md) | `wave-signal` |
-| [wave-spectrum](amb3r-kernels.md) | `amb3r-base` |
-| [wave-store](amb3r-kernels.md) | `amb3r-base` |
-| [wave-trigger](amb3r-kernels.md) | `amb3r-base` |
 | [wave-vcd](mulib-wave-vcd.md) | `dsim-logic4` |
 | [wayland-wire](mulib-gfx-wire.md) | `glx-core` |
 | [wayland](mulib-wayland.md) | `dynload` |
@@ -1049,7 +936,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (294 modules)
+## Stratum 2 (386 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1061,15 +948,24 @@ Compatibility group: `parsec`, `peg`.
 | [bidi](mulib-bidi.md) | `uniproc` |
 | [binfilebuilder](mulib-binfilebuilder.md) | `binfileschema`, `buffer`, `bycutils` |
 | [bktree](mulib-bktree.md) | `bk-trees` |
-| [browser-cache](mulib-browser-cache.md) | `shylock-core` |
-| [browser-cookiejar](mulib-browser-cookiejar.md) | `shylock-core` |
-| [browser-navigation](mulib-browser-navigation.md) | `shylock-core` |
-| [browser-resource](mulib-browser-resource.md) | `shylock-core` |
-| [browser-snapshot](mulib-browser-snapshot.md) | `shylock-core` |
+| [browser-cache](mulib-browser-cache.md) | `bounded-text` |
+| [browser-cookiejar](mulib-browser-cookiejar.md) | `bounded-text` |
+| [browser-navigation](mulib-browser-navigation.md) | `bounded-text` |
+| [browser-resource](mulib-browser-resource.md) | `bounded-text` |
+| [browser-snapshot](mulib-browser-snapshot.md) | `bounded-text` |
 | [buildvm](mulib-buildvm.md) | `buildgraph`, `vcdiff` |
 | [bytecode-eval](mulib-bytecode-eval.md) | `bytecode-verify` |
 | [bzip2](mulib-bzip2.md) | `codec-core` |
 | [cache](mulib-cache.md) | `hattrie`, `kvdb`, `trie` |
+| [canvas-camera](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [canvas-command](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [canvas-gizmo](engineering-kernels.md) | `geom2-core` |
+| [canvas-grid](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [canvas-hittest](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
+| [canvas-layer](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [canvas-selection](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
+| [canvas-tile](engineering-kernels.md) | `geom2-core` |
+| [canvas-viewport](engineering-kernels.md) | `geom2-core`, `storage-core` |
 | [cdd-execute](mulib-cdd-execute.md) | `cdd-plan` |
 | [cdd-resolve](mulib-cdd-resolve.md) | `cdd-plan` |
 | [cgeom](mulib-cgeom.md) | `linalg`, `simdmath` |
@@ -1084,9 +980,9 @@ Compatibility group: `parsec`, `peg`.
 | [conntrack](mulib-conntrack.md) | `nfnetlink` |
 | [container-network](mulib-container-network.md) | `container-netdev`, `packetrules` |
 | [containerstub](mulib-containerstub.md) | `container2daemonproto`, `ocicontainer` |
-| [crawlarchive](mulib-crawlarchive.md) | `shylock-core` |
-| [css-computed](mulib-css-computed.md) | `shylock-core` |
-| [css-parser](mulib-css-parser.md) | `shylock-core` |
+| [crawlarchive](mulib-crawlarchive.md) | `bounded-text` |
+| [css-computed](mulib-css-computed.md) | `bounded-text` |
+| [css-parser](mulib-css-parser.md) | `bounded-text` |
 | [css](mulib-css.md) | `xml` |
 | [dbus-client](mulib-dbus-client.md) | `dbus-transport` |
 | [devlink](mulib-devlink.md) | `netlink-genl` |
@@ -1098,33 +994,48 @@ Compatibility group: `parsec`, `peg`.
 | [docsource](mulib-docsource.md) | `docir`, `typecore`, `typesrc` |
 | [docvalidate](mulib-docvalidate.md) | `docir`, `typecore` |
 | [dsdom](mulib-dsdom.md) | `xml` |
-| [dsim-driver](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
-| [dsim-sequential](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
-| [dsim-signal](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
-| [dsim-trigger](amb3r-kernels.md) | `amb3r-base`, `dsim-resolve` |
-| [ecad-flatten](amb3r-kernels.md) | `amb3r-base`, `ecad-sheet` |
-| [eda-changeset](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
-| [eda-query](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
-| [eda-revision](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
-| [eda-serialize](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
-| [eda-validate](amb3r-kernels.md) | `amb3r-base`, `eda-store` |
+| [dsim-cosim](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [dsim-delta](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [dsim-driver](engineering-kernels.md) | `dsim-resolve`, `storage-core` |
+| [dsim-sequential](engineering-kernels.md) | `dsim-resolve`, `storage-core` |
+| [dsim-signal](engineering-kernels.md) | `dsim-resolve`, `storage-core` |
+| [dsim-testbench](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [dsim-trigger](engineering-kernels.md) | `dsim-resolve`, `storage-core` |
+| [ecad-elaborate](engineering-kernels.md) | `graph-core` |
+| [ecad-hittest](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
+| [ecad-instance](engineering-kernels.md) | `geom2-core` |
+| [ecad-pin](engineering-kernels.md) | `geom2-core` |
+| [ecad-sheet](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [ecad-snap](engineering-kernels.md) | `geom2-core` |
+| [ecad-wire-route](engineering-kernels.md) | `graph-core` |
+| [ecad-wire](engineering-kernels.md) | `geom2-core` |
+| [eda-dependency](engineering-kernels.md) | `graph-core` |
+| [eda-parametric](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [eda-store](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
 | [elfutils](mulib-elfutils.md) | `elf` |
 | [ethtool-netlink](mulib-ethtool-netlink.md) | `netlink-genl` |
 | [etl-transform](mulib-etl-transform.md) | `record` |
 | [evtstream](mulib-evtstream.md) | `ast` |
-| [field-electrostatic](amb3r-kernels.md) | `amb3r-base`, `field-fdm` |
-| [field-fem](amb3r-kernels.md) | `amb3r-base`, `field-mesh` |
+| [field-boundary](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [field-current](engineering-kernels.md) | `geom2-core` |
+| [field-fdm](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [field-fdtd](engineering-kernels.md) | `num-core` |
+| [field-mesh](engineering-kernels.md) | `geom2-core` |
 | [fmt-sv](mulib-fmt-sv.md) | `hwil-module` |
 | [fontshape](mulib-fontshape.md) | `dynload`, `fontcmap`, `fontgdef`, `fontgpos`, `fontgsub`, `fontkern`, `fontmetrics`, `sfnt`, `utf8` |
-| [formal-aig-cnf](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [formal-assume](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
-| [formal-bmc](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample`, `formal-transition` |
-| [formal-ctl](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
-| [formal-kinduction](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
-| [formal-miter](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [formal-pdr](amb3r-kernels.md) | `amb3r-base`, `formal-transition` |
-| [fpga-place](amb3r-kernels.md) | `amb3r-base`, `fpga-architecture`, `place-legalize` |
-| [fpga-rrgraph](amb3r-kernels.md) | `amb3r-base`, `fpga-grid` |
+| [formal-aig-cnf](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [formal-assertion](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [formal-cdc](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [formal-counterexample](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [formal-ltl](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [formal-miter](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [formal-rdc](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [formal-sec](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [formal-transition](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [fpga-architecture](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [fpga-grid](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [fpga-pack](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [fpga-timing](engineering-kernels.md) | `num-core` |
 | [glr](mulib-glr.md) | `atn`, `gss`, `sppf` |
 | [glx-clientbuffer](notebook-desktop.md) | `glx-core`, `wm-core` |
 | [glx-compositor](mulib-gfx-raster.md) | `glx-blend`, `glx-surface` |
@@ -1144,27 +1055,30 @@ Compatibility group: `parsec`, `peg`.
 | [glx-swapchain](mulib-gfx-present.md) | `glx-surface` |
 | [glx-texture](mulib-gfx-font-image.md) | `glx-gradient`, `glx-surface` |
 | [gzip](mulib-gzip.md) | `codec-core`, `crc32`, `deflate` |
-| [hdl-consteval](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hdl-width](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hdl-consteval](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hdl-elaborate](engineering-kernels.md) | `graph-core` |
+| [hdl-width](engineering-kernels.md) | `geom2-core`, `hwil-context`, `storage-core` |
 | [hidden_markov_chain](mulib-hidden_markov_chain.md) | `markov_chain` |
-| [html-jsonld](mulib-html-jsonld.md) | `html-tokenizer`, `shylock-core` |
-| [html-treebuilder](mulib-html-treebuilder.md) | `html-tokenizer`, `shylock-core` |
+| [html-jsonld](mulib-html-jsonld.md) | `bounded-text`, `html-tokenizer` |
+| [html-treebuilder](mulib-html-treebuilder.md) | `bounded-text`, `html-tokenizer` |
 | [html](mulib-html.md) | `docir`, `xml` |
 | [http3](mulib-http3.md) | `quic` |
-| [hwil-attribute](amb3r-kernels.md) | `amb3r-base`, `eda-properties` |
-| [hwil-builder](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-cell](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-elaborate](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-memory](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-pass](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-port](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-register](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-reset](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-serialize](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-text](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-use-def](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
-| [hwil-value](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [hwil-attribute](engineering-kernels.md) | `eda-properties`, `storage-core` |
+| [hwil-builder](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-cell](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-elaborate](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-memory](engineering-kernels.md) | `graph-core`, `hwil-context`, `num-core`, `storage-core` |
+| [hwil-pass](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-port](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-region](engineering-kernels.md) | `graph-core` |
+| [hwil-register](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-reset](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-serialize](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-text](engineering-kernels.md) | `hwil-context`, `storage-core` |
+| [hwil-use-def](engineering-kernels.md) | `graph-core`, `hwil-context`, `storage-core` |
+| [hwil-value](engineering-kernels.md) | `hwil-context`, `storage-core` |
 | [hwil-verify](mulib-hwil-verify.md) | `hwil-module` |
+| [hwil-wire](engineering-kernels.md) | `graph-core`, `storage-core` |
 | [ifft](mulib-ifft.md) | `fft` |
 | [imagepng](mulib-imagepng.md) | `deflate`, `typecore` |
 | [img-core](mulib-img-core.md) | `media-core` |
@@ -1173,8 +1087,9 @@ Compatibility group: `parsec`, `peg`.
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [input-gesture](mulib-gfx-input.md) | `input-touch` |
 | [input-keymap](mulib-gfx-input.md) | `input-keyboard` |
-| [instrument-scpi](amb3r-kernels.md) | `amb3r-base`, `instrument-transport` |
+| [instrument-scpi](engineering-kernels.md) | `instrument-transport`, `storage-core` |
 | [kernel-ir](mulib-kernel-ir.md) | `media-core` |
+| [kernel-substrates](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
 | [latex](mulib-latex.md) | `docir`, `tex` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
 | [loops](mulib-loops.md) | `dominance` |
@@ -1203,7 +1118,7 @@ Compatibility group: `parsec`, `peg`.
 | [mesh-core](mulib-mesh-core.md) | `media-core` |
 | [metapp](mulib-metapp.md) | `arena`, `dsu`, `elf`, `endian`, `linker`, `strbuf`, `utf8` |
 | [microchan](mulib-microchan.md) | `container-ipc`, `socket` |
-| [microjs-module](mulib-microjs-module.md) | `shylock-core` |
+| [microjs-module](mulib-microjs-module.md) | `bounded-text` |
 | [midi](mulib-midi.md) | `audio` |
 | [miniflac](mulib-miniflac.md) | `audio` |
 | [minimpeg](mulib-minimpeg.md) | `audio`, `codec-core` |
@@ -1227,7 +1142,24 @@ Compatibility group: `parsec`, `peg`.
 | [nl80211](mulib-nl80211.md) | `netlink`, `netlink-attr`, `netlink-genl` |
 | [nle-timeline](mulib-nle-timeline.md) | `media-core` |
 | [nodegraph-core](mulib-nodegraph-core.md) | `media-core` |
-| [num-sparse-ldlt](amb3r-kernels.md) | `amb3r-base`, `num-sparse-lu` |
+| [num-adaptive](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [num-amd](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-bdf](engineering-kernels.md) | `num-core` |
+| [num-bicgstab](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [num-cholesky](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-colamd](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-complex-lu](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-condition](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [num-csr](mulib-num-csr.md) | `num-core`, `num-sparse` |
+| [num-dae](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-eigensolver](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [num-gmres](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [num-jacobian](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [num-newton](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-precondition](engineering-kernels.md) | `num-core` |
+| [num-sparse-lu](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-symbolic](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [num-trapezoid](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
 | [oauth2](mulib-oauth2.md) | `auth`, `authcrypto` |
 | [objfileleader](mulib-objfileleader.md) | `elf` |
 | [objfilewriter](mulib-objfilewriter.md) | `binfilewriter`, `buffer`, `bycutils` |
@@ -1236,30 +1168,52 @@ Compatibility group: `parsec`, `peg`.
 | [otpath](mulib-otpath.md) | `otpauth` |
 | [parsec](mulib-parsec.md) | `ast`, `glob`, `peg`, `strbuf` |
 | [parser-pratt](mulib-parser-pratt.md) | `lexer` |
-| [pcb-dfm](amb3r-kernels.md) | `amb3r-base`, `pcb-via` |
-| [pcb-dft](amb3r-kernels.md) | `amb3r-base`, `pcb-pad` |
-| [pcb-footprint](amb3r-kernels.md) | `amb3r-base`, `pcb-pad` |
-| [pcb-ipc2581](amb3r-kernels.md) | `amb3r-base`, `pcb-stackup` |
+| [pcb-diffpair](engineering-kernels.md) | `geom2-core` |
+| [pcb-ipc2581](engineering-kernels.md) | `pcb-stackup`, `storage-core` |
+| [pcb-kicad](engineering-kernels.md) | `geom2-core` |
+| [pcb-lengthmatch](engineering-kernels.md) | `geom2-core` |
+| [pcb-netclass](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [pcb-pad](engineering-kernels.md) | `geom2-core` |
+| [pcb-panelize](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [pcb-placement](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [pcb-pour](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [pcb-ratsnest](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [pcb-router](engineering-kernels.md) | `graph-core` |
+| [pcb-shove](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [pcb-spatial](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [pcb-thermal-relief](engineering-kernels.md) | `geom2-core`, `num-core` |
+| [pcb-via](engineering-kernels.md) | `geom2-core`, `num-core` |
+| [pcb-zone](engineering-kernels.md) | `geom2-core` |
 | [pe](mulib-pe.md) | `coff` |
 | [peephole](mulib-peephole.md) | `lowopt` |
 | [peg](mulib-peg.md) | `parsec`, `strbuf` |
+| [physical-lef](engineering-kernels.md) | `geom2-core`, `storage-core` |
 | [pipeline](mulib-pipeline.md) | `parallel` |
+| [place-analytical](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [place-anneal](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [place-floorplan](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [place-legalize](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
 | [postdominance](mulib-postdominance.md) | `dominance` |
 | [price-history](mulib-price-history.md) | `price-observation` |
-| [price-match](mulib-price-match.md) | `shylock-core` |
+| [price-match](mulib-price-match.md) | `bounded-text` |
 | [price-monitor](mulib-price-monitor.md) | `price-observation` |
 | [project-history](mulib-project-history.md) | `media-core` |
 | [project-journal](mulib-project-journal.md) | `media-core` |
 | [project-migrate](mulib-project-migrate.md) | `media-core` |
 | [project-package](mulib-project-package.md) | `media-core` |
 | [project-store](mulib-project-store.md) | `media-core` |
-| [readability](mulib-readability.md) | `html-textstream`, `shylock-core` |
+| [readability](mulib-readability.md) | `bounded-text`, `html-textstream` |
 | [recordbatch](mulib-recordbatch.md) | `record` |
 | [regalloc](mulib-regalloc.md) | `regalloc-graph`, `regalloc-linear` |
 | [retgtk-template](graphics-overlay.md) | `textbuffer` |
+| [rf-matching](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [rf-network](engineering-kernels.md) | `num-core` |
+| [rf-tolerance](engineering-kernels.md) | `num-core` |
+| [rf-touchstone](engineering-kernels.md) | `num-core` |
+| [rf-transmission](engineering-kernels.md) | `num-core` |
 | [richtext](mulib-gfx-text.md) | `textbuffer` |
 | [rootfs](mulib-rootfs.md) | `archive`, `vfs` |
-| [route-global](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample` |
+| [route-detailed](engineering-kernels.md) | `graph-core` |
 | [rtnl-address](mulib-rtnl-address.md) | `netlink-attr`, `rtnl` |
 | [rtnl-link](mulib-rtnl-link.md) | `rtnl` |
 | [rtnl-neighbor](mulib-rtnl-neighbor.md) | `netlink-attr`, `rtnl` |
@@ -1273,31 +1227,49 @@ Compatibility group: `parsec`, `peg`.
 | [sandbox-process](mulib-sandbox-process.md) | `cgroup2`, `ipc-framed`, `landlock`, `namespace`, `sandbox-profile`, `seccomp` |
 | [seat](notebook-desktop.md) | `wm-core` |
 | [spice-ac](mulib-spice-ac.md) | `spice-netlist` |
-| [spice-jfet](amb3r-kernels.md) | `amb3r-base`, `spice-mosfet` |
+| [spice-checkpoint](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [spice-convergence](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
+| [spice-elaborate](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [spice-fourier](engineering-kernels.md) | `num-core` |
+| [spice-jfet](engineering-kernels.md) | `spice-mosfet`, `storage-core` |
 | [spice-measure](mulib-spice-measure.md) | `wave-measure` |
-| [spice-mna](amb3r-kernels.md) | `amb3r-base`, `num-sparse-lu` |
+| [spice-montecarlo](engineering-kernels.md) | `num-core` |
+| [spice-noise](engineering-kernels.md) | `num-core` |
 | [spice-op](mulib-spice-op.md) | `num-dense`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |
+| [spice-pz](engineering-kernels.md) | `num-core` |
+| [spice-rawfile](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [spice-sensitivity](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [spice-sourcewave](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
+| [spice-subckt](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [spice-sweep](engineering-kernels.md) | `num-core` |
+| [spice-tline](engineering-kernels.md) | `num-core` |
 | [spice-tran](mulib-spice-tran.md) | `num-dense`, `spice-c`, `spice-independent`, `spice-netlist`, `spice-r`, `spice-stamp` |
 | [sqlite-pager](mulib-sqlite-pager.md) | `sqlite-format` |
 | [sstfile](mulib-sstfile.md) | `buffer`, `bycutils`, `crc32`, `memtable`, `wal` |
 | [strpool](mulib-strpool.md) | `alloc`, `hash` |
 | [superblocks](mulib-superblocks.md) | `gssair` |
 | [svg](mulib-svg.md) | `xml` |
-| [synth-aig-balance](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-aig-refactor](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-arithmetic](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-cost](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-cuts](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-dce](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-egraph](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-espresso](amb3r-kernels.md) | `amb3r-base`, `synth-quinemccluskey` |
-| [synth-lutmap](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-multiplexer](amb3r-kernels.md) | `amb3r-base`, `synth-aig-rewrite` |
-| [synth-register](amb3r-kernels.md) | `amb3r-base`, `hwil-context` |
+| [synth-aig-balance](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `synth-aig-rewrite` |
+| [synth-aig-refactor](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [synth-arithmetic](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [synth-cellmap](engineering-kernels.md) | `graph-core`, `storage-core` |
+| [synth-cost](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core`, `synth-aig-rewrite` |
+| [synth-cuts](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [synth-dce](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `synth-aig-rewrite` |
+| [synth-egraph](engineering-kernels.md) | `graph-core`, `synth-aig-rewrite` |
+| [synth-espresso](engineering-kernels.md) | `storage-core`, `synth-quinemccluskey` |
+| [synth-fsm](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [synth-lutmap](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `synth-aig-rewrite` |
+| [synth-multiplexer](engineering-kernels.md) | `storage-core`, `synth-aig-rewrite` |
+| [synth-register](engineering-kernels.md) | `graph-core`, `hwil-context`, `storage-core` |
 | [term_rewriting](mulib-term_rewriting.md) | `ast` |
 | [textcursor](mulib-gfx-text.md) | `textbuffer` |
-| [timing-critical](amb3r-kernels.md) | `amb3r-base`, `formal-counterexample` |
-| [timing-propagate](amb3r-kernels.md) | `amb3r-base`, `timing-graph` |
+| [timing-clock](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
+| [timing-corner](engineering-kernels.md) | `graph-core` |
+| [timing-elmore](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [timing-graph](engineering-kernels.md) | `graph-core` |
+| [timing-slack](engineering-kernels.md) | `geom2-core`, `storage-core` |
+| [timing-spef](engineering-kernels.md) | `graph-core` |
 | [tree_parsing](mulib-tree_parsing.md) | `ast` |
 | [tui](mulib-tui.md) | `terminfo`, `termkey`, `vterm` |
 | [unibreak](mulib-unibreak.md) | `uniproc` |
@@ -1308,8 +1280,15 @@ Compatibility group: `parsec`, `peg`.
 | [vm-module](mulib-vm-module.md) | `bytecode`, `bytecode-verify` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
 | [vmweave](mulib-vmweave.md) | `mir`, `rewrite` |
-| [wave-psd](amb3r-kernels.md) | `amb3r-base`, `wave-spectrum` |
-| [wave-stream](amb3r-kernels.md) | `amb3r-base`, `wave-store` |
+| [wave-correlation](engineering-kernels.md) | `num-core` |
+| [wave-expression](engineering-kernels.md) | `num-core` |
+| [wave-eye](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [wave-histogram](engineering-kernels.md) | `num-core` |
+| [wave-index](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [wave-jitter](engineering-kernels.md) | `geom2-core`, `num-core`, `storage-core` |
+| [wave-spectrum](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [wave-store](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
+| [wave-trigger](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
 | [wayland-data](mulib-gfx-wire.md) | `wayland-wire` |
 | [wayland-dmabuf](mulib-gfx-wire.md) | `wayland-wire` |
 | [wayland-protocol](mulib-gfx-wire.md) | `wayland-wire` |
@@ -1317,9 +1296,9 @@ Compatibility group: `parsec`, `peg`.
 | [wayland-shm](mulib-gfx-wire.md) | `wayland-wire` |
 | [wayland-textinput](mulib-gfx-wire.md) | `wayland-wire` |
 | [wayland-xdg](mulib-gfx-wire.md) | `wayland-wire` |
-| [webextract-evidence](mulib-webextract-evidence.md) | `shylock-core` |
-| [webidl-bindgen](mulib-webidl-bindgen.md) | `shylock-core` |
-| [webidl-runtime](mulib-webidl-runtime.md) | `shylock-core`, `utf8` |
+| [webextract-evidence](mulib-webextract-evidence.md) | `bounded-text` |
+| [webidl-bindgen](mulib-webidl-bindgen.md) | `bounded-text` |
+| [webidl-runtime](mulib-webidl-runtime.md) | `bounded-text`, `utf8` |
 | [wl-datadevice](notebook-desktop.md) | `wm-core` |
 | [wl-layershell](notebook-desktop.md) | `wm-core` |
 | [wl-protogen](notebook-desktop.md) | `wm-core` |
@@ -1348,7 +1327,7 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (251 modules)
+## Stratum 3 (264 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1416,15 +1395,27 @@ Compatibility group: `parsec`, `peg`.
 | [depir](mulib-depir.md) | `anfir`, `clickir`, `superblocks` |
 | [dnsnmeserver](mulib-dnsnmeserver.md) | `nameserver` |
 | [dom-query](mulib-dom-query.md) | `html-treebuilder` |
-| [dsim-engine](amb3r-kernels.md) | `amb3r-base`, `dsim-region`, `dsim-signal` |
-| [dsim-memory](amb3r-kernels.md) | `amb3r-base`, `hwil-value` |
-| [eda-diff](amb3r-kernels.md) | `amb3r-base`, `eda-changeset` |
-| [eda-journal](amb3r-kernels.md) | `amb3r-base`, `eda-serialize` |
+| [dsim-engine](engineering-kernels.md) | `dsim-region`, `dsim-signal`, `storage-core` |
+| [dsim-memory](engineering-kernels.md) | `graph-core`, `hwil-value`, `num-core`, `storage-core` |
+| [ecad-flatten](engineering-kernels.md) | `ecad-sheet`, `graph-core`, `num-core`, `storage-core` |
+| [eda-changeset](engineering-kernels.md) | `eda-store`, `storage-core` |
+| [eda-query](engineering-kernels.md) | `eda-store`, `geom2-core`, `graph-core`, `storage-core` |
+| [eda-revision](engineering-kernels.md) | `eda-store`, `storage-core` |
+| [eda-serialize](engineering-kernels.md) | `eda-store`, `geom2-core`, `graph-core`, `storage-core` |
+| [eda-validate](engineering-kernels.md) | `eda-store`, `geom2-core`, `graph-core`, `storage-core` |
 | [efi](mulib-efi.md) | `pe` |
 | [epub](mulib-epub.md) | `html`, `xml`, `zip` |
 | [evtlistener](mulib-evtlistener.md) | `evtstream` |
-| [field-magnetostatic](amb3r-kernels.md) | `amb3r-base`, `field-electrostatic` |
-| [formal-proof](amb3r-kernels.md) | `amb3r-base`, `formal-aig-cnf` |
+| [field-electrostatic](engineering-kernels.md) | `field-fdm`, `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [field-fem](engineering-kernels.md) | `field-mesh`, `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [formal-assume](engineering-kernels.md) | `formal-transition`, `graph-core`, `num-core`, `storage-core` |
+| [formal-bmc](engineering-kernels.md) | `formal-counterexample`, `formal-transition`, `graph-core`, `num-core`, `storage-core` |
+| [formal-ctl](engineering-kernels.md) | `formal-transition`, `graph-core`, `num-core`, `storage-core` |
+| [formal-kinduction](engineering-kernels.md) | `formal-transition`, `graph-core`, `num-core`, `storage-core` |
+| [formal-pdr](engineering-kernels.md) | `formal-transition`, `storage-core` |
+| [formal-proof](engineering-kernels.md) | `formal-aig-cnf`, `graph-core`, `num-core`, `storage-core` |
+| [fpga-place](engineering-kernels.md) | `fpga-architecture`, `geom2-core`, `graph-core`, `num-core`, `place-legalize`, `storage-core` |
+| [fpga-rrgraph](engineering-kernels.md) | `fpga-grid`, `graph-core`, `num-core`, `storage-core` |
 | [gbm](notebook-desktop.md) | `dmabuf` |
 | [geom-bezier](mulib-geom-bezier.md) | `mesh-core` |
 | [geom-bspline](mulib-geom-bspline.md) | `mesh-core` |
@@ -1452,11 +1443,11 @@ Compatibility group: `parsec`, `peg`.
 | [glx-textatlas](mulib-gfx-font-image.md) | `glx-atlas`, `glx-font` |
 | [gvizz](mulib-gvizz.md) | `dsdom` |
 | [html-dombridge](mulib-html-dombridge.md) | `html-treebuilder` |
-| [hwil-flatten](amb3r-kernels.md) | `amb3r-base`, `hwil-elaborate` |
-| [hwil-instance](amb3r-kernels.md) | `amb3r-base`, `hwil-port` |
-| [hwil-lower](amb3r-kernels.md) | `amb3r-base`, `hwil-builder` |
-| [hwil-process](amb3r-kernels.md) | `amb3r-base`, `hwil-cell` |
-| [hwil-rewrite](amb3r-kernels.md) | `amb3r-base`, `hwil-cell` |
+| [hwil-flatten](engineering-kernels.md) | `hwil-elaborate`, `storage-core` |
+| [hwil-instance](engineering-kernels.md) | `hwil-port`, `storage-core` |
+| [hwil-lower](engineering-kernels.md) | `hwil-builder`, `storage-core` |
+| [hwil-process](engineering-kernels.md) | `hwil-cell`, `storage-core` |
+| [hwil-rewrite](engineering-kernels.md) | `graph-core`, `hwil-cell`, `storage-core` |
 | [hyphen](mulib-hyphen.md) | `cache`, `dfa`, `orhoconv` |
 | [image2container](mulib-image2container.md) | `imgformat`, `rootfs` |
 | [img-blend](mulib-img-blend.md) | `img-core` |
@@ -1532,12 +1523,16 @@ Compatibility group: `parsec`, `peg`.
 | [nodegraph-cache](mulib-nodegraph-cache.md) | `nodegraph-core` |
 | [nodegraph-temporal](mulib-nodegraph-temporal.md) | `nodegraph-core` |
 | [nodegraph-types](mulib-nodegraph-types.md) | `nodegraph-core` |
+| [num-sparse-ldlt](engineering-kernels.md) | `graph-core`, `num-core`, `num-sparse-lu`, `storage-core` |
 | [oauth](mulib-oauth.md) | `oauth2` |
 | [objfile](mulib-objfile.md) | `binfile`, `elfutils` |
 | [objfilebuilder](mulib-objfilebuilder.md) | `objfilewriter` |
 | [objfileinjector](mulib-objfileinjector.md) | `elfutils` |
 | [objfilesymloc](mulib-objfilesymloc.md) | `binfile`, `elfutils` |
 | [ocicontainervfs](mulib-ocicontainervfs.md) | `rootfs` |
+| [pcb-dfm](engineering-kernels.md) | `pcb-via`, `storage-core` |
+| [pcb-dft](engineering-kernels.md) | `geom2-core`, `graph-core`, `pcb-pad`, `storage-core` |
+| [pcb-footprint](engineering-kernels.md) | `geom2-core`, `pcb-pad`, `storage-core` |
 | [peutils](mulib-peutils.md) | `coffutils`, `pe` |
 | [physics-cloth](mulib-physics-cloth.md) | `mesh-core` |
 | [physics-particle](mulib-physics-particle.md) | `mesh-core` |
@@ -1553,7 +1548,7 @@ Compatibility group: `parsec`, `peg`.
 | [resolved-client](mulib-resolved-client.md) | `dbus-client` |
 | [rootfs-buildspec](mulib-rootfs-buildspec.md) | `container-core`, `rootfs` |
 | [rootfsbuilder](mulib-rootfsbuilder.md) | `archive`, `buffer`, `rootfs` |
-| [route-negotiated](amb3r-kernels.md) | `amb3r-base`, `route-global` |
+| [route-global](engineering-kernels.md) | `formal-counterexample`, `graph-core`, `num-core`, `storage-core` |
 | [rtnl-bridge](mulib-rtnl-bridge.md) | `rtnl`, `rtnl-link` |
 | [rtnl-tunnel](mulib-rtnl-tunnel.md) | `rtnl`, `rtnl-link` |
 | [rtnl-veth](mulib-rtnl-veth.md) | `rtnl`, `rtnl-link` |
@@ -1562,21 +1557,16 @@ Compatibility group: `parsec`, `peg`.
 | [shaderx](mulib-shaderx.md) | `parsec`, `strbuf` |
 | [shiraz](mulib-shiraz.md) | `pe`, `strbuf` |
 | [spellcheck](mulib-spellcheck.md) | `bktree`, `cache`, `endian`, `fst`, `utf8`, `weighted-edit-distance` |
-| [spice-behavioral](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
-| [spice-controlled](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
-| [spice-dae](amb3r-kernels.md) | `amb3r-base`, `num-dae`, `spice-mna` |
 | [spice-dc](mulib-spice-dc.md) | `spice-op` |
-| [spice-device](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
-| [spice-diode](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
-| [spice-k](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
-| [spice-l](amb3r-kernels.md) | `amb3r-base`, `spice-mna` |
+| [spice-mna](engineering-kernels.md) | `graph-core`, `num-core`, `num-sparse-lu`, `storage-core` |
 | [sqlite](mulib-sqlite.md) | `arena`, `parsec`, `peg`, `rng`, `sqlite-pager`, `strbuf`, `utf8` |
 | [stylesheet](mulib-stylesheet.md) | `css` |
 | [symbol](mulib-symbol.md) | `mathml` |
 | [tbl](mulib-tbl.md) | `csv`, `dsdom`, `tex` |
 | [termstyle](mulib-termstyle.md) | `css`, `terminfo`, `vterm` |
 | [textselection](mulib-gfx-text.md) | `textcursor` |
-| [timing-sta](amb3r-kernels.md) | `amb3r-base`, `timing-propagate`, `timing-slack` |
+| [timing-critical](engineering-kernels.md) | `formal-counterexample`, `graph-core`, `storage-core` |
+| [timing-propagate](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `timing-graph` |
 | [typecheck](mulib-typecheck.md) | `parser-pratt`, `symboltable`, `typesystem` |
 | [udev](mulib-udev.md) | `parsec` |
 | [ustack-tuntap](mulib-ustack-tuntap.md) | `ustack` |
@@ -1585,6 +1575,8 @@ Compatibility group: `parsec`, `peg`.
 | [virtio-os](mulib-virtio-os.md) | `virtio` |
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
+| [wave-psd](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `wave-spectrum` |
+| [wave-stream](engineering-kernels.md) | `storage-core`, `wave-store` |
 | [wifi-ap](mulib-wifi-ap.md) | `nl80211` |
 | [wifi-regulatory](mulib-wifi-regulatory.md) | `nl80211` |
 | [wifi-scan](mulib-wifi-scan.md) | `nl80211` |
@@ -1604,7 +1596,7 @@ Compatibility group: `parsec`, `peg`.
 | [xtas](mulib-xtas.md) | `dsdom` |
 | [xz](mulib-xz.md) | `authcrypto`, `bcj`, `crc32`, `lzma` |
 
-## Stratum 4 (114 modules)
+## Stratum 4 (121 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1628,15 +1620,16 @@ Compatibility group: `parsec`, `peg`.
 | [css-selector](mulib-css-selector.md) | `dom-query`, `html-treebuilder` |
 | [dbschema](mulib-dbschema.md) | `json` |
 | [documentdb](mulib-documentdb.md) | `json`, `memtable` |
-| [dsim-clock](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
-| [dsim-delay](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
-| [dsim-process](amb3r-kernels.md) | `amb3r-base`, `dsim-engine` |
+| [dsim-clock](engineering-kernels.md) | `dsim-engine`, `storage-core` |
+| [dsim-delay](engineering-kernels.md) | `dsim-engine`, `storage-core` |
+| [dsim-process](engineering-kernels.md) | `dsim-engine`, `storage-core` |
 | [dsymspec](mulib-dsymspec.md) | `json` |
 | [dyegram](mulib-dyegram.md) | `gvizz` |
-| [eda-merge](amb3r-kernels.md) | `amb3r-base`, `eda-diff` |
+| [eda-diff](engineering-kernels.md) | `eda-changeset`, `graph-core`, `storage-core` |
+| [eda-journal](engineering-kernels.md) | `eda-serialize`, `graph-core`, `num-core`, `storage-core` |
 | [elfbuilder](mulib-elfbuilder.md) | `binfilewriter`, `bycutils`, `objfilebuilder` |
 | [eqn](mulib-eqn.md) | `symbol`, `tex` |
-| [fpga-pathfinder](amb3r-kernels.md) | `amb3r-base`, `fpga-rrgraph`, `route-negotiated` |
+| [field-magnetostatic](engineering-kernels.md) | `field-electrostatic`, `geom2-core`, `graph-core`, `num-core`, `storage-core` |
 | [geom-nurbs](mulib-geom-nurbs.md) | `geom-bspline`, `mesh-core` |
 | [glx-gpu](graphics-overlay.md) | `glx-drawlist` |
 | [glx-renderqueue](mulib-gfx-raster.md) | `glx-drawlist` |
@@ -1699,21 +1692,27 @@ Compatibility group: `parsec`, `peg`.
 | [render-bsdf](mulib-render-bsdf.md) | `mesh-core`, `render-material` |
 | [render-scene](mulib-render-scene.md) | `mesh-core`, `render-material` |
 | [render-texture](mulib-render-texture.md) | `img-sampler`, `mesh-core` |
+| [route-negotiated](engineering-kernels.md) | `graph-core`, `num-core`, `route-global`, `storage-core` |
 | [rpc](mulib-rpc.md) | `json` |
-| [schemaorg](mulib-schemaorg.md) | `json`, `shylock-core` |
-| [spice-bjt](amb3r-kernels.md) | `amb3r-base`, `spice-diode` |
-| [spice-nonlinear](amb3r-kernels.md) | `amb3r-base`, `spice-device` |
-| [spice-timestep](amb3r-kernels.md) | `amb3r-base`, `num-adaptive`, `spice-dae` |
+| [schemaorg](mulib-schemaorg.md) | `bounded-text`, `json` |
+| [spice-behavioral](engineering-kernels.md) | `graph-core`, `spice-mna`, `storage-core` |
+| [spice-controlled](engineering-kernels.md) | `graph-core`, `spice-mna`, `storage-core` |
+| [spice-dae](engineering-kernels.md) | `num-dae`, `spice-mna`, `storage-core` |
+| [spice-device](engineering-kernels.md) | `spice-mna`, `storage-core` |
+| [spice-diode](engineering-kernels.md) | `spice-mna`, `storage-core` |
+| [spice-k](engineering-kernels.md) | `spice-mna`, `storage-core` |
+| [spice-l](engineering-kernels.md) | `spice-mna`, `storage-core` |
 | [tas](mulib-tas.md) | `xtas` |
 | [template](mulib-template.md) | `json`, `strbuf`, `utf8` |
 | [termsyn](mulib-termsyn.md) | `edbuf`, `termstyle` |
 | [texthistory](mulib-gfx-text.md) | `textselection` |
+| [timing-sta](engineering-kernels.md) | `graph-core`, `timing-propagate`, `timing-slack` |
 | [toml](mulib-toml.md) | `json`, `strbuf`, `utf8` |
 | [unit](mulib-unit.md) | `archml`, `emitter` |
 | [vmm](mulib-vmm.md) | `virtio-os`, `vmm-memory` |
 | [walker](mulib-walker.md) | `evtlistener` |
-| [webextract-llm](mulib-webextract-llm.md) | `json`, `shylock-core` |
-| [webextract-rules](mulib-webextract-rules.md) | `dom-query`, `html-textstream`, `shylock-core` |
+| [webextract-llm](mulib-webextract-llm.md) | `bounded-text`, `json` |
+| [webextract-rules](mulib-webextract-rules.md) | `bounded-text`, `dom-query`, `html-textstream` |
 | [wl-dispatch](notebook-desktop.md) | `wl-client` |
 | [wl-output](notebook-desktop.md) | `wl-client` |
 | [wl-seat](notebook-desktop.md) | `wl-client` |
@@ -1723,7 +1722,7 @@ Compatibility group: `parsec`, `peg`.
 | [yaml](mulib-yaml.md) | `json`, `strbuf`, `utf8` |
 | [yantlr](mulib-yantlr.md) | `arena`, `json`, `parsec`, `peg`, `strbuf`, `utf8` |
 
-## Stratum 5 (97 modules)
+## Stratum 5 (102 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1748,8 +1747,10 @@ Compatibility group: `parsec`, `peg`.
 | [dbserializer](mulib-dbserializer.md) | `bson`, `cbor`, `messagepack` |
 | [distribtask](mulib-distribtask.md) | `mune`, `utf8`, `yaml` |
 | [docstring](mulib-docstring.md) | `css`, `dsdom`, `dyegram`, `mune`, `pandocast`, `tas`, `tbl`, `termsyn`, `yaml` |
+| [eda-merge](engineering-kernels.md) | `eda-diff`, `graph-core`, `storage-core` |
 | [elf-objdump](mulib-elf-objdump.md) | `elf`, `objdump` |
 | [exec](mulib-exec.md) | `mune`, `perf`, `process` |
+| [fpga-pathfinder](engineering-kernels.md) | `fpga-rrgraph`, `graph-core`, `num-core`, `route-negotiated`, `storage-core` |
 | [getaddr](mulib-getaddr.md) | `inet6` |
 | [glx-hittest](notebook-desktop.md) | `glx-scene` |
 | [glx-unix](mulib-gfx-input.md) | `glx-backend-drm`, `glx-backend-wayland`, `glx-backend-x11`, `glx-eventloop`, `glx-window`, `input-seat` |
@@ -1812,6 +1813,9 @@ Compatibility group: `parsec`, `peg`.
 | [retgtk-type](graphics-overlay.md) | `gui-core` |
 | [row-rdbms](mulib-row-rdbms.md) | `dbschema`, `documentdb` |
 | [shebang-sh](mulib-shebang-sh.md) | `mune` |
+| [spice-bjt](engineering-kernels.md) | `spice-diode`, `storage-core` |
+| [spice-nonlinear](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `spice-device`, `storage-core` |
+| [spice-timestep](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-adaptive`, `num-core`, `spice-dae`, `storage-core` |
 | [texteditor](mulib-gfx-text.md) | `texthistory` |
 | [vizigen](mulib-vizigen.md) | `asdl`, `binfilereader`, `binfilewriter`, `mmfile`, `walker` |
 | [vmm-kvm](mulib-vmm-kvm.md) | `kvm`, `vmm` |
@@ -1925,7 +1929,7 @@ Compatibility group: `parsec`, `peg`.
 | --- | --- |
 | [browser-realm](mulib-browser-realm.md) | `browser-origin` |
 | [browsertools](mulib-browsertools.md) | `http`, `json`, `utf8` |
-| [crawler](mulib-crawler.md) | `browser-origin`, `shylock-core` |
+| [crawler](mulib-crawler.md) | `bounded-text`, `browser-origin` |
 | [fetch-policy](mulib-fetch-policy.md) | `browser-origin` |
 | [http1](mulib-http1.md) | `http` |
 | [http_request](mulib-http_request.md) | `http` |
@@ -1963,8 +1967,8 @@ Compatibility group: `parsec`, `peg`.
 | [waf](mulib-waf.md) | `http`, `seurity` |
 | [webclient](mulib-webclient.md) | `http` |
 | [webframework](mulib-webframework.md) | `http` |
-| [websearch-engine](mulib-websearch-engine.md) | `browser-origin`, `shylock-core` |
-| [websearch-provider](mulib-websearch-provider.md) | `browser-origin`, `shylock-core` |
+| [websearch-engine](mulib-websearch-engine.md) | `bounded-text`, `browser-origin` |
+| [websearch-provider](mulib-websearch-provider.md) | `bounded-text`, `browser-origin` |
 | [websocket](mulib-websocket.md) | `base64`, `buffer`, `http`, `uri`, `utf8` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
@@ -1972,7 +1976,7 @@ Compatibility group: `parsec`, `peg`.
 
 | Module | Direct dependencies |
 | --- | --- |
-| [fetch](mulib-fetch.md) | `fetch-policy`, `shylock-core` |
+| [fetch](mulib-fetch.md) | `bounded-text`, `fetch-policy` |
 | [fileserver](mulib-fileserver.md) | `webframework` |
 | [http_response](mulib-http_response.md) | `webframework` |
 | [https](mulib-https.md) | `tsl`, `webclient` |

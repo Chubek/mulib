@@ -1,5 +1,5 @@
 /* Complete, offline webextract-evidence example. */
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_WEBEXTRACT_EVIDENCE
 #include "mulib-webextract-evidence.h"

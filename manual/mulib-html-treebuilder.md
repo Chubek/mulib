@@ -25,7 +25,7 @@ Include `include/mulib-html-treebuilder.h`. Define the following switches in exa
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -61,7 +61,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_HTML_TREEBUILDER_H
 #define MULIB_HTML_TREEBUILDER_H
 #include "mulib-html-tokenizer.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -73,7 +73,7 @@ extern "C"
   typedef struct mulib_html_tree_node
   {
     char tag[64];
-    mulib_shylock_buffer_t text, attributes;
+    mulib_bounded_text_buffer_t text, attributes;
     struct mulib_html_tree_node *parent, *first_child, *last_child,
         *next_sibling;
     size_t offset;
@@ -104,7 +104,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-html-treebuilder.h`](../include/mulib-html-treebuilder.h) |
 | Implementation switch | `MULIB_IMPL_HTML_TREEBUILDER` |
-| Repository-local includes | [mulib-html-tokenizer](mulib-html-tokenizer.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-html-tokenizer](mulib-html-tokenizer.md) |
 | Complete example | [`examples/modules/html-treebuilder.c`](../examples/modules/html-treebuilder.c) |
 
 The include list includes conditional and implementation-only includes;

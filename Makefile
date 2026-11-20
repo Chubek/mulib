@@ -3,24 +3,25 @@ CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
 CPPFLAGS ?= -Iinclude
 LDLIBS ?= -lm
 TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c)) build/cdd-test
-TESTS += $(patsubst tests/%.c,build/%,$(wildcard tests/joltfx-*-test.c)) build/joltfx-link
+TESTS += $(patsubst tests/%.c,build/%,$(wildcard tests/media-*-test.c)) build/media-link
 # These fixtures need additional TUs, arguments, or a private Xvfb.
 TESTS := $(filter-out build/test-notebook-headless build/test-wl-headless-private build/test-x11-nested-live,$(TESTS))
 HEADERS := $(wildcard include/*.h include/detail/*.h include/detail/*.inc)
 TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
 EXAMPLES += build/cdd-pipeline
-EXAMPLES += build/joltfx-pipeline
+EXAMPLES += build/media-pipeline
+EXAMPLES += build/kernel-substrates
 .PHONY: all check check-shell check-examples check-compiler demo formats docir-formats clean
 .PHONY: muw3 check-muw3 check-muw3lib check-tls
 .PHONY: check-openai check-markup check-api-kernels
 .PHONY: check-web-primitives
 .PHONY: check-graphics check-vulkan check-raytracing check-minimpeg-video check-notebook-desktop
 .PHONY: check-notebook-headless check-wl-headless-private check-x11-nested
-.PHONY: check-joltfx
-check-joltfx:
-	python3 tools/joltfx_inventory.py --check
-	python3 tools/check_joltfx.py
+.PHONY: check-media
+check-media:
+	python3 tools/media_inventory.py --check
+	python3 tools/check_media.py
 WEB_PRIMITIVES_TESTS := pricing extraction browser css alloc hostile
 TESTS += $(addprefix build/test_web_,$(WEB_PRIMITIVES_TESTS))
 build/test_web_%: tests/test_web_%.c $(HEADERS) $(TEST_FIXTURES) | build
@@ -124,11 +125,13 @@ build/test-%: tests/test-%.c $(HEADERS) $(TEST_FIXTURES) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 build/cdd-test: tests/cdd-test.c tests/cdd-implementation.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDLIBS) -o $@
-build/joltfx-%: tests/joltfx-%.c $(HEADERS) | build
+build/media-%: tests/media-%.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
-build/joltfx-link: tests/joltfx-link-a.c tests/joltfx-link-b.c $(HEADERS) | build
+build/media-link: tests/media-link-a.c tests/media-link-b.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(filter %.c,$^) $(LDLIBS) -o $@
-build/joltfx-pipeline: examples/joltfx-pipeline.c $(HEADERS) | build
+build/media-pipeline: examples/media-pipeline.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+build/kernel-substrates: examples/kernel-substrates.c $(HEADERS) | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 check: $(TESTS)
 	@set -eu; for t in $(TESTS); do ./$$t; done

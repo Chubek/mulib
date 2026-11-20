@@ -20,7 +20,7 @@ Include `include/mulib-webextract-rules.h`. Define the following switches in exa
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_DOM_QUERY`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBEXTRACT_RULES`.
+`MULIB_IMPL_DOM_QUERY`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBEXTRACT_RULES`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -57,7 +57,7 @@ Include the header in application code; dependency types come from its includes.
 #define MULIB_WEBEXTRACT_RULES_H
 #include "mulib-dom-query.h"
 #include "mulib-html-textstream.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -75,7 +75,7 @@ extern "C"
    * contract. */
   int mulib_webextract_rules_text (const char *html, size_t n,
                                    const mulib_webextract_rule_t *rule,
-                                   mulib_shylock_buffer_t *out);
+                                   mulib_bounded_text_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -94,7 +94,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-webextract-rules.h`](../include/mulib-webextract-rules.h) |
 | Implementation switch | `MULIB_IMPL_WEBEXTRACT_RULES` |
-| Repository-local includes | [mulib-dom-query](mulib-dom-query.md), [mulib-html-textstream](mulib-html-textstream.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-dom-query](mulib-dom-query.md), [mulib-html-textstream](mulib-html-textstream.md) |
 | Complete example | [`examples/modules/webextract-rules.c`](../examples/modules/webextract-rules.c) |
 
 The include list includes conditional and implementation-only includes;

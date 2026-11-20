@@ -16,7 +16,7 @@ count_token (void *p, const mulib_html_token_t *t)
   return 1;
 }
 static int
-jsonld (void *p, mulib_shylock_span_t span, size_t offset)
+jsonld (void *p, mulib_bounded_text_span_t span, size_t offset)
 {
   assert (offset > 0);
   assert (span.len == 2 && !memcmp (span.data, "{}", 2));
@@ -39,43 +39,43 @@ put_text (void *ctx, void *node, const char *s, size_t n)
   return 1;
 }
 static int
-llm (void *ctx, const char *request, size_t n, mulib_shylock_buffer_t *out)
+llm (void *ctx, const char *request, size_t n, mulib_bounded_text_buffer_t *out)
 {
   (void)ctx;
   assert (request && n);
-  return mulib_shylock_text (out, "{}");
+  return mulib_bounded_text_text (out, "{}");
 }
 
 int
 main (void)
 {
-  mulib_shylock_buffer_t b = { 0 };
-  assert (mulib_shylock_text (&b, "abcdefgh"));
-  assert (mulib_shylock_reserve (&b, 63));
+  mulib_bounded_text_buffer_t b = { 0 };
+  assert (mulib_bounded_text_text (&b, "abcdefgh"));
+  assert (mulib_bounded_text_reserve (&b, 63));
   for (int i = 0; i < 10; i++)
     {
       size_t len = b.len;
-      assert (mulib_shylock_append (&b, b.data, len));
+      assert (mulib_bounded_text_append (&b, b.data, len));
     }
   assert (b.len == 8192 && !memcmp (b.data, b.data + 4096, 4096));
   size_t old = b.len;
   b.limit = old;
-  assert (!mulib_shylock_text (&b, "x") && b.len == old);
-  assert (!mulib_shylock_json_string (&b, "abc", 3) && b.len == old);
-  mulib_shylock_buffer_free (&b);
+  assert (!mulib_bounded_text_text (&b, "x") && b.len == old);
+  assert (!mulib_bounded_text_json_string (&b, "abc", 3) && b.len == old);
+  mulib_bounded_text_buffer_free (&b);
   b.limit = SIZE_MAX;
-  assert (mulib_shylock_json_string (&b, "\"\n", 2)
+  assert (mulib_bounded_text_json_string (&b, "\"\n", 2)
           && !strcmp (b.data, "\"\\\"\\u000a\""));
   old = b.len;
-  assert (!mulib_shylock_json_string (&b, "\xc0\xaf", 2) && b.len == old);
+  assert (!mulib_bounded_text_json_string (&b, "\xc0\xaf", 2) && b.len == old);
   double number;
-  assert (mulib_shylock_parse_decimal (" 1.25e2 ", &number) && number == 125);
-  assert (!mulib_shylock_parse_decimal ("0x1p4", &number));
-  assert (!mulib_shylock_parse_decimal ("NaN", &number));
+  assert (mulib_bounded_text_parse_decimal (" 1.25e2 ", &number) && number == 125);
+  assert (!mulib_bounded_text_parse_decimal ("0x1p4", &number));
+  assert (!mulib_bounded_text_parse_decimal ("NaN", &number));
   number = 77;
-  assert (!mulib_shylock_parse_decimal ("1e-100000", &number) && number == 77);
-  assert (mulib_shylock_parse_decimal ("0e-100000", &number) && number == 0);
-  mulib_shylock_buffer_free (&b);
+  assert (!mulib_bounded_text_parse_decimal ("1e-100000", &number) && number == 77);
+  assert (mulib_bounded_text_parse_decimal ("0e-100000", &number) && number == 0);
+  mulib_bounded_text_buffer_free (&b);
 
   const char *html = "<!doctype html><div ID = 'price' class='a featured "
                      "b'>one<br>two<script>if (a < b) x='<p>';</script></div>";
@@ -90,7 +90,7 @@ main (void)
                                      100));
   assert (mulib_readability_extract (html, strlen (html), &b)
           && !strcmp (b.data, "one two"));
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   mulib_html_tree_node_t *root = NULL;
   assert (mulib_html_tree_parse (html, strlen (html), 100, 10, &root));
   const mulib_html_tree_node_t *node
@@ -117,7 +117,7 @@ main (void)
   strcpy (rule.selector, "#absent");
   assert (!mulib_webextract_rules_text (html, strlen (html), &rule, &b)
           && b.len == old);
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   const char *ld
       = "<!-- <script type='application/ld+json'>{}</script> --><script "
         "data-type='application/ld+json'>{}</script><script TYPE = "
@@ -158,11 +158,11 @@ main (void)
   assert (!mulib_webextract_llm_request ("model", "page",
                                          "{} , \"escape\":true", 100, &b)
           && b.len == old);
-  mulib_shylock_buffer_t response = { 0 };
+  mulib_bounded_text_buffer_t response = { 0 };
   assert (mulib_webextract_llm_call (llm, NULL, b.data, b.len, &response)
           && !strcmp (response.data, "{}"));
-  mulib_shylock_buffer_free (&b);
-  mulib_shylock_buffer_free (&response);
+  mulib_bounded_text_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&response);
   mulib_crawlarchive_t archive = { 0 };
   archive.max_body = 3;
   assert (mulib_crawlarchive_add (&archive, "https://example.com", 200, "a\0b",
@@ -172,7 +172,7 @@ main (void)
   const mulib_crawlarchive_record_t *record
       = mulib_crawlarchive_find (&archive, "https://example.com");
   assert (record && record->body.len == 3
-          && record->hash == mulib_shylock_hash ("a\0b", 3));
+          && record->hash == mulib_bounded_text_hash ("a\0b", 3));
   mulib_crawlarchive_free (&archive);
   return 0;
 }

@@ -264,7 +264,7 @@ static void hardening(const char *root,const mulib_elvi_scrape_program_t *progra
     free(large);}
 }
 static const char *fixture,*expected_home;
-static int mocked_transport(void*ctx,const char*url,mulib_shylock_buffer_t*b,
+static int mocked_transport(void*ctx,const char*url,mulib_bounded_text_buffer_t*b,
                             unsigned*status,char*type,size_t cap){
   (void)ctx;calls++;
   if(expected_home)assert(!strcmp(url,expected_home));

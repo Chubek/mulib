@@ -98,5 +98,5 @@ slice. Keep native callback and enforcement glue in the trusted host boundary.
 On1x owns decisions about routing, manifest and permissions at the application
 layer; C kernels provide mechanisms and do not grant application authority.
 Production use also needs separate host enforcement runs (including delegated
-cgroups, Landlock and AArch64) and targeted independent security review. The
-[Shylock worker/data-plane task](shylock-worker-followup.md) is separate.
+cgroups, Landlock and AArch64) and targeted independent security review.
+Application worker and data-plane orchestration remain separate host concerns.

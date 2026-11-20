@@ -15,11 +15,9 @@
 > **Contract/toolchain repository:** `https://github.com/Chubek/libstone`
 > (`moonstone/exotract/`, `moonstone/exoml/`, `moonstone/chisel/`).
 >
-> **Proving application:** `https://github.com/Chubek/shylock`.
->
 > **Status:** Partially implemented acceptance specification. Native discovery,
 > unsafe clamp calls, and signed-review clamp and bounded numerical profiles
-> exist. General foreign resources and full Shylock integration do not.
+> exist. General foreign resources and complete fixture-driven I/O do not.
 >
 > **Verified implementation:** [KernelBind discovery](docs/kernel-bind.md)
 > parses native import requests, resolves canonical profiles, and extracts
@@ -58,14 +56,14 @@ policy, supported symbols and limitations: [reviewed scalar profile](docs/kernel
 | F | Explicit raw one-byte local frame and same-thread callback after close | Retention, arbitrary endpoints, capabilities and scheduler integration |
 | G | Local atomic reviewed bundles (including multi-kernel) and inspection | Reusable locked imports, installed/relocated review policy and migration parity |
 
-The complete document and §9.5 Shylock gate are **not complete**.
+The complete document and §9.5 integration gate are **not complete**.
 
 ## 0. Objective and non-negotiable invariants
 
 Implement a *compiler-native* facility, **KernelBind**, through which an On1x
 program can select, type-check, call, and link C11 header-only MuLIB kernels
 without application-authored `extern fn` declarations, C pointer plumbing,
-`MULIB_IMPL_*` switches, or Shylock-specific native bridges.
+`MULIB_IMPL_*` switches, or application-specific native bridges.
 
 The canonical programmer-facing syntax is:
 
@@ -107,7 +105,7 @@ let decision = Pricing.optimize(demand_model, constraints)?;
    manifest/ExoLib recipes. Companion files remain separate when required.
 7. **Application sources stay On1x.** Generated and audited C11 binding adapters,
    the generated MuLIB implementation TU, and ordinary runtime/kernel C are
-   permissible; no handwritten Shylock-only native adapter should be necessary.
+   permissible; no handwritten application-only native adapter should be necessary.
 8. **Preserve established On1x syntax and behavior**—ordinary `import`, modules,
    nominal ADTs, `Result` and `?`, function-scoped Go-style `defer`, PPX hygiene,
    and existing foreign escape hatches. This is additive, not a language rewrite.
@@ -140,7 +138,7 @@ assume the following observations still hold after repository changes.
   selected-kernel metadata and build planning are not general safe ABI bindings.
 - `on1x/stdlib/_bridge/`: existing trusted raw scalar C adapters; do not
   mistake them for independently reviewed ExoML safe exports.
-- `on1x/docs/{contracts.md,ffi-strings.md,shylock-readiness.md,
+- `on1x/docs/{contracts.md,ffi-strings.md,kernel-numerics.md,
   memory-safety.md,concurrency.md,nominal-adts.md,modules.md}` and
   `on1x/COMPLETION.md`: existing capabilities and explicit blockers.
 - LibStone `moonstone/exotract/{DESIGN.md,README.md,binders/on1x.lua,
@@ -156,7 +154,7 @@ binder emits `moonstone.exotract.on1x/2` **typed metadata**, with
 `unsafe_by_default:true`, **not executable On1x declarations**. On1x's safe
 import admission is narrow (scalar and separately reviewed immutable-string
 profiles), not general slices, records, handles, out-params or callbacks.
-The On1x Shylock readiness document explicitly marks general executable and
+The On1x capability matrix explicitly marks general resource and
 safe-FFI requirements incomplete. Verify any newer work instead of relying on
 this snapshot.
 
@@ -519,7 +517,7 @@ owner-thread polling profile, not admission for C callback exports.
 
 For HTML tokenization, provide a generic *pull iterator or bounded event buffer*
 in MuLIB if this enables safe On1x use without callback retention. Such a kernel
-must be domain-neutral and tested independently; do not hide Shylock-specific
+must be domain-neutral and tested independently; do not hide application-specific
 policy inside a new MuLIB header.
 
 ## 6. Effects, thread safety, capabilities and concurrency
@@ -532,10 +530,10 @@ safety, thread affinity, callback origin and borrowed-resource lifetime.
 
 A contract describing an `io` effect is **not** proof of authorization to use
 network, filesystem, credentials or processes. Separate runtime capability
-permissions are needed, particularly for Dragnet and Mune extensions. Do not
+permissions are needed, particularly for browser and Mune extensions. Do not
 confuse source-level `unsafe` with an OS sandbox. Preserve existing DNS-pinning,
 TLS certificate/hostname validation, redirect/private-address policies and
-sandbox isolation when replacing native Shylock transport/VM bridges.
+sandbox isolation when replacing native transport/VM bridges.
 
 On1x's present cooperative fibers/channels are a bounded single-native-thread
 profile, not general typed `async`/`await`, owned resource channels, actors,
@@ -652,32 +650,34 @@ implementation under On1x.
 - Existing ordinary On1x apps, stdlib, PPX, Category, concurrency and
   generated/fallback compiler profiles do not regress.
 
-### 9.5 Shylock proof of usability
+### 9.5 Fixture-driven I/O and resource composition
 
 **Release gate: NOT YET ADMITTED.** The multi-module
 `examples/kernel/pricing/main.on1x` runs the numerical slice and a direct C
 differential test. It does not load or publish JSON through an admitted API,
-or verify Shylock equivalence. The numerical test does not satisfy this gate.
+or establish general application I/O. The numerical test does not satisfy this gate.
 
-Create a *real* multi-module On1x fixture application (initially in
-`on1x/examples/` or `on1x/tests/`) that imports selected MuLIB pricing kernels
-through the **new syntax** and does all of the following without `shy_*` C
-adapters or handwritten `extern fn`:
+Use a real multi-module On1x integration fixture that composes public MuLIB
+interfaces without application-only C adapters or handwritten `extern fn`.
+Its declared profile should demonstrate:
 
-1. Accept/load a fixture series using an admitted JSON/file API.
-2. Convert validated monetary minor units into numerical model inputs.
-3. Compute and compare at least an EMA and a Holt forecast, preserving
-   unavailable variance and actual model error conventions.
-4. Evaluate candidate models against chronological selection/holdout fixtures.
-5. Optimize a price under checked floor/cap/tick/cost constraints.
-6. Emit a versioned JSON decision with source and model provenance.
-7. Compare its numerical results and failure behavior against direct C MuLIB
-   and the corresponding Shylock fixture workflow.
+1. Bounded fixture ingestion through an admitted input API, with malformed and
+   truncated input rejected before results are published.
+2. Validated conversion into the selected kernel's exact numeric, record,
+   enum, and span representations.
+3. Execution of a reusable operation with errors and unavailable values
+   preserved rather than replaced by fabricated defaults.
+4. Owned-resource construction, borrowing, invalidation, and cleanup on success,
+   failure, and cancellation wherever those resources occur in the profile.
+5. Bounded output through an admitted API, with explicit partial-write and
+   commit-failure behavior where applicable.
+6. Independent direct-C or fixture oracles, negative ownership/ABI tests, and
+   sanitizer evidence for the exact supported target.
 
 If JSON, slices, records, or output-param imports are not yet admitted, keep
 this test as an explicit failing/not-yet-admitted release gate. Do not replace
-it with a C program, faked result, or a manually bridged `shy_*` helper and
-claim Shylock readiness.
+it with a C program, faked result, or a manually bridged application-only helper
+and claim the admitted integration gate passed.
 
 ## 10. Work packages and required sequencing
 
@@ -708,7 +708,7 @@ Add checked numeric spans, input length pairs, validated enum and output
 record lowering, error/initialization semantics. Admit the first `statsprice`
 and `histprice` functions against reviewed evidence; then `priceopt`/demand/
 ensemble APIs. Deliver the forecasting/optimization demonstration. This is the
-first important Shylock migration blocker.
+first numerical composition blocker.
 
 ### Package E — owned foreign handles and cleanup
 
@@ -729,7 +729,7 @@ block the early numerical release on this broader work.
 
 Integrate locked imports into installation, library search, source discovery,
 `On1xfile` and documented build commands. Remove *application-authored* C
-bridges in the Shylock proof only after parity tests pass. Update compatibility
+bridges in integration fixtures only after parity tests pass. Update compatibility
 and status docs with exact measured results.
 
 ## 11. Definition of done
@@ -748,9 +748,9 @@ The **initial KernelBind milestone** is complete only when all of these are true
 - Evidence is reproducible and includes tested revisions, commands, target
   compiler/ABI, safety-lowering scope and remaining gaps.
 
-**Shylock-ready KernelBind** additionally requires the complete pricing
-vertical slice in §9.5, including real numerical and JSON equivalence, failure
-handling, owned resources as needed and no Shylock-specific native adapters.
+**Fixture-driven resource composition** additionally requires the declared
+profile in §9.5, including input/output equivalence, failure
+handling, owned resources as needed and no application-specific native adapters.
 Do **not** conflate those two milestones.
 
 ## 12. Deliverables to check in
@@ -764,8 +764,8 @@ Do **not** conflate those two milestones.
    option; choose a nonconflicting CLI spelling).
 4. Executable positive, negative, differential, fuzz/bounds where appropriate,
    and ASan/UBSan tests. Include at least one documented end-to-end command.
-5. Working On1x example showing an actual kernel import and call; later the
-   Shylock pricing fixture.
+5. Working On1x example showing an actual kernel import and call; later a
+   fixture-driven I/O and resource composition profile.
 6. `KERNEL_DIRECT_USAGE.md` updated to reflect **implemented**, **partial**,
    **unsupported** and **verified** features, with exact source paths and logs;
    an `AGENTS.md` summary pointing to this specification if appropriate.
@@ -807,4 +807,4 @@ fn forecast_and_optimize(prices, model, limits) {
 
 Implement the smallest truthful compiler/runtime subset that makes the direct
 kernel-import model real; then expand it toward this ergonomic surface and
-Shylock's complete On1x-only implementation.
+verified multi-module composition.

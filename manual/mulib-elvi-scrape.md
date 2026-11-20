@@ -35,14 +35,14 @@ ranking, provider traits, or per-engine scripts.
 
 The module uses `fetch`, `url`, `https`, `json`, `utf8` and the internal webscan scanner.
 The complete one-TU implementation recipe is: `parsec`, `strbuf`, `buffer`,
-`inet4`, `inet6`, `uri`, `utf8`, `json`, `shylock-core`, `browser-origin`, `fetch-policy`,
+`inet4`, `inet6`, `uri`, `utf8`, `json`, `bounded-text`, `browser-origin`, `fetch-policy`,
 `fetch`, `url`, `http`, `webclient`, `tsl`, `https`, `elvi-scrape`. Define all
 corresponding `MULIB_IMPL_*` macros before including `mulib-elvi-scrape.h` in
 exactly one C11 translation unit. Other translation units include declarations
 only. No implementation switches are enabled implicitly, including the optional
 owned `MULIB_IMPL_PARSER` API.
 On platforms with a separate C math library, link `-lm`: the complete one-TU
-dependency closure includes `shylock-core`'s decimal conversion helpers.
+dependency closure includes `bounded-text`'s decimal conversion helpers.
 
 Offline compilation and extraction never open a connection. The HTTPS adapter
 composes MuLIB HTTPS, HTTP and TSL kernels with an application-supplied blocking

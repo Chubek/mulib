@@ -99,7 +99,7 @@
 #define MULIB_IMPL_PRICE_TIMESERIES
 #define MULIB_IMPL_READABILITY
 #define MULIB_IMPL_SCHEMAORG
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_WEBEXTRACT_EVIDENCE
 #define MULIB_IMPL_WEBEXTRACT_LLM
 #define MULIB_IMPL_WEBEXTRACT_RECONCILE
@@ -2379,7 +2379,7 @@
 #include "mulib-price-timeseries.h"
 #include "mulib-readability.h"
 #include "mulib-schemaorg.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include "mulib-webextract-evidence.h"
 #include "mulib-webextract-llm.h"
 #include "mulib-webextract-reconcile.h"

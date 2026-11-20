@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_WEBIDL_RUNTIME_H
 #define MULIB_WEBIDL_RUNTIME_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include "mulib-utf8.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -28,7 +28,7 @@ extern "C"
   /** @brief See manual/mulib-webidl-runtime.md for this operation's contract.
    */
   int mulib_webidl_domstring_utf8 (const char *utf8, size_t n,
-                                   mulib_shylock_buffer_t *out);
+                                   mulib_bounded_text_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -84,12 +84,12 @@ mulib_webidl_to_boolean (double n)
 }
 int
 mulib_webidl_domstring_utf8 (const char *s, size_t n,
-                             mulib_shylock_buffer_t *out)
+                             mulib_bounded_text_buffer_t *out)
 {
   if ((!s && n) || !out
       || (n && !mulib_utf8_validate ((const unsigned char *)s, n)))
     return 0;
-  return mulib_shylock_append (out, s, n);
+  return mulib_bounded_text_append (out, s, n);
 }
 #endif
 #endif

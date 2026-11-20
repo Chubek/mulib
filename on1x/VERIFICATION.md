@@ -1,20 +1,21 @@
 # On1x verification — through 2026-11-20
 
-The [consolidation verification record](../consolidation/VERIFICATION.md)
-distinguishes the fresh starting tree from integrated results for MIR,
-exclusive replacement, SDK activation, trusted On1xRT loading, and raw C11
-wrapper generation. Earlier evidence below remains attached to its original
-revision and build profiles.
+Historical evidence below remains attached to its original revision and build
+profiles. A [cross-layer integration record](../manual/integration-verification.md)
+preserves the baseline and integrated suite totals. Current requirements are described in the
+[representation contracts](../manual/representation-contracts.md).
+Renamed reproduction commands use current repository paths; their spelling
+does not assert a fresh execution of the historical test runs.
 
-## Bounded JoltFX kernel review and registration — 2026-11-20
+## Bounded media kernel review and registration — 2026-11-20
 
 Baseline MuLIB `53f77657126cf36401a6c18f49691499fdb53e11`, configured read-only
 LibStone `3399047f6c6328b8f07788795c610699e66c060a`; Linux x86-64,
 GCC 16.2.1 and Clang 22.1.8. The four kernel workers and one peripheral worker
 preserved the 193 supplied headers, added one shared PCM helper, strengthened
 explicit capacities/overlap/numeric/provider checks, and supplied 194 manuals.
-See [the integration boundary](docs/kernel-joltfx.md) and
-[the C11 reproduction guide](../manual/joltfx-review.md).
+See [the integration boundary](docs/kernel-media.md) and
+[the C11 reproduction guide](../manual/media-review.md).
 
 `MANIFEST.yaml` now registers **1,957** independent modules: 1,462 with
 implementation switches and 495 bounded static-inline modules. All 194 new
@@ -26,27 +27,27 @@ independent approval or native media/GPU/audio provider was fabricated.
 Reproduction:
 
 ```sh
-python3 tools/joltfx_inventory.py --check
-python3 tools/check_joltfx.py --fuzz-runs 5000 \
-  --report /tmp/opencode/joltfx-final-optimized-report.json
+python3 tools/media_inventory.py --check
+python3 tools/check_media.py --fuzz-runs 5000 \
+  --report /tmp/opencode/media-final-optimized-report.json
 python3 tools/manuals.py --check
 python3 tools/stratify.py --check
 
-cmake -S . -B build/joltfx-review-gcc -DMULIB_BUILD_MUW3=OFF \
+cmake -S . -B build/media-review-gcc -DMULIB_BUILD_MUW3=OFF \
   -DMULIB_BUILD_SHIRAZ=OFF -DMULIB_BUILD_VIRTIO=OFF -DCMAKE_C_COMPILER=gcc
-cmake -S . -B build/joltfx-review-clang-san -DMULIB_BUILD_MUW3=OFF \
+cmake -S . -B build/media-review-clang-san -DMULIB_BUILD_MUW3=OFF \
   -DMULIB_BUILD_SHIRAZ=OFF -DMULIB_BUILD_VIRTIO=OFF \
   -DCMAKE_C_COMPILER=clang -DMULIB_SANITIZERS=ON \
   -DCMAKE_C_FLAGS=-fsanitize=float-cast-overflow
-for build in build/joltfx-review-gcc build/joltfx-review-clang-san; do
+for build in build/media-review-gcc build/media-review-clang-san; do
   cmake --build "$build" --parallel 4 --target \
-    mulib_joltfx_pipeline mulib_joltfx_link mulib_joltfx-integration-test \
-    mulib_joltfx-parser-boundary-test mulib_joltfx-media-review-test \
-    mulib_joltfx-image-review-test mulib_joltfx-scene-review-test \
-    mulib_joltfx-compute-audio-review-test
+    mulib_media_pipeline mulib_media_link mulib_media-integration-test \
+    mulib_media-parser-boundary-test mulib_media-review-test \
+    mulib_media-image-review-test mulib_media-scene-review-test \
+    mulib_media-compute-audio-review-test
 done
-ctest --test-dir build/joltfx-review-gcc --output-on-failure -R '^mulib_joltfx[-_]'
-ctest --test-dir build/joltfx-review-clang-san --output-on-failure -R '^mulib_joltfx[-_]'
+ctest --test-dir build/media-review-gcc --output-on-failure -R '^mulib_media[-_]'
+ctest --test-dir build/media-review-clang-san --output-on-failure -R '^mulib_media[-_]'
 
 cmake --build build/on1x-workstream4-gcc --target on1xc exotract --parallel 4
 ctest --test-dir build/on1x-workstream4-gcc --output-on-failure \
@@ -2240,7 +2241,7 @@ All four failures stop on the preexisting Elvi-scrape manual pin mismatch
 described below. Category was skipped with native PPX disabled.
 Statsprice, Money, demand/ensemble, dynamic buffers, JSON file I/O, owned
 handles, callbacks, scheduler integration, reusable installed locks, and
-full Shylock parity remain open. §9.5 is explicitly not admitted.
+general application I/O remain open. §9.5 is explicitly not admitted.
 
 ## KernelBind Package C: independently authorized scalar build mechanism
 
@@ -2344,7 +2345,7 @@ corrected and rerun successfully. The full suite is therefore **not green**.
 Remaining gates: independently issued production scalar review; numeric
 spans/records/enums/output/error lowering; affine foreign handles and cleanup;
 callbacks/capabilities/transport; independent checker and MIR integration;
-installed/reusable reviewed import locks; and the §9.5 Shylock application.
+installed/reusable reviewed import locks; and the §9.5 fixture-driven I/O profile.
 No 32-bit, non-Linux or cross-target admission, native backend, or general safe
 FFI is claimed. TSAN is inapplicable to this resource-free synchronous profile.
 
@@ -2439,7 +2440,7 @@ ctest --test-dir build/kernelbind-sanitize -R '^on1x\.(kernel_imports|kernel_imp
 
 The profile is explicitly unsafe, not a safe-FFI admission. No legacy
 `admitted-extern` certificate is consumed. No staged resource-bearing
-stdlib port or Shylock workflow is claimed executable.
+stdlib port or general application workflow is claimed executable.
 
 ## KernelBind Packages A/B baseline: native requests and declaration discovery
 
@@ -2480,7 +2481,7 @@ to compile Histprice and Statsproc in one implementation TU (verified with
 strict separate caller TU. The C probe checks the actual Holt function
 prototype, leaves point/variance unchanged on rejected input, and returns
 point 18, variance NaN on its valid series. It is **not** KernelBind-generated
-code, a proof of arbitrary C behavior, or the Shylock release gate.
+code, a proof of arbitrary C behavior, or the general integration release gate.
 
 Commands from the MuLIB root (use the NVMe `TMPDIR` if system `/tmp` is full):
 
@@ -2531,7 +2532,7 @@ because native PPXs were disabled.
 
 At this baseline checkpoint the native compiler gate was closed for both safe and unsafe calls. The safe
 scalar, raw unsafe, ownership/callbacks, aggregate/target ABI, link selection
-from On1x and Shylock release gates are not exercised or met. See
+from On1x and resource-integration release gates are not exercised or met. See
 [KernelBind discovery](docs/kernel-bind.md) for the exact input and output
 contract.
 
@@ -5292,7 +5293,7 @@ value/ownership proof. The finite oracle corpus is not universal equivalence.
   testing, not a proof of complete HTML5 behavior or transport security.
 - Both trusted provider files are registered in `std/mulib/catalog.json`.
   Explicit fixture selection now preserves source-pinned recipes, required
-  exports and evidence inputs. The complete archive's `shylock-core` C math
+  exports and evidence inputs. The complete archive's `bounded-text` C math
   dependency is explicit, including GCC consumers without sanitizer-provided
   link libraries. The optional owned parser remains off.
 - The complete `test_mulib.py` suite passes with GCC and Clang ASan/UBSan;
@@ -5688,7 +5689,7 @@ as one quoted CMake argument. Sanitized archive tests additionally receive
 These remain trusted raw scalar adapters and bounded syntactic transforms,
 **not** independent ExoML review or generalized safe FFI. No f64/record/slice ABI,
 foreign-owner lowering, native ADTs, full SML/Base/Batteries conformance, TLS
-socket API or completed Shylock backend is claimed. Operation contracts and
+socket API or complete application backend is claimed. Operation contracts and
 examples: [`stdlib/README.md`](stdlib/README.md),
 [`stdlib/_bridge/README.md`](stdlib/_bridge/README.md),
 [`stdppx/README.md`](stdppx/README.md).

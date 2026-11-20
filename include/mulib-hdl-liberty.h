@@ -1,11 +1,21 @@
-/* MuLIB / Amb3r: hdl-liberty. C11 single-header kernel.
+/* MuLIB: hdl-liberty. C11 single-header kernel.
  * Define MULIB_IMPL_HDL_LIBERTY in exactly one implementation translation unit.
  * Profile: Bilinear interpolation for timing tables; not Liberty parsing.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_HDL_LIBERTY_H
 #define MULIB_HDL_LIBERTY_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

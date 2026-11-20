@@ -6,12 +6,12 @@
   "aggregate_integration_revision": "18aa71faa49d6d98b333cd1e53075b4e685bcc35",
   "sdk_version": "2.0.0",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
-  "consolidation": {
+  "integration": {
     "baseline_revision": "d1bddd5f5e4a41f8cc6231564a40d9463825bfa2",
     "linked_v2_profile": "compiler-selected trusted analyzer of canonical verified MIR",
     "runtime_profile": "Linux/glibc opt-in trusted sealed native loading",
-    "report": "catalogue/agent-reports/consolidation-worker-6.json",
-    "verification": "../../consolidation/VERIFICATION.md"
+    "report": "catalogue/agent-reports/runtime-interop.json",
+    "verification": "VERIFICATION.md"
   },
   "contracts": {
     "sdk_abi": 2,

@@ -57,14 +57,14 @@ static void interrupt_test(void){
     CHECK(!sigaction(SIGUSR1,&old,NULL));puts("IPC: interrupted poll resumes; repeated signals do not reset the deadline");
 }
 typedef struct txn{int stage,committed,aborted,audited,uncertain;} txn;
-static int begin(void*c,const char*s){txn*t=c;CHECK(!strcmp(s,"dragnet"));t->stage=0;return 0;}
+static int begin(void*c,const char*s){txn*t=c;CHECK(!strcmp(s,"test-worker"));t->stage=0;return 0;}
 static int commit(void*c){txn*t=c;t->committed+=t->stage;t->stage=0;return t->uncertain?MULIB_SB_UNCERTAIN:0;}
 static void abort_tx(void*c){txn*t=c;t->aborted++;t->stage=0;}
 static void audit(void*c,const char*s,const char*o,int r){txn*t=c;(void)s;(void)o;(void)r;t->audited++;}
-static int op(void*c,const char*s,const void*r,size_t n,void*out,size_t cap,size_t*len){txn*t=c;CHECK(!strcmp(s,"dragnet"));if(n>cap)return MULIB_SB_LIMIT;memcpy(out,r,n);*len=n;t->stage++;return 0;}
+static int op(void*c,const char*s,const void*r,size_t n,void*out,size_t cap,size_t*len){txn*t=c;CHECK(!strcmp(s,"test-worker"));if(n>cap)return MULIB_SB_LIMIT;memcpy(out,r,n);*len=n;t->stage++;return 0;}
 static int bad_reply(void*c,const char*s,const void*r,size_t n,void*out,size_t cap,size_t*len){(void)c;(void)s;(void)r;(void)n;(void)out;*len=cap+1;return 0;}
 static void broker_test(void){txn t={0};mulib_capbroker_t b;mulib_sandbox_profile_t p=mulib_sandbox_profile_default();p.max_broker_requests=2;p.max_frame_bytes=8;p.max_broker_bytes=16;const char*grants[]={"proposal.write"};const char*requested[]={"proposal.write","approval.write"};const char*effective[2];size_t count=99;CHECK(!mulib_capbroker_intersect(requested,2,grants,1,effective,2,&count)&&count==1&&effective[0]==grants[0]);CHECK(mulib_capbroker_intersect(requested,2,grants,1,NULL,0,&count)==MULIB_SB_LIMIT&&count==1);mulib_capbroker_op_t ops[]={{"submit","proposal.write",op,&t},{"review","approval.write",op,&t},{"bad","proposal.write",bad_reply,&t}};mulib_capbroker_hooks_t h={begin,commit,abort_tx,audit,&t};char buf[16];size_t n;
-    CHECK(!mulib_capbroker_init(&b,"dragnet",ops,3,grants,1,&h,&p));CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_capbroker_call(&b,"submit","a",1,buf,16,&n)&&n==1);CHECK(mulib_capbroker_call(&b,"review","x",1,buf,16,&n)==MULIB_SB_DENIED);CHECK(mulib_capbroker_call(&b,"submit","x",1,buf,16,&n)==MULIB_SB_DENIED);CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_DENIED&&t.aborted==1&&!t.committed);
+    CHECK(!mulib_capbroker_init(&b,"test-worker",ops,3,grants,1,&h,&p));CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_capbroker_call(&b,"submit","a",1,buf,16,&n)&&n==1);CHECK(mulib_capbroker_call(&b,"review","x",1,buf,16,&n)==MULIB_SB_DENIED);CHECK(mulib_capbroker_call(&b,"submit","x",1,buf,16,&n)==MULIB_SB_DENIED);CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_DENIED&&t.aborted==1&&!t.committed);
     CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_capbroker_call(&b,"submit","a",1,buf,16,&n));CHECK(!mulib_capbroker_finish(&b,1)&&t.committed==1);CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_STATE);
     CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_capbroker_call(&b,"submit","12345678",8,buf,16,&n)&&n==8);CHECK(mulib_capbroker_call(&b,"submit","x",1,buf,16,&n)==MULIB_SB_LIMIT);CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_DENIED);
     CHECK(!mulib_capbroker_begin(&b));CHECK(mulib_capbroker_call(&b,"bad","x",1,buf,16,&n)==MULIB_SB_PROTOCOL);CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_DENIED);t.uncertain=1;int aborts=t.aborted;CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_capbroker_call(&b,"submit","x",1,buf,16,&n));CHECK(mulib_capbroker_finish(&b,1)==MULIB_SB_UNCERTAIN&&t.aborted==aborts);puts("broker authorization, sticky deny, quotas, rollback, uncertain commit: ok");}
@@ -111,7 +111,7 @@ static void rollback_test(const mulib_sandbox_launch_t *cfg){
     txn t={0};mulib_capbroker_t b;const char *grants[]={"proposal.write"};
     const mulib_capbroker_op_t ops[]={{"submit","proposal.write",op,&t}};
     const mulib_capbroker_hooks_t hooks={begin,commit,abort_tx,audit,&t};
-    CHECK(!mulib_capbroker_init(&b,"dragnet",ops,1,grants,1,&hooks,&cfg->profile));
+    CHECK(!mulib_capbroker_init(&b,"test-worker",ops,1,grants,1,&hooks,&cfg->profile));
     CHECK(!mulib_capbroker_begin(&b));CHECK(!mulib_sandbox_process_start(&p,cfg));
     CHECK(!mulib_sandbox_process_send(&p,"T",1));
     char req[1],reply[1];size_t n=0,rn=0;

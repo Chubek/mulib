@@ -47,7 +47,7 @@ Shiraz and Virtio have their own linking instructions in [INSTALL.md](INSTALL.md
 
 ## Work with a byte container
 
-The [README example](README.md#quick-start) creates a vector of integers with
+The [vector example](examples/modules/vec.c) creates a vector of integers with
 `mulib_vec_init`, copies a value with `mulib_vec_push`, reads it with
 `mulib_vec_at`, and releases storage with `mulib_vec_free`.
 

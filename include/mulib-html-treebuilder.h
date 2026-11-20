@@ -7,7 +7,7 @@
 #ifndef MULIB_HTML_TREEBUILDER_H
 #define MULIB_HTML_TREEBUILDER_H
 #include "mulib-html-tokenizer.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,7 +19,7 @@ extern "C"
   typedef struct mulib_html_tree_node
   {
     char tag[64];
-    mulib_shylock_buffer_t text, attributes;
+    mulib_bounded_text_buffer_t text, attributes;
     struct mulib_html_tree_node *parent, *first_child, *last_child,
         *next_sibling;
     size_t offset;
@@ -106,7 +106,7 @@ mulib_html_tree_cb_ (void *p, const mulib_html_token_t *t)
   n->is_text = t->kind == MULIB_HTML_STREAM_TEXT;
   if (n->is_text)
     {
-      if (!mulib_shylock_append (&n->text, t->raw, t->length))
+      if (!mulib_bounded_text_append (&n->text, t->raw, t->length))
         {
           free (n);
           return 0;
@@ -115,7 +115,7 @@ mulib_html_tree_cb_ (void *p, const mulib_html_token_t *t)
   else
     {
       memcpy (n->tag, t->name, sizeof n->tag);
-      if (!mulib_shylock_append (&n->attributes, t->raw, t->length))
+      if (!mulib_bounded_text_append (&n->attributes, t->raw, t->length))
         {
           free (n);
           return 0;
@@ -164,8 +164,8 @@ mulib_html_tree_free (mulib_html_tree_node_t *root)
     {
       mulib_html_tree_node_t *next = root->next_sibling;
       mulib_html_tree_free (root->first_child);
-      mulib_shylock_buffer_free (&root->text);
-      mulib_shylock_buffer_free (&root->attributes);
+      mulib_bounded_text_buffer_free (&root->text);
+      mulib_bounded_text_buffer_free (&root->attributes);
       free (root);
       root = next;
     }

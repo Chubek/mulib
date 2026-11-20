@@ -20,7 +20,7 @@ Include `include/mulib-microjs-module.h`. Define the following switches in exact
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_MICROJS_MODULE`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_MICROJS_MODULE`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -55,7 +55,7 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_MICROJS_MODULE_H
 #define MULIB_MICROJS_MODULE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -105,7 +105,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-microjs-module.h`](../include/mulib-microjs-module.h) |
 | Implementation switch | `MULIB_IMPL_MICROJS_MODULE` |
-| Repository-local includes | [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/microjs-module.c`](../examples/modules/microjs-module.c) |
 
 The include list includes conditional and implementation-only includes;

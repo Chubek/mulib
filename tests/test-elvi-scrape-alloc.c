@@ -32,10 +32,10 @@ static const char elvi_html_[]="<a href='/url?q=https%3A%2F%2Fexample.net%2F'><h
 static const char elvi_json_dsl_[]="elvi fixture\nhost example.org\nhome https://example.org/\n"
   "search https://example.org/?q={query}\nformat json\nresults /\ntitle /label\nurl /href\n";
 static const char elvi_json_[]="[{\"label\":\"Safe & local\",\"href\":\"https://example.net/\"}]";
-static int elvi_fetch_(void *ctx,const char *url,mulib_shylock_buffer_t *body,
+static int elvi_fetch_(void *ctx,const char *url,mulib_bounded_text_buffer_t *body,
                        unsigned *status,char *type,size_t cap) {
   (void)ctx;(void)url;
-  if(!mulib_shylock_text(body,elvi_html_) || cap<10)return 0;
+  if(!mulib_bounded_text_text(body,elvi_html_) || cap<10)return 0;
   *status=200;memcpy(type,"text/html",10);return 1;
 }
 static void elvi_operation_(const mulib_elvi_scrape_program_t *p,int operation) {
@@ -66,12 +66,12 @@ static void elvi_operation_(const mulib_elvi_scrape_program_t *p,int operation) 
   } else {
     const char *wire="HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nOK";
     fixture f={wire,0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-    mulib_shylock_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
+    mulib_bounded_text_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
     ok=mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type);
     assert(f.closes==f.connects);
     if(!ok)assert(!body.data && status==42 && !strcmp(type,"unchanged"));
     else assert(status==200 && body.len==2 && !strcmp(body.data,"OK"));
-    mulib_shylock_buffer_free(&body);
+    mulib_bounded_text_buffer_free(&body);
   }
   if(!allocation_fail)assert(ok);
 }

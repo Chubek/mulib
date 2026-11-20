@@ -1,5 +1,5 @@
 /* Complete, offline webidl-bindgen example. */
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #define MULIB_IMPL_WEBIDL_BINDGEN
 #include "mulib-webidl-bindgen.h"
@@ -10,10 +10,10 @@
 int
 main (void)
 {
-  mulib_shylock_buffer_t header = { 0 };
+  mulib_bounded_text_buffer_t header = { 0 };
   const char *idl = "interface Node { attribute DOMString name; };";
   assert (mulib_webidl_bindgen_interfaces (idl, strlen (idl), &header, 10));
   assert (strstr (header.data, "mulib_webidl_Node"));
-  mulib_shylock_buffer_free (&header);
+  mulib_bounded_text_buffer_free (&header);
   return 0;
 }

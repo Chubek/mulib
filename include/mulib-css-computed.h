@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_CSS_COMPUTED_H
 #define MULIB_CSS_COMPUTED_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -136,10 +136,10 @@ mulib_css_computed_apply (mulib_css_computed_t *s, const char *d, size_t n)
               && strcmp (value, "none") && strcmp (value, "flex")
               && strcmp (value, "grid"))
             return 0;
-          mulib_shylock_copy (result.display, sizeof result.display, value);
+          mulib_bounded_text_copy (result.display, sizeof result.display, value);
         }
       else if (color)
-        mulib_shylock_copy (result.color, sizeof result.color, value);
+        mulib_bounded_text_copy (result.color, sizeof result.color, value);
       else
         {
           double x;
@@ -149,7 +149,7 @@ mulib_css_computed_apply (mulib_css_computed_t *s, const char *d, size_t n)
             {
               if (size >= 2 && !strcmp (value + size - 2, "px"))
                 value[size - 2] = 0;
-              if (!mulib_shylock_parse_decimal (value, &x) || x < 0)
+              if (!mulib_bounded_text_parse_decimal (value, &x) || x < 0)
                 return 0;
             }
           if (width)

@@ -1,11 +1,21 @@
-/* MuLIB / Amb3r: pcb-router. C11 single-header kernel.
+/* MuLIB: pcb-router. C11 single-header kernel.
  * Define MULIB_IMPL_PCB_ROUTER in exactly one implementation translation unit.
  * Profile: Four-neighbor obstacle-grid A*; not a multilayer manufacturing-aware router.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_PCB_ROUTER_H
 #define MULIB_PCB_ROUTER_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-graph-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -20,7 +30,7 @@ int mulib_pcb_router(size_t width,size_t height,const unsigned char *blocked,siz
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_pcb_router(size_t width,size_t height,const unsigned char *blocked,size_t start,size_t goal,size_t *path,size_t capacity,size_t *length){return ma_grid_route(width,height,blocked,start,goal,path,capacity,length);}
+int mulib_pcb_router(size_t width,size_t height,const unsigned char *blocked,size_t start,size_t goal,size_t *path,size_t capacity,size_t *length){return mulib_graph_grid_route(width,height,blocked,start,goal,path,capacity,length);}
 #ifdef __cplusplus
 }
 #endif

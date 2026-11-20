@@ -1156,7 +1156,7 @@
 #include "mulib-price-timeseries.h"
 #include "mulib-readability.h"
 #include "mulib-schemaorg.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include "mulib-webextract-evidence.h"
 #include "mulib-webextract-llm.h"
 #include "mulib-webextract-reconcile.h"

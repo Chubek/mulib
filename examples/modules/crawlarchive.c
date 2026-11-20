@@ -1,6 +1,6 @@
 /* Complete, offline crawlarchive example. */
 #define MULIB_IMPL_CRAWLARCHIVE
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-crawlarchive.h"
 #include <assert.h>

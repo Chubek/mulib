@@ -1,6 +1,6 @@
 /* Complete, offline css-computed example. */
 #define MULIB_IMPL_CSS_COMPUTED
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-css-computed.h"
 #include <assert.h>

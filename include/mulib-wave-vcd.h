@@ -38,7 +38,7 @@ int mulib_wave_vcd_begin(mulib_wave_vcd_t *v, FILE *fp, const char *name) {
     if (!v || !fp || !name || !name[0] || strpbrk(name, " \t\n\r$"))
         return 0;
     if (fprintf(fp,
-                "$timescale 1ns $end\n$scope module amb3r $end\n$var wire 1 ! %s $end\n$upscope "
+                "$timescale 1ns $end\n$scope module circuit $end\n$var wire 1 ! %s $end\n$upscope "
                 "$end\n$enddefinitions $end\n#0\nx!\n",
                 name) < 0)
         return 0;

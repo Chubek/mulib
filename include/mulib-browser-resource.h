@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_BROWSER_RESOURCE_H
 #define MULIB_BROWSER_RESOURCE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -69,7 +69,7 @@ mulib_browser_resource_register (mulib_browser_resources_t *r, const char *url,
   if (r->limit && r->len >= r->limit)
     return 0;
   mulib_browser_resource_t v = { 0 };
-  if (!mulib_shylock_copy (v.url, sizeof v.url, url))
+  if (!mulib_bounded_text_copy (v.url, sizeof v.url, url))
     return 0;
   if (r->len == r->cap)
     {
@@ -96,7 +96,7 @@ mulib_browser_resource_complete (mulib_browser_resources_t *r, size_t id,
       || r->items[id].loaded)
     return 0;
   mulib_browser_resource_t *v = r->items + id;
-  if (!mulib_shylock_copy (v->content_type, sizeof v->content_type, ct))
+  if (!mulib_bounded_text_copy (v->content_type, sizeof v->content_type, ct))
     return 0;
   v->status = st;
   v->bytes = size;

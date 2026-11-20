@@ -1,10 +1,21 @@
-/* MuLIB / Amb3r: dsim-testbench. C11 single-header kernel.
+/* MuLIB: dsim-testbench. C11 single-header kernel.
  * Define MULIB_IMPL_DSIM_TESTBENCH in exactly one implementation translation unit.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_DSIM_TESTBENCH_H
 #define MULIB_DSIM_TESTBENCH_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
+#include "mulib-graph-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,7 +30,7 @@ size_t mulib_dsim_testbench_compare(const unsigned *actual,const unsigned *expec
 #ifdef __cplusplus
 extern "C" {
 #endif
-size_t mulib_dsim_testbench_compare(const unsigned *actual,const unsigned *expected,size_t n,size_t *first){if((!actual&&n)||(!expected&&n))return MA_NONE;size_t count=0;if(first)*first=MA_NONE;for(size_t i=0;i<n;i++)if(expected[i]<=3&&actual[i]!=expected[i]){if(!count&&first)*first=i;count++;}return count;}
+size_t mulib_dsim_testbench_compare(const unsigned *actual,const unsigned *expected,size_t n,size_t *first){if((!actual&&n)||(!expected&&n))return MULIB_STORAGE_NONE;size_t count=0;if(first)*first=MULIB_STORAGE_NONE;for(size_t i=0;i<n;i++)if(expected[i]<=3&&actual[i]!=expected[i]){if(!count&&first)*first=i;count++;}return count;}
 #ifdef __cplusplus
 }
 #endif

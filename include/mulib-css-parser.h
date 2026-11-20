@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_CSS_PARSER_H
 #define MULIB_CSS_PARSER_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -18,7 +18,7 @@ extern "C"
   typedef struct mulib_css_rule
   {
     char selector[256];
-    mulib_shylock_buffer_t declarations;
+    mulib_bounded_text_buffer_t declarations;
   } mulib_css_rule_t;
   typedef struct mulib_css_parsed_sheet
   {
@@ -63,7 +63,7 @@ mulib_css_parse_sheet (const char *src, size_t n, size_t max,
   if ((!src && n) || !out || !max || n > 32 * 1024 * 1024
       || (n && memchr (src, 0, n)))
     return 0;
-  mulib_shylock_buffer_t clean = { 0 };
+  mulib_bounded_text_buffer_t clean = { 0 };
   clean.limit = 32 * 1024 * 1024;
   mulib_css_parsed_sheet_t s = { 0 };
   char quote = 0;
@@ -77,16 +77,16 @@ mulib_css_parse_sheet (const char *src, size_t n, size_t max,
           if (i + 1 >= n)
             goto fail;
           i++;
-          if (!mulib_shylock_text (&clean, " "))
+          if (!mulib_bounded_text_text (&clean, " "))
             goto fail;
           continue;
         }
       char c = src[i];
-      if (!mulib_shylock_append (&clean, &c, 1))
+      if (!mulib_bounded_text_append (&clean, &c, 1))
         goto fail;
       if (quote && c == '\\')
         {
-          if (++i == n || !mulib_shylock_append (&clean, src + i, 1))
+          if (++i == n || !mulib_bounded_text_append (&clean, src + i, 1))
             goto fail;
         }
       else if (quote)
@@ -159,14 +159,14 @@ mulib_css_parse_sheet (const char *src, size_t n, size_t max,
       mulib_css_rule_t r = { 0 };
       memcpy (r.selector, sel, len);
       r.selector[len] = 0;
-      if (!mulib_shylock_append (&r.declarations, src + body, i - body))
+      if (!mulib_bounded_text_append (&r.declarations, src + body, i - body))
         goto fail;
       if (s.len == s.cap)
         {
           size_t cap = s.cap ? 2 * s.cap : 16;
           if (cap < s.cap || cap > SIZE_MAX / sizeof r)
             {
-              mulib_shylock_buffer_free (&r.declarations);
+              mulib_bounded_text_buffer_free (&r.declarations);
               goto fail;
             }
           if (cap > max)
@@ -174,7 +174,7 @@ mulib_css_parse_sheet (const char *src, size_t n, size_t max,
           void *p = realloc (s.rules, cap * sizeof r);
           if (!p)
             {
-              mulib_shylock_buffer_free (&r.declarations);
+              mulib_bounded_text_buffer_free (&r.declarations);
               goto fail;
             }
           s.rules = p;
@@ -183,11 +183,11 @@ mulib_css_parse_sheet (const char *src, size_t n, size_t max,
       s.rules[s.len++] = r;
       i++;
     }
-  mulib_shylock_buffer_free (&clean);
+  mulib_bounded_text_buffer_free (&clean);
   *out = s;
   return 1;
 fail:
-  mulib_shylock_buffer_free (&clean);
+  mulib_bounded_text_buffer_free (&clean);
   mulib_css_sheet_free (&s);
   return 0;
 }
@@ -197,7 +197,7 @@ mulib_css_sheet_free (mulib_css_parsed_sheet_t *s)
   if (s)
     {
       for (size_t i = 0; i < s->len; i++)
-        mulib_shylock_buffer_free (&s->rules[i].declarations);
+        mulib_bounded_text_buffer_free (&s->rules[i].declarations);
       free (s->rules);
       memset (s, 0, sizeof *s);
     }

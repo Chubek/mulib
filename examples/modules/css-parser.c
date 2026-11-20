@@ -1,6 +1,6 @@
 /* Complete, offline css-parser example. */
 #define MULIB_IMPL_CSS_PARSER
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-css-parser.h"
 #include <assert.h>

@@ -115,19 +115,19 @@ def main():
     count = re.search(r'^module_count: (\d+)$', manifest, re.M)
     if not count or int(count.group(1)) != len(headers):
         failures.append(('MANIFEST.yaml', 'module_count does not match header inventory'))
-    bounded, amb3r = set(), set()
+    bounded, engineering = set(), set()
     for header in headers:
         name, text = header.name, texts[header.name]
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
         block = entries.get(name, '')
-        profile = re.search(r'^  profile: amb3r$', block, re.M)
+        profile = re.search(r'^  profile: engineering$', block, re.M)
         if profile:
-            amb3r.add(name)
+            engineering.add(name)
             for key in ('manual', 'example'):
                 field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
                 if (field and not (root / field.group(1)).is_file()) or (key == 'manual' and not field):
-                    failures.append((name, 'missing Amb3r ' + key))
+                    failures.append((name, 'missing engineering ' + key))
         if re.search(r'^  implementation: static-inline$', block, re.M):
             bounded.add(name)
             if match or not re.search(r'^  status: bounded$', block, re.M):
@@ -206,14 +206,14 @@ def main():
     implementation = (root / 'tests/implementation.c').read_text()
     declarations = (root / 'tests/declarations.c').read_text()
     for name in texts:
-        if name in bounded or name in amb3r:
-            continue  # graphics gate or generated Amb3r compilation below
+        if name in bounded or name in engineering:
+            continue  # graphics gate or generated engineering compilation below
         for path, text in [('tests/implementation.c', implementation),
                            ('tests/declarations.c', declarations)]:
             if '#include "' + name + '"' not in text:
                 failures.append((path, 'missing header ' + name))
     for name, switch in switches.items():
-        if name not in amb3r and '#define ' + switch + '\n' not in implementation:
+        if name not in engineering and '#define ' + switch + '\n' not in implementation:
             failures.append(('tests/implementation.c', 'missing switch ' + switch))
 
     def closure(name, seen=None):
@@ -450,9 +450,9 @@ def main():
         # The shell modules require this before any system header, including in
         # the declaration-first and reverse-order combined implementation tests.
         posix_source = '#ifndef _POSIX_C_SOURCE\n#define _POSIX_C_SOURCE 200809L\n#endif\n'
-        defines = header_switches(texts.keys() - amb3r)
+        defines = header_switches(texts.keys() - engineering)
         includes = ''.join('#include "' + header.name + '"\n' for header in reversed(headers)
-                           if header.name not in amb3r)
+                           if header.name not in engineering)
         main_source = 'int main(void) { return 0; }\n'
         linux_source = ('#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
                         '#define _GNU_SOURCE\n#endif\n')
@@ -469,25 +469,25 @@ def main():
                               language='c++'))
         else:
             print('C++ declaration check skipped: no C++ compiler')
-        # Amb3r includes a resolver symbol incompatible with legacy dsim-logic4.
+        # engineering includes a resolver symbol incompatible with legacy dsim-logic4.
         # Scope the indentation exception to this separate reference family.
-        amb3r_flags = ['-Wno-misleading-indentation']
-        if amb3r:
-            includes = ''.join(f'#include "{name}"\n' for name in sorted(amb3r))
-            dependencies = set().union(*(closure(name) for name in amb3r))
-            cases.append(dict(label='Amb3r combined implementations',
+        engineering_flags = ['-Wno-misleading-indentation']
+        if engineering:
+            includes = ''.join(f'#include "{name}"\n' for name in sorted(engineering))
+            dependencies = set().union(*(closure(name) for name in engineering))
+            cases.append(dict(label='engineering combined implementations',
                               source_text=header_switches(dependencies) + includes + main_source,
-                              extra_flags=amb3r_flags))
+                              extra_flags=engineering_flags))
             if have_cxx:
-                cases.append(dict(label='Amb3r C++ declarations', source_text=includes + main_source,
-                                  language='c++', extra_flags=amb3r_flags))
+                cases.append(dict(label='engineering C++ declarations', source_text=includes + main_source,
+                                  language='c++', extra_flags=engineering_flags))
         counts['combined builds'] = (check_many(cases), len(cases))
         print('MuLIB combined builds: %s/%s passed' % counts['combined builds'], flush=True)
         if not args.no_isolation:
             cases = []
             for header in headers:
                 name = header.name
-                extra_flags = amb3r_flags if name in amb3r else []
+                extra_flags = engineering_flags if name in engineering else []
                 declaration = ('#include "' + name + '"\n') * 2 + 'int main(void) { return 0; }\n'
                 cases.append(dict(label='isolated declarations: ' + name, source_text=declaration,
                                   extra_flags=extra_flags))

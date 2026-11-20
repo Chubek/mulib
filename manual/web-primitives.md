@@ -10,7 +10,7 @@ ECMAScript, Schema.org, forecasting or security implementations.
 
 | Layer | Starting points |
 | --- | --- |
-| Owned bytes and money | [shylock-core](mulib-shylock-core.md), [money](mulib-money.md) |
+| Owned bytes and money | [bounded-text](mulib-bounded-text.md), [money](mulib-money.md) |
 | Price records and analysis | [observations](mulib-price-observation.md), [normalization](mulib-price-normalize.md), [matching](mulib-price-match.md), [history](mulib-price-history.md), [series](mulib-price-timeseries.md), [forecasts](mulib-price-forecast.md), [confidence](mulib-price-confidence.md), [demand](mulib-price-demand.md), [monitoring](mulib-price-monitor.md), [ensembles](mulib-price-ensemble.md), [causal diagnostic](mulib-price-causal.md) |
 | Retrieval and discovery | [providers](mulib-websearch-provider.md), [results](mulib-websearch-engine.md), [crawl frontier](mulib-crawler.md), [fetch policy](mulib-fetch-policy.md), [transport adapter](mulib-fetch.md), [archive](mulib-crawlarchive.md) |
 | HTML and extraction | [lexical events](mulib-html-textstream.md), [tokens](mulib-html-tokenizer.md), [tree](mulib-html-treebuilder.md), [native bridge](mulib-html-dombridge.md), [queries](mulib-dom-query.md), [text](mulib-readability.md), [JSON-LD spans](mulib-html-jsonld.md), [offers](mulib-schemaorg.md), [rules](mulib-webextract-rules.md), [evidence](mulib-webextract-evidence.md), [consensus](mulib-webextract-reconcile.md), [LLM requests](mulib-webextract-llm.md) |

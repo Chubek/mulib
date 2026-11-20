@@ -7,7 +7,7 @@
 #ifndef MULIB_HTML_JSONLD_H
 #define MULIB_HTML_JSONLD_H
 #include "mulib-html-tokenizer.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -16,7 +16,7 @@ extern "C"
 {
 #endif
 
-  typedef int (*mulib_html_jsonld_fn) (void *ctx, mulib_shylock_span_t source,
+  typedef int (*mulib_html_jsonld_fn) (void *ctx, mulib_bounded_text_span_t source,
                                        size_t offset);
   /** @brief See manual/mulib-html-jsonld.md for this operation's contract. */
   int mulib_html_jsonld_scan (const char *html, size_t n,
@@ -67,7 +67,7 @@ mulib_html_jsonld_token_ (void *ctx, const mulib_html_token_t *t)
               char type[20];
               memcpy (type, v, n);
               type[n] = 0;
-              s->active = mulib_shylock_equal_ci (type, "application/ld+json");
+              s->active = mulib_bounded_text_equal_ci (type, "application/ld+json");
             }
         }
       if (s->active)
@@ -78,7 +78,7 @@ mulib_html_jsonld_token_ (void *ctx, const mulib_html_token_t *t)
     {
       if (s->max && s->count >= s->max)
         return 0;
-      mulib_shylock_span_t span
+      mulib_bounded_text_span_t span
           = { s->source + s->start, t->offset - s->start };
       if (!s->fn (s->ctx, span, s->start))
         return 0;

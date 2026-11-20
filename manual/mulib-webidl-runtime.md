@@ -20,7 +20,7 @@ Include `include/mulib-webidl-runtime.h`. Define the following switches in exact
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBIDL_RUNTIME`.
+`MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBIDL_RUNTIME`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -55,7 +55,7 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_WEBIDL_RUNTIME_H
 #define MULIB_WEBIDL_RUNTIME_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include "mulib-utf8.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -77,7 +77,7 @@ extern "C"
   /** @brief See manual/mulib-webidl-runtime.md for this operation's contract.
    */
   int mulib_webidl_domstring_utf8 (const char *utf8, size_t n,
-                                   mulib_shylock_buffer_t *out);
+                                   mulib_bounded_text_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -96,7 +96,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-webidl-runtime.h`](../include/mulib-webidl-runtime.h) |
 | Implementation switch | `MULIB_IMPL_WEBIDL_RUNTIME` |
-| Repository-local includes | [mulib-shylock-core](mulib-shylock-core.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/webidl-runtime.c`](../examples/modules/webidl-runtime.c) |
 
 The include list includes conditional and implementation-only includes;

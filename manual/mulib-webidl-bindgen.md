@@ -21,7 +21,7 @@ Include `include/mulib-webidl-bindgen.h`. Define the following switches in exact
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBIDL_BINDGEN`.
+`MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBIDL_BINDGEN`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -56,7 +56,7 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_WEBIDL_BINDGEN_H
 #define MULIB_WEBIDL_BINDGEN_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -68,7 +68,7 @@ extern "C"
   /** @brief See manual/mulib-webidl-bindgen.md for this operation's contract.
    */
   int mulib_webidl_bindgen_interfaces (const char *idl, size_t n,
-                                       mulib_shylock_buffer_t *out,
+                                       mulib_bounded_text_buffer_t *out,
                                        size_t max_interfaces);
 #ifdef __cplusplus
 }
@@ -88,7 +88,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-webidl-bindgen.h`](../include/mulib-webidl-bindgen.h) |
 | Implementation switch | `MULIB_IMPL_WEBIDL_BINDGEN` |
-| Repository-local includes | [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/webidl-bindgen.c`](../examples/modules/webidl-bindgen.c) |
 
 The include list includes conditional and implementation-only includes;

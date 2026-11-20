@@ -19,7 +19,7 @@ Include `include/mulib-browser-resource.h`. Define the following switches in exa
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_BROWSER_RESOURCE`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_BROWSER_RESOURCE`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -54,7 +54,7 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_BROWSER_RESOURCE_H
 #define MULIB_BROWSER_RESOURCE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -105,7 +105,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-browser-resource.h`](../include/mulib-browser-resource.h) |
 | Implementation switch | `MULIB_IMPL_BROWSER_RESOURCE` |
-| Repository-local includes | [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/browser-resource.c`](../examples/modules/browser-resource.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -1,10 +1,21 @@
-/* MuLIB / Amb3r: timing-critical. C11 single-header kernel.
+/* MuLIB: timing-critical. C11 single-header kernel.
  * Define MULIB_IMPL_TIMING_CRITICAL in exactly one implementation translation unit.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_TIMING_CRITICAL_H
 #define MULIB_TIMING_CRITICAL_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
+#include "mulib-graph-core.h"
 #include "mulib-formal-counterexample.h"
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +31,7 @@ int mulib_timing_critical(const double *slack,const size_t *pred,size_t n,size_t
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_timing_critical(const double *slack,const size_t *pred,size_t n,size_t *path,size_t capacity,size_t *length){if(!slack||!pred||!n||!length)return 0;size_t bad=MA_NONE;for(size_t i=0;i<n;i++)if(isfinite(slack[i])&&(bad==MA_NONE||slack[i]<slack[bad]))bad=i;return bad!=MA_NONE&&mulib_formal_counterexample(pred,n,bad,path,capacity,length);}
+int mulib_timing_critical(const double *slack,const size_t *pred,size_t n,size_t *path,size_t capacity,size_t *length){if(!slack||!pred||!n||!length)return 0;size_t bad=MULIB_STORAGE_NONE;for(size_t i=0;i<n;i++)if(isfinite(slack[i])&&(bad==MULIB_STORAGE_NONE||slack[i]<slack[bad]))bad=i;return bad!=MULIB_STORAGE_NONE&&mulib_formal_counterexample(pred,n,bad,path,capacity,length);}
 #ifdef __cplusplus
 }
 #endif

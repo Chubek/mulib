@@ -1,6 +1,6 @@
 /* Complete, offline browser-resource example. */
 #define MULIB_IMPL_BROWSER_RESOURCE
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-browser-resource.h"
 #include <assert.h>

@@ -21,7 +21,7 @@ Include `include/mulib-webextract-llm.h`. Define the following switches in exact
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_AST`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBEXTRACT_LLM`.
+`MULIB_IMPL_AST`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBEXTRACT_LLM`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -57,7 +57,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_WEBEXTRACT_LLM_H
 #define MULIB_WEBEXTRACT_LLM_H
 #include "mulib-json.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -68,17 +68,17 @@ extern "C"
 
   typedef int (*mulib_webextract_llm_transport_fn) (
       void *ctx, const char *request_json, size_t length,
-      mulib_shylock_buffer_t *response);
+      mulib_bounded_text_buffer_t *response);
   /** @brief See manual/mulib-webextract-llm.md for this operation's contract.
    */
   int mulib_webextract_llm_request (const char *model, const char *text,
                                     const char *schema, size_t max_text,
-                                    mulib_shylock_buffer_t *out);
+                                    mulib_bounded_text_buffer_t *out);
   /** @brief See manual/mulib-webextract-llm.md for this operation's contract.
    */
   int mulib_webextract_llm_call (mulib_webextract_llm_transport_fn transport,
                                  void *ctx, const char *request, size_t n,
-                                 mulib_shylock_buffer_t *response);
+                                 mulib_bounded_text_buffer_t *response);
 #ifdef __cplusplus
 }
 #endif
@@ -97,7 +97,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-webextract-llm.h`](../include/mulib-webextract-llm.h) |
 | Implementation switch | `MULIB_IMPL_WEBEXTRACT_LLM` |
-| Repository-local includes | [mulib-json](mulib-json.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/webextract-llm.c`](../examples/modules/webextract-llm.c) |
 
 The include list includes conditional and implementation-only includes;

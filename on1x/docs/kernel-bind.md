@@ -149,7 +149,7 @@ profile.
 Registered bounded `implementation: static-inline` modules are also eligible
 for metadata inspection. Use underscores for hyphens, for example
 `import kernel mulib.media_timebase as Time;` or
-`import kernel mulib.compute_vulkan as Vulkan;`. This includes the 193 JoltFX
+`import kernel mulib.compute_vulkan as Vulkan;`. This includes the 193 bounded media
 assessment kernels and the review's shared audio-core helper. The real ExoML/libclang graph retains their inline
 definitions and internal linkage; these are **not external archive symbols**.
 Reports remain `not_representable`, `callable:false`, with no semantic sidecar.
@@ -194,5 +194,5 @@ immutable slices and specific record/enum/status shapes only. The explicit raw
 framed profile handles sealed owners, including a
 [reusable session](kernel-framed.md#reusable-session) with one retained scalar
 callback dispatched by explicit same-thread polling.
-Safe owned handles, general callback ABIs, Money and the full Shylock workflow
+Safe owned handles, general callback ABIs, Money and general fixture-driven I/O
 remain unadmitted.

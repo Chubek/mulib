@@ -1,6 +1,6 @@
 /* Complete, offline price-match example. */
 #define MULIB_IMPL_PRICE_MATCH
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-price-match.h"
 #include <assert.h>

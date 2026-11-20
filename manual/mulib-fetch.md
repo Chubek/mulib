@@ -21,7 +21,7 @@ Include `include/mulib-fetch.h`. Define the following switches in exactly one C1
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_AST`, `MULIB_IMPL_BROWSER_ORIGIN`, `MULIB_IMPL_FETCH`, `MULIB_IMPL_FETCH_POLICY`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`, `MULIB_IMPL_INTE6`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_URI`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_AST`, `MULIB_IMPL_BROWSER_ORIGIN`, `MULIB_IMPL_FETCH`, `MULIB_IMPL_FETCH_POLICY`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`, `MULIB_IMPL_INTE6`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_URI`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -57,7 +57,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_FETCH_H
 #define MULIB_FETCH_H
 #include "mulib-fetch-policy.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -67,7 +67,7 @@ extern "C"
 #endif
 
   typedef int (*mulib_fetch_transport_fn) (void *ctx, const char *url,
-                                           mulib_shylock_buffer_t *body,
+                                           mulib_bounded_text_buffer_t *body,
                                            unsigned *status,
                                            char *content_type, size_t cap);
   typedef struct mulib_fetch_client
@@ -78,7 +78,7 @@ extern "C"
   } mulib_fetch_client_t;
   /** @brief See manual/mulib-fetch.md for this operation's contract. */
   int mulib_fetch_get (const mulib_fetch_client_t *client, const char *url,
-                       mulib_shylock_buffer_t *body, unsigned *status,
+                       mulib_bounded_text_buffer_t *body, unsigned *status,
                        char *content_type, size_t cap);
 #ifdef __cplusplus
 }
@@ -98,7 +98,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-fetch.h`](../include/mulib-fetch.h) |
 | Implementation switch | `MULIB_IMPL_FETCH` |
-| Repository-local includes | [mulib-fetch-policy](mulib-fetch-policy.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-fetch-policy](mulib-fetch-policy.md) |
 | Complete example | [`examples/modules/fetch.c`](../examples/modules/fetch.c) |
 
 The include list includes conditional and implementation-only includes;

@@ -21,7 +21,7 @@ Include `include/mulib-schemaorg.h`. Define the following switches in exactly on
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_AST`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_SCHEMAORG`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_AST`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_SCHEMAORG`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -57,7 +57,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_SCHEMAORG_H
 #define MULIB_SCHEMAORG_H
 #include "mulib-json.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -91,7 +91,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-schemaorg.h`](../include/mulib-schemaorg.h) |
 | Implementation switch | `MULIB_IMPL_SCHEMAORG` |
-| Repository-local includes | [mulib-json](mulib-json.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/schemaorg.c`](../examples/modules/schemaorg.c) |
 
 The include list includes conditional and implementation-only includes;

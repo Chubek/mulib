@@ -4,7 +4,7 @@
     "json": ["m"], "microjs": ["m"], "yantlr": ["m"],
     "archml": ["m"], "optml": ["m"], "mune": ["m", "pthread"],
     "dynload": ["dl"], "shiraz": ["m"], "readline": ["m"],
-    "hidden_markov_chain": ["m"], "corpus": ["m"], "shylock-core": ["m"]
+    "hidden_markov_chain": ["m"], "corpus": ["m"], "bounded-text": ["m"]
   },
   "fixtures": {
     "archml": {"kernels": ["archml", "unit", "isel"], "kind": "profiles", "files": ["library/archml/*.am", "library/archml/*.aml"], "checks": ["tools/embed_units.py"]},

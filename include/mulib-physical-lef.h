@@ -1,16 +1,27 @@
-/* MuLIB / Amb3r: physical-lef. C11 single-header kernel.
+/* MuLIB: physical-lef. C11 single-header kernel.
  * Define MULIB_IMPL_PHYSICAL_LEF in exactly one implementation translation unit.
  * Profile: Single-layer rectangular-block macro fragment writer; not full LEF interchange.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_PHYSICAL_LEF_H
 #define MULIB_PHYSICAL_LEF_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
+#include "mulib-geom2-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int mulib_physical_lef_macro(FILE *f,const char *name,double width,double height,const char *layer,const ma_box *obstructions,size_t n);
+int mulib_physical_lef_macro(FILE *f,const char *name,double width,double height,const char *layer,const mulib_geom2_box *obstructions,size_t n);
 #ifdef __cplusplus
 }
 #endif
@@ -20,7 +31,7 @@ int mulib_physical_lef_macro(FILE *f,const char *name,double width,double height
 #ifdef __cplusplus
 extern "C" {
 #endif
-int mulib_physical_lef_macro(FILE *f,const char *name,double width,double height,const char *layer,const ma_box *obstructions,size_t n){if(!f||!ma_word(name)||!ma_word(layer)||width<=0||height<=0||!isfinite(width+height)||(!obstructions&&n))return 0;for(size_t i=0;i<n;i++)if(!ma_box_valid(obstructions[i]))return 0;if(fprintf(f,"MACRO %s\n CLASS BLOCK ;\n ORIGIN 0 0 ;\n SIZE %.9g BY %.9g ;\n OBS\n LAYER %s ;\n",name,width,height,layer)<0)return 0;for(size_t i=0;i<n;i++)if(fprintf(f," RECT %.9g %.9g %.9g %.9g ;\n",obstructions[i].lo.x,obstructions[i].lo.y,obstructions[i].hi.x,obstructions[i].hi.y)<0)return 0;return fprintf(f," END\nEND %s\n",name)>0;}
+int mulib_physical_lef_macro(FILE *f,const char *name,double width,double height,const char *layer,const mulib_geom2_box *obstructions,size_t n){if(!f||!mulib_storage_identifier_valid(name)||!mulib_storage_identifier_valid(layer)||width<=0||height<=0||!isfinite(width+height)||(!obstructions&&n))return 0;for(size_t i=0;i<n;i++)if(!mulib_geom2_box_valid(obstructions[i]))return 0;if(fprintf(f,"MACRO %s\n CLASS BLOCK ;\n ORIGIN 0 0 ;\n SIZE %.9g BY %.9g ;\n OBS\n LAYER %s ;\n",name,width,height,layer)<0)return 0;for(size_t i=0;i<n;i++)if(fprintf(f," RECT %.9g %.9g %.9g %.9g ;\n",obstructions[i].lo.x,obstructions[i].lo.y,obstructions[i].hi.x,obstructions[i].hi.y)<0)return 0;return fprintf(f," END\nEND %s\n",name)>0;}
 #ifdef __cplusplus
 }
 #endif

@@ -7,7 +7,7 @@
 #ifndef MULIB_WEBSEARCH_ENGINE_H
 #define MULIB_WEBSEARCH_ENGINE_H
 #include "mulib-browser-origin.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -72,8 +72,8 @@ mulib_websearch_engine_add (mulib_websearch_engine_t *e, const char *url,
   if (e->limit && e->len >= e->limit)
     return 0;
   mulib_websearch_hit_t v = { 0 };
-  if (!mulib_shylock_copy (v.url, sizeof v.url, url)
-      || !mulib_shylock_copy (v.title, sizeof v.title, title))
+  if (!mulib_bounded_text_copy (v.url, sizeof v.url, url)
+      || !mulib_bounded_text_copy (v.title, sizeof v.title, title))
     return 0;
   v.score = score;
   v.providers = provider;

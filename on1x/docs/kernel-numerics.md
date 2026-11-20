@@ -49,8 +49,8 @@ module and the optimization kernel. It validates and converts embedded minor
 units, separates training, chronological selection, and a holdout observation,
 executes tick-grid optimization and discrete candidate evaluation, and tests
 the mismatched-length failure. A separate C11 fixture checks the same workflow.
-This is **not** the complete §9.5 Shylock fixture: it still uses embedded
-samples and does not perform admitted JSON/file I/O or Shylock parity.
+This is **not** general application integration: it still uses embedded
+samples and does not perform admitted JSON/file I/O or production data handling.
 
 Generate a review subject using the [same command and trust
 procedure](kernel-review.md#reproducible-workflow), replacing the input with

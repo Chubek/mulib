@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_BROWSER_SNAPSHOT_H
 #define MULIB_BROWSER_SNAPSHOT_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,7 +17,7 @@ extern "C"
 
   typedef struct mulib_browser_snapshot
   {
-    mulib_shylock_buffer_t bytes;
+    mulib_bounded_text_buffer_t bytes;
     uint64_t version, hash;
   } mulib_browser_snapshot_t;
   /** @brief See manual/mulib-browser-snapshot.md for this operation's
@@ -55,9 +55,9 @@ mulib_browser_snapshot_make (mulib_browser_snapshot_t *o, const void *p,
     return 0;
   mulib_browser_snapshot_t s = { 0 };
   s.bytes.limit = max;
-  if (!mulib_shylock_append (&s.bytes, p, n))
+  if (!mulib_bounded_text_append (&s.bytes, p, n))
     return 0;
-  s.hash = mulib_shylock_hash (p, n);
+  s.hash = mulib_bounded_text_hash (p, n);
   s.version = ver;
   *o = s;
   return 1;
@@ -75,7 +75,7 @@ mulib_browser_snapshot_free (mulib_browser_snapshot_t *s)
 {
   if (s)
     {
-      mulib_shylock_buffer_free (&s->bytes);
+      mulib_bounded_text_buffer_free (&s->bytes);
       memset (s, 0, sizeof *s);
     }
 }

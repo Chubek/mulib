@@ -122,4 +122,4 @@ python3 tools/manuals.py --compile-examples
 The second command compiles and links examples in temporary directories without
 running programs or accessing devices. For execution and broader checks, see
 the individual stack guides, [hardening](hardening.md), and the repository
-[testing instructions](../README.md#extensive-examples-and-test-coverage).
+[testing instructions](../README.md#build-test-and-platform-limits).

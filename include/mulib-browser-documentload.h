@@ -56,7 +56,7 @@ mulib_browser_documentload_bounded (const mulib_browser_fetch_t *f,
   mulib_browser_fetch_t fetch = *f;
   if (!fetch.client.policy.max_bytes || fetch.client.policy.max_bytes > bytes)
     fetch.client.policy.max_bytes = bytes;
-  mulib_shylock_buffer_t body = { 0 };
+  mulib_bounded_text_buffer_t body = { 0 };
   body.limit = bytes;
   char type[128] = { 0 };
   unsigned code = 0;
@@ -81,7 +81,7 @@ mulib_browser_documentload_bounded (const mulib_browser_fetch_t *f,
     }
   if (ok)
     *status = code;
-  mulib_shylock_buffer_free (&body);
+  mulib_bounded_text_buffer_free (&body);
   return ok;
 }
 int

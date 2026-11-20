@@ -1,7 +1,7 @@
 /** @file mulib-compute-vulkan.h
  * Checked Vulkan queue provider attachment and dispatch.
  * C11 header-only; caller owns buffers unless expressly stated.
- * Scope: Adapter only; no native vulkan device, command creation or driver code. Wire JoltFX backend before advertising support.
+ * Scope: Adapter only; no native vulkan device, command creation or driver code. Attach a real queue provider before advertising support.
  */
 #ifndef MULIB_COMPUTE_VULKAN_H
 #define MULIB_COMPUTE_VULKAN_H

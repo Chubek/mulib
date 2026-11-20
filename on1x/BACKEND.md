@@ -2,7 +2,7 @@
 
 > **Location:** `mulib/on1x/BACKEND.md`  
 > **Audience:** autonomous implementation agents working on On1x.  
-> **Mission:** implement real, verified and extensible On1x backends, using the *current* LibStone toolchain without regressing the already-working C11 backend. The minimum production goal remains the Shylock price-prediction application described in `COMPLETION.md`; native code generation is an additional outcome, **not** permission to defer safe MuLIB binding.
+> **Mission:** implement real, verified and extensible On1x backends, using the *current* LibStone toolchain without regressing the already-working C11 backend. Verified MuLIB binding remains an independent goal described in `COMPLETION.md`; native code generation is an additional outcome, **not** permission to defer safe foreign interfaces.
 >
 > **Status of this file:** implementation specification, **not** a statement that the integrations already exist. Prefer verified source and passing tests over design claims.
 
@@ -202,7 +202,7 @@ Current supported building blocks:
 | `Novostone::DatabaseBasedIR` | i32 SSA reference/dominance/liveness and example relational analysis | Existing opcode semantics are incompatible with general On1x values/effects |
 | `Novostone::QueryBasedIR` | Safe rewrite workflow, SCCP/DCE/CFG, differential test harness | Its own optimizer rewrites apply to its supported i32 dialect only |
 | `Novostone::SpeculativeIR` | Guarded parameter specialization and recovery-frame reference | Only narrow supported guard/recovery subset; no arbitrary JIT OSR |
-| `Novostone::CostCC` | Context-specific compiler cost ranking, model versioning/drift fallback | Compiler latency cost, **not** Shylock's economic price predictor |
+| `Novostone::CostCC` | Context-specific compiler cost ranking, model versioning/drift fallback | Compiler latency cost, not economic price prediction |
 
 ### Integrate via facts, not lossy values
 
@@ -242,7 +242,7 @@ Introduce a pass API with `requires`, `preserves`, `invalidates`, `effects`, `ta
 
 Mandatory passes: lowering/canonicalization, CFG normalization, checked constant folding, dead pure code elimination, liveness, foreign effect barriers, closure conversion, verified register/spill assignment for supported native targets, and exact-once cleanup placement. Additional passes (inlining, Sequent simplification, equality saturation, loop transforms, vectorization and speculative specialization) begin disabled until soundness gates pass.
 
-**Profiler feedback:** Prolific measurements and Novostone CostCC may *rank* compiler strategies; they may not waive type/ownership checks, claim semantic equivalence or certify a risky rewrite. Profile-guided speculation requires a guard, a sufficient fallback, correct state reconstruction, invalidation and real workload comparison. Price prediction in Shylock is distinct from compiler profitability prediction.
+**Profiler feedback:** Prolific measurements and Novostone CostCC may *rank* compiler strategies; they may not waive type/ownership checks, claim semantic equivalence or certify a risky rewrite. Profile-guided speculation requires a guard, a sufficient fallback, correct state reconstruction, invalidation and real workload comparison. Economic price prediction is distinct from compiler profitability prediction.
 
 ## 8. Foreign calls are backend features, not ad hoc source rewrites
 
@@ -256,7 +256,7 @@ Use the canonical ExoML CDecl plus v2 semantic contract and the independent On1x
 
 The backend must preserve these requirements in C11, VM and native lowering. `extern fn` raw escape hatches stay explicitly unsafe. Safe imports only appear when the full source review + ABI + compiler usage + runtime gates succeed. Otherwise emit a deterministic rejection or name the adapter **trusted/unchecked** rather than certifying safety.
 
-Required Shylock fixtures: `mulib_statsprice_estimate`, `mulib_histprice_ema`, `mulib_price_forecast`, `mulib_price_ensemble_blend`, `mulib_price_demand_fit`, and `mulib_priceopt_optimize`, including failures, arrays, structs, enums and checked result output. Use the *actual* canonical header signatures.
+Representative numerical fixtures include `mulib_statsprice_estimate`, `mulib_histprice_ema`, `mulib_price_forecast`, `mulib_price_ensemble_blend`, `mulib_price_demand_fit`, and `mulib_priceopt_optimize`, including failures, arrays, structs, enums and checked result output. Use the *actual* canonical header signatures; this list does not assert current admission.
 
 ## 9. Build integration and proposed CLI
 
@@ -294,7 +294,7 @@ These commands exercise upstream components, **not** an On1x backend. Add indepe
 | FFI | real MuLIB kernels/arrays/structs/errors, ABI layout probes, ownership rollback and one implementation TU |
 | Safety | ASan/UBSan; TSan for eligible concurrent components; negative compile tests and allocation-failure injection |
 | Reproducibility | deterministic IR dumps/artifacts, pinned source/contract/toolchain IDs; independently built installed-package consumer |
-| Shylock | real On1x source ingesting a fixture, generating forecasts, comparing MAE and safely handling no-demand-data case |
+| Numerical composition | Real On1x source ingesting a fixture, generating forecasts, comparing MAE and safely handling missing demand data |
 
 If a toolchain/target cannot be run, say **NOT VERIFIED** and provide the exact blocker; do not present compilation as execution or a sample corpus as a proof.
 
@@ -306,15 +306,15 @@ If a toolchain/target cannot be run, say **NOT VERIFIED** and provide the exact 
 - **B3 — Novostone relational analyses:** generated Datalog rules, transactional fact import and revisioned queries. *Pass:* analysis equivalence against an independent On1x reference oracle; no i32 type laundering.
 - **B4 — General backend pass manager:** preserved/invalidated facts, verified pass order, diagnostic provenance and deterministic fallback. *Pass:* failed transformations never escape into executable artifacts.
 - **B5 — Real VM/native subset:** choose actual Flintstone/Firestone/etc. target APIs and produce executable artifacts. *Pass:* GCC/Clang C11 oracle agreement; real machine execution on supported host and ABI fixture checks.
-- **B6 — Shylock-ready static foreign calls:** `f64`, buffer/record/enum/error/resource bindings through ExoML-reviewed contracts. *Pass:* `COMPLETION.md` Shylock runnable and safe-FFI gates (which are separate).
+- **B6 — Verified static foreign calls:** `f64`, buffer/record/enum/error/resource bindings through ExoML-reviewed contracts. *Pass:* `COMPLETION.md` executable and independent safe-FFI gates (which are separate).
 - **B7 — Additional optimization / profiling:** measured profile-driven optimization and guarded speculation, optional async/vector/native improvements. *Pass:* verified deoptimization, strict fallback, no observable semantic regressions.
 
-B6 is the user's actual application requirement. **Do not hold B6 hostage to B5 or B7**. C11 plus verified foreign bindings is an acceptable Shylock-ready implementation.
+B6 is independent of native optimization. **Do not hold B6 hostage to B5 or B7**. C11 plus verified foreign bindings is a useful supported implementation.
 
 ## 12. Deliverables, change reports and completion criteria
 
 For every work package commit: (1) source/headers/CMake updates; (2) positive and negative tests; (3) public docs and examples; (4) a reproducible command log; (5) an explicit supported/unsupported feature table. Update `README.md`, `VERIFICATION.md`, `docs/roadmap.md` and `COMPLETION.md` only with measured facts.
 
-**Backend complete for Shylock** only when an On1x-authored application builds with real MuLIB kernels, emits a standalone C11 executable and passes the `COMPLETION.md` functionality/ABI/error/ownership tests. **Native backend complete** additionally requires verified machine code for each explicitly supported ABI and language subset. **Optimizing backend complete** additionally requires validated pass transformations with bounded failure behavior, sustained performance evidence, and safe fallbacks.
+**Foreign-call backend acceptance** requires an On1x-authored integration fixture that builds with real MuLIB kernels, emits a standalone C11 executable and passes the `COMPLETION.md` functionality/ABI/error/ownership tests for its declared profile. **Native backend acceptance** additionally requires verified machine code for each explicitly supported ABI and language subset. **Optimizing backend acceptance** additionally requires validated pass transformations with bounded failure behavior, sustained performance evidence, and safe fallbacks.
 
 Do not close the task with placeholders, a prose-only roadmap, hardcoded demo outputs, unverified speculative transforms, an `emit-safe` command that bypasses review, or a fake native target that compiles by calling the old C emitter. Continue implementing against the real repository, and report blockers with evidence rather than inventing success.

@@ -1,4 +1,4 @@
-/* C++17 declarations-only compatibility across the entire Amb3r slice. */
+/* C++17 declarations-only compatibility across the engineering modules. */
 #include "mulib-asic-floorplan.h"
 #include "mulib-asic-sta.h"
 #include "mulib-dsim-bitvec.h"

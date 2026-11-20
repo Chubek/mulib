@@ -78,7 +78,7 @@ mulib_browser_engine_navigate (mulib_browser_engine_t *e, const char *url,
       || !mulib_browser_limits_valid (&e->limits) || strlen (url) > 8192
       || e->stream.sequence == UINT64_MAX)
     return 0;
-  char *owned = mulib_shylock_dup (url, strlen (url));
+  char *owned = mulib_bounded_text_dup (url, strlen (url));
   if (!owned)
     return 0;
   e->navigating = 1;

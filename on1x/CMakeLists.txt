@@ -199,7 +199,7 @@ if(ON1X_LINKED_SDK_EXTENSION)
         "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" ${_sdk_test_c_flags})
   endif()
 endif()
-include(sdk/cmake/ConsolidationActivation.cmake)
+include(sdk/cmake/LinkedAnalyzerActivation.cmake)
 if(ON1X_WITH_NEROTYPICAL)
   include(cmake/Nerotypical.cmake)
 endif()
@@ -735,12 +735,12 @@ if(BUILD_TESTING)
          "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/inline-wrappers-sdk"
          "${CMAKE_C_COMPILER}" ${_test_c_flags})
        set_tests_properties(on1x.inline_wrappers_sdk PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
-       add_test(NAME on1x.workload.shylock COMMAND "${Python3_EXECUTABLE}" -B
-         "${CMAKE_CURRENT_SOURCE_DIR}/../consolidation/workloads/shylock/check.py"
+       add_test(NAME on1x.integration.forecasting COMMAND "${Python3_EXECUTABLE}" -B
+         "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/forecasting/check.py"
          --on1xc "$<TARGET_FILE:on1xc>" --exotract "$<TARGET_FILE:exotract>"
-         --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/workload-shylock"
+         --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/integration-forecasting"
          --cc "${CMAKE_C_COMPILER}" ${_test_c_flags})
-       set_tests_properties(on1x.workload.shylock PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+       set_tests_properties(on1x.integration.forecasting PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
      endif()
      add_test(NAME on1x.bounded_kernel_discovery_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_bounded_kernel_discovery_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"

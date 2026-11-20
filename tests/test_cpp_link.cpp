@@ -60,9 +60,9 @@ int main() {
     assert(mulib_num_csr_from_triplets(&sparse, &csr));
     assert(mulib_num_csr_transpose(&csr, &transpose));
     assert(transpose.rows == 2 && transpose.cols == 1 && transpose.values[0] == 3);
-    ma_csr borrow{};
-    assert(mulib_num_csr_borrow_amb3r(&transpose, 3, 1, 1, &borrow));
-    assert(mulib_num_csr_from_amb3r(&borrow, 3, 1, 1, &copy));
+    mulib_num_csr_view borrow{};
+    assert(mulib_num_csr_borrow_view(&transpose, 3, 1, 1, &borrow));
+    assert(mulib_num_csr_copy_from_view(&borrow, 3, 1, 1, &copy));
     mulib_num_csr_free(&transpose);
     assert(copy.offset[2] == 1 && copy.column[0] == 0 && copy.values[0] == 3);
     mulib_num_csr_free(&copy);

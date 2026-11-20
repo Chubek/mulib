@@ -1,0 +1,50 @@
+{
+  "schema": "on1x.sdk.integration-report/1",
+  "worker": 6,
+  "baseline_commit": "d1bddd5f5e4a41f8cc6231564a40d9463825bfa2",
+  "libstone_commit": "3399047f6c6328b8f07788795c610699e66c060a",
+  "implemented": "One explicitly selected and build-authorized trusted-linked ABI-2 analyzer on canonical, verified MIR; no dynamic ABI-2 activation.",
+  "cli": "on1xc --sdk-analyze linked-v2:HOOK INPUT [--ir-input]",
+  "proof": "on1x/sdk/tests/check_linked_v2.py runs the actual on1xc; its C11 provider borrows the host snapshot and checks the expected instructions through immutable MIR traversal.",
+  "integration_hooks": [
+    {
+      "path": "on1x/CMakeLists.txt",
+      "change": "After the existing ON1X_LINKED_SDK_EXTENSION block, include(\"${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/LinkedAnalyzerActivation.cmake\") unconditionally. This wires ON1X_LINKED_SDK_EXTENSION_V2 (default empty) and rejects a configured provider in an SDK-disabled build."
+    },
+    {
+      "path": "on1x/src/cli.cpp",
+      "change": "At the existing call before the --ir-input branch, pass sdk_name: on1x::sdk_driver::check_plugin_selection(plugin_selectors,sdk_name);. This lets the driver reject mixed providers before compiling input and skip legacy environment checks for the trusted-linked ABI-2 profile, including when the dynamic worker is disabled."
+    },
+    {
+      "path": "on1x/sdk/CAPABILITY_MATRIX.json",
+      "change": "Record a separate trusted-linked ABI-2 analyzer subset (single configured provider, explicitly named, canonical verified MIR, bounded diagnostics only). Do not claim the plugin worker runs ABI-2 facets, that dynamic manifest authorization activates a provider, or that PPX-v2 is implemented."
+    }
+  ],
+  "limits": [
+    "Only the mir.analyze revision 1 grant; no candidate publication, artifacts, PPX or general phase callbacks.",
+    "128 unlocated diagnostics per call, each a nonempty NUL-free UTF-8 message of at most 4096 bytes. Bad sinks, failed runs or failed shutdown discard staged results.",
+    "Trusted native code has compiler process authority with no host-enforced CPU or wall-clock budget on callback execution. Compile only audited providers. Existing sandboxed ABI-1 worker remains unchanged."
+  ],
+  "verification": {
+    "baseline": {
+      "ctest_regex": "^on1x\\.sdk\\.(registry|registry_v2|plugin_v2|analyzer|dynamic_plugins|frontend|semantics_ir)$",
+      "passed": 7
+    },
+    "local_wiring": "Historical validation used CMAKE_PROJECT_On1x_INCLUDE deferred inclusion of the linked-analyzer activation hook in the ignored build directory. The shared CLI and CMake sources were not edited during that validation.",
+    "configuration": "Release; BUILD_TESTING and dynamic SDK worker enabled; pinned ON1X_LIBSTONE_ROOT and ON1X_REQUIRE_LIBSTONE=ON; optional Syren, native PPX and native SDK reference disabled. ON1X_LINKED_SDK_EXTENSION points at tests/linked_extension.c; ON1X_LINKED_SDK_EXTENSION_V2 points at tests/linked_extension_v2.c.",
+    "commands": [
+      {
+        "command": "cmake --build build-sdk-activation --parallel 2 --target on1xc on1x_runtime on1x_sdk_dynamic_fixture on1x_sdk_test_analyzer on1x_sdk_test_c_abi on1x_sdk_test_registry on1x_sdk_test_registry_v2 on1x_sdk_test_plugin_v2 on1x_sdk_test_semantics_ir on1x_sdk_test_frontend",
+        "result": "passed"
+      },
+      {
+        "command": "ctest --test-dir build-sdk-activation --output-on-failure -R '^on1x\\.sdk\\.(linked_analyzer_v2|linked_compiler|dynamic_plugins|c_abi|registry|registry_v2|plugin_v2|analyzer|frontend|semantics_ir)$' -j2",
+        "result": "10 passed"
+      },
+      {
+        "command": "cmake -S on1x -B build-sdk-activation -DON1X_LINKED_SDK_EXTENSION_V2= && cmake --build build-sdk-activation --parallel 2 --target on1xc && ctest --test-dir build-sdk-activation --output-on-failure -R '^on1x\\.sdk\\.(linked_analyzer_v2_unavailable|linked_compiler)$' -j2",
+        "result": "2 passed"
+      }
+    ]
+  }
+}

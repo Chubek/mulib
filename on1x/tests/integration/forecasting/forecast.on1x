@@ -1,0 +1,37 @@
+import kernel mulib.histprice as History;
+
+fn abs(x: f64) -> f64 {
+  if x < 0.0 {
+    return 0.0 - x;
+  }
+  return x;
+}
+
+fn predict(samples: slice<f64,6>, holt: bool, horizon: i64)
+    -> History.Result<History.Forecast, History.Error> {
+  if holt {
+    return History.holt(samples, 0.5, 0.5, 1.0, horizon);
+  }
+  return History.ema(samples, 0.5, horizon);
+}
+
+fn backtest(samples: array<f64,6>)
+    -> History.Result<record{holt: bool, ema_mae: f64, selected_mae: f64, next: f64}, History.Error> {
+  # Fit on [0,3), select on [3,4), and independently score [4,6).
+  # Neither validation nor holdout enters the fit when measuring holdout MAE.
+  let train = samples[0:3];
+  let ema_validation = predict(train, false, 1)?;
+  let holt_validation = predict(train, true, 1)?;
+  let holt = abs(holt_validation["point"] - samples[3]) < abs(ema_validation["point"] - samples[3]);
+  let ema_a = predict(train, false, 2)?;
+  let ema_b = predict(train, false, 3)?;
+  let a = predict(train, holt, 2)?;
+  let b = predict(train, holt, 3)?;
+  let ema_mae = (abs(ema_a["point"] - samples[4]) + abs(ema_b["point"] - samples[5])) / 2.0;
+  let selected_mae = (abs(a["point"] - samples[4]) + abs(b["point"] - samples[5])) / 2.0;
+  # Refit only after evaluating the frozen model; this predicts day seven.
+  let future = predict(samples[0:6], holt, 1)?;
+  return variant<History.Result<record{holt: bool, ema_mae: f64, selected_mae: f64, next: f64},
+    History.Error>>(Ok,
+    record{holt: holt, ema_mae: ema_mae, selected_mae: selected_mae, next: future["point"]});
+}

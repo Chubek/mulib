@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_WEBIDL_BINDGEN_H
 #define MULIB_WEBIDL_BINDGEN_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -18,7 +18,7 @@ extern "C"
   /** @brief See manual/mulib-webidl-bindgen.md for this operation's contract.
    */
   int mulib_webidl_bindgen_interfaces (const char *idl, size_t n,
-                                       mulib_shylock_buffer_t *out,
+                                       mulib_bounded_text_buffer_t *out,
                                        size_t max_interfaces);
 #ifdef __cplusplus
 }
@@ -63,15 +63,15 @@ mulib_webidl_skip_ (const char *s, size_t n, size_t *i)
 }
 int
 mulib_webidl_bindgen_interfaces (const char *s, size_t n,
-                                 mulib_shylock_buffer_t *out, size_t limit)
+                                 mulib_bounded_text_buffer_t *out, size_t limit)
 {
   if ((!s && n) || !out || n > 4 * 1024 * 1024 || (n && memchr (s, 0, n)))
     return 0;
-  mulib_shylock_buffer_t b = { 0 };
+  mulib_bounded_text_buffer_t b = { 0 };
   b.limit = out->limit;
   int ok = 0;
   size_t count = 0, i = 0;
-  if (!mulib_shylock_text (&b, "/* Generated C interface handles. */\n"))
+  if (!mulib_bounded_text_text (&b, "/* Generated C interface handles. */\n"))
     goto done;
   while (i < n)
     {
@@ -130,17 +130,17 @@ mulib_webidl_bindgen_interfaces (const char *s, size_t n,
         }
       if (i == n || s[i++] != ';')
         goto done;
-      if (!mulib_shylock_text (&b, "typedef struct mulib_webidl_")
-          || !mulib_shylock_append (&b, s + start, len)
-          || !mulib_shylock_text (&b, " mulib_webidl_")
-          || !mulib_shylock_append (&b, s + start, len)
-          || !mulib_shylock_text (&b, ";\n"))
+      if (!mulib_bounded_text_text (&b, "typedef struct mulib_webidl_")
+          || !mulib_bounded_text_append (&b, s + start, len)
+          || !mulib_bounded_text_text (&b, " mulib_webidl_")
+          || !mulib_bounded_text_append (&b, s + start, len)
+          || !mulib_bounded_text_text (&b, ";\n"))
         goto done;
       count++;
     }
-  ok = mulib_shylock_append (out, b.data, b.len);
+  ok = mulib_bounded_text_append (out, b.data, b.len);
 done:
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   return ok;
 }
 #endif

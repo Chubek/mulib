@@ -7,7 +7,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-elvi-scrape.h",
-    "revision": "sha256:100a954cd6eeccbd2024410a0af3e9a90c56191ffbf12b1ff19bc298961807c9",
+    "revision": "sha256:7f9816e0f5738f62b6f4ae1525bae2e44be175e72b9b9a8a4b17239dcf385dd2",
     "author": "Codex (AI-authored)",
     "review_status": "unreviewed",
     "evidence_method": "Source/manual audit; contracts-exoml/obligations.json; real-kernel offline extraction and HTTPS adapter tests. Independent review pending."
@@ -381,7 +381,7 @@
           "name": "body",
           "ownership": "borrowed_mutable",
           "nullable": false,
-          "encoding": "Initialized MuLIB buffer; append may reallocate, caller later frees via mulib_shylock_buffer_free",
+          "encoding": "Initialized MuLIB buffer; append may reallocate, caller later frees via mulib_bounded_text_buffer_free",
           "index": 2
         },
         {

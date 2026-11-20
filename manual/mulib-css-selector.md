@@ -19,7 +19,7 @@ Include `include/mulib-css-selector.h`. Define the following switches in exactly
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_CSS_SELECTOR`, `MULIB_IMPL_DOM_QUERY`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_CSS_SELECTOR`, `MULIB_IMPL_DOM_QUERY`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_HTML_TREEBUILDER`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must

@@ -74,20 +74,20 @@ moving_realloc (void *p, size_t size)
 static void
 workload (void)
 {
-  mulib_shylock_buffer_t b = { 0 };
-  if (mulib_shylock_text (&b, "abcdef"))
+  mulib_bounded_text_buffer_t b = { 0 };
+  if (mulib_bounded_text_text (&b, "abcdef"))
     {
       for (int i = 0; i < 8; i++)
         {
           size_t old = b.len;
-          int ok = mulib_shylock_append (&b, b.data, old);
+          int ok = mulib_bounded_text_append (&b, b.data, old);
           assert (ok ? b.len == old * 2 : b.len == old);
         }
       size_t old = b.len;
-      int ok = mulib_shylock_json_string (&b, b.data, b.len);
+      int ok = mulib_bounded_text_json_string (&b, b.data, b.len);
       assert (ok || b.len == old);
     }
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   mulib_browser_cache_t cache = { 0 };
   if (mulib_browser_cache_put (&cache, "a", "", 20, "old", 3))
     {
@@ -122,15 +122,15 @@ workload (void)
   (void)mulib_readability_extract (html, strlen (html), &b);
   mulib_webextract_rule_t rule = { ".b", 100 };
   (void)mulib_webextract_rules_text (html, strlen (html), &rule, &b);
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   (void)mulib_webextract_llm_request ("model", "text", "{}", 4, &b);
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   const char *json = "{\"price\":\"1.2\",\"priceCurrency\":\"USD\"}";
   mulib_schemaorg_offer_t offer;
   (void)mulib_schemaorg_offer_parse (json, strlen (json), &offer);
   const char *idl = "interface Node {};";
   (void)mulib_webidl_bindgen_interfaces (idl, strlen (idl), &b, 1);
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
 }
 int
 main (void)

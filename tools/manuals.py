@@ -80,18 +80,18 @@ def inventory():
         text = header.read_text()
         switch = IMPLEMENTATION.search(text)
         inline = fields.get('implementation') == 'static-inline'
-        amb3r = fields.get('profile') == 'amb3r'
+        engineering = fields.get('profile') == 'engineering'
         if inline and (switch or fields.get('status') != 'bounded'):
             raise ValueError('invalid bounded static-inline entry: ' + header.name)
         if fields and not inline and (not switch or fields.get('macro') != switch.group(1)):
             raise ValueError('manifest switch differs from header: ' + header.name)
         example_path = fields.get('example')
-        if example_path is None and not amb3r:
+        if example_path is None and not engineering:
             example_path = 'examples/modules/' + AUXILIARY.get(stem, stem[6:]) + '.c'
         example = ROOT / example_path if example_path else None
-        manual = (ROOT / fields['manual'] if inline or amb3r else
+        manual = (ROOT / fields['manual'] if inline or engineering else
                   ROOT / 'manual' / (stem + '.md'))
-        if (fields and not (inline or amb3r)
+        if (fields and not (inline or engineering)
                 and fields.get('manual') != manual.relative_to(ROOT).as_posix()):
             raise ValueError('manifest manual differs from header: ' + header.name)
         for path in (manual, example):
@@ -105,7 +105,7 @@ def inventory():
             purpose = brief.group(1).split('*/')[0].strip() if brief else 'Embedded support data.'
         records.append(dict(header=header, manual=manual, example=example,
                             text=text, switch=switch.group(1) if switch else None,
-                             purpose=purpose, shared=inline or amb3r))
+                             purpose=purpose, shared=inline or engineering))
     return records
 
 

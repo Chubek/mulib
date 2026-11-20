@@ -26,7 +26,7 @@ archive. The [KernelBind inspector](../docs/kernel-bind.md#inspect-requests-and-
 can extract declaration metadata for `mulib.cdd_*`. It neither attaches a
 semantic sidecar nor enables callable bindings.
 
-Bounded static-inline entries, including the 193 JoltFX assessment kernels,
+Bounded static-inline entries, including the 193 media and compute kernels,
 are registered by the same MANIFEST inventory. Their source import aliases
 replace hyphens with underscores (`mulib.img_blend`, `mulib.media_timebase`).
 `--inspect-kernels` extracts their actual internal-linkage definitions into

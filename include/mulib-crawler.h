@@ -7,7 +7,7 @@
 #ifndef MULIB_CRAWLER_H
 #define MULIB_CRAWLER_H
 #include "mulib-browser-origin.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -64,7 +64,7 @@ mulib_crawler_enqueue (mulib_crawler_t *c, const char *url, int64_t due)
   if (c->limit && c->len >= c->limit)
     return 0;
   mulib_crawler_job_t j = { 0 };
-  if (!mulib_shylock_copy (j.url, sizeof j.url, url))
+  if (!mulib_bounded_text_copy (j.url, sizeof j.url, url))
     return 0;
   j.due_ms = due;
   if (c->len == c->cap)

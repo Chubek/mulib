@@ -36,7 +36,7 @@ int mulib_fmt_sv_emit(FILE *out, const mulib_hwil_module_t *m, size_t root) {
     for (size_t i = 0; i < m->count; i++)
         if (m->nodes[i].op == MULIB_HWIL_INPUT)
             inputs++;
-    if (fputs("module amb3r_generated (\n", out) < 0)
+    if (fputs("module mulib_generated (\n", out) < 0)
         return 0;
     for (size_t k = 0; k < inputs; k++)
         if (fprintf(out, "  input wire in%zu,\n", k) < 0)

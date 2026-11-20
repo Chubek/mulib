@@ -19,9 +19,9 @@ inventory = contracts.inventory(root)
 modules = inventory['modules']
 profiles = contracts.exotract_catalog()
 sys.path.insert(0, str(root/'tools'))
-from joltfx_inventory import inventory as joltfx_inventory
+from media_inventory import inventory as media_inventory
 
-rows = [record['header'][6:-2] for record in joltfx_inventory(root)]
+rows = [record['header'][6:-2] for record in media_inventory(root)]
 assert len(rows) == len(set(rows)) == 194
 assert set(rows) <= modules.keys()
 assert set(inventory['auxiliary_headers']) == {

@@ -20,7 +20,7 @@ Include `include/mulib-html-jsonld.h`. Define the following switches in exactly 
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_HTML_JSONLD`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_HTML_JSONLD`, `MULIB_IMPL_HTML_TEXTSTREAM`, `MULIB_IMPL_HTML_TOKENIZER`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -56,7 +56,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_HTML_JSONLD_H
 #define MULIB_HTML_JSONLD_H
 #include "mulib-html-tokenizer.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -65,7 +65,7 @@ extern "C"
 {
 #endif
 
-  typedef int (*mulib_html_jsonld_fn) (void *ctx, mulib_shylock_span_t source,
+  typedef int (*mulib_html_jsonld_fn) (void *ctx, mulib_bounded_text_span_t source,
                                        size_t offset);
   /** @brief See manual/mulib-html-jsonld.md for this operation's contract. */
   int mulib_html_jsonld_scan (const char *html, size_t n,
@@ -89,7 +89,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-html-jsonld.h`](../include/mulib-html-jsonld.h) |
 | Implementation switch | `MULIB_IMPL_HTML_JSONLD` |
-| Repository-local includes | [mulib-html-tokenizer](mulib-html-tokenizer.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-html-tokenizer](mulib-html-tokenizer.md) |
 | Complete example | [`examples/modules/html-jsonld.c`](../examples/modules/html-jsonld.c) |
 
 The include list includes conditional and implementation-only includes;

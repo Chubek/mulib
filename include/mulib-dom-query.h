@@ -56,7 +56,7 @@ mulib_dom_query_matches (const mulib_html_tree_node_t *n, const char *s)
     if (!isalnum ((unsigned char)*p) && *p != '-' && *p != '_' && *p != ':')
       return 0;
   if (s[0] != '.' && s[0] != '#')
-    return mulib_shylock_equal_ci (s, n->tag);
+    return mulib_bounded_text_equal_ci (s, n->tag);
   const char *v;
   size_t len, z = strlen (word);
   if (!mulib_html_attribute (n->attributes.data, n->attributes.len,

@@ -4,7 +4,7 @@
 #define MULIB_IMPL_HTML_TEXTSTREAM
 #define MULIB_IMPL_HTML_TOKENIZER
 #define MULIB_IMPL_HTML_TREEBUILDER
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-css-selector.h"
 #include <assert.h>

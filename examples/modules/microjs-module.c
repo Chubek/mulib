@@ -1,6 +1,6 @@
 /* Complete, offline microjs-module example. */
 #define MULIB_IMPL_MICROJS_MODULE
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-microjs-module.h"
 #include <assert.h>

@@ -216,11 +216,11 @@ if(MULIB_BUILD_TESTS)
         list(APPEND _workload_flags --cflag=-fsanitize=address,undefined
           --cflag=-fno-sanitize-recover=all --cflag=-fno-omit-frame-pointer)
       endif()
-      add_test(NAME mulib_consolidation_c_workloads
-        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/consolidation/workloads/check_c.py"
+      add_test(NAME mulib_integration_c_workloads
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/check_c.py"
           --cc "${CMAKE_C_COMPILER}" --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/workloads"
           ${_workload_flags})
-      set_tests_properties(mulib_consolidation_c_workloads PROPERTIES TIMEOUT 180)
+      set_tests_properties(mulib_integration_c_workloads PROPERTIES TIMEOUT 180)
     endif()
     add_test(NAME mulib_tool_regressions
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_tools.py)
@@ -322,23 +322,27 @@ if(MULIB_BUILD_TESTS)
   mulib_test_executable(mulib_test_cdd)
   mulib_register_test(mulib_test_cdd)
 
-  add_executable(mulib_joltfx_pipeline examples/joltfx-pipeline.c)
-  mulib_test_executable(mulib_joltfx_pipeline)
-  mulib_register_test(mulib_joltfx_pipeline)
-  add_executable(mulib_joltfx_link tests/joltfx-link-a.c tests/joltfx-link-b.c)
-  mulib_test_executable(mulib_joltfx_link)
-  mulib_register_test(mulib_joltfx_link)
+  add_executable(mulib_kernel_substrates examples/kernel-substrates.c)
+  mulib_test_executable(mulib_kernel_substrates)
+  mulib_register_test(mulib_kernel_substrates)
+
+  add_executable(mulib_media_pipeline examples/media-pipeline.c)
+  mulib_test_executable(mulib_media_pipeline)
+  mulib_register_test(mulib_media_pipeline)
+  add_executable(mulib_media_link tests/media-link-a.c tests/media-link-b.c)
+  mulib_test_executable(mulib_media_link)
+  mulib_register_test(mulib_media_link)
   if(Python3_Interpreter_FOUND)
-    add_test(NAME mulib_joltfx_inventory
-      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/joltfx_inventory.py" --check)
-    add_test(NAME mulib_joltfx_tools
-      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-joltfx-tools.py")
-    set_tests_properties(mulib_joltfx_inventory mulib_joltfx_tools PROPERTIES TIMEOUT 60)
+    add_test(NAME mulib_media_inventory
+      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/media_inventory.py" --check)
+    add_test(NAME mulib_media_tools
+      COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-media-tools.py")
+    set_tests_properties(mulib_media_inventory mulib_media_tools PROPERTIES TIMEOUT 60)
   endif()
 
   file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test-*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tests/joltfx-*-test.c")
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/media-*-test.c")
   add_library(mulib_api_kernels_implementation OBJECT
     tests/api-kernels/implementation.c tests/api-kernels/dependencies.c)
   mulib_test_executable(mulib_api_kernels_implementation)
@@ -493,7 +497,7 @@ if(MULIB_BUILD_TESTS)
     mulib_test_executable(mulib_test_pricing_cpp)
     mulib_register_test(mulib_test_pricing_cpp)
 
-    add_library(mulib_eda_implementation OBJECT tests/amb3r_implementation.c)
+    add_library(mulib_eda_implementation OBJECT tests/engineering_implementation.c)
     mulib_test_executable(mulib_eda_implementation)
     add_executable(mulib_test_cpp_link tests/test_cpp_link.cpp
       $<TARGET_OBJECTS:mulib_eda_implementation>)

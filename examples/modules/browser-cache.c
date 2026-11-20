@@ -1,6 +1,6 @@
 /* Complete, offline browser-cache example. */
 #define MULIB_IMPL_BROWSER_CACHE
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-browser-cache.h"
 #include <assert.h>

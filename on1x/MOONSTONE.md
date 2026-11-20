@@ -3,7 +3,7 @@
 > **Location:** `mulib/on1x/MOONSTONE.md`  
 > **Audience:** an autonomous coding agent implementing the compiler, safe MuLIB Static FFI, analysis passes and runtime of On1x.  
 > **Purpose:** use the *real* components in `Chubek/libstone/moonstone/` coherently and safely; do not merely include their headers or describe hypothetical future libraries.  
-> **Companion instructions:** `COMPLETION.md` is the Shylock readiness contract; `BACKEND.md` governs IR, Novostone and code-generation integration. Read both.  
+> **Companion instructions:** `COMPLETION.md` describes compiler and foreign-interface acceptance; `BACKEND.md` governs IR, Novostone and code-generation integration. Read both.
 > **Truthfulness:** this file is an implementation mandate. A proposed adapter, pass, interface or test described below is **not** already shipped unless the current checked-out source and executable tests prove it.
 
 ## 0. Inspect actual dependencies and record their revisions
@@ -110,13 +110,19 @@ Build an eligibility report with per-function reasons and exact source/contract/
 - Effect tracking for read/write/alloc/free/IO/thread/suspend/unknown. An unknown-effect call is not eligible for pure Sequent optimization, speculative duplication or unsafe suspension.
 - Callback descriptors: synchronous vs retained, userdata lifetime, register/unregister, thread affinity, cancellation and exception boundary. Unsupported callback patterns remain unavailable in the safe API.
 
-### Minimum kernel contract coverage for Shylock
+### Representative numerical kernel contract coverage
 
-Prioritize fully classified ExoML profiles for the actual signatures in:
+Choose contract profiles by reusable ABI and lifecycle shape, not by a
+particular application's feature list. Stateless borrowed-array operations
+provide an initial numerical profile; owned containers and retained callbacks
+require separate lifecycle admission.
 
-`mulib-statsproc.h`, `mulib-statsprice.h`, `mulib-histprice.h`, `mulib-competprice.h`, `mulib-priceopt.h`, `mulib-price-forecast.h`, `mulib-price-ensemble.h`, `mulib-price-demand.h`, `mulib-price-confidence.h`, `mulib-price-observation.h`, `mulib-price-history.h`, `mulib-price-timeseries.h`, `mulib-price-normalize.h`, `mulib-money.h` and selected CSV/JSON data kernels.
-
-Prioritize stateless borrowed-array numerical methods first, then owned history/time-series handles. Add concrete negative tests for `mulib_histprice_ema` (borrowed doubles + result record), `mulib_price_ensemble_blend` (two non-aliasing outputs), `mulib_price_demand_fit` (paired arrays + output struct) and `mulib_priceopt_optimize` (demand/config structs + enums). Use actual headers; never manufacture an incompatible C prototype.
+The existing Histprice/PriceOpt numerical work supplies representative cases:
+`mulib_histprice_ema` uses borrowed doubles and a result record, while
+`mulib_priceopt_optimize` uses input records and an enum. Other useful negative
+cases include paired arrays, disjoint outputs, and invalid lengths. A function's
+presence in this list does not establish admission. Use actual headers; never
+manufacture an incompatible C prototype.
 
 **One-translation-unit rule:** gather the transitive `MANIFEST.yaml` dependency/implementation-switch closure and define each `MULIB_IMPL_*` macro in one implementation source. The generated program never defines duplicate implementation switches across consumers.
 
@@ -160,7 +166,7 @@ Use it for narrowly scoped compiler assistive tasks:
 - Structured output carrying grammar version, source/IR identity, budget, proof status, counterexample and solver assumptions.
 - Syren fix proposals can be generated with Supersonic, but a separate On1x compilation and semantic validation pipeline must approve them.
 
-If Satie or Equinox-NG support is enabled, link and test the real vendored APIs, with strict namespaces and no hidden header collision workarounds. Solver UNKNOWN must remain UNKNOWN. Make synthesis entirely optional for basic Shylock compilation.
+If Satie or Equinox-NG support is enabled, link and test the real vendored APIs, with strict namespaces and no hidden header collision workarounds. Solver UNKNOWN must remain UNKNOWN. Make synthesis entirely optional for ordinary C11 compilation.
 
 **Exit test:** overflow counterexamples, unacceptable transformations, budget exhaustion, maliciously large grammars, invalid candidate syntax and a correctly validated small positive rewrite.
 
@@ -191,7 +197,7 @@ Plaid does **not** yet implement arbitrary Scheme `call/cc`, multi-shot resource
 
 **P3 — On1x async/compiler lowering:** use `weaver/AsyncAnalysis.hpp` to compute spill/liveness sets; define an explicit state machine and cancellation/drop paths in On1x MIR, then generate and test actual C11 state machines. `PlaidIR.hpp` currently has an opcode vocabulary and basic use-before-def validation, **not** full compiler lowering. Do not claim an opcode list is an implementation of async/await.
 
-**P4 — data parallel Shylock processing:** permit parallel independent product/model computations only where underlying kernels and buffers are proven thread-safe, without shared mutable histories or allocator lifetimes. Protect deterministic reductions and stable error aggregation. Respect worker shutdown and bounded queues, and make cancellation cleanup total.
+**P4 — data parallel numerical processing:** permit parallel independent model computations only where underlying kernels and buffers are proven thread-safe, without shared mutable histories or allocator lifetimes. Protect deterministic reductions and stable error aggregation. Respect worker shutdown and bounded queues, and make cancellation cleanup total.
 
 **Exit tests:** TSAN-supported stress tests for channel close/send/receive, pool stop, actor destruction, cancellation, task scopes and foreign calls; ASan lifetime tests; explicit serial reference comparison; no inferred thread safety for an unannotated C kernel.
 
@@ -267,7 +273,7 @@ The agent should modify existing files as necessary rather than blindly creating
 
 ```text
 on1x/
-  COMPLETION.md             # overall Shylock-ready completion requirements
+  COMPLETION.md             # compiler and foreign-interface acceptance
   BACKEND.md                # LibStone IR, Novostone, native/VM completion
   MOONSTONE.md              # this Moonstone integration and trust specification
   include/on1x/moonstone/   # typed public adapter APIs as actually implemented
@@ -322,7 +328,7 @@ python3 on1x/tools/on1x-contracts.py build-plan json vec parsec
 | Nerotypical | C11-vs-Sequent *pure subset* differential, verifier gates and cost budgets; effectful rejection |
 | Plaid | C11 host ABI tests, cancel/drop, MPMC stress, TSAN where support exists, suspension-safe FFI |
 | Prolific | context-aware trace, versioned cache, loss accounting, explicit guard/deopt if speculation used |
-| Full pipeline | On1x Shylock source invokes real MuLIB forecasting and optimization kernels with typed errors and no illegal owner escape |
+| Full pipeline | On1x source invokes real MuLIB kernels with typed errors and no illegal owner escape |
 | Packaging | GCC/Clang strict builds, relevant ASan/UBSan/TSan runs, install/relocation consumer, no hidden vendor source pollution |
 
 No result may be counted as passing when its test did not run. ASan/UBSan/TSan environment failures, nonportable target probes and missing optional packages must be documented as distinct statuses, not ignored or counted as green. Never suppress a failing test by disabling the feature while still claiming that feature is implemented.
@@ -335,27 +341,27 @@ No result may be counted as passing when its test did not run. ASan/UBSan/TSan e
 
 **M2 — ExoML foreign ABI path.** Preserve CDecl and v2 contract records; implement supported numeric/array/struct/enum/output parameter adapters with strict ABI checks. Provenance, rejection codes and review-state honesty are mandatory.
 
-**M3 — Chisel/Wetstone safe callsites.** Intraprocedural then interprocedural ownership, alias/effect, branch cleanup and resource invalidation for selected pricing kernels. Do not emit “safe” on an unsupported analysis path.
+**M3 — Chisel/Wetstone safe callsites.** Intraprocedural then interprocedural ownership, alias/effect, branch cleanup and resource invalidation for selected kernel profiles. Do not emit “safe” on an unsupported analysis path.
 
 **M4 — Nerotypical integration.** Optional pure On1x -> Sequent -> On1x verifier/optimizer bridge; no invented effect semantics. Integrate its target/packaging and isolated header tests.
 
 **M5 — Supersonic assist.** Verified bounded candidate generation and Syren repair suggestions, strictly optional with distinct unknown/provisional/proven statuses.
 
-**M6 — Plaid runtime + future async.** Start with explicit tasks, snapshot-only safe parallel pricing computation and C ABI; add real compiler async lowering only after ownership and cancellation correctness.
+**M6 — Plaid runtime + future async.** Start with explicit tasks, snapshot-only parallel numerical computation and C ABI; add real compiler async lowering only after ownership and cancellation correctness.
 
 **M7 — Prolific and optimizer feedback.** Instrument actual compiler operations; integrate context-aware profile ranking and optional, correctly guarded speculation. Never turn profile advice into semantic proof.
 
-**M8 — End-to-end acceptance.** Compile, link and run Shylock using the canonical MuLIB headers and actual On1x source. Re-run `COMPLETION.md` gates plus all Moonstone adapter tests under supported toolchains. Record reproducible commands, results, dependency revisions and remaining exclusions.
+**M8 — End-to-end acceptance.** Compile, link and run multi-module integration fixtures using canonical MuLIB headers and actual On1x source. Re-run `COMPLETION.md` gates plus all Moonstone adapter tests under supported toolchains. Record reproducible commands, results, dependency revisions and remaining exclusions.
 
 ## 14. Definition of done and required agent reporting
 
-An agent may claim **Moonstone-integrated On1x for Shylock** only when:
+Claim a **Moonstone-integrated On1x profile** only when:
 
-1. Real reviewed/admitted ExoML bindings needed for Shylock compile via the On1x typed API, **or** Shylock's executable-ready milestone explicitly uses marked, tested trusted adapters and separately declares that the safe-FFI milestone is still open.
+1. Real reviewed/admitted ExoML bindings in that profile compile via the On1x typed API, **or** the executable profile explicitly uses marked, tested trusted adapters and separately declares that the safe-FFI milestone is still open.
 2. Every relevant foreign call uses the correct ABI and error/ownership/effect lowering, with independent negative and runtime verification. Unreviewed contracts are never promoted to safe automatically.
 3. Syren diagnostics and source provenance survive to the user; Chisel/Wetstone rejects unsupported unsafe resource behavior rather than masking it; there is an opt-in working pure Nerotypical bridge with documented bounds.
 4. The supported Plaid and Prolific integrations, where enabled, run their *own* actual stress/profile/ABI tests; absence of optional systems does not stop minimal C11 + MuLIB applications.
-5. The final run compiles and executes a real On1x Shylock fixture with forecasts, validation, optional demand/optimization, deterministic output and resource cleanup, without requiring the compile-time LibStone C++ runtime in the generated ordinary C11 process.
+5. The final run compiles and executes a real On1x integration fixture with validation, deterministic output and resource cleanup, without requiring the compile-time LibStone C++ runtime in the generated ordinary C11 process.
 6. The compatibility and test report names every compiler/target actually executed, exact LibStone and MuLIB revision, contract evidence snapshot, all failures and exclusions. No placeholders, hardcoded demo success, fake native execution or prose-only implementation is accepted.
 
 **The goal is not to make On1x depend on every Moonstone library at runtime.** The goal is to make On1x a well-verified compiler that uses *all relevant Moonstone capabilities* in their correct phase: Core for infrastructure; ExoML for declared foreign interfaces; Chisel for ownership; Syren for diagnostics; Supersonic for validated synthesis; Nerotypical for compatible functional IR; Plaid for real concurrency; and Prolific for observation-guided engineering. Unsupported use cases must remain explicitly unsupported until implemented and tested.

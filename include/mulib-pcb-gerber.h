@@ -41,7 +41,7 @@ int mulib_pcb_gerber_write(FILE *fp, const mulib_pcb_segment_t *traces, size_t n
             fabs(s->b.x) > 1000 || fabs(s->a.y) > 1000 || fabs(s->b.y) > 1000)
             return 0;
     }
-    if (fputs("G04 Amb3r minimal Gerber X2 compatible RS-274X trace "
+    if (fputs("G04 MuLIB minimal Gerber X2 compatible RS-274X trace "
               "layer*\n%FSLAX46Y46*%\n%MOMM*%\n%LPD*%\nG01*\n",
               fp) == EOF)
         return 0;

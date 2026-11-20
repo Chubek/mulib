@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_BROWSER_CACHE_H
 #define MULIB_BROWSER_CACHE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -19,7 +19,7 @@ extern "C"
   {
     char url[1024], etag[256];
     int64_t expires;
-    mulib_shylock_buffer_t body;
+    mulib_bounded_text_buffer_t body;
   } mulib_browser_cache_entry_t;
   typedef struct mulib_browser_cache
   {
@@ -93,17 +93,17 @@ mulib_browser_cache_put (mulib_browser_cache_t *c, const char *url,
     return 0;
   mulib_browser_cache_entry_t e = { 0 };
   e.body.limit = c->max_bytes;
-  if (!mulib_shylock_copy (e.url, sizeof e.url, url)
-      || !mulib_shylock_copy (e.etag, sizeof e.etag, etag)
-      || !mulib_shylock_append (&e.body, data, n))
+  if (!mulib_bounded_text_copy (e.url, sizeof e.url, url)
+      || !mulib_bounded_text_copy (e.etag, sizeof e.etag, etag)
+      || !mulib_bounded_text_append (&e.body, data, n))
     {
-      mulib_shylock_buffer_free (&e.body);
+      mulib_bounded_text_buffer_free (&e.body);
       return 0;
     }
   e.expires = expiry;
   if (replace != SIZE_MAX)
     {
-      mulib_shylock_buffer_free (&c->items[replace].body);
+      mulib_bounded_text_buffer_free (&c->items[replace].body);
       c->items[replace] = e;
       return 1;
     }
@@ -112,7 +112,7 @@ mulib_browser_cache_put (mulib_browser_cache_t *c, const char *url,
       size_t k = c->cap ? 2 * c->cap : 16;
       if (k < c->cap || k > SIZE_MAX / sizeof e)
         {
-          mulib_shylock_buffer_free (&e.body);
+          mulib_bounded_text_buffer_free (&e.body);
           return 0;
         }
       if (c->max_entries && k > c->max_entries)
@@ -120,7 +120,7 @@ mulib_browser_cache_put (mulib_browser_cache_t *c, const char *url,
       void *p = realloc (c->items, k * sizeof e);
       if (!p)
         {
-          mulib_shylock_buffer_free (&e.body);
+          mulib_bounded_text_buffer_free (&e.body);
           return 0;
         }
       c->items = p;
@@ -138,7 +138,7 @@ mulib_browser_cache_prune (mulib_browser_cache_t *c, int64_t now)
   for (size_t i = 0; i < old; i++)
     {
       if (now >= c->items[i].expires)
-        mulib_shylock_buffer_free (&c->items[i].body);
+        mulib_bounded_text_buffer_free (&c->items[i].body);
       else
         c->items[kept++] = c->items[i];
     }
@@ -151,7 +151,7 @@ mulib_browser_cache_free (mulib_browser_cache_t *c)
   if (c)
     {
       for (size_t i = 0; i < c->len; i++)
-        mulib_shylock_buffer_free (&c->items[i].body);
+        mulib_bounded_text_buffer_free (&c->items[i].body);
       free (c->items);
       memset (c, 0, sizeof *c);
     }

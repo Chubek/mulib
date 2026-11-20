@@ -1,6 +1,6 @@
 /* Complete, offline browser-snapshot example. */
 #define MULIB_IMPL_BROWSER_SNAPSHOT
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_UTF8
 #include "mulib-browser-snapshot.h"
 #include <assert.h>

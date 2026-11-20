@@ -1,4 +1,4 @@
-/* Canonical CSR, Amb3r bridge, and independent matvec/solve oracles. */
+/* Canonical CSR, bounded view bridge, and independent matvec/solve oracles. */
 #define MULIB_IMPL_NUM_SPARSE
 #define MULIB_IMPL_NUM_SPARSE_LU
 #include "mulib-num-sparse.h"
@@ -66,9 +66,9 @@ static void round_trip(void) {
     size_t offset[] = {0, 4, 7, 9};
     size_t column[] = {2, 1, 1, 0, 2, 0, 1, 1, 0};
     double values[] = {1, .75, 1.25, -0.0, 2, 3, -1, 1, 1};
-    ma_csr src = {3, 3, 9, offset, column, values};
+    mulib_num_csr_view src = {3, 3, 9, offset, column, values};
     mulib_num_csr_t owner = {0}, t = {0};
-    assert(mulib_num_csr_from_amb3r(&src, 4, 9, 9, &owner));
+    assert(mulib_num_csr_copy_from_view(&src, 4, 9, 9, &owner));
     assert(owner.offset != offset && owner.column != column && owner.values != values);
     assert(!memcmp(owner.offset, offset, sizeof offset));
     assert(!memcmp(owner.column, column, sizeof column));
@@ -78,9 +78,9 @@ static void round_trip(void) {
     values[0] = 100;
     assert(mulib_num_csr_validate(&owner));
 
-    ma_csr view = {0};
+    mulib_num_csr_view view = {0};
     budget = 0; /* It must not allocate. */
-    assert(mulib_num_csr_borrow_amb3r(&owner, 4, 9, 9, &view));
+    assert(mulib_num_csr_borrow_view(&owner, 4, 9, 9, &view));
     budget = SIZE_MAX;
     assert(view.rows == 3 && view.cols == 3 && view.nnz == 9);
     assert(view.ptr == owner.offset && view.idx == owner.column && view.val == owner.values);
@@ -97,7 +97,7 @@ static void round_trip(void) {
     assert(y[0] == -3 && y[1] == 7 && y[2] == -3);
     mulib_num_csr_free(&t);
 
-    ma_sparse_lu lu = {0};
+    mulib_num_sparse_lu lu = {0};
     assert(mulib_num_sparse_lu_factor(&view, 1e-12, &lu));
     assert(lu.piv[0] != 0);
     mulib_num_csr_free(&owner); /* The factor, unlike the view, owns its data. */
@@ -114,64 +114,64 @@ static void round_trip(void) {
 static void rejects_without_publication(void) {
     size_t offset[] = {0, 0, 1}, column[] = {1};
     double values[] = {DBL_MAX};
-    const ma_csr src = {2, 2, 1, offset, column, values};
+    const mulib_num_csr_view src = {2, 2, 1, offset, column, values};
     mulib_num_csr_t dst = {0};
     unsigned char saved[sizeof dst];
     memcpy(saved, &dst, sizeof saved);
-    assert(!mulib_num_csr_from_amb3r(NULL, 3, 1, 1, &dst));
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, NULL));
-    assert(!mulib_num_csr_from_amb3r(&src, 2, 1, 1, &dst));
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 0, 1, &dst));
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 0, &dst));
+    assert(!mulib_num_csr_copy_from_view(NULL, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, NULL));
+    assert(!mulib_num_csr_copy_from_view(&src, 2, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 0, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 0, &dst));
     offset[0] = 1;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     offset[0] = 0;
     offset[1] = 2;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     offset[1] = 0;
     offset[2] = 0;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     offset[2] = 1;
     column[0] = 2;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     column[0] = 1;
     values[0] = NAN;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     values[0] = INFINITY;
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     values[0] = DBL_MAX;
-    ma_csr no_values = src;
+    mulib_num_csr_view no_values = src;
     no_values.val = NULL;
-    assert(!mulib_num_csr_from_amb3r(&no_values, 3, 1, 1, &dst));
-    ma_csr huge = src;
+    assert(!mulib_num_csr_copy_from_view(&no_values, 3, 1, 1, &dst));
+    mulib_num_csr_view huge = src;
     huge.rows = SIZE_MAX;
-    assert(!ma_csr_valid(&huge));
-    assert(!mulib_num_csr_from_amb3r(&huge, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_view_valid(&huge));
+    assert(!mulib_num_csr_copy_from_view(&huge, 3, 1, 1, &dst));
     huge = src;
     huge.nnz = SIZE_MAX;
-    assert(!ma_csr_valid(&huge));
-    assert(!mulib_num_csr_from_amb3r(&huge, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_view_valid(&huge));
+    assert(!mulib_num_csr_copy_from_view(&huge, 3, 1, 1, &dst));
     assert(!memcmp(saved, &dst, sizeof dst) && !live);
 
     for (size_t i = 0; i < 3; i++) {
         budget = i;
-        assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+        assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
         assert(!memcmp(saved, &dst, sizeof dst) && !live);
     }
     budget = SIZE_MAX;
-    assert(mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     memcpy(saved, &dst, sizeof saved);
-    assert(!mulib_num_csr_from_amb3r(&src, 3, 1, 1, &dst));
+    assert(!mulib_num_csr_copy_from_view(&src, 3, 1, 1, &dst));
     assert(!memcmp(saved, &dst, sizeof dst) && live == 3);
 
-    ma_csr view = src;
+    mulib_num_csr_view view = src;
     unsigned char saved_view[sizeof view];
     memcpy(saved_view, &view, sizeof saved_view);
-    assert(!mulib_num_csr_borrow_amb3r(&dst, 0, 1, 1, &view));
-    assert(!mulib_num_csr_borrow_amb3r(&dst, 3, 0, 1, &view));
-    assert(!mulib_num_csr_borrow_amb3r(&dst, 3, 1, 0, &view));
+    assert(!mulib_num_csr_borrow_view(&dst, 0, 1, 1, &view));
+    assert(!mulib_num_csr_borrow_view(&dst, 3, 0, 1, &view));
+    assert(!mulib_num_csr_borrow_view(&dst, 3, 1, 0, &view));
     dst.column[0] = dst.cols;
-    assert(!mulib_num_csr_borrow_amb3r(&dst, 3, 1, 1, &view));
+    assert(!mulib_num_csr_borrow_view(&dst, 3, 1, 1, &view));
     assert(!mulib_num_csr_validate(&dst));
     assert(!memcmp(saved_view, &view, sizeof view));
     dst.column[0] = 1;
@@ -183,17 +183,17 @@ static void rejects_without_publication(void) {
 
 static void empty_rectangular(void) {
     const size_t zero = 0;
-    const ma_csr empty = {0, 3, 0, &zero, NULL, NULL};
+    const mulib_num_csr_view empty = {0, 3, 0, &zero, NULL, NULL};
     mulib_num_csr_t owner = {0}, t = {0};
-    assert(!mulib_num_csr_from_amb3r(&empty, 0, 0, 0, &owner));
-    assert(!mulib_num_csr_from_amb3r(&empty, 1, 1, 0, &owner));
-    assert(!mulib_num_csr_from_amb3r(&empty, 1, 0, 1, &owner));
-    assert(mulib_num_csr_from_amb3r(&empty, 1, 0, 0, &owner));
+    assert(!mulib_num_csr_copy_from_view(&empty, 0, 0, 0, &owner));
+    assert(!mulib_num_csr_copy_from_view(&empty, 1, 1, 0, &owner));
+    assert(!mulib_num_csr_copy_from_view(&empty, 1, 0, 1, &owner));
+    assert(mulib_num_csr_copy_from_view(&empty, 1, 0, 0, &owner));
     assert(owner.offset[0] == 0 && !owner.column && !owner.values);
     assert(mulib_num_csr_transpose(&owner, &t));
     assert(t.rows == 3 && !t.cols && !t.nnz);
-    ma_csr view = {0};
-    assert(mulib_num_csr_borrow_amb3r(&t, 4, 0, 0, &view));
+    mulib_num_csr_view view = {0};
+    assert(mulib_num_csr_borrow_view(&t, 4, 0, 0, &view));
     for (size_t i = 0; i < 4; i++)
         assert(view.ptr[i] == 0);
     mulib_num_csr_free(&t);

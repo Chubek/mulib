@@ -11,15 +11,15 @@ typedef struct server
   int fail;
 } server_t;
 static int
-transport (void *p, const char *url, mulib_shylock_buffer_t *out,
+transport (void *p, const char *url, mulib_bounded_text_buffer_t *out,
            unsigned *status, char *type, size_t cap)
 {
   server_t *s = p;
   assert (url);
   s->calls++;
   *status = s->status;
-  assert (mulib_shylock_copy (type, cap, s->type));
-  int ok = mulib_shylock_text (out, s->html);
+  assert (mulib_bounded_text_copy (type, cap, s->type));
+  int ok = mulib_bounded_text_text (out, s->html);
   return ok && !s->fail;
 }
 static mulib_browser_fetch_t
@@ -90,7 +90,7 @@ js (void *ctx, mulib_jsdom_op_t op, uint64_t id, const char *property,
   (void)value;
   (void)n;
   assert (!strcmp (property, "name"));
-  return mulib_shylock_copy (out, cap, "widget");
+  return mulib_bounded_text_copy (out, cap, "widget");
 }
 
 static void
@@ -133,7 +133,7 @@ origins_and_network (void)
   assert (!mulib_fetch_policy_check (&policy, "http://example.com"));
   server_t server = { "<p>hi</p>", "text/html; charset=utf-8", 200, 0, 0 };
   mulib_browser_fetch_t f = fetcher (&server);
-  mulib_shylock_buffer_t body = { 0 };
+  mulib_bounded_text_buffer_t body = { 0 };
   unsigned status = 99;
   char type[128] = "old";
   assert (!mulib_browser_fetch_get (&f, "https://other.com", &body, &status,
@@ -153,7 +153,7 @@ origins_and_network (void)
   f.client.policy.max_bytes = 2;
   assert (!mulib_fetch_get (&f.client, "https://example.com", &body, &status,
                             type, sizeof type));
-  mulib_shylock_buffer_free (&body);
+  mulib_bounded_text_buffer_free (&body);
   assert (mulib_websearch_known (MULIB_WEBSEARCH_GOOGLE));
   mulib_websearch_provider_config_t provider;
   assert (mulib_websearch_provider_init (&provider, "search",
@@ -163,7 +163,7 @@ origins_and_network (void)
       && !strcmp (body.data, "https://example.com/search?q=a%26b+c&start=2"));
   assert (!mulib_websearch_provider_init (&provider, "x",
                                           "https://example.com/#frag", 1));
-  mulib_shylock_buffer_free (&body);
+  mulib_bounded_text_buffer_free (&body);
   mulib_websearch_engine_t engine = { 0 };
   engine.limit = 2;
   assert (mulib_websearch_engine_add (&engine, "https://b.com", "b", 1, 1));
@@ -197,14 +197,14 @@ storage (void)
   mulib_browser_cookie_t cookie
       = { "sid", "abc", "Example.COM", "/account", 100, 1, 0, 1 };
   assert (mulib_browser_cookiejar_put (&jar, &cookie));
-  mulib_shylock_buffer_t b = { 0 };
+  mulib_bounded_text_buffer_t b = { 0 };
   assert (mulib_browser_cookiejar_header (&jar, "www.EXAMPLE.com",
                                           "/accountant", 1, 10, &b)
           && b.len == 0);
   assert (mulib_browser_cookiejar_header (&jar, "www.example.com",
                                           "/account/x", 1, 10, &b)
           && !strcmp (b.data, "sid=abc"));
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   assert (mulib_browser_cookiejar_header (&jar, "badexample.com", "/account",
                                           1, 10, &b)
           && b.len == 0);
@@ -217,7 +217,7 @@ storage (void)
   cookie.name[0] = '=';
   assert (!mulib_browser_cookiejar_put (&jar, &cookie));
   mulib_browser_cookiejar_free (&jar);
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   mulib_browser_cache_t cache = { 0 };
   cache.max_bytes = 4;
   cache.max_entries = 2;
@@ -349,7 +349,7 @@ runtime (void)
   assert (!mulib_dom_range_shift (range, INT64_MIN, 8, &other));
   shifted.start = 8;
   assert (!mulib_dom_range_intersect (range, shifted, &other));
-  mulib_shylock_buffer_t generated = { 0 };
+  mulib_bounded_text_buffer_t generated = { 0 };
   const char *idl = "/* interface Fake {}; */ interface Node { attribute "
                     "DOMString name; }; interface Window;";
   assert (mulib_webidl_bindgen_interfaces (idl, strlen (idl), &generated, 2));
@@ -358,7 +358,7 @@ runtime (void)
   assert (
       !mulib_webidl_bindgen_interfaces ("interface 123 {};", 17, &generated, 1)
       && generated.len == old);
-  mulib_shylock_buffer_free (&generated);
+  mulib_bounded_text_buffer_free (&generated);
   int32_t signed_value;
   uint32_t unsigned_value;
   assert (fesetround (FE_UPWARD) == 0);
@@ -369,7 +369,7 @@ runtime (void)
   assert (!mulib_webidl_to_int32 (1.5, 0, &signed_value));
   assert (!mulib_webidl_domstring_utf8 ("\xed\xa0\x80", 3, &generated));
   assert (mulib_webidl_domstring_utf8 ("a\0b", 3, &generated));
-  mulib_shylock_buffer_free (&generated);
+  mulib_bounded_text_buffer_free (&generated);
 }
 
 static void

@@ -1,14 +1,16 @@
-# On1x Standard Library + native PPX extension batch
+# On1x
 
-These extensions are integrated with the existing C11 compiler and module loader.
-The refined Basis modules, `stdlib/ppx/`, `stdlib/sexpr/`, `stdlib/visitor/`,
-original native processors and contracts are preserved.
+On1x is a statically compiled language with a C11 backend, module loader,
+standard library, and native PPX facilities. This directory also contains its
+compiler SDK and the separately versioned On1xRT embedding interface.
+The manuals distinguish executable subsets, optional integrations, and
+unsupported profiles rather than treating inventory as proof of capability.
 
 For a fresh MuLIB checkout, `git submodule update --init on1x/third_party/libstone`
 checks out the pinned LibStone sources for the generated scanner and optional
 integrations. Existing compatible checkouts can be selected with
 `-DON1X_LIBSTONE_ROOT=/path/to/libstone`. CMake does not fetch or update either
-checkout. See the [consolidation plan](../consolidation/PLAN.md) for the
+checkout. See the [representation contracts](../manual/representation-contracts.md) for the
 cross-subsystem integration boundaries.
 
 ## Project tools
@@ -51,7 +53,7 @@ sealed native image on Linux/glibc; this runs with host authority, not in a sand
 ## Language implementation continuation
 
 The [bounded kernel inventory](contracts-exotract/README.md) registers the
-193 new JoltFX assessment kernels for metadata discovery. Static-inline
+193 bounded media and compute kernels for metadata discovery. Static-inline
 definitions do not provide an external archive ABI: safe and unsafe calls
 remain unsupported, and no codec/GPU provider or safety admission is implied.
 

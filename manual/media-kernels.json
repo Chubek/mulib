@@ -1,0 +1,1625 @@
+[
+  {
+    "header": "mulib-media-core.h",
+    "scope": "Common checked arithmetic, status and byte views.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-fraction.h"
+    ]
+  },
+  {
+    "header": "mulib-media-timebase.h",
+    "scope": "Exact rational timebase normalization and checked rescaling.",
+    "limitations": "May reject very large intermediate products even if final quotient would fit.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-pixelformat.h",
+    "scope": "Plane layout for packed and subsampled images.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-frame.h",
+    "scope": "Checked strided frame views, heap allocation and row copying.",
+    "limitations": "Copy requires disjoint frames or identical layout. Owned and borrowed frames share layout; caller tracks ownership.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-pixelformat.h"
+    ]
+  },
+  {
+    "header": "mulib-media-packet.h",
+    "scope": "Deep copy and release of encoded packets.",
+    "limitations": "Release only cloned packets.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-stream.h",
+    "scope": "Short-read and short-write handling for blocking streams.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-clock.h",
+    "scope": "Anchored monotonic host-clock mapping (rate in ticks/ns).",
+    "limitations": "Caller supplies monotonic timestamps; no audio PLL.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-bufferpool.h",
+    "scope": "Fixed-size reusable frame pool.",
+    "limitations": "Single-threaded; all leases must be returned before destruction.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-frame.h"
+    ]
+  },
+  {
+    "header": "mulib-media-metadata.h",
+    "scope": "Borrowed key/value metadata with checked capacity.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-convert.h",
+    "scope": "RGB, gray, float and limited-range BT.709 YUV420 to RGBA8.",
+    "limitations": "Disjoint source/destination; no transfer conversion.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-frame.h"
+    ]
+  },
+  {
+    "header": "mulib-media-demux.h",
+    "scope": "Demux provider lifecycle and checked dispatch.",
+    "limitations": "Needs caller-supplied demux implementation (e.g. FFmpeg bridge).",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-packet.h"
+    ]
+  },
+  {
+    "header": "mulib-media-mux.h",
+    "scope": "Mux provider lifecycle with finalization guard.",
+    "limitations": "Provider required.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-packet.h"
+    ]
+  },
+  {
+    "header": "mulib-media-codec.h",
+    "scope": "Send/receive codec provider contract with explicit draining (NULL input).",
+    "limitations": "No bundled codec provider.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-frame.h",
+      "mulib-media-packet.h"
+    ]
+  },
+  {
+    "header": "mulib-media-isobmff.h",
+    "scope": "Bounds-checked ISO BMFF box traversal including extended sizes.",
+    "limitations": "No sample tables, timestamps or container writing.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-matroska.h",
+    "scope": "EBML variable integers and bounded element traversal.",
+    "limitations": "Unknown-sized element consumes remaining caller-supplied scope; no block/lacing support.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-mpegts.h",
+    "scope": "188-byte transport packet header and adaptation-field parsing.",
+    "limitations": "No PES assembly, PAT/PMT or muxing.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-h264.h",
+    "scope": "Annex B NAL iterator and emulation-prevention removal.",
+    "limitations": "Bitstream tooling only; no H.264 encoder/decoder.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-h265.h",
+    "scope": "Annex B HEVC NAL header extraction.",
+    "limitations": "No HEVC encoder/decoder.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-h264.h"
+    ]
+  },
+  {
+    "header": "mulib-media-vp9.h",
+    "scope": "VP9 uncompressed frame prefix parsing.",
+    "limitations": "Does not validate full frame or decode pixels.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-av1.h",
+    "scope": "AV1 low-overhead OBU framing and LEB128 sizes.",
+    "limitations": "No AV1 encoder/decoder.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-seek.h",
+    "scope": "Binary timestamp seek followed by keyframe backtracking.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-media-scale.h",
+    "scope": "Nearest-neighbor RGBA8 scale.",
+    "limitations": "Requires disjoint buffers; use img-resample for high quality.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-frame.h"
+    ]
+  },
+  {
+    "header": "mulib-media-proxy.h",
+    "scope": "Aspect-preserving in-memory proxy frame generation.",
+    "limitations": "No proxy media files or cache.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-scale.h"
+    ]
+  },
+  {
+    "header": "mulib-media-export.h",
+    "scope": "Cancellable packet remux loop with release and finalization.",
+    "limitations": "Provider callbacks must be blocking; no encode or atomic filesystem commit.",
+    "dependencies": [
+      "mulib-media-core.h",
+      "mulib-media-demux.h",
+      "mulib-media-mux.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-timeline.h",
+    "scope": "Caller-backed timeline with exact integer ticks and unique clip IDs.",
+    "limitations": "No automatic overlap policy; source and sequence use same tick units.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-track.h",
+    "scope": "Track lookup and mute/solo policy.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-clip.h",
+    "scope": "Clip source mapping and bounded slip.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-interval.h",
+    "scope": "Half-open range intersection and bounded output query.",
+    "limitations": "Linear scan; replace with augmented interval index for large timelines.",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-edit.h",
+    "scope": "Split, trim and atomic adjacent roll editing.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-ripple.h",
+    "scope": "Validate-then-apply ripple shift.",
+    "limitations": "Caller resolves overlaps and locked tracks.",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-transition.h",
+    "scope": "Linear and smooth crossfade weights.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-retime.h",
+    "scope": "Piecewise-linear source-time mapping, including reverse and hold.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-snap.h",
+    "scope": "Nearest clip boundary snapping with deterministic ties.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-evaluate.h",
+    "scope": "Visit active clips at a timeline tick.",
+    "limitations": "Track compositing order is caller policy.",
+    "dependencies": [
+      "mulib-nle-clip.h",
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-edl.h",
+    "scope": "Write lossless neutral tab-separated edit list.",
+    "limitations": "Not CMX3600; implement SMPTE/drop-frame interchange separately.",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-nle-otio.h",
+    "scope": "OpenTimelineIO RationalTime numeric bridge.",
+    "limitations": "No OTIO JSON schema serialization.",
+    "dependencies": [
+      "mulib-nle-timeline.h"
+    ]
+  },
+  {
+    "header": "mulib-img-core.h",
+    "scope": "Float RGBA strided image view and pixel math.",
+    "limitations": "get/put are unchecked internal primitives; validate and bound indices first. Linear light, straight alpha by convention.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-tile.h",
+    "scope": "Zero-copy tile views and row-major tile enumeration.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-sampler.h",
+    "scope": "Nearest, bilinear, Catmull-Rom and Lanczos3 samplers.",
+    "limitations": "Clamp borders; straight alpha interpolation, premultiply if filtering transparent images.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-resample.h",
+    "scope": "Center-aligned image reconstruction.",
+    "limitations": "Disjoint buffers; no scale-dependent antialiasing for strong minification.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-img-sampler.h"
+    ]
+  },
+  {
+    "header": "mulib-img-convolve.h",
+    "scope": "General odd-kernel correlation with clamped boundaries.",
+    "limitations": "Disjoint buffers; flip weights for true convolution.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-blur.h",
+    "scope": "Separable Gaussian blur with caller-provided scratch.",
+    "limitations": "Scratch must not overlap either image.",
+    "dependencies": [
+      "mulib-img-convolve.h",
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-morphology.h",
+    "scope": "Square alpha erosion and dilation.",
+    "limitations": "Disjoint buffers.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-edge.h",
+    "scope": "Sobel gradient magnitude image.",
+    "limitations": "No Canny hysteresis or Laplacian.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-transform.h",
+    "scope": "Inverse homography image transformation with transparent exterior.",
+    "limitations": "Disjoint buffers.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-img-sampler.h"
+    ]
+  },
+  {
+    "header": "mulib-img-warp.h",
+    "scope": "Displacement map warp; field R/G are source offsets in pixels.",
+    "limitations": "Clamp border; disjoint buffers.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-img-sampler.h"
+    ]
+  },
+  {
+    "header": "mulib-img-matte.h",
+    "scope": "Luminance-derived soft alpha matte.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-keying.h",
+    "scope": "Soft chroma-distance alpha key.",
+    "limitations": "No spill suppression or foreground color recovery.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-blend.h",
+    "scope": "Straight-alpha source-over compositing and blend modes.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-pyramid.h",
+    "scope": "Half-resolution box-filter pyramid level.",
+    "limitations": "Not a Gaussian/Laplacian reconstruction pyramid.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-opticalflow.h",
+    "scope": "Exhaustive local motion estimation by block matching.",
+    "limitations": "Integer displacement only; no dense multiscale flow.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-motionblur.h",
+    "scope": "Velocity-map shutter integration.",
+    "limitations": "No occlusion handling.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-img-sampler.h"
+    ]
+  },
+  {
+    "header": "mulib-img-denoise.h",
+    "scope": "Spatial bilateral RGB denoising.",
+    "limitations": "No temporal denoise.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-img-tracking.h",
+    "scope": "Track a set of points by block matching with confidence rejection.",
+    "limitations": "No feature detection or subpixel refinement.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-img-opticalflow.h"
+    ]
+  },
+  {
+    "header": "mulib-color-transfer.h",
+    "scope": "Linear/sRGB/Rec.709/PQ/HLG transfer functions.",
+    "limitations": "PQ uses normalized 10000-nit luminance; HLG is scene OETF, no OOTF.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-primaries.h",
+    "scope": "3x3 color matrices and D65 Rec.709/Rec.2020/P3 matrices.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-adaptation.h",
+    "scope": "Bradford XYZ white-point adaptation.",
+    "limitations": "Supply normalized XYZ white points.",
+    "dependencies": [
+      "mulib-color-primaries.h",
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-gamut.h",
+    "scope": "Neutral-axis gamut compression into bounded RGB.",
+    "limitations": "Simple RGB heuristic, not perceptually uniform.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-lut1d.h",
+    "scope": "Clamped linear 1D LUT interpolation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-lut3d.h",
+    "scope": "Trilinear and tetrahedral 3D LUT evaluation, red-fastest order.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-cube.h",
+    "scope": "Read standard unit-domain 3D .cube LUTs.",
+    "limitations": "No combined 1D/3D or arbitrary domains; partial scratch on failure.",
+    "dependencies": [
+      "mulib-color-lut3d.h",
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-tonemap.h",
+    "scope": "Reinhard and ACES-inspired fitted filmic curves.",
+    "limitations": "Not an official ACES rendering transform.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-grade.h",
+    "scope": "ASC-CDL-style slope, offset, power and saturation.",
+    "limitations": "Unclamped positive output; specify CDL clamp mode for interchange.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-wheels.h",
+    "scope": "Luminance-weighted three-way grading offsets.",
+    "limitations": "Simple overlapping weights, not a Resolve-compatible wheel model.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-curves.h",
+    "scope": "Validated piecewise-linear grading curves.",
+    "limitations": "No monotone cubic or cyclic hue interpolation.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-qualifier.h",
+    "scope": "Soft luminance/saturation selection mask.",
+    "limitations": "Hue and spatial cleanup not implemented.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-vectorscope.h",
+    "scope": "BT.709 Cb/Cr density histogram to caller-owned square bins.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-waveform.h",
+    "scope": "Luma or RGB waveform density bins.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-color-pipeline.h",
+    "scope": "Fused per-pixel pipeline of caller-supplied color stages.",
+    "limitations": "Callbacks trusted and synchronous.",
+    "dependencies": [
+      "mulib-img-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-core.h",
+    "scope": "Borrowed graph topology with indexed edges and typed single outputs.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-types.h",
+    "scope": "Exact port-type equality and edge validation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nodegraph-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-validate.h",
+    "scope": "Validate node identity, port types and unique incoming edges.",
+    "limitations": "Cycle rejection is in nodegraph-compile; unconnected ports allowed.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-types.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-compile.h",
+    "scope": "Kahn topological ordering and cycle detection.",
+    "limitations": "O(VE) traversal; add adjacency index.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-eval.h",
+    "scope": "Execute a topologically ordered graph through an operation provider.",
+    "limitations": "Callback manages values and cleanup; no parallel execution.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-cache.h",
+    "scope": "Revision-keyed non-owning intermediate result cache.",
+    "limitations": "No eviction; caller releases values.",
+    "dependencies": [
+      "mulib-nodegraph-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-dirty.h",
+    "scope": "Propagate invalidation downstream to fixed point.",
+    "limitations": "Quadratic worst case; use adjacency and queue.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-region.h",
+    "scope": "Backward ROI union with per-node filter halo.",
+    "limitations": "Requires valid topological order; transform-specific ROI mapping remains.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-temporal.h",
+    "scope": "Checked temporal dependency window expansion.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-nodegraph-core.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-fusion.h",
+    "scope": "Conservative candidate detection for unary operator fusion.",
+    "limitations": "Does not rewrite graph; verify execution semantic compatibility.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-serialize.h",
+    "scope": "Versioned textual graph topology writer.",
+    "limitations": "No reader or node properties.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-nodegraph-layout.h",
+    "scope": "Layered DAG layout with deterministic rows.",
+    "limitations": "Valid topological order required; no crossing minimization.",
+    "dependencies": [
+      "mulib-nodegraph-core.h",
+      "mulib-nodegraph-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-core.h",
+    "scope": "Caller-owned indexed triangle mesh and vector math.",
+    "limitations": "Triangle-only initial model; integrate canonical cgeom/linalg types later.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-halfedge.h",
+    "scope": "Triangle half-edge construction and nonmanifold edge rejection.",
+    "limitations": "O(E\u00b2), no nonmanifold vertex detection.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-adjacency.h",
+    "scope": "Vertex-to-face incidence query.",
+    "limitations": "Linear scan; add CSR adjacency.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-primitives.h",
+    "scope": "Box and regular grid primitive generation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-attributes.h",
+    "scope": "Checked dense per-element attribute channels.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-edit.h",
+    "scope": "Single-face extrusion with cap and side walls.",
+    "limitations": "No region extrusion, bevel or inset.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-triangulate.h",
+    "scope": "Ear clipping for simple planar polygons.",
+    "limitations": "No exact predicates or holes; assumes non-self-intersection.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-subdivide.h",
+    "scope": "Shared-edge linear triangle subdivision.",
+    "limitations": "Not Loop or Catmull-Clark smoothing; disjoint meshes.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-mesh-halfedge.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-decimate.h",
+    "scope": "Shortest-edge selection and index collapse with degenerate face removal.",
+    "limitations": "Not QEM; may change topology; leaves unused vertices.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-remesh.h",
+    "scope": "Jacobi Laplacian smoothing with fixed vertices.",
+    "limitations": "Face-weighted neighbors; no isotropic split/collapse/flip remeshing.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-boolean.h",
+    "scope": "Point-in-closed-mesh parity classification, a boolean building block.",
+    "limitations": "No mesh boolean output; edge degeneracies and robust intersections unresolved.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-repair.h",
+    "scope": "Remove zero-area or below-threshold triangles.",
+    "limitations": "No hole filling, welding or orientation repair.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-normals.h",
+    "scope": "Area-weighted smooth vertex normals.",
+    "limitations": "No tangent frames or split normals.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-uv.h",
+    "scope": "Normalized planar UV projection.",
+    "limitations": "No seam generation, LSCM or atlas packing.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-skin.h",
+    "scope": "Four-weight normalized linear blend skinning.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-obj.h",
+    "scope": "Wavefront OBJ position and triangle export.",
+    "limitations": "No import, material, normal or UV records.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-ply.h",
+    "scope": "ASCII PLY positions and triangle export.",
+    "limitations": "No binary PLY or import.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-mesh-gltf.h",
+    "scope": "GLB 2.0 JSON and BIN chunk extraction.",
+    "limitations": "No glTF JSON/accessor/material import or export.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-bezier.h",
+    "scope": "Arbitrary-degree de Casteljau curve evaluation.",
+    "limitations": "Scratch must have n elements; no surface API.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-bspline.h",
+    "scope": "De Boor B-spline curve evaluation and span search.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-nurbs.h",
+    "scope": "Rational B-spline curve evaluation using homogeneous coordinates.",
+    "limitations": "Positive weights, degree <=32; no tensor-product surface yet.",
+    "dependencies": [
+      "mulib-geom-bspline.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-tessellate.h",
+    "scope": "Regular parametric surface tessellation via callback.",
+    "limitations": "Not adaptive; add curvature-based refinement and crack prevention.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-sdf.h",
+    "scope": "Sphere, box and smooth-union signed distance functions.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-metaball.h",
+    "scope": "Compact-support polynomial metaball field.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-isosurface.h",
+    "scope": "Marching tetrahedron cell polygonization.",
+    "limitations": "Requires grid traversal, consistent winding and vertex welding.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-cloner.h",
+    "scope": "Grid and radial instance positions; linear is grid with two dimensions =1.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-deform.h",
+    "scope": "Twist, taper and cylindrical bend point deformation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-geom-csg.h",
+    "scope": "Implicit-field CSG union, intersection and difference.",
+    "limitations": "Not exact boundary-representation CSG.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-keyframe.h",
+    "scope": "Sorted integer-time scalar keyframes and insertion.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-curve.h",
+    "scope": "Step, linear and cubic Hermite animation interpolation.",
+    "limitations": "Tangents in value per tick.",
+    "dependencies": [
+      "mulib-anim-keyframe.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-easing.h",
+    "scope": "Six bounded easing functions.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-quaternion.h",
+    "scope": "Quaternion normalization, multiplication, shortest-path SLERP and vector rotation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-transform.h",
+    "scope": "TRS point transformation and animation interpolation.",
+    "limitations": "No matrix/shear decomposition.",
+    "dependencies": [
+      "mulib-anim-quaternion.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-channel.h",
+    "scope": "Evaluate multiple scalar animation property channels.",
+    "limitations": "Partial output on invalid later channel.",
+    "dependencies": [
+      "mulib-anim-curve.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-blend.h",
+    "scope": "Normalized weighted scalar blending.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-skeleton.h",
+    "scope": "Parent-ordered skeleton forward point transformation.",
+    "limitations": "No matrix palette generation.",
+    "dependencies": [
+      "mulib-anim-transform.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-ik.h",
+    "scope": "FABRIK position-chain inverse kinematics.",
+    "limitations": "False may still return best-effort pose; no joint limits.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-morph.h",
+    "scope": "Weighted blend-shape delta application.",
+    "limitations": "Caller guarantees nonoverlapping delta/output arrays.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-driver.h",
+    "scope": "Ordered, acyclic scalar dependency execution.",
+    "limitations": "Caller supplies topology and expression engine.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-bake.h",
+    "scope": "Bake a scalar curve into uniform integer-tick samples.",
+    "limitations": "Partial output on error.",
+    "dependencies": [
+      "mulib-anim-channel.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-anim-exposure.h",
+    "scope": "Midpoint stratified shutter-time samples.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-rigidbody.h",
+    "scope": "Semi-implicit Euler for translational sphere rigid bodies.",
+    "limitations": "No rotation, torque, inertia tensor or angular momentum.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-broadphase.h",
+    "scope": "Sphere AABB overlap candidate generation.",
+    "limitations": "O(n\u00b2); validate bodies before use.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-rigidbody.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-narrowphase.h",
+    "scope": "Sphere-sphere normal and penetration depth.",
+    "limitations": "No convex or mesh collision.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-rigidbody.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-manifold.h",
+    "scope": "Match previous sphere contacts by stable body indices and normal.",
+    "limitations": "No manifold points or warm-start application.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-narrowphase.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-solver.h",
+    "scope": "Normal collision impulse and positional correction.",
+    "limitations": "Single contact, no friction or angular effects.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-narrowphase.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-world.h",
+    "scope": "Sphere-world integrator with iterative contact resolution.",
+    "limitations": "O(n\u00b2), no CCD or persistent broadphase; partial state on numeric failure.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-solver.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-joint.h",
+    "scope": "Position-based distance joint.",
+    "limitations": "Does not update velocities or support angular constraints.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-physics-rigidbody.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-particle.h",
+    "scope": "Particle advection, exponential drag and lifetime expiration.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-physics-cloth.h",
+    "scope": "Position-based cloth stretch constraint projection with pinning.",
+    "limitations": "No integration, bending or self-collision.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-material.h",
+    "scope": "Validated linear-light PBR material parameter representation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-scene.h",
+    "scope": "Triangle scene, material table and Moller-Trumbore closest-hit traversal.",
+    "limitations": "Brute-force scene hit; validate scene once before render.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-material.h"
+    ]
+  },
+  {
+    "header": "mulib-render-bvh.h",
+    "scope": "AABB slab intersection and caller-stack BVH traversal.",
+    "limitations": "False conflates miss and invalid traversal; builder-generated tree assumed.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-scene.h"
+    ]
+  },
+  {
+    "header": "mulib-render-bvhbuild.h",
+    "scope": "Balanced centroid-partition BVH builder.",
+    "limitations": "Not SAH or Morton LBVH; caller provides 2N-1 nodes.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-bvh.h"
+    ]
+  },
+  {
+    "header": "mulib-render-camera.h",
+    "scope": "Pinhole look-at camera with normalized pixel rays.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-scene.h"
+    ]
+  },
+  {
+    "header": "mulib-render-sampling.h",
+    "scope": "Deterministic RNG, radical inverse and cosine-weighted hemisphere samples.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-bsdf.h",
+    "scope": "Lambert BRDF, GGX normal distribution and Schlick Fresnel primitives.",
+    "limitations": "No full GGX sampling, masking term or transmission.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-material.h"
+    ]
+  },
+  {
+    "header": "mulib-render-light.h",
+    "scope": "Inverse-square point-light evaluation.",
+    "limitations": "No area-light sampling.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-shadow.h",
+    "scope": "Ray-tested visibility to a point on a light.",
+    "limitations": "No shadow maps; requires validated scene.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-scene.h"
+    ]
+  },
+  {
+    "header": "mulib-render-integrator.h",
+    "scope": "Direct Lambert illumination from point lights with visibility.",
+    "limitations": "Validated scene required; no specular direct lighting.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-bsdf.h",
+      "mulib-render-light.h",
+      "mulib-render-shadow.h"
+    ]
+  },
+  {
+    "header": "mulib-render-pathtrace.h",
+    "scope": "Diffuse multi-bounce stochastic path tracing.",
+    "limitations": "Validated scene required; no MIS, specular BSDF, Russian roulette or BVH integration.",
+    "dependencies": [
+      "mulib-mesh-core.h",
+      "mulib-render-bsdf.h",
+      "mulib-render-sampling.h",
+      "mulib-render-scene.h"
+    ]
+  },
+  {
+    "header": "mulib-render-raster.h",
+    "scope": "Screen-space Gouraud triangle rasterization with depth test.",
+    "limitations": "No clip space, perspective correction or top-left fill rule.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-texture.h",
+    "scope": "Bilinear sampling with mip-level interpolation and repeat coordinates.",
+    "limitations": "Caller generates mip levels; repeat seams use clamped bilinear.",
+    "dependencies": [
+      "mulib-img-sampler.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-film.h",
+    "scope": "HDR sample accumulation and resolve.",
+    "limitations": "No AOV multiplexing; not thread-safe.",
+    "dependencies": [
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-render-denoise.h",
+    "scope": "Normal-guided 5x5 bilateral render denoising.",
+    "limitations": "Normals in signed RGB, no temporal accumulation.",
+    "dependencies": [
+      "mulib-img-core.h",
+      "mulib-mesh-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-core.h",
+    "scope": "Device-neutral dispatch and fence contract.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-device.h",
+    "scope": "Select from real provider-supplied device capability descriptors.",
+    "limitations": "No platform enumeration.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-buffer.h",
+    "scope": "Checked host buffer allocation and staging copies.",
+    "limitations": "CPU memory only, not device allocation.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-image.h",
+    "scope": "Aligned-row host storage image allocation.",
+    "limitations": "No GPU texture memory.",
+    "dependencies": [
+      "mulib-compute-buffer.h",
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-pipeline.h",
+    "scope": "Pipeline binding layout validation.",
+    "limitations": "Provider owns actual pipeline creation.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-dispatch.h",
+    "scope": "Validated dispatch to provider and ceil-division workgroup sizing.",
+    "limitations": "Actual execution delegated.",
+    "dependencies": [
+      "mulib-compute-core.h",
+      "mulib-compute-pipeline.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-sync.h",
+    "scope": "Fence provider wait and monotonic software timeline accounting.",
+    "limitations": "Caller serializes operations; no native barriers.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-memory.h",
+    "scope": "Aligned suballocation offsets for a preallocated staging arena.",
+    "limitations": "Not device memory allocation; fence before reuse.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-cache.h",
+    "scope": "Device/revision-keyed bounded pipeline handle cache.",
+    "limitations": "No eviction or handle ownership.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-spirv.h",
+    "scope": "SPIR-V header/instruction framing validator and instruction emitter.",
+    "limitations": "Structural only; not semantic verification or compiler.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-vulkan.h",
+    "scope": "Checked Vulkan queue provider attachment and dispatch.",
+    "limitations": "Adapter only; no native vulkan device, command creation or driver code. Wire a native backend before advertising support.",
+    "dependencies": [
+      "mulib-compute-core.h",
+      "mulib-compute-dispatch.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-metal.h",
+    "scope": "Checked Metal command queue provider attachment and dispatch.",
+    "limitations": "Adapter only; no native metal device, command creation or driver code. Wire a native backend before advertising support.",
+    "dependencies": [
+      "mulib-compute-core.h",
+      "mulib-compute-dispatch.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-d3d12.h",
+    "scope": "Checked D3D12 command queue provider attachment and dispatch.",
+    "limitations": "Adapter only; no native d3d12 device, command creation or driver code. Wire a native backend before advertising support.",
+    "dependencies": [
+      "mulib-compute-core.h",
+      "mulib-compute-dispatch.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-webgpu.h",
+    "scope": "Checked WebGPU queue provider attachment and dispatch.",
+    "limitations": "Adapter only; no native webgpu device, command creation or driver code. Wire a native backend before advertising support.",
+    "dependencies": [
+      "mulib-compute-core.h",
+      "mulib-compute-dispatch.h"
+    ]
+  },
+  {
+    "header": "mulib-compute-cpu.h",
+    "scope": "Bounded deterministic CPU workgroup dispatch.",
+    "limitations": "Serial; use taskpool for parallelism.",
+    "dependencies": [
+      "mulib-compute-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-mixer.h",
+    "scope": "Allocation-free multitrack mono/stereo mixing with pan and gain.",
+    "limitations": "Inputs must not overlap output; no limiter or solo handling.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-resample.h",
+    "scope": "Interleaved linear sample-rate conversion; ratio=input/output rate.",
+    "limitations": "No anti-alias filter, streaming phase history or sinc quality.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-channelmap.h",
+    "scope": "Arbitrary interleaved channel mixing matrix.",
+    "limitations": "Caller specifies layout matrix; disjoint input/output.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-envelope.h",
+    "scope": "Linear or power-interpolated per-frame gain envelope.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-filter.h",
+    "scope": "Stateful DF-II transposed biquad, lowpass design and causal FIR.",
+    "limitations": "FIR zero initial history; one biquad state per channel.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-eq.h",
+    "scope": "RBJ peaking EQ design and cascaded mono processing.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-audio-filter.h",
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-dynamics.h",
+    "scope": "Peak envelope compressor and hard limiter.",
+    "limitations": "No lookahead, RMS detection, gate or linked channels.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-delay.h",
+    "scope": "Allocation-free feedback delay ring.",
+    "limitations": "Initialize state before per-sample call.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-reverb.h",
+    "scope": "Parallel feedback comb reverb.",
+    "limitations": "Set comb wet=1; no diffusion allpass or damping filter.",
+    "dependencies": [
+      "mulib-audio-delay.h",
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-timestretch.h",
+    "scope": "Offline windowed overlap-add time stretching.",
+    "limitations": "No WSOLA alignment or phase vocoder; pitch preservation is approximate, mono only.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-loudness.h",
+    "scope": "Streaming RMS dBFS and sample-peak measurement.",
+    "limitations": "Not LUFS/ITU BS.1770 or oversampled true peak.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-device.h",
+    "scope": "Audio provider lifecycle and partial-frame writes.",
+    "limitations": "No native device provider; bridge existing miniaudio or platform audio.",
+    "dependencies": [
+      "mulib-audio-core.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-ir.h",
+    "scope": "Typed straight-line SSA expression IR with explicit result.",
+    "limitations": "Executable subset is f32 and bool; no CFG, memory instructions or vector values.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-types.h",
+    "scope": "Scalar type and packed vector byte-size helpers.",
+    "limitations": "GPU alignment is backend dependent; no matrix/image types.",
+    "dependencies": [
+      "mulib-kernel-ir.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-validate.h",
+    "scope": "Validate SSA dominance/types and interpret scalar expressions.",
+    "limitations": "No execution budgets beyond bounded instruction count; callers enforce finite input if needed.",
+    "dependencies": [
+      "mulib-kernel-ir.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-uniformity.h",
+    "scope": "Conservative SSA uniformity propagation from parameter annotations.",
+    "limitations": "No divergent control-flow or barrier analysis.",
+    "dependencies": [
+      "mulib-kernel-ir.h",
+      "mulib-kernel-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-memory.h",
+    "scope": "Overflow-safe interval bounds and alias checks for allocation IDs.",
+    "limitations": "No pointer provenance inference or address-space lowering.",
+    "dependencies": [
+      "mulib-kernel-ir.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-vectorize.h",
+    "scope": "Portable lane-wise batched SSA execution.",
+    "limitations": "Scalar loop, not actual SIMD code generation.",
+    "dependencies": [
+      "mulib-kernel-ir.h",
+      "mulib-kernel-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-fusion.h",
+    "scope": "Fuse two pure SSA expressions by parameter substitution and ID remapping.",
+    "limitations": "Out and map require disjoint buffers; no side-effect semantics.",
+    "dependencies": [
+      "mulib-kernel-ir.h",
+      "mulib-kernel-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-glsl.h",
+    "scope": "Emit GLSL scalar function from validated SSA.",
+    "limitations": "No compute entry point, descriptors or driver compilation; locale must be C.",
+    "dependencies": [
+      "mulib-kernel-ir.h",
+      "mulib-kernel-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-wgsl.h",
+    "scope": "Emit WGSL scalar function with typed let bindings.",
+    "limitations": "No entry point, resources, or shader validation by native compiler.",
+    "dependencies": [
+      "mulib-kernel-glsl.h",
+      "mulib-kernel-ir.h"
+    ]
+  },
+  {
+    "header": "mulib-kernel-legalize.h",
+    "scope": "Finite constant folding as a first legalization pass.",
+    "limitations": "No backend-specific capability lowering; verify float semantic parity.",
+    "dependencies": [
+      "mulib-kernel-ir.h",
+      "mulib-kernel-validate.h"
+    ]
+  },
+  {
+    "header": "mulib-asset-core.h",
+    "scope": "Stable 128-bit identity and borrowed asset metadata.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-asset-catalog.h",
+    "scope": "Caller-backed asset catalogue with identity and substring query.",
+    "limitations": "Linear, case-sensitive search; strings borrowed.",
+    "dependencies": [
+      "mulib-asset-core.h"
+    ]
+  },
+  {
+    "header": "mulib-asset-dependency.h",
+    "scope": "Transitive dependent-asset invalidation.",
+    "limitations": "",
+    "dependencies": [
+      "mulib-asset-core.h"
+    ]
+  },
+  {
+    "header": "mulib-asset-cache.h",
+    "scope": "Digest- and variant-keyed non-owning asset cache.",
+    "limitations": "Caller computes SHA-256; no eviction or persistent store.",
+    "dependencies": [
+      "mulib-asset-core.h"
+    ]
+  },
+  {
+    "header": "mulib-asset-thumbnail.h",
+    "scope": "Aspect-preserving thumbnail from an RGBA8 frame.",
+    "limitations": "Nearest-neighbor; no video seek or cache.",
+    "dependencies": [
+      "mulib-media-proxy.h"
+    ]
+  },
+  {
+    "header": "mulib-project-store.h",
+    "scope": "Transactional provider interface with lifecycle guards.",
+    "limitations": "Provider supplies durability and recovery, e.g. existing KVDB.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-project-journal.h",
+    "scope": "CRC32-framed journal append and valid-prefix recovery.",
+    "limitations": "Memory serialization only; no fsync, atomic commit or transaction markers.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-project-migrate.h",
+    "scope": "Ordered monotonic schema migration execution with ambiguity rejection.",
+    "limitations": "Each step must be transactional; earlier successful steps remain committed.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-project-history.h",
+    "scope": "Bounded command undo/redo history with branching truncation.",
+    "limitations": "In-memory callbacks only; no persistence or cleanup of discarded commands.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-project-package.h",
+    "scope": "Portable relative archive path validation and checked writer dispatch.",
+    "limitations": "Not an archive implementation or sufficient extraction security; handle symlinks, DOS reserved names and collisions.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  },
+  {
+    "header": "mulib-audio-core.h",
+    "scope": "Checked borrowed PCM byte extents, finite-sample scans and conservative alias helpers.",
+    "limitations": "Low-level caller-backed helpers; no audio allocation, device, codec or safe On1x admission.",
+    "dependencies": [
+      "mulib-media-core.h"
+    ]
+  }
+]

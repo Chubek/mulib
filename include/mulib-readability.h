@@ -7,7 +7,7 @@
 #ifndef MULIB_READABILITY_H
 #define MULIB_READABILITY_H
 #include "mulib-html-textstream.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -18,7 +18,7 @@ extern "C"
 
   /** @brief See manual/mulib-readability.md for this operation's contract. */
   int mulib_readability_extract (const char *html, size_t length,
-                                 mulib_shylock_buffer_t *out);
+                                 mulib_bounded_text_buffer_t *out);
 #ifdef __cplusplus
 }
 #endif
@@ -36,7 +36,7 @@ extern "C"
 
 typedef struct mulib_readability_state_
 {
-  mulib_shylock_buffer_t *out;
+  mulib_bounded_text_buffer_t *out;
   int skip, space;
 } mulib_readability_state_;
 static int
@@ -104,29 +104,29 @@ mulib_readability_event_ (void *ctx, const mulib_html_textstream_event_t *e)
         }
       if (s->space && s->out->len)
         {
-          if (!mulib_shylock_text (s->out, " "))
+          if (!mulib_bounded_text_text (s->out, " "))
             return 0;
         }
       s->space = 0;
-      if (!mulib_shylock_append (s->out, &c, 1))
+      if (!mulib_bounded_text_append (s->out, &c, 1))
         return 0;
     }
   return 1;
 }
 int
 mulib_readability_extract (const char *s, size_t n,
-                           mulib_shylock_buffer_t *out)
+                           mulib_bounded_text_buffer_t *out)
 {
   if (!out)
     return 0;
-  mulib_shylock_buffer_t tmp = { 0 };
+  mulib_bounded_text_buffer_t tmp = { 0 };
   tmp.limit = out->limit;
   mulib_readability_state_ st = { &tmp, 0, 0 };
   int ok = mulib_html_textstream_scan (s, n, mulib_readability_event_, &st,
                                        1000000);
   if (ok)
-    ok = mulib_shylock_append (out, tmp.data, tmp.len);
-  mulib_shylock_buffer_free (&tmp);
+    ok = mulib_bounded_text_append (out, tmp.data, tmp.len);
+  mulib_bounded_text_buffer_free (&tmp);
   return ok;
 }
 #endif

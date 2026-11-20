@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_CRAWLARCHIVE_H
 #define MULIB_CRAWLARCHIVE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,7 +20,7 @@ extern "C"
     char url[1024];
     unsigned status;
     uint64_t hash;
-    mulib_shylock_buffer_t body;
+    mulib_bounded_text_buffer_t body;
   } mulib_crawlarchive_record_t;
   typedef struct mulib_crawlarchive
   {
@@ -59,23 +59,23 @@ mulib_crawlarchive_add (mulib_crawlarchive_t *a, const char *url,
       || (a->max_body && n > a->max_body))
     return 0;
   mulib_crawlarchive_record_t z = { 0 };
-  if (!mulib_shylock_copy (z.url, sizeof z.url, url)
-      || !mulib_shylock_append (&z.body, bytes, n))
+  if (!mulib_bounded_text_copy (z.url, sizeof z.url, url)
+      || !mulib_bounded_text_append (&z.body, bytes, n))
     return 0;
   z.status = status;
-  z.hash = mulib_shylock_hash (bytes, n);
+  z.hash = mulib_bounded_text_hash (bytes, n);
   if (a->len == a->cap)
     {
       size_t c = a->cap ? a->cap * 2 : 8;
       if (c < a->cap || c > SIZE_MAX / sizeof z)
         {
-          mulib_shylock_buffer_free (&z.body);
+          mulib_bounded_text_buffer_free (&z.body);
           return 0;
         }
       void *p = realloc (a->items, c * sizeof z);
       if (!p)
         {
-          mulib_shylock_buffer_free (&z.body);
+          mulib_bounded_text_buffer_free (&z.body);
           return 0;
         }
       a->items = p;
@@ -100,7 +100,7 @@ mulib_crawlarchive_free (mulib_crawlarchive_t *a)
   if (a)
     {
       for (size_t i = 0; i < a->len; i++)
-        mulib_shylock_buffer_free (&a->items[i].body);
+        mulib_bounded_text_buffer_free (&a->items[i].body);
       free (a->items);
       memset (a, 0, sizeof *a);
     }

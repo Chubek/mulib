@@ -23,6 +23,13 @@ Avoid copying third-party sources without recording licensing and provenance.
 
 ## Composition and scope
 
+Keep kernel and platform documentation independent of downstream application
+identities, deployment plans, and release gates. Document reusable mechanisms
+by domain and supported profile. Application policy belongs outside generic
+kernel APIs; discovery, test execution, and independent safety approval remain
+distinct. Retain honest historical results with their original scope, failures,
+and exclusions when reorganizing documentation.
+
 Reuse existing MuLIB storage, parsing, encoding, and document models when they
 fit. Include dependency headers normally and list transitive implementation
 switches in the manual and standalone example. Never silently define another

@@ -9,6 +9,7 @@ successful sync. An implemented status describes the documented API subset, not
 certification of a named format or standard.
 Run after adding modules, then run tools/stratify.py and tools/check.py.
 """
+import argparse
 import json
 from pathlib import Path
 import re
@@ -68,7 +69,7 @@ def merge_additions(root, manifest):
     return manifest.replace('project_files:', ''.join(blocks) + 'project_files:', 1), paths
 
 
-def sync(root):
+def sync(root, *, fixtures=True):
     manifest_path = root / 'MANIFEST.yaml'
     manifest = manifest_path.read_text()
     if not re.search(r'^project_files:\s*$', manifest, re.M):
@@ -84,8 +85,8 @@ def sync(root):
         registered[name.group(1)] = block
     if set(registered) - {p.name for p in headers}:
         raise ValueError('manifest references missing headers')
-    amb3r_headers = {name for name, block in registered.items()
-                     if re.search(r'^  profile: amb3r$', block, re.M)}
+    engineering_headers = {name for name, block in registered.items()
+                     if re.search(r'^  profile: engineering$', block, re.M)}
     switches, fixture_switches, blocks = [], [], []
     for header in headers:
         text = header.read_text()
@@ -97,7 +98,7 @@ def sync(root):
             raise ValueError('static-inline header gained an ABI switch: ' + header.name)
         if match:
             switches.append(match.group(1))
-            if header.name not in amb3r_headers:
+            if header.name not in engineering_headers:
                 fixture_switches.append(match.group(1))
         elif not inline and re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
@@ -126,7 +127,7 @@ def sync(root):
                 fields = {'macro': match.group(1),
                           'dependencies': '[' + ', '.join(deps) + ']',
                           'status': 'implemented'}
-                if header.name not in amb3r_headers:
+                if header.name not in engineering_headers:
                     fields = {'manual': f'manual/mulib-{name}.md', **fields}
                 for key, value in fields.items():
                     pattern = r'^  ' + key + r':[^\n]*$'
@@ -175,9 +176,9 @@ def sync(root):
             manifest += f'- file: {relative}\n  purpose: {json.dumps(purpose)}\n'
     if len(set(switches)) != len(switches):
         raise ValueError('implementation switch shared by multiple headers')
-    # The main checker compiles Amb3r as part of its generated TU checks.
+    # The main checker compiles engineering as part of its generated TU checks.
     # Do not repeat that group in the older handwritten ABI fixtures.
-    generated_headers = inline_headers | amb3r_headers
+    generated_headers = inline_headers | engineering_headers
     implementation_path = root / 'tests/implementation.c'
     implementation = implementation_path.read_text()
     prefix = ''.join('#define ' + switch + '\n' for switch in fixture_switches
@@ -197,9 +198,11 @@ def sync(root):
             raise ValueError('declaration test lacks main(void) insertion point')
         declaration = declaration[:anchor.start()] + includes + declaration[anchor.start():]
     # Validate/read every input before publishing any updated inventory file.
-    for path, content in ((manifest_path, manifest),
-                          (implementation_path, implementation),
-                          (declaration_path, declaration)):
+    outputs = [(manifest_path, manifest)]
+    if fixtures:
+        outputs.extend(((implementation_path, implementation),
+                        (declaration_path, declaration)))
+    for path, content in outputs:
         if path.read_text() != content:
             path.write_text(content)
     for path in additions:
@@ -207,4 +210,8 @@ def sync(root):
 
 
 if __name__ == '__main__':
-    sync(ROOT)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--metadata-only', action='store_true',
+                        help='synchronize MANIFEST.yaml without editing C test fixtures')
+    args = parser.parse_args()
+    sync(ROOT, fixtures=not args.metadata_only)

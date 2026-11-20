@@ -7,7 +7,7 @@
 #ifndef MULIB_SCHEMAORG_H
 #define MULIB_SCHEMAORG_H
 #include "mulib-json.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -92,7 +92,7 @@ mulib_schemaorg_offer_parse (const char *s, size_t n,
     ok = strlen (z.currency) == 3 && z.currency[0] >= 'A'
          && z.currency[0] <= 'Z' && z.currency[1] >= 'A'
          && z.currency[1] <= 'Z' && z.currency[2] >= 'A'
-         && z.currency[2] <= 'Z' && mulib_shylock_parse_decimal (z.price, &v)
+         && z.currency[2] <= 'Z' && mulib_bounded_text_parse_decimal (z.price, &v)
          && v >= 0;
   mulib_json_destroy (doc);
   if (ok)

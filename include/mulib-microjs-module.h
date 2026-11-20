@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_MICROJS_MODULE_H
 #define MULIB_MICROJS_MODULE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -73,8 +73,8 @@ mulib_microjs_module_register (mulib_microjs_modules_t *m, const char *name,
       || mulib_microjs_module_find (m, name)
       || (m->limit && m->len >= m->limit))
     return 0;
-  mulib_microjs_module_t z = { mulib_shylock_dup (name, strlen (name)),
-                               mulib_shylock_dup (src, n), n };
+  mulib_microjs_module_t z = { mulib_bounded_text_dup (name, strlen (name)),
+                               mulib_bounded_text_dup (src, n), n };
   if (!z.name || !z.source)
     {
       free (z.name);

@@ -19,7 +19,7 @@ Include `include/mulib-websearch-engine.h`. Define the following switches in exa
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_AST`, `MULIB_IMPL_BROWSER_ORIGIN`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`, `MULIB_IMPL_INTE6`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_URI`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBSEARCH_ENGINE`.
+`MULIB_IMPL_AST`, `MULIB_IMPL_BROWSER_ORIGIN`, `MULIB_IMPL_GLOB`, `MULIB_IMPL_INET4`, `MULIB_IMPL_INET6`, `MULIB_IMPL_INTE6`, `MULIB_IMPL_PARSEC`, `MULIB_IMPL_PARSER`, `MULIB_IMPL_PEG`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_STRBUF`, `MULIB_IMPL_URI`, `MULIB_IMPL_UTF8`, `MULIB_IMPL_WEBSEARCH_ENGINE`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -55,7 +55,7 @@ Include the header in application code; dependency types come from its includes.
 #ifndef MULIB_WEBSEARCH_ENGINE_H
 #define MULIB_WEBSEARCH_ENGINE_H
 #include "mulib-browser-origin.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -104,7 +104,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-websearch-engine.h`](../include/mulib-websearch-engine.h) |
 | Implementation switch | `MULIB_IMPL_WEBSEARCH_ENGINE` |
-| Repository-local includes | [mulib-browser-origin](mulib-browser-origin.md), [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-browser-origin](mulib-browser-origin.md) |
 | Complete example | [`examples/modules/websearch-engine.c`](../examples/modules/websearch-engine.c) |
 
 The include list includes conditional and implementation-only includes;

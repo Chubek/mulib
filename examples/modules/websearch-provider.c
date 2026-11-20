@@ -8,7 +8,7 @@
 #define MULIB_IMPL_PARSEC
 #define MULIB_IMPL_PARSER
 #define MULIB_IMPL_PEG
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_URI
 #define MULIB_IMPL_UTF8
@@ -22,11 +22,11 @@ int
 main (void)
 {
   mulib_websearch_provider_config_t p;
-  mulib_shylock_buffer_t url = { 0 };
+  mulib_bounded_text_buffer_t url = { 0 };
   assert (mulib_websearch_provider_init (&p, "demo",
                                          "https://example.com/search", 10));
   assert (mulib_websearch_provider_url (&p, "a & b", 0, &url));
   assert (strstr (url.data, "a+%26+b"));
-  mulib_shylock_buffer_free (&url);
+  mulib_bounded_text_buffer_free (&url);
   return 0;
 }

@@ -142,14 +142,14 @@ struct fixture_response {
   size_t length, calls;
 };
 
-static int fixture_transport(void *ctx, const char *url, mulib_shylock_buffer_t *body,
+static int fixture_transport(void *ctx, const char *url, mulib_bounded_text_buffer_t *body,
                             unsigned *status, char *type, size_t cap) {
   struct fixture_response *fixture=ctx;
   if(++fixture->calls!=1 || strcmp(url,fixture->url) || strlen(fixture->type)>=cap)
     return 0;
   strcpy(type,fixture->type);
   *status=200;
-  return mulib_shylock_append(body,fixture->body,fixture->length);
+  return mulib_bounded_text_append(body,fixture->body,fixture->length);
 }
 
 int main(int argc, char **argv) {

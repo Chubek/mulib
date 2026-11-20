@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_WEBEXTRACT_EVIDENCE_H
 #define MULIB_WEBEXTRACT_EVIDENCE_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -56,10 +56,10 @@ mulib_webextract_evidence_make (const char *s, size_t n, size_t off,
     return 0;
   mulib_webextract_evidence_t z = { off,
                                     len,
-                                    mulib_shylock_hash (s, n),
-                                    mulib_shylock_hash (s + off, len),
+                                    mulib_bounded_text_hash (s, n),
+                                    mulib_bounded_text_hash (s + off, len),
                                     { 0 } };
-  if (!mulib_shylock_copy (z.field, sizeof z.field, field))
+  if (!mulib_bounded_text_copy (z.field, sizeof z.field, field))
     return 0;
   *o = z;
   return 1;
@@ -69,8 +69,8 @@ mulib_webextract_evidence_verify (const char *s, size_t n,
                                   const mulib_webextract_evidence_t *e)
 {
   return s && e && e->start <= n && e->length <= n - e->start
-         && e->document_hash == mulib_shylock_hash (s, n)
-         && e->span_hash == mulib_shylock_hash (s + e->start, e->length);
+         && e->document_hash == mulib_bounded_text_hash (s, n)
+         && e->span_hash == mulib_bounded_text_hash (s + e->start, e->length);
 }
 #endif
 #endif

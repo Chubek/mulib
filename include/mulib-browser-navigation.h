@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_BROWSER_NAVIGATION_H
 #define MULIB_BROWSER_NAVIGATION_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -55,7 +55,7 @@ mulib_browser_navigation_visit (mulib_browser_navigation_t *n, const char *url)
   size_t kept = n->len ? n->current + 1 : 0;
   if (n->limit && kept >= n->limit)
     return 0;
-  char *s = mulib_shylock_dup (url, strlen (url));
+  char *s = mulib_bounded_text_dup (url, strlen (url));
   if (!s)
     return 0;
   if (kept == n->cap)

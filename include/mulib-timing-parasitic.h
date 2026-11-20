@@ -1,10 +1,20 @@
-/* MuLIB / Amb3r: timing-parasitic. C11 single-header kernel.
+/* MuLIB: timing-parasitic. C11 single-header kernel.
  * Define MULIB_IMPL_TIMING_PARASITIC in exactly one implementation translation unit.
  * Unless stated otherwise, 1 indicates success, 0 indicates failure.
  */
 #ifndef MULIB_TIMING_PARASITIC_H
 #define MULIB_TIMING_PARASITIC_H
-#include "mulib-amb3r-base.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <limits.h>
+#include <ctype.h>
+#include <errno.h>
+#include "mulib-storage-core.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

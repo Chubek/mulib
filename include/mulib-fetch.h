@@ -7,7 +7,7 @@
 #ifndef MULIB_FETCH_H
 #define MULIB_FETCH_H
 #include "mulib-fetch-policy.h"
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,7 +17,7 @@ extern "C"
 #endif
 
   typedef int (*mulib_fetch_transport_fn) (void *ctx, const char *url,
-                                           mulib_shylock_buffer_t *body,
+                                           mulib_bounded_text_buffer_t *body,
                                            unsigned *status,
                                            char *content_type, size_t cap);
   typedef struct mulib_fetch_client
@@ -28,7 +28,7 @@ extern "C"
   } mulib_fetch_client_t;
   /** @brief See manual/mulib-fetch.md for this operation's contract. */
   int mulib_fetch_get (const mulib_fetch_client_t *client, const char *url,
-                       mulib_shylock_buffer_t *body, unsigned *status,
+                       mulib_bounded_text_buffer_t *body, unsigned *status,
                        char *content_type, size_t cap);
 #ifdef __cplusplus
 }
@@ -47,13 +47,13 @@ extern "C"
 
 int
 mulib_fetch_get (const mulib_fetch_client_t *c, const char *url,
-                 mulib_shylock_buffer_t *body, unsigned *status, char *type,
+                 mulib_bounded_text_buffer_t *body, unsigned *status, char *type,
                  size_t cap)
 {
   if (!c || !body || !status || !type || !cap || !c->transport
       || !mulib_fetch_policy_check (&c->policy, url))
     return 0;
-  mulib_shylock_buffer_t tmp = { 0 };
+  mulib_bounded_text_buffer_t tmp = { 0 };
   size_t limit = c->policy.max_bytes ? c->policy.max_bytes : 16 * 1024 * 1024;
   tmp.limit = limit;
   char ct[128] = { 0 };
@@ -64,7 +64,7 @@ mulib_fetch_get (const mulib_fetch_client_t *c, const char *url,
       && tmp.len < tmp.cap && tmp.data)
     {
       if (body->len <= SIZE_MAX - tmp.len)
-        ok = mulib_shylock_append (body, tmp.data, tmp.len);
+        ok = mulib_bounded_text_append (body, tmp.data, tmp.len);
       else
         ok = 0;
       if (ok)
@@ -82,7 +82,7 @@ mulib_fetch_get (const mulib_fetch_client_t *c, const char *url,
     }
   else
     ok = 0;
-  mulib_shylock_buffer_free (&tmp);
+  mulib_bounded_text_buffer_free (&tmp);
   return ok;
 }
 #endif

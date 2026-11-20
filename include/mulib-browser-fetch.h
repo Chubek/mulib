@@ -25,7 +25,7 @@ extern "C"
   /** @brief See manual/mulib-browser-fetch.md for this operation's contract.
    */
   int mulib_browser_fetch_get (const mulib_browser_fetch_t *f, const char *url,
-                               mulib_shylock_buffer_t *body, unsigned *status,
+                               mulib_bounded_text_buffer_t *body, unsigned *status,
                                char *content_type, size_t cap);
 #ifdef __cplusplus
 }
@@ -44,7 +44,7 @@ extern "C"
 
 int
 mulib_browser_fetch_get (const mulib_browser_fetch_t *f, const char *url,
-                         mulib_shylock_buffer_t *body, unsigned *status,
+                         mulib_bounded_text_buffer_t *body, unsigned *status,
                          char *type, size_t cap)
 {
   if (!f)

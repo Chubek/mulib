@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_PRICE_MATCH_H
 #define MULIB_PRICE_MATCH_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 

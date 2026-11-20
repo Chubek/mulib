@@ -10,7 +10,7 @@ machine-code backend is added.
 
 ## Current feature matrix
 
-M2 discovery continuation (2026-11-20): the 193 JoltFX assessment kernels use
+M2 discovery continuation (2026-11-20): the 193 bounded media and compute kernels use
 bounded static-inline MANIFEST entries and canonical internal-linkage CDecl
 inspection. No callable ABI, resource lowering or independent safe admission
 is added; provider adapters remain adapters. See [KernelBind](kernel-bind.md).
@@ -166,7 +166,7 @@ not a wrapper around stackful fibers.
 | Chisel resource checking | Opt-in scalar/JSON usage subset | Real solver plus conservative joins, token-use and exit/reinitialization checks; generic external resource CFG API; [manual](memory-safety.md) |
 | Nerotypical structural verification | Opt-in concrete HIR checker | Real TypeGraph/Satie EUF obligations for calls, closures, tuples, staging and resources; explicit universals reject; separate patched source SDK; [manual](type-safety.md) |
 | Exotract static bindings | MANIFEST-backed kernel and companion archives | Typed CDecl/import metadata; executable JSON/Vec/Parsec and MicroJS C clients, On1x JSON/YANTLR/Shiraz archive linkage, fixture provenance and one kernel implementation TU; [manual](../contracts-exotract/README.md) |
-| Compiler-native KernelBind | Discovery, unsafe scalar calls and review-gated scalar/numerical calls (Packages B–D partial) | ExoLib/CDecl, independent Ed25519 review, one-TU archives, atomic admission bundles, all three Clamp functions, and bounded snapshots and nominal results for Histprice and PriceOpt. No production approvals or general owned resources; Shylock release gate remains open. [Manual](kernel-bind.md), [numerical profile](kernel-numerics.md), [source migration blockers](source-migration.md) |
+| Compiler-native KernelBind | Discovery, unsafe scalar calls and review-gated scalar/numerical calls (Packages B–D partial) | ExoLib/CDecl, independent Ed25519 review, one-TU archives, atomic admission bundles, all three Clamp functions, and bounded snapshots and nominal results for Histprice and PriceOpt. No production approvals or general owned resources; fixture-driven I/O gate remains open. [Manual](kernel-bind.md), [numerical profile](kernel-numerics.md), [source migration blockers](source-migration.md) |
 | KernelBind framed transport | Executable explicit raw slice (Packages E–F partial) | Sealed move-only pairs and sessions, checked loans, bounded local frames, and one retained callback dispatched by owner-thread polling. No safe admission, arbitrary endpoints, foreign-thread callbacks, or async/scheduler support. [Manual](kernel-framed.md) |
 | Standard-library ownership containers | Executable bounded C11 library slice | Heap boxes, lexical mutation, `Rc`/`Arc` strong owners, local `RefCell` guards, explicit quarantine policies, and Linux scoped adapters. No general `Send`/`Sync`. [Stdlib guide](../stdlib/README.md#ownership-and-scoped-containers) |
 | Linux Pod fixture | Executable bounded C11 library slice | Fixed explicitly authorized worker, strict sandbox bootstrap, optional child namespaces and delegated cgroup leaf. No arbitrary executable or OCI support; live cgroup validation requires delegation. [Manual](../stdlib/container/POD.md) |

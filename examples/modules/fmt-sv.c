@@ -19,7 +19,7 @@ int main(void) {
     rewind(f);
     char text[512] = {0};
     fread(text, 1, sizeof text - 1, f);
-    assert(strstr(text, "module amb3r_generated") && strstr(text, "n0 & n1"));
+    assert(strstr(text, "module mulib_generated") && strstr(text, "n0 & n1"));
     fclose(f);
     puts("PASS mulib-fmt-sv");
     return 0;

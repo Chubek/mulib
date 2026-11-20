@@ -120,12 +120,12 @@ static void responses(void) {
   };
   for(size_t i=0;i<sizeof invalid/sizeof *invalid;i++) {
     fixture f={invalid[i],0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-    mulib_shylock_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
-    assert(mulib_shylock_text(&body,"seed"));char *original=body.data;
+    mulib_bounded_text_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
+    assert(mulib_bounded_text_text(&body,"seed"));char *original=body.data;
     assert(!mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
     assert(f.connects==1 && f.closes==1 && status==42 && !strcmp(type,"unchanged"));
     assert(body.data==original && body.len==4 && !strcmp(body.data,"seed"));
-    mulib_shylock_buffer_free(&body);
+    mulib_bounded_text_buffer_free(&body);
   }
   const char *valid[]={
     "HTTP/1.1 200 OK\r\nContent-Type: Text/HTML; charset=utf-8\r\nContent-Encoding: Identity\r\nContent-Length: 2\r\n\r\nOK",
@@ -134,11 +134,11 @@ static void responses(void) {
   };
   for(size_t i=0;i<sizeof valid/sizeof *valid;i++) {
     fixture f={valid[i],0,0,0,0,15};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-    mulib_shylock_buffer_t body={0};char type[64];unsigned status=0;
-    assert(mulib_shylock_text(&body,"seed"));body.limit=6;
+    mulib_bounded_text_buffer_t body={0};char type[64];unsigned status=0;
+    assert(mulib_bounded_text_text(&body,"seed"));body.limit=6;
     assert(mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
     assert(f.connects==1 && f.closes==1 && status==200 && !strcmp(body.data,"seedOK"));
-    mulib_shylock_buffer_free(&body);
+    mulib_bounded_text_buffer_free(&body);
   }
 }
 int main(void) {
@@ -146,13 +146,13 @@ int main(void) {
   for(int mode=0;mode<=15;mode++) {
     fixture f={wire,0,0,0,0,mode};
     mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-    mulib_shylock_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
+    mulib_bounded_text_buffer_t body={0};char type[64]="unchanged";unsigned status=42;
     int ok=mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type);
     assert(f.connects==1 && f.closes==1);
     if(!mode || mode==15)assert(ok && status==200 && body.len==2 && !strcmp(body.data,"OK"));
     else {assert(!ok && status==42 && !strcmp(type,"unchanged") && !body.data);
       if(mode!=8)assert(!f.writes);}
-    mulib_shylock_buffer_free(&body);
+    mulib_bounded_text_buffer_free(&body);
   }
   /* A redirect response is returned for the search wrapper to reject. No
    * Location, including private/HTTP targets, causes a second connection. */
@@ -160,12 +160,12 @@ int main(void) {
   for(size_t i=0;i<3;i++) {
     char raw[256];snprintf(raw,sizeof raw,"HTTP/1.1 302 Found\r\nLocation: %s\r\nContent-Length: 0\r\n\r\n",targets[i]);
     fixture f={raw,0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-    mulib_shylock_buffer_t body={0};char type[64];unsigned status=0;
+    mulib_bounded_text_buffer_t body={0};char type[64];unsigned status=0;
     assert(mulib_elvi_scrape_https_transport(&tls,"https://example.org/",&body,&status,type,sizeof type));
-    assert(status==302 && f.connects==1 && f.closes==1);mulib_shylock_buffer_free(&body);
+    assert(status==302 && f.connects==1 && f.closes==1);mulib_bounded_text_buffer_free(&body);
   }
   fixture f={wire,0,0,0,0,0};mulib_elvi_scrape_https_t tls={connect_tls,peer_tls,&f};
-  mulib_shylock_buffer_t body={0};char type[64];unsigned status=0;
+  mulib_bounded_text_buffer_t body={0};char type[64];unsigned status=0;
   assert(!mulib_elvi_scrape_https_transport(&tls,"https://localhost/",&body,&status,type,sizeof type));
   assert(!mulib_elvi_scrape_https_transport(&tls,"http://example.org/",&body,&status,type,sizeof type));
   assert(!f.connects);body.limit=1;

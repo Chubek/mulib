@@ -5,9 +5,11 @@
  */
 #ifndef MULIB_NUM_CSR_H
 #define MULIB_NUM_CSR_H
+#include <float.h>
+#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "mulib-amb3r-base.h"
+#include "mulib-num-core.h"
 #include "mulib-num-sparse.h"
 #ifdef __cplusplus
 extern "C" {
@@ -35,12 +37,12 @@ int mulib_num_csr_transpose(const mulib_num_csr_t *s, mulib_num_csr_t *out);
  * success, 0 on invalid input or allocation failure, leaving *out unchanged. */
 /* Copies the source into a zero-initialized destination. Free only the copy
  * with mulib_num_csr_free; the source keeps its original ownership. */
-int mulib_num_csr_from_amb3r(const ma_csr *s, size_t offset_count, size_t column_count,
+int mulib_num_csr_copy_from_view(const mulib_num_csr_view *s, size_t offset_count, size_t column_count,
                             size_t value_count, mulib_num_csr_t *out);
 /* Allocation-free read-only borrow. Keep the source arrays alive and immutable
  * until the last use of the borrow; never free through the view. */
-int mulib_num_csr_borrow_amb3r(const mulib_num_csr_t *s, size_t offset_count,
-                              size_t column_count, size_t value_count, ma_csr *out);
+int mulib_num_csr_borrow_view(const mulib_num_csr_t *s, size_t offset_count,
+                              size_t column_count, size_t value_count, mulib_num_csr_view *out);
 
 #ifdef __cplusplus
 }
@@ -87,20 +89,20 @@ static int mulib_num_csr_alloc_(size_t rows, size_t cols, size_t nnz, mulib_num_
     *out = z;
     return 1;
 }
-static ma_csr mulib_num_csr_view_(const mulib_num_csr_t *s) {
-    ma_csr v = {s->rows, s->cols, s->nnz, s->offset, s->column, s->values};
+static mulib_num_csr_view mulib_num_csr_view_(const mulib_num_csr_t *s) {
+    mulib_num_csr_view v = {s->rows, s->cols, s->nnz, s->offset, s->column, s->values};
     return v;
 }
-static int mulib_num_csr_view_valid_(const ma_csr *s, size_t offset_count,
+static int mulib_num_csr_view_valid_(const mulib_num_csr_view *s, size_t offset_count,
                                      size_t column_count, size_t value_count) {
     /* rows < offset_count checks rows+1 without adding to an untrusted count. */
     return s && s->rows < offset_count && offset_count <= SIZE_MAX / sizeof *s->ptr &&
            s->nnz <= column_count && column_count <= SIZE_MAX / sizeof *s->idx &&
            (s->idx || !column_count) &&
            s->nnz <= value_count && value_count <= SIZE_MAX / sizeof *s->val &&
-           (s->val || !value_count) && ma_csr_valid(s);
+           (s->val || !value_count) && mulib_num_csr_view_valid(s);
 }
-int mulib_num_csr_from_amb3r(const ma_csr *s, size_t offset_count, size_t column_count,
+int mulib_num_csr_copy_from_view(const mulib_num_csr_view *s, size_t offset_count, size_t column_count,
                             size_t value_count, mulib_num_csr_t *out) {
     if (!out || out->rows || out->cols || out->nnz || out->offset || out->column || out->values ||
         !mulib_num_csr_view_valid_(s, offset_count, column_count, value_count))
@@ -116,11 +118,11 @@ int mulib_num_csr_from_amb3r(const ma_csr *s, size_t offset_count, size_t column
     *out = z;
     return 1;
 }
-int mulib_num_csr_borrow_amb3r(const mulib_num_csr_t *s, size_t offset_count,
-                              size_t column_count, size_t value_count, ma_csr *out) {
+int mulib_num_csr_borrow_view(const mulib_num_csr_t *s, size_t offset_count,
+                              size_t column_count, size_t value_count, mulib_num_csr_view *out) {
     if (!s || !out)
         return 0;
-    ma_csr v = mulib_num_csr_view_(s);
+    mulib_num_csr_view v = mulib_num_csr_view_(s);
     if (!mulib_num_csr_view_valid_(&v, offset_count, column_count, value_count))
         return 0;
     *out = v;
@@ -187,8 +189,8 @@ int mulib_num_csr_matvec(const mulib_num_csr_t *s, const double *x, double *y) {
 int mulib_num_csr_validate(const mulib_num_csr_t *s) {
     if (!s)
         return 0;
-    ma_csr v = mulib_num_csr_view_(s);
-    return ma_csr_valid(&v);
+    mulib_num_csr_view v = mulib_num_csr_view_(s);
+    return mulib_num_csr_view_valid(&v);
 }
 
 int mulib_num_csr_transpose(const mulib_num_csr_t *s, mulib_num_csr_t *out) {

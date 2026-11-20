@@ -6,7 +6,7 @@
  */
 #ifndef MULIB_BROWSER_COOKIEJAR_H
 #define MULIB_BROWSER_COOKIEJAR_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -35,7 +35,7 @@ extern "C"
   int mulib_browser_cookiejar_header (const mulib_browser_cookiejar_t *j,
                                       const char *hostname, const char *path,
                                       int tls, int64_t now,
-                                      mulib_shylock_buffer_t *out);
+                                      mulib_bounded_text_buffer_t *out);
   /** @brief See manual/mulib-browser-cookiejar.md for this operation's
    * contract. */
   void mulib_browser_cookiejar_free (mulib_browser_cookiejar_t *j);
@@ -135,7 +135,7 @@ mulib_browser_cookiejar_put (mulib_browser_cookiejar_t *j,
 int
 mulib_browser_cookiejar_header (const mulib_browser_cookiejar_t *j,
                                 const char *host, const char *path, int tls,
-                                int64_t now, mulib_shylock_buffer_t *out)
+                                int64_t now, mulib_bounded_text_buffer_t *out)
 {
   if (!j || !host || !*host || strlen (host) > 253 || !path || path[0] != '/'
       || !out || now < 0)
@@ -146,7 +146,7 @@ mulib_browser_cookiejar_header (const mulib_browser_cookiejar_t *j,
     hostname[i] = (char)tolower ((unsigned char)host[i]);
   if (hn && hostname[hn - 1] == '.')
     hostname[hn - 1] = 0;
-  mulib_shylock_buffer_t b = { 0 };
+  mulib_bounded_text_buffer_t b = { 0 };
   b.limit = out->limit;
   for (size_t i = 0; i < j->len; i++)
     {
@@ -158,17 +158,17 @@ mulib_browser_cookiejar_header (const mulib_browser_cookiejar_t *j,
           || strncmp (path, c->path, plen)
           || (c->path[plen - 1] != '/' && path[plen] && path[plen] != '/'))
         continue;
-      if (b.len && !mulib_shylock_text (&b, "; "))
+      if (b.len && !mulib_bounded_text_text (&b, "; "))
         goto fail;
-      if (!mulib_shylock_text (&b, c->name) || !mulib_shylock_text (&b, "=")
-          || !mulib_shylock_text (&b, c->value))
+      if (!mulib_bounded_text_text (&b, c->name) || !mulib_bounded_text_text (&b, "=")
+          || !mulib_bounded_text_text (&b, c->value))
         goto fail;
     }
-  int ok = mulib_shylock_append (out, b.data, b.len);
-  mulib_shylock_buffer_free (&b);
+  int ok = mulib_bounded_text_append (out, b.data, b.len);
+  mulib_bounded_text_buffer_free (&b);
   return ok;
 fail:
-  mulib_shylock_buffer_free (&b);
+  mulib_bounded_text_buffer_free (&b);
   return 0;
 }
 void

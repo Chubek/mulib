@@ -3,7 +3,7 @@
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
 **Header:** `include/mulib-num-csr.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_CSR`  
-**Dependencies:** `num-sparse`; `amb3r-base` (static inline, no additional link dependency).
+**Dependencies:** `num-sparse`; numerical substrate helpers (static inline, no additional link dependency).
 
 ## Purpose and supported profile
 
@@ -19,7 +19,7 @@ pointer may be null, even for an empty dimension).
 
 Zero-initialize owned containers before first use; call initialization functions only on empty objects, and release owned storage with the matching free function. Callers retain ownership of streams and borrowed arrays. Public pointer fields must refer to live storage large enough for their declared counts; validation checks logical fields, not allocation bounds. Check return values before using outputs.
 
-### Checked Amb3r adapters
+### Checked borrowed-view adapters
 
 Both representations use zero-based `size_t` rows, columns, and offsets,
 and finite `double` coefficients. The adapters take the readable element counts
@@ -32,11 +32,11 @@ nondecreasing, and end at `nnz`; each column index must be less than `cols`.
 Trailing capacity beyond the logical array lengths is not inspected. The
 caller vouches for allocation, alignment, and liveness of the supplied spans.
 
-- `mulib_num_csr_from_amb3r` deep-copies to a zero-initialized `mulib_num_csr_t`.
+- `mulib_num_csr_copy_from_view` deep-copies to a zero-initialized `mulib_num_csr_t`.
   It allocates one offset array and, for `nnz > 0`, one column array and one
   coefficient array. The result is independent of the source; release the
   result with `mulib_num_csr_free`.
-- `mulib_num_csr_borrow_amb3r` publishes a read-only `ma_csr` view with the source
+- `mulib_num_csr_borrow_view` publishes a read-only `mulib_num_csr_view` with the source
   pointers and no allocation. The owner remains responsible for releasing the
   storage. Keep the arrays alive and unmodified until the last use of the view;
   destroying, reallocating, or modifying owner storage invalidates the borrow.
@@ -48,7 +48,7 @@ the output unchanged. Neither operation converts units, sorts, combines
 duplicates, nor drops zeros. This preserves floating-point accumulation
 order across the bridge itself, not across different numerical algorithms.
 In particular, a valid CSR borrow is not proof of invertibility, sufficient
-pivot magnitude, or a usable preconditioner. Amb3r sparse LU accepts a square
+pivot magnitude, or a usable preconditioner. The reference sparse LU accepts a square
 view, accumulates duplicates into its own factors, and does not retain the
 borrow after factoring.
 
@@ -68,9 +68,9 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_CSR` defined before inc
 ## Focused regression test
 
 `tests/test_num_csr.c` checks canonical matvec and transpose against explicit
-oracles, solves a pivoted nonsymmetric system via Amb3r sparse LU and checks the
+oracles, solves a pivoted nonsymmetric system via the reference sparse LU and checks the
 solution and analytical residual, and covers malformed lengths, numerical
-failures, ownership, and each copy allocation failure. The Amb3r suite also
+failures, ownership, and each copy allocation failure. The engineering suite also
 exercises both adapter symbols in a separately compiled C++ consumer.
 
 ```sh
@@ -80,7 +80,7 @@ cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_csr.c -lm -o /tmp/tes
 
 ## Provenance
 
-Original implementation prepared for Amb3r/MuLIB. No external code was copied. The full requested roadmap is larger than this implemented subset; this module claims only its documented profile.
+Maintained as a MuLIB numerical kernel. No external code was copied. The broader roadmap is larger than this implemented subset; this module claims only its documented profile.
 
 <!-- manual-interface -->
 ## Public header reference
@@ -99,9 +99,11 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_NUM_CSR_H
 #define MULIB_NUM_CSR_H
+#include <float.h>
+#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
-#include "mulib-amb3r-base.h"
+#include "mulib-num-core.h"
 #include "mulib-num-sparse.h"
 #ifdef __cplusplus
 extern "C" {
@@ -129,12 +131,12 @@ int mulib_num_csr_transpose(const mulib_num_csr_t *s, mulib_num_csr_t *out);
  * success, 0 on invalid input or allocation failure, leaving *out unchanged. */
 /* Copies the source into a zero-initialized destination. Free only the copy
  * with mulib_num_csr_free; the source keeps its original ownership. */
-int mulib_num_csr_from_amb3r(const ma_csr *s, size_t offset_count, size_t column_count,
+int mulib_num_csr_copy_from_view(const mulib_num_csr_view *s, size_t offset_count, size_t column_count,
                             size_t value_count, mulib_num_csr_t *out);
 /* Allocation-free read-only borrow. Keep the source arrays alive and immutable
  * until the last use of the borrow; never free through the view. */
-int mulib_num_csr_borrow_amb3r(const mulib_num_csr_t *s, size_t offset_count,
-                              size_t column_count, size_t value_count, ma_csr *out);
+int mulib_num_csr_borrow_view(const mulib_num_csr_t *s, size_t offset_count,
+                              size_t column_count, size_t value_count, mulib_num_csr_view *out);
 
 #ifdef __cplusplus
 }
@@ -156,7 +158,7 @@ Constructors and conversions require an empty destination; release existing owne
 | --- | --- |
 | Header | [`include/mulib-num-csr.h`](../include/mulib-num-csr.h) |
 | Implementation switch | `MULIB_IMPL_NUM_CSR` |
-| Repository-local includes | [mulib-amb3r-base](amb3r-kernels.md), [mulib-num-sparse](mulib-num-sparse.md) |
+| Repository-local includes | [mulib-num-core](engineering-kernels.md), [mulib-num-sparse](mulib-num-sparse.md) |
 | Complete example | [`examples/modules/num-csr.c`](../examples/modules/num-csr.c) |
 
 The include list includes conditional and implementation-only includes;

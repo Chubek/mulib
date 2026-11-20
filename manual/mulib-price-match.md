@@ -18,7 +18,7 @@ Include `include/mulib-price-match.h`. Define the following switches in exactly 
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
-`MULIB_IMPL_PRICE_MATCH`, `MULIB_IMPL_SHYLOCK_CORE`, `MULIB_IMPL_UTF8`.
+`MULIB_IMPL_PRICE_MATCH`, `MULIB_IMPL_BOUNDED_TEXT`, `MULIB_IMPL_UTF8`.
 
 Only MuLIB and the C standard library are used (link libm where required).
 Lengths/offsets are bytes unless explicitly stated above. Public structs must
@@ -53,7 +53,7 @@ Include the header in application code; dependency types come from its includes.
  */
 #ifndef MULIB_PRICE_MATCH_H
 #define MULIB_PRICE_MATCH_H
-#include "mulib-shylock-core.h"
+#include "mulib-bounded-text.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -84,7 +84,7 @@ extern "C"
 | --- | --- |
 | Header | [`include/mulib-price-match.h`](../include/mulib-price-match.h) |
 | Implementation switch | `MULIB_IMPL_PRICE_MATCH` |
-| Repository-local includes | [mulib-shylock-core](mulib-shylock-core.md) |
+| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/price-match.c`](../examples/modules/price-match.c) |
 
 The include list includes conditional and implementation-only includes;

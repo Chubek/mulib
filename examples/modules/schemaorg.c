@@ -6,7 +6,7 @@
 #define MULIB_IMPL_PARSER
 #define MULIB_IMPL_PEG
 #define MULIB_IMPL_SCHEMAORG
-#define MULIB_IMPL_SHYLOCK_CORE
+#define MULIB_IMPL_BOUNDED_TEXT
 #define MULIB_IMPL_STRBUF
 #define MULIB_IMPL_UTF8
 #include "mulib-schemaorg.h"
