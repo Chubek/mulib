@@ -1,0 +1,24 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns ownership;
+check consume_once priority 980
+match Move($owner)
+requires unique_owner, source_initialized, not_previously_consumed, no_live_loan
+ diagnostic "MMG-OWN-MOVE";
+check deterministic_drop priority 960
+match Drop($owner)
+requires drop_once, destructor_correct, no_live_loan, cleanup_edges_present, owner_generation_current
+ diagnostic "MMG-OWN-DROP";
+check checked_transfer priority 940
+match Take($owner)
+requires unique_owner, source_initialized, no_live_loan, active_payload_transferred, owner_generation_current
+ diagnostic "MMG-OWN-TAKE";
+check result_propagation priority 920
+match Propagate($result)
+requires result_identity_exact, owned_payload_transferred_once, defer_order_preserved
+ diagnostic "MMG-OWN-RESULT";
+reject double_drop priority 1000
+match Drop($owner)
+when previously_consumed
+ diagnostic "MMG-OWN-DOUBLE-DROP";
+endpatterns;

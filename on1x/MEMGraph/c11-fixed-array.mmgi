@@ -1,0 +1,27 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns c11_fixed_array_v1;
+
+check checked_array_index priority 980
+match CheckedArrayIndex($base, $index)
+requires typed_hir, fixed_array_layout, exact_i64_bounds, emitted_bounds_check
+diagnostic "MMG-MEM-INDEX";
+
+check checked_array_slice priority 960
+match CheckedArraySlice($base, $lo, $hi)
+requires typed_hir, fixed_array_layout, exact_i64_bounds, emitted_bounds_check
+diagnostic "MMG-MEM-SLICE";
+
+rewrite static_array_index priority 270
+match CheckedArrayIndex($base, $index)
+replace ProvedArrayIndex($base, $index)
+requires typed_hir, fixed_array_layout, exact_i64_bounds, bounded_checked_i64_evaluation, constant_bounds_in_range, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+
+rewrite static_array_slice priority 260
+match CheckedArraySlice($base, $lo, $hi)
+replace ProvedArraySlice($base, $lo, $hi)
+requires typed_hir, fixed_array_layout, exact_i64_bounds, bounded_checked_i64_evaluation, constant_bounds_in_range, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+
+endpatterns;

@@ -1,0 +1,8 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+pass canonical stage pre_codegen mode rewrite priority 500;
+include "canonical-types.mmgi";
+include "canonical-memory.mmgi";
+include "canonical-owners.mmgi";
+include "canonical-ffi.mmgi";
+endpass;

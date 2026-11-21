@@ -1,5 +1,6 @@
 #pragma once
 #include <on1x/backend/passes.hpp>
+#include <on1x/c11.hpp>
 #include <on1x/processor.hpp>
 #include <algorithm>
 #include <map>
@@ -8,13 +9,14 @@
 #include <stdexcept>
 
 namespace on1x::driver {
-enum class Stage { Processor, Lowering, MIR };
+ enum class Stage { Processor, C11, Lowering, MIR };
 
 // Names come from the linked compiler, including alternate authored tables.
 // 'all' is a selector, never a pass. Keep the descriptor pipeline's order.
 struct OptimizationPolicy {
  std::string profile;
- processor::RuleSelection rules;
+  processor::RuleSelection rules;
+  bool memgraph_bounds=false;
  bool decision_ssa=false;
  std::vector<mir::passes::Pass> pipeline;
  struct Entry {std::string_view name;Stage stage;bool enabled;};
@@ -26,7 +28,8 @@ struct OptimizationPolicy {
   for(const auto& entry:entries){
    if(!first)out<<',';
    first=false;
-   const char* stage=entry.stage==Stage::Processor?"processor":entry.stage==Stage::Lowering?"lowering":"mir";
+    const char* stage=entry.stage==Stage::Processor?"processor":entry.stage==Stage::C11?"c11":
+        entry.stage==Stage::Lowering?"lowering":"mir";
    // Authored identifiers, descriptor names and profile values are closed alphabets.
    out<<"{\"name\":\""<<entry.name<<"\",\"stage\":\""<<stage<<"\",\"enabled\":"
       <<(entry.enabled?"true":"false")<<"}";
@@ -49,7 +52,7 @@ struct OptimizationRequest {
   if(!added&&it->second!=enabled)
    throw std::runtime_error("conflicting optimization selections: "+it->first);
  }
- OptimizationPolicy resolve(bool default_mir) const {
+  OptimizationPolicy resolve(bool default_mir, bool inspect_memgraph=false) const {
   OptimizationPolicy policy;
   policy.profile=profile.value_or("default");
   const auto all=selectors.find("all");
@@ -65,8 +68,12 @@ struct OptimizationRequest {
    policy.entries.push_back({name,Stage::Processor,on});
    if(on!=policy.rules.default_enabled)policy.rules.overrides.emplace(name,on);
   }
-  policy.rules.partial_eval=enabled("partial-eval",policy.profile=="release");
-  policy.entries.push_back({"partial-eval",Stage::Processor,policy.rules.partial_eval});
+   policy.rules.partial_eval=enabled("partial-eval",policy.profile=="release");
+   policy.entries.push_back({"partial-eval",Stage::Processor,policy.rules.partial_eval});
+   if(memgraph::available()){
+    policy.memgraph_bounds=enabled("memgraph-bounds",inspect_memgraph||policy.profile=="release");
+    policy.entries.push_back({"memgraph-bounds",Stage::C11,policy.memgraph_bounds});
+   }
   policy.decision_ssa=enabled("decision-ssa",source_base);
   policy.entries.push_back({"decision-ssa",Stage::Lowering,policy.decision_ssa});
   for(auto pass:mir::passes::Options{}.pipeline){
@@ -82,9 +89,10 @@ struct OptimizationRequest {
   }
   return policy;
  }
- void check_stages(const OptimizationPolicy& policy,bool processor,bool lowering,bool mir) const {
-  for(const auto& e:policy.entries){
-   if(selectors.contains(e.name)&&!(e.stage==Stage::Processor?processor:e.stage==Stage::Lowering?lowering:mir))
+  void check_stages(const OptimizationPolicy& policy,bool processor,bool c11,bool lowering,bool mir) const {
+   for(const auto& e:policy.entries){
+    if(selectors.contains(e.name)&&!(e.stage==Stage::Processor?processor:e.stage==Stage::C11?c11:
+                                   e.stage==Stage::Lowering?lowering:mir))
     throw std::runtime_error("optimization "+std::string(e.name)+" is not applicable in this mode");
   }
  }

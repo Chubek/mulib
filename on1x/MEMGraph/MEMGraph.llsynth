@@ -1,0 +1,77 @@
+# MEMGraph/v1: declarative memory/type/owner/FFI transformation language.
+# Grammar follows LibStone cornerstone/LLSynth's .language/.rule syntax.
+# It parses specifications; compiler-side validation, proof discharge and
+# transactional rewrite publication are SEPARATE mandatory responsibilities.
+.language "MEMGraph"
+.skip /[ \t\r\n]+/
+.skip /#[^\n]*/
+.token NAME: String = /[A-Za-z_][A-Za-z_0-9]*/
+.token NUMBER: Int = /[0-9]+/
+.token STRING: String = /"([^"\\\r\n]|\\["\\nrt])*"/
+
+.rule Start
+'syntax: Header PassDocument EOF | Header PatternDocument EOF
+'semantics: return nil;
+.end
+
+.rule Header
+'syntax: "memgraph" NUMBER ";" "budget" "steps" NUMBER "nodes" NUMBER "depth" NUMBER ";"
+.end
+
+# .mmg describes one ordered pass and references only sibling .mmgi files.
+.rule PassDocument
+'syntax: "pass" NAME "stage" Stage "mode" Mode "priority" NUMBER ";" Profile Includes "endpass" ";"
+.end
+.rule Profile
+'syntax: "profile" NAME ";" |
+.end
+.rule Stage
+'syntax: "post_infer" | "post_ownership" | "pre_codegen"
+.end
+.rule Mode
+'syntax: "verify" | "rewrite"
+.end
+.rule Includes
+'syntax: Includes Include |
+.end
+.rule Include
+'syntax: "include" STRING ";"
+.end
+
+# .mmgi defines the declarative checks and rewrites for exactly one pass.
+.rule PatternDocument
+'syntax: "patterns" NAME ";" Declarations "endpatterns" ";"
+.end
+.rule Declarations
+'syntax: Declarations Declaration |
+.end
+.rule Declaration
+'syntax: Check | Reject | Rewrite
+.end
+.rule Check
+'syntax: "check" NAME "priority" NUMBER "match" Tree "requires" Names "diagnostic" STRING ";"
+.end
+.rule Reject
+'syntax: "reject" NAME "priority" NUMBER "match" Tree "when" Names "diagnostic" STRING ";"
+.end
+.rule Rewrite
+'syntax: "rewrite" NAME "priority" NUMBER "match" Tree "replace" Tree "requires" Names "preserves" Names ";"
+.end
+.rule Names
+'syntax: NAME NamesTail
+.end
+.rule NamesTail
+'syntax: "," NAME NamesTail |
+.end
+.rule Tree
+'syntax: "$" NAME | NAME "(" Arguments ")"
+.end
+.rule Arguments
+'syntax: Argument TreeTail |
+.end
+.rule Argument
+'syntax: STRING | Tree
+.end
+.rule TreeTail
+'syntax: "," Argument TreeTail |
+.end

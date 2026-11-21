@@ -25,7 +25,7 @@ debug = ['--opt-profile', 'debug']
 release = ['--profile', 'release']
 baseline = listing()
 assert baseline == listing('--opt-profile', 'default')
-assert all(on == (stage != 'mir' and name != 'partial-eval')
+assert all(on == (stage not in ('mir', 'c11') and name != 'partial-eval')
            for name, (stage, on) in baseline.items())
 assert {'decision-ssa', 'integer_add_zero_right', 'constant-fold', 'dead-pure'} <= baseline.keys()
 assert not any(on for _, on in listing(*debug).values())

@@ -97,7 +97,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     tools_home = checkout/'on1x'
     for subdir, names in (
         ('tools', ('on1x-build.py', 'on1x_optimization.py', 'on1x-exotract.py', 'on1x-contracts.py')),
-        ('runtime', ('on1x_runtime.c', 'on1x_runtime.h')),
+        ('runtime', ('on1x_runtime.c', 'on1x_runtime.h', 'on1x_bounds.h')),
         ('stdlib/mulib', ('housekeeping.py',)),
         ('contracts-exotract', ('catalog.json', 'kernel-discovery-v1.lua')),
     ):

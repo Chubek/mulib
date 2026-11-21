@@ -1,0 +1,25 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns types;
+# Assertions RECHECK canonical annotations; a rule cannot manufacture them.
+check named_identity priority 900
+match NominalValue($value)
+requires nominal_identity_resolved, type_form_valid, exact_module_identity
+ diagnostic "MMG-TYPE-NOMINAL";
+check generic_instance priority 880
+match GenericInstance($value, $type)
+requires specialization_checked, type_form_valid, no_unsolved_holes, type_arguments_satisfy_constraints
+ diagnostic "MMG-TYPE-GENERIC";
+check cast_exact priority 860
+match Cast($value, $type)
+requires cast_checked, no_implicit_narrowing, target_abi_known
+ diagnostic "MMG-TYPE-CAST";
+reject forged_type priority 995
+match ForgedTypeEvidence($value)
+when untrusted_type_claim
+ diagnostic "MMG-TYPE-FORGED";
+reject unsolved_type priority 990
+match UnknownType($value)
+when unresolved_type
+ diagnostic "MMG-TYPE-UNKNOWN";
+endpatterns;

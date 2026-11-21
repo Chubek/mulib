@@ -10,7 +10,7 @@ struct Product {
     std::string diagnostic;
 };
 
-Product run_c11(const Unit &, std::string_view source);
+Product run_c11(const Unit &, std::string_view source, const C11Options & = {});
 Product run_mir(const mir::Module &, const char *backend);
 
 // Native output is assembly only. External assembly/linking belongs to the

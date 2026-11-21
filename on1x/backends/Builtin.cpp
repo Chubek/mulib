@@ -38,13 +38,12 @@ void check(On1xSDK_Status status, const char *operation, const char *backend)
 }
 
 template<class Prepare>
-Product run(const char *name, Register registrar, Prepare prepare)
+Product run(const char *name, Register registrar, Prepare prepare, Context context = {})
 {
     On1xSDK_Program *raw_program = nullptr;
     check(prepare(&raw_program), "program preparation", name);
     const std::unique_ptr<On1xSDK_Program, decltype(&on1x_sdk_program_destroy)>
         program(raw_program, on1x_sdk_program_destroy);
-    Context context;
     On1xSDK_Registry *raw_registry = nullptr;
     check(on1x_sdk_registry_create(&raw_registry), "registry creation", name);
     const std::unique_ptr<On1xSDK_Registry, decltype(&on1x_sdk_registry_destroy)>
@@ -64,10 +63,12 @@ Product run(const char *name, Register registrar, Prepare prepare)
 }
 }
 
-Product run_c11(const Unit &unit, std::string_view source)
+Product run_c11(const Unit &unit, std::string_view source, const C11Options &options)
 {
+    Context context;
+    context.c11 = options;
     return run("c11", registrar_for("c11"),
-               [&](auto out) { return sdk::make_checked_hir(unit, source, out); });
+               [&](auto out) { return sdk::make_checked_hir(unit, source, out); }, std::move(context));
 }
 
 Product run_mir(const mir::Module &module, const char *backend)

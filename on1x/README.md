@@ -13,6 +13,11 @@ integrations. Existing compatible checkouts can be selected with
 checkout. See the [representation contracts](../manual/representation-contracts.md) for the
 cross-subsystem integration boundaries.
 
+The optional [MEMGraph C11 profile](MEMGraph/README.md) uses LibStone LLSynth
+at build time. It lets `on1xc` omit fixed-array bounds checks only when the
+compiler proves they cannot trap; it does not add a runtime dependency or
+widen ownership or foreign-call admission.
+
 ## Project tools
 
 Use `on1xc init --bin`, `on1xc init --proj`, or `on1xc init --lib` to

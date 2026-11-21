@@ -1,0 +1,14 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns canonical;
+rewrite redundant_shared_view priority 240
+match ReadOnlyView(ReadOnlyView($value))
+replace ReadOnlyView($value)
+requires typed_hir, loan_root_equal, parent_loan_live, nested_scope_equal, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+rewrite redundant_owner_check priority 220
+match OwnerValidated(OwnerValidated($owner))
+replace OwnerValidated($owner)
+requires typed_hir, owner_generation_unchanged, no_move_or_drop_between, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+endpatterns;

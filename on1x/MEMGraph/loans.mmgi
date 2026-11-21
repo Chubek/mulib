@@ -1,0 +1,24 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns ownership;
+check shared_loan priority 980
+match BorrowShared($place)
+requires place_addressable, source_initialized, no_exclusive_conflict, lexical_scope_valid
+ diagnostic "MMG-LOAN-SHARED";
+check exclusive_loan priority 960
+match BorrowMut($place)
+requires place_addressable, source_initialized, no_other_live_loan, lexical_scope_valid
+ diagnostic "MMG-LOAN-MUT";
+check reborrow priority 940
+match Reborrow($loan)
+requires parent_loan_live, child_scope_contained, reborrow_access_valid
+ diagnostic "MMG-LOAN-REBORROW";
+reject escaped_loan priority 1000
+match CaptureLoan($loan)
+when callback_or_closure_escape
+ diagnostic "MMG-LOAN-ESCAPE";
+reject cross_suspension priority 990
+match SuspendWithLoan($loan)
+when loan_crosses_suspension
+ diagnostic "MMG-LOAN-SUSPEND";
+endpatterns;

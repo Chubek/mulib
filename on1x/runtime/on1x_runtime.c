@@ -1,4 +1,5 @@
 #include "on1x_runtime.h"
+#include "on1x_bounds.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -212,36 +213,17 @@ void on1x_defer_run(on1x_defer_stack *stack){
  }
 }
 int64_t on1x_add_i64(int64_t a,int64_t b){
-#if defined(__GNUC__) || defined(__clang__)
- int64_t c;if(__builtin_add_overflow(a,b,&c))arithmetic_error("addition overflow");return c;
-#else
- if((b>0&&a>INT64_MAX-b)||(b<0&&a<INT64_MIN-b))arithmetic_error("addition overflow");return a+b;
-#endif
+ int64_t c;if(!on1x_try_add_i64(a,b,&c))arithmetic_error("addition overflow");return c;
 }
 int64_t on1x_sub_i64(int64_t a,int64_t b){
-#if defined(__GNUC__) || defined(__clang__)
- int64_t c;if(__builtin_sub_overflow(a,b,&c))arithmetic_error("subtraction overflow");return c;
-#else
- if((b<0&&a>INT64_MAX+b)||(b>0&&a<INT64_MIN+b))arithmetic_error("subtraction overflow");return a-b;
-#endif
+ int64_t c;if(!on1x_try_sub_i64(a,b,&c))arithmetic_error("subtraction overflow");return c;
 }
 int64_t on1x_mul_i64(int64_t a,int64_t b){
-#if defined(__GNUC__) || defined(__clang__)
- int64_t c;if(__builtin_mul_overflow(a,b,&c))arithmetic_error("multiplication overflow");return c;
-#else
- if(a==0||b==0)return 0;
- if(a==-1&&b==INT64_MIN)arithmetic_error("multiplication overflow");
- if(b==-1&&a==INT64_MIN)arithmetic_error("multiplication overflow");
- if(a>0){if(b>0){if(a>INT64_MAX/b)arithmetic_error("multiplication overflow");}
- else if(b<INT64_MIN/a)arithmetic_error("multiplication overflow");}
- else if(b>0){if(a<INT64_MIN/b)arithmetic_error("multiplication overflow");}
- else if(a<INT64_MAX/b)arithmetic_error("multiplication overflow");
- return a*b;
-#endif
+ int64_t c;if(!on1x_try_mul_i64(a,b,&c))arithmetic_error("multiplication overflow");return c;
 }
-int64_t on1x_div_i64(int64_t a,int64_t b){if(!b||(a==INT64_MIN&&b==-1))arithmetic_error("invalid division");return a/b;}
-int64_t on1x_mod_i64(int64_t a,int64_t b){if(!b||(a==INT64_MIN&&b==-1))arithmetic_error("invalid modulo");return a%b;}
-int64_t on1x_neg_i64(int64_t a){if(a==INT64_MIN)arithmetic_error("negation overflow");return -a;}
+int64_t on1x_div_i64(int64_t a,int64_t b){if(!on1x_valid_divisor_i64(a,b))arithmetic_error("invalid division");return a/b;}
+int64_t on1x_mod_i64(int64_t a,int64_t b){if(!on1x_valid_divisor_i64(a,b))arithmetic_error("invalid modulo");return a%b;}
+int64_t on1x_neg_i64(int64_t a){int64_t c;if(!on1x_try_sub_i64(0,a,&c))arithmetic_error("negation overflow");return c;}
 void on1x_print_i64(int64_t a){printf("%" PRId64 "\n",a);}
 void on1x_print_bool(bool a){puts(a?"true":"false");}
 void on1x_print_string(const char *a){puts(a?a:"");}
@@ -298,10 +280,10 @@ static void value_error(const char *message,const char *file,size_t line){
   fprintf(stderr,"%s:%zu: On1x value error: %s\n",file,line,message);exit(70);
 }
 void on1x_bounds_index(int64_t index,int64_t length,const char *file,size_t line){
-  if(length<0||index<0||index>=length)value_error("index out of bounds",file,line);
+  if(!on1x_index_in_bounds(index,length))value_error("index out of bounds",file,line);
 }
 void on1x_bounds_slice(int64_t lo,int64_t hi,int64_t length,const char *file,size_t line){
-  if(length<0||lo<0||hi<lo||hi>length)value_error("slice bounds out of range",file,line);
+  if(!on1x_slice_in_bounds(lo,hi,length))value_error("slice bounds out of range",file,line);
 }
 void on1x_invalid_tag(const char *file,size_t line){value_error("invalid sum discriminant",file,line);}
 

@@ -1,0 +1,16 @@
+memgraph 1;
+budget steps 1048576 nodes 131072 depth 128;
+patterns canonical;
+# Rewrites are ONLY candidates. The host must independently discharge every
+# named obligation and revalidate the entire candidate; otherwise retain input.
+rewrite redundant_identity_cast priority 300
+match IdentityCast(IdentityCast($value))
+replace IdentityCast($value)
+requires typed_hir, same_exact_type, identity_cast_total, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+rewrite nested_type_validation priority 280
+match TypeValidated(TypeValidated($value))
+replace TypeValidated($value)
+requires typed_hir, equivalent_validation_obligation, no_hidden_effect
+preserves value, type, evaluation, effects, ownership, loans, ffi, traps, provenance;
+endpatterns;

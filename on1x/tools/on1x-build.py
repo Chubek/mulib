@@ -253,7 +253,8 @@ def main():
             compiler[0] = exo.executable(compiler[0])
             driver_pins = {path: exo.contracts.digest(path) for path in
                            [compiler[0], Path(__file__).resolve(), Path(optimization.__file__).resolve(),
-                            ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h']}
+                            ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h',
+                            ROOT/'runtime/on1x_bounds.h']}
             requests_path = Path(temp)/'kernel-requests.json'
             inspect = [str(compiler[0]), '--kernel-imports', str(args.input), '-o', str(requests_path), *compiler[5:]]
             subprocess.run(inspect, check=True, timeout=60)

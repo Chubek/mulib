@@ -5,11 +5,11 @@ a stable `name`, a `stage`, and an `enabled` boolean. Add profile or selection
 flags to see the resolved policy. Authored rule names come from the compiled
 `.o1m` tables; MIR pass names come from the pass descriptors.
 
-| `--opt-profile` | Authored processor rules | [`partial-eval`](../processor/PARTIAL_EVALUATION.md) | `decision-ssa` lowering | MIR pass pipeline |
-|---|---|---|---|---|
-| `default` (also when omitted) | on | off | on | off, except for `--optimize-ir` and `--dump-passes` |
-| `debug` | off | off | off | off |
-| `release` | on | on | on | on |
+| `--opt-profile` | Authored processor rules | [`partial-eval`](../processor/PARTIAL_EVALUATION.md) | [`memgraph-bounds`](../MEMGraph/README.md) (C11 only, if built) | `decision-ssa` lowering | MIR pass pipeline |
+|---|---|---|---|---|---|
+| `default` (also when omitted) | on | off | off | on | off, except for `--optimize-ir` and `--dump-passes` |
+| `debug` | off | off | off | off | off |
+| `release` | on | on | on | on | on |
 
 `--profile` is an alias for `--opt-profile` in the compiler CLI. Profile names
 describe compiler transformations: selecting `debug` does not add host C debug
@@ -36,6 +36,8 @@ uses. An individual selector must refer to an applicable stage:
 
 * Direct source C11, checking and `--dump-processor` accept authored rules
   and `partial-eval`.
+* Direct source C11 emission and `--dump-memgraph` accept the `c11` stage
+  selector `memgraph-bounds` when LLSynth-built MEMGraph is available.
 * Source-to-MIR, including SDK MIR hooks and native emission, also accepts
   `decision-ssa` and the MIR passes `constant-fold`, `simplify-cfg`,
   `local-slots` and `dead-pure`.
@@ -43,6 +45,8 @@ uses. An individual selector must refer to an applicable stage:
   process or lower. Syntax and dependency inspection execute no optional passes.
 
 `--dump-processor` reports active rules and their actual hits.
+`--dump-memgraph` enables C11 bounds inspection unless explicitly disabled,
+and reports the decisions for that emission.
 `--dump-passes` reports the actual selected pipeline in its standard execution
 order. When all MIR passes are disabled it verifies the input and reports
 identical source and output MIR, zero work, and no events. `--optimize-ir`

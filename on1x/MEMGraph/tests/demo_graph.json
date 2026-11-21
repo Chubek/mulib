@@ -1,0 +1,11 @@
+{
+  "op": "CopyScalar",
+  "args": [
+    {
+      "op": "CopyScalar",
+      "args": [
+        {"op": "Value", "args": [], "value": 42, "type": "i64"}
+      ]
+    }
+  ]
+}

@@ -131,6 +131,7 @@ if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
 else()
   message(STATUS "On1x core regex: unavailable without LibStone Firestone headers")
 endif()
+add_subdirectory(MEMGraph)
 target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
 if(ON1X_WITH_WETSTONE)
   if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")

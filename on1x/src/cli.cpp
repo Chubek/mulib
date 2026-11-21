@@ -508,6 +508,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "         --profile aliases --opt-profile; --all-optimizations / --no-optimizations select all\n"
   "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc --dump-processor INPUT [-o OUTPUT]\n"
+  "       on1xc --dump-memgraph INPUT [-o OUTPUT] (inspect C11 bounds decisions)\n"
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
   "       [--admitted-extern FILE] (reviewed scalar-only extern evidence; memory modes only)\n"
   "       [--memory-check] (check resource usage before source compilation)\n"
@@ -687,7 +688,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-       if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"){mode=arg;continue;}
+        if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -743,7 +744,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
    }
         if(!vm_prefixes.empty()&&mode!="--emit-vm")throw std::runtime_error("--vm-source-prefix requires --emit-vm");
-        const auto policy=requested_opts.resolve(legacy_optimize||mode=="--dump-passes");
+         const bool dump_memgraph=mode=="--dump-memgraph";
+         if(dump_memgraph&&!on1x::memgraph::available())
+          throw std::runtime_error("MEMGraph unavailable: configure with ON1X_WITH_MEMGRAPH=ON and LibStone LLSynth");
+         const auto policy=requested_opts.resolve(legacy_optimize||mode=="--dump-passes",dump_memgraph);
        if(list_opts){
         if(mode!="--emit-c"||explicit_c||!source.empty()||!sdk_mode.empty()||ir_input||opt_limit||
            !sdk_target.empty()||native_pic||native_no_entry||!plugin_selectors.empty()||
@@ -757,7 +761,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
          mode!="--print-stdlib"&&mode!="--stdlib-resource";
-       requested_opts.check_stages(policy,checked_source,mir_mode&&!ir_input,mir_mode);
+        requested_opts.check_stages(policy,checked_source,!mir_mode&&(mode=="--emit-c"||dump_memgraph),
+                                    mir_mode&&!ir_input,mir_mode);
        optimization.pipeline=policy.pipeline;
        const bool optimize=mir_mode&&(!optimization.pipeline.empty()||mode=="--dump-passes");
        optimization.allow_empty=mode=="--dump-passes"&&optimization.pipeline.empty();
@@ -1036,12 +1041,20 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      publish_diagnostics();write_all(out,listing.str());return 0;
     }
-#ifdef ON1X_WITH_EXTENSION_SDK
-    auto generated=on1x::backends::run_c11(unit,source).bytes;
-#else
-    auto generated=on1x::emit_c(unit,source);
-#endif
-    publish_diagnostics();write_all(out,generated);return 0;
+     std::string bounds_report;
+     const on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+ #ifdef ON1X_WITH_EXTENSION_SDK
+     auto generated=on1x::backends::run_c11(unit,source,c11_options).bytes;
+ #else
+     auto generated=on1x::emit_c(unit,source,c11_options);
+ #endif
+     if(dump_memgraph){
+      publish_diagnostics();
+      if(out.empty()||out=="-")write_all(out,bounds_report);
+      else publish_regular_file(out,bounds_report,"MEMGraph",".on1x-memgraph-XXXXXX");
+      return 0;
+     }
+     publish_diagnostics();write_all(out,generated);return 0;
 #ifdef ON1X_WITH_NOVOSTONE
  }catch(const on1x::mir::relational::BudgetExceeded& e){
    std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<terminal_text(e.what())<<"\n";return 75;

@@ -18,7 +18,7 @@ static On1xSDK_Status emit_c11(void *userdata, const On1xSDK_Program *program,
     if (!unit) return ON1X_SDK_UNSUPPORTED;
 
     try {
-        const auto c = on1x::emit_c(*unit, std::string(source_name));
+        const auto c = on1x::emit_c(*unit, std::string(source_name), context.c11);
         return on1x_sdk_output_write(artifact, c.data(), c.size());
     } catch (const std::bad_alloc &) {
         return ON1X_SDK_LIMIT;

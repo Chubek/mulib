@@ -10,6 +10,13 @@ machine-code backend is added.
 
 ## Current feature matrix
 
+The [MEMGraph C11 profile](../MEMGraph/ADAPTER.md) compiles the authored
+`.mmg` and `.mmgi` through LibStone LLSynth. Direct C11 can omit independently
+proved fixed-array bounds calls without changing checked HIR, operand
+evaluation, or the runtime ABI. Dynamic bounds and unsupported layouts keep
+their reference checks. Ownership/loan/FFI policies and MIR effects remain
+outside the executable profile.
+
 On1xMETA now has 17 canonicalization rules and 12 desugar rules. A bounded
 bottom-up normalizer exposes composed neutral boolean operands before lazy
 expressions expand. On the [frozen wrapper/explicit benchmark](../benchmark/ZERO_COST.md)

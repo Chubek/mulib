@@ -1574,12 +1574,15 @@ def build(args):
             if key not in stages:
                 fail(f'unknown optimization in On1xfile: {key}')
         for key in selections:
-            if key != 'all' and stages[key] != 'processor' and backend == 'c11':
+            if key != 'all' and stages[key] not in ('processor', 'c11') and backend == 'c11':
                 fail(f'optimization {key} requires a MIR backend')
+            if key != 'all' and stages[key] == 'c11' and backend != 'c11':
+                fail(f'optimization {key} requires the C11 backend')
         check_flags = optimization.flags(opt_profile, {key: on for key, on in selections.items()
                                                        if key == 'all' or stages[key] == 'processor'})
+        c11_stages = ['processor', 'c11'] if 'c11' in stages.values() else ['processor']
         policy = dict(backend=backend, args=opt_flags, declared=declared_policy(config),
-                      active_stages=['processor', 'lowering', 'mir'] if backend != 'c11' else ['processor'],
+                      active_stages=['processor', 'lowering', 'mir'] if backend != 'c11' else c11_stages,
                       **inventory)
         project_stage = work / 'input/project'
         deps_stage = work / 'input/deps'

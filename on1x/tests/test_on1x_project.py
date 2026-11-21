@@ -165,6 +165,21 @@ class ProjectTests(unittest.TestCase):
         self.lock()
         self.build('--no-optimizations', negative='undefined')
 
+    def test_c11_memgraph_policy(self):
+        listing = json.loads(subprocess.check_output(
+            [OPTIONS.on1xc, '--list-optimizations'], text=True, timeout=30))
+        if not any(row['name'] == 'memgraph-bounds' for row in listing['optimizations']):
+            self.skipTest('compiler built without LibStone LLSynth MEMGraph')
+        self.app(extra='optimization "memgraph-bounds" on\n',
+                 implementation='fn main(){let a=array[1,42];println(a[1]);}\n')
+        out = self.build()
+        self.run_bin(out)
+        policy = json.loads((out / '.on1x-build.json').read_text())['optimization']
+        self.assertEqual(policy['active_stages'], ['processor', 'c11'])
+        self.assertIn({'name': 'memgraph-bounds', 'stage': 'c11', 'enabled': True},
+                      policy['optimizations'])
+        self.build('--via-mir', negative='optimization memgraph-bounds requires the C11 backend')
+
     def test_scoped_optimizer_selections(self):
         self.app(extra='backend mir-c11\noptimization-profile debug\n'
                  'optimization "integer_add_zero_right" on\n'
