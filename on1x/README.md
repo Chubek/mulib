@@ -310,6 +310,10 @@ script PPXs carry terse metadata on their second line, after the shebang.
 PPX activation remains explicit. See [search order, manifest examples and
 compatibility](docs/search-paths.md).
 
+MuLIB registration and the available contract, native-import, archive and raw
+wrapper paths are summarized in the
+[kernel interoperability guide](docs/kernel-registration.md).
+
 ## Build (C11 adapter)
 
 The build helper selects bridge/kernel groups automatically and preserves one

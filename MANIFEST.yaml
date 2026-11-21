@@ -2,15 +2,39 @@ name: MuLIB
 version: 0.1.0
 language: C11
 header_only: true
-implementation_model: ABI modules define MULIB_IMPL_<MODULE> in one translation unit; bounded static-inline modules require no switch.
+implementation_model: ABI modules define MULIB_IMPL_<MODULE> in one translation unit; bounded static-inline and static-data modules require no switch.
 inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 2046
+module_count: 2049
 implemented_module_count: 1547
-bounded_module_count: 499
+bounded_module_count: 502
 modules:
+- name: container-core
+  header: include/mulib-container-core.h
+  manual: manual/mulib-container-core.md
+  implementation: static-inline
+  purpose: Shared checked storage, wire primitives and errors for containers.
+  dependencies: []
+  status: bounded
+  example: examples/modules/container-core.c
+- name: qvm
+  header: include/mulib-qvm.h
+  manual: manual/mulib-qvm.md
+  implementation: static-inline
+  purpose: Resumable quota-limited bytecode engine with owned code and RAM.
+  dependencies: [container-core]
+  status: bounded
+  example: examples/modules/qvm-core.c
+- name: lprowse
+  header: include/mulib-lprowse.h
+  manual: manual/mulib-lprowse.md
+  implementation: static-data
+  purpose: Generated embedded Lua source data for the Prowse host; no C function API.
+  dependencies: []
+  status: bounded
+  example: examples/modules/prowse-control.c
 - name: cdd-catalogue
   header: include/mulib-cdd-catalogue.h
   manual: manual/mulib-cdd-catalogue.md
@@ -1422,7 +1446,7 @@ modules:
   manual: manual/mulib-fuse.md
   macro: MULIB_IMPL_FUSE
   purpose: Userspace filesystem request dispatch over the shared VFS model.
-  dependencies: [vfs]
+  dependencies: [container-core, vfs]
   status: implemented
 - name: getaddr
   header: include/mulib-getaddr.h
@@ -2509,7 +2533,7 @@ modules:
   manual: manual/mulib-container.md
   macro: MULIB_IMPL_CONTAINER
   purpose: Owned process specifications and generation-tracked container lifecycle.
-  dependencies: []
+  dependencies: [container-core]
   status: implemented
 - name: imgbuilder
   header: include/mulib-imgbuilder.h
@@ -2544,14 +2568,14 @@ modules:
   manual: manual/mulib-container-qvmboost.md
   macro: MULIB_IMPL_CONTAINER_QVMBOOST
   purpose: Resumable portable quota-VM execution backend.
-  dependencies: [containerboost]
+  dependencies: [containerboost, qvm]
   status: implemented
 - name: container-ipc
   header: include/mulib-container-ipc.h
   manual: manual/mulib-container-ipc.md
   macro: MULIB_IMPL_CONTAINER_IPC
   purpose: Checksummed bounded IPC framing and incremental stream assembly.
-  dependencies: [crc32]
+  dependencies: [container-core, crc32]
   status: implemented
 - name: container-network
   header: include/mulib-container-network.h
@@ -2565,7 +2589,7 @@ modules:
   manual: manual/mulib-container-vfs.md
   macro: MULIB_IMPL_CONTAINER_VFS
   purpose: Per-container routing, read-only bindings and root checkpoints.
-  dependencies: [rootfs]
+  dependencies: [container-core, rootfs]
   status: implemented
 - name: image2container
   header: include/mulib-image2container.h
@@ -2600,14 +2624,14 @@ modules:
   manual: manual/mulib-container-netdev.md
   macro: MULIB_IMPL_CONTAINER_NETDEV
   purpose: Bounded virtual packet queues, transport callbacks and link metrics.
-  dependencies: []
+  dependencies: [container-core]
   status: implemented
 - name: container-log
   header: include/mulib-container-log.h
   manual: manual/mulib-container-log.md
   macro: MULIB_IMPL_CONTAINER_LOG
   purpose: Bounded binary log ring with sequence cursors and loss accounting.
-  dependencies: []
+  dependencies: [container-core]
   status: implemented
 - name: container-packelf
   header: include/mulib-container-packelf.h
@@ -2670,7 +2694,7 @@ modules:
   manual: manual/mulib-rootfs-buildspec.md
   macro: MULIB_IMPL_ROOTFS_BUILDSPEC
   purpose: Owned filesystem recipes with transactional application and quotas.
-  dependencies: [rootfs]
+  dependencies: [container-core, rootfs]
   status: implemented
 - name: imgformat
   header: include/mulib-imgformat.h
@@ -3034,7 +3058,7 @@ modules:
   manual: manual/mulib-prowse-control.md
   macro: MULIB_IMPL_PROWSE_CONTROL
   purpose: Browser automation, scraping, lprowse Lua DSL and a highlighted interactive REPL.
-  dependencies: [mune, prowse-protocol, readline, strbuf]
+  dependencies: [lprowse, mune, prowse-protocol, readline, strbuf]
   status: implemented
 - name: cgeom
   header: include/mulib-cgeom.h
@@ -6105,7 +6129,7 @@ modules:
   manual: manual/mulib-zstd.md
   macro: MULIB_IMPL_ZSTD
   purpose: "Dependency-free Zstandard LZ/FSE/Huffman codec and raw/RLE helpers."
-  dependencies: [codec-core]
+  dependencies: [codec-core, container-core]
   status: implemented
 - name: typecore
   header: include/mulib-typecore.h

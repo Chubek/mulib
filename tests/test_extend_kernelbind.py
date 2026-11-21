@@ -1,5 +1,6 @@
 """Regression tests for the generated, discovery-only KernelBind inventory."""
 
+import importlib.util
 import json
 from pathlib import Path
 import re
@@ -53,7 +54,7 @@ class ExtendKernelBind(unittest.TestCase):
                             extra="  optional_dependency: OpenSSL Crypto 1.1.1 or newer\n")
         bounded = entry("bounded", status="bounded")
         reserved = entry("reserved", status="reserved")
-        self.set_manifest(implemented, bounded, reserved, headers=("normal", "bounded", "auxiliary"))
+        self.set_manifest(implemented, bounded, reserved, headers=("normal", "bounded"))
         original_manifest = self.manifest.read_bytes()
         original_headers = {p: p.read_bytes() for p in (self.root / "include").iterdir()}
         self.assertIn("missing or stale catalog", self.run_tool("--check", expected=1).stderr)
@@ -109,6 +110,39 @@ class ExtendKernelBind(unittest.TestCase):
         self.assertEqual(self.catalog.read_bytes(), changed)
         self.run_tool()
         self.run_tool("--check")
+
+    def test_unregistered_header_and_static_data(self):
+        self.set_manifest(entry("normal"), headers=("normal",))
+        self.run_tool()
+        original = self.catalog.read_bytes()
+        header = self.root / "include/mulib-embedded.h"
+        header.write_text('static const char source[] = "embedded data";\n')
+        for flags in ((), ("--check",)):
+            self.assertIn("unregistered kernel header", self.run_tool(*flags, expected=1).stderr)
+            self.assertEqual(self.catalog.read_bytes(), original)
+        data_entry = entry("embedded", status="bounded").replace("static-inline", "static-data")
+        self.set_manifest(entry("normal"), data_entry)
+        self.run_tool()
+        self.run_tool("--check")
+        catalog = json.loads(self.catalog.read_bytes())
+        self.assertFalse(catalog["safe_export"])
+        self.assertEqual(catalog["modules"]["embedded"], {
+            "header": "include/mulib-embedded.h", "status": "bounded",
+            "implementation": "static-data", "dependencies": [],
+        })
+        self.assertEqual(header.read_text(), 'static const char source[] = "embedded data";\n')
+
+    def test_reserved_headers_are_registered_but_not_exported(self):
+        self.set_manifest(entry("normal"), entry("reserved", status="reserved"),
+                          headers=("normal", "reserved"))
+        self.run_tool()
+        original = self.catalog.read_bytes()
+        self.assertEqual(set(json.loads(original)["modules"]), {"normal"})
+        self.run_tool("--check")
+        (self.root/"include/mulib-reserved.h").unlink()
+        self.run_tool("--check")
+        self.run_tool()
+        self.assertEqual(self.catalog.read_bytes(), original)
 
     def test_malformed_manifest_preserves_existing_catalog(self):
         base = entry("valid")
@@ -171,7 +205,27 @@ class ExtendKernelBind(unittest.TestCase):
                 self.assertIn(name, catalog["modules"])
         self.assertEqual(catalog["modules"]["sshcrypto"]["optional_dependency"],
                          "OpenSSL Crypto 1.1.1 or newer")
-        self.assertFalse({"container-core", "qvm", "lprowse"} & catalog["modules"].keys())
+        self.assertEqual({p.relative_to(ROOT).as_posix() for p in (ROOT/"include").glob("mulib-*.h")},
+                         {item["header"] for item in catalog["modules"].values()})
+        self.assertEqual(catalog["modules"]["container-core"]["implementation"], "static-inline")
+        self.assertEqual(catalog["modules"]["qvm"]["implementation"], "static-inline")
+        self.assertEqual(catalog["modules"]["qvm"]["dependencies"], ["container-core"])
+        self.assertEqual(catalog["modules"]["lprowse"]["implementation"], "static-data")
+        self.assertNotIn("macro", catalog["modules"]["lprowse"])
+
+    def test_live_manual_coverage(self):
+        spec = importlib.util.spec_from_file_location("registration_manuals", ROOT/"tools/manuals.py")
+        manuals = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(manuals)
+        records = manuals.inventory()
+        self.assertEqual({record["header"] for record in records},
+                         set((ROOT/"include").glob("mulib-*.h")))
+        for name in ("container-core", "qvm", "lprowse"):
+            record = next(r for r in records if r["header"].name == f"mulib-{name}.h")
+            self.assertIsNone(record["switch"])
+            self.assertTrue(record["shared"])
+            self.assertTrue(record["manual"].is_file())
+            self.assertTrue(record["example"].is_file())
 
 
 if __name__ == "__main__":

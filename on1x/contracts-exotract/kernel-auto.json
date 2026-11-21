@@ -1924,13 +1924,22 @@
       "status": "implemented"
     },
     "container": {
-      "dependencies": [],
+      "dependencies": [
+        "container-core"
+      ],
       "header": "include/mulib-container.h",
       "macro": "MULIB_IMPL_CONTAINER",
       "status": "implemented"
     },
+    "container-core": {
+      "dependencies": [],
+      "header": "include/mulib-container-core.h",
+      "implementation": "static-inline",
+      "status": "bounded"
+    },
     "container-ipc": {
       "dependencies": [
+        "container-core",
         "crc32"
       ],
       "header": "include/mulib-container-ipc.h",
@@ -1956,13 +1965,17 @@
       "status": "implemented"
     },
     "container-log": {
-      "dependencies": [],
+      "dependencies": [
+        "container-core"
+      ],
       "header": "include/mulib-container-log.h",
       "macro": "MULIB_IMPL_CONTAINER_LOG",
       "status": "implemented"
     },
     "container-netdev": {
-      "dependencies": [],
+      "dependencies": [
+        "container-core"
+      ],
       "header": "include/mulib-container-netdev.h",
       "macro": "MULIB_IMPL_CONTAINER_NETDEV",
       "status": "implemented"
@@ -2032,7 +2045,8 @@
     },
     "container-qvmboost": {
       "dependencies": [
-        "containerboost"
+        "containerboost",
+        "qvm"
       ],
       "header": "include/mulib-container-qvmboost.h",
       "macro": "MULIB_IMPL_CONTAINER_QVMBOOST",
@@ -2057,6 +2071,7 @@
     },
     "container-vfs": {
       "dependencies": [
+        "container-core",
         "rootfs"
       ],
       "header": "include/mulib-container-vfs.h",
@@ -4629,6 +4644,7 @@
     },
     "fuse": {
       "dependencies": [
+        "container-core",
         "vfs"
       ],
       "header": "include/mulib-fuse.h",
@@ -7751,6 +7767,12 @@
       "header": "include/mulib-lowopt.h",
       "macro": "MULIB_IMPL_LOWOPT",
       "status": "implemented"
+    },
+    "lprowse": {
+      "dependencies": [],
+      "header": "include/mulib-lprowse.h",
+      "implementation": "static-data",
+      "status": "bounded"
     },
     "lsh": {
       "dependencies": [],
@@ -11234,6 +11256,7 @@
     },
     "prowse-control": {
       "dependencies": [
+        "lprowse",
         "mune",
         "prowse-protocol",
         "readline",
@@ -11324,6 +11347,14 @@
       "header": "include/mulib-quic.h",
       "macro": "MULIB_IMPL_QUIC",
       "status": "implemented"
+    },
+    "qvm": {
+      "dependencies": [
+        "container-core"
+      ],
+      "header": "include/mulib-qvm.h",
+      "implementation": "static-inline",
+      "status": "bounded"
     },
     "range-analysis": {
       "dependencies": [],
@@ -12292,6 +12323,7 @@
     },
     "rootfs-buildspec": {
       "dependencies": [
+        "container-core",
         "rootfs"
       ],
       "header": "include/mulib-rootfs-buildspec.h",
@@ -16629,7 +16661,8 @@
     },
     "zstd": {
       "dependencies": [
-        "codec-core"
+        "codec-core",
+        "container-core"
       ],
       "header": "include/mulib-zstd.h",
       "macro": "MULIB_IMPL_ZSTD",

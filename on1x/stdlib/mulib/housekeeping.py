@@ -167,8 +167,15 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
         if previous==(len(ordered), len(selected)):break
     discovery_only = {name: reason for name in ordered
                       if (reason := contracts.module_discovery_only_reason(name, modules[name], profiles))}
-    if discovery_only and not discovery:
-        name = next(iter(discovery_only))
+    # Internal-linkage dependencies supply definitions to their consumer's TU;
+    # they do not require (or acquire) an external callable archive ABI. Keep
+    # rejecting explicit requests for those kernels and unsupported external
+    # dependencies, while allowing ordinary switched kernels to include them.
+    requested = set(libraries) | {config['fixtures'][name]['kernels'][0] for name in fixtures}
+    blocked = [name for name in discovery_only
+               if name in requested or modules[name]['macro'] is not None]
+    if blocked and not discovery:
+        name = blocked[0]
         raise ValueError('discovery-only MuLIB kernel '+name+': '+discovery_only[name])
     directories=include_paths(root,paths)
     entries=[]
@@ -206,7 +213,11 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
         records.append(dict(path=path, group=group, bytes=len(data), sha256=hashlib.sha256(data).hexdigest()))
     for macro in extra:
         if macro not in macros:macros.append(macro)
-    for name in ordered:links.update(config['kernel_links'].get(name, []))
+    for name in ordered:
+        # Dependencies need their native link requirements just as explicitly
+        # selected kernels do (for example, a consumer of prettyemit needs dl).
+        links.update(config['kernel_links'].get(name, []))
+        links.update(profiles['profiles'].get(name, {}).get('link_libraries', []))
     for check in checks:
         path=local(root,check);inputs[str(path)]=contracts.digest(path)
     for path,digest in inputs.items():

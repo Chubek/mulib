@@ -27,7 +27,7 @@ assert p.returncode == 0, p.stderr
 assert inventory == dict(json.loads(p.stdout), schema='on1x.contract-inventory/v1')
 modules, coverage = inventory['modules'], inventory['coverage']
 auxiliary = set(inventory['auxiliary_headers'])
-assert {'include/mulib-'+n+'.h' for n in ['container-core', 'lprowse', 'qvm']} <= auxiliary
+assert not auxiliary, sorted(auxiliary)
 registered = {m['header'] for m in modules.values()}
 assert not registered & auxiliary
 assert registered | auxiliary == {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}

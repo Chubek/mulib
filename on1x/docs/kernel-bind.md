@@ -104,8 +104,9 @@ executable and review profiles retain their existing authority.
 In source names, replace `-` with `_` and `+` with `_plus_`. Prefix names
 starting with a digit with `k_`: for example `mulib.imtui_core`,
 `mulib.b_plus_tree`, and `mulib.k_2dgeom`. Ambiguous aliases fail rather than
-selecting either header. Reserved and unregistered auxiliary headers are
-not kernels. The check detects stale or missing catalog entries; it never
+selecting either header. All current public headers have registry entries,
+including `container-core`, `qvm`, and the static-data `lprowse` module.
+Reserved entries are not discoverable kernels. The check detects stale or missing catalog entries; it never
 writes source files.
 
 From the MuLIB root (use a fresh report path):
@@ -179,8 +180,8 @@ definitions and internal linkage; these are **not external archive symbols**.
 Reports remain `not_representable`, `callable:false`, with no semantic sidecar.
 Neither safe nor unsafe import spelling enables calls, archives or production
 admission. An ambiguous underscore/hyphen alias rejects rather than guessing.
-Other logical names are rejected at their source location, even if they appear
-in the broader [MuLIB inventory](../contracts-exotract/README.md).
+Other registered modules use the generated discovery catalog. Unknown or
+ambiguous logical names are rejected at their source location.
 
 `--mulib-root`, `--mulib-path`, `ON1X_MULIB_ROOT`, and `ON1X_MULIB_PATH` select
 the canonical checkout using the existing planner. Additional selected-header

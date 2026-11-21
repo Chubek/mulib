@@ -1,4 +1,4 @@
-# On1x verification — through 2026-11-20
+# On1x verification — through 2026-11-21
 
 Historical evidence below remains attached to its original revision and build
 profiles. A [cross-layer integration record](../manual/integration-verification.md)
@@ -6,6 +6,78 @@ preserves the baseline and integrated suite totals. Current requirements are des
 [representation contracts](../manual/representation-contracts.md).
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
+
+## Complete public-header registration — 2026-11-21
+
+Baseline MuLIB `6adf09c62abe00b9efbce3a115119b8fb7ebabd7`; bundled LibStone
+checkout `2a0b16514c725198410ec49308797d504ba7fb6b`. Host: Linux x86-64,
+GCC 16.2.1 and Clang 22.1.8.
+
+The shared registry now covers all **2,049** public `include/mulib-*.h`
+headers: 1,547 implementation-switch entries and 502 bounded entries.
+The formerly auxiliary `container-core` and `qvm` headers are static-inline;
+`lprowse` is static-data, with no callable C API. These entries participate in
+the contract inventory and automatic KernelBind catalog. Semantic sidecars
+and independently reviewed callable profiles remain separate requirements.
+See the [interop path guide](docs/kernel-registration.md).
+
+Registration checks:
+
+```sh
+python3 tools/extend-kernelbind.py --check
+python3 on1x/tools/on1x-contracts.py lint
+```
+
+Both passed after regeneration. Additional passing commands:
+
+```sh
+python3 tests/test_extend_kernelbind.py
+python3 tools/manuals.py --check
+python3 on1x/tests/test_header_registration.py \
+  build/on1x-workstream4-gcc/on1xc on1x \
+  /mnt/andromeda/tempdir/opencode/header-registration gcc
+python3 on1x/tests/test_kernel_auto_discovery_sdk.py \
+  build/on1x-workstream4-gcc/libstone-moonstone/exotract/exotract \
+  build/on1x-workstream4-gcc/on1xc on1x \
+  /mnt/andromeda/tempdir/opencode/header-registration-sdk gcc
+```
+
+The generator suite passed **8/8**. Full-header tests cover inventories,
+build plans, source hashes, aliases and native import requests. The real SDK
+test extracts the new inline/data modules and QVM dependency provenance.
+Existing `exotract`, `kernel_paths`, `contracts`, `kernel_imports`,
+`bounded_kernel_inventory`, `kernel_imports_sdk`, and
+`bounded_kernel_discovery_sdk` CTests passed (**7 total**).
+The final stabilized-tree run passed **7/7 in 54.10 seconds**:
+
+```sh
+ctest --test-dir build/on1x-workstream4-gcc \
+  -R 'on1x\.(contracts|kernel_imports|exotract|bounded_kernel_inventory|kernel_paths|kernel_imports_sdk|bounded_kernel_discovery_sdk)$' \
+  --output-on-failure
+```
+
+An initial SDK input-drift rejection cleared after registry edits stabilized.
+These runs use existing workstream4 compiler/extractor binaries; the LibStone
+SHA above identifies the current source checkout, not a fresh binary rebuild.
+The initially missing `on1x-bind` was subsequently rebuilt against the current
+LibStone checkout with real libclang extraction enabled. The previously blocked
+`contracts_sdk` test passed **1/1 in 17.76 seconds**:
+
+```sh
+cmake --build build/on1x-workstream4-gcc --target on1x-bind --parallel 4
+ctest --test-dir build/on1x-workstream4-gcc \
+  -R '^on1x\.contracts_sdk$' --output-on-failure
+```
+
+No full compiler suite, sanitizer run or additional platform coverage is claimed.
+
+Native planning also preserves internal-linkage dependencies of switched
+kernels while rejecting direct unsupported archive requests. Ten affected native
+implementation TUs compiled with GCC C11 and `-Werror`, including
+`container-qvmboost` and `prowse-control`. Metadata-only synchronization preserves
+all registrations and is idempotent. Fixture registration now includes `lprowse`,
+`imtui`, `termscript`, and `xmacir-trs`; `test_mulib.py` passed with the workstream4
+GCC compiler, including native providers, resources, relocation and rollback.
 
 ## FinPRED declaration discovery — 2026-11-21
 

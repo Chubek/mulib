@@ -690,7 +690,7 @@ if(BUILD_TESTING)
   endif()
      list(APPEND _meta_tests category control patterns value_loops nominal_adts cliche core_impl defer_errors concurrency stream_poll cancellation_deadlines taskgroup_within discovery)
       list(APPEND _meta_tests kernel_imports project_driver enum_connective core_ref container_local container_shared
-       literals_core owning_adt recursive_owning_adts type_checker_hardening bounded_kernel_inventory ref_replace)
+       literals_core owning_adt recursive_owning_adts type_checker_hardening bounded_kernel_inventory header_registration ref_replace)
    if(ON1X_HAS_FIRESTONE_REGEX)
      list(APPEND _meta_tests core_syntax_integration)
      add_test(NAME on1x.core_regex COMMAND "${Python3_EXECUTABLE}"

@@ -10,6 +10,13 @@ machine-code backend is added.
 
 ## Current feature matrix
 
+Full-header registration continuation (2026-11-21): all 2,049 public headers
+are represented in the shared registry and automatic KernelBind catalog.
+The previously auxiliary `container-core`, `qvm`, and `lprowse` headers now have
+explicit discovery-only classifications. See the
+[interoperability guide](kernel-registration.md) for the contract, import,
+archive, wrapper and source-bundle entry points.
+
 M2 discovery continuation (2026-11-20): the 193 bounded media and compute kernels use
 bounded static-inline MANIFEST entries and canonical internal-linkage CDecl
 inspection. No callable ABI, resource lowering or independent safe admission

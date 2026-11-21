@@ -17,7 +17,6 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-lprowse.h'}
 
 
 def merge_additions(root, manifest):
@@ -46,6 +45,9 @@ def merge_additions(root, manifest):
                                    ('macro', r'^  macro: (.+)$')):
                 match = re.search(pattern, block, re.M)
                 if not match:
+                    if field == 'macro' and re.search(
+                            r'^  implementation: static-(?:inline|data)$', block, re.M):
+                        continue
                     raise ValueError('additions module lacks ' + field)
                 value = match.group(1)
                 if value in used[field]:
@@ -77,7 +79,7 @@ def sync(root, *, fixtures=True):
     if not re.search(r'^project_files:\s*$', manifest, re.M):
         raise ValueError('manifest lacks project_files section')
     manifest, additions = merge_additions(root, manifest)
-    headers = sorted(p for p in (root / 'include').glob('mulib-*.h') if p.name not in SUPPORT_HEADERS)
+    headers = sorted((root / 'include').glob('mulib-*.h'))
     registered = {}
     for block in re.findall(r'^- name: .*?(?=^- name: |^project_files:|\Z)',
                             manifest, re.M | re.S):
@@ -97,9 +99,9 @@ def sync(root, *, fixtures=True):
         match = re.search(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                           r'(MULIB_IMPL_[A-Z0-9_]+)', text, re.M)
         inline = header.name in registered and bool(re.search(
-            r'^  implementation: static-inline$', registered[header.name], re.M))
+            r'^  implementation: static-(?:inline|data)$', registered[header.name], re.M))
         if inline and match:
-            raise ValueError('static-inline header gained an ABI switch: ' + header.name)
+            raise ValueError('internal-linkage header gained an ABI switch: ' + header.name)
         if match:
             switches.append(match.group(1))
             if header.name not in engineering_headers | optional_headers:
@@ -107,8 +109,7 @@ def sync(root, *, fixtures=True):
         elif not inline and re.sub(r'/\*.*?\*/|//[^\n]*', '', text, flags=re.S).strip():
             raise ValueError('header lacks implementation switch: ' + header.name)
         name = header.stem[6:]
-        deps = sorted({d for d in re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)
-                       if 'mulib-' + d + '.h' not in SUPPORT_HEADERS})
+        deps = sorted(set(re.findall(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', text, re.M)))
         if header.name in registered:
             old = registered[header.name]
             implemented = bool(re.search(r'^  status: implemented$', old, re.M))
@@ -117,7 +118,7 @@ def sync(root, *, fixtures=True):
             new = old
             if inline:
                 if not re.search(r'^  status: bounded$', old, re.M):
-                    raise ValueError('static-inline module must retain bounded status: ' + header.name)
+                    raise ValueError('internal-linkage module must retain bounded status: ' + header.name)
                 new = re.sub(r'^  dependencies:.*$',
                              lambda _: '  dependencies: [' + ', '.join(deps) + ']',
                              new, flags=re.M)
@@ -160,7 +161,7 @@ def sync(root, *, fixtures=True):
     manifest = re.sub(r'^module_count: \d+$', f'module_count: {len(headers)}', manifest, flags=re.M)
     manifest = re.sub(r'^implemented_module_count: \d+$', f'implemented_module_count: {len(switches)}', manifest, flags=re.M)
     inline_headers = {name for name, block in registered.items() if re.search(
-        r'^  implementation: static-inline$', block, re.M)}
+        r'^  implementation: static-(?:inline|data)$', block, re.M)}
     if inline_headers:
         manifest = re.sub(r'^bounded_module_count: \d+$',
                           f'bounded_module_count: {len(inline_headers)}', manifest, flags=re.M)

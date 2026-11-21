@@ -164,25 +164,50 @@ class Tools(unittest.TestCase):
             (root / 'include').mkdir()
             (root / 'tests').mkdir()
             (root / 'MANIFEST.yaml').write_text(
-                'module_count: 0\nimplemented_module_count: 0\nmodules:\nproject_files:\n')
+                'module_count: 0\nimplemented_module_count: 0\nbounded_module_count: 0\nmodules:\n'
+                '- name: container-core\n  header: include/mulib-container-core.h\n'
+                '  implementation: static-inline\n  status: bounded\n'
+                '  purpose: Maintainer storage contract.\n  dependencies: []\n'
+                '- name: lprowse\n  header: include/mulib-lprowse.h\n'
+                '  implementation: static-data\n  status: bounded\n'
+                '  manual: manual/embedded.md\n  example: examples/host.c\n'
+                '  purpose: Maintainer embedded data contract.\n  dependencies: []\n'
+                'project_files:\n')
             (root / 'tests/implementation.c').write_text('/* existing client */\n')
             (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
             (root / 'include/mulib-a.h').write_text(
                 '/** @brief Sample API. */\n#include "mulib-container-core.h"\n#if defined(MULIB_IMPL_A)\n#endif\n')
             (root / 'include/mulib-container-core.h').write_text(
                 'static inline int mulib_ct_support(void) { return 1; }\n')
+            (root / 'include/mulib-lprowse.h').write_text(
+                'static const char *const mulib_lprowse_source_[] = {"return {}"};\n')
             (root / 'include/mulib-future.h').write_text('/* reserved user notes */\n')
             inventory.sync(root)
             before = {p: p.read_text() for p in (root / 'MANIFEST.yaml',
                       root / 'tests/implementation.c', root / 'tests/declarations.c')}
-            self.assertIn('module_count: 2', before[root / 'MANIFEST.yaml'])
+            self.assertIn('module_count: 4', before[root / 'MANIFEST.yaml'])
             self.assertIn('implemented_module_count: 1', before[root / 'MANIFEST.yaml'])
-            self.assertNotIn('- name: container-core', before[root / 'MANIFEST.yaml'])
-            self.assertIn('dependencies: []', before[root / 'MANIFEST.yaml'])
+            self.assertIn('bounded_module_count: 2', before[root / 'MANIFEST.yaml'])
+            self.assertIn('dependencies: [container-core]', before[root / 'MANIFEST.yaml'])
+            self.assertIn('implementation: static-data', before[root / 'MANIFEST.yaml'])
+            for preserved in ('Maintainer storage contract.', 'Maintainer embedded data contract.',
+                              'manual: manual/embedded.md', 'example: examples/host.c'):
+                self.assertIn(preserved, before[root / 'MANIFEST.yaml'])
+            for path in ('tests/implementation.c', 'tests/declarations.c'):
+                self.assertNotIn('mulib-container-core.h', before[root/path])
+                self.assertNotIn('mulib-lprowse.h', before[root/path])
             self.assertIn('status: reserved', before[root / 'MANIFEST.yaml'])
             self.assertIn('#define MULIB_IMPL_A', before[root / 'tests/implementation.c'])
             inventory.sync(root)
             self.assertEqual(before, {p: p.read_text() for p in before})
+            for name in ('container-core', 'lprowse'):
+                header = root / 'include' / f'mulib-{name}.h'
+                original = header.read_text()
+                header.write_text(original + '\n#if defined(MULIB_IMPL_FORGED)\n#endif\n')
+                with self.assertRaisesRegex(ValueError, 'internal-linkage header gained an ABI switch'):
+                    inventory.sync(root)
+                self.assertEqual(before, {p: p.read_text() for p in before})
+                header.write_text(original)
             (root / 'include/mulib-a.h').write_text('/* API accidentally erased */\n')
             with self.assertRaisesRegex(ValueError, 'lost its API'):
                 inventory.sync(root)
@@ -223,12 +248,7 @@ class Tools(unittest.TestCase):
                 declarations = root / 'tests/declarations.c'
                 implementation.write_text('/* legacy ABI TU */\n')
                 declarations.write_text('int main(void) { return 0; }\n')
-                for stem in manuals.AUXILIARY:
-                    (root / 'include' / (stem + '.h')).touch()
-                    (root / 'manual' / (stem + '.md')).touch()
                 (root / 'examples/modules').mkdir(parents=True)
-                for name in manuals.AUXILIARY.values():
-                    (root / 'examples/modules' / (name + '.c')).touch()
                 (root / 'manual/engineering-kernels.md').write_text('# Reference kernels\n')
                 (root / 'include/mulib-reference-base.h').write_text(
                     'static inline int reference_identity(int n) { return n; }\n')

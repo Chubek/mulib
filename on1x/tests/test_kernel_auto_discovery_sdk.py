@@ -48,7 +48,8 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     report = directory/'probe.json'
     command = [sys.executable, on1x/'tools/on1x-build.py', *opts, '--mulib-root', on1x.parent]
     names = {'vec': 'vec', 'parsec': 'parsec', 'yantlr': 'yantlr', 'ed25519': 'ed25519',
-             'k_2dgeom': '2dgeom', 'b_plus_tree': 'b+tree', 'cowb_plus_tree': 'cowb+tree'}
+              'k_2dgeom': '2dgeom', 'b_plus_tree': 'b+tree', 'cowb_plus_tree': 'cowb+tree',
+              'container_core': 'container-core', 'qvm': 'qvm', 'lprowse': 'lprowse'}
     source.write_text(''.join(f'import kernel mulib.{name} as K{i};\n' for i, name in enumerate(names))
                       +'fn main(){}\n')
     result = run([*command, '--inspect-kernels', source, '-o', report])
@@ -58,8 +59,32 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     assert set(data['modules']) == {'mulib.'+name for name in names}
     for name, canonical in names.items():
         discovered = data['modules']['mulib.'+name]
-        assert discovered['exolib']['name'] == canonical and discovered['symbols']
+        assert discovered['exolib']['name'] == canonical
+        if canonical != 'lprowse':
+            assert discovered['symbols']
         assert Path(discovered['metadata']['cdecl']['header']).name == f'mulib-{canonical}.h'
+    # Inline functions and embedded data are real declarations, never fabricated
+    # external archive symbols or an automatically callable native namespace.
+    for name, symbol in (('container_core', 'mulib_ct_add_size'), ('qvm', 'mulib_qvm_validate')):
+        graph = data['modules']['mulib.'+name]['metadata']['cdecl']
+        declaration = next(d for d in graph['declarations'] if d['name'] == symbol)
+        assert declaration['kind'] == 'function' and declaration['definition']
+        assert declaration['linkage'] == '2'
+    qvm_inputs = data['modules']['mulib.qvm']['metadata']['cdecl']['inputs']
+    assert str(on1x.parent/'include/mulib-container-core.h') in {p['path'] for p in qvm_inputs}
+    embedded = data['modules']['mulib.lprowse']
+    assert embedded['automatic_registration']['implementation'] == 'static-data'
+    assert 'macro' not in embedded['automatic_registration']
+    assert not embedded['symbols']
+    assert any(d['name'] == 'mulib_lprowse_source_' for d in embedded['metadata']['cdecl']['declarations'])
+    for name in ('container_core', 'qvm', 'lprowse'):
+        for unsafe, diagnostic in (('', 'ON1X-KERNEL-NOT-ADMITTED'),
+                                   ('unsafe ', 'ON1X-KERNEL-UNSAFE-UNSUPPORTED')):
+            source.write_text(f'{unsafe}import kernel mulib.{name} as K;\nfn main(){{}}\n')
+            rejected = directory/f'{name}-{bool(unsafe)}'
+            result = run([*command, '--kernel-bind', source, '-o', rejected])
+            assert result.returncode != 0 and diagnostic in result.stderr, result
+            assert not rejected.exists()
     ed25519 = data['modules']['mulib.ed25519']
     assert ed25519['automatic_registration']['optional_dependency'].startswith('OpenSSL Crypto')
     assert not any('openssl/' in row['path'] for row in ed25519['metadata']['cdecl']['inputs'])
@@ -116,6 +141,10 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     source.write_text('import kernel mulib.future_kernel as F;\n'
                       'import kernel mulib.future_types as T;\n'
                       'import kernel mulib.future_inline as I;\nfn main(){}\n')
+    result = run(generate)
+    assert result.returncode != 0 and 'unregistered kernel header' in result.stderr, result
+    assert not catalog.exists(), 'incomplete header coverage published a catalog'
+    (checkout/'include/mulib-auxiliary.h').unlink()
     result = run(generate)
     assert result.returncode == 0, result
     future = directory/'future.json'

@@ -233,7 +233,7 @@ def manifest_scalar(entry, key, token, *, optional=False):
 def module_fields(name, entry, *, registration=False):
     fields = {key: manifest_scalar(entry, key, r'[A-Za-z0-9_./+-]+') for key in ('header', 'manual')}
     macro = manifest_scalar(entry, 'macro', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
-    implementation = manifest_scalar(entry, 'implementation', r'static-inline', optional=True)
+    implementation = manifest_scalar(entry, 'implementation', r'static-inline|static-data', optional=True)
     if (macro is None) == (implementation is None):
         reject('unsupported MANIFEST implementation: '+name)
     fields['macro'] = macro
@@ -242,10 +242,10 @@ def module_fields(name, entry, *, registration=False):
     fields['manifest_dependencies'] = manifest_list(entry, 'dependencies', r'[a-z0-9][a-z0-9_+-]*')
     fields['extra_macros'] = manifest_list(entry, 'extra_macros', r'MULIB_IMPL_[A-Z0-9_]+', optional=True)
     if macro is None and fields['extra_macros']:
-        reject('static-inline module declares implementation switches: '+name)
+        reject('non-external module declares implementation switches: '+name)
     if registration:
         fields['status'] = manifest_scalar(entry, 'status', r'implemented|bounded')
-        if (fields['status'] == 'bounded') != (implementation == 'static-inline'):
+        if (fields['status'] == 'bounded') != (implementation in ('static-inline', 'static-data')):
             reject('MANIFEST implementation metadata does not match status: '+name)
         optional_dependency = manifest_scalar(entry, 'optional_dependency', r'[A-Za-z0-9][ -~]{0,511}',
                                               optional=True)
@@ -360,6 +360,8 @@ def inventory(root):
 
 
 def module_discovery_only_reason(name, module, exo):
+    if module.get('implementation') == 'static-data':
+        return 'static-data header has no callable C API or supported external archive ABI'
     if module['macro'] is None:
         return 'static-inline header has no supported external archive ABI'
     return discovery_only_reason(name, exo)

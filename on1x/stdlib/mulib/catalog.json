@@ -15,6 +15,7 @@
     "gui": {"kernels": ["gui-core"], "kind": "test-data", "files": ["library/gui/**/*.lua"]},
     "immgtk": {"kernels": ["immgtk"], "kind": "runtime", "files": ["library/immgtk/*.lua"]},
     "immgtk-widgets": {"kernels": ["immgtk"], "kind": "empty", "files": []},
+    "imtui": {"kernels": ["imtui-mune", "imtui"], "kind": "runtime", "files": ["library/imtui/*.lua"]},
     "lcharts": {"kernels": ["chart"], "kind": "embedded-source", "files": ["library/lcharts/*.lua"], "checks": ["tools/embed_notation.py"]},
     "ldaemon": {"kernels": ["daemon"], "kind": "runtime", "files": ["library/ldaemon/*.lua"]},
     "ldistrib": {"kernels": ["distribtask"], "kind": "profiles", "files": ["library/ldistrib/*.lua", "library/ldistrib/*.json", "library/ldistrib/*.yaml", "library/ldistrib/*.distribtask"]},
@@ -22,16 +23,18 @@
     "librl": {"kernels": ["readline"], "kind": "profiles", "files": ["library/librl/*.mlsyn", "library/librl/*.mlac", "library/librl/*.mldir"], "checks": ["tools/generate_librl.py"]},
     "lmuw3": {"kernels": ["muw3-mune"], "kind": "embedded-source", "files": ["library/lmuw3/*.lua", "library/lmuw3/runtime.c"], "checks": ["tools/embed_lmuw3.py"]},
     "lpaleo": {"kernels": ["paleography"], "kind": "embedded-source", "files": ["library/lpaleo/*.lua"], "checks": ["tools/embed_notation.py"]},
-    "lprowse": {"kernels": ["prowse-control"], "kind": "embedded-source", "files": ["library/lprowse/*.lua"], "checks": ["tools/embed_lprowse.py"]},
+    "lprowse": {"kernels": ["prowse-control", "lprowse"], "kind": "embedded-source", "files": ["library/lprowse/*.lua"], "checks": ["tools/embed_lprowse.py"]},
     "microchan": {"kernels": ["microchan"], "kind": "profiles", "files": ["library/microchan/profiles/*.prof", "library/microchan/runtime.c"]},
     "muw3lib": {"kernels": ["muw3-mune"], "kind": "test-data", "files": ["library/muw3lib/**/*.lua"]},
     "optim": {"kernels": ["optml", "peephole"], "kind": "profiles", "files": ["library/optim/*.optml"]},
     "retgtk": {"kernels": ["retgtk"], "kind": "test-data", "files": ["library/retgtk/**/*.lua"]},
     "shiraz": {"kernels": ["shiraz"], "kind": "native", "files": ["library/shiraz/internal.h", "library/shiraz/core.c", "library/shiraz/runtime.c", "library/shiraz/kernel32.c", "library/shiraz/registry.c"], "requires": ["kvdb"], "native_sources": ["library/shiraz/runtime.c", "library/shiraz/kernel32.c", "library/shiraz/registry.c"]},
     "statistical-text": {"kernels": ["hidden_markov_chain", "corpus", "spellcheck"], "kind": "test-data", "files": ["library/statistical-text/fixtures.h"]},
+    "termscript": {"kernels": ["termscript", "termscript-host"], "kind": "runtime", "files": ["library/termscript/README.md", "library/termscript/stdlib/*.term", "library/termscript/examples/*.term", "library/termscript/*.h", "library/termscript/*.c"]},
     "virtio-guest": {"kernels": ["virtio-guest"], "kind": "amalgamated-source", "files": ["library/virtio-guest/*.h", "library/virtio-guest/*.c"], "checks": ["tools/amalgamate_virtio.py"]},
     "virtio-os": {"kernels": ["virtio-os"], "kind": "amalgamated-source", "files": ["library/virtio-os/*.h", "library/virtio-os/*.c"], "checks": ["tools/amalgamate_virtio.py"]},
     "webidl": {"kernels": ["webidl"], "kind": "test-data", "files": ["library/webidl/**/*.idl", "library/webidl/**/*.webidl"]},
+    "xmacir-trs": {"kernels": ["xmacir"], "kind": "profiles", "files": ["library/xmacir-trs/README.md", "library/xmacir-trs/*.xmtrs"]},
     "yantlr": {"kernels": ["yantlr"], "kind": "provider", "files": ["library/yantlr/mulib-yantlr-stdlib.h", "library/yantlr/example.y1"], "include_headers": ["library/yantlr/mulib-yantlr-stdlib.h"], "implementation_macros": ["MULIB_IMPL_YANTLR_STDLIB"]}
   }
 }

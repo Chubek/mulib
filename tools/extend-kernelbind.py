@@ -3,8 +3,8 @@
 
 This is an inventory, not a declaration extractor, implementation recipe,
 sidecar, or callable profile. It copies exact MANIFEST names (including legacy
-spellings), never source aliases. Unregistered headers and reservations are
-not exported. Dependencies retain their MANIFEST names and order.
+spellings), never source aliases. Unregistered headers are rejected; reservations
+are not exported. Dependencies retain their MANIFEST names and order.
 """
 
 import argparse
@@ -132,7 +132,7 @@ def project_entry(contracts, name, lines):
     if status == "implemented" and implementation is None and re.fullmatch(
             r"MULIB_IMPL_[A-Z0-9_]+", macro or ""):
         item["macro"] = macro
-    elif status == "bounded" and macro is None and implementation == "static-inline":
+    elif status == "bounded" and macro is None and implementation in {"static-inline", "static-data"}:
         item["implementation"] = implementation
     elif status != "reserved" or macro is not None or implementation is not None:
         raise ValueError("implementation metadata does not match status")
@@ -179,6 +179,11 @@ def generate(root):
             if dependency not in modules:
                 raise ValueError(f"MANIFEST.yaml: {name}: unknown dependency: {dependency}")
     eligible = {name: item for name, item in modules.items() if item["status"] != "reserved"}
+    registered = {item["header"] for item in modules.values()}
+    headers = {path.relative_to(root).as_posix() for path in root.glob("include/mulib-*.h")}
+    missing = sorted(headers - registered)
+    if missing:
+        raise ValueError("unregistered kernel header: " + missing[0] + "; register in MANIFEST.yaml")
     data = {"schema": SCHEMA, "safe_export": False, "modules": eligible}
     output = (json.dumps(data, sort_keys=True, indent=2, ensure_ascii=True) + "\n").encode("ascii")
     if len(output) > MAX_CATALOG_BYTES:

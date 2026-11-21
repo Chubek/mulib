@@ -15,9 +15,9 @@ The binding source is `include/mulib-*.h`. Both this catalog and the
 [ExoML inventory](../contracts-exoml/README.md) use `MANIFEST.yaml` as the
 module registry. `list` reports each canonical header, manual, implementation
 switch and dependencies, plus its archive recipe and whether any semantic
-sidecar or core snapshot profile exists. The three auxiliary headers
-`mulib-container-core.h`, `mulib-qvm.h` and `mulib-lprowse.h` are reported
-separately; they have no independent implementation recipe. Registration
+sidecar or core snapshot profile exists. All 2,049 public headers are registered,
+including the static-inline `container-core` and `qvm` helpers and the
+discovery-only static-data `lprowse` module. Registration
 does not mean a kernel builds on every platform or has a callable KernelBind
 profile. The [generated KernelBind catalog](../docs/kernel-bind.md#refresh-automatic-discovery)
 adds declaration discovery without changing these archive recipes.

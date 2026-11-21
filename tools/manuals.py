@@ -20,11 +20,6 @@ ROOT = Path(__file__).resolve().parent.parent
 IMPLEMENTATION = re.compile(
     r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)(MULIB_IMPL_[A-Z0-9_]+)', re.M)
 INCLUDE = re.compile(r'^\s*#\s*include\s*["<]([^">]+)[">]', re.M)
-AUXILIARY = {
-    'mulib-container-core': 'container-core',
-    'mulib-qvm': 'qvm-core',
-    'mulib-lprowse': 'prowse-control',
-}
 
 
 def marker(kind, end=False):
@@ -68,26 +63,26 @@ def inventory():
         if header in entries:
             raise ValueError('duplicate manifest header: ' + str(header))
         entries[header] = fields
-    headers = {p for p in (ROOT / 'include').glob('mulib-*.h') if p.stem not in AUXILIARY}
+    headers = set((ROOT / 'include').glob('mulib-*.h'))
     if set(entries) != headers:
         raise ValueError('manifest and mulib header inventory differ')
     records = []
-    for header in sorted(headers | {ROOT / 'include' / (n + '.h') for n in AUXILIARY}):
+    for header in sorted(headers):
         fields = entries.get(header, {})
         if fields.get('status') == 'reserved':
             continue
         stem = header.stem
         text = header.read_text()
         switch = IMPLEMENTATION.search(text)
-        inline = fields.get('implementation') == 'static-inline'
+        inline = fields.get('implementation') in ('static-inline', 'static-data')
         engineering = fields.get('profile') == 'engineering'
         if inline and (switch or fields.get('status') != 'bounded'):
-            raise ValueError('invalid bounded static-inline entry: ' + header.name)
+            raise ValueError('invalid bounded non-external entry: ' + header.name)
         if fields and not inline and (not switch or fields.get('macro') != switch.group(1)):
             raise ValueError('manifest switch differs from header: ' + header.name)
         example_path = fields.get('example')
         if example_path is None and not engineering:
-            example_path = 'examples/modules/' + AUXILIARY.get(stem, stem[6:]) + '.c'
+            example_path = 'examples/modules/' + stem[6:] + '.c'
         example = ROOT / example_path if example_path else None
         manual = (ROOT / fields['manual'] if inline or engineering else
                   ROOT / 'manual' / (stem + '.md'))

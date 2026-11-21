@@ -1037,7 +1037,7 @@ canonical entry points and compatibility behavior.
 | [logger](mulib-logger.md) | Simple callback-driven logging with message severity filtering. | [header](../include/mulib-logger.h) · [example](../examples/modules/logger.c) |
 | [loops](mulib-loops.md) | Reachability-aware natural-loop membership per dominance backedge. | [header](../include/mulib-loops.h) · [example](../examples/modules/loops.c) |
 | [lowopt](mulib-lowopt.md) | Native MIR constant folding, local simplification and conservative dead writes. | [header](../include/mulib-lowopt.h) · [example](../examples/modules/lowopt.c) |
-| [lprowse](mulib-lprowse.md) | Embedded support data. | [header](../include/mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
+| [lprowse](mulib-lprowse.md) | Generated embedded Lua source data for the Prowse host; no C function API. | [header](../include/mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
 | [lsh](mulib-lsh.md) | Band-key construction for locality-sensitive MinHash candidate retrieval | [header](../include/mulib-lsh.h) · [example](../examples/modules/lsh.c) |
 | [lsmtree](mulib-lsmtree.md) | Memory-backed LSM runs with WAL-before-publication and atomic compaction. | [header](../include/mulib-lsmtree.h) · [example](../examples/modules/lsmtree.c) |
 | [lzf](mulib-lzf.md) | Dependency-free LZF blocks and standard ZV-framed .lzf streams. | [header](../include/mulib-lzf.h) · [example](../examples/modules/lzf.c) |
@@ -1502,7 +1502,7 @@ canonical entry points and compatibility behavior.
 | [queryjoin](mulib-queryjoin.md) | Sorted equi-join pairs over uint64 keys and original row IDs | [header](../include/mulib-queryjoin.h) · [example](../examples/modules/queryjoin.c) |
 | [queue](mulib-queue.md) | A dynamically growing FIFO queue implemented with a circular buffer. | [header](../include/mulib-queue.h) · [example](../examples/modules/queue.c) |
 | [quic](mulib-quic.md) | RFC 9000 variable integers and length-bearing STREAM frames. | [header](../include/mulib-quic.h) · [example](../examples/modules/quic.c) |
-| [qvm](mulib-qvm.md) | Quota VM: a resumable 16-register, unsigned-64-bit bytecode engine. | [header](../include/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
+| [qvm](mulib-qvm.md) | Resumable quota-limited bytecode engine with owned code and RAM. | [header](../include/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
 
 ## R
 

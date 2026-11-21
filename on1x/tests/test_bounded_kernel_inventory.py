@@ -24,9 +24,7 @@ from media_inventory import inventory as media_inventory
 rows = [record['header'][6:-2] for record in media_inventory(root)]
 assert len(rows) == len(set(rows)) == 194
 assert set(rows) <= modules.keys()
-assert set(inventory['auxiliary_headers']) == {
-    'include/mulib-container-core.h', 'include/mulib-qvm.h', 'include/mulib-lprowse.h',
-}
+assert not inventory['auxiliary_headers'], inventory['auxiliary_headers']
 for name in rows:
     module = modules[name]
     assert module['macro'] is None and module['implementation'] == 'static-inline'
@@ -72,4 +70,4 @@ for name in ('media-timebase', 'compute-vulkan', 'kernel-validate'):
     p = run([sys.executable, t.root/'tools/on1x-exotract.py', 'build', name,
              '--output', output, '--exotract', t.work/'unused-sdk'])
     assert p.returncode != 0 and 'discovery-only MuLIB kernel' in p.stderr and not output.exists(), p
-print('193 supplied kernels plus shared audio core registered; only three intentional auxiliaries: PASS')
+print('193 supplied kernels plus shared audio core registered; no unregistered headers: PASS')

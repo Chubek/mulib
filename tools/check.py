@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
-SUPPORT_HEADERS = {'mulib-container-core.h', 'mulib-qvm.h', 'mulib-lprowse.h'}
 
 
 def main():
@@ -49,7 +48,7 @@ def main():
     links = ([] if sys.platform == 'win32' else ['-lm'])
     if sys.platform.startswith(('linux', 'freebsd')):
         links += ['-ldl']
-    headers = sorted(p for p in (root / 'include').glob('mulib-*.h') if p.name not in SUPPORT_HEADERS)
+    headers = sorted((root / 'include').glob('mulib-*.h'))
     texts = {p.name: p.read_text() for p in headers}
     switches, dependencies, extra_switches, failures = {}, {}, {}, []
     reserved = set()
@@ -136,13 +135,12 @@ def main():
                 field = re.search(r'^  ' + key + r': (.+)$', block, re.M)
                 if (field and not (root / field.group(1)).is_file()) or (key == 'manual' and not field):
                     failures.append((name, 'missing engineering ' + key))
-        if re.search(r'^  implementation: static-inline$', block, re.M):
+        if re.search(r'^  implementation: (?:static-inline|static-data)$', block, re.M):
             bounded.add(name)
             if match or not re.search(r'^  status: bounded$', block, re.M):
-                failures.append((name, 'static-inline module must have bounded status and no ABI switch'))
+                failures.append((name, 'non-external module must have bounded status and no ABI switch'))
             dependencies[name] = [d for d in re.findall(r'^\s*#\s*include\s*["<]'
-                                      r'(mulib-[^">]+\.h)[">]', text, re.M)
-                                  if d not in SUPPORT_HEADERS]
+                                      r'(mulib-[^">]+\.h)[">]', text, re.M)]
             deps = re.search(r'^  dependencies: \[([^\]]*)\]$', block, re.M)
             actual = {d.strip() for d in deps.group(1).split(',') if d.strip()} if deps else None
             expected = {d[len('mulib-'):-len('.h')] for d in dependencies[name]}
@@ -172,7 +170,7 @@ def main():
             failures.append((name, 'implemented header must have status: implemented'))
         switches[name] = match.group(1)
         dependencies[name] = [d for d in re.findall(r'^\s*#\s*include\s*["<]'
-                                        r'(mulib-[^">]+\.h)[">]', text, re.M) if d not in SUPPORT_HEADERS]
+                                        r'(mulib-[^">]+\.h)[">]', text, re.M)]
         module = name[len('mulib-'):-len('.h')]
         example = re.search(r'^  example: (.+)$', block, re.M)
         if not profile:
@@ -207,7 +205,7 @@ def main():
         failures.append(('MANIFEST.yaml', 'implemented_module_count does not match implemented headers'))
     bounded_count = re.search(r'^bounded_module_count: (\d+)$', manifest, re.M)
     if bounded and (not bounded_count or int(bounded_count.group(1)) != len(bounded)):
-        failures.append(('MANIFEST.yaml', 'bounded_module_count does not match static-inline headers'))
+        failures.append(('MANIFEST.yaml', 'bounded_module_count does not match non-external headers'))
 
     if len(set(switches.values())) != len(switches):
         failures.append(('headers', 'implementation switch shared by multiple modules'))
