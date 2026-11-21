@@ -1,3 +1,8 @@
+# geneeated
+generated-*/
+generated/
+generated_*/
+
 # Aurocks strfile
 AUROCKS_STRPOOL
 
