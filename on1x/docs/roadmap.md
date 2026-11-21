@@ -10,6 +10,36 @@ machine-code backend is added.
 
 ## Current feature matrix
 
+On1xMETA continuation (2026-11-21): the normal semantic pipeline now consumes
+LLSynth-compiled [`processor/*.o1m`](../processor/README.md) programs: 6 typed
+desugaring rules, 13 canonicalization rules, and 45 structural/typed semantic
+constraints. Rewrites follow original ownership/control verification and are
+rechecked transactionally. `--dump-processor` exposes deterministic rule hits
+and authored locations. This bounded expression-rewrite profile preserves
+capture evaluation and checked arithmetic; arbitrary effect-changing rewrites
+and general theorem proving are outside its supported vocabulary. See
+[semantic boundaries](processor-semantics.md) and the current verification record.
+The [per-backend feedback cycle](../benchmark/PROCESSOR_FEEDBACK.md) confirms
+targeted identity improvements and identifies a small unoptimized-native
+dynamic-boolean regression plus additional optimization cost. A subsequent
+two-agent round implements bounded, verified boolean-decision SSA lowering,
+with effects, traps and fallback coverage. Its
+[matched comparisons](../benchmark/OPTIMIZATION_ROUND2.md) use the preserved
+On1xMETA compiler as baseline. General resource promotion remains outside this
+optimization's bool-only structural scope.
+
+Native MIR continuation (2026-11-21): the opt-in generated Archon backend
+now builds and executes on AMD64 SysV, with target-aware trusted SDK assembly
+admission and a standalone SDK-disabled tool. Native execution is limited to
+the verified MIR subset; C11 remains the general reference backend. See
+[native integration evidence](../VERIFICATION.md#archon-native-integration-baseline--2026-11-21).
+
+The [MuLL-led benchmark suite](../benchmark/README.md) now runs correctness-gated
+C11/native comparisons and records compilation/runtime distributions, artifact
+sizes and MIR pass metrics. Its feedback led to tested signed-i64 annihilator
+folds in constant-fold descriptor v3; measurements and limitations are preserved
+in [optimization feedback](../benchmark/OPTIMIZATION_FEEDBACK.md).
+
 Full-header registration continuation (2026-11-21): all 2,049 public headers
 are represented in the shared registry and automatic KernelBind catalog.
 The previously auxiliary `container-core`, `qvm`, and `lprowse` headers now have

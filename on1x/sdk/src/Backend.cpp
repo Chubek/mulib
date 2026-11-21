@@ -206,8 +206,16 @@ On1xSDK_Status copy_capability(const On1xSDK_BackendCapability &input, bool trus
         return ON1X_SDK_UNSUPPORTED;
     if (!valid_artifact(capability.artifact_kind))
         return ON1X_SDK_INVALID_ARGUMENT;
-    if (native_artifact(capability.artifact_kind))
-        return ON1X_SDK_UNSUPPORTED;
+    if (native_artifact(capability.artifact_kind)) {
+        /* Native authority is host-only: the private compiler-linked registrar
+         * is the grant, never a provider-supplied flag or name. This reviewed
+         * profile admits assembly, not object files or executables. */
+        if (!trusted || capability.artifact_kind != ON1X_SDK_ARTIFACT_ASSEMBLY ||
+            phase != ON1X_SDK_VERIFIED_MIR ||
+            !capability.input_schema_min ||
+            (capability.flags & ON1X_SDK_BACKEND_TARGET_INDEPENDENT))
+            return ON1X_SDK_UNSUPPORTED;
+    }
     if (capability.flags & ~provider_flags)
         return ON1X_SDK_INVALID_ARGUMENT;
     if (phase == ON1X_SDK_VERIFIED_MIR) {
@@ -667,10 +675,8 @@ On1xSDK_Status on1x_sdk_backend_produce(const On1xSDK_Registry *registry,
     if (!field_available(size, offsetof(On1xSDK_BackendRequest, poll_userdata),
                          sizeof(input.poll_userdata)))
         input.poll_userdata = nullptr;
-    if (!input.program || !valid_artifact(input.artifact_kind) ||
-        native_artifact(input.artifact_kind))
-        return native_artifact(input.artifact_kind) ? ON1X_SDK_UNSUPPORTED
-                                                    : ON1X_SDK_INVALID_ARGUMENT;
+    if (!input.program || !valid_artifact(input.artifact_kind))
+        return ON1X_SDK_INVALID_ARGUMENT;
     if (input.flags & ~request_flags || input.reserved)
         return ON1X_SDK_INVALID_ARGUMENT;
     if (input.byte_limit > ON1X_SDK_MAX_ARTIFACT_BYTES)
@@ -694,6 +700,18 @@ On1xSDK_Status on1x_sdk_backend_produce(const On1xSDK_Registry *registry,
             });
         status != ON1X_SDK_OK)
         return status;
+
+    /* Private compiler pointers must never reach an external provider, even
+     * when its serialized-MIR capability otherwise matches the request. */
+    if (!selection.trusted &&
+        (input.program->checked_unit || input.program->verified_module))
+        return ON1X_SDK_CAPABILITY_DENIED;
+    if (native_artifact(input.artifact_kind) &&
+        (!selection.trusted || requested_name.empty() || !input.target ||
+         input.artifact_kind != ON1X_SDK_ARTIFACT_ASSEMBLY ||
+         phase != ON1X_SDK_VERIFIED_MIR || !schema ||
+         (selection.capability.flags & ON1X_SDK_BACKEND_TARGET_INDEPENDENT)))
+        return ON1X_SDK_CAPABILITY_DENIED;
 
     if (invocation_active(registry, selection.name))
         return ON1X_SDK_BUSY;

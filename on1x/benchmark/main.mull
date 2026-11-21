@@ -1,0 +1,72 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val args <- H:Args;
+if G:Len(args) == 0 or args[0] == "help" or args[0] == "--help" {
+  G:GetStdout()("On1x benchmark (real MuLL runtime)\n"
+    + "  on1x-benchmark run [--config FILE] [--output DIR] [--backend cross|c11|mir-archon]\n"
+    + "    [--compiler PATH] [--archon PATH] [--cc PATH] [--cflags '[\"-O2\"]']\n"
+    + "    [--iterations N] [--seed N] [--cases recurrence,branches,gcd,calls,constants,annihilator,tuple,trap]\n"
+    + "    [--warmups N] [--repeats N] [--compile-repeats N] [--compile-warmups N]\n"
+    + "    [--optimization both|on|off] [--timeout-ms N] [--root PATH]\n"
+    + "  on1x-benchmark generate [same options]\n"
+    + "  on1x-benchmark analyze REPORT.json\n"
+    + "  on1x-benchmark compare BASELINE.json CURRENT.json\n"
+    + "  on1x-benchmark selftest\n");
+  return 0;
+}
+if args[0] == "selftest" {
+  val Test <- G:LoadLib("Selftest") or G:DieWith("$E?");
+  return Test:Test();
+}
+if args[0] == "hosttest" {
+  G:Assert(G:Len(args) == 2);
+  val Test <- G:LoadLib("Hosttest") or G:DieWith("$E?");
+  return Test:Test(args[1]);
+}
+if args[0] == "analysis-test" {
+  val Test <- G:LoadLib("AnalysisTests") or G:DieWith("$E?");
+  return Test:Test();
+}
+if args[0] == "invalid-stage-test" {
+  val Test <- G:LoadLib("AnalysisTests") or G:DieWith("$E?");
+  val Config <- G:LoadLib("Config") or G:DieWith("$E?");
+  val Stage <- G:LoadLib("Stagecost") or G:DieWith("$E?");
+  Stage:Stages(Config:Set(Test:Row(false), "compile_samples_ns", [1, 2, 3]));
+  return 0;
+}
+if args[0] == "decode" {
+  G:Assert(G:Len(args) == 2);
+  G:GetStdout()(J:Encode(J:Decode(args[1])) + "\n");
+  return 0;
+}
+if args[0] == "analyze" or args[0] == "compare" {
+  val A <- G:LoadLib("Analyze") or G:DieWith("$E?");
+  if args[0] == "analyze" {
+    G:Assert(G:Len(args) == 2);
+    G:GetStdout()(A:Analyze(J:Decode(H:Read(args[1]))):markdown);
+  } else {
+    G:Assert(G:Len(args) == 3);
+    val result <- A:Compare(J:Decode(H:Read(args[1])), J:Decode(H:Read(args[2])));
+    G:GetStdout()(J:Encode(result) + "\n");
+    if not result:compatible { return 1; }
+  }
+  return 0;
+}
+if args[0] != "run" and args[0] != "generate" { return G:DieWith("unknown command: " + args[0]); }
+val Config <- G:LoadLib("Config") or G:DieWith("$E?");
+val config <- Config:Parse(args);
+if args[0] == "generate" {
+  val F <- G:LoadLib("Fixtures") or G:DieWith("$E?");
+  val manifest <- F:Generate(config);
+  H:Write(config:output + "/manifest.json", J:Encode(manifest) + "\n");
+  H:Write(config:output + "/config.json", J:Encode(config) + "\n");
+  G:GetStdout()("generated " + G:Str(G:Len(manifest)) + " On1x fixtures\n");
+  return 0;
+}
+val Runner <- G:LoadLib("Runner") or G:DieWith("$E?");
+val Analyze <- G:LoadLib("Analyze") or G:DieWith("$E?");
+val report <- Runner:Run(config);
+Analyze:Save(report, config:output);
+G:GetStdout()("report: " + config:output + "/report.json\n");
+if report:failures > 0 { return 1; }
+return 0;

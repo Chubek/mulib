@@ -21,16 +21,36 @@ bool matches_generated_architecture(std::string_view triple) noexcept {
     const char *raw = archon_backend_target();
     if (!raw) return false;
     const std::string_view native(raw);
-    // IRGen pins a target/ABI in the generated library. An SDK triple is an
-    // *additional* assertion; it must not silently select a different ISA.
-    if (triple.starts_with("x86_64-")) return native.find("AMD64") != native.npos;
-    if (triple.starts_with("aarch64-")) return native.find("AArch64") != native.npos;
-    if (triple.starts_with("riscv64-")) return native.find("RISCV64") != native.npos;
+    // This is an ABI allowlist, not an ISA substring test. In particular, a
+    // Windows triple or another generated calling convention is not SysV.
+    if (triple == "x86_64-unknown-linux-gnu") return native == "AMD64/SysVAMD64";
+    if (triple == "aarch64-unknown-linux-gnu") return native == "AArch64/AAPCS64";
+    if (triple == "riscv64-unknown-linux-gnu") return native == "RISCV64IM/LP64";
     return false;
 }
+bool matches_layout(const On1xSDK_TargetDescriptor &target) noexcept {
+    const auto &layout = target.data_layout;
+    if (layout.byte_order != ON1X_SDK_BYTE_ORDER_LITTLE ||
+        layout.pointer_bits != 64 || layout.pointer_alignment != 64 ||
+        layout.integer_alignment != 64 || layout.stack_alignment != 128 ||
+        target.object_format != ON1X_SDK_OBJECT_FORMAT_ELF)
+        return false;
+    constexpr std::string_view triple = ON1X_ARCHON_TARGET_TRIPLE;
+    const auto calling = triple.starts_with("x86_64-")
+        ? ON1X_SDK_CALLING_CONVENTION_SYSV_AMD64
+        : triple.starts_with("aarch64-") ? ON1X_SDK_CALLING_CONVENTION_AAPCS64
+                                       : ON1X_SDK_CALLING_CONVENTION_RISCV_LP64;
+    return target.calling_convention == calling;
+}
+struct Cancellation {
+    const On1xSDK_BackendInvocation *invocation;
+    On1xSDK_Status status = ON1X_SDK_OK;
+};
 int cancelled_by_host(void *state) noexcept {
-    const auto *call = static_cast<const On1xSDK_BackendInvocation *>(state);
-    return on1x_sdk_backend_poll(call) == ON1X_SDK_OK ? 0 : 1;
+    auto &cancel = *static_cast<Cancellation *>(state);
+    if (cancel.status == ON1X_SDK_OK)
+        cancel.status = on1x_sdk_backend_poll(cancel.invocation);
+    return cancel.status == ON1X_SDK_OK ? 0 : 1;
 }
 
 On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invocation,
@@ -41,6 +61,7 @@ On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invo
     auto &context = *static_cast<on1x::backends::Context *>(userdata);
     context.error = {};
     context.diagnostic.clear();
+    Cancellation cancel{invocation};
     try {
         const On1xSDK_TargetDescriptor *target = nullptr;
         auto status = on1x_sdk_target_view(invocation->target, &target);
@@ -48,18 +69,23 @@ On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invo
         constexpr std::string_view expected = ON1X_ARCHON_TARGET_TRIPLE;
         if (!target || !target->triple || target->triple_size != expected.size() ||
             std::memcmp(target->triple, expected.data(), expected.size()) ||
-            !matches_generated_architecture(expected))
+            !matches_generated_architecture(expected) || !matches_layout(*target))
             return ON1X_SDK_UNSUPPORTED;
 
         on1x::backends::archon::Options opt;
-        opt.emit_c_entrypoint = true;
+        opt.emit_c_entrypoint = context.native_emit_c_entrypoint;
+        opt.pic = context.native_pic;
         opt.max_assembly_bytes = std::min<std::size_t>(invocation->byte_limit,
                                                        ON1X_SDK_MAX_ARTIFACT_BYTES);
         opt.cancelled = cancelled_by_host;
-        opt.cancel_userdata = const_cast<On1xSDK_BackendInvocation *>(invocation);
+        opt.cancel_userdata = &cancel;
         if (!opt.max_assembly_bytes) return ON1X_SDK_LIMIT;
         const auto write = [&](const on1x::mir::Module &module) {
+            if (module.version != invocation->input_schema)
+                return ON1X_SDK_INVALID_ARGUMENT;
+            if (cancelled_by_host(&cancel)) return cancel.status;
             auto product = on1x::backends::archon::compile(module, opt);
+            if (cancelled_by_host(&cancel)) return cancel.status;
             return on1x_sdk_output_write(sink, product.assembly.data(), product.assembly.size());
         };
         if (const auto *module = on1x::sdk::builtin_mir(invocation->program))
@@ -74,9 +100,23 @@ On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invo
         return write(on1x::mir::deserialize(wire));
     } catch (const std::bad_alloc &) {
         return ON1X_SDK_LIMIT;
+    } catch (const on1x::backends::archon::Error &error) {
+        context.error = std::current_exception();
+        if (cancel.status != ON1X_SDK_OK) return cancel.status;
+        switch (error.status) {
+        case ARCHON_BACKEND_LIMIT:
+        case ARCHON_BACKEND_NOMEM: return ON1X_SDK_LIMIT;
+        case ARCHON_BACKEND_CANCELLED: return ON1X_SDK_CANCELLED;
+        case ARCHON_BACKEND_UNSUPPORTED: return ON1X_SDK_UNSUPPORTED;
+        case ARCHON_BACKEND_INVALID: return ON1X_SDK_VERIFICATION_FAILED;
+        default: return ON1X_SDK_ERROR;
+        }
+    } catch (const on1x::Error &) {
+        context.error = std::current_exception();
+        return cancel.status != ON1X_SDK_OK ? cancel.status : ON1X_SDK_VERIFICATION_FAILED;
     } catch (...) {
         context.error = std::current_exception();
-        return ON1X_SDK_ERROR;
+        return cancel.status != ON1X_SDK_OK ? cancel.status : ON1X_SDK_ERROR;
     }
 }
 } // namespace

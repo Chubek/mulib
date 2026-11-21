@@ -1,0 +1,6 @@
+meta 1;
+budget steps 100000 nodes 100000 depth 128;
+rule identity phase canonicalize priority 100
+match Binary("+", $value, Integer("0"))
+replace $value
+guard integer;

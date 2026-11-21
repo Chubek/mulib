@@ -7,14 +7,12 @@ v1, v2 and v3 into Archon's language-neutral MachineIR v1 and calls the
 produces assembly; ordinary assemblers/linkers and the On1x runtime are
 required to produce an executable.
 
-**Repository integration is intentionally explicit.** As of On1x master
-`eeedc2aed7db341be86c6c281582d7f46b1a564b`, the SDK denies native artifact
-capabilities and the existing compiler driver assumes target-independent
-built-in providers. The standalone `on1x-archon-mir` tool works through the
-bridge without those SDK changes. `Backend.cpp` is a real target-aware SDK 2
-provider, but it **cannot register with the unmodified SDK**. See
-[INTEGRATION.md](INTEGRATION.md). No source file mislabels assembly as C11 to
-bypass the SDK's policy.
+**Repository integration is intentionally explicit.** The original package at
+`eeedc2aed7db341be86c6c281582d7f46b1a564b` lacked SDK native admission.
+The integrated SDK now admits this compiler-linked provider's target-bound
+assembly through an explicitly selected native path. External plugins gain no
+native artifact authority. The standalone `on1x-archon-mir` tool also works with
+the SDK disabled. See [INTEGRATION.md](INTEGRATION.md) and [DRIVER.md](DRIVER.md).
 
 ## Coverage and contract
 
@@ -47,7 +45,29 @@ bypass the SDK's policy.
 
 ## Build prerequisite: generated Archon backend
 
-From `libstone/cornerstone/Archon`, for Linux AMD64 SysV:
+See [TOOLCHAIN.md](TOOLCHAIN.md) for exact paths and real-toolchain evidence.
+
+From the repository root, provision the bundled LibStone canonical Linux
+AMD64 SysV backend, run its native scalar GAS tests, and install it:
+
+```sh
+python3 on1x/backends/mir-archon/provision_toolchain.py \
+  --work-dir /mnt/andromeda/tempdir/opencode/on1x-archon-toolchain --jobs 4
+cmake -S on1x -B /mnt/andromeda/tempdir/opencode/on1x-archon-build \
+  -DCMAKE_PREFIX_PATH=/mnt/andromeda/tempdir/opencode/on1x-archon-toolchain/install \
+  -DON1X_BUILD_MIR_ARCHON=ON -DON1X_ARCHON_ENABLE_SDK_ADAPTER=ON \
+  -DON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu -DBUILD_TESTING=ON
+cmake --build /mnt/andromeda/tempdir/opencode/on1x-archon-build --parallel 4
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build \
+  -R 'on1x.backends' --output-on-failure
+```
+
+The provisioning script accepts `--libstone-root` for an explicitly selected
+checkout, performs no fetch or checkout, and records its revision and install
+prefix in `on1x-toolchain.json`. Its upstream tests report unavailable
+cross-target runners as skipped; AMD64 execution requires an AMD64 Linux host.
+
+Equivalent manual generation from `libstone/cornerstone/Archon`:
 
 ```sh
 python3 -m archon compile stdspec/amd64/root.arch -o amd64.archdb
@@ -65,12 +85,11 @@ The native backend is generated *once per target*, not once per source file.
 code-generation interface used by `Bridge.cpp`. The latter consumes the
 installed generated `Backend.h` and `Archon::Backend`.
 
-Integrate this folder into `on1x/backends/CMakeLists.txt` as described in
-`INTEGRATION.md`, then configure On1x with
+The opt-in `on1x/backends/CMakeLists.txt` wiring is included. Configure On1x with
 `-DCMAKE_PREFIX_PATH="$HOME/.local/archon-amd64"` and build. This directory
 adds `on1x_archon_bridge`, `on1x_archon_scalar_abi` and `on1x-archon-mir`.
-The optional SDK adapter requires explicit target configuration and host
-policy work.
+The optional SDK adapter requires explicit target configuration and trusted
+native artifact admission.
 
 ## Standalone use
 
@@ -101,11 +120,13 @@ imports. No FP/vector MachineIR type or cross-ABI FP call is assumed.
 - All On1x verifier budgets apply. Tuple flattening is bounded to 4096 words
   per tuple and locals to 32 KiB individually. The actual generated native
   backend may reject a function earlier due to its 64 KiB fixed-frame budget,
-  64-argument ABI limit or other target-specific resource constraints.
+  `ARCHON_MIR_MAX_PARAMS` ABI limit (128 for the pinned generated backend,
+  including any hidden tuple-result pointer) or other target-specific constraints.
 - One Archon native backend build serves one target/ABI. The SDK adapter checks
   the requested triple against its configured triple and generated ISA family.
 - Assembly output defaults to at most 16 MiB; generated work is further
-  bounded per function to 8192 SSA values, 32768 MachineIR instructions and
+  bounded to 65536 MachineIR instructions per module and per function to
+  8192 SSA values, 32768 MachineIR instructions and
   32 KiB of explicit local storage. Callers can tighten these limits through
   `Options`; cancellation is forwarded to `ArchonBackendOptions`.
 - `Product.assembly` is source text, not an executable, ELF object or JIT code.
@@ -118,6 +139,9 @@ imports. No FP/vector MachineIR type or cross-ABI FP call is assumed.
   On1x effect order is preserved in the incoming MachineIR instruction stream.
 
 ## Tests
+
+See [scalar ABI qualification](ABI.md) for runtime signature coverage,
+cross-translation-unit native calls, exact traps and sanitizer scope.
 
 `tests/TestBridge.cpp` exercises MIR v1 loops/slots/calls, v2 nested tuple
 returns and float values, v3 unsigned/binary32 operations and deterministic

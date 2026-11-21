@@ -4,6 +4,7 @@
 #include <on1x/diagnostic.hpp>
 #include <string_view>
 #include <vector>
+#include "../../backends/Builtin.hpp"
 
 namespace on1x::sdk_driver {
 struct Result {
@@ -17,4 +18,8 @@ void check_plugin_selection(const std::vector<std::string> &selectors,
 Result run(const mir::Module &, const std::string &input_name,
            const std::string &hook_name, bool emit, diagnostic::Registry &,
            const std::vector<std::string> &selectors);
+Result run_native(const mir::Module &, const std::string &input_name,
+                  const std::string &hook_name, std::string_view target,
+                  diagnostic::Registry &, const std::vector<std::string> &selectors,
+                  const backends::NativeOptions &options = {});
 }

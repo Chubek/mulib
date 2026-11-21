@@ -1,0 +1,22 @@
+record Cell { value:i64 }
+extern fn on1x_unique_live_allocations()->i64;
+extern fn on1x_test_unique_allocator_live()->i64;
+fn early(flag:bool)->bool {
+    let owner=box(record<Cell>{value:42});
+    if !(!(flag&&true)) { return true; }
+    return false;
+}
+fn main() {
+    println(early(true));
+    println(early(false));
+    assert(on1x_unique_live_allocations()==0);
+    assert(on1x_test_unique_allocator_live()==0);
+    outer:for i in 0..10 {
+        let owner=box(record<Cell>{value:i});
+        if false||(i==3) { break outer; }
+        continue outer;
+    }
+    assert(on1x_unique_live_allocations()==0);
+    assert(on1x_test_unique_allocator_live()==0);
+    println(42);
+}

@@ -1,13 +1,13 @@
-# Required upstream integration (outside this directory)
+# Native backend integration
 
-This folder is self-contained as a source package; it does **not** silently
-change On1x's security policy. These changes are necessary for the optional
-compiler-linked SDK 2 provider to become publicly selectable.
+The original package required the integration work below. It is now wired
+into the compiler as an explicit opt-in native backend, with separate trusted
+SDK admission and standalone paths.
 
-## 1. CMake wiring
+## 1. CMake wiring (implemented)
 
-In `on1x/backends/CMakeLists.txt`, after the existing `foreach()` creating
-built-in adapters, add a guarded opt-in subdirectory:
+`on1x/backends/CMakeLists.txt` includes the guarded opt-in subdirectory after
+creating the existing built-in adapters:
 
 ```cmake
 option(ON1X_BUILD_MIR_ARCHON "Build Archon native MIR backend" OFF)
@@ -19,17 +19,18 @@ if(ON1X_BUILD_MIR_ARCHON)
 endif()
 ```
 
-Build standalone by enabling `ON1X_BUILD_MIR_ARCHON`. For provider registration
-also set `ON1X_ARCHON_ENABLE_SDK_ADAPTER=ON` and
+Build standalone by enabling `ON1X_BUILD_MIR_ARCHON` and setting
 `ON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu` (or the true canonical
-triple for the generated native target). Note that the parent On1x project
+triple for the generated native target). For provider registration also set
+`ON1X_ARCHON_ENABLE_SDK_ADAPTER=ON`. Note that the parent On1x project
 currently declares `on1x_runtime` **after** entering `backends`; this folder's
 CMake deliberately allows the target to be created later.
 
-## 2. Manifest registrars
+## 2. Manifest registrars (implemented)
 
-If enabling the built-in SDK adapter, append the following to both the
-portable and Yellowstone manifests:
+Both the portable and Yellowstone manifests include the native registrar.
+The portable entry and generated C++ entry are guarded by
+`ON1X_WITH_MIR_ARCHON`, defined only when the SDK adapter target is linked:
 
 ```text
 # on1x/backends/BuiltinRegistrars.inc
@@ -41,52 +42,47 @@ ON1X_BUILTIN_REGISTRAR("mir-archon", on1x_builtin_mir_archon_register)
 qld.backend("mir-archon", "on1x_builtin_mir_archon_register")
 ```
 
-Extend the strict `registrars` table in
-`on1x/backends/link/GenerateRegistrars.cpp` with that exact pair. It is a
+The strict `registrars` table in
+`on1x/backends/link/GenerateRegistrars.cpp` includes that exact pair. It is a
 closed allowlist; adding only the Lua entry makes generation fail.
 
-## 3. Do not weaken native-artifact admission indiscriminately
+## 3. Trusted native-artifact admission (implemented)
 
-`on1x/sdk/src/Backend.cpp` currently refuses
-`ON1X_SDK_ARTIFACT_ASSEMBLY/OBJECT/EXECUTABLE` at provider registration and
-`on1x_sdk_backend_produce`. It must be changed **only for trusted, verified,
-explicitly selected, target-matched native providers**. External plugin
-providers must remain barred from claiming native artifact authority merely
-by choosing an output enum value. Retain the existing target/schema/feature
-matching, cancellation, budgets, byte staging and atomic artifact publication.
+`on1x/sdk/src/Backend.cpp` admits `ASSEMBLY` only for explicitly named,
+compiler-linked trusted native providers receiving verified MIR and matching
+an immutable target. Public external provider registration still rejects native
+authority; SDK `OBJECT` and `EXECUTABLE` production remain unsupported.
+Target/schema/feature matching, cancellation, budgets, staged bytes and atomic
+publication remain enforced. See [SDK security](../../sdk/SECURITY.md) and
+`on1x.sdk.native_backend_{v2,artifact}`.
 
-A sound change should relocate the rejection until after capability selection,
-then test `selected.trusted`, target descriptor, input verification and host
-admission policy. Do not simply remove the rejection or set
-`ON1X_SDK_BACKEND_TARGET_INDEPENDENT`. Update the SDK's published contract and
-its positive/negative native-artifact tests at the same time.
+## 4. Target-aware driver invocation (implemented)
 
-## 4. Target-aware driver invocation
-
-`on1x::backends::run_mir()` currently selects providers only when they declare
-`ON1X_SDK_BACKEND_TARGET_INDEPENDENT`, and the public `--sdk-emit` driver calls
-legacy `on1x_sdk_backend_run()`, not target-aware
-`on1x_sdk_backend_produce()`. Neither path can invoke this provider as written.
-
-Add a native emit mode to `on1xc`, or an explicit SDK 2 producer path with an
-immutable, validated `On1xSDK_Target`, an assembly request and a selected
-provider name `mir-archon`. The compiler should use a trusted private MIR view
-or verified serialization and transfer artifacts through the existing staging
-sink. The new mode must fail closed on target mismatch and should not change
-existing `--emit-ir-c`, `--emit-ir`, `--ir-cfg` or `--run-ir` behavior.
+`on1xc --sdk-emit mir-archon --sdk-target x86_64-unknown-linux-gnu INPUT`
+uses `run_native`/`run_mir_native` and target-aware
+`on1x_sdk_backend_produce()`. It supplies verified private MIR with its exact
+schema, a validated immutable target and an assembly request. `--optimize-ir`,
+`--native-pic` and `--native-no-entry` are supported. Plugin selection is
+rejected on this path. Existing MIR and legacy SDK modes retain their behavior.
 
 The standalone `on1x-archon-mir` driver already supports the same backend
 without an SDK policy change and is the preferred initial integration test.
 
-## 5. Executable linkage
+## 5. Executable linkage (implemented)
 
-Assembly is not a complete program. Provide a compiler driver / build-tool
-step which assembles and links it with `on1x_archon_scalar_abi`, `on1x_runtime`,
-any required On1x runtime platform dependencies, and the platform C runtime.
-Use the generated backend manifest to confirm the correct target and toolchain.
-Do not execute untrusted assembly in the compiler process.
+`tools/on1x-native-build.py` performs explicit source-to-native compilation,
+assembly and linkage with the scalar ABI, On1x runtime and platform libraries.
+It validates toolchain targets and ELF artifacts, bounds subprocess resources
+and publishes atomically. Provider callbacks never execute external tools.
+See [driver usage and tests](DRIVER.md).
 
 ## 6. Release gate
+
+AMD64 native differential, exact trap, ABI, cancellation and resource tests
+are executable CTests; see [measured evidence](tests/VERIFICATION.md).
+Other-target execution and a fully instrumented entire toolchain remain
+unqualified. Native emission remains opt-in and limited to the admitted MIR
+subset.
 
 Before enabling native output by default, run differential tests against
 `mir::evaluate()` and `mir::emit_c()`, including loop-carried tuples,

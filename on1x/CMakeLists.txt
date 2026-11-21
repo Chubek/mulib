@@ -25,6 +25,7 @@ option(ON1X_WITH_EXOML_EXTRACT "Enable real libclang CDecl extraction in on1x-bi
 option(ON1X_WITH_EXOTRACT "Build MuLIB static binding discovery and generation" OFF)
 option(ON1X_WITH_EXOTRACT_LUA "Build Exotract's Lua ExoLib frontend for KernelBind discovery" OFF)
 option(ON1X_BUILD_EXTENSION_SDK "Build and install the On1x extension SDK" ON)
+option(ON1X_BUILD_MIR_ARCHON "Build Archon native MIR backend" OFF)
 option(ON1X_BUILD_DYNAMIC_SDK_PLUGINS "Build the Linux x86-64 isolated SDK plugin worker" ON)
 set(ON1X_LINKED_SDK_EXTENSION "" CACHE FILEPATH
   "Optional trusted C/C++ source defining on1x_sdk_linked_extension for on1xc")
@@ -114,10 +115,12 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTE
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
 add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
-  src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
+  src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp
+  src/processor.cpp src/processor_semantic.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+add_subdirectory(processor)
 target_sources(on1x_frontend PRIVATE src/regex.cpp)
 if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
    EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/UTF8Automaton.hpp")
@@ -163,6 +166,24 @@ target_link_libraries(on1xc PRIVATE on1x_frontend on1x_pretty_kernels)
 target_compile_definitions(on1xc PRIVATE ON1X_DRIVER_SOURCE_TOOLS="${CMAKE_CURRENT_SOURCE_DIR}/tools")
 if(ON1X_BUILD_EXTENSION_SDK)
   add_subdirectory(backends)
+  if(BUILD_TESTING AND TARGET on1x_backend_mir_archon)
+    add_executable(on1x_sdk_test_native_backend_v2 sdk/tests/native_backend_v2.cpp)
+    target_include_directories(on1x_sdk_test_native_backend_v2 PRIVATE sdk/src backends)
+    target_compile_definitions(on1x_sdk_test_native_backend_v2 PRIVATE
+      ON1X_ARCHON_TARGET_TRIPLE="${ON1X_ARCHON_TARGET_TRIPLE}")
+    target_link_libraries(on1x_sdk_test_native_backend_v2 PRIVATE
+      on1x_backend_mir_archon on1x_frontend On1x::SDK)
+    add_test(NAME on1x.sdk.native_backend_v2 COMMAND on1x_sdk_test_native_backend_v2)
+    if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+        AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+        AND ON1X_ARCHON_TARGET_TRIPLE STREQUAL "x86_64-unknown-linux-gnu")
+      add_test(NAME on1x.sdk.native_backend_artifact
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sdk/tests/check_native_backend_artifact.py"
+          "$<TARGET_FILE:on1x_sdk_test_native_backend_v2>" "${CMAKE_C_COMPILER}"
+          "$<TARGET_FILE:on1x_archon_scalar_abi>" "$<TARGET_FILE:on1x_runtime>"
+          "${CMAKE_CURRENT_BINARY_DIR}/sdk-native-artifact")
+    endif()
+  endif()
   target_sources(on1xc PRIVATE sdk/src/Driver.cpp)
   target_include_directories(on1xc PRIVATE sdk/src)
   target_link_libraries(on1xc PRIVATE On1x::SDK on1x_builtin_backends)
@@ -190,6 +211,8 @@ if(ON1X_BUILD_EXTENSION_SDK)
           "$<TARGET_FILE:on1xc>" "$<TARGET_FILE:on1x_sdk_dynamic_fixture>" "${CMAKE_C_COMPILER}")
     endif()
   endif()
+elseif(ON1X_BUILD_MIR_ARCHON)
+  add_subdirectory(backends/mir-archon)
 endif()
 if(ON1X_LINKED_SDK_EXTENSION)
   target_sources(on1xc PRIVATE "${ON1X_LINKED_SDK_EXTENSION}")
@@ -278,7 +301,7 @@ endif()
 install(TARGETS on1xc RUNTIME DESTINATION bin)
 install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
-install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py DESTINATION share/on1x/tools)
+install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
 install(FILES tools/on1x_project.py tools/on1x_inline.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
@@ -494,6 +517,19 @@ if(BUILD_TESTING)
     add_test(NAME on1x.external_memory_model COMMAND on1x_external_memory_example)
   endif()
   add_executable(on1x_pass_tests tests/test_passes.cpp)
+  add_executable(on1x_processor_engine_tests tests/test_processor_engine.cpp)
+  target_link_libraries(on1x_processor_engine_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.processor_engine COMMAND on1x_processor_engine_tests)
+  add_executable(on1x_processor_semantic_tests tests/test_processor_semantic.cpp)
+  target_link_libraries(on1x_processor_semantic_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.processor_semantic COMMAND on1x_processor_semantic_tests)
+  add_test(NAME on1x.processor_integration
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_processor.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/processor"
+      "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.processor_engine on1x.processor_semantic
+    on1x.processor_integration PROPERTIES TIMEOUT 240)
   target_link_libraries(on1x_pass_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.passes_hir COMMAND on1x_pass_tests)
   set_tests_properties(on1x.passes_hir PROPERTIES TIMEOUT 120)
@@ -504,6 +540,15 @@ if(BUILD_TESTING)
     set_tests_properties(on1x.relational_hir PROPERTIES TIMEOUT 120)
   endif()
   add_executable(on1x_mir_tests tests/test_mir.cpp)
+  add_executable(on1x_mir_decision_tests tests/test_mir_decision.cpp)
+  target_link_libraries(on1x_mir_decision_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.mir_decision_hir COMMAND on1x_mir_decision_tests)
+  add_test(NAME on1x.mir_decision
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mir_decision.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/mir-decision"
+      "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.mir_decision_hir on1x.mir_decision PROPERTIES TIMEOUT 240)
   target_link_libraries(on1x_mir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_hir COMMAND on1x_mir_tests)
   set_tests_properties(on1x.mir_hir PROPERTIES TIMEOUT 40)

@@ -106,6 +106,19 @@ void constant_fold(Module& m,Budget& budget){
     const auto& i=*instructions.at(id);bool all=!i.operands.empty();
     for(auto v:i.operands){budget.tick(at);if(!known.contains(v)){all=false;break;}}
     if(all)value=fold(i.op,known.at(i.operands[0]),i.operands.size()>1?known.at(i.operands[1]):0);
+     // These i64 annihilators are nontrapping for every possible operand,
+     // including INT64_MIN. Only replace the result: operand producers remain
+     // in place, so calls, loads and earlier checked arithmetic still execute.
+     // Do not extend to x/x, x%x or x%-1 (zero/overflow traps), nor Numeric
+     // operations (unsigned/IEEE semantics require their own proof).
+     if(!value&&i.operands.size()==2){
+      auto literal=[&](std::size_t n,std::int64_t expected){
+       auto found=known.find(i.operands[n]);return found!=known.end()&&found->second==expected;
+      };
+      if((i.op==Op::Sub&&i.operands[0]==i.operands[1])||
+         (i.op==Op::Mul&&(literal(0,0)||literal(1,0)))||
+         (i.op==Op::Mod&&literal(1,1)))value=0;
+     }
    }
    if(!value)continue;
    budget.edit(at);known.emplace(id,*value);folded.emplace(id,*value);
@@ -182,8 +195,36 @@ void dead_pure(Module& m,Budget& budget){
 void local_slots(Module& m,Budget& budget){
  for(auto& f:m.functions){
   std::map<Id,Id> aliases;std::set<Id> removed;
+  std::map<Id,const Block*> blocks;
+  std::map<Id,std::set<Id>> predecessors;
   for(const auto& b:f.blocks){
-   // Only same-block reaching values are evidence. A callee cannot access a
+   budget.tick(b.where);blocks.emplace(b.id,&b);
+   for(const auto& edge:b.exit.edges){
+    budget.tick(b.exit.where);predecessors[edge.block].insert(b.id);
+   }
+  }
+  auto reaching_store=[&](const Block& block,Id slot)->std::optional<Id>{
+   // Every traversed predecessor dominates its sole-predecessor successor.
+   // Do not guess a reaching value at a branch join or across a loop header.
+   // No recursion, fixed-point assumption, or block-vector order is involved.
+   auto cursor=block.id;std::set<Id> seen{cursor};
+   while(cursor!=f.blocks.front().id){
+    budget.tick(block.where);
+    auto found=predecessors.find(cursor);
+    if(found==predecessors.end()||found->second.size()!=1)break;
+    auto previous=*found->second.begin();
+    if(!seen.insert(previous).second)break;
+    const auto& source=*blocks.at(previous);
+    for(auto i=source.instructions.rbegin();i!=source.instructions.rend();++i){
+     budget.tick(i->where);
+     if(i->op==Op::Store&&i->target==slot)return i->operands[0];
+    }
+    cursor=previous;
+   }
+   return {};
+  };
+  for(const auto& b:f.blocks){
+   // Store deletion remains strictly same-block. A callee cannot access a
    // caller's slots: MIR has neither slot addresses nor indirect/foreign calls.
    std::map<Id,Id> values;std::map<Id,const Instruction*> stores;
    for(const auto& i:b.instructions){
@@ -196,6 +237,9 @@ void local_slots(Module& m,Budget& budget){
     }else if(i.op==Op::Load){
      if(auto v=values.find(i.target);v!=values.end()){
       budget.edit(i.where);aliases.emplace(i.id,v->second);removed.insert(i.id);
+     }else if(auto incoming=reaching_store(b,i.target)){
+      budget.edit(i.where);aliases.emplace(i.id,*incoming);removed.insert(i.id);
+      values[i.target]=*incoming;
      }else values[i.target]=i.id;
     }
    }
@@ -260,14 +304,14 @@ Views views(const Module& m){
 }
 const Descriptor& descriptor(Pass pass){
  static const Descriptor descriptors[]={
-  {Pass::ConstantFold,"constant-fold",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
+  {Pass::ConstantFold,"constant-fold",3,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
     {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::SimplifyCFG,"simplify-cfg",2,{"verified-mir"},{Analysis::Signatures},
     {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::DeadPure,"dead-pure",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls,Analysis::Effects},
     {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
-  {Pass::LocalSlots,"local-slots",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
-    {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations + slots/nonmemory barriers"}
+   {Pass::LocalSlots,"local-slots",3,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
+     {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local and unique-predecessor reaching loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds and predecessor walks","MIR + preservation + retained source locations + slots/nonmemory barriers"}
  };
  auto index=static_cast<std::size_t>(pass);if(index>=std::size(descriptors))fail({"<mir-pass>"},"unknown pass");return descriptors[index];
 }

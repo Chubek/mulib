@@ -16,6 +16,8 @@
 #include <on1x/concurrency.hpp>
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
+#include <on1x/sema.hpp>
+#include <on1x/clone.hpp>
 #include <charconv>
 #include <climits>
 #include <map>
@@ -372,13 +374,13 @@ class Checker {
             if(offer.kind==Expr::Kind::Boolean&&offer.text=="true"&&i+1==e.children.size()){
              fields.push_back(Type::data(Type::Record,{}));labels.push_back("Default");break;
             }
-           if(offer.kind==Expr::Kind::SourceCsp&&offer.text=="offer_after"){
+           if((offer.kind==Expr::Kind::SourceCsp||offer.kind==Expr::Kind::Csp)&&offer.text=="offer_after"){
             if(has_deadline||offer.children.size()!=1)fail(offer.where,"invalid or duplicate poll deadline");
             has_deadline=true;
             offer.type=Type::Void;equal(check_expr(*offer.children[0]),Type::I64,offer.where);
             fields.push_back(Type::data(Type::Record,{}));labels.push_back("After");continue;
            }
-           if(offer.kind!=Expr::Kind::SourceCsp||(offer.text!="offer_recv"&&offer.text!="offer_send")||
+           if((offer.kind!=Expr::Kind::SourceCsp&&offer.kind!=Expr::Kind::Csp)||(offer.text!="offer_recv"&&offer.text!="offer_send")||
               offer.children.size()!=(offer.text=="offer_recv"?1u:2u))fail(offer.where,"invalid poll offer");
            offer.type=Type::Void;
             auto endpoint=check_expr(*offer.children[0]);bool receive=offer.text=="offer_recv";
@@ -970,18 +972,42 @@ class Checker {
    generic_context=false;
  }
 };
-   void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces,analysis::Context* analysis_context){
-    require_no_kernel_imports(u);cliches::prepare(u);inherent::prepare(u);
-    expand_macros(u);meta::require_core(u);infer_types(u);
-    cliches::verify_elaborated(u);inherent::verify_elaborated(u);
-    canonical::lower_control(u);
-   Checker(u).run(interfaces);
-   if(analysis_context)analysis::run(u,*analysis_context);
-   if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run(interfaces);}
-  csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);
+   void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces,analysis::Context* analysis_context,
+                   processor::Report* output=nullptr){
+    if(output)*output={};
+    processor::Report evidence;
+     require_no_kernel_imports(u);cliches::prepare(u);inherent::prepare(u);
+     expand_macros(u);meta::require_core(u);infer_types(u);
+     cliches::verify_elaborated(u);inherent::verify_elaborated(u);
+     evidence.structural=processor::validate(u,processor::SemanticStage::Structural);
+     canonical::lower_control(u);
+    Checker(u).run(interfaces);
+    if(analysis_context)analysis::run(u,*analysis_context);
+    if(canonical::needs_values(u)){canonical::lower_values(u);Checker(u).run(interfaces);}
+   csp::lower(u);canonical::verify_control(u);canonical::verify_values(u);csp::verify(u,true);extensions::verify_evidence(u);
+    // Source diagnostics, including mandatory ownership/borrow flow checking,
+    // precede any compiled rewrite that could remove an invalid operand.
+    evidence.typed_before=processor::validate(u,processor::SemanticStage::Typed);
+    if(analysis_context&&analysis_context->diagnostics.has_errors())return;
+    std::size_t budget=262144;
+    auto candidate=clone_unit(u,budget);
+    for(const auto phase:{processor::Phase::Desugar,processor::Phase::Canonicalize}){
+     auto stats=processor::apply(candidate,phase);
+     // Validate annotations before Checker can recompute them. Never repeat
+     // inference, macro expansion or source lowering on this private HIR.
+     evidence.typed_after=processor::validate(candidate,processor::SemanticStage::Typed);
+     Checker(candidate).run(interfaces);
+     canonical::verify_control(candidate);canonical::verify_values(candidate);
+     csp::verify(candidate,true);extensions::verify_evidence(candidate);
+     if(phase==processor::Phase::Desugar)evidence.desugar=std::move(stats);
+     else evidence.canonicalize=std::move(stats);
+    }
+    u=std::move(candidate);evidence.verified=true;
+    if(output)*output=std::move(evidence);
  }
 }
-  void check(Unit& u,analysis::Context& context){check_unit(u,nullptr,&context);}
+   void check(Unit& u,analysis::Context& context){check_unit(u,nullptr,&context);}
+   void check(Unit& u,analysis::Context& context,processor::Report& report){check_unit(u,nullptr,&context,&report);}
   void check(Unit& u){
    diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};
    check_unit(u,nullptr,&context);

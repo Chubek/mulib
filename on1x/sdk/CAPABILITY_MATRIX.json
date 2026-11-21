@@ -116,8 +116,8 @@
       "owner": 5,
       "status": "PARTIAL",
       "headers": ["On1xSDK-Backend.h", "On1xSDK-Target.h", "On1xSDK-Artifact.h", "On1xSDK-ToolchainResolver.h", "On1xSDK-MachineIR.h", "On1xSDK-AOT.h", "On1xSDK-JIT.h"],
-      "subset": "Five canonical built-in adapters, explicit capabilities and target matching, bounded staged artifacts with digest/reproducibility checks, and host-authorized inert toolchain resolution.",
-      "blockers": ["No verified direct machine-code pipeline, native JIT or general cross-target ABI.", "Toolchain resolution does not execute tools or search PATH."]
+      "subset": "Five canonical built-in adapters plus opt-in trusted target-bound mir-archon native assembly from verified MIR; explicit capabilities, bounded staged artifacts with digest/reproducibility checks, and host-authorized inert toolchain resolution.",
+      "blockers": ["Native SDK object/executable artifacts, external-provider native admission, native JIT and general cross-target ABI remain unsupported.", "Toolchain resolution does not execute tools or search PATH."]
     },
     {
       "id": "ffi.contracts",

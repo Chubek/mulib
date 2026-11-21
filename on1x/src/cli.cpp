@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/analysis.hpp>
+#include <on1x/sema.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
@@ -448,7 +449,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
-   "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
+    "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
+    "       on1xc --sdk-emit mir-archon --sdk-target TRIPLE INPUT [-o ASSEMBLY] [--ir-input] [--optimize-ir]\n"
+    "         native options: --native-pic --native-no-entry\n"
    "       [--plugin +NAME_OR_PATH] (repeatable in SDK hook modes)\n"
    "       on1xc sdk COMMAND [ARGS ...] (bounded SDK data tool)\n"
 #endif
@@ -456,6 +459,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
   "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
   "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
+  "       on1xc --dump-processor INPUT [-o OUTPUT]\n"
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
   "       [--admitted-extern FILE] (reviewed scalar-only extern evidence; memory modes only)\n"
   "       [--memory-check] (check resource usage before source compilation)\n"
@@ -503,7 +507,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      return format_command(argc,argv,command);
    }
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
-         std::string sdk_mode,sdk_name;
+          std::string sdk_mode,sdk_name,sdk_target;
+          bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
          bool explicit_c=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
@@ -527,7 +532,18 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          throw std::runtime_error("specify one SDK mode with a nonempty hook name");
          sdk_mode=arg;sdk_name=argv[i];continue;
         }
-        if(arg=="--plugin"){
+         if(arg=="--native-pic"){native_pic=true;continue;}
+         if(arg=="--native-no-entry"){native_no_entry=true;continue;}
+         if(arg=="--sdk-target"){
+          if(!sdk_target.empty()||++i>=argc||!argv[i][0])
+           throw std::runtime_error("--sdk-target requires one nonempty target triple");
+          sdk_target=argv[i];
+          if(sdk_target.size()>256||sdk_target.find_first_not_of(
+             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")!=std::string::npos)
+           throw std::runtime_error("invalid --sdk-target triple");
+          continue;
+         }
+         if(arg=="--plugin"){
          if(++i>=argc)throw std::runtime_error("--plugin requires +NAME_OR_PATH");
          std::string_view selector=argv[i];
          if(!selector.starts_with('+')||selector.size()==1)
@@ -597,7 +613,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-     if(arg=="--check-memory"||arg=="--check-interfaces"){mode=arg;continue;}
+      if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -652,7 +668,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
    }
-           if(!sdk_mode.empty()&&(mode!="--emit-c"||explicit_c||optimize||opt_limit||
+            if(!sdk_target.empty()&&(sdk_mode!="--sdk-emit"||sdk_name!="mir-archon"||!plugin_selectors.empty()))
+             throw std::runtime_error("--sdk-target requires --sdk-emit mir-archon without plugins");
+            if((native_pic||native_no_entry)&&sdk_target.empty())
+             throw std::runtime_error("--native-pic and --native-no-entry require target-aware native emission");
+            if(!sdk_mode.empty()&&(mode!="--emit-c"||explicit_c||((optimize||opt_limit)&&sdk_target.empty())||
               (sdk_mode=="--sdk-analyze"&&!out.empty())))
             throw std::runtime_error("SDK modes cannot be combined with other modes, MIR optimization, or analyzer output files");
 #ifdef ON1X_WITH_EXTENSION_SDK
@@ -758,9 +778,19 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
        mir_mode=mir_mode||!sdk_mode.empty();
 #ifdef ON1X_WITH_EXTENSION_SDK
-      auto sdk_output=[&](const on1x::mir::Module& module){
-       const bool emit=sdk_mode=="--sdk-emit";
-       auto result=on1x::sdk_driver::run(module,source,sdk_name,emit,diagnostic_registry,plugin_selectors);
+       auto sdk_output=[&](const on1x::mir::Module& input){
+        const bool emit=sdk_mode=="--sdk-emit";
+        std::optional<on1x::mir::passes::Result> optimized;
+        if(optimize){
+         optimized=on1x::mir::passes::run(input,optimization);
+         if(optimized->status()==on1x::mir::passes::Status::BudgetExhausted)
+          std::cerr<<"on1xc: ON1X-MIR-PASS: "<<terminal_text(optimized->diagnostic())<<"; using last verified MIR prefix\n";
+        }
+        const auto& module=optimized?optimized->module():input;
+        auto result=sdk_target.empty()
+         ?on1x::sdk_driver::run(module,source,sdk_name,emit,diagnostic_registry,plugin_selectors)
+         :on1x::sdk_driver::run_native(module,source,sdk_name,sdk_target,diagnostic_registry,plugin_selectors,
+            {.pic=native_pic,.emit_c_entrypoint=!native_no_entry});
        publish_diagnostics();
        if(result.exit_code!=0)return result.exit_code;
        if(emit){
@@ -839,7 +869,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
     on1x::meta::rewrite(unit,ppx);
      on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
-     on1x::check(unit,analysis_context);
+      on1x::processor::Report processor_report;
+      if(mode=="--dump-processor")on1x::check(unit,analysis_context,processor_report);
+      else on1x::check(unit,analysis_context);
      if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
      auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
@@ -849,7 +881,14 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_CHISEL
      if(memory){auto evidence=on1x::safety::check(unit,{},admitted);if(mode=="--check-memory"){publish_diagnostics();write_all(out,evidence);return 0;}}
 #endif
-     if(mode=="--check-types"){publish_diagnostics();write_all(out,type_evidence);return 0;}
+      if(mode=="--check-types"){publish_diagnostics();write_all(out,type_evidence);return 0;}
+      if(mode=="--dump-processor"){
+       publish_diagnostics();
+       auto text=on1x::processor::report(processor_report);
+       if(out.empty()||out=="-")write_all(out,text);
+       else publish_regular_file(out,text,"processor",".on1x-processor-XXXXXX");
+       return 0;
+      }
      if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
       if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
        if(mir_mode){

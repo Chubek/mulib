@@ -47,6 +47,70 @@ and differential tests. Continues nested in expression regions still execute the
 target latch. Records/sums/arrays/slices, strings and managed/foreign resources
 remain unsupported MIR profiles; C11 matching does not widen those boundaries.
 
+### Canonical boolean decision lowering
+
+After ordinary canonical verification, `src/backend/lower.cpp` recognizes this
+narrow, typed value-region shape:
+
+```text
+Region<bool>(
+  Storage<bool> result;
+  If(condition, Initialize(result, yes), Initialize(result, no));
+  Local<bool>(result))
+```
+
+It emits a bool block parameter (phi), rather than a temporary slot and its
+stores/load. Eligibility is structural: no generated-name prefix grants
+authority. A bounded scan requires the condition and both initializer subtrees
+to contain no reference or rebinding to that temporary; even a legal nested
+shadowing of the spelling conservatively uses ordinary storage lowering.
+Additional statements, non-bool results, unsafe outer regions, patterns and
+retained prototype/template evidence do not enter this fast path.
+
+The condition executes once before the selected initializer. Initializers still
+use ordinary expression lowering, including nested decisions, lexical mutable
+state, calls and checked traps. A literal `true` on the true edge or `false` on
+the false edge forwards the already evaluated condition directly to the join,
+avoiding a redundant block. Other arms supply their own result; terminating
+arms supply no edge or phi argument. Captured operations retain their source
+locations and the phi carries the original result location.
+
+Recognition has a shared allowance of `min(Limits.work, 262144)` visits and
+depth 128. Exhaustion declines the optimization; normal node/analysis limits
+and all source/candidate/MIR checks still apply. There is no full mem2reg,
+resource/drop promotion, or relaxation of LocalSlots predecessor restrictions.
+The `.o1m` rules still execute and their verified canonical HIR remains intact.
+`tests/test_mir_decision.cpp` checks structural eligibility, malformed input,
+early-return initialization, budgets and round-trips; `test_mir_decision.py`
+compares effect/trap traces through HIR→C11, MIR→C11, evaluation and configured
+native code, with MIR optimization both off and on.
+
+Focused verification (2026-11-21, GCC 16.2.1, Linux x86_64):
+
+```sh
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-opt2-build \
+  -R '^on1x[.]mir_decision(_hir)?$' --output-on-failure
+c++ -std=c++20 -g -O1 -fsanitize=address,undefined -fno-omit-frame-pointer \
+  -Ion1x/include on1x/src/backend/lower.cpp on1x/tests/test_mir_decision.cpp \
+  /mnt/andromeda/tempdir/opencode/on1x-opt2-build/libon1x_frontend.a \
+  /mnt/andromeda/tempdir/opencode/on1x-opt2-build/libon1x_scanner.a \
+  -o /mnt/andromeda/tempdir/opencode/on1x-opt2-decision-sanitized
+/mnt/andromeda/tempdir/opencode/on1x-opt2-decision-sanitized
+```
+
+Both CTests passed, including 21 differential executions with the configured
+native bridge; the focused ASan/UBSan executable passed. The sanitizer command
+instruments the changed lowerer and its test, not the linked frontend/scanner
+archives. The same tests against the preserved `on1x-meta-build` baseline fail
+their temporary-storage regression gates (the Python execution comparisons
+pass before that gate). Performance evidence is recorded separately in the
+[processor benchmark feedback](../benchmark/PROCESSOR_FEEDBACK.md).
+The pass suite retains its lazy-source semantic checks. Its later-round
+LocalSlots→CFG regression uses explicit mutable boolean storage, since direct
+decision SSA no longer needs that feedback; a pipeline excluding LocalSlots
+must retain the unreachable division, while the full pipeline must remove it
+and commit CFG simplification in a later round.
+
 The v2 continuation adds f64 literals/operations and **trivially copied tuples**.
 Existing scalar source still lowers to v1, and existing v1 artifacts continue to
 decode and round-trip as v1. Lowering selects v2 only when extended types/opcodes

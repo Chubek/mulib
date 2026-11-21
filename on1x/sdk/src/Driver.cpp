@@ -203,6 +203,24 @@ void check_plugin_selection(const std::vector<std::string> &selectors, std::stri
 #endif
 }
 
+Result run_native(const mir::Module &module, const std::string &input,
+                  const std::string &hook, std::string_view target,
+                  diagnostic::Registry &diagnostics, const std::vector<std::string> &selectors,
+                  const backends::NativeOptions &options)
+{
+    Report report{diagnostics, input};
+    if (hook != "mir-archon" || target.empty() || !selectors.empty()) {
+        report.status(ON1X_SDK_INVALID_ARGUMENT,
+                      "native emission requires mir-archon, an exact target and no --plugin", hook);
+        return {1, {}};
+    }
+    // This route never discovers ON1X_PLUGIN_PATH or activates external code.
+    // Source verification, immutable target creation and staged SDK publication
+    // are performed by the compiler's explicitly linked builtin dispatcher.
+    auto product = backends::run_mir_native(module, target, options);
+    return {product.exit_code, std::move(product.bytes)};
+}
+
 Result run(const mir::Module &module, const std::string &input, const std::string &hook,
            bool emit, diagnostic::Registry &diagnostics, const std::vector<std::string> &selectors)
 {

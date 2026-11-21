@@ -141,8 +141,9 @@ typedef struct On1xSDK_BackendRequest {
 /*
  * Registration deep-copies descriptor strings/arrays. Public providers receive
  * serialized VERIFIED_MIR only. Checked-HIR adapters remain trusted built-ins.
- * Native assembly/object/executable capabilities reject as UNSUPPORTED until a
- * verified On1x machine pipeline is available.
+ * Public native assembly/object/executable capabilities remain UNSUPPORTED.
+ * Only the compiler's private trusted registrar can admit target-bound assembly
+ * from verified MIR; plugins cannot acquire this authority through metadata.
  */
 On1xSDK_Status on1x_sdk_backend_provider_register(
     On1xSDK_Registry *registry, const On1xSDK_BackendProvider *provider);
@@ -151,6 +152,9 @@ On1xSDK_Status on1x_sdk_backend_provider_register(
  * Deterministically selects the unique highest-priority compatible provider,
  * runs it synchronously into a private staging sink, and returns no artifact on
  * failure. Equal best-ranked providers are an ambiguity and return DUPLICATE.
+ * Native assembly additionally requires an explicit provider_name, a matching
+ * target and a host-authorized compiler-linked provider. Object/executable
+ * production is unsupported. No artifact is executed or published to disk.
  */
 On1xSDK_Status on1x_sdk_backend_produce(const On1xSDK_Registry *registry,
                                         const On1xSDK_BackendRequest *request,

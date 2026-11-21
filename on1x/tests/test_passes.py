@@ -73,6 +73,26 @@ for sample in range(8):
 rng = random.Random(8401)
 lo, hi = -(1 << 63), (1 << 63)-1
 boundary = [lo, lo+1, -3037000500, -1, 0, 1, 3037000499, hi-1, hi]
+# Runtime parameters prevent ordinary literal folding from masking the new
+# integer identities. Python's exact arithmetic supplies the expected answers.
+annihilator_rng = random.Random(8402)
+annihilator_inputs = boundary + [annihilator_rng.getrandbits(64)-(1 << 63) for _ in range(80)]
+annihilator = tests.source('annihilator',
+    'fn cancel(x:i64)->i64{return (x-x)+(x*0)+(0*x)+(x%1);}'
+    'fn main(){' + ''.join(f'println(cancel({x}));' for x in annihilator_inputs) + '}')
+before, after = check('annihilator', annihilator,
+                     ''.join(f'{(x-x)+(x*0)+(0*x)+(x%1)}\n' for x in annihilator_inputs))
+assert all(op in before and op not in after for op in ['sub.checked', 'mul.checked', 'mod.checked'])
+for n, expression in enumerate(['0*(1/0)', '(1/0)*0', '(1/0)%1',
+                                '(9223372036854775807+1)*0']):
+    trapping = tests.source(f'annihilator_trap_{n}',
+                           f'fn main(){{println(7);println({expression});println(9);}}')
+    for mode, options in [('--emit-c', []), ('--emit-ir-c', []), ('--emit-ir-c', ['--optimize-ir'])]:
+        code = tests.work/f'annihilator_trap_{n}.c'
+        p = run([tests.compiler, mode, trapping, *options, '-o', code])
+        assert p.returncode == 0, p.stderr
+        p = compile_run(code, f'annihilator_trap_{n}')
+        assert p.returncode == 70 and p.stdout == '7\n', (p.returncode, p.stdout, p.stderr)
 pairs = [(a, b) for a in boundary for b in boundary]
 pairs += [(rng.getrandbits(64)-(1 << 63), rng.getrandbits(64)-(1 << 63)) for _ in range(160)]
 statements, expected = [], []

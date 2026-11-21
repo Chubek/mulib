@@ -19,16 +19,20 @@ target_link_libraries(on1x_archon_scalar_abi PUBLIC on1x_runtime)
 
 add_executable(on1x-archon-mir Tool.cpp)
 target_link_libraries(on1x-archon-mir PRIVATE on1x_archon_bridge)
+install(TARGETS on1x-archon-mir RUNTIME DESTINATION bin)
+install(TARGETS on1x_archon_scalar_abi ARCHIVE DESTINATION lib)
 
 option(ON1X_ARCHON_ENABLE_SDK_ADAPTER "Build target-aware trusted SDK 2 provider" OFF)
 set(ON1X_ARCHON_TARGET_TRIPLE "" CACHE STRING
     "Exact On1x SDK target triple corresponding to generated Archon::Backend")
+if(NOT ON1X_ARCHON_TARGET_TRIPLE)
+  message(FATAL_ERROR "Set ON1X_ARCHON_TARGET_TRIPLE for the generated native target")
+endif()
+target_compile_definitions(on1x-archon-mir PRIVATE
+  ON1X_ARCHON_TARGET_TRIPLE="${ON1X_ARCHON_TARGET_TRIPLE}")
 if(ON1X_ARCHON_ENABLE_SDK_ADAPTER)
   if(NOT TARGET On1x::SDK)
     message(FATAL_ERROR "mir-archon SDK adapter requires On1x::SDK")
-  endif()
-  if(NOT ON1X_ARCHON_TARGET_TRIPLE)
-    message(FATAL_ERROR "Set ON1X_ARCHON_TARGET_TRIPLE for native SDK admission")
   endif()
   add_library(on1x_backend_mir_archon STATIC Backend.cpp)
   target_include_directories(on1x_backend_mir_archon PRIVATE
@@ -41,6 +45,10 @@ if(ON1X_ARCHON_ENABLE_SDK_ADAPTER)
 endif()
 
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
+  add_test(NAME on1x.backends.mir_archon_tool_target
+    COMMAND on1x-archon-mir --print-target)
+  set_tests_properties(on1x.backends.mir_archon_tool_target PROPERTIES
+    PASS_REGULAR_EXPRESSION "${ON1X_ARCHON_TARGET_TRIPLE}")
   add_executable(on1x_archon_test tests/TestBridge.cpp)
   target_link_libraries(on1x_archon_test PRIVATE on1x_archon_bridge)
   add_test(NAME on1x.backends.mir_archon COMMAND on1x_archon_test)
@@ -50,5 +58,35 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   if(Python3_EXECUTABLE)
     add_test(NAME on1x.backends.mir_archon_scalar_abi_regen
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_scalar_abi.py" --check)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+        AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+        AND ON1X_ARCHON_TARGET_TRIPLE STREQUAL "x86_64-unknown-linux-gnu")
+      add_test(NAME on1x.backends.mir_archon_scalar_abi
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_scalar_abi.py"
+          --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}"
+          --build-dir "${CMAKE_CURRENT_BINARY_DIR}/scalar-abi-tests"
+          --native-tool "$<TARGET_FILE:on1x-archon-mir>")
+      set_tests_properties(on1x.backends.mir_archon_scalar_abi PROPERTIES TIMEOUT 240)
+      add_executable(on1x_archon_native_fixture tests/NativeFixture.cpp)
+      target_compile_features(on1x_archon_native_fixture PRIVATE cxx_std_20)
+      target_compile_options(on1x_archon_native_fixture PRIVATE -Wall -Wextra -Wpedantic -Werror)
+      target_link_libraries(on1x_archon_native_fixture PRIVATE on1x_archon_bridge)
+      set(_archon_sdk_test_args)
+      if(ON1X_ARCHON_ENABLE_SDK_ADAPTER)
+        list(APPEND _archon_sdk_test_args --sdk-target "${ON1X_ARCHON_TARGET_TRIPLE}")
+      endif()
+      add_test(NAME on1x.backends.mir_archon_native_differential
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_differential.py"
+          --fixture-tool "$<TARGET_FILE:on1x_archon_native_fixture>"
+          --archon-tool "$<TARGET_FILE:on1x-archon-mir>"
+          --on1xc "$<TARGET_FILE:on1xc>" --cc "${CMAKE_C_COMPILER}"
+          --runtime "$<TARGET_FILE:on1x_runtime>"
+          --scalar-abi "$<TARGET_FILE:on1x_archon_scalar_abi>"
+          --runtime-include "${PROJECT_SOURCE_DIR}/runtime"
+          --work "${CMAKE_CURRENT_BINARY_DIR}/native-differential" ${_archon_sdk_test_args})
+      set_tests_properties(on1x.backends.mir_archon_native_differential PROPERTIES TIMEOUT 180)
+      add_test(NAME on1x.backends.mir_archon_native_limits
+        COMMAND on1x_archon_native_fixture --checks)
+    endif()
   endif()
 endif()

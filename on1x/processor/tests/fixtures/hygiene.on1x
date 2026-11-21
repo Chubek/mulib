@@ -1,0 +1,12 @@
+fn helper(value:bool)->bool { println(1); return value; }
+macro identity { rule($x:Expression)=>expression { helper($x) && true }; }
+macro capture { rule($x:Expression)=>expression {
+    fn(temporary:bool)->bool { return false || ($x && temporary); }(true)
+}; }
+fn main() {
+    let helper=fn(value:bool)->bool { println(99); return false; };
+    let temporary=true;
+    println(identity!(temporary));
+    println(capture!(temporary));
+    { let temporary=false; println(capture!(temporary)); }
+}

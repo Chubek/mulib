@@ -1,0 +1,21 @@
+fn exchange(x:((i64,bool),(f64,u8)))->((i64,bool),(f64,u8)) {
+  let ((n,b),(f,w))=x;
+  return ((n+1,!b),(-f,w));
+}
+fn main() {
+  var x=((10,true),(1.5,255u8));
+  let old=x;
+  x=exchange(x);
+  let ((a,b),(c,d))=old;
+  let ((e,f),(g,h))=x;
+  println(a);println(b);println(c);println(d);
+  println(e);println(f);println(g);println(h);
+  var n=0;
+  while n<5 {
+    let snapshot=x;
+    x=exchange(x);
+    let ((q,r),(s,t))=snapshot;
+    println(q);println(r);println(s);println(t);
+    n=n+1;
+  }
+}

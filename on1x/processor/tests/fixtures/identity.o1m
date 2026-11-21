@@ -1,0 +1,12 @@
+meta 1;
+budget steps 100000 nodes 100000 depth 128;
+rule remove_double_not phase canonicalize priority 100
+match Unary("!", Unary("!", $value))
+replace $value
+guard boolean;
+rule lazy_and phase desugar priority 100
+match Binary("&&", $left, $right)
+replace Select("", $left, $right, Boolean("false"))
+guard boolean;
+constraint binary_children phase semantic
+match Binary require arity "2" message "binary needs two children";

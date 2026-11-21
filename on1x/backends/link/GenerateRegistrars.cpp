@@ -21,6 +21,7 @@ constexpr std::array registrars{
     Registrar{"mir-eval", "on1x_builtin_mir_eval_register"},
     Registrar{"mir-text", "on1x_builtin_mir_text_register"},
     Registrar{"mir-cfg", "on1x_builtin_mir_cfg_register"},
+    Registrar{"mir-archon", "on1x_builtin_mir_archon_register"},
 };
 
 std::string render(std::string_view manifest) {
@@ -45,11 +46,13 @@ std::string render(std::string_view manifest) {
         seen[i] = true;
         ++count;
 
+        if (name == "mir-archon") result += "#if defined(ON1X_WITH_MIR_ARCHON)\n";
         result += "ON1X_BUILTIN_REGISTRAR(\"";
         result += name;
         result += "\", ";
         result += symbol;
         result += ")\n";
+        if (name == "mir-archon") result += "#endif\n";
     }
     if (count != registrars.size())
         throw std::runtime_error("missing required built-in backend registration");

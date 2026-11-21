@@ -15,8 +15,10 @@ namespace on1x::backends::archon {
 class Error : public std::runtime_error {
 public:
     Location where;
-    explicit Error(Location where, std::string message)
-        : std::runtime_error(std::move(message)), where(std::move(where)) {}
+    ArchonBackendStatus status;
+    explicit Error(Location where, std::string message,
+                   ArchonBackendStatus status = ARCHON_BACKEND_INVALID)
+        : std::runtime_error(std::move(message)), where(std::move(where)), status(status) {}
 };
 
 struct Options {
@@ -25,15 +27,19 @@ struct Options {
     std::size_t max_values_per_function = 8192;
     std::size_t max_instructions_per_function = 32768;
     std::size_t max_local_bytes_per_function = 32768;
+    std::size_t max_instructions_per_module = 65536;
     bool pic = false;
     bool emit_c_entrypoint = true;
-    // Borrowed, synchronous. Nonzero requests cancellation.
+    // Borrowed, synchronous, must not throw. Nonzero requests cancellation.
+    // Polled before/after bounded MIR verification, throughout lowering, and
+    // by the native backend. The canonical verifier has no polling callback.
     int (*cancelled)(void *) = nullptr;
     void *cancel_userdata = nullptr;
 };
 
 // Owns all MachineIR arrays, string backing storage, instructions, edges and
-// import signatures. Pointers returned by view() stay valid for its lifetime.
+// import signatures. Moving transfers pointer ownership without invalidation.
+// Pointers expire when their owning storage is destroyed or move-assigned over.
 class MachineModule {
 public:
     struct Impl;
@@ -42,6 +48,7 @@ public:
     MachineModule &operator=(MachineModule &&) noexcept;
     MachineModule(const MachineModule &) = delete;
     MachineModule &operator=(const MachineModule &) = delete;
+    // A moved-from module exposes an empty (invalid for compilation) view.
     const ArchonMIRModule &view() const noexcept;
 
 private:
@@ -55,8 +62,9 @@ struct Product {
     std::string target; // Archon's generated, pinned native target descriptor.
 };
 
-// Validates On1x MIR, lowers its complete MIR v1-v3 value model (including
-// nested tuples and numeric primitives), then validates via Archon's backend.
+// lower validates On1x MIR and constructs owned MachineIR within bridge limits.
+// compile additionally validates/emits through the generated native backend,
+// whose target-specific limits may be tighter than the bridge limits.
 // Requires ScalarABI.c and On1x's runtime at *link* time for runtime calls.
 MachineModule lower(const mir::Module &module, const Options &options = {});
 Product compile(const mir::Module &module, const Options &options = {});

@@ -1,0 +1,21 @@
+fn fact(n:i64)->i64 {
+  if n <= 1 { return 1; }
+  return n * fact(n - 1);
+}
+fn seen(n:i64)->bool { println(n); return n > 0; }
+fn main()->i64 {
+  println(fact(8));
+  println(false && seen(91));
+  println(true || seen(92));
+  println(seen(1) && seen(2));
+  var n=0;
+  var total=0;
+  while n<8 {
+    n=n+1;
+    if n==3 { continue; }
+    if n==7 { break; }
+    if n%2==0 { total=total+n; } else { total=total-n; }
+  }
+  println(total);
+  return 37;
+}

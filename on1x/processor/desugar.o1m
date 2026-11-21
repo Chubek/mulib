@@ -1,0 +1,34 @@
+meta 1;
+budget steps 8388608 nodes 262144 depth 520;
+
+# Select evaluates its condition once, then exactly one result.
+rule lazy_and phase desugar priority 200
+match Binary("&&", $left, $right)
+replace Select($left, $right, Boolean("false"))
+guard boolean;
+
+rule lazy_or phase desugar priority 190
+match Binary("||", $left, $right)
+replace Select($left, Boolean("true"), $right)
+guard boolean;
+
+# Integer order is total; these are deliberately not float rewrites.
+rule integer_not_equal phase desugar priority 180
+match Binary("!=", $left, $right)
+replace Unary("!", Binary("==", $left, $right))
+guard integer;
+
+rule integer_less_equal phase desugar priority 170
+match Binary("<=", $left, $right)
+replace Unary("!", Binary(">", $left, $right))
+guard integer;
+
+rule integer_greater_equal phase desugar priority 160
+match Binary(">=", $left, $right)
+replace Unary("!", Binary("<", $left, $right))
+guard integer;
+
+rule boolean_not_equal phase desugar priority 150
+match Binary("!=", $left, $right)
+replace Unary("!", Binary("==", $left, $right))
+guard boolean;

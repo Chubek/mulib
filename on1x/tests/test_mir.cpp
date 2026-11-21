@@ -151,8 +151,8 @@ int main(int argc,char** argv){
   require(stepped.status==m::Status::Returned&&stepped.output=="10\n0\n11\n1\n12\n2\n42\n",
           "continue did not evaluate the latch once in effect order");
   malformed(latch,[&](auto& m){change_op(m,m::Op::Call,[](auto& i){i.effect_in=0;});},"effect ordering");
-  auto logic=lower("fn main(){println(true&&false);}");
-  malformed(logic,[](auto& m){m.functions[0].blocks[2].parameters[0].type=Type::I64;},"argument type");
+   auto logic=lower("fn main(){println(true&&false);}");
+   require(m::evaluate(logic).output=="false\n","logical value lowering changed its result");
   auto effect_order=lower("fn main(){println(1);println(2);}");
   std::swap(effect_order.functions[0].blocks[0].instructions[1],effect_order.functions[0].blocks[0].instructions[2]);
   m::verify(effect_order);
@@ -178,7 +178,10 @@ int main(int argc,char** argv){
   m::Block done;done.id=16;done.effect=17;done.where=at;done.parameters={{18,Type::I64,at},{19,Type::I64,at}};
   done.instructions={{20,Type::Void,m::Op::Print,{18},0,0,17,21,at},{22,Type::Void,m::Op::Print,{19},0,0,21,23,at}};
   done.exit={24,m::Exit::Return,0,23,{},at};f.blocks={entry,done,loop};phi.functions={f};
-  m::verify(phi);require(m::evaluate(phi).output=="20\n10\n","parallel loop phi copy failed");
+   m::verify(phi);require(m::evaluate(phi).output=="20\n10\n","parallel loop phi copy failed");
+   // Test the edge/parameter type invariant on an explicit phi. Source logical
+   // expressions may legitimately lower through canonical initialized slots.
+   malformed(phi,[](auto& m){m.functions[0].blocks[1].parameters[0].type=Type::Bool;},"argument type");
   if(argc==2){std::ofstream out(argv[1]);out<<m::emit_c(phi);require(bool(out),"cannot write phi C fixture");}
   auto product=Type::tuple({Type::I64,Type::F64});phi.version=2;
   auto& pe=phi.functions[0].blocks[0];

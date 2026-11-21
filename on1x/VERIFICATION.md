@@ -7,6 +7,312 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## Boolean decision lowering optimization — 2026-11-21
+
+Two agents implement and benchmark a narrow improvement in
+`src/backend/lower.cpp`. Checked boolean regions with exactly one temporary,
+one conditional initialization per arm, and a final read can lower directly
+to MIR block arguments. Literal identity arms forward the already-evaluated
+condition. Effect order, selected traps and terminating branches are preserved.
+Recognition uses a bounded structural scan, not generated name prefixes;
+ambiguous shapes retain ordinary storage lowering.
+
+The preserved On1xMETA baseline is
+`/mnt/andromeda/tempdir/opencode/on1x-meta-build/on1xc`, SHA-256
+`06ec2d05af95a38c25b1aea5226f54dc7d140ae80265e24528e3bde64e335b86`.
+This is a different baseline from the earlier pre-processor comparison below.
+Repository/LibStone revisions, platform and compilers match the processor
+record. Candidate build commands:
+
+```sh
+cmake -S on1x -B /mnt/andromeda/tempdir/opencode/on1x-opt2-build \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  -DON1X_BUILD_MIR_ARCHON=ON -DON1X_ARCHON_ENABLE_SDK_ADAPTER=ON \
+  -DON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu \
+  -DCMAKE_PREFIX_PATH=/mnt/andromeda/tempdir/opencode/on1x-archon-toolchain/install \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_SATIE_ROOT=/mnt/andromeda/tempdir/opencode/on1x-meta-satie-sdk
+cmake --build /mnt/andromeda/tempdir/opencode/on1x-opt2-build --parallel 4
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-opt2-build \
+  -R '^on1x[.]mir_decision' --output-on-failure
+```
+
+The complete build succeeds and the two new tests pass in 1.03 seconds.
+The source test exercises 21 C11/MIR-C11/evaluator/native profiles, including
+optimized and unoptimized paths, ordered effects, lexical mutation, nested
+decisions and checked traps. C++ tests cover arbitrary temporary names,
+shadowing and extra-statement fallback, early-return initializers, duplicate
+target edges, malformed HIR, locations, round trips and budgets. Deep shape
+recognition falls back rather than bypassing ordinary verification.
+Both new structural gates demonstrably fail against the preserved baseline;
+its execution results still pass.
+Focused ASan/UBSan also passes with the final tests: the changed lowerer and
+test are instrumented, while linked frontend/scanner archives are ordinary
+builds. Exact command and detailed eligibility rules are recorded in
+[`docs/backend-mir.md`](docs/backend-mir.md).
+Candidate compiler SHA-256:
+`beb339dbf2417c55239789eba68dfbc88a61ce3971672c07451a6d71ec4aba3e`.
+The lazy diagnostic's optimized MIR decreases from 44 to 32 instructions,
+20 to 16 blocks, and six to two slots; its unoptimized MIR decreases from
+63 to 46 instructions. These structural counts are distinct from runtime
+measurements.
+
+The matched measurement protocol and results are recorded in
+[`benchmark/OPTIMIZATION_ROUND2.md`](benchmark/OPTIMIZATION_ROUND2.md).
+The full candidate suite ran 213 tests: 209 passed, one skipped and three
+failed. Two shared an old test assumption that source boolean lowering must
+leave temporary storage for a later-round CFG pass. The original source
+semantic assertions remain; an explicit mutable-storage fixture now retains
+and strengthens the exact later-round obligation. Both affected tests pass
+on rerun (**2/2 in 26.79 seconds**), giving a tested union of **211 passed,
+one expected cgroup skip and the independently reproduced baseline
+`addon_chatgpt` failure**.
+
+Paired and reversed-order benchmarks pass **84/84 correctness combinations**
+and four strict comparisons. Against the preserved On1xMETA baseline:
+
+- Lazy boolean diagnostic native runtime is **7.1–9.8% lower without MIR
+  optimization** and **4.6–6.1% lower with it**, confirmed in both orders.
+- Its optimized native compilation takes **22.7–26.0% less time**, with
+  MIR lowering/optimization decreasing from approximately 53 ms to 35 ms.
+- Identity diagnostic native runtime also decreases: **5.1–7.2%** without
+  optimization and **7.5–9.1%** with it.
+- Direct C11 sources/executables and historical-control executables are
+  byte-identical. Their timing variation establishes no general speedup.
+  Intermittent delays in the unchanged Archon bridge remain separately
+  reported, with all samples retained.
+
+Reproduce the full regression and affected-test rerun with:
+
+```sh
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-opt2-build \
+  --output-on-failure --parallel 4
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-opt2-build \
+  -R '^on1x[.]passes(_hir)?$' --output-on-failure
+```
+
+The bounded bool-only optimization does not implement general mem2reg,
+resource promotion, or cross-join slot forwarding.
+
+## On1xMETA processor — 2026-11-21
+
+Implemented with four coordinated workers on MuLIB
+`94b27511328c61a219c90cf531ca68e952bc2a85` plus working-tree changes; configured
+LibStone remains `5d733d69f19fac1d8a05294fe54e4a4ec863fc4c`.
+Platform: Linux `6.18.52-1-lts`, x86_64 GNU/Linux; GCC/G++ `16.2.1 20260810`,
+Clang `22.1.8`. Historical native/benchmark work below is preserved.
+
+The real LLSynth generator compiles `processor/On1xMETA.llsynth` into a parser;
+`processor/generate.py` validates parsed `.o1m` programs and emits C++ tables.
+Default inputs contain **19 rewrites and 45 semantic constraints**. The normal
+CLI and SDK semantic pipeline applies them, with original source/ownership
+verification before rewriting and candidate verification before publication.
+`--dump-processor` reports program/parser hashes, source-located hits and phase
+counters. See [processor generation](processor/README.md),
+[rewrite semantics](processor/REWRITES.md), and
+[semantic contracts](docs/processor-semantics.md).
+
+Combined generated-scanner, AMD64 native SDK, Chisel and Nerotypical build:
+
+```sh
+python3 on1x/tools/prepare-type-sdk.py \
+  --output /mnt/andromeda/tempdir/opencode/on1x-meta-satie-sdk
+cmake -S on1x -B /mnt/andromeda/tempdir/opencode/on1x-meta-build \
+  -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON \
+  -DON1X_BUILD_MIR_ARCHON=ON -DON1X_ARCHON_ENABLE_SDK_ADAPTER=ON \
+  -DON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu \
+  -DCMAKE_PREFIX_PATH=/mnt/andromeda/tempdir/opencode/on1x-archon-toolchain/install \
+  -DON1X_WITH_CHISEL=ON -DON1X_WITH_NEROTYPICAL=ON \
+  -DON1X_SATIE_ROOT=/mnt/andromeda/tempdir/opencode/on1x-meta-satie-sdk
+cmake --build /mnt/andromeda/tempdir/opencode/on1x-meta-build --parallel 4
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-meta-build \
+  -R '^on1x[.]processor' --output-on-failure
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-meta-build \
+  --output-on-failure --parallel 4
+```
+
+The Satie preparation command requires a fresh destination and uses the
+documented SDK patch without changing the pinned dependency. The installed
+Archon prerequisite is reproduced in the native section below.
+
+Additional validation:
+
+- Fresh LLSynth generation, relocated/input-order reproducibility, C++ table
+  compilation and **47 malformed/unsafe-rule rejection cases** pass.
+- A deliberately stale build-root header cannot shadow the generated rules;
+  the regression leaves that stale artifact intact.
+- Alternate `.o1m` programs control actual checked HIR transformation and
+  semantic rejection, using the production processor implementations.
+- Focused engine and semantic ASan/UBSan executions pass. Instrumentation
+  covers the processor translation units, tests and inline clone code;
+  linked ordinary frontend/scanner archives are uninstrumented.
+- Short-circuit desugaring exposed a MIR optimization gap: local-slots v3 now
+  forwards a nearest reaching store along bounded unique-predecessor chains.
+  Conflicting joins and loop backedges stop propagation; cross-block stores and
+  calls remain intact. Existing unreachable-division elimination gates are
+  retained. Focused pass/test ASan/UBSan also passes with ordinary linked
+  frontend/scanner archives; see [pass contracts](docs/backend-passes.md).
+- The separate fallback-scanner build passes its semantic unit test and eight
+  focused source regressions. Strict GCC/Clang HIR/MIR-C11 and an AMD64 native
+  source probe agree; exact commands and scoped results are in the processor
+  documents linked above.
+- The expanded source suite passes **129 executable profiles and 46 rejection
+  checks**, including strict Clang ASan/UBSan generated C/runtime/allocator
+  executions. Native assembly and its scalar archive execute in the differential
+  suite but are not sanitizer-instrumented.
+- The full combined suite ran **211 registered tests in 168.78 seconds**:
+  207 passed, `container_pod_cgroup` skipped, and three failed. `patterns` and
+  `enum_connective` exposed an authored empty-match diagnostic wording
+  regression; the rule now preserves the established text. The separate
+  `on1x.addon_chatgpt` RepositorySmoke “Noncanonical kernel fields” failure
+  reproduces against the pre-processor compiler and is unrelated to this change.
+  All nine processor tests, MIR/native/checker/SDK and installation tests passed
+  in the full run. Full log:
+  `/mnt/andromeda/tempdir/opencode/on1x-meta-full-ctest.log`.
+- After restoring the diagnostic and rebuilding, the **11 affected tests pass
+  in 12.62 seconds**: both failing language tests and all nine processor tests.
+  Across the full run plus focused rerun, the matrix is **209 passed, one
+  expected skip, one independently reproduced baseline failure**. The final
+  report fingerprints match the generated manifest and authored source bytes.
+  Final compiler SHA-256:
+  `06ec2d05af95a38c25b1aea5226f54dc7d140ae80265e24528e3bde64e335b86`.
+  Final program SHA-256:
+  `0af30583209e3a231fa2ed2772646fe70de6479a03b02b420f25dfd2e8cb449b`.
+
+Focused final rerun:
+
+```sh
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-meta-build \
+  -R '^on1x[.](patterns$|enum_connective$|processor)' \
+  --output-on-failure --parallel 4
+```
+
+The additional benchmark worker compares privately snapshotted baseline/final
+compilers through the real MuLL harness, reports C11/native-off/native-on
+separately, and sends findings to all four implementation workers.
+Reproducible measurements and recommendations live in
+[`benchmark/PROCESSOR_FEEDBACK.md`](benchmark/PROCESSOR_FEEDBACK.md).
+The completed initial and reverse-order confirmation cycles pass **84/84
+measured fixture/backend correctness combinations** with four compatible
+comparisons. The million-iteration identity diagnostic confirms approximately
+39% lower C11 and 30% lower optimized-native median runtime; unoptimized-native
+identity samples are noisier. These are targeted diagnostic results, not
+general application speedups: historical workload intervals overlap. Dynamic
+lazy booleans show a repeatable approximately 3.5% unoptimized-native slowdown,
+and optimized-native compilation of that diagnostic costs approximately 37%
+more. Added Select storage/control flow is the next optimization target.
+Intermittent delays in the identical Archon bridge are excluded from compiler
+improvement claims. Compilation comparisons also include differing optional
+checker build settings. Raw samples, variability and limitations are retained
+in the feedback report.
+
+Supported rewrite vocabulary is intentionally bounded: boolean trace-equivalent
+rewrites, checked-i64 neutral identities/comparison duals, and lazy boolean
+selection. Floating-point algebra, effect-changing capture deletion/duplication,
+arbitrary user code in rules, and general proof search are unsupported.
+Semantic constraints supplement the existing checker rather than replace
+type inference or ownership analysis. Native differential evidence remains
+limited to the admitted AMD64 MIR profile.
+
+## Archon native integration baseline — 2026-11-21
+
+Baseline MuLIB `94b27511328c61a219c90cf531ca68e952bc2a85`, LibStone
+`5d733d69f19fac1d8a05294fe54e4a4ec863fc4c`. Both default branches were
+fetched and matched these checkouts; dependency pins were preserved.
+
+The canonical AMD64 SysV ArchDB generated a real installed Archon backend.
+The combined Debug On1x build succeeded with the native SDK adapter enabled.
+`examples/mir.on1x`, lowered through verified MIR to native assembly and linked
+with the scalar ABI and On1x runtime, matched MIR-C11 stdout and exit status:
+`1\n1\n2\n6\n24\n120\nfalse\n`, exit 0. No C lowering is used for native code
+generation. See [toolchain reproduction](backends/mir-archon/TOOLCHAIN.md).
+
+```sh
+python3 on1x/backends/mir-archon/provision_toolchain.py \
+  --work-dir /mnt/andromeda/tempdir/opencode/on1x-archon-toolchain --jobs 4
+cmake -S on1x -B /mnt/andromeda/tempdir/opencode/on1x-archon-build \
+  -DON1X_BUILD_MIR_ARCHON=ON -DON1X_ARCHON_ENABLE_SDK_ADAPTER=ON \
+  -DON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu \
+  -DCMAKE_PREFIX_PATH=/mnt/andromeda/tempdir/opencode/on1x-archon-toolchain/install \
+  -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build /mnt/andromeda/tempdir/opencode/on1x-archon-build --parallel 6
+```
+
+Upstream native scalar GAS tests passed the AMD64 cases; AArch64 execution
+cases were skipped without QEMU. Fourteen focused backend/MIR/SDK tests passed
+across an initial run and a rerun after correcting a tuple fixture. These
+baseline results do not establish general On1x source-language coverage or
+non-AMD64 execution.
+
+The SDK-disabled standalone configuration also builds, installs and executes
+the native example. Explicit mismatched targets reject without publishing
+assembly. The trusted SDK native admission and artifact execution tests pass
+**2/2** through CTest. The compiler CLI's target-aware SDK path, with
+`--optimize-ir`, produces the same native example output; four negative probes
+reject wrong targets, analyzer/target combinations, native/plugin combinations
+and legacy SDK optimization while preserving an existing output.
+
+The hardened bridge's two focused CTests pass. Separately compiled native
+programs matched C11, the MIR evaluator and an independent modulo oracle for
+**588** boundary/random unsigned wrapping and bitwise outputs. Four flat/nested
+tuple-phi programs matched native/C11/evaluator results. Bridge and focused SDK
+translation units passed ASan/UBSan; their linked frontend and Archon libraries
+were uninstrumented. Current generated ABI limits admit 128 argument carriers,
+including hidden tuple-result pointers. Canonical MIR rejects empty/singleton
+tuple types; those are not native execution claims.
+
+The final combined build passed the focused backend/MIR/pass/SDK selection
+**25/25 in 54.62 seconds**. The subsequently registered differential and
+resource-limit CTests passed **2/2 in 13.64 seconds**:
+
+```sh
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build \
+  -R 'on1x\.(backends\.|mir$|passes$|sdk\.(native_backend|backend|external_backend|builtin_providers|target_v2|analysis_passes))' \
+  --output-on-failure
+ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build \
+  -R '^on1x\.backends\.mir_archon_native_(differential|limits)$' --output-on-failure
+```
+
+The [differential suite](backends/mir-archon/tests/VERIFICATION.md) covers 58
+program cases, 43 traps, the seeded unsigned oracle, native/optimized SDK
+emission, 131 cancellation checkpoints and actual frame-limit rejection.
+The [ABI suite](backends/mir-archon/ABI.md) passed GCC/Clang normal and
+sanitizer runs with 590 runtime and 716 native comparisons and 187 exact traps
+per path. Native assembly itself is not sanitizer-instrumented.
+
+The new [MuLL-led benchmark suite](benchmark/README.md) generated and executed
+21 C11/native/optimized-native workload combinations and independent solo runs.
+The [archived report](benchmark/results/linux-amd64-2026-11-21.json) retains
+raw samples and provenance. Its constants workload measured native medians
+2.126→0.845 ms and MIR instruction counts 581→152 with optimization enabled,
+with higher compile cost. This measures the existing pipeline's effect, not
+causality for a new optimization; process startup and uncontrolled host noise
+limit performance interpretation.
+
+Benchmark feedback also produced a new, separately measured constant-fold v3
+optimization for signed-i64 `x-x`, `x*0`, `0*x` and `x%1`. Operand effects and
+traps remain intact. Both baseline and patched measurements run the full pass
+pipeline; the [new-change report](benchmark/results/annihilator-v3-linux-amd64-2026-11-21.json)
+records 28→19 MIR instructions, 26,013→17,013 evaluator steps, and nine runtime
+samples per variant. On this diagnostic workload only, medians were C11
+33.333→7.551 ms and native 44.687→21.757 ms. Baseline and patched output match.
+The original pass fails the added regression. Validation includes 2,316 wide
+integer cases, 89 annihilator inputs, effect/trap/budget negatives, 60
+cross-path executions and focused Clang ASan/UBSan. No compiler-latency or
+general workload speedup is inferred from these samples.
+
+The final benchmark continuation adds the generated annihilator diagnostic:
+**24/24** workload/backend gates pass, and **9/9** harness CTests pass.
+Strict comparison between independent runs accepts all 21 timed pairs after
+checking source, target/ABI, runtime, flags, harness and machine identities.
+The [eight-workload report](benchmark/results/eight-workloads-linux-amd64-2026-11-21.json)
+and analysis preserve timing distributions, opcode deltas, compile-stage costs
+and break-even estimates. Overlapping intervals are reported as inconclusive.
+The implementation is **80.03% MuLL** including authored tests (82.6% excluding
+tests); the remainder is the C process boundary and a disclosed minimal C++
+adapter required to embed the genuine MuLL runtime. Historical benchmark reports
+remain unchanged.
+
 ## Complete public-header registration — 2026-11-21
 
 Baseline MuLIB `6adf09c62abe00b9efbce3a115119b8fb7ebabd7`; bundled LibStone

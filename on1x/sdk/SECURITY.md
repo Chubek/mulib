@@ -48,6 +48,21 @@ side effects, isolation failure, cancellation, worker crash, protocol mismatch,
 shared-memory mutation attempts, output truncation, and artifact publication
 failure.
 
+## Native compiler artifacts
+
+The optional compiler-linked `mir-archon` provider may produce staged
+`ASSEMBLY` from verified MIR only when explicitly selected by name against an
+immutable matching native target. Native admission requires the host's private
+trusted-provider registration; public external providers cannot obtain it by
+requesting an artifact enum or using a built-in name. Private compiler MIR views
+are never delivered to external providers.
+
+The canonical MIR verifier and the generated, target-pinned Archon backend
+remain authoritative. Cancellation, artifact budgets, reproducibility checks
+and atomic publication apply to native output. Object/executable production
+through the SDK remains unsupported; assembling and linking are explicit
+host build-tool steps outside provider callbacks.
+
 ## Foreign code
 
 Foreign declaration extraction is not safety admission. A plugin cannot

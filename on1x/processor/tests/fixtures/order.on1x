@@ -1,0 +1,13 @@
+fn mark(label:i64, value:bool)->bool { println(label); return value; }
+fn main() {
+    println(mark(1,true) && true);
+    println(false || mark(2,false));
+    println(true && mark(3,true));
+    println(mark(4,false) || false);
+    println(!(!mark(5,true)));
+    println((mark(6,true) && true) && (false || mark(7,false)));
+    println(false && mark(99,true));
+    println(true || mark(98,false));
+    println(mark(8,false) && mark(97,true));
+    println(mark(9,true) || mark(96,false));
+}

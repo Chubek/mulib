@@ -1,0 +1,9 @@
+{
+  "iterations": 10,
+  "warmups": 0,
+  "repeats": 2,
+  "compile_repeats": 1,
+  "compile_warmups": 0,
+  "backend": "cross",
+  "optimization": "both"
+}

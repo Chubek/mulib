@@ -1,0 +1,82 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "worker": 3,
+  "task": "Trusted-only target-aware native assembly admission",
+  "status": "implemented-and-tested",
+  "repository_revision": "94b27511328c61a219c90cf531ca68e952bc2a85",
+  "libstone_revision": "5d733d69f19fac1d8a05294fe54e4a4ec863fc4c",
+  "commits_created": false,
+  "files": [
+    "on1x/sdk/src/Backend.cpp",
+    "on1x/sdk/src/backend/BackendProviderInternal.hpp",
+    "on1x/sdk/include/On1xSDK-Backend.h",
+    "on1x/backends/mir-archon/Backend.cpp",
+    "on1x/sdk/tests/native_backend_v2.cpp",
+    "on1x/sdk/tests/check_native_backend_artifact.py"
+  ],
+  "implemented": [
+    "Compiler-linked private registration admits only target-bound ASSEMBLY capabilities consuming VERIFIED_MIR schemas >= 1.",
+    "Public external provider native registration remains UNSUPPORTED; object and executable capabilities remain unsupported even for trusted registration.",
+    "Native production requires trusted selected provider, explicit provider name, matching target/schema/features, and verified input phase.",
+    "Private compiler IR pointers cannot be dispatched to external providers.",
+    "mir-archon validates exact generated ISA/ABI and canonical Linux triple, LP64 layout, alignment, ELF and calling convention.",
+    "Adapter preserves first host cancellation/deadline/limit status, maps typed bridge resource failures, and uses canonical verification.",
+    "Native PIC and entrypoint settings consume Worker4's private context options.",
+    "Existing artifact byte limits, staged output discard, reproducibility checks and metadata retained."
+  ],
+  "verification": [
+    {
+      "command": "cmake --build /mnt/andromeda/tempdir/opencode/on1x-archon-build --target on1x_backend_mir_archon on1x_sdk_test_backend_v2 --parallel 4",
+      "result": "passed"
+    },
+    {
+      "command": "ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build --output-on-failure -R '^on1x.sdk.(backend_v2|external_backend|builtin_providers_v2|target_v2|backend_c_abi|backend_headers)$'",
+      "result": "6 passed, 0 failed"
+    },
+    {
+      "command": "/mnt/andromeda/tempdir/opencode/on1x-sdk-native-backend-test /mnt/andromeda/tempdir/opencode/on1x-sdk-native-backend.s",
+      "result": "passed; real Archon assembly, verifier rejection, permission, target, schema, layout, features, cancellation, limits, staging"
+    },
+    {
+      "command": "cc /mnt/andromeda/tempdir/opencode/on1x-sdk-native-backend.s /mnt/andromeda/tempdir/opencode/on1x-archon-build/backends/mir-archon/libon1x_archon_scalar_abi.a /mnt/andromeda/tempdir/opencode/on1x-archon-build/libon1x_runtime.a -lm -pthread -o /mnt/andromeda/tempdir/opencode/on1x-sdk-native-backend-executable",
+      "result": "passed; executable returned 42 with empty stdout/stderr"
+    },
+    {
+      "command": "python3 on1x/sdk/tests/check_native_backend_artifact.py /mnt/andromeda/tempdir/opencode/on1x-sdk-native-backend-sanitized /usr/bin/cc /mnt/andromeda/tempdir/opencode/on1x-archon-build/backends/mir-archon/libon1x_archon_scalar_abi.a /mnt/andromeda/tempdir/opencode/on1x-archon-build/libon1x_runtime.a /mnt/andromeda/tempdir/opencode/on1x-sdk-native-artifact",
+      "result": "passed; every cancellation poll boundary and second-generation reproducibility cancellation; native compile/link/execute"
+    }
+  ],
+  "sanitizers": {
+    "flags": "-std=c++20 -Wall -Wextra -Wpedantic -Werror -g -fsanitize=address,undefined -fno-omit-frame-pointer",
+    "instrumented": [
+      "on1x/sdk/tests/native_backend_v2.cpp",
+      "on1x/sdk/src/Backend.cpp",
+      "on1x/backends/mir-archon/Backend.cpp",
+      "on1x/backends/mir-archon/Bridge.cpp"
+    ],
+    "scope": "Focused ASan/UBSan test; linked SDK/frontend/Archon dependencies were not instrumented in this run."
+  },
+  "integration_requests": [
+    {
+      "owner": "parent/Worker1",
+      "request": "Register native_backend_v2 test target when on1x_backend_mir_archon exists; include sdk/src and backends, define ON1X_ARCHON_TARGET_TRIPLE, link on1x_backend_mir_archon on1x_frontend On1x::SDK. Exact CMake snippet is in /mnt/andromeda/tempdir/opencode/on1x-worker3-interface.md."
+    },
+    {
+      "owner": "parent/Worker1",
+      "request": "Register check_native_backend_artifact.py only for qualified same-target native-host execution; pass test executable, C compiler, scalar ABI archive, runtime archive and work directory."
+    },
+    {
+      "owner": "Worker4",
+      "request": "Private MIR BackendRequest must pass input_schema=module.version; zero is only derivable for serialized input. Current Builtin.cpp:122 was observed passing zero."
+    },
+    {
+      "owner": "parent",
+      "request": "Update shared SDK security/architecture/capability documentation with narrowly admitted compiler-linked native assembly profile, explicit target/name selection, external native authority denied, staged-only publication and no object/executable support."
+    }
+  ],
+  "limitations": [
+    "Actual code generation/link/execution tested on Linux AMD64 SysV only.",
+    "AArch64 and RISCV64IM descriptors are allowlisted but execution qualification belongs to their target test matrix.",
+    "No new public native provider authorization API, object producer, executable producer or JIT."
+  ]
+}

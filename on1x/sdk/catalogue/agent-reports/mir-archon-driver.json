@@ -1,0 +1,53 @@
+{
+  "schema": "on1x.mir-archon.worker-report/1",
+  "worker": 4,
+  "status": "EXECUTABLE",
+  "scope": "Target-aware native assembly driver and Linux AMD64 executable build helper",
+  "repository_revision": "94b27511328c61a219c90cf531ca68e952bc2a85",
+  "libstone_revision": "5d733d69f19fac1d8a05294fe54e4a4ec863fc4c",
+  "platform": "Linux x86_64",
+  "compilers": ["GCC 16.2.1 20260810", "Clang 22.1.8"],
+  "build": "/mnt/andromeda/tempdir/opencode/on1x-archon-build",
+  "toolchain": "/mnt/andromeda/tempdir/opencode/on1x-archon-toolchain/install",
+  "files": [
+    "on1x/backends/Builtin.cpp",
+    "on1x/backends/Builtin.hpp",
+    "on1x/backends/BuiltinContext.hpp",
+    "on1x/backends/mir-archon/Tool.cpp",
+    "on1x/backends/mir-archon/DRIVER.md",
+    "on1x/backends/mir-archon/tests/TestDriver.cpp",
+    "on1x/backends/mir-archon/tests/test_native_driver.py",
+    "on1x/sdk/src/Driver.cpp",
+    "on1x/sdk/src/Driver.hpp",
+    "on1x/tools/on1x-native-build.py"
+  ],
+  "commands": [
+    "cmake --build /mnt/andromeda/tempdir/opencode/on1x-archon-build --target on1x-archon-mir on1xc on1x_archon_scalar_abi --parallel 2",
+    "python3 on1x/backends/mir-archon/tests/test_native_driver.py --build-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build --cc /usr/bin/cc --sdk",
+    "python3 on1x/backends/mir-archon/tests/test_native_driver.py --build-dir /mnt/andromeda/tempdir/opencode/on1x-archon-build --cc /usr/bin/clang --sdk",
+    "/mnt/andromeda/tempdir/opencode/on1x-worker4-driver-test",
+    "/mnt/andromeda/tempdir/opencode/on1x-worker4-driver-san"
+  ],
+  "results": {
+    "real_native_source_mir_assembly_link_execute": "PASS with GCC and Clang",
+    "c11_differential": "PASS",
+    "sdk_native_cli_and_optimization": "PASS",
+    "pic_and_library_flags": "PASS including final native CLI PIC-to-PIE execution, no-entry symbol absence and native-only flag rejection",
+    "wrong_target_invalid_source_invalid_mir": "PASS",
+    "unsafe_flag_rejection": "PASS",
+    "failed_assembler_linker_atomic_preservation": "PASS",
+    "artifact_limits_deadline_signal_cancellation": "PASS",
+    "private_mir_schema_and_options": "PASS",
+    "focused_driver_asan_ubsan": "PASS; dependencies uninstrumented",
+    "focused_standalone_asan_ubsan": "PASS; dependencies uninstrumented"
+  },
+  "limitations": [
+    "Executable helper qualifies only Linux AMD64 SysV; other executable targets reject.",
+    "Source features outside canonical MIR remain unsupported and reject.",
+    "Finite helper address-space limits cannot accommodate ASan compiler shadow mappings; focused sanitizer tool runs were invoked directly.",
+    "Installed helper intentionally requires --build-dir and the qualified compiler/runtime archives; it does not infer these from its installation prefix.",
+    "Full production gate and whole-toolchain sanitizer coverage are outside this worker's focused evidence."
+  ],
+  "parent_requests": [],
+  "commits": []
+}

@@ -5,8 +5,10 @@ The opt-in B4 increment adds a bounded, transactional pipeline over
 the independent fallback build. Public API:
 `include/on1x/backend/passes.hpp`; implementation: `src/backend/passes.cpp`.
 
-The v2 numeric/product extension retains the same four algorithms, with version-2
-pass descriptors. Reports select `portable-scalar-v1` for legacy modules and
+The v2 numeric/product extension retains the same four algorithms. Constant-fold
+now has descriptor version 3. The later On1xMETA integration advances
+`local-slots` to version 3; the other pass descriptors remain version 2.
+Reports select `portable-scalar-v1` for legacy modules and
 `portable-numeric-product-v2` for MIR v2 (including a default API target request).
 MIR v3 selects `portable-numeric-v3`; its typed numeric descriptors retain
 conservative trap effects and are not signed-folded. Existing value/slot/CFG
@@ -58,6 +60,11 @@ identities and source points, and removed IDs leave gaps.
 - Checked operations fold only when they cannot trap. Overflow, zero division,
   `INT64_MIN / -1`, `INT64_MIN % -1` and minimum-value negation stay as runtime
   operations with their original source locations and effect ordering.
+- Descriptor v3 additionally folds signed-i64 `x-x`, `x*0`, `0*x`, and `x%1`
+  to zero even when `x` is unknown. These identities cannot trap, including at
+  `INT64_MIN`. Operand producers still execute: calls, loads and earlier
+  checked arithmetic retain their effects and traps. `x/x`, `x%x`, and
+  `x%-1` are excluded, as are typed Numeric/unsigned and IEEE identities.
 - Successful arithmetic folds remove their now-proven-nontrapping effect steps.
   Remaining effects retain their order and output-token identities; input tokens
   and the terminator token are repaired in that same transaction.
@@ -66,6 +73,12 @@ Reference evaluation and folding share `src/backend/checked.hpp`, which checks
 ranges before executing host arithmetic. Emitted C11 uses the independent
 C runtime checked operations. Tests additionally use Python's arbitrary-precision
 integers as an independent arithmetic oracle.
+
+The [benchmark feedback](../benchmark/OPTIMIZATION_FEEDBACK.md) records the
+v2-versus-v3 diagnostic measurement separately from optimization-off/on results.
+The targeted workload drops from 28 to 19 MIR instructions and 26,013 to 17,013
+reference evaluation steps. These reductions do not imply general application
+speedups.
 
 No call evaluation, slot propagation, algebraic reassociation or path-sensitive
 phi speculation is performed. For example, a false edge carrying a nonconstant
@@ -100,7 +113,15 @@ calls and printing retain their order and identities. A trap is terminal; earlie
 local stores are not externally observable on a trapping path. Computing a stored
 value can still trap or print even when the store is removed.
 
-Discovery is block-local; no reaching value is assumed at a join or loop header.
+Version 3 additionally forwards an unresolved load from the nearest store on
+a chain of unique predecessors. Every traversed predecessor dominates its
+successor. The nonrecursive backward walk stops at the entry, a multi-predecessor
+join, or a repeated block; every visited block and instruction consumes the shared
+work budget. No incoming value is assumed at a join or loop header, and store
+deletion remains same-block only. This permits a subsequent folding/CFG round to
+simplify a canonical Select value after one of its predecessors becomes
+unreachable. It does not add general global slot propagation or memory SSA.
+
 After discovery, substitutions cover all uses, including successor instructions,
 return/branch operands and parallel edge arguments. This is independent of block
 listing order. Alias chains follow dominance and use bounded path compression.

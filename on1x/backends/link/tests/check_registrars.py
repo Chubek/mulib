@@ -8,7 +8,7 @@ import tempfile
 
 def main():
     generator, spec, built_header = map(Path, sys.argv[1:])
-    builtins = ("c11", "mir-c11", "mir-eval", "mir-text", "mir-cfg")
+    builtins = ("c11", "mir-c11", "mir-eval", "mir-text", "mir-cfg", "mir-archon")
     calls = [
         f'qld.backend("{name}", "on1x_builtin_{name.replace("-", "_")}_register")'
         for name in builtins
@@ -20,7 +20,13 @@ def main():
 
     def compare(header, ordered_rows):
         text = header.read_text(encoding="utf-8").splitlines()
-        assert text[1:] == ordered_rows, text
+        expected = []
+        for row in ordered_rows:
+            if '"mir-archon"' in row:
+                expected.extend(("#if defined(ON1X_WITH_MIR_ARCHON)", row, "#endif"))
+            else:
+                expected.append(row)
+        assert text[1:] == expected, text
 
     with tempfile.TemporaryDirectory(prefix="on1x registrar map ") as workdir:
         source = Path(workdir) / "backends.lua"

@@ -1,0 +1,69 @@
+meta 1;
+budget steps 8388608 nodes 262144 depth 520;
+
+# No rule drops or duplicates a captured computation. In particular, x*0,
+# x-x, x/x and double arithmetic negation are not identities for checked i64.
+rule boolean_double_not phase canonicalize priority 300
+match Unary("!", Unary("!", $value))
+replace $value
+guard boolean;
+
+rule boolean_not_true phase canonicalize priority 290
+match Unary("!", Boolean("true"))
+replace Boolean("false")
+guard boolean;
+
+rule boolean_not_false phase canonicalize priority 280
+match Unary("!", Boolean("false"))
+replace Boolean("true")
+guard boolean;
+
+rule integer_add_zero_right phase canonicalize priority 270
+match Binary("+", $value, Integer("0"))
+replace $value
+guard integer;
+
+rule integer_add_zero_left phase canonicalize priority 260
+match Binary("+", Integer("0"), $value)
+replace $value
+guard integer;
+
+rule integer_subtract_zero phase canonicalize priority 250
+match Binary("-", $value, Integer("0"))
+replace $value
+guard integer;
+
+rule integer_multiply_one_right phase canonicalize priority 240
+match Binary("*", $value, Integer("1"))
+replace $value
+guard integer;
+
+rule integer_multiply_one_left phase canonicalize priority 230
+match Binary("*", Integer("1"), $value)
+replace $value
+guard integer;
+
+rule integer_divide_one phase canonicalize priority 220
+match Binary("/", $value, Integer("1"))
+replace $value
+guard integer;
+
+rule boolean_equal_true_right phase canonicalize priority 210
+match Binary("==", $value, Boolean("true"))
+replace $value
+guard boolean;
+
+rule boolean_equal_true_left phase canonicalize priority 200
+match Binary("==", Boolean("true"), $value)
+replace $value
+guard boolean;
+
+rule boolean_equal_false_right phase canonicalize priority 190
+match Binary("==", $value, Boolean("false"))
+replace Unary("!", $value)
+guard boolean;
+
+rule boolean_equal_false_left phase canonicalize priority 180
+match Binary("==", Boolean("false"), $value)
+replace Unary("!", $value)
+guard boolean;

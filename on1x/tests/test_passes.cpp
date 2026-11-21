@@ -98,6 +98,37 @@ int main(int argc,char** argv){
    auto result=p::run(trap);equivalent(trap,result.module());
    require(m::evaluate(result.module()).status==m::Status::Trapped&&m::evaluate(result.module()).output=="7\n","unused trap deleted");
   }
+   // Benchmark regression: unknown runtime inputs still have exact,
+   // nontrapping annihilators. The result folds without erasing its producers.
+   auto cancel=lower("fn f(x:i64)->i64{return (x-x)+(x*0)+(0*x)+(x%1);}fn main(){}");
+   auto cancel_after=p::run(cancel);
+   for(auto op:{m::Op::Sub,m::Op::Mul,m::Op::Mod,m::Op::Add})
+    require(count(cancel_after.module(),op)==0,"runtime integer annihilator not folded");
+   for(auto x:{std::numeric_limits<std::int64_t>::min(),std::int64_t(-1),std::int64_t(0),std::int64_t(1),std::numeric_limits<std::int64_t>::max()})
+    equivalent(cancel,cancel_after.module(),"f",{x});
+   require(!p::run(cancel_after.module()).changed(),"annihilator fixed point changed");
+   budget={};budget.rewrites=1;auto cancel_rollback=p::run(cancel,budget);
+   require(cancel_rollback.status()==p::Status::BudgetExhausted&&!cancel_rollback.changed(),"partial annihilator fold escaped transaction");
+   auto cancel_effects=lower("fn call(x:i64)->i64{println(x);return x;}fn main(){let x=call(7);println(x-x);println(0*call(8));println(call(9)*0);println(call(10)%1);println(call(2)-call(3));}");
+   auto cancel_effects_after=p::run(cancel_effects);equivalent(cancel_effects,cancel_effects_after.module());
+   require(count(cancel_effects,m::Op::Call)==count(cancel_effects_after.module(),m::Op::Call),"annihilator deleted operand call");
+   require(m::evaluate(cancel_effects_after.module()).output=="7\n0\n8\n0\n9\n0\n10\n0\n2\n3\n-1\n","annihilator reordered operand effects");
+   for(const auto& expression:{"0*(1/0)","(1/0)*0","(1/0)%1","(9223372036854775807+1)*0"}){
+    auto trap=lower(std::string("fn main(){println(7);println(")+expression+");println(9);}");
+    auto result=p::run(trap);equivalent(trap,result.module());
+    require(m::evaluate(result.module()).status==m::Status::Trapped,"annihilator erased operand trap");
+   }
+   for(const auto& expression:{"x/x","x%x","x%(-1)"}){
+    auto unsafe=lower(std::string("fn f(x:i64)->i64{return ")+expression+";}fn main(){}");
+    auto result=p::run(unsafe);
+    for(auto x:{std::numeric_limits<std::int64_t>::min(),std::int64_t(-1),std::int64_t(0),std::int64_t(1)})
+     equivalent(unsafe,result.module(),"f",{x});
+    require(count(result.module(),m::Op::Div)+count(result.module(),m::Op::Mod)==1,"unsafe identity folded");
+   }
+   auto float_cancel=lower("fn f(x:f64)->f64{return (x-x)+(x*0.0);}fn main(){println(f(1.0));}");
+   auto float_after=p::run(float_cancel);equivalent(float_cancel,float_after.module());
+   require(count(float_cancel,m::Op::FloatSub)==count(float_after.module(),m::Op::FloatSub)&&count(float_cancel,m::Op::FloatMul)==count(float_after.module(),m::Op::FloatMul),"integer identity applied to IEEE operations");
+   require(count(float_cancel,m::Op::Numeric)==count(float_after.module(),m::Op::Numeric),"integer identity applied to typed numeric operations");
   auto effects=lower("fn call(x:i64)->i64{println(x);return x;}fn main(){var n=0;n=call(1);let dead=n;assert(true);call(2);}");
   auto effects_after=p::run(effects);equivalent(effects,effects_after.module());
   for(auto op:{m::Op::Call,m::Op::Assert,m::Op::Print})require(count(effects,op)==count(effects_after.module(),op),"nonmemory effect root deleted");
@@ -115,8 +146,65 @@ int main(int argc,char** argv){
   equivalent(recursive_slots,p::run(recursive_slots).module());
   // Join inputs differ and loop-carried slots change every iteration.
   auto control_slots=lower("fn f(flag:bool)->i64{var x=1;if flag{x=7;}else{x=9;}return x+x;}fn main(){var i=0;while i<4{println(f(i<2));i=i+1;}}");
-  auto control_after=p::run(control_slots,slots_only);equivalent(control_slots,control_after.module());
-  require(count(control_after.module(),m::Op::Load)>0,"cross-block slot state invented");
+   auto control_after=p::run(control_slots,slots_only);equivalent(control_slots,control_after.module());
+   require(count(control_after.module(),m::Op::Load)>0,"cross-block slot state invented");
+   // A value stored before branching dominates a chain of sole-predecessor
+   // successors. Forward the loads without deleting cross-block stores or calls.
+   auto chains=lower("fn call(x:i64)->i64{println(x);return x;}fn f(flag:bool)->i64{var n=call(7);if flag{println(1);if flag{return n;}return n;}else{println(2);return n;}}fn main(){}");
+   auto chains_after=p::run(chains,slots_only);
+   require(p::descriptor(p::Pass::LocalSlots).version==3,"slot descriptor version not advanced");
+   require(count(chains,m::Op::Load)>0&&count(chains_after.module(),m::Op::Load)==0,
+           "sole-predecessor reaching stores were not forwarded");
+   require(count(chains,m::Op::Store)==count(chains_after.module(),m::Op::Store)&&
+           count(chains,m::Op::Call)==count(chains_after.module(),m::Op::Call),
+           "cross-block forwarding deleted stores or operand effects");
+   for(auto flag:{0,1})equivalent(chains,chains_after.module(),"f",{flag});
+   require(m::evaluate(chains_after.module(),"f",{1}).output=="7\n1\n",
+           "forwarding reordered effectful producer and branch effects");
+   auto chains_unordered=chains;
+   for(auto& function:chains_unordered.functions)
+    std::reverse(function.blocks.begin()+1,function.blocks.end());
+   auto chains_unordered_after=p::run(chains_unordered,slots_only);
+   require(count(chains_unordered_after.module(),m::Op::Load)==0,
+           "predecessor forwarding depended on block-vector order");
+   for(auto flag:{0,1})equivalent(chains_unordered,chains_unordered_after.module(),"f",{flag});
+   auto conflicting=lower("fn f(flag:bool)->i64{var n=1;if flag{n=7;}else{n=9;}return n;}fn main(){}");
+   auto conflicting_after=p::run(conflicting,slots_only);
+   require(count(conflicting_after.module(),m::Op::Load)==1,
+           "conflicting incoming stores were propagated through a join");
+   for(auto flag:{0,1})equivalent(conflicting,conflicting_after.module(),"f",{flag});
+   auto backedge=lower("fn main(){var n=0;while n<3{println(n);n=n+1;}println(n);}");
+   auto backedge_after=p::run(backedge,slots_only);
+   equivalent(backedge,backedge_after.module());
+   require(m::evaluate(backedge_after.module()).output=="0\n1\n2\n3\n"&&
+           count(backedge_after.module(),m::Op::Load)>0,
+           "entry value incorrectly crossed a loop backedge");
+    // Explicit mutable storage keeps this pass-interaction test independent of
+    // canonical bool Select lowering (which now produces SSA directly).
+    // CFG removes one predecessor, LocalSlots exposes the stored condition,
+    // and a later CFG round discharges the branch without executing its trap.
+    auto feedback=lower("fn main(){var decision=false;if 3<4{decision=true;}if decision{println(42);}else{println(1/0);}}");
+    require(count(feedback,m::Op::Load)==1&&count(feedback,m::Op::Store)==2&&
+            count(feedback,m::Op::Div)==1,"slot/CFG feedback fixture lost explicit storage/trap");
+    p::Options without_slots;without_slots.pipeline={p::Pass::ConstantFold,p::Pass::SimplifyCFG,p::Pass::DeadPure};
+    auto no_feedback=p::run(feedback,without_slots);
+    equivalent(feedback,no_feedback.module());
+    require(count(no_feedback.module(),m::Op::Div)==1,
+            "slot/CFG feedback fixture no longer requires slot forwarding");
+    auto feedback_after=p::run(feedback);equivalent(feedback,feedback_after.module());
+    require(m::evaluate(feedback_after.module()).output=="42\n"&&
+            count(feedback_after.module(),m::Op::Load)==0&&
+            count(feedback_after.module(),m::Op::Div)==0,
+            "slot/CFG feedback failed to preserve output/remove unreachable trap");
+    require(!p::run(feedback_after.module()).changed(),"slot/CFG feedback not at fixed point");
+    require(std::any_of(feedback_after.events().begin(),feedback_after.events().end(),
+      [](const auto& event){return event.pass==p::Pass::LocalSlots&&
+                                   event.outcome==p::Outcome::Committed;}),
+            "slot/CFG feedback did not commit slot forwarding");
+    require(std::any_of(feedback_after.events().begin(),feedback_after.events().end(),
+     [](const auto& event){return event.pass==p::Pass::SimplifyCFG&&event.round>0&&
+                                  event.outcome==p::Outcome::Committed;}),
+           "slot/CFG feedback did not reach a later-round fixed point");
   // Nonmemory barrier mutations reject even if effect chains are repaired.
   mutant=roots;mutant.functions[0].blocks[0].instructions.erase(mutant.functions[0].blocks[0].instructions.begin()+1);rethread(mutant.functions[0].blocks[0]);
   rejected([&]{p::verify_transition(roots,mutant,p::Pass::LocalSlots);},"slots/nonmemory barriers");
@@ -150,13 +238,22 @@ int main(int argc,char** argv){
   auto identical=p::run(parallel);require(identical.module().functions[0].blocks[0].exit.kind==m::Exit::Jump,"identical edges not simplified");
   equivalent(parallel,identical.module(),"main",{0});equivalent(parallel,identical.module(),"main",{1});
 
-  // Different literal IDs with equal values can collapse a nonentry parameter.
-  auto equal=lower("fn choose(flag:bool)->bool{return flag&&false;}fn main(){}");
-  // Author both incoming values as literals; the source lowerer uses `flag` on
-  // the false edge, which would require path-sensitive reasoning to fold.
-  auto& equal_entry=equal.functions[0].blocks[0];
-  equal_entry.instructions.push_back({1000000,Type::Bool,m::Op::Constant,{},0,0,0,0,equal_entry.where});
-  equal_entry.exit.edges[1].arguments={1000000};
+   // Different literal IDs with equal values can collapse a nonentry parameter.
+   // Author the topology explicitly: source logical expressions may use slots
+   // after canonical Select desugaring and need not introduce a phi.
+   m::Module equal;m::Function choose;choose.id=2;choose.name="choose";
+   choose.result=Type::Bool;choose.where={"equal-phi.on1x"};
+   m::Block equal_entry;equal_entry.id=3;equal_entry.effect=4;equal_entry.where=choose.where;
+   equal_entry.parameters={{5,Type::Bool,choose.where}};
+   equal_entry.instructions={{6,Type::Bool,m::Op::Constant,{},0,0,0,0,choose.where}};
+   equal_entry.exit={7,m::Exit::Branch,5,4,{{8,{}},{12,{6}}},choose.where};
+   m::Block equal_right;equal_right.id=8;equal_right.effect=9;equal_right.where=choose.where;
+   equal_right.instructions={{10,Type::Bool,m::Op::Constant,{},0,0,0,0,choose.where}};
+   equal_right.exit={11,m::Exit::Jump,0,9,{{12,{10}}},choose.where};
+   m::Block equal_join;equal_join.id=12;equal_join.effect=13;equal_join.where=choose.where;
+   equal_join.parameters={{14,Type::Bool,choose.where}};
+   equal_join.exit={15,m::Exit::Return,14,13,{},choose.where};
+   choose.blocks={equal_entry,equal_right,equal_join};equal.functions={choose};m::verify(equal);
   auto equal_after=p::run(equal);equivalent(equal,equal_after.module(),"choose",{0});equivalent(equal,equal_after.module(),"choose",{1});
   for(const auto& block:equal_after.module().functions[0].blocks)if(block.id!=equal_after.module().functions[0].blocks[0].id)require(block.parameters.empty(),"uniform constant parameter not folded");
   // Pass order is explicit, verified at every step; alternate order converges.

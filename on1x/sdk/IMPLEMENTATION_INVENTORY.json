@@ -7,6 +7,8 @@
   "sdk_version": "2.0.0",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "integration": {
+    "native_backend_report": "catalogue/agent-reports/mir-archon-worker3.json",
+    "native_backend_profile": "Explicit compiler-linked target-bound mir-archon assembly from verified MIR; external native providers denied",
     "baseline_revision": "d1bddd5f5e4a41f8cc6231564a40d9463825bfa2",
     "linked_v2_profile": "compiler-selected trusted analyzer of canonical verified MIR",
     "runtime_profile": "Linux/glibc opt-in trusted sealed native loading",

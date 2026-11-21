@@ -12,4 +12,16 @@ struct Product {
 
 Product run_c11(const Unit &, std::string_view source);
 Product run_mir(const mir::Module &, const char *backend);
+
+// Native output is assembly only. External assembly/linking belongs to the
+// explicitly selected build tool, never to a compiler backend callback.
+struct NativeOptions {
+    bool pic = false;
+    bool emit_c_entrypoint = true;
+    std::size_t byte_limit = 16u * 1024u * 1024u;
+    int (*cancelled)(void *) = nullptr;
+    void *cancel_userdata = nullptr;
+};
+Product run_mir_native(const mir::Module &, std::string_view target,
+                       const NativeOptions & = {});
 }

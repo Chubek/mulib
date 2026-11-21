@@ -1,0 +1,9 @@
+fn main() {
+  let low=-9223372036854775807-1;
+  println(low);
+  println(9223372036854775807);
+  println(low%3);
+  println(-7/3);println(-7%3);println(7/(-3));println(7%(-3));
+  println(low<0);println(low!=9223372036854775807);
+  println(!false);
+}

@@ -1,0 +1,38 @@
+.language "On1xMETA"
+.skip /[ \t\r\n]+/
+.skip /#[^\n]*/
+.token NAME: String = /[A-Za-z_][A-Za-z_0-9]*/
+.token NUMBER: Int = /[0-9]+/
+.token STRING: String = /"([^"\\\r\n]|\\["\\nrt])*"/
+
+.rule Start
+'syntax: Header Declarations EOF
+'semantics: return nil;
+.end
+.rule Header
+'syntax: "meta" NUMBER ";" "budget" "steps" NUMBER "nodes" NUMBER "depth" NUMBER ";"
+.end
+.rule Declarations
+'syntax: Declarations Declaration |
+.end
+.rule Declaration
+'syntax: Rewrite | Constraint
+.end
+.rule Rewrite
+'syntax: "rule" NAME "phase" Phase "priority" NUMBER "match" Tree "replace" Tree "guard" NAME ";"
+.end
+.rule Phase
+'syntax: "canonicalize" | "desugar"
+.end
+.rule Constraint
+'syntax: "constraint" NAME "phase" "semantic" "match" NAME "require" NAME STRING "message" STRING ";"
+.end
+.rule Tree
+'syntax: "$" NAME | NAME "(" Arguments ")"
+.end
+.rule Arguments
+'syntax: STRING Tail | Tree Tail |
+.end
+.rule Tail
+'syntax: "," Tree Tail |
+.end

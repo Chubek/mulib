@@ -19,13 +19,18 @@ constexpr V none = ARCHON_MIR_NONE;
 constexpr std::size_t max_tuple_words = 4096; // bounded type expansion and frame budget
 constexpr std::size_t max_frame_local_bytes = 32768;
 
-[[noreturn]] void fail(const Location &where, std::string message) {
-    throw Error(where, "ON1X-MIR-ARCHON: " + std::move(message));
+[[noreturn]] void fail(const Location &where, std::string message,
+                      ArchonBackendStatus status = ARCHON_BACKEND_INVALID) {
+    throw Error(where, "ON1X-MIR-ARCHON: " + std::move(message), status);
+}
+void poll(const Options &options, const Location &at) {
+    if (options.cancelled && options.cancelled(options.cancel_userdata))
+        fail(at, "compilation cancelled", ARCHON_BACKEND_CANCELLED);
 }
 std::string source_symbol(mir::Id id) { return "on1x_mir_f" + std::to_string(id); }
 
 std::size_t words(const Type &type, const Location &at, unsigned depth = 0) {
-    if (depth > 32) fail(at, "tuple nesting exceeds 32");
+    if (depth > 32) fail(at, "tuple nesting exceeds 32", ARCHON_BACKEND_LIMIT);
     if (!type.is_tuple()) {
         if (type == Type::I64 || type == Type::Bool || type.is_numeric()) return 1;
         fail(at, "unrepresentable MachineIR type: " + type_name(type));
@@ -33,11 +38,11 @@ std::size_t words(const Type &type, const Location &at, unsigned depth = 0) {
     std::size_t count = 0;
     for (const auto &child : type.elements()) {
         auto n = words(child, at, depth + 1);
-        if (n > max_tuple_words - count) fail(at, "tuple exceeds flat-word limit");
+        if (n > max_tuple_words - count)
+            fail(at, "tuple exceeds flat-word limit", ARCHON_BACKEND_LIMIT);
         count += n;
     }
-    // Empty tuples are unit-like; carry a stable pointer to one spare word.
-    // No loads/stores are generated for their empty payload.
+    // The canonical Type API currently requires at least two tuple elements.
     return count;
 }
 ArchonMIRType abi_type(const Type &t, const Location &at) {
@@ -91,6 +96,7 @@ struct ImportData {
 } // namespace
 
 struct MachineModule::Impl {
+    std::size_t instruction_count = 0;
     std::vector<std::unique_ptr<FunctionData>> functions;
     std::map<std::string, ImportData> imports;
     std::vector<ArchonMIRFunction> c_functions;
@@ -108,13 +114,15 @@ struct MachineModule::Impl {
         imports.emplace(std::move(name), ImportData{result, std::move(params)});
     }
 
-    void finalize() {
+    void finalize(const Options &options) {
         // All input vectors and strings are frozen before borrowing pointers.
         c_functions.reserve(functions.size());
         for (auto &holder : functions) {
+            poll(options, {"<mir>"});
             auto &f = *holder;
             f.c_blocks.reserve(f.blocks.size());
             for (auto &b : f.blocks) {
+                poll(options, {"<mir>"});
                 b.c_insts.reserve(b.insts.size());
                 for (auto &i : b.insts) {
                     auto c = i.c;
@@ -150,7 +158,6 @@ class Builder {
     const Options &options_;
     std::size_t instruction_count_ = 0;
     std::size_t local_bytes_ = 0;
-    const mir::Module &module_;
     const mir::Function &source_;
     FunctionData &out_;
     std::map<mir::Id, V> values_;
@@ -166,9 +173,10 @@ class Builder {
     Location at_;
 
     V allocate(ArchonMIRType type) {
+        poll(options_, at_);
         if (out_.types.size() >= options_.max_values_per_function ||
             out_.types.size() >= static_cast<std::size_t>(none))
-            fail(at_, "MachineIR value budget exceeded");
+            fail(at_, "MachineIR value budget exceeded", ARCHON_BACKEND_LIMIT);
         const V value = static_cast<V>(out_.types.size());
         out_.types.push_back(type);
         return value;
@@ -185,12 +193,13 @@ class Builder {
         return it->second;
     }
     std::size_t local(const Type &type) {
+        poll(options_, at_);
         const auto n = words(type, at_);
         if (n > max_frame_local_bytes / 8 || out_.locals.size() >= UINT32_MAX)
-            fail(at_, "frame local exceeds bounded native representation");
+            fail(at_, "frame local exceeds bounded native representation", ARCHON_BACKEND_LIMIT);
         const auto size = static_cast<std::uint32_t>(std::max<std::size_t>(1, n) * 8);
         if (size > options_.max_local_bytes_per_function - local_bytes_)
-            fail(at_, "MachineIR local storage budget exceeded");
+            fail(at_, "MachineIR local storage budget exceeded", ARCHON_BACKEND_LIMIT);
         local_bytes_ += size;
         const auto index = out_.locals.size();
         out_.locals.push_back({size, 8});
@@ -198,9 +207,13 @@ class Builder {
     }
     void emit(ArchonMIROpcode op, V dst = none, V a = none, V b = none,
               std::uint64_t imm = 0, std::string symbol = {}, std::vector<V> args = {}) {
+        poll(options_, at_);
         if (instruction_count_ >= options_.max_instructions_per_function)
-            fail(at_, "MachineIR instruction budget exceeded");
+            fail(at_, "MachineIR instruction budget exceeded", ARCHON_BACKEND_LIMIT);
+        if (owner_.instruction_count >= options_.max_instructions_per_module)
+            fail(at_, "MachineIR module instruction budget exceeded", ARCHON_BACKEND_LIMIT);
         ++instruction_count_;
+        ++owner_.instruction_count;
         InstructionData d;
         d.c = {op, dst, a, b, imm, nullptr, nullptr, 0};
         d.symbol = std::move(symbol);
@@ -284,6 +297,33 @@ class Builder {
                     op == "gt" || op == "ge") { unsigned_compare(i, op); return; }
             }
         }
+        if (i.type.is_unsigned()) {
+            const auto prefix = runtime_type(i.type) + "_";
+            if (i.primitive.starts_with(prefix)) {
+                const auto op = std::string_view(i.primitive).substr(prefix.size());
+                ArchonMIROpcode native{};
+                if (op == "wrapping_add") native = ARCHON_MIR_ADD;
+                else if (op == "wrapping_sub") native = ARCHON_MIR_SUB;
+                else if (op == "wrapping_mul") native = ARCHON_MIR_MUL;
+                else if (op == "and") native = ARCHON_MIR_AND;
+                else if (op == "or") native = ARCHON_MIR_OR;
+                else if (op == "xor" || op == "not") native = ARCHON_MIR_XOR;
+                if (native != ArchonMIROpcode{}) {
+                    // Runtime unsigned operations use uint64_t arithmetic then
+                    // cast to T. Modular arithmetic commutes with truncation,
+                    // including multiplication and subtraction underflow.
+                    const auto width = i.type == Type::U8 ? 8u :
+                        i.type == Type::U16 ? 16u : i.type == Type::U32 ? 32u : 64u;
+                    const auto dst = lookup(i.id);
+                    const auto result = width == 64 ? dst : temporary();
+                    const auto rhs = op == "not" ? constant(UINT64_MAX) :
+                        lookup(i.operands.at(1));
+                    emit(native, result, lookup(i.operands.at(0)), rhs);
+                    if (width != 64) emit(ARCHON_MIR_TRUNC, dst, result, none, width);
+                    return;
+                }
+            }
+        }
         runtime(i.primitive, i);
     }
     void instruction(const mir::Instruction &i) {
@@ -294,7 +334,7 @@ class Builder {
         case O::Constant:
             if (i.type == Type::F64 || i.type == Type::F32) {
                 // Match the C11 oracle's from-bits entrypoint: canonicalize
-                // through the qualified runtime and check FP environment.
+                // through the qualified runtime without altering their bits.
                 const auto bits = constant(std::bit_cast<std::uint64_t>(i.immediate));
                 extern_call(i.type == Type::F64 ? "on1x_archon_f64_from_bits"
                                                  : "on1x_archon_f32_from_bits",
@@ -334,14 +374,12 @@ class Builder {
             return;
         }
         case O::Call: {
-            const auto *target = static_cast<const mir::Function *>(nullptr);
-            for (const auto &f : module_.functions) if (f.id == i.target) { target = &f; break; }
-            if (!target) fail(at_, "unknown call target during lowering");
             std::vector<V> args;
             if (i.type.is_tuple()) args.push_back(frame_address(local(i.type), dst));
             for (auto id : i.operands) args.push_back(lookup(id));
             const auto c_dst = (i.type == Type::Void || i.type.is_tuple()) ? none : dst;
-            emit(ARCHON_MIR_CALL, c_dst, none, none, 0, source_symbol(target->id), std::move(args));
+            // The canonical verifier has already resolved the target/signature.
+            emit(ARCHON_MIR_CALL, c_dst, none, none, 0, source_symbol(i.target), std::move(args));
             return;
         }
         case O::Print: {
@@ -417,7 +455,8 @@ class Builder {
         // Split *only* the taken edge. A conditional must not mutate the phi
         // storage of its untaken successor. Proxy blocks take exact edge args
         // as SSA parameters, preserving values until the transfer executes.
-        if (out_.blocks.size() >= UINT32_MAX) fail(at_, "too many native CFG blocks");
+        if (out_.blocks.size() >= UINT32_MAX)
+            fail(at_, "too many native CFG blocks", ARCHON_BACKEND_LIMIT);
         const auto proxy_index = static_cast<std::uint32_t>(out_.blocks.size());
         out_.blocks.emplace_back();
         auto *prior = block_;
@@ -489,15 +528,20 @@ class Builder {
 
 public:
     Builder(MachineModule::Impl &owner, const Options &options,
-            const mir::Module &module, const mir::Function &source, FunctionData &out)
-        : owner_(owner), options_(options), module_(module), source_(source),
+            const mir::Function &source, FunctionData &out)
+        : owner_(owner), options_(options), source_(source),
           out_(out), at_(source.where) {}
     void run() {
+        poll(options_, at_);
+        if (source_.blocks.front().parameters.size() +
+                (source_.result.is_tuple() ? 1u : 0u) > ARCHON_MIR_MAX_PARAMS)
+            fail(at_, "native ABI parameter limit exceeded (including tuple result pointer)",
+                 ARCHON_BACKEND_LIMIT);
         out_.name = source_symbol(source_.id);
         out_.result = source_.result.is_tuple() ? ARCHON_MIR_VOID :
             source_.result == Type::Void ? ARCHON_MIR_VOID : abi_type(source_.result, at_);
         if (source_.blocks.size() > UINT32_MAX / 3u)
-            fail(at_, "native CFG block budget exhausted");
+            fail(at_, "native CFG block budget exhausted", ARCHON_BACKEND_LIMIT);
         out_.blocks.reserve(source_.blocks.size() * 3u);
         out_.blocks.resize(source_.blocks.size());
         if (source_.result.is_tuple()) sret_ = allocate(ARCHON_MIR_PTR);
@@ -537,13 +581,19 @@ public:
     }
 };
 
-void build_entrypoint(MachineModule::Impl &m, const mir::Module &source) {
+void build_entrypoint(MachineModule::Impl &m, const mir::Module &source, const Options &options) {
     const mir::Function *entry = nullptr;
     for (const auto &f : source.functions) if (f.name == "main") { entry = &f; break; }
     if (!entry) fail({"<mir>"}, "no main function for executable entrypoint");
     if (!entry->blocks.front().parameters.empty() ||
         (entry->result != Type::Void && entry->result != Type::I64))
         fail(entry->where, "main requires no arguments and i64 or void result");
+    poll(options, entry->where);
+    const std::size_t count = entry->result == Type::Void ? 2 : 1;
+    if (count > options.max_instructions_per_function ||
+        count > options.max_instructions_per_module - m.instruction_count)
+        fail(entry->where, "MachineIR entrypoint instruction budget exceeded", ARCHON_BACKEND_LIMIT);
+    m.instruction_count += count;
     auto f = std::make_unique<FunctionData>();
     f->name = "main";
     f->result = ARCHON_MIR_I64;
@@ -570,24 +620,30 @@ MachineModule::MachineModule(std::unique_ptr<Impl> impl) : impl_(std::move(impl)
 MachineModule::~MachineModule() = default;
 MachineModule::MachineModule(MachineModule &&) noexcept = default;
 MachineModule &MachineModule::operator=(MachineModule &&) noexcept = default;
-const ArchonMIRModule &MachineModule::view() const noexcept { return impl_->c; }
+const ArchonMIRModule &MachineModule::view() const noexcept {
+    static const ArchonMIRModule empty{};
+    return impl_ ? impl_->c : empty;
+}
 
 MachineModule lower(const mir::Module &source, const Options &options) {
-    mir::verify(source, options.verification_limits);
+    poll(options, {"<mir>"});
     if (!options.max_values_per_function || !options.max_instructions_per_function ||
-        !options.max_local_bytes_per_function ||
+        !options.max_local_bytes_per_function || !options.max_instructions_per_module ||
         options.max_values_per_function > UINT32_MAX ||
         options.max_local_bytes_per_function > max_frame_local_bytes)
         fail({"<mir>"}, "invalid generated MachineIR resource budgets");
+    mir::verify(source, options.verification_limits);
+    poll(options, {"<mir>"});
     auto owned = std::make_unique<MachineModule::Impl>();
     owned->functions.reserve(source.functions.size() + (options.emit_c_entrypoint ? 1 : 0));
     for (const auto &func : source.functions) {
         auto f = std::make_unique<FunctionData>();
-        Builder(*owned, options, source, func, *f).run();
+        Builder(*owned, options, func, *f).run();
         owned->functions.push_back(std::move(f));
     }
-    if (options.emit_c_entrypoint) build_entrypoint(*owned, source);
-    owned->finalize();
+    if (options.emit_c_entrypoint) build_entrypoint(*owned, source, options);
+    owned->finalize(options);
+    poll(options, {"<mir>"});
     return MachineModule(std::move(owned));
 }
 
@@ -596,23 +652,35 @@ Product compile(const mir::Module &source, const Options &options) {
         fail({"<mir>"}, "invalid assembly output budget");
     const auto target_name = archon_backend_target();
     if (!target_name) fail({"<archon>"}, "generated native backend has no target");
+    const std::string_view target(target_name);
+    if (target != "AMD64/SysVAMD64" && target != "AArch64/AAPCS64" &&
+        target != "RISCV64I/LP64" && target != "RISCV64IM/LP64")
+        fail({"<archon>"}, "unqualified generated target/ABI: " + std::string(target),
+             ARCHON_BACKEND_UNSUPPORTED);
+    // Verify before traversing recursive types, even on a rejected FP target.
+    auto module = lower(source, options);
     // On1x currently qualifies binary32/64 runtime semantics only on its
     // Linux AMD64/SSE2 target; other Archon scalar targets cannot claim them.
-    if (std::string_view(target_name).find("AMD64") == std::string_view::npos) {
+    if (target != "AMD64/SysVAMD64") {
         for (const auto &f : source.functions) {
+            poll(options, f.where);
             if (contains_float(f.result))
-                fail(f.where, "floating-point On1x runtime requires Linux AMD64/SSE2");
+                fail(f.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
+                     ARCHON_BACKEND_UNSUPPORTED);
             for (const auto &slot : f.slots) if (contains_float(slot.type))
-                fail(slot.where, "floating-point On1x runtime requires Linux AMD64/SSE2");
+                fail(slot.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
+                     ARCHON_BACKEND_UNSUPPORTED);
             for (const auto &b : f.blocks) {
+                poll(options, b.where);
                 for (const auto &p : b.parameters) if (contains_float(p.type))
-                    fail(p.where, "floating-point On1x runtime requires Linux AMD64/SSE2");
+                    fail(p.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
+                         ARCHON_BACKEND_UNSUPPORTED);
                 for (const auto &i : b.instructions) if (contains_float(i.type))
-                    fail(i.where, "floating-point On1x runtime requires Linux AMD64/SSE2");
+                    fail(i.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
+                         ARCHON_BACKEND_UNSUPPORTED);
             }
         }
     }
-    auto module = lower(source, options);
     const ArchonBackendOptions limits{options.max_assembly_bytes, options.cancelled,
                                       options.cancel_userdata};
     ArchonBackendArtifact output{};
@@ -634,12 +702,13 @@ Product compile(const mir::Module &source, const Options &options) {
         const auto *end = std::find(begin, begin + sizeof(diagnostic.message), '\0');
         message << ": ";
         message.write(begin, static_cast<std::streamsize>(end - begin));
-        fail({"<archon>"}, message.str());
+        fail({"<archon>"}, message.str(), status);
     }
     if ((!output.data && output.size) || output.size > options.max_assembly_bytes)
-        fail({"<archon>"}, "native backend published invalid or excessive artifact");
-    const auto *target = archon_backend_target();
+        fail({"<archon>"}, "native backend published invalid or excessive artifact",
+             ARCHON_BACKEND_INTERNAL);
+    poll(options, {"<archon>"});
     return Product{output.size ? std::string(output.data, output.size) : std::string{},
-                   target ? target : ""};
+                   std::string(target)};
 }
 } // namespace on1x::backends::archon

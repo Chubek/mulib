@@ -28,7 +28,10 @@ class Lowering {
  };
  struct RegionTarget {std::size_t id;const Location& where;std::size_t done=ended;};
  std::vector<LoopTarget> loops;
- std::vector<RegionTarget> regions;
+  std::vector<RegionTarget> regions;
+  // Optional shape recognition has its own finite allowance. Exhaustion falls
+  // back to ordinary storage lowering, never bypasses HIR/MIR verification.
+  std::size_t decision_work;
  [[noreturn]] void unsupported(const Location& at,const std::string& why){
   throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
  }
@@ -150,11 +153,85 @@ class Lowering {
     check_omitted(s.otherwise);
    }
   }
-  Id expression(const Expr& e){
+   bool independent_body(const std::vector<Stmt>& statements,const std::string& name,std::size_t depth){
+    for(const auto& s:statements){
+     if(depth>128||!decision_work)return false;
+     --decision_work;
+     if(s.name==name||s.prototype||s.pattern||s.kind==Stmt::Kind::Template)return false;
+     if(s.value&&!independent_expression(*s.value,name,depth+1))return false;
+     if(!independent_body(s.body,name,depth+1)||!independent_body(s.otherwise,name,depth+1))return false;
+    }
+    return true;
+   }
+   bool independent_expression(const Expr& e,const std::string& name,std::size_t depth=0){
+    if(depth>128||!decision_work)return false;
+    --decision_work;
+    if(e.prototype||!e.captures.empty()||!e.proofs.empty()||
+       (e.kind==Expr::Kind::Variable&&e.text==name))return false;
+    if(e.callee&&!independent_expression(*e.callee,name,depth+1))return false;
+    for(const auto& child:e.children)
+     if(!independent_expression(*child,name,depth+1))return false;
+    return independent_body(e.body,name,depth+1);
+   }
+   bool boolean_decision(const Expr& e){
+    // verify_values has already checked all metadata, initialization, lexical
+    // references and ownership. Only erase this exact non-addressable bool
+    // temporary, never a general mutable binding or a resource-bearing value.
+    if(e.type!=Type::Bool||e.noreturn||e.prototype||e.unsafe_region||
+       e.body.size()!=2||e.children.size()!=1)return false;
+    const auto& storage=e.body[0];const auto& branch=e.body[1];
+    const auto& result=*e.children[0];
+    if(storage.kind!=Stmt::Kind::Storage||storage.declared!=Type::Bool||storage.prototype||
+       branch.kind!=Stmt::Kind::If||branch.prototype||!branch.value||
+       branch.value->type!=Type::Bool||branch.body.size()!=1||branch.otherwise.size()!=1||
+       result.kind!=Expr::Kind::Variable||result.reference!=Expr::Reference::Local||
+       result.type!=Type::Bool||result.text!=storage.name)return false;
+    for(const auto* arm:{&branch.body[0],&branch.otherwise[0]})
+     if(arm->kind!=Stmt::Kind::Initialize||arm->prototype||arm->ref_store||
+        arm->name!=storage.name||!arm->value||
+        (arm->value->type!=Type::Bool&&!arm->value->noreturn))return false;
+    return independent_expression(*branch.value,storage.name)&&
+      independent_expression(*branch.body[0].value,storage.name)&&
+      independent_expression(*branch.otherwise[0].value,storage.name);
+   }
+   Id decision(const Expr& e){
+    const auto& branch=e.body[1];
+    const auto& yes_value=*branch.body[0].value;
+    const auto& no_value=*branch.otherwise[0].value;
+    auto condition=expression(*branch.value);
+    if(current==ended)return 0;
+    // On a literal identity arm the condition itself is the selected value.
+    // It is already evaluated once, including any loads/calls/traps.
+    bool yes_identity=yes_value.kind==Expr::Kind::Boolean&&yes_value.text=="true";
+    bool no_identity=no_value.kind==Expr::Kind::Boolean&&no_value.text=="false";
+    auto merge=yes_identity||no_identity?make_block(e.where):ended;
+    auto yes=yes_identity?merge:make_block(branch.where);
+    auto no=no_identity?merge:make_block(branch.where);
+    terminate(Exit::Branch,condition,
+      {yes_identity?edge(yes,{condition}):edge(yes),
+       no_identity?edge(no,{condition}):edge(no)},branch.where);
+    Id yes_result=0,no_result=0;
+    auto yes_tail=ended,no_tail=ended;
+    if(!yes_identity){current=yes;yes_result=expression(yes_value);yes_tail=current;}
+    if(!no_identity){current=no;no_result=expression(no_value);no_tail=current;}
+    if(merge==ended){
+     if(yes_tail==ended&&no_tail==ended){current=ended;return 0;}
+     merge=make_block(e.where);
+    }
+    auto result=fresh(e.children[0]->where);
+    fn().blocks[merge].parameters.push_back({result,Type::Bool,e.children[0]->where});
+    if(yes_tail!=ended){current=yes_tail;jump(merge,branch.body[0].where,{yes_result});}
+    if(no_tail!=ended){current=no_tail;jump(merge,branch.otherwise[0].where,{no_result});}
+    current=merge;return result;
+   }
+   Id expression(const Expr& e){
    module.version=std::max(module.version,expression_profile(e));
    switch(e.kind){
    case Expr::Kind::Unit:return 0;
-   case Expr::Kind::Region:{scopes.emplace_back();body(e.body,false);auto result=current==ended?Id{0}:expression(*e.children.at(0));scopes.pop_back();return result;}
+    case Expr::Kind::Region:{
+     if(boolean_decision(e))return decision(e);
+     scopes.emplace_back();body(e.body,false);auto result=current==ended?Id{0}:expression(*e.children.at(0));scopes.pop_back();return result;
+    }
    case Expr::Kind::Project:{auto root=expression(*e.children.at(0));return emit(Op::Extract,e.type,{root},e.where,0,static_cast<std::int64_t>(e.projection));}
    case Expr::Kind::Integer:{
     return emit(Op::Constant,e.type,{},e.where,0,integer_literal_bits(e.text,e.where));
@@ -285,7 +362,7 @@ class Lowering {
   if(scope)scopes.pop_back();
  }
 public:
- Lowering(const Unit& u,Limits l):unit(u),limits(l){}
+  Lowering(const Unit& u,Limits l):unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)){}
    Module run(){
       inherent::verify_elaborated(unit);
       cliches::verify_elaborated(unit);

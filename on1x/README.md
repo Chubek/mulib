@@ -297,6 +297,25 @@ The repository accessed through the GitHub connection exposed the prior PPX-v1 s
 - [`stdlib/CATALOG.json`](stdlib/CATALOG.json): complete named SML Basis inventory;
   extension modules remain partial adapters, not Base/Batteries API parity.
 
+## On1xMETA processor
+
+The normal compiler pipeline applies authored
+[`processor/*.o1m` rewrites](processor/REWRITES.md) compiled by the
+LLSynth-generated `processor/On1xMETA.llsynth` language tool. Typed desugaring
+and canonicalization follow original semantic and ownership verification;
+transformed candidates are checked again before publication.
+[Semantic constraints](docs/processor-semantics.md) inspect structural and
+typed invariants at the phase boundaries.
+
+`on1xc --dump-processor INPUT [-o REPORT.json]` reports deterministic phase
+counters, rule hits and authored source locations. Rule execution is native
+compiler code; emitted programs do not require LLSynth, Perl or Python.
+Per-backend measurements and implementation recommendations are recorded in
+[`benchmark/PROCESSOR_FEEDBACK.md`](benchmark/PROCESSOR_FEEDBACK.md).
+The follow-up [boolean decision lowering comparison](benchmark/OPTIMIZATION_ROUND2.md)
+documents replacing eligible canonical boolean temporaries with MIR block arguments,
+with confirmed targeted native runtime and compilation improvements.
+
 ## Library, PPX and kernel discovery
 
 `stdlib/mulib` is part of the installed standard-library tree (`std.mulib`).
@@ -315,6 +334,20 @@ wrapper paths are summarized in the
 [kernel interoperability guide](docs/kernel-registration.md).
 
 ## Build (C11 adapter)
+
+The optional [Archon native MIR backend](backends/mir-archon/README.md)
+emits target-pinned native assembly for the verified MIR subset. With its
+trusted SDK adapter enabled, use
+`on1xc --sdk-emit mir-archon --sdk-target x86_64-unknown-linux-gnu INPUT -o OUTPUT.s`;
+`--optimize-ir` applies the verified MIR pass pipeline before emission.
+The standalone tool also works with the extension SDK disabled.
+Follow the [toolchain setup](backends/mir-archon/TOOLCHAIN.md) for the generated
+Archon package and runtime linkage.
+The [native build driver](backends/mir-archon/DRIVER.md) compiles, assembles
+and links an executable through explicitly selected tools.
+Use the [MuLL/C benchmark suite](benchmark/README.md) to generate fixtures,
+run individual backends or compare them, and inspect timing and optimization
+reports.
 
 The build helper selects bridge/kernel groups automatically and preserves one
 kernel implementation TU. Alternatively supply a locked Exotract archive through

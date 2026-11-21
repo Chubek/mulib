@@ -12,14 +12,22 @@
 #if CHAR_BIT != 8 || UINT64_MAX != 18446744073709551615ULL
 #error "Archon ScalarABI requires 64-bit words and eight-bit bytes"
 #endif
+_Static_assert(sizeof(void *) == 8 && sizeof(long) == 8 && sizeof(size_t) == 8,
+               "Archon ScalarABI requires an LP64 target");
+_Static_assert(sizeof(int64_t) == 8 && INT64_MIN == (-INT64_MAX - 1),
+               "Archon ScalarABI requires two's-complement i64");
 static uint64_t enc_i64(int64_t v) { uint64_t b; memcpy(&b, &v, 8); return b; }
 static int64_t dec_i64(uint64_t b) { int64_t v; memcpy(&v, &b, 8); return v; }
 #if defined(ON1X_F64_ABI_VERSION)
+_Static_assert(ON1X_F64_ABI_VERSION == 1 && sizeof(double) == 8,
+               "Archon ScalarABI requires On1x binary64 ABI v1");
 static uint64_t enc_f64(double v) { uint64_t b; memcpy(&b, &v, 8); return b; }
 static double dec_f64(uint64_t b) { double v; memcpy(&v, &b, 8); return v; }
 void on1x_archon_print_f64(uint64_t bits) { on1x_print_f64(dec_f64(bits)); }
 #endif
 #if defined(ON1X_F32_ABI_VERSION)
+_Static_assert(ON1X_F32_ABI_VERSION == 1 && sizeof(float) == 4,
+               "Archon ScalarABI requires On1x binary32 ABI v1");
 static uint64_t enc_f32(float v) { uint32_t b; memcpy(&b, &v, 4); return (uint64_t)b; }
 static float dec_f32(uint64_t b) { uint32_t lo=(uint32_t)b; float v; memcpy(&v, &lo, 4); return v; }
 void on1x_archon_print_f32(uint64_t bits) { on1x_print_f32(dec_f32(bits)); }
@@ -153,22 +161,22 @@ uint64_t on1x_archon_f64_from_i64(uint64_t a0) {
     return enc_f64(on1x_f64_from_i64(dec_i64(a0)));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_f64_from_u16(uint64_t a0) {
     return enc_f64(on1x_f64_from_u16((uint16_t)a0));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_f64_from_u32(uint64_t a0) {
     return enc_f64(on1x_f64_from_u32((uint32_t)a0));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_f64_from_u64(uint64_t a0) {
     return enc_f64(on1x_f64_from_u64((uint64_t)a0));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_f64_from_u8(uint64_t a0) {
     return enc_f64(on1x_f64_from_u8((uint8_t)a0));
 }
@@ -325,7 +333,7 @@ uint64_t on1x_archon_u16_from_f32(uint64_t a0) {
     return (uint64_t)(on1x_u16_from_f32(dec_f32(a0)));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_u16_from_f64(uint64_t a0) {
     return (uint64_t)(on1x_u16_from_f64(dec_f64(a0)));
 }
@@ -386,7 +394,7 @@ uint64_t on1x_archon_u32_from_f32(uint64_t a0) {
     return (uint64_t)(on1x_u32_from_f32(dec_f32(a0)));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_u32_from_f64(uint64_t a0) {
     return (uint64_t)(on1x_u32_from_f64(dec_f64(a0)));
 }
@@ -447,7 +455,7 @@ uint64_t on1x_archon_u64_from_f32(uint64_t a0) {
     return (uint64_t)(on1x_u64_from_f32(dec_f32(a0)));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_u64_from_f64(uint64_t a0) {
     return (uint64_t)(on1x_u64_from_f64(dec_f64(a0)));
 }
@@ -508,7 +516,7 @@ uint64_t on1x_archon_u8_from_f32(uint64_t a0) {
     return (uint64_t)(on1x_u8_from_f32(dec_f32(a0)));
 }
 #endif
-#if defined(ON1X_F64_ABI_VERSION)
+#if defined(ON1X_F32_ABI_VERSION)
 uint64_t on1x_archon_u8_from_f64(uint64_t a0) {
     return (uint64_t)(on1x_u8_from_f64(dec_f64(a0)));
 }
