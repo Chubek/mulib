@@ -41,7 +41,9 @@ struct Options {
  // Synchronous cooperative control. Throwing is reported as CallbackFailed.
  std::function<Control(std::size_t)> control;
  // Called before and after each pass attempt. `before` is true for the first call.
- std::function<Control(const Event&,bool before)> instrumentation;
+  std::function<Control(const Event&,bool before)> instrumentation;
+  // An explicitly disabled driver profile can still request a verified report.
+  bool allow_empty=false;
 };
 class Result {
 public:

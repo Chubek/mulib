@@ -26,6 +26,14 @@ and a seeded boolean oracle. Native execution is explicitly reported
 unsupported if the configured compiler build has no Archon tool and scalar
 ABI archive.
 
+The engine test checks all eight literal `&&`/`||` combinations against
+their truth tables: each becomes a literal in one compiled desugaring step.
+Only the closed `false && false` and `true || true` rules have no capture.
+For `false && mark()` and `true || mark()` the test finds the original call
+in the unselected branch; for `mark() && false` and `mark() || true` it
+finds the call in the evaluated condition. The generator tests independently
+reject rules that drop either evaluated or skipped captures.
+
 ```sh
 ctest --test-dir BUILD --output-on-failure -R 'on1x\.processor'
 python3 on1x/processor/tests/test_generator.py \

@@ -7,6 +7,88 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## Zero-cost expressions and optimization policy — 2026-11-21
+
+Baseline checkout `866b57a9e581a622e8a2bceb3cf9bdecb9de09a0`, LibStone
+`5d733d69f19fac1d8a05294fe54e4a4ec863fc4c`, Linux x86-64. The baseline
+compiler is the previous round's `beb339dbf2417c55239789eba68dfbc88a61ce3971672c07451a6d71ec4aba3e`.
+The shipped processor program now contains **29 rewrites and 45 semantic
+constraints**, program SHA-256
+`4049525ac80f15e1e4a4831e0c2027ba748a42f5ba9f898013f8a77834287c60`.
+It recognizes neutral literal boolean operations before expanding a
+short circuit, three two-operand predicate identities, and negation of the
+exact checked-i64 zero literal. Canonical and desugaring rules compose on
+operands before a parent chooses whether to emit a decision. No general
+negation cancellation, effect dropping, or floating-point algebra is enabled.
+
+**Paired acceptance:** the [frozen benchmark and reproduction
+commands](benchmark/ZERO_COST.md) run explicit and wrapped source against the
+same compiler and independent checksum. Before this change all six executions
+passed, but all three code-identity checks failed. The candidate's emitted
+direct C matches byte for byte; MIR matches except source locations, native
+assembly matches byte for byte both with and without MIR passes, and all
+three normalized linked images match. Both native executable pairs also match
+*without* stripping metadata. The native-off pair has 39 MIR instructions /
+9 blocks each; native-opt has 37 / 9 each. This is a scoped runtime-code
+result, not a claim of zero compile time or zero overhead for all abstractions.
+
+**Core correctness:** 19 focused CTests passed in 30.63 seconds; these include
+159 executable profiles, 53 source rejections and 52 generator negatives.
+Three changed processor/test translation units passed targeted ASan/UBSan
+with ordinary frontend/scanner archives. Tests cover nested rule families,
+ordered traps, rejected moves with all optimizations off, canonical HIR
+fallback, macro provenance, signed integer extremes and IEEE negative zero.
+The standalone CLI profile test additionally exercises the generated rule
+inventory, independent decision lowering and handwritten MIR selection,
+checked empty pipelines, SDK native output and error-output preservation.
+
+Build from the preceding boolean-lowering configuration below, using a fresh
+`-B /mnt/nvme/on1x-zero-build` with the same options. Focused reproduction:
+
+```sh
+B=/mnt/nvme/on1x-zero-build
+cmake --build "$B" --parallel 5
+ctest --test-dir "$B" -R 'on1x[.](processor|optimization_cli|mir_decision|passes)' --output-on-failure
+python3 -B on1x/processor/snapshot.py --check --work "$B/snapshot-check"
+```
+
+See [compiler policy](docs/optimization-profiles.md) for the debug/default/
+release settings and per-pass precedence. On1x semantic contracts and the
+ordinary type/ownership and MIR verifiers remain mandatory in every profile.
+The inventory exposes 34 optional transforms (29 generated, one lowering, four
+MIR passes); ordinary debug/default/release settings enable 0/30/34 before
+stage applicability. Seventeen project tests, eleven fetch/lock tests, public
+driver and native helper tests exercise real manifests, profile scoping,
+CLI overrides, plan/build agreement and publication. Projects without policy
+directives retain v1 dependency locks. See the [manifest syntax and
+examples](stdlib/on1xfile/README.md#compiler-optimizations).
+
+**Integrated test matrix:** 215 tests ran in 165.88 seconds (211 passed,
+three failed, one skipped). The SDK validator and relocated SDK consumer
+exposed a missing helper import. The project engine now loads its shipped
+sibling by absolute path; the SDK component installs that helper and correctly
+labels v2 locks. Both affected SDK tests passed on rerun in 0.81 seconds.
+The tested union is **213 passed, one reproduced baseline `addon_chatgpt`
+failure and one environmental cgroup skip**. There was no second full run.
+Logs: `/mnt/nvme/on1x-zero-testwork/{full-suite,sdk-rerun}.log`.
+The measured compiler binary is
+`7187a0edadf292bbe3412d16f1c811d6abe48e984ab849eea2dce860671c1bba`.
+Four serial MuLL benchmark reports (including reversed compiler and workload
+order) passed **48/48 correctness combinations** and two strict cross-compiler
+comparisons. In both orders the baseline failed all three within-compiler
+code-identity gates; the candidate passed all three. Wrapped native medians
+fell from 11.6 ms to 8.7–9.0 ms without MIR optimization and from 10.7–11.1 ms
+to about 8.4 ms with it. Wrapped direct-C11 medians were instead 4.2–4.7%
+*higher* than the previous compiler's wrapped program. Runtime code identity
+is between the explicit and wrapped spellings **in the same build**, not a
+cross-compiler speed guarantee; timings of even byte-identical programs vary.
+See [`benchmark/ZERO_COST.md`](benchmark/ZERO_COST.md) for the artifacts,
+distributions, independent oracle and exact gate definitions.
+The [portable result archive](benchmark/results/zero-cost-linux-amd64-2026-11-21.json)
+retains 720 measured runtime samples, 240 compilation samples with their
+stages, and code hashes (SHA-256:
+`7154174bfb98148c7249b6af97f1221f07ccf94a95f306ae66a8d0b5c918aa97`).
+
 ## Boolean decision lowering optimization — 2026-11-21
 
 Two agents implement and benchmark a narrow improvement in

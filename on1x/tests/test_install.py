@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import tempfile
+from hashlib import sha256
 from pathlib import Path
 from support import NativeTests, run
 
@@ -124,4 +125,22 @@ fn main() {
         assert len(generated)==1,generated
         p=run([generated[0]],cwd=base,env=env)
         assert p.returncode==0,p.stderr
+        (project/'src/main.on1x').write_text('fn main(){println(42);}\n')
+        for backend, tool in [('mir-archon', 'on1x-archon-mir'), ('mir-vm', 'on1x-vm')]:
+            shipped = (relocated/'bin'/tool).is_file()
+            built = (t.compiler.parent/('backends/mir-archon' if backend=='mir-archon' else '.')/tool).is_file()
+            assert shipped == built, (backend, 'runner missing from install')
+            if shipped:
+                p=run([compiler,'exec','build','--backend',backend,'--cc',t.cc],cwd=project,env=env)
+                if backend=='mir-archon' and run([relocated/'bin'/tool,'--print-target']).stdout.strip()!='x86_64-unknown-linux-gnu':
+                    assert p.returncode!=0 and 'mir-archon unavailable' in p.stderr,p
+                    continue
+                assert p.returncode==0,(backend,p.stderr)
+                out=Path(p.stdout.strip())
+                report=json.loads((out/'.on1x-build.json').read_text())
+                assert report['backend']['name']==backend
+                key='archon' if backend=='mir-archon' else 'vm_runner'
+                assert report['tools'][key]==sha256((relocated/'bin'/tool).read_bytes()).hexdigest()
+                p=run([out/'relocated-project'],cwd=base,env=env)
+                assert (p.returncode,p.stdout)==(0,'42\n'),(backend,p)
 print('Relocated compiler, prelude, stdlib, stdppx, formatter and project driver: PASS')

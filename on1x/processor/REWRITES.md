@@ -10,6 +10,8 @@ are reporting labels, never C++ pass selectors.
 
 | Phase | Operation | Restriction |
 |---|---|---|
+| Desugar | `true && a`, `a && true`, `false || a`, `a || false` → `a` | checked booleans; the omitted operand is a neutral literal |
+| Desugar | `false && false` → `false`; `true || true` → `true` | closed literals only; does not delete a captured call |
 | Desugar | `a && b` → `Select(a,b,false)` | checked booleans |
 | Desugar | `a || b` → `Select(a,true,b)` | checked booleans |
 | Desugar | `a != b` → `!(a == b)` | checked i64 or booleans |
@@ -17,7 +19,10 @@ are reporting labels, never C++ pass selectors.
 | Canonicalize | `!!a` → `a`; `!true` → `false`; `!false` → `true` | checked booleans |
 | Canonicalize | `a == true`, `true == a` → `a` | checked booleans |
 | Canonicalize | `a == false`, `false == a` → `!a` | checked booleans |
+| Canonicalize | `(!a) == (!b)` → `a == b` | checked booleans |
+| Canonicalize | `(!a) != b`, `a != (!b)` → `a == b` | checked booleans, after `!=` desugaring |
 | Canonicalize | `a + 0`, `0 + a`, `a - 0` → `a` | checked i64 only |
+| Canonicalize | `-0` → `0` | unary minus on the exact i64 literal zero; exposes neutral operands such as `a + -0` |
 | Canonicalize | `a * 1`, `1 * a`, `a / 1` → `a` | checked i64 only |
 
 `Select` is a replacement constructor, not a source or HIR node. It constructs
@@ -26,10 +31,17 @@ an ordinary bool `Region`, a `Storage` result slot, an `If` with one
 evaluated once and only the selected branch executes. Existing C11 and MIR
 lowerers consume those canonical nodes.
 
+For the neutral `&&` / `||` cases, the specialized desugar rules run before
+the general `Select` replacements, so no branch or result slot is needed.
+Canonicalization exposes neutral literals such as `!false` before this step;
+`!=` desugaring can in turn expose negated equality for canonicalization.
+Equality remains eager: even if `a` returns false, `b` still runs; if `a`
+traps, `b` does not run.
+
 Float arithmetic and comparisons are deliberately outside these rules: signed
 zero and NaN invalidate several integer identities. No zero-multiplication,
 self-subtraction, self-division, double arithmetic negation, dead-branch
-elimination, constant checked arithmetic, effect duplication or arbitrary
+elimination, general constant checked arithmetic, effect duplication or arbitrary
 statement deletion is implemented.
 
 ## Authority, effects and provenance
@@ -77,6 +89,13 @@ avoidance, canonical value/control verification of Select expansion, negative
 float/zero laws, prototype preservation and transactional work/node/depth/rewrite
 exhaustion, including failure after a successful internal rewrite. End-to-end
 source/C11/native coverage is in `tests/test_processor.py`.
+`tests/test_processor_predicates.py` checks individual negated-equality rule
+hits, compares complete direct and MIR-generated C11 with explicit `a == b`,
+and exercises both operand trap positions plus all four input pairs through
+direct C11 and the MIR evaluator. It also checks that `mark(x) + -0` emits the
+same direct and MIR-generated C11 as `mark(x)` at both signed integer limits,
+that negation overflow still reports after `mark` runs, and that negative
+floating-point zeros retain their sign.
 
 ### Engine verification (2026-11-21)
 

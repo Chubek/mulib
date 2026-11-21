@@ -1,0 +1,168 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val S <- G:LoadLib("Stats") or G:DieWith("$E?");
+val C <- G:LoadLib("Comparability") or G:DieWith("$E?");
+val Stage <- G:LoadLib("Stagecost") or G:DieWith("$E?");
+val Metrics <- G:LoadLib("Metrics") or G:DieWith("$E?");
+val Analyze <- fn(report) {
+  G:Assert(report:schema == "on1x.benchmark.v1");
+  var comparisons <- [];
+  var table <- "# On1x benchmark results\n\n"
+    + "Whole-process wall times include process startup. Ratios are observations, not significance tests.\n\n"
+    + "| Fixture | Backend | Gate | Compile median ms | Runtime median ms | Executable bytes |\n"
+    + "|---|---|---|---:|---:|---:|\n";
+  var i <- 0;
+  while i < G:Len(report:rows) {
+    val row <- report:rows[i];
+    val compile <- S:Describe(row:compile_samples_ns);
+    val runtime <- S:Describe(row:runtime_samples_ns);
+    var compile_text <- "n/a";
+    var runtime_text <- "n/a";
+    var size_text <- "n/a";
+    if compile != nil { compile_text <- G:Str(compile:median / 1000000); }
+    if runtime != nil and row:valid { runtime_text <- G:Str(runtime:median / 1000000); }
+    if row:sizes_bytes != nil { size_text <- G:Str(row:sizes_bytes:executable); }
+    table <- table + "| " + row:fixture + " | " + row:backend + " | " + G:Str(row:valid)
+      + " | " + compile_text + " | " + runtime_text + " | " + size_text + " |\n";
+    if row:valid and row:timed and row:backend != "c11" and runtime != nil {
+      var j <- 0;
+      while j < G:Len(report:rows) {
+        val reference <- report:rows[j];
+        if reference:fixture == row:fixture and reference:backend == "c11"
+          and reference:valid and G:Len(reference:runtime_samples_ns) > 0 {
+          val ref_stats <- S:Describe(reference:runtime_samples_ns);
+          comparisons <- comparisons + [{fixture: row:fixture, backend: row:backend,
+            c11_over_backend_median: ref_stats:median / runtime:median,
+            c11_runtime_ns: ref_stats, backend_runtime_ns: runtime,
+            compile_c11_over_backend_median: S:Describe(reference:compile_samples_ns):median / compile:median}];
+        }
+        j <- j + 1;
+      }
+    }
+    i <- i + 1;
+  }
+  table <- table + "\n## MIR transformation metrics\n\n"
+    + "| Fixture | Instructions before | Instructions after | Blocks before | Blocks after |\n"
+    + "|---|---:|---:|---:|---:|\n";
+  i <- 0;
+  while i < G:Len(report:mir) {
+    val row <- report:mir[i];
+    if row:metrics != nil {
+      val m <- row:metrics;
+      table <- table + "| " + row:fixture + " | " + G:Str(m:before:instructions)
+        + " | " + G:Str(m:after:instructions) + " | " + G:Str(m:before:blocks)
+        + " | " + G:Str(m:after:blocks) + " |\n";
+    }
+    i <- i + 1;
+  }
+  table <- table + "\nFailures: " + G:Str(report:failures)
+    + ". See `report.json`, `commands.json`, and per-command logs for exact provenance.\n";
+  table <- table + "\n## Checked arithmetic instruction reductions\n\n";
+  i <- 0;
+  while i < G:Len(report:mir) {
+    val item <- report:mir[i];
+    if item:metrics != nil {
+      val ops <- ["sub.checked", "mul.checked", "mod.checked"];
+      var j <- 0;
+      while j < G:Len(ops) {
+        val a <- Metrics:OpcodeCount(item:metrics:before, ops[j]);
+        val b <- Metrics:OpcodeCount(item:metrics:after, ops[j]);
+        if a != b {
+          table <- table + "* " + item:fixture + " / " + ops[j]
+            + ": " + G:Str(a) + " -> " + G:Str(b) + ".\n";
+        }
+        j <- j + 1;
+      }
+    }
+    i <- i + 1;
+  }
+  val cost <- Stage:Analyze(report:rows);
+  table <- table + "\n## Optimization cost observations\n\n";
+  i <- 0;
+  while i < G:Len(cost:optimization_tradeoffs) {
+    val item <- cost:optimization_tradeoffs[i];
+    table <- table + "* " + item:fixture + ": " + item:assessment
+      + "; estimated break-even executions = " + G:Str(item:estimated_break_even_executions) + ".\n";
+    i <- i + 1;
+  }
+  return {schema: "on1x.benchmark-analysis.v1", comparisons: comparisons,
+    stage_costs: cost, markdown: table};
+};
+val Compare <- fn(baseline, current) {
+  G:Assert(baseline:schema == "on1x.benchmark.v1" and current:schema == baseline:schema);
+  val context_reasons <- C:Context(baseline, current);
+  var deltas <- [];
+  var rejected <- [];
+  var i <- 0;
+  while i < G:Len(current:rows) {
+    val row <- current:rows[i];
+    var matches <- [];
+    var j <- 0;
+    while j < G:Len(baseline:rows) {
+      val old <- baseline:rows[j];
+      if old:fixture == row:fixture and old:backend == row:backend { matches <- matches + [old]; }
+      j <- j + 1;
+    }
+    if row:timed {
+      var reasons <- context_reasons;
+      if G:Len(matches) != 1 { reasons <- reasons + ["missing-or-duplicate-baseline-row"]; }
+      var duplicates <- 0;
+      j <- 0;
+      while j < G:Len(current:rows) {
+        if current:rows[j]:fixture == row:fixture and current:rows[j]:backend == row:backend {
+          duplicates <- duplicates + 1;
+        }
+        j <- j + 1;
+      }
+      if duplicates != 1 { reasons <- reasons + ["duplicate-current-row"]; }
+      if G:Len(matches) == 1 { reasons <- reasons + C:Pair(baseline, current, matches[0], row); }
+      if G:Len(reasons) == 0 {
+        val old <- matches[0];
+        val before <- S:Describe(old:runtime_samples_ns);
+        val after <- S:Describe(row:runtime_samples_ns);
+        G:Assert(before:median > 0 and after:median > 0);
+        deltas <- deltas + [{fixture: row:fixture, backend: row:backend,
+          baseline_median_ns: before:median, current_median_ns: after:median,
+          runtime_change_percent: (after:median / before:median - 1) * 100,
+          baseline_cv: before:coefficient_of_variation, current_cv: after:coefficient_of_variation}];
+      } else { rejected <- rejected + [{fixture: row:fixture, backend: row:backend, reasons: reasons}]; }
+    }
+    i <- i + 1;
+  }
+  var native_changed <- nil;
+  # Require the same timed workload/backend population in both directions.
+  i <- 0;
+  while i < G:Len(baseline:rows) {
+    val old <- baseline:rows[i];
+    if old:timed {
+      var matches <- 0; var j <- 0;
+      while j < G:Len(current:rows) {
+        if current:rows[j]:fixture == old:fixture and current:rows[j]:backend == old:backend
+          and current:rows[j]:timed { matches <- matches + 1; }
+        j <- j + 1;
+      }
+      if matches == 0 {
+        rejected <- rejected + [{fixture: old:fixture, backend: old:backend,
+          reasons: ["missing-current-timed-row"]}];
+      }
+    }
+    i <- i + 1;
+  }
+  if baseline:archon_provenance != nil and current:archon_provenance != nil {
+    native_changed <- C:Hashes(baseline:archon_provenance:hash) != C:Hashes(current:archon_provenance:hash);
+  }
+  return {schema: "on1x.benchmark-comparison.v2", deltas: deltas, rejected: rejected,
+    context_reasons: context_reasons,
+    compatible: G:Len(context_reasons) == 0 and G:Len(rejected) == 0 and G:Len(deltas) > 0,
+    compiler_changed: C:Hashes(baseline:provenance:compiler_hash) != C:Hashes(current:provenance:compiler_hash),
+    native_bridge_changed: native_changed,
+    same_machine: baseline:provenance:machine == current:provenance:machine,
+    note: "Ratios require matching source hashes, machine, target/ABI, runtime objects/flags, harness and methodology. Compiler changes are disclosed."};
+};
+val Save <- fn(report, directory) {
+  val result <- Analyze(report);
+  H:Write(directory + "/summary.md", result:markdown);
+  H:Write(directory + "/analysis.json", J:Encode(result) + "\n");
+  return result;
+};
+return {Analyze: Analyze, Compare: Compare, Save: Save};

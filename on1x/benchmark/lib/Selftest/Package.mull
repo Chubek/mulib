@@ -1,0 +1,51 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val S <- G:LoadLib("Stats") or G:DieWith("$E?");
+val F <- G:LoadLib("Fixtures") or G:DieWith("$E?");
+val Metrics <- G:LoadLib("Metrics") or G:DieWith("$E?");
+val Test <- fn() {
+  val data <- {schema: "test", nested: [nil, true, false, 0, -42, 0.125],
+    escapes: "\"\\\n\t\r\0", empty: {}, array: []};
+  G:Assert(J:Decode(J:Encode(data)) == data);
+  G:Assert(J:Decode(" [ -1.25e2, 1E+3, 0.5 ] ") == [-125, 1000, 0.5]);
+  G:Assert(J:Decode("\"\\u0041\\b\\f\\/\"") == "A" + H:Char(8) + H:Char(12) + "/");
+  val d <- S:Describe([1, 2, 3, 4, 5]);
+  G:Assert(d:mean == 3 and d:median == 3 and d:p05 == 1.2 and d:p95 == 4.8);
+  G:Assert(d:median_absolute_deviation == 1 and d:count == 5);
+  G:Assert(S:Describe([]) == nil and S:Describe([7]):stddev_sample == 0);
+  G:Assert(S:Describe([0, 0]):coefficient_of_variation == nil);
+  G:Assert(F:Build("recurrence", 1, 1):expected_stdout == "40\n");
+  G:Assert(F:Build("branches", 4, 1):expected_stdout == "1\n");
+  G:Assert(F:Build("gcd", 1, 1):expected_stdout == "2\n");
+  G:Assert(F:Build("calls", 2, 1):expected_stdout == "110\n");
+  G:Assert(F:Build("tuple", 10, 1):expected_stdout == "55\n");
+  G:Assert(F:Build("constants", 1, 1):expected_stdout == "82\n");
+  G:Assert(F:Build("annihilator", 1, 1):expected_stdout == "0\n");
+  G:Assert(F:Build("annihilator", 1000000, 1729):expected_stdout == "0\n");
+  G:Assert(F:Build("annihilator", 10, 1):timed);
+  G:Assert(F:Build("processor-lazy", 1, 1):expected_stdout == "1\n");
+  G:Assert(F:Build("processor-lazy", 30, 1):expected_stdout == "14\n");
+  G:Assert(F:Build("processor-lazy", 31, 1):expected_stdout == "15\n");
+  G:Assert(F:Build("processor-identities", 97, 1):expected_stdout == "4656\n");
+  G:Assert(F:Build("processor-identities", 100, 1):expected_stdout == "4659\n");
+  G:Assert(F:Build("zero-explicit", 7, 5):expected_stdout == "8\n");
+  G:Assert(F:Build("zero-wrapped", 8, 2):expected_stdout == "7\n");
+  G:Assert(F:Build("zero-wrapped", 1000000, 1729):expected_stdout == "999998\n");
+  G:Assert(F:Build("trap", 1, 1):expected_exit == 70);
+  val m <- Metrics:Count("(on1x.mir 1 0 ((function 1 \"(instruction fake)\" i64"
+    + " (at \"file\" 0 0 0) () ((block 2 3 (at \"file\" 0 0 0) ()"
+    + " ((instruction 4 const.i64 i64 () 7 0 0 0 (at \"file\" 0 0 0)))"
+    + " (exit 5 return 4 3 () (at \"file\" 0 0 0)))))))");
+  G:Assert(m:instructions == 1 and m:functions == 1 and m:blocks == 1);
+  G:Assert(m:opcodes["const.i64"] == 1);
+  G:Assert(Metrics:OpcodeCount(m, "mul.checked") == 0);
+  val changes <- Metrics:OpcodeChanges(
+    {opcodes: {"mul.checked": 2, "sub.checked": 1}},
+    {opcodes: {"const": 3, "sub.checked": 1}});
+  G:Assert(changes == [
+    {opcode: "mul.checked", before: 2, after: 0, removed: 2},
+    {opcode: "const", before: 0, after: 3, removed: -3}]);
+  G:GetStdout()("MuLL JSON, statistics, fixture oracle, and MIR metrics tests passed\n");
+  return 0;
+};
+return {Test: Test};

@@ -972,8 +972,15 @@ class Checker {
    generic_context=false;
  }
 };
+   processor::SemanticStats recheck_candidate(Unit& unit,const std::vector<InterfaceObligation>* interfaces){
+    auto stats=processor::validate(unit,processor::SemanticStage::Typed);
+    Checker(unit).run(interfaces);
+    canonical::verify_control(unit);canonical::verify_values(unit);
+    csp::verify(unit,true);extensions::verify_evidence(unit);
+    return stats;
+   }
    void check_unit(Unit& u,const std::vector<InterfaceObligation>* interfaces,analysis::Context* analysis_context,
-                   processor::Report* output=nullptr){
+                   processor::Report* output=nullptr,const processor::RuleSelection& selection={}){
     if(output)*output={};
     processor::Report evidence;
      require_no_kernel_imports(u);cliches::prepare(u);inherent::prepare(u);
@@ -989,25 +996,53 @@ class Checker {
     // precede any compiled rewrite that could remove an invalid operand.
     evidence.typed_before=processor::validate(u,processor::SemanticStage::Typed);
     if(analysis_context&&analysis_context->diagnostics.has_errors())return;
+    if(!selection.partial_eval&&!selection.default_enabled&&selection.overrides.empty()){
+     // Nothing may change the already verified unit. In particular, disabling
+     // rewrites never disables the structural or typed semantic contracts.
+     if(output){evidence.typed_after=processor::validate(u,processor::SemanticStage::Typed);
+                evidence.verified=true;*output=std::move(evidence);}
+     return;
+    }
     std::size_t budget=262144;
     auto candidate=clone_unit(u,budget);
-    for(const auto phase:{processor::Phase::Desugar,processor::Phase::Canonicalize}){
-     auto stats=processor::apply(candidate,phase);
+    auto verify_candidate=[&]{
      // Validate annotations before Checker can recompute them. Never repeat
      // inference, macro expansion or source lowering on this private HIR.
-     evidence.typed_after=processor::validate(candidate,processor::SemanticStage::Typed);
-     Checker(candidate).run(interfaces);
-     canonical::verify_control(candidate);canonical::verify_values(candidate);
-     csp::verify(candidate,true);extensions::verify_evidence(candidate);
-     if(phase==processor::Phase::Desugar)evidence.desugar=std::move(stats);
-     else evidence.canonicalize=std::move(stats);
+     evidence.typed_after=recheck_candidate(candidate,interfaces);
+    };
+    // Expose neutral operands before desugaring can turn them into decisions
+    // (e.g. `x && !false`). Desugaring may itself introduce canonical redexes.
+    evidence.canonicalize=processor::apply(candidate,processor::Phase::Canonicalize,{},selection);
+    if(evidence.canonicalize.rewrites)verify_candidate();
+    if(selection.partial_eval){
+     evidence.partial_eval=processor::partial_evaluate(candidate,u);
+     const auto& pe=evidence.partial_eval;
+     if(pe.folds||pe.static_calls||pe.residual_calls)verify_candidate();
     }
+    auto normalized=processor::desugar_normalized(candidate,{},selection);
+    evidence.desugar=std::move(normalized.desugar);
+    auto& total=evidence.canonicalize;
+    total.visited+=normalized.canonicalize.visited;
+    total.rewrites+=normalized.canonicalize.rewrites;
+    // Both traversals enumerate the same immutable canonical rule table.
+    for(std::size_t i=0;i<total.rules.size();++i)
+     total.rules[i].second+=normalized.canonicalize.rules[i].second;
+    verify_candidate();
     u=std::move(candidate);evidence.verified=true;
     if(output)*output=std::move(evidence);
  }
 }
+   void recheck_checked_hir(Unit& u){
+    require_no_kernel_imports(u);meta::require_core(u);
+    cliches::verify_elaborated(u);inherent::verify_elaborated(u);
+    processor::validate(u,processor::SemanticStage::Structural);
+    (void)recheck_candidate(u,nullptr);
+   }
    void check(Unit& u,analysis::Context& context){check_unit(u,nullptr,&context);}
    void check(Unit& u,analysis::Context& context,processor::Report& report){check_unit(u,nullptr,&context,&report);}
+   void check(Unit& u,analysis::Context& context,const processor::RuleSelection& selection,processor::Report* report){
+    check_unit(u,nullptr,&context,report,selection);
+   }
   void check(Unit& u){
    diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};
    check_unit(u,nullptr,&context);
@@ -1019,6 +1054,11 @@ class Checker {
   void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces,analysis::Context& context){
    if(interfaces.empty())throw Error({"<unit>"},"no interface obligations to verify","ON1X-INTERFACE-MEMBER");
    check_unit(u,&interfaces,&context);
+  }
+  void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces,analysis::Context& context,
+                        const processor::RuleSelection& selection){
+   if(interfaces.empty())throw Error({"<unit>"},"no interface obligations to verify","ON1X-INTERFACE-MEMBER");
+   check_unit(u,&interfaces,&context,nullptr,selection);
   }
   void check_interfaces(Unit u,const std::vector<InterfaceObligation>& interfaces){
    diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};

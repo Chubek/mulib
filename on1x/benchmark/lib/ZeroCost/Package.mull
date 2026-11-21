@@ -1,0 +1,96 @@
+# Recheck artifacts from one real cross-backend run. Never normalize SSA ids,
+# block arguments, immediates, conditional edges, assembly, C, or .text.
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val F <- G:LoadLib("Fixtures") or G:DieWith("$E?");
+val C <- G:LoadLib("Comparability") or G:DieWith("$E?");
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+val Check <- fn(dir) {
+  val report <- J:Decode(H:Read(dir + "/report.json"));
+  G:Assert(report:schema == "on1x.benchmark.v1" and report:failures == 0);
+  val work <- dir + "/zero-cost";
+  H:Mkdir(work);
+  var count <- 0;
+  val Tool <- fn(argv, stdout) {
+    val err <- work + "/" + G:Str(count) + ".stderr";
+    count <- count + 1;
+    val r <- H:Run(argv, stdout, err, 30000);
+    if r:exit_code != 0 or r:signal != 0 or r:timed_out {
+      return G:DieWith("zero-cost tool failed: " + argv[0] + " " + H:Read(err));
+    }
+  };
+  val Hash <- fn(path) {
+    val stdout <- work + "/sha256sum.stdout";
+    Tool(["sha256sum", path], stdout);
+    return T:Split(H:Read(stdout), " ")[0];
+  };
+  var rows <- []; var passed <- true;
+  val compiler <- dir + "/tools/on1xc";
+  G:Assert(C:Hashes(report:provenance:compiler_hash) == [Hash(compiler)]);
+  val backends <- ["c11", "mir-archon", "mir-archon-opt"];
+  val names <- ["zero-explicit", "zero-wrapped"];
+  var bi <- 0;
+  while bi < G:Len(backends) {
+    val backend <- backends[bi];
+    var sides <- [];
+    var ni <- 0;
+    while ni < G:Len(names) {
+      val name <- names[ni];
+      val fixture <- F:Build(name, report:config:iterations, report:config:seed);
+      val src <- dir + "/fixtures/" + name + ".on1x";
+      G:Assert(H:Read(src) == fixture:source and Hash(src) == C:FixtureHash(report, name));
+      if bi == 0 {
+        val processor <- work + "/" + name + ".processor.json";
+        Tool([compiler, "--dump-processor", src, "-o", processor], work + "/processor.stdout");
+        G:Assert(J:Decode(H:Read(processor)):verified);
+      }
+      val stem <- dir + "/artifacts/" + name + "." + backend;
+      val exe <- stem + ".exe";
+      val base <- work + "/" + name + "." + backend;
+      var matches <- 0;
+      var ri <- 0;
+      while ri < G:Len(report:rows) {
+        val row <- report:rows[ri];
+        if row:fixture == name and row:backend == backend {
+          matches <- matches + 1;
+          G:Assert(row:valid and row:timed and G:Len(row:runtime_samples_ns) > 0);
+          G:Assert(C:Hashes(row:executable_hash) == [Hash(exe)]);
+          val gate <- row:correctness;
+          G:Assert(gate:result:exit_code == fixture:expected_exit and gate:result:signal == 0
+            and not gate:result:timed_out);
+        }
+        ri <- ri + 1;
+      }
+      G:Assert(matches == 1);
+      val check <- H:Run([exe], base + ".stdout", base + ".stderr", report:config:timeout_ms);
+      G:Assert(check:exit_code == fixture:expected_exit and check:signal == 0 and not check:timed_out
+        and H:Read(base + ".stdout") == fixture:expected_stdout
+        and H:Read(base + ".stderr") == fixture:expected_stderr);
+      Tool(["objcopy", "--strip-all", "--remove-section=.note.gnu.build-id", exe, base + ".elf"],
+        work + "/objcopy.stdout");
+      var mir_hash <- nil;
+      var output <- stem + ".c";
+      if backend != "c11" {
+        output <- stem + ".s";
+        # MIR v1 location: (at "escaped path" offset line column).
+        Tool(["sed", "-E", "s/\\(at \"([^\"\\\\]|\\\\.)*\" [0-9]+ [0-9]+ [0-9]+\\)/(at)/g", stem + ".mir"],
+          base + ".mir");
+        mir_hash <- Hash(base + ".mir");
+      }
+      sides <- sides + [{fixture: name, mir: mir_hash, emitted: Hash(output),
+        executable: Hash(exe), normalized_elf: Hash(base + ".elf")}];
+      ni <- ni + 1;
+    }
+    val equal <- sides[0]:mir == sides[1]:mir and sides[0]:emitted == sides[1]:emitted
+      and sides[0]:normalized_elf == sides[1]:normalized_elf;
+    rows <- rows + [{backend: backend, equal: equal, sides: sides}];
+    passed <- passed and equal;
+    bi <- bi + 1;
+  }
+  val result <- {schema: "on1x.zero-cost.v1", passed: passed, rows: rows};
+  H:Write(work + "/comparison.json", J:Encode(result) + "\n");
+  G:GetStdout()(J:Encode(result) + "\n");
+  if not passed { return 1; }
+  return 0;
+};
+return {Check: Check};

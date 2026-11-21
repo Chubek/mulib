@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build one On1x file through the checked C11 backend (no shell interpolation).
+"""Build one On1x file with the selected verified backend (default: direct C11).
 
 Installed helpers accept --mulib-root or ON1X_MULIB_ROOT for kernel builds.
 """
@@ -62,7 +62,11 @@ def main():
     cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc') if (ROOT / 'build' / 'on1xc').is_file() else shutil.which('on1xc') or 'on1xc')
     cli.add_argument('--cc', default=os.environ.get('CC', 'cc'))
     cli.add_argument('--emit-only', action='store_true')
-    cli.add_argument('--via-mir', action='store_true', help='use the verified scalar MIR-to-C11 path')
+    backend_args = cli.add_mutually_exclusive_group()
+    backend_args.add_argument('--backend', choices=('c11', 'mir-c11', 'mir-vm', 'mir-archon'),
+                              help='output: direct C11, MIR C11, VM bytecode, or native Archon executable')
+    backend_args.add_argument('--via-mir', dest='backend', action='store_const', const='mir-c11',
+                              help='shorthand for --backend mir-c11')
     cli.add_argument('--memory-check', action='store_true', help='require Chisel resource-usage admission')
     cli.add_argument('--admitted-extern', type=Path, action='append', default=[],
                      help='reviewed scalar-only extern evidence (requires --memory-check)')
@@ -78,6 +82,8 @@ def main():
     cli.add_argument('--diagnostics', choices=('text', 'json', 'sarif'))
     cli.add_argument('--color', choices=('auto', 'always', 'never'))
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
+    import on1x_optimization as optimization
+    optimization.arguments(cli)
     cli.add_argument('--extra-c', action='append', default=[], help='extra C translation unit to compile/link')
     cli.add_argument('--cflag', action='append', default=[], help='explicit extra C compiler option')
     cli.add_argument('--enable-pod-fixture', action='store_true',
@@ -116,6 +122,25 @@ def main():
     cli.add_argument('--exotract', help='trusted Lua-enabled Exotract executable for KernelBind')
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
     args = cli.parse_args()
+    args.via_mir = args.backend == 'mir-c11'
+    alternate = args.backend in ('mir-vm', 'mir-archon')
+    if alternate:
+        if (args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or args.extra_c
+                or args.enable_pod_fixture or args.mulib or args.mulib_fixture or args.mulib_archive
+                or args.mulib_root or args.mulib_path or args.mulib_plan or args.debug_build_root):
+            cli.error(f'{args.backend} does not accept C11/kernel-link options')
+        if args.cflag and args.backend == 'mir-vm':
+            cli.error('mir-vm emits bytecode and does not accept C compiler flags')
+        compiler_tool = shutil.which(args.on1xc)
+        if not compiler_tool:
+            cli.error('compiler unavailable: ' + args.on1xc)
+        args.on1xc = str(Path(compiler_tool).resolve(strict=True))
+        protected = {args.input.resolve(), Path(args.on1xc)}
+        if args.backend == 'mir-vm':
+            protected.add(Path(args.on1xc).with_name('on1x-vm').resolve())
+        if args.output.resolve() in protected:
+            cli.error('output aliases a build input')
+        args.output.parent.mkdir(parents=True, exist_ok=True)
     if args.kernel_review_candidate:
         args.inspect_kernels = True
     review_options = (args.kernel_review, args.kernel_review_key, args.kernel_review_signature)
@@ -124,8 +149,11 @@ def main():
             cli.error('review, public key and signature must be supplied together with --kernel-bind')
         if args.mulib_plan:
             cli.error('reviewed builds publish their link plan inside the output directory')
-    if args.optimize_ir and not args.via_mir:
-        cli.error('--optimize-ir requires --via-mir')
+    if args.optimize_ir and not (args.via_mir or alternate):
+        cli.error('--optimize-ir requires --via-mir or another MIR backend')
+    opt_flags = optimization.flags(args.opt_profile, args.opt_select)
+    if opt_flags and (args.inspect_kernels or args.kernel_bind):
+        cli.error('explicit compiler optimization policy is unsupported by KernelBind profiles')
     if args.admitted_extern and not args.memory_check:
         cli.error('--admitted-extern requires --memory-check')
     if args.debug_build_root and (args.inspect_kernels or args.kernel_bind):
@@ -163,8 +191,14 @@ def main():
     with tempfile.TemporaryDirectory(prefix='on1x-build-') as temp:
         generated = Path(temp) / ('kernel-requests.json' if args.inspect_kernels else 'main.c')
         mode = '--kernel-imports' if args.inspect_kernels else '--emit-ir-c' if args.via_mir else '--emit-c'
+        if args.backend == 'mir-vm':
+            mode = '--emit-vm'
+            generated = Path(temp) / 'program.o1vm'
+        elif args.backend == 'mir-archon':
+            mode = '--emit-ir'
+            generated = Path(temp) / 'program.mir'
         compiler = [args.on1xc, mode, str(args.input), '-o', str(generated),
-                    '--ppx-timeout-ms', str(args.ppx_timeout_ms)]
+                    '--ppx-timeout-ms', str(args.ppx_timeout_ms), *opt_flags]
         if args.allow_source_ppx:
             compiler.append('--allow-source-ppx')
         if args.optimize_ir:
@@ -218,7 +252,7 @@ def main():
             exo = importlib.util.module_from_spec(spec);spec.loader.exec_module(exo)
             compiler[0] = exo.executable(compiler[0])
             driver_pins = {path: exo.contracts.digest(path) for path in
-                           [compiler[0], Path(__file__).resolve(),
+                           [compiler[0], Path(__file__).resolve(), Path(optimization.__file__).resolve(),
                             ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h']}
             requests_path = Path(temp)/'kernel-requests.json'
             inspect = [str(compiler[0]), '--kernel-imports', str(args.input), '-o', str(requests_path), *compiler[5:]]
@@ -262,6 +296,29 @@ def main():
             args.cc = report['compiler']
             compiler.append('--kernel-c11')
         subprocess.run(compiler, check=True)
+        if args.backend == 'mir-vm':
+            # The compiler writes verified portable bytecode. Verify the exact
+            # published bytes with the installed standalone runner as well.
+            runner = Path(args.on1xc).with_name('on1x-vm')
+            subprocess.run([runner, '--verify', generated], check=True)
+            with tempfile.NamedTemporaryFile(dir=args.output.parent, delete=False) as stream:
+                staged = Path(stream.name)
+            try:
+                shutil.copyfile(generated, staged)
+                os.replace(staged, args.output)
+            finally:
+                staged.unlink(missing_ok=True)
+            return
+        if args.backend == 'mir-archon':
+            cc = shutil.which(args.cc)
+            if not cc:
+                raise ValueError('native C toolchain unavailable: ' + args.cc)
+            subprocess.run([sys.executable, ROOT / 'tools/on1x-native-build.py',
+                            '--on1xc', args.on1xc, '--target', 'x86_64-unknown-linux-gnu',
+                            '--cc', str(Path(cc).resolve()), '--ir-input', generated, '-o', args.output,
+                            *(['--emit-only'] if args.emit_only else []),
+                            *(f'--cflag={flag}' for flag in args.cflag)], check=True)
+            return
         if kernel_interface:
             # Re-resolve the graph after lowering as well as checking each
             # original source hash. Adding a higher-priority module candidate
@@ -330,7 +387,8 @@ def main():
             cc=Path(cc).resolve()
             compiler_version=subprocess.check_output([str(cc),'--version'],text=True,timeout=30)
             compiler_target=subprocess.check_output([str(cc),'-dumpmachine'],text=True,timeout=30).strip()
-            for path in [cc,Path(__file__).resolve(),Path(house.__file__)]:fingerprints[str(path)]=house.contracts.digest(path)
+            for path in (cc, Path(__file__).resolve(), Path(optimization.__file__).resolve(), Path(house.__file__)):
+                fingerprints[str(path)] = house.contracts.digest(path)
             kernels = list(args.mulib)
             if kernel_interface:
                 if has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge or containers or has_shared:
@@ -638,7 +696,9 @@ def main():
                 report=dict(schema='on1x.mulib-link/v1',plan=recipe,inputs=stable,generated_inputs=generated_inputs,
                             compiler=str(cc),compiler_version=compiler_version,compiler_target=compiler_target,
                             cflags=args.cflag,bridge_groups=sorted(groups),
-                            executable_sha256=house.contracts.digest(binary),safe_export=False)
+                             executable_sha256=house.contracts.digest(binary),safe_export=False)
+                if opt_flags or args.optimize_ir:
+                    report['optimization_args'] = opt_flags + (['--optimize-ir'] if args.optimize_ir else [])
                 if containers or has_shared:
                     report['container_bridge_groups'] = sorted(containers + (['SHARED'] if has_shared else []))
                 if 'POD' in containers:

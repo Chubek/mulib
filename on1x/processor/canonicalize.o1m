@@ -3,6 +3,23 @@ budget steps 8388608 nodes 262144 depth 520;
 
 # No rule drops or duplicates a captured computation. In particular, x*0,
 # x-x, x/x and double arithmetic negation are not identities for checked i64.
+rule boolean_equal_negated_operands phase canonicalize priority 330
+match Binary("==", Unary("!", $left), Unary("!", $right))
+replace Binary("==", $left, $right)
+guard boolean;
+
+# The desugar phase spells != as !(left == right). Cancel its result
+# negation against a negated operand, retaining the eager comparison order.
+rule boolean_not_equal_negated_left phase canonicalize priority 320
+match Unary("!", Binary("==", Unary("!", $left), $right))
+replace Binary("==", $left, $right)
+guard boolean;
+
+rule boolean_not_equal_negated_right phase canonicalize priority 310
+match Unary("!", Binary("==", $left, Unary("!", $right)))
+replace Binary("==", $left, $right)
+guard boolean;
+
 rule boolean_double_not phase canonicalize priority 300
 match Unary("!", Unary("!", $value))
 replace $value
@@ -17,6 +34,11 @@ rule boolean_not_false phase canonicalize priority 280
 match Unary("!", Boolean("false"))
 replace Boolean("true")
 guard boolean;
+
+rule integer_negate_zero phase canonicalize priority 275
+match Unary("-", Integer("0"))
+replace Integer("0")
+guard integer;
 
 rule integer_add_zero_right phase canonicalize priority 270
 match Binary("+", $value, Integer("0"))

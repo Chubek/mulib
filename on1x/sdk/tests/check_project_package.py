@@ -91,11 +91,14 @@ add_test(NAME consumer COMMAND consumer)
             raise RuntimeError("installed on1x-sdk reported unexpected metadata")
         manifest = work / "On1xfile"
         manifest.write_text(
-            "on1xfile 1\nkind library\nname \"relocated\"\n",
+            "on1xfile 1\nkind library\nname \"relocated\"\n"
+            "optimization-profile debug\noptimization \"dev\" \"all\" off\n",
             encoding="utf-8",
         )
-        validated = json.loads(
-            run(str(tool), "validate", "on1xfile", str(manifest)).stdout)
+        # Neither the current project nor PYTHONPATH supplies trusted SDK helpers.
+        (work / "on1x_optimization.py").write_text("raise RuntimeError('shadowed SDK helper')\n")
+        validated = json.loads(run(str(tool), "validate", "on1xfile", str(manifest),
+                                   cwd=work, env=dict(os.environ, PYTHONPATH=str(work))).stdout)
         if not validated.get("valid"):
             raise RuntimeError("installed project validator rejected a manifest")
 

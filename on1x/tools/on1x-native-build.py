@@ -46,11 +46,13 @@ def frontend_flags(flags):
     arities = {
         "--no-prelude": 0, "--memory-check": 0, "--verify-types": 0,
         "--no-analysis-repairs": 0, "--allow-source-ppx": 0,
+        "--opt-profile": 1, "--profile": 1, "--enable-opt": 1, "--disable-opt": 1,
+        "--all-optimizations": 0, "--no-optimizations": 0,
         "-I": 1, "--module-path": 1, "--stdlib": 1, "--prelude": 1,
         "--lib-path": 1, "--stdlib-path": 1, "--ppx-path": 1,
         "--stdppx-path": 1, "--stdppx": 1, "--use-ppx": 1,
         "--enable": 1, "--disable": 1, "--ppx-timeout-ms": 1,
-        "--scrutiny": 1, "--scrutiny-work": 1, "--diagnostics": 1,
+        "--scrutiny": 1, "--project-scrutiny": 1, "--scrutiny-work": 1, "--diagnostics": 1,
         "--color": 1, "--diagnostic-catalog": 1, "--opt-work": 1, "--opt-rewrites": 1,
         "--ppx": 2, "--ppx-schema": 2,
     }
@@ -81,7 +83,7 @@ class Runner:
         resource.setrlimit(resource.RLIMIT_FSIZE, (self.max_bytes, self.max_bytes))
         resource.setrlimit(resource.RLIMIT_NOFILE, (128, 128))
 
-    def run(self, command, toolchain=False):
+    def run(self, command, toolchain=False, cwd=None):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise BuildError("native build deadline exceeded")
@@ -102,7 +104,7 @@ class Runner:
         with log.open("wb") as output:
             child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output,
                                      stderr=subprocess.STDOUT, start_new_session=True,
-                                     preexec_fn=self.limits, env=environment)
+                                     preexec_fn=self.limits, env=environment, cwd=cwd)
             try:
                 code = child.wait(timeout=remaining)
             except BaseException:
@@ -120,9 +122,12 @@ class Runner:
         return text.strip()
 
 
-def manifest_path(args, build):
-    if args.toolchain_prefix:
-        return args.toolchain_prefix.resolve() / "share/archon/backend/BackendManifest.json"
+def manifest_path(build, toolchain_prefix):
+    if toolchain_prefix:
+        return toolchain_prefix.resolve() / "share/archon/backend/BackendManifest.json"
+    installed = build.parent / "share/on1x/backends/mir-archon/BackendManifest.json"
+    if build.name == 'bin' and not (build / 'CMakeCache.txt').is_file():
+        return installed
     cache = build / "CMakeCache.txt"
     if cache.stat().st_size > 4 * 1024 * 1024:
         raise BuildError("CMake cache exceeds limit")
@@ -133,27 +138,40 @@ def manifest_path(args, build):
     raise BuildError("missing ArchonBackend_DIR; provide --toolchain-prefix")
 
 
+def layout(build):
+    """Fixed build-tree or installed-prefix artifacts beside the selected compiler."""
+    if build.name == 'bin' and not (build / 'CMakeCache.txt').is_file():
+        return (build / 'on1x-archon-mir', build.parent / 'lib/libon1x_archon_scalar_abi.a',
+                build.parent / 'lib/libon1x_runtime.a')
+    return (build / 'backends/mir-archon/on1x-archon-mir',
+            build / 'backends/mir-archon/libon1x_archon_scalar_abi.a', build / 'libon1x_runtime.a')
+
+
 def bounded_artifact(path, limit):
     if not path.is_file() or not 0 < path.stat().st_size <= limit:
         raise BuildError("missing, empty or oversized artifact: " + str(path))
 
 
 def main(argv=None):
+    import on1x_optimization as optimization
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("input", type=Path)
-    parser.add_argument("-o", "--output", type=Path, required=True)
-    parser.add_argument("--build-dir", type=Path, required=True)
+    parser.add_argument("input", nargs='?', type=Path)
+    parser.add_argument("-o", "--output", type=Path)
+    parser.add_argument("--build-dir", type=Path, help='tool directory (defaults to the selected compiler directory)')
+    parser.add_argument("--probe", action='store_true', help='verify the configured native toolchain and print its tools')
     parser.add_argument("--target", required=True)
     parser.add_argument("--cc", required=True, help="absolute path to trusted GCC/Clang driver")
     parser.add_argument("--assembler", type=Path, help="absolute trusted assembler (default: CC-selected)")
     parser.add_argument("--linker", type=Path, help="absolute trusted linker (default: CC-selected)")
     parser.add_argument("--toolchain-prefix", type=Path)
+    parser.add_argument("--archon-manifest", type=Path)
     parser.add_argument("--on1xc", type=Path)
     parser.add_argument("--archon-mir", type=Path)
     parser.add_argument("--scalar-abi", type=Path)
     parser.add_argument("--runtime", type=Path)
     parser.add_argument("--ir-input", action="store_true", help="input is serialized MIR")
     parser.add_argument("--optimize-ir", action="store_true")
+    optimization.arguments(parser)
     parser.add_argument("--pic", action="store_true", help="emit PIC and link a PIE")
     parser.add_argument("--emit-only", action="store_true", help="publish assembly")
     parser.add_argument("--no-entry", action="store_true", help="library assembly; requires --emit-only")
@@ -166,6 +184,8 @@ def main(argv=None):
                         help="ordered frontend argument; use --on1xc-arg=--no-prelude")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args(argv)
+    if (args.probe and (args.output or args.input)) or (not args.probe and not (args.output and args.input)):
+        parser.error("supply INPUT and -o OUTPUT, or --probe without either")
     if sys.platform != "linux" or args.target != TARGET:
         raise BuildError("native executable helper currently qualifies only Linux " + TARGET)
     if args.no_entry and not args.emit_only:
@@ -178,19 +198,22 @@ def main(argv=None):
     if any(flag not in SAFE_FLAGS for flag in args.cflag):
         raise BuildError("unsupported C flag (target/ABI/fast-math overrides are forbidden)")
     forwarded = frontend_flags(args.on1xc_arg)
-    build = args.build_dir.resolve(strict=True)
-    compiler = file_path(args.on1xc or build / "on1xc", True)
-    archon = file_path(args.archon_mir or build / "backends/mir-archon/on1x-archon-mir", True)
+    default_compiler = (args.build_dir.resolve(strict=True) / 'on1xc' if args.build_dir else
+                        Path(__file__).resolve().parents[3] / 'bin/on1xc')
+    compiler = file_path(args.on1xc or default_compiler, True)
+    build = args.build_dir.resolve(strict=True) if args.build_dir else compiler.parent
+    archon_default, scalar_default, runtime_default = layout(build)
+    archon = file_path(args.archon_mir or archon_default, True)
     cc = file_path(args.cc, True)
-    scalar = file_path(args.scalar_abi or build / "backends/mir-archon/libon1x_archon_scalar_abi.a")
-    runtime = file_path(args.runtime or build / "libon1x_runtime.a")
-    source = args.input.resolve(strict=True)
+    scalar = file_path(args.scalar_abi or scalar_default)
+    runtime = file_path(args.runtime or runtime_default)
+    source = args.input.resolve(strict=True) if args.input else None
     # Preserve the final path component so atomic replacement replaces a symlink,
     # rather than following it and overwriting the symlink's destination.
-    destination = args.output.parent.resolve(strict=True) / args.output.name
-    if destination.resolve() in {source, compiler, archon, cc, scalar, runtime}:
+    destination = args.output.parent.resolve(strict=True) / args.output.name if args.output else None
+    manifest = file_path(args.archon_manifest or manifest_path(build, args.toolchain_prefix))
+    if destination and destination.resolve() in {source, compiler, archon, cc, scalar, runtime, manifest}:
         raise BuildError("output aliases a build input")
-    manifest = manifest_path(args, build)
     if manifest.stat().st_size > 1024 * 1024:
         raise BuildError("Archon manifest exceeds limit")
     profile = json.loads(manifest.read_text())
@@ -198,7 +221,7 @@ def main(argv=None):
             profile.get("machineir_schema_version")) != ("AMD64", "SysVAMD64", 1, 1):
         raise BuildError("Archon manifest target/ABI/schema mismatch")
     # Stage on the output filesystem; every failure leaves the old output intact.
-    with tempfile.TemporaryDirectory(prefix=".on1x-native-", dir=destination.parent) as temporary:
+    with tempfile.TemporaryDirectory(prefix=".on1x-native-", dir=destination.parent if destination else None) as temporary:
         stage = Path(temporary)
         runner = Runner(stage, args.timeout, args.memory_mib * 1024 * 1024,
                         args.max_output_bytes, args.verbose)
@@ -224,7 +247,7 @@ def main(argv=None):
                 if not selected:
                     raise BuildError("cannot resolve trusted tool: " + name)
             selected = file_path(selected, True)
-            if destination.resolve() == selected:
+            if destination and destination.resolve() == selected:
                 raise BuildError("output aliases a toolchain executable")
             (tools / name).symlink_to(selected)
             resolved_tools[name] = selected
@@ -232,11 +255,16 @@ def main(argv=None):
                 (tools / "ld.bfd").symlink_to(selected)
             if args.verbose:
                 print("trusted " + name + ": " + str(selected), file=sys.stderr)
+        if args.probe:
+            print(json.dumps(dict(target=args.target, abi=profile['abi'], cc_target=cc_target,
+                                  assembler=str(resolved_tools['as']), linker=str(resolved_tools['ld'])), sort_keys=True))
+            return 0
         mir = stage / "program.mir"
         command = [compiler, "--emit-ir"]
         if args.ir_input:
             command.append("--ir-input")
         command += [source, "-o", mir]
+        command += optimization.flags(args.opt_profile, args.opt_select)
         if args.optimize_ir:
             command.append("--optimize-ir")
         runner.run(command + forwarded)
@@ -253,8 +281,11 @@ def main(argv=None):
         artifact = assembly
         if not args.emit_only:
             obj = stage / "program.o"
-            runner.run([resolved_tools["as"], "--64", assembly, "-o", obj] +
-                       (["-g"] if "-g" in args.cflag else []), toolchain=True)
+            # The assembler runs in the private stage; don't embed temporary
+            # project paths in native debug info.
+            runner.run([resolved_tools["as"], "--64", assembly.name, "-o", obj] +
+                       (["-g", "--debug-prefix-map", str(stage) + "=/__on1x__/native"]
+                        if "-g" in args.cflag else []), toolchain=True, cwd=stage)
             bounded_artifact(obj, args.max_output_bytes)
             with obj.open("rb") as stream:
                 header = stream.read(20)

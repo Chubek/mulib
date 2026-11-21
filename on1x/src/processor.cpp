@@ -33,9 +33,14 @@ meta::Phase phase_of(Phase phase) {
 class Engine {
   Limits limits;
   Stats stats;
+  Stats* canonical=nullptr;
+  std::size_t canonical_count=0, total_rewrites=0;
   std::size_t steps=0, nodes=0, serial=0;
   std::set<std::string> names;
   std::vector<const meta::Rule*> rules;
+  // Every checked pattern has a structural root. Preserve authored order in
+  // each bucket without trying every canonical/desugar rule on every leaf.
+  std::map<std::pair<E,std::string_view>,std::vector<std::size_t>> by_root;
   using Captures=std::map<std::string,ExprPtr*>;
 
   void step(const Location& at,std::size_t depth) {
@@ -293,21 +298,27 @@ class Engine {
   void rewrite(ExprPtr& e,std::size_t depth) {
     if(!e)return;
     step(e->where,depth);++stats.visited;
+    if(canonical)++canonical->visited;
     if(e->prototype)return;
     children(*e,depth);
     for(;;) {
+      const auto bucket=by_root.find({e->kind,e->text});
+      if(bucket==by_root.end())break;
       bool changed=false;
-      for(std::size_t i=0;i<rules.size();++i) {
+      for(const auto i:bucket->second) {
         const auto& rule=*rules[i];Captures captures;
         if(!match(rule.match,e,captures,depth)||!guard(rule.guard,captures))continue;
-        if(stats.rewrites>=limits.rewrites)exhausted(e->where,"rewrite");
+        if(total_rewrites>=limits.rewrites)exhausted(e->where,"rewrite");
         const auto at=e->where;const auto type=e->type;
         auto replacement=construct(rule.replacement,captures,at,depth);
         for(const auto& [name,slot]:captures)
           if(slot)fail(at,"replacement dropped capture "+name);
         if(replacement->type!=type)fail(at,"replacement changes checked result type");
         e=std::move(replacement);
-        ++stats.rewrites;++stats.rules[i].second;changed=true;
+        ++total_rewrites;
+        auto& hits=i<canonical_count?*canonical:stats;
+        ++hits.rewrites;++hits.rules[i<canonical_count?i:i-canonical_count].second;
+        changed=true;
         // Normalize newly constructed children before trying the root again.
         children(*e,depth);
         break;
@@ -318,21 +329,39 @@ class Engine {
   void rewrite(std::vector<Stmt>& body,std::size_t depth) {
     for(auto& s:body) {
       step(s.where,depth);++stats.visited;
+      if(canonical)++canonical->visited;
       if(s.prototype||s.kind==S::Template)continue;
       if(s.value)rewrite(s.value,depth+1);
       rewrite(s.body,depth+1);rewrite(s.otherwise,depth+1);
     }
   }
 public:
-  Engine(Phase phase,const Limits& requested):limits(requested) {
+  Engine(Phase phase,const Limits& requested,const RuleSelection& selection,Stats* normalize=nullptr)
+      :limits(requested),canonical(normalize) {
     limits.nodes=std::min<std::size_t>(limits.nodes,table::budgets.nodes);
     limits.steps=std::min<std::size_t>(limits.steps,table::budgets.steps);
     limits.depth=std::min<std::size_t>(limits.depth,table::budgets.depth);
-    for(const auto& rule:table::rules)if(rule.phase==phase_of(phase)) {
-      rules.push_back(&rule);stats.rules.emplace_back(rule.name,0);
-    }
+    auto add=[&](Phase family,Stats& hits){
+      for(const auto& rule:table::rules)if(rule.phase==phase_of(family)&&selection.enabled(rule.name)){
+        const auto& root=node(rule.match,{});
+        E kind;
+        switch(root.kind){
+          case N::Unary:kind=E::Unary;break;
+          case N::Binary:kind=E::Binary;break;
+          case N::Boolean:kind=E::Boolean;break;
+          case N::Integer:kind=E::Integer;break;
+          case N::Unit:kind=E::Unit;break;
+          default:fail({},"invalid compiled match root");
+        }
+        by_root[{kind,root.text}].push_back(rules.size());
+        rules.push_back(&rule);hits.rules.emplace_back(rule.name,0);
+      }
+    };
+    if(canonical){add(Phase::Canonicalize,*canonical);canonical_count=rules.size();}
+    add(phase,stats);
   }
   Stats run(Unit& unit) {
+    if(rules.empty())return std::move(stats);
     inventory(unit);
     auto clone_budget=limits.nodes;
     Unit working;
@@ -351,6 +380,19 @@ public:
 };
 }
 Stats apply(Unit& unit,Phase phase,const Limits& limits) {
-  return Engine(phase,limits).run(unit);
+  return apply(unit,phase,limits,RuleSelection{});
+}
+Stats apply(Unit& unit,Phase phase,const Limits& limits,const RuleSelection& selection) {
+  return Engine(phase,limits,selection).run(unit);
+}
+std::vector<std::string_view> rule_names() {
+  std::vector<std::string_view> result;
+  for(const auto& rule:table::rules)result.emplace_back(rule.name);
+  return result;
+}
+NormalizationStats desugar_normalized(Unit& unit,const Limits& limits,const RuleSelection& selection) {
+  NormalizationStats result;
+  result.desugar=Engine(Phase::Desugar,limits,selection,&result.canonicalize).run(unit);
+  return result;
 }
 }

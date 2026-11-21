@@ -103,6 +103,31 @@ void budgets(){
  limits={};limits.depth=0;
  rejects([&]{processor::validate(unit,processor::SemanticStage::Structural,limits);},
          "ON1X-PROCESSOR-LIMIT","depth/node budget");
+
+ // One combined rewrite budget must cover both families. Start with checked
+ // HIR and insert an identity: source check() would already have erased it.
+ unit=checked("fn pick(x:bool)->bool{return x;}fn main(){}");
+ auto& value=unit.functions.front().body.front().value;
+ auto binary=[&](std::string op,ExprPtr left,ExprPtr right) {
+  auto e=literal(Expr::Kind::Binary,std::move(op));e->type=Type::Bool;
+  e->children.push_back(std::move(left));e->children.push_back(std::move(right));
+  return e;
+ };
+ auto yes=[] {
+  auto e=literal(Expr::Kind::Boolean,"true");e->type=Type::Bool;return e;
+ };
+ value=binary("&&",binary("==",std::move(value),yes()),yes());
+ const auto before=emit_c(unit,"semantic-fixture.on1x");
+ limits={};limits.rewrites=1;
+ rejects([&]{processor::desugar_normalized(unit,limits);},"ON1X-PROCESSOR-LIMIT",
+         "rewrite budget",2);
+ require(emit_c(unit,"semantic-fixture.on1x")==before,"combined budget failure mutated input");
+ limits.rewrites=2;
+ auto done=processor::desugar_normalized(unit,limits);
+ require(done.canonicalize.rewrites==1&&done.desugar.rewrites==1,
+         "combined phase did not account for distinct rule families");
+ require(unit.functions.front().body.front().value->kind==Expr::Kind::Variable,
+         "successful retry did not remove both wrappers");
 }
 void integration(){
  diagnostic::Registry registry;
@@ -128,8 +153,46 @@ void integration(){
  const auto emitted=emit_c(unit,"semantic-fixture.on1x");
  require(!emitted.empty(),"checked processor result cannot emit C11");
 }
+void selection(){
+ diagnostic::Registry registry;
+ analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};
+ processor::Report evidence;
+ processor::RuleSelection selected;selected.default_enabled=false;
+ const auto program="fn pred(x:bool)->bool{return (x==true)&&true;}fn main(){}";
+ auto result=[&] {
+  auto u=source(program);check(u,context,selected,&evidence);
+  require(evidence.verified&&evidence.structural.checks&&evidence.typed_before.checks&&
+          evidence.typed_after.checks,"disable rewrites bypassed semantic contracts");
+  return std::move(u.functions.front().body.front().value);
+ };
+ auto e=result();
+ require(e->kind==Expr::Kind::Binary&&e->text=="&&"&&e->children[0]->text=="==",
+         "all-off changed original checked lazy expression");
+ require(evidence.canonicalize.rewrites==0&&evidence.desugar.rewrites==0,
+         "disabled rules rewrote HIR");
+ for(const std::string_view bad:{
+     "fn main(){println(false && (1+true==0));}",
+     "record C{v:i64}fn main(){let b=box(record<C>{v:0});if false{drop(b);drop(b);}}"}){
+  auto u=source(std::string(bad));
+  try {check(u,context,selected,&evidence);require(false,"all-off admitted invalid source");}
+  catch(const Error& error){
+   require(!evidence.verified&&error.where.file=="semantic-fixture.on1x",
+           "all-off published stale evidence or lost source location");
+   const auto expected=bad.starts_with("record")?"move":"expected i64";
+   require(std::string_view(error.what()).find(expected)!=std::string_view::npos,
+           "all-off changed original type/ownership diagnostic");
+  }
+ }
+ selected.overrides["lazy_and_true_right"]=true;e=result();
+ require(e->kind==Expr::Kind::Binary&&e->text=="=="&&evidence.desugar.rewrites==1&&
+         !evidence.canonicalize.rewrites,"single desugar pass selection was ignored");
+ selected.overrides.clear();selected.overrides["boolean_equal_true_right"]=true;e=result();
+ require(e->kind==Expr::Kind::Binary&&e->text=="&&"&&e->children[0]->kind==Expr::Kind::Variable&&
+         !evidence.desugar.rewrites&&evidence.canonicalize.rewrites==1,
+         "single canonical pass selection was ignored");
+}
 }
 int main(){
- structure();typed();budgets();integration();
+ structure();typed();budgets();integration();selection();
  std::cout<<"semantic processor contracts: OK\n";
 }

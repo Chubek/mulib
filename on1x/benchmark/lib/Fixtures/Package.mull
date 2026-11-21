@@ -1,0 +1,163 @@
+# Independent exact integer oracles: all intermediate values stay below 2^53.
+val H <- G:Native("bench-host");
+val Build <- fn(name, n, seed) {
+  val count <- G:Str(n);
+  val initial <- G:Str(seed);
+  var code <- "";
+  var expected <- 0;
+  var status <- 0;
+  var i <- 0;
+  var description <- "";
+  if name == "recurrence" {
+    description <- "loop-carried checked multiply/add/remainder";
+    code <- "fn main() { var x = " + initial + "; var i = 0;\n"
+      + "while i < " + count + " { x = (x * 17 + 23) % 1000003; i = i + 1; }\nprintln(x); }\n";
+    expected <- seed;
+    while i < n { expected <- (expected * 17 + 23) % 1000003; i <- i + 1; }
+  } else if name == "branches" {
+    description <- "alternating control flow and mutable accumulators";
+    code <- "fn main() { var sum = 0; var i = 0;\nwhile i < " + count
+      + " { if i % 3 == 0 { sum = sum + i; } else { sum = sum - 1; } i = i + 1; }\nprintln(sum); }\n";
+    while i < n {
+      if i % 3 == 0 { expected <- expected + i; } else { expected <- expected - 1; }
+      i <- i + 1;
+    }
+  } else if name == "gcd" {
+    description <- "nested Euclidean remainder loops and direct function calls";
+    code <- "fn gcd(a: i64, b: i64) -> i64 { var x = a; var y = b;\n"
+      + "while y != 0 { let t = x % y; x = y; y = t; } return x; }\n"
+      + "fn main() { var sum = 0; var i = 1; while i <= " + count
+      + " { sum = sum + gcd(i + " + initial + ", 2310); i = i + 1; } println(sum); }\n";
+    i <- 1;
+    while i <= n {
+      var a <- i + seed; var b <- 2310;
+      while b != 0 { val r <- a % b; a <- b; b <- r; }
+      expected <- expected + a; i <- i + 1;
+    }
+  } else if name == "calls" {
+    description <- "bounded recursive call tree repeated by an outer loop";
+    code <- "fn fib(n: i64) -> i64 { if n < 2 { return n; }"
+      + " else { return fib(n - 1) + fib(n - 2); } }\n"
+      + "fn main() { var sum = 0; var i = 0; while i < " + count
+      + " { sum = sum + fib(10); i = i + 1; } println(sum); }\n";
+    expected <- 55 * n;
+  } else if name == "constants" {
+    description <- "generated foldable arithmetic and dead constant branches";
+    # Bound source growth independently of runtime iteration count.
+    val width <- 8 + n % 57;
+    var body <- "";
+    var value <- seed;
+    while i < width {
+      val k <- i + 1;
+      body <- body + "if 3 * 7 == 21 { x = x + (" + G:Str(k)
+        + " * 2 - 1); } else { x = x / 0; }\n";
+      value <- value + k * 2 - 1;
+      i <- i + 1;
+    }
+    code <- "fn kernel(x0: i64) -> i64 { var x = x0;\n" + body + "return x; }\n"
+      + "fn main() { var sum = 0; var i = 0; while i < " + count
+      + " { sum = sum + kernel(" + initial + "); i = i + 1; } println(sum); }\n";
+    expected <- value * n;
+  } else if name == "annihilator" {
+    description <- "optimizer diagnostic: unknown-parameter signed-i64 cancellation/annihilation";
+    # Keep the parameter unknown inside cancel, matching worker8's diagnostic.
+    # Each term is exactly zero for every reachable i64 input. No reassociation
+    # or unchecked arithmetic is needed by the independent output oracle.
+    code <- "fn cancel(x: i64) -> i64 {\n"
+      + "  return (x - x) + (x * 0) + (0 * x) + (x % 1);\n}\n"
+      + "fn kernel(n: i64) -> i64 {\n"
+      + "  var i = 0; var total = 0;\n"
+      + "  while i < n { total = total + cancel(i); i = i + 1; }\n"
+      + "  return total;\n}\n"
+      + "fn main() { println(kernel(" + count + ")); }\n";
+    expected <- 0;
+  } else if name == "processor-lazy" {
+    description <- "processor diagnostic: dynamic lazy boolean regions and constant unreachable trap";
+    code <- "fn accept(x: i64) -> bool {\n"
+      + "  return (x % 2 == 0 && x % 3 != 0) || x % 5 == 0;\n}\n"
+      + "fn main() { var sum = 0; var i = 0; while i < " + count + " {\n"
+      + "  if (3 * 7 == 21 && !false) || 1 / 0 == 0 {\n"
+      + "    if accept(i) { sum = sum + 1; }\n"
+      + "  } else { sum = sum / 0; }\n"
+      + "  i = i + 1;\n} println(sum); }\n";
+    # Independent periodic oracle uses arithmetic indicators rather than the
+    # source's short-circuit expression. Count each residue once in period 30.
+    var period <- 0; var tail <- 0;
+    while i < 30 {
+      var a <- 0; var b <- 0;
+      if i % 2 == 0 { if i % 3 != 0 { a <- 1; } }
+      if i % 5 == 0 { b <- 1; }
+      val accepted <- a + b - a * b;
+      period <- period + accepted;
+      if i < n % 30 { tail <- tail + accepted; }
+      i <- i + 1;
+    }
+    expected <- ((n - n % 30) / 30) * period + tail;
+  } else if name == "processor-identities" {
+    description <- "processor diagnostic: checked neutral identities, double negation and comparison";
+    code <- "fn identity(x: i64) -> i64 {\n"
+      + "  let y = ((x + 0) - 0) * 1 / 1;\n"
+      + "  if !!(y <= 96) && true { return y; } else { return 1 / 0; }\n}\n"
+      + "fn main() { var sum = 0; var i = 0; while i < " + count + " {\n"
+      + "  sum = sum + identity(i % 97); i = i + 1;\n} println(sum); }\n";
+    # Sum complete residue cycles plus the triangular-number remainder.
+    val tail <- n % 97;
+    expected <- ((n - tail) / 97) * 4656 + tail * (tail - 1) / 2;
+  } else if name == "zero-explicit" or name == "zero-wrapped" {
+    description <- "paired zero-cost diagnostic: direct call, mutable bool and checked i64";
+    var residue <- "(i + " + initial + ") % 7";
+    var update <- "accept(r) == (i % 2 == 0)";
+    var branch <- "ok";
+    if name == "zero-wrapped" {
+      residue <- "(((" + residue + " + 0) - 0) * 1) / 1";
+      update <- "true && (!!((!accept(r) == !(i % 2 == 0)) == true) || false)";
+      branch <- "(false || !!(ok != false)) && !false";
+    }
+    code <- "fn accept(x: i64) -> bool { return x < 3; }\n"
+      + "fn kernel(n: i64) -> i64 {\n  var total = 0; var i = 0; var ok = false;\n"
+      + "  while i < n {\n    let r = " + residue + ";\n    ok = " + update + ";\n"
+      + "    if " + branch + " { total = total + r; } else { total = total - 1; }\n"
+      + "    i = i + 1;\n  }\n  return total;\n}\n"
+      + "fn main() { println(kernel(" + count + ")); }\n";
+    # Each residue occurs once per parity in 14 steps, contributing r and
+    # -1 exactly once each. Sum(0..6) - 7 = 14, for any seed. No predicates
+    # or checked identities from the source are reused by the remainder oracle.
+    val weights <- [[0, 1, 2, -1, -1, -1, -1], [-1, -1, -1, 3, 4, 5, 6]];
+    val tail <- n % 14;
+    expected <- n - tail;
+    while i < tail { expected <- expected + weights[i % 2][(i + seed) % 7]; i <- i + 1; }
+  } else if name == "tuple" {
+    description <- "tuple return and destructure with loop-carried scalar state";
+    code <- "fn step(a: i64, b: i64) -> (i64, i64) { return (b, (a + b) % 1000003); }\n"
+      + "fn main() { var a = 0; var b = 1; var i = 0;\nwhile i < " + count
+      + " { let (x, y) = step(a, b); a = x; b = y; i = i + 1; } println(a); }\n";
+    var a <- 0; var b <- 1;
+    while i < n { val next <- (a + b) % 1000003; a <- b; b <- next; i <- i + 1; }
+    expected <- a;
+  } else if name == "trap" {
+    description <- "correctness-only ordered output followed by checked division failure";
+    code <- "fn quotient(x: i64, y: i64) -> i64 { return x / y; }\n"
+      + "fn main() { println(17); println(quotient(1, 0)); }\n";
+    expected <- 17;
+    status <- 70;
+  } else { return G:DieWith("unknown fixture: " + name); }
+  var stderr <- "";
+  if status != 0 { stderr <- "On1x arithmetic error: invalid division\n"; }
+  return {name: name, description: description, source: code,
+    expected_stdout: G:Str(expected) + "\n", expected_stderr: stderr,
+    expected_exit: status, timed: status == 0};
+};
+val Generate <- fn(config) {
+  H:Mkdir(config:output);
+  H:Mkdir(config:output + "/fixtures");
+  var fixtures <- [];
+  var i <- 0;
+  while i < G:Len(config:cases) {
+    val fixture <- Build(config:cases[i], config:iterations, config:seed);
+    H:Write(config:output + "/fixtures/" + fixture:name + ".on1x", fixture:source);
+    fixtures <- fixtures + [fixture];
+    i <- i + 1;
+  }
+  return fixtures;
+};
+return {Build: Build, Generate: Generate};

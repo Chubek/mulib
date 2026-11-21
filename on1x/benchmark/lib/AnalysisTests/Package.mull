@@ -1,0 +1,122 @@
+# Synthetic data is exclusively regression-test input, never benchmark evidence.
+val C <- G:LoadLib("Comparability") or G:DieWith("$E?");
+val A <- G:LoadLib("Analyze") or G:DieWith("$E?");
+val Stage <- G:LoadLib("Stagecost") or G:DieWith("$E?");
+val Config <- G:LoadLib("Config") or G:DieWith("$E?");
+val Text <- G:LoadLib("text") or G:DieWith("$E?");
+val Set <- Config:Set;
+val Probe <- fn(text) {
+  return {stdout: text, command: {result: {exit_code: 0, signal: 0, timed_out: false}}};
+};
+val Hash <- fn(letter) {
+  var text <- ""; var i <- 0;
+  while i < 64 { text <- text + letter; i <- i + 1; }
+  return Probe(text + "  /different/output/path\n");
+};
+val Row <- fn(optimized) {
+  var backend <- "mir-archon";
+  var run <- 100; var lower <- 100;
+  if optimized { backend <- "mir-archon-opt"; run <- 50; lower <- 400; }
+  val stages <- [{stage: "MIR lower", elapsed_ns: lower},
+    {stage: "assemble/compile and link", elapsed_ns: 200}];
+  return {fixture: "unit", backend: backend, valid: true, timed: true,
+    compile_stages: [stages, stages, stages],
+    compile_samples_ns: [lower + 200, lower + 200, lower + 200],
+    runtime_samples_ns: [run, run, run], sizes_bytes: {executable: 100}};
+};
+val Report <- fn() {
+  val context <- {schema: "on1x.benchmark-context.v1",
+    cc_target: Probe("x86_64-linux-gnu\n"), cc_version: Probe("test cc\n"),
+    archon_target: Probe("x86_64-unknown-linux-gnu\n"), archon_abi: Probe("SysVAMD64\n"),
+    runtime_objects: Hash("a"), runtime_sources: Hash("b"), scalar_abi_object: Hash("c"),
+    harness_sources: Hash("d"), runtime_flags: ["-O2"], link_flags: ["-no-pie", "-lm"],
+    cpu: Probe("Architecture: x86_64\nCPU(s): 8\nModel name: test CPU\nCPU(s) scaling MHz: 70%\n")};
+  return {schema: "on1x.benchmark.v1", config: Config:Defaults, comparison_context: context,
+    provenance: {machine: {machine: "x86_64"}, compiler_hash: Hash("e")},
+    archon_provenance: {hash: Hash("f")}, methodology: {clock: "test"}, failures: 0,
+    mir: [{fixture: "unit", source_hash: Hash("a")}], rows: [Row(false), Row(true)]};
+};
+val Test <- fn() {
+  val base <- Report();
+  G:Assert(A:Compare(base, base):compatible);
+  G:Assert(G:Len(A:Compare(base, base):deltas) == 2);
+  val different_source <- Set(base, "mir", [{fixture: "unit", source_hash: Hash("b")}]);
+  val wrong_source <- A:Compare(base, different_source);
+  G:Assert(not wrong_source:compatible and G:Len(wrong_source:deltas) == 0);
+  G:Assert(wrong_source:rejected[0]:reasons == ["fixture-source-hash"]);
+  val relocated <- Set(base, "mir", [{fixture: "unit",
+    source_hash: Probe(Text:Replace(Hash("a"):stdout, "/different/output/path", "/other directory/source"))}]);
+  G:Assert(A:Compare(base, relocated):compatible);
+  val context <- base:comparison_context;
+  val keys <- ["cc_target", "archon_target", "archon_abi", "cc_version"];
+  var i <- 0;
+  while i < G:Len(keys) {
+    val changed <- Set(base, "comparison_context", Set(context, keys[i], Probe("different\n")));
+    G:Assert(not A:Compare(base, changed):compatible);
+    G:Assert(G:Len(A:Compare(base, changed):deltas) == 0);
+    i <- i + 1;
+  }
+  val hash_keys <- ["runtime_objects", "runtime_sources", "scalar_abi_object", "harness_sources"];
+  i <- 0;
+  while i < G:Len(hash_keys) {
+    val changed <- Set(base, "comparison_context", Set(context, hash_keys[i], Hash("0")));
+    G:Assert(not A:Compare(base, changed):compatible);
+    i <- i + 1;
+  }
+  G:Assert(not A:Compare(base, Set(base, "comparison_context",
+    Set(context, "runtime_flags", ["-O3"]))):compatible);
+  G:Assert(not A:Compare(base, Set(base, "comparison_context",
+    Set(context, "link_flags", ["-pie"]))):compatible);
+  val clock_changed <- Set(base, "methodology", {clock: "different"});
+  G:Assert(not A:Compare(base, clock_changed):compatible);
+  val duplicated <- Set(base, "rows", base:rows + [Row(false)]);
+  G:Assert(not A:Compare(base, duplicated):compatible);
+  G:Assert(not A:Compare(duplicated, base):compatible);
+  val smaller_suite <- Set(base, "rows", [Row(false)]);
+  G:Assert(not A:Compare(base, smaller_suite):compatible);
+  G:Assert(not A:Compare(smaller_suite, base):compatible);
+  val ambiguous_source <- Set(base, "mir", base:mir + base:mir);
+  G:Assert(not A:Compare(base, ambiguous_source):compatible);
+  val failed_probe <- {stdout: "x86_64-linux-gnu\n",
+    command: {result: {exit_code: 1, signal: 0, timed_out: false}}};
+  val failed_target <- Set(base, "comparison_context", Set(context, "cc_target", failed_probe));
+  G:Assert(not A:Compare(base, failed_target):compatible);
+  G:Assert(G:Len(A:Compare(base, failed_target):deltas) == 0);
+  val different_machine <- Set(base, "provenance",
+    Set(base:provenance, "machine", {machine: "aarch64"}));
+  G:Assert(not A:Compare(base, different_machine):compatible);
+  val different_seed <- Set(base, "config", Set(base:config, "seed", 123));
+  G:Assert(not A:Compare(base, different_seed):compatible);
+  val bad_runtime_hash <- Set(base, "comparison_context",
+    Set(context, "runtime_objects", Probe("not-a-hash  runtime.o\n")));
+  G:Assert(not A:Compare(base, bad_runtime_hash):compatible);
+  val failed <- Set(base, "rows", [Set(Row(false), "valid", false)]);
+  G:Assert(not A:Compare(base, failed):compatible);
+  # Compiler revisions may be the experimental variable, but changes are exposed.
+  val compiler_change <- Set(base, "provenance", Set(base:provenance, "compiler_hash", Hash("0")));
+  val comparison <- A:Compare(base, compiler_change);
+  G:Assert(comparison:compatible and comparison:compiler_changed);
+  val missing_identity <- Set(base, "provenance", Set(base:provenance, "compiler_hash", Probe("")));
+  G:Assert(not A:Compare(base, missing_identity):compatible);
+  val frequency <- Set(base, "comparison_context", Set(context, "cpu",
+    Probe("Architecture: x86_64\nCPU(s): 8\nModel name: test CPU\nCPU(s) scaling MHz: 90%\n")));
+  G:Assert(A:Compare(base, frequency):compatible);
+  G:Assert(C:Hashes(Probe("malformed digest\n")) == nil);
+  G:Assert(C:Hashes(Probe("")) == nil);
+  G:Assert(C:Hashes(nil) == nil);
+  val cost <- Stage:Tradeoff(Row(false), Row(true));
+  G:Assert(cost:runtime_saving_median_ns == 50 and cost:compile_extra_median_ns == 300);
+  G:Assert(cost:estimated_break_even_executions == 6);
+  G:Assert(cost:stage_changes[0]:median_delta_ns == 300);
+  G:Assert(cost:stage_changes[1]:median_delta_ns == 0);
+  val regression <- Stage:Tradeoff(Row(true), Row(false));
+  G:Assert(regression:estimated_break_even_executions == nil);
+  G:Assert(regression:runtime_saving_median_ns == -50);
+  G:Assert(Stage:Tradeoff(Set(Row(false), "valid", false), Row(true)) == nil);
+  val overlap <- Stage:Tradeoff(Row(false), Row(false));
+  G:Assert(overlap:estimated_break_even_executions == nil);
+  G:Assert(overlap:assessment == "inconclusive: runtime distributions overlap");
+  G:GetStdout()("MuLL comparability, target/runtime identity, stage-cost and break-even tests passed\n");
+  return 0;
+};
+return {Test: Test, Report: Report, Row: Row};

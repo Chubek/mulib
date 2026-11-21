@@ -82,13 +82,42 @@ exercise('order', fixtures / 'order.on1x',
          'false\ntrue\n8\nfalse\n9\ntrue\n')
 exercise('control', fixtures / 'control.on1x', '10\n11\n13\n3\n')
 exercise('hygiene', fixtures / 'hygiene.on1x', '1\ntrue\ntrue\nfalse\n', scalar=False)
+# Macro patterns observe raw syntax before typed identities disappear.
+# `helper` in the replacement is definition-site; `$x` is caller-site.
+raw = t.source('raw_identity_macro', '''
+fn helper(b:bool)->bool {println(1);return !b;}
+macro shape {
+ rule(ast_binary("&&", $x:Expression, true))=>expression{true && helper($x)};
+ rule($x:Expression)=>expression{false};
+}
+fn main(){
+ let helper=fn(b:bool)->bool{println(99);return b;};
+ let b=false;println(shape!(b && true));println(shape!(b));
+}
+''')
+exercise('raw_identity_macro', raw, '1\ntrue\nfalse\n', scalar=False)
 hooks = ['-include', t.root / 'tests/fixtures/closure_allocator.h',
          t.root / 'tests/fixtures/closure_allocator.c']
 exercise('cleanup', fixtures / 'cleanup.on1x', 'true\n42\n', scalar=False, extra=hooks)
 owner_hooks = ['-include', t.root / 'tests/fixtures/unique_allocator.h',
                t.root / 'tests/fixtures/unique_allocator.c']
 exercise('owners', fixtures / 'owners.on1x', 'true\nfalse\n42\n',
-         scalar=False, extra=owner_hooks)
+          scalar=False, extra=owner_hooks)
+consume = '''
+record Cell {n:i64}
+fn consume(b:own<Cell>)->bool {
+ let value=take(b);println(value["n"]);return value["n"] > 0;
+}
+'''
+owner_calls = t.source('owner_calls', consume + '''
+extern fn on1x_test_unique_allocator_live()->i64;
+fn main(){
+ println(false && consume(box(record<Cell>{n:91})));
+ println(true && (!consume(box(record<Cell>{n:7})) != true));
+ assert(on1x_test_unique_allocator_live()==0);
+}
+''')
+exercise('owner_calls', owner_calls, 'false\n7\ntrue\n', scalar=False, extra=owner_hooks)
 
 # Type guards must not generalize boolean/integer identities to floating point.
 # +0 is observably different from identity for -0 under IEEE round-to-nearest.
@@ -116,17 +145,96 @@ fn main(){
  println(mark(7,1)!=mark(8,2));
  println(mark(9,2)<=mark(10,1));
  println(mark(11,2)>=mark(12,1));
+ println(mark(13,-9223372036854775808)+ -0);
 }
 ''')
 exercise('integer_order', integer,
          '1\n42\n2\n-42\n3\n-9223372036854775808\n4\n9223372036854775807\n'
          '5\n-9223372036854775808\n6\n-9223372036854775808\n'
-         '7\n8\ntrue\n9\n10\nfalse\n11\n12\ntrue\n')
+          '7\n8\ntrue\n9\n10\nfalse\n11\n12\ntrue\n13\n-9223372036854775808\n')
+
+# `!=` has overlapping structural patterns. An i64 guard failure must leave
+# both captures intact for the bool rule; a float must match neither guard.
+def hits_for(source, phase):
+    data = json.loads(command([t.compiler, '--dump-processor', source]).stdout)
+    return {r['name']: r['count'] for r in data[phase]['rules']}
+
+numeric_hits = hits_for(numeric, 'desugar')
+for name in ['boolean_not_equal', 'integer_not_equal', 'integer_less_equal',
+             'integer_greater_equal']:
+    assert numeric_hits[name] == 0, (name, numeric_hits)
+integer_hits = hits_for(integer, 'desugar')
+assert integer_hits['integer_not_equal'] == 1 and integer_hits['boolean_not_equal'] == 0
+assert hits_for(integer, 'canonicalize')['integer_negate_zero'] == 1
+
+# Check both truth and eager left-to-right evaluation on *all* inputs.
+equal_forms = ['!mark(1,a) == !mark(2,b)', '!mark(1,a) != mark(2,b)',
+               'mark(1,a) != !mark(2,b)']
+def spelling(value):
+    return str(value).lower()
+
+tests = []
+expected = []
+for a in [False, True]:
+    for b in [False, True]:
+        tests.append(f'trace({spelling(a)},{spelling(b)});')
+        expected.extend(['1', '2', spelling(a == b)] * len(equal_forms))
+ordered = t.source('eager_comparison', '''
+fn mark(n:i64,x:bool)->bool {println(n);return x;}
+fn trace(a:bool,b:bool) {''' + ''.join('println(' + e + ');' for e in equal_forms)
+                   + '}\nfn main(){' + ''.join(tests) + '}')
+exercise('eager_comparison', ordered, '\n'.join(expected) + '\n')
+eager_report = json.loads(command([t.compiler, '--dump-processor', ordered]).stdout)
+eager_hits = {r['name']: r['count'] for r in eager_report['canonicalize']['rules']}
+ordered_desugar = {r['name']: r['count'] for r in eager_report['desugar']['rules']}
+assert ordered_desugar['integer_not_equal'] == 0 and ordered_desugar['boolean_not_equal'] == 2
+for name in ['boolean_equal_negated_operands', 'boolean_not_equal_negated_left',
+             'boolean_not_equal_negated_right']:
+    assert eager_hits.get(name) == 1, (name, eager_hits)
+
+# Byte-for-byte direct and unoptimized MIR-C11 output, including function
+# bodies, calls, checked operations and branches. Reuse one path to avoid
+# comparing source filenames. Do not erase or renumber instructions/blocks.
+def emitted_pair(a, b):
+    def emit(body):
+        path = t.source('matched_programs', '''
+fn mark(n:i64,x:bool)->bool {println(n);return x;}
+fn same(a:bool,b:bool)->bool {return ''' + body + ''';}
+fn main(){println(same(true,false));}''')
+        return [command([t.compiler, mode, path]).stdout for mode in ['--emit-c', '--emit-ir-c']]
+    for mode, direct, wrapped in zip(['C11', 'MIR-C11'], emit(a), emit(b)):
+        assert direct == wrapped, (mode, a, b, 'nonidentical generated code')
+
+for expr in equal_forms:
+    emitted_pair('mark(1,a) == mark(2,b)', 'true && ((' + expr + ') || false)')
+
+# The inner !=, and the combination of lazy and eager negations, reveal the
+# neutral RHS only while normalizing this expression. A whole-unit prepass
+# followed by irreversible Select expansion misses these opportunities.
+for rhs in ['(true != false)', '!(true && !true)', '(true || true)',
+            '!(false && false)']:
+    emitted_pair('mark(1,a)', 'mark(1,a) && ' + rhs)
+closed = t.source('closed_boolean_pairs',
+                  'fn main(){println(false && false);println(true || true);}')
+closed_hits = hits_for(closed, 'desugar')
+assert closed_hits['lazy_and_false_literals'] == closed_hits['lazy_or_true_literals'] == 1
+
+# Pre-normalization exposes `!false` before && can expand to a region;
+# post-normalization reduces the `== true` introduced by desugaring `!=`.
+before_after = '(mark(1,a) && !false) != true'
+emitted_pair('!mark(1,a)', before_after)
+phase_pair = json.loads(command([t.compiler, '--dump-processor',
+                                 t.work / 'matched_programs.on1x']).stdout)
+for phase, names in [('canonicalize', ['boolean_not_false', 'boolean_equal_true_right']),
+                     ('desugar', ['lazy_and_true_right', 'boolean_not_equal'])]:
+    by_name = {r['name']: r['count'] for r in phase_pair[phase]['rules']}
+    for name in names:
+        assert by_name.get(name) == 1, (phase, name, by_name)
 
 # The report is produced by the same checked pipeline used by emitters. Check
 # authored rule activation and exact rule provenance, not only file hashes.
 report_source = t.source('report', '''
-fn boolean(x:bool,y:bool)->bool{return !(!(x&&y))||false;}
+fn boolean(x:bool,y:bool)->bool{return !(!(x&&y))||y;}
 fn integer(x:i64)->i64{return (x+0)*1;}
 fn main(){println(boolean(true,false));println(integer(42));}
 ''')
@@ -170,6 +278,15 @@ hits = {rule['name']: rule['count'] for phase in ['desugar', 'canonicalize']
 for name in ['lazy_and', 'lazy_or', 'boolean_double_not', 'integer_add_zero_right',
              'integer_multiply_one_right']:
     assert hits[name] > 0, (name, hits)
+
+# `order` above checks the calls' observable trace. Its compiled rule counts
+# distinguish the direct identities from generic Select expansion.
+order_report = json.loads(command([t.compiler, '--dump-processor', fixtures / 'order.on1x']).stdout)
+order_hits = {r['name']: r['count'] for r in order_report['desugar']['rules'] if r['count']}
+assert order_hits == {'lazy_and_true_left': 1, 'lazy_and_true_right': 2,
+                      'lazy_or_false_left': 2, 'lazy_or_false_right': 1,
+                      'lazy_and': 3, 'lazy_or': 2}, order_hits
+
 report_file = t.work / 'processor-report.json'
 command([t.compiler, '--dump-processor', report_source, '-o', report_file])
 assert report_file.read_text() == first.stdout
@@ -212,6 +329,11 @@ for index, (expression, diagnostic) in enumerate([
     ('0*(1/0)', 'invalid division'),
     ('(1/0)*0', 'invalid division'),
     ('(1/0)%1', 'invalid division'),
+    # Neither RHS skipping nor eager comparison negation may swallow a
+    # checked operation on INT64_MIN; the selected operand itself traps.
+    ('false || (!(-(-9223372036854775808)==0) != true)', 'overflow'),
+    ('true && (-9223372036854775808/-1==0)', 'invalid division'),
+    ('-9223372036854775808%-1', 'invalid modulo'),
 ]):
     source = t.source(f'trap_{index}',
                       f'fn main(){{println(7);println({expression});println(9);}}')
@@ -228,6 +350,8 @@ negative = [
     ('dead_control', 'fn main(){if false{break;}}', 'no lexical target'),
     ('dead_move', 'record Cell{n:i64}fn main(){let b=box(record<Cell>{n:1});'
                   'if false{drop(b);drop(b);}}', 'move'),
+    ('skipped_owner', consume + 'fn main(){let b=box(record<Cell>{n:1});'
+                     'drop(b);println(false && consume(move(b)));}', 'use after move'),
 ]
 preserved = t.work / 'preserved-output'
 for name, text, diagnostic in negative:
@@ -244,14 +368,19 @@ for incompatible in [['--ir-input'], ['--optimize-ir']]:
     p = run([t.compiler, '--dump-processor', *incompatible, report_source, '-o', preserved])
     assert p.returncode == 2 and not p.stdout and preserved.read_text() == 'preserved\n', p.stderr
 
-# Imported macro expansion keeps its call-site diagnostic rather than .o1m paths.
+# Introduced names point at the definition, spliced names at the caller.
 library = t.source('located_macro', 'macro bad{rule()=>expression{false || unknown};}')
 source = t.source('located_import', 'import "located_macro.on1x";\nfn main(){println(bad!());}\n')
 p = run([t.compiler, '--emit-c', source])
 assert p.returncode == 1 and 'undefined' in p.stderr and not p.stdout, p.stderr
-assert 'located_' in p.stderr and '.o1m' not in p.stderr, p.stderr
+assert f'{library}:1:39:' in p.stderr and '.o1m' not in p.stderr, p.stderr
+library = t.source('located_macro', 'macro keep{rule($x:Expression)=>expression{true && $x};}')
+source = t.source('located_import', 'import "located_macro.on1x";\nfn main(){println(keep!(missing));}\n')
+p = run([t.compiler, '--emit-c', source])
+assert p.returncode == 1 and 'undefined' in p.stderr and not p.stdout, p.stderr
+assert f'{source}:2:25:' in p.stderr and '.o1m' not in p.stderr, p.stderr
 
 (t.work / 'processor-results.json').write_text(json.dumps(outcomes, indent=2) + '\n')
 print(f'On1xMETA semantics PASS: {len(outcomes)} executions, '
-      f'{len(negative)*6+3+int("--memory-check" in independent)} rejections')
+      f'{len(negative)*6+4+int("--memory-check" in independent)} rejections')
 print('Archon native: ' + ('executed' if native else 'UNSUPPORTED (native tool/ABI not configured)'))

@@ -1,0 +1,80 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+val Defaults <- {
+  schema: "on1x.benchmark-config.v1",
+  root: H:Root, output: "benchmark-results", backend: "cross", optimization: "both",
+  compiler: "/mnt/andromeda/tempdir/opencode/on1x-archon-build/on1xc",
+  archon: "/mnt/andromeda/tempdir/opencode/on1x-archon-build/backends/mir-archon/on1x-archon-mir",
+  cc: "cc", cflags: ["-O2"], iterations: 1000, seed: 1729,
+  cases: ["recurrence", "branches", "gcd", "calls", "constants", "annihilator", "tuple", "trap"],
+  warmups: 2, repeats: 7, compile_warmups: 0, compile_repeats: 3, timeout_ms: 30000
+};
+val Set <- fn(record, key, value) {
+  val keys <- H:Keys(record);
+  var found <- false;
+  var fields <- [];
+  var i <- 0;
+  while i < G:Len(keys) {
+    val k <- keys[i];
+    if k == key { fields <- fields + [[k, value]]; found <- true; }
+    else { fields <- fields + [[k, record[k]]]; }
+    i <- i + 1;
+  }
+  if not found { return G:DieWith("unknown config key: " + key); }
+  return H:Record(fields);
+};
+val Integer <- fn(n, lo, hi, name) {
+  if G:Type(n) != "number" or n % 1 != 0 or n < lo or n > hi {
+    return G:DieWith("invalid bounded integer: " + name);
+  }
+};
+val Validate <- fn(c) {
+  G:Assert(c:schema == "on1x.benchmark-config.v1");
+  G:Assert(c:backend == "cross" or c:backend == "c11" or c:backend == "mir-archon");
+  G:Assert(c:optimization == "both" or c:optimization == "on" or c:optimization == "off");
+  Integer(c:iterations, 1, 1000000, "iterations");
+  Integer(c:seed, 1, 1000000, "seed");
+  Integer(c:repeats, 1, 1000, "repeats");
+  Integer(c:warmups, 0, 100, "warmups");
+  Integer(c:compile_repeats, 1, 100, "compile_repeats");
+  Integer(c:compile_warmups, 0, 20, "compile_warmups");
+  Integer(c:timeout_ms, 1, 3600000, "timeout_ms");
+  G:Assert(G:Type(c:cflags) == "list" and G:Type(c:cases) == "list");
+  G:Assert(G:Len(c:cases) > 0 and G:Len(c:cases) <= 12);
+  var seen <- [];
+  var i <- 0;
+  while i < G:Len(c:cases) {
+    var j <- 0;
+    while j < G:Len(seen) { G:Assert(seen[j] != c:cases[i]); j <- j + 1; }
+    seen <- seen + [c:cases[i]]; i <- i + 1;
+  }
+  return c;
+};
+val Parse <- fn(args) {
+  var config <- Defaults;
+  var i <- 1;
+  while i < G:Len(args) {
+    val option <- args[i];
+    if i + 1 >= G:Len(args) { return G:DieWith("missing value for " + option); }
+    val value <- args[i + 1];
+    if option == "--config" {
+      val fields <- J:Decode(H:Read(value));
+      val keys <- H:Keys(fields);
+      var j <- 0;
+      while j < G:Len(keys) { config <- Set(config, keys[j], fields[keys[j]]); j <- j + 1; }
+    } else {
+      val parts <- T:Split(option, "--");
+      if G:Len(parts) != 2 or parts[0] != "" { return G:DieWith("expected --option"); }
+      val key <- T:Replace(parts[1], "-", "_");
+      var parsed <- value;
+      if key == "cases" { parsed <- T:Split(value, ","); }
+      else if key == "cflags" { parsed <- J:Decode(value); }
+      else if G:Type(Defaults[key]) == "number" { parsed <- J:Decode(value); }
+      config <- Set(config, key, parsed);
+    }
+    i <- i + 2;
+  }
+  return Validate(config);
+};
+return {Defaults: Defaults, Parse: Parse, Validate: Validate, Set: Set};

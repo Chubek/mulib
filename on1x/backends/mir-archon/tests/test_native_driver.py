@@ -45,7 +45,17 @@ def main():
         run([compiler, "--emit-ir", source, "-o", mir])
         run(base + [mir, "--ir-input", "-o", output])
         assert run([output]).stdout == b"42\n"
+        output_bytes = output.read_bytes()
+        run(base + [mir, "--ir-input", "--enable-opt", "integer_add_zero_right", "-o", output], False)
+        assert output.read_bytes() == output_bytes
         assembly = work / "main.s"
+        wrapper = work / "wrapper.on1x"
+        wrapper.write_text("fn plus(x:i64)->i64{return x+0;}fn main(){println(plus(42));}\n")
+        build_asm = base + [wrapper, "--emit-only", "-o", assembly, "--profile", "debug"]
+        run(build_asm)
+        with_add = assembly.read_bytes()
+        run(build_asm + ["--enable-opt", "integer_add_zero_right"])
+        assert assembly.read_bytes() != with_add
         run(base + [source, "--emit-only", "--no-entry", "-o", assembly])
         assert b"\nmain:" not in assembly.read_bytes()
         marker = b"previous complete output\n"

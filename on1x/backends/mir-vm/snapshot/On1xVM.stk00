@@ -1,0 +1,321 @@
+stk-00 1
+vm "On1xVM"
+configuration "switch" "int64_t" 1 256 64 "custom" 0
+source "On1xVM.lua" 1
+component "dispatch"
+component "frame"
+component "insncode"
+component "opcode"
+component "tape"
+component "token"
+field "state" "ptr" 0
+: "Add" opcode 2 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 2
+c{ 134
+extern int64_t o1vm_Add(void *, int64_t);
+int64_t result = o1vm_Add(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Assert" opcode 19 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 19
+c{ 140
+extern int64_t o1vm_Assert(void *, int64_t);
+int64_t result = o1vm_Assert(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Branch" opcode 43 operands 1 "cell" effect "( -- )" flow "branch" source "On1xVM.lua" 43
+c{ 156
+extern int64_t o1vm_Branch(void *, int64_t);
+int64_t result = o1vm_Branch(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+vm_jump(result);
+}c ;
+: "Call" opcode 17 operands 1 "cell" effect "( -- )" flow "call" source "On1xVM.lua" 17
+c{ 152
+extern int64_t o1vm_Call(void *, int64_t);
+int64_t result = o1vm_Call(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+vm_call(result);
+}c ;
+: "Constant" opcode 1 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 1
+c{ 144
+extern int64_t o1vm_Constant(void *, int64_t);
+int64_t result = o1vm_Constant(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Div" opcode 5 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 5
+c{ 134
+extern int64_t o1vm_Div(void *, int64_t);
+int64_t result = o1vm_Div(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Enter" opcode 41 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 41
+c{ 138
+extern int64_t o1vm_Enter(void *, int64_t);
+int64_t result = o1vm_Enter(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Eq" opcode 9 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 9
+c{ 132
+extern int64_t o1vm_Eq(void *, int64_t);
+int64_t result = o1vm_Eq(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Extract" opcode 39 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 39
+c{ 142
+extern int64_t o1vm_Extract(void *, int64_t);
+int64_t result = o1vm_Extract(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatAdd" opcode 20 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 20
+c{ 144
+extern int64_t o1vm_FloatAdd(void *, int64_t);
+int64_t result = o1vm_FloatAdd(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatDiv" opcode 23 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 23
+c{ 144
+extern int64_t o1vm_FloatDiv(void *, int64_t);
+int64_t result = o1vm_FloatDiv(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatEq" opcode 25 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 25
+c{ 142
+extern int64_t o1vm_FloatEq(void *, int64_t);
+int64_t result = o1vm_FloatEq(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatFromBits" opcode 33 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 33
+c{ 154
+extern int64_t o1vm_FloatFromBits(void *, int64_t);
+int64_t result = o1vm_FloatFromBits(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatFromI64" opcode 31 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 31
+c{ 152
+extern int64_t o1vm_FloatFromI64(void *, int64_t);
+int64_t result = o1vm_FloatFromI64(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatGe" opcode 30 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 30
+c{ 142
+extern int64_t o1vm_FloatGe(void *, int64_t);
+int64_t result = o1vm_FloatGe(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatGt" opcode 29 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 29
+c{ 142
+extern int64_t o1vm_FloatGt(void *, int64_t);
+int64_t result = o1vm_FloatGt(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatIsFinite" opcode 36 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 36
+c{ 154
+extern int64_t o1vm_FloatIsFinite(void *, int64_t);
+int64_t result = o1vm_FloatIsFinite(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatIsNaN" opcode 35 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 35
+c{ 148
+extern int64_t o1vm_FloatIsNaN(void *, int64_t);
+int64_t result = o1vm_FloatIsNaN(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatLe" opcode 28 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 28
+c{ 142
+extern int64_t o1vm_FloatLe(void *, int64_t);
+int64_t result = o1vm_FloatLe(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatLt" opcode 27 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 27
+c{ 142
+extern int64_t o1vm_FloatLt(void *, int64_t);
+int64_t result = o1vm_FloatLt(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatMul" opcode 22 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 22
+c{ 144
+extern int64_t o1vm_FloatMul(void *, int64_t);
+int64_t result = o1vm_FloatMul(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatNe" opcode 26 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 26
+c{ 142
+extern int64_t o1vm_FloatNe(void *, int64_t);
+int64_t result = o1vm_FloatNe(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatNeg" opcode 24 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 24
+c{ 144
+extern int64_t o1vm_FloatNeg(void *, int64_t);
+int64_t result = o1vm_FloatNeg(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatSignbit" opcode 37 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 37
+c{ 152
+extern int64_t o1vm_FloatSignbit(void *, int64_t);
+int64_t result = o1vm_FloatSignbit(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatSub" opcode 21 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 21
+c{ 144
+extern int64_t o1vm_FloatSub(void *, int64_t);
+int64_t result = o1vm_FloatSub(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatToBits" opcode 34 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 34
+c{ 150
+extern int64_t o1vm_FloatToBits(void *, int64_t);
+int64_t result = o1vm_FloatToBits(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "FloatToI64" opcode 32 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 32
+c{ 148
+extern int64_t o1vm_FloatToI64(void *, int64_t);
+int64_t result = o1vm_FloatToI64(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Ge" opcode 14 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 14
+c{ 132
+extern int64_t o1vm_Ge(void *, int64_t);
+int64_t result = o1vm_Ge(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Gt" opcode 13 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 13
+c{ 132
+extern int64_t o1vm_Gt(void *, int64_t);
+int64_t result = o1vm_Gt(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Jump" opcode 42 operands 1 "cell" effect "( -- )" flow "jump" source "On1xVM.lua" 42
+c{ 152
+extern int64_t o1vm_Jump(void *, int64_t);
+int64_t result = o1vm_Jump(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+vm_jump(result);
+}c ;
+: "Le" opcode 12 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 12
+c{ 132
+extern int64_t o1vm_Le(void *, int64_t);
+int64_t result = o1vm_Le(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Load" opcode 15 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 15
+c{ 136
+extern int64_t o1vm_Load(void *, int64_t);
+int64_t result = o1vm_Load(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Lt" opcode 11 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 11
+c{ 132
+extern int64_t o1vm_Lt(void *, int64_t);
+int64_t result = o1vm_Lt(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Mod" opcode 6 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 6
+c{ 134
+extern int64_t o1vm_Mod(void *, int64_t);
+int64_t result = o1vm_Mod(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Mul" opcode 4 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 4
+c{ 134
+extern int64_t o1vm_Mul(void *, int64_t);
+int64_t result = o1vm_Mul(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Ne" opcode 10 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 10
+c{ 132
+extern int64_t o1vm_Ne(void *, int64_t);
+int64_t result = o1vm_Ne(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Neg" opcode 7 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 7
+c{ 134
+extern int64_t o1vm_Neg(void *, int64_t);
+int64_t result = o1vm_Neg(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Not" opcode 8 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 8
+c{ 134
+extern int64_t o1vm_Not(void *, int64_t);
+int64_t result = o1vm_Not(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Numeric" opcode 40 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 40
+c{ 142
+extern int64_t o1vm_Numeric(void *, int64_t);
+int64_t result = o1vm_Numeric(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Print" opcode 18 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 18
+c{ 138
+extern int64_t o1vm_Print(void *, int64_t);
+int64_t result = o1vm_Print(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Return" opcode 44 operands 1 "cell" effect "( -- )" flow "return" source "On1xVM.lua" 44
+c{ 193
+extern int64_t o1vm_Return(void *, int64_t);
+int64_t result = o1vm_Return(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+if (result == -1) { vm_halt(); return; }
+vm_return();
+}c ;
+: "Store" opcode 16 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 16
+c{ 138
+extern int64_t o1vm_Store(void *, int64_t);
+int64_t result = o1vm_Store(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Sub" opcode 3 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 3
+c{ 134
+extern int64_t o1vm_Sub(void *, int64_t);
+int64_t result = o1vm_Sub(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+: "Tuple" opcode 38 operands 1 "cell" effect "( -- )" flow "next" source "On1xVM.lua" 38
+c{ 138
+extern int64_t o1vm_Tuple(void *, int64_t);
+int64_t result = o1vm_Tuple(vm->state, operand0);
+if (result == -2) { vm_fail(-12); return; }
+
+}c ;
+end

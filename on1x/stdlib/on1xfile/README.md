@@ -66,6 +66,117 @@ On1xfile is not a valid replacement destination. The `.on1x-build.json`
 report records profile settings, selected source and manifest hashes, direct
 helper executable identities, and executable artifact hashes.
 
+### Backend selection
+
+Choose one backend for the project, optionally overridden for individual
+built-in or custom Lua build profiles:
+
+```text
+backend c11
+backend "debug" mir-vm
+backend "release" mir-archon
+```
+
+`on1xc exec build --profile debug` uses the scoped `mir-vm` entry.
+`on1xc exec release --backend mir-c11` overrides the scope for that build.
+Precedence is **CLI > selected profile > project-wide > c11**; `--via-mir`
+is an alias for `--backend mir-c11`. A project never falls back to another
+backend. Check a selected toolchain and see its artifact kind, tools and flags
+before building with `on1x-project.py plan PROJECT --backend NAME`.
+`on1x-project.py backends --on1xc /path/to/on1xc` probes all four backends
+with a fixed program and prints availability or a failure reason. It does
+not read the current project's manifest or execute the compiled programs.
+
+| Backend | Project output | Requirements |
+|---|---|---|
+| `c11` | Host executable from direct HIR→C11 | C compiler and reference runtime |
+| `mir-c11` | Host executable from verified MIR→C11 | MIR-admitted source and C toolchain |
+| `mir-archon` | Linux AMD64 SysV ELF executable | Archon generator tool, matching target manifest, assembler/linker, scalar ABI and runtime archives |
+| `mir-vm` | `NAME.o1vm` bytecode, bundled `.on1x-vm-runner`, executable `NAME` launcher | VM-enabled compiler and matching `on1x-vm` beside it; no host C compiler |
+
+The three MIR backends use checked MIR and reject constructs outside their
+admitted profiles. Source-library packaging uses the checked source path.
+`mir-archon` and `mir-vm` do not link project `kernel` declarations. The VM
+runner verifies the emitted tape before publication. Copy the **entire VM
+output directory**, including the hidden runner, to relocate it on a compatible
+host. The generated launcher uses `/bin/sh`; you can also run
+`./.on1x-vm-runner ./NAME.o1vm` directly. The output report hashes every VM
+artifact. Project source locations in bytecode use `/__on1x__/project`,
+`/__on1x__/deps`, `/__on1x__/stdlib` and `/__on1x__/std`, preserving
+line/column without embedding temporary staging paths. VM builds record an
+empty `cflags` array because no C build occurs.
+
+For single-file builds, `on1x-build.py --backend mir-vm INPUT -o app.o1vm`
+publishes bytecode (run it with `on1x-vm app.o1vm`); `--backend mir-archon`
+publishes the ELF executable, or assembly with `--emit-only`. These paths
+also use the selected compiler's adjacent tools. Native plans probe the real
+target/ABI and fingerprint the assembler, linker, target manifest and archives.
+
+### Compiler optimizations
+
+Use `on1xc --list-optimizations` for the active compiler's generated rule
+names, lowering options, and handwritten MIR passes. Declare policy in the
+root file; dependencies cannot set compiler policy. For example:
+
+```text
+backend mir-c11
+optimization-profile default
+optimization "integer_add_zero_right" on
+optimization "dev" "all" off
+optimization "dev" "integer_add_zero_right" on
+optimization "release" "local-slots" off
+```
+
+Only the MIR backends accept named lowering or MIR passes.
+
+**Project `--profile` selects the build profile** (output directory, C flags,
+and optional Lua settings). **`--opt-profile default|debug|release` selects
+the compiler policy**, independently of C flags. The compiler's `default`
+keeps generated rewrites and decision SSA enabled, with MIR passes opt-in
+(`--optimize-ir` on the MIR path); `debug` turns all optional optimizations
+off; `release` turns them on for applicable stages. Original typing,
+ownership, semantic and MIR verification still run.
+
+Without a manifest or CLI compiler profile, built-in `release` and `debug`
+build profiles use the matching compiler preset. `dev`, `default` and
+custom Lua build profiles use `default`. The manifest `optimization-profile`
+sets the base for **all** build profiles, overridden only by CLI `--opt-profile`.
+`dev`, `debug` and `default` use `-O0 -g`; `release` uses `-O3`.
+Existing explicitly declared custom profiles named `debug` or `default`
+retain their own C flags.
+
+The two-field `optimization "NAME" on|off` applies project-wide.
+`optimization "BUILD_PROFILE" "NAME" on|off` applies only to the named
+built-in or declared custom build profile. Apply project-wide selections
+first, that build profile's selections second, and CLI `--enable-opt NAME`
+or `--disable-opt NAME` last. Within a layer, `"all"` sets the baseline and
+named selections override it, independent of order. A higher layer selecting
+`all` resets lower-layer selections. Duplicate manifest declarations for a
+selector in one scope and contradictory flags in one CLI request are errors.
+
+```sh
+on1xc exec build --profile debug --enable-opt integer_add_zero_right
+on1xc exec release --via-mir --disable-opt decision-ssa
+python3 on1x/tools/on1x-project.py plan . --opt-profile release --disable-opt local-slots --via-mir
+python3 on1x/tools/on1x-project.py lock . --on1xc /path/to/on1xc
+```
+
+`plan` validates declared inputs and prints JSON without emitting targets.
+The plan and `.on1x-build.json` include the declared scopes, resolved compiler
+flags, available optimizations and enabled state, active backend stages, and
+compiler identity. Enabled entries for inactive stages do not run. A project
+with optimizer/backend directives writes an `on1x.lock/v2` file recording
+the manifest policy; without directives, dependency locks keep the original
+v1 format. Changes to locked declarations require re-locking. CLI overrides
+are recorded in the build/plan and do not rewrite the dependency lock.
+`format --on1xc PATH`, `lock`, and `build` validate names against the linked
+compiler; formatting without a compiler validates the declarative syntax.
+
+The same `--opt-profile`, `--enable-opt` and `--disable-opt` switches work in
+`on1x-build.py` and the Archon `on1x-native-build.py` helper. For single-file
+compilation `--profile` aliases `--opt-profile`. KernelBind discovery and
+reviewed/kernel C11 profiles reject explicit optimization policy.
+
 ### Static-analysis scrutiny
 
 A root manifest may set the project-wide fallback policy:
@@ -237,7 +348,8 @@ merges its entry into the lockfile. `PROJECT` defaults to the current directory.
 Both commands accept `--ca-file PEM`. They run on the host, not in the build
 sandbox; review each endpoint before authorizing network access.
 
-The lockfile has schema `on1x.lock/v1`. Each entry records the dependency kind,
+The dependency-only lockfile has schema `on1x.lock/v1`; a v2 lock also pins
+the [compiler policy](#compiler-optimizations). Each dependency entry records the dependency kind,
 exact source, manifest selector, and resolved full commit ID. It is intended to
 be committed. For example:
 

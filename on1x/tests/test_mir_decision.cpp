@@ -103,7 +103,11 @@ int main(){
   auto terminated=m::lower(terminal);
   require(terminated.functions[0].slots.empty(),"terminating arm was not lowered to SSA");
   require(m::evaluate(terminated,"pick",{1,0,1}).value==1,"terminating arm return lost");
-  require(m::evaluate(terminated,"pick",{0,1,1}).value==0,"normal arm after terminating arm");
+   require(m::evaluate(terminated,"pick",{0,1,1}).value==0,"normal arm after terminating arm");
+   auto stored=m::lower(terminal,{.decision_ssa=false});
+   require(stored.functions[0].slots.size()==1,"disabled decision SSA still eliminated the slot");
+   require(m::evaluate(stored,"pick",{1,0,1}).value==1&&
+           m::evaluate(stored,"pick",{0,1,1}).value==0,"storage lowering lost a terminating arm");
   // Verify malformed near-matches before considering optimization.
   for(int change=0;change<5;++change){
    auto bad=fixture();auto& e=region(bad);

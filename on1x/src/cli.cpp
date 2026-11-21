@@ -6,7 +6,9 @@
 #include <on1x/discovery.hpp>
 #include <on1x/formatter.hpp>
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/vm.hpp>
 #include <on1x/backend/passes.hpp>
+#include "optimization_policy.hpp"
 #ifdef ON1X_WITH_EXTENSION_SDK
 #include "Builtin.hpp"
 #include "Driver.hpp"
@@ -283,8 +285,8 @@ namespace {
    }
   emit_diagnostics(bundle,format,color);
  }
- int repair_source(const std::string& source,const std::string& out,const on1x::LoaderOptions& options,
-  const on1x::diagnostic::Catalog& catalog,const std::string& format,bool color){
+  int repair_source(const std::string& source,const std::string& out,const on1x::LoaderOptions& options,
+   const on1x::processor::RuleSelection& rules,const on1x::diagnostic::Catalog& catalog,const std::string& format,bool color){
  namespace fs=std::filesystem;
  using Failure=on1x::diagnostic::CommandFailure;
  if(out.empty()||out=="-")throw std::runtime_error(catalog.command_failure(Failure::RepairOutput));
@@ -299,7 +301,7 @@ namespace {
   if(!loaded.unit.ppx.empty())throw std::runtime_error(catalog.presentation().source_ppx_unavailable);
   on1x::diagnostic::Registry validation_records;
   on1x::analysis::Context validation_context{catalog,validation_records,{},{}};
-  on1x::check(loaded.unit,validation_context);
+   on1x::check(loaded.unit,validation_context,rules);
   if(validation_records.has_errors()){
    const auto& finding=*std::find_if(validation_records.records().begin(),validation_records.records().end(),
     [](const auto& item){return item.level.failure;});
@@ -363,7 +365,31 @@ std::string read_ir(const std::string& name){
  if(!in.eof())throw std::runtime_error("cannot read "+name);
  return text;
 }
-int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization){
+using VmSourcePrefixes=std::map<std::string,std::string>;
+void vm_source_paths(on1x::mir::Module& module,const VmSourcePrefixes& prefixes){
+ auto map=[&](on1x::Location& at){
+  const std::string* replacement=nullptr;std::size_t length=0;
+  for(const auto& [from,to]:prefixes){
+   if(from.size()<=length||!at.file.starts_with(from))continue;
+   if(from!="/"&&at.file.size()!=from.size()&&at.file[from.size()]!='/')continue;
+   length=from.size();replacement=&to;
+  }
+  if(replacement){
+   auto suffix=at.file.substr(length);
+   if(!suffix.empty()&&suffix.front()=='/')suffix.erase(0,1);
+   at.file=suffix.empty()?*replacement:(std::filesystem::path(*replacement)/suffix).lexically_normal().generic_string();
+  }
+ };
+ for(auto& f:module.functions){
+  map(f.where);for(auto& s:f.slots)map(s.where);
+  for(auto& b:f.blocks){
+   map(b.where);for(auto& p:b.parameters)map(p.where);
+   for(auto& i:b.instructions)map(i.where);
+   map(b.exit.where);
+  }
+ }
+}
+int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization,const VmSourcePrefixes& prefixes){
  std::optional<on1x::mir::passes::Result> optimized;
  if(optimization){
   optimized=on1x::mir::passes::run(input,*optimization);
@@ -371,7 +397,24 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
     std::cerr<<"on1xc: ON1X-MIR-PASS: "<<terminal_text(optimized->diagnostic())<<"; using last verified MIR prefix\n";
  }
  if(mode=="--dump-passes"){write_all(out,on1x::mir::passes::report(*optimized));return 0;}
- const auto& module=optimized?optimized->module():input;
+  const auto& module=optimized?optimized->module():input;
+  if(mode=="--emit-vm"||mode=="--run-vm"){
+   auto image=[&]{
+    if(prefixes.empty())return on1x::vm::compile(module);
+    auto portable=module;vm_source_paths(portable,prefixes);return on1x::vm::compile(portable);
+   }();
+   if(mode=="--emit-vm"){
+    if(out.empty()||out=="-")write_all(out,image);
+    else publish_regular_file(out,image,"mir-vm",".on1x-vm-XXXXXX");
+    return 0;
+   }
+   auto r=on1x::vm::run_main(image);
+   write_all(out,r.output);
+   if(r.status==on1x::mir::Status::Returned)return static_cast<int>(r.value);
+   std::cerr<<terminal_text(r.where.file)<<":"<<r.where.line<<":"<<r.where.column
+            <<": ON1X-VM: "<<terminal_text(r.diagnostic)<<"\n";
+   return r.status==on1x::mir::Status::Trapped?70:75;
+  }
 #ifdef ON1X_WITH_NOVOSTONE
  if(mode=="--emit-ir-facts"||mode=="--analyze-ir"){
   namespace r=on1x::mir::relational;r::Store store(module);
@@ -447,6 +490,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
+   "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
+   "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in emitted bytecode\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
     "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
@@ -457,7 +502,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #endif
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
-  "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
+   "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
+   "       [--opt-profile default|debug|release] [--enable-opt NAME] [--disable-opt NAME]\n"
+   "       on1xc --list-optimizations (JSON; accepts profile and selection flags)\n"
+   "         --profile aliases --opt-profile; --all-optimizations / --no-optimizations select all\n"
   "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc --dump-processor INPUT [-o OUTPUT]\n"
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
@@ -512,7 +560,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          std::vector<std::string> plugin_selectors;
          bool explicit_c=false;
      std::size_t analysis_work=10000000;bool analysis_limit=false;
-       on1x::mir::passes::Options optimization;bool optimize=false,opt_limit=false;
+        on1x::mir::passes::Options optimization;bool legacy_optimize=false,opt_limit=false;
+         on1x::driver::OptimizationRequest requested_opts;
+         VmSourcePrefixes vm_prefixes;
+        bool list_opts=false;
        on1x::analysis::Options scrutiny;
        [[maybe_unused]] bool scrutiny_option=false;
        bool scrutiny_work_invalid=false;
@@ -525,8 +576,31 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      std::vector<std::filesystem::path> import_paths;
      std::vector<std::filesystem::path> stdlib_paths,ppx_paths,stdppx_paths;
     std::vector<std::string> admission_files;
-   for(int i=1;i<argc;++i){std::string arg=argv[i];
-       if(arg=="--help"||arg=="-h"){usage();return 0;}
+    for(int i=1;i<argc;++i){std::string arg=argv[i];
+         if(arg=="--help"||arg=="-h"){usage();return 0;}
+         if(arg=="--vm-source-prefix"){
+          if(i+2>=argc||vm_prefixes.size()>=16)
+           throw std::runtime_error("--vm-source-prefix needs two absolute paths (maximum 16 maps)");
+          auto path=[&]{
+           std::filesystem::path p(argv[++i]);
+           if(!p.is_absolute()||p.native().size()>4096||p!=p.lexically_normal())
+            throw std::runtime_error("--vm-source-prefix requires normalized absolute paths");
+           return p.generic_string();
+          };
+          auto from=path(),to=path();
+          if(!vm_prefixes.emplace(from,to).second)throw std::runtime_error("duplicate VM source prefix");
+          continue;
+         }
+        if(arg=="--opt-profile"||arg=="--profile"||arg=="--enable-opt"||arg=="--disable-opt"){
+         if(++i==argc||!argv[i][0]||argv[i][0]=='-')throw std::runtime_error(arg+" requires a name");
+         if(arg=="--enable-opt"||arg=="--disable-opt")requested_opts.select(argv[i],arg=="--enable-opt");
+         else requested_opts.set_profile(argv[i]);
+         continue;
+        }
+        if(arg=="--no-optimizations"||arg=="--all-optimizations"){
+         requested_opts.select("all",arg=="--all-optimizations");continue;
+        }
+        if(arg=="--list-optimizations"){list_opts=true;continue;}
        if(arg=="--sdk-analyze"||arg=="--sdk-emit"){
          if(!sdk_mode.empty()||++i>=argc||!argv[i][0]||argv[i][0]=='-')
          throw std::runtime_error("specify one SDK mode with a nonempty hook name");
@@ -557,15 +631,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(++i>=argc)throw std::runtime_error(arg+" requires registered feature names");
        on1x::extensions::select(arg=="--enable"?loader.extensions.enabled:loader.extensions.disabled,argv[i],{"<command-line>"});continue;
       }
-      if(arg=="--list-extensions"){mode=arg;continue;}
+       if(arg=="--list-extensions"){mode=arg;continue;}
       if(arg=="--explain-extension"){
        if(++i>=argc)throw std::runtime_error("--explain-extension requires a feature name");
-       explain_extension=argv[i];mode=arg;continue;
+        explain_extension=argv[i];mode=arg;continue;
       }
-      if(arg=="--repair"||arg=="--print-stdlib"){mode=arg;continue;}
+       if(arg=="--repair"||arg=="--print-stdlib"){mode=arg;continue;}
       if(arg=="--stdlib-resource"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty relative path");
-       stdlib_resource=argv[i];mode=arg;continue;
+        stdlib_resource=argv[i];mode=arg;continue;
       }
       if(arg=="--lib-path"||arg=="--stdlib-path"||arg=="--ppx-path"||arg=="--stdppx-path"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty search list");
@@ -613,7 +687,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-      if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"){mode=arg;continue;}
+       if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -624,10 +698,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      admission_files.emplace_back(argv[i]);continue;
     }
     if(arg=="--verify-types"){type_safety=true;continue;}
-    if(arg=="--check-types"){mode=arg;continue;}
-    if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
-      if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
-       mode=arg;explicit_c=explicit_c||arg=="--emit-c";
+     if(arg=="--check-types"){mode=arg;continue;}
+     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
+       if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
+        mode=arg;explicit_c=explicit_c||arg=="--emit-c";
       }
       else if(arg=="--no-prelude")loader.prelude=false;
       else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"||arg=="--use-ppx"){
@@ -639,7 +713,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       }
       else if(arg.starts_with("-I")&&arg.size()>2)import_paths.emplace_back(arg.substr(2));
       else if(arg=="--ir-input")ir_input=true;
-      else if(arg=="--optimize-ir")optimize=true;
+       else if(arg=="--optimize-ir")legacy_optimize=true;
       else if(arg=="--opt-work"||arg=="--opt-rewrites"){
        if(++i>=argc)throw std::runtime_error(arg+" requires a value");
        auto& limit=arg=="--opt-work"?optimization.work:optimization.rewrites;
@@ -668,13 +742,34 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
    }
-            if(!sdk_target.empty()&&(sdk_mode!="--sdk-emit"||sdk_name!="mir-archon"||!plugin_selectors.empty()))
+        if(!vm_prefixes.empty()&&mode!="--emit-vm")throw std::runtime_error("--vm-source-prefix requires --emit-vm");
+        const auto policy=requested_opts.resolve(legacy_optimize||mode=="--dump-passes");
+       if(list_opts){
+        if(mode!="--emit-c"||explicit_c||!source.empty()||!sdk_mode.empty()||ir_input||opt_limit||
+           !sdk_target.empty()||native_pic||native_no_entry||!plugin_selectors.empty()||
+           memory||type_safety||!loader.interfaces.empty()||analysis_limit)
+         throw std::runtime_error("--list-optimizations cannot be combined with an input or compilation mode");
+        write_all(out,policy.listing());return 0;
+       }
+       const bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
+       const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
+          mode=="--run-ir"||mode=="--emit-vm"||mode=="--run-vm"||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
+       const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
+         mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
+         mode!="--print-stdlib"&&mode!="--stdlib-resource";
+       requested_opts.check_stages(policy,checked_source,mir_mode&&!ir_input,mir_mode);
+       optimization.pipeline=policy.pipeline;
+       const bool optimize=mir_mode&&(!optimization.pipeline.empty()||mode=="--dump-passes");
+       optimization.allow_empty=mode=="--dump-passes"&&optimization.pipeline.empty();
+       if(legacy_optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
+       if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require enabled MIR passes or --dump-passes");
+             if(!sdk_target.empty()&&(sdk_mode!="--sdk-emit"||sdk_name!="mir-archon"||!plugin_selectors.empty()))
              throw std::runtime_error("--sdk-target requires --sdk-emit mir-archon without plugins");
             if((native_pic||native_no_entry)&&sdk_target.empty())
              throw std::runtime_error("--native-pic and --native-no-entry require target-aware native emission");
-            if(!sdk_mode.empty()&&(mode!="--emit-c"||explicit_c||((optimize||opt_limit)&&sdk_target.empty())||
+             if(!sdk_mode.empty()&&(mode!="--emit-c"||explicit_c||(legacy_optimize&&sdk_target.empty())||
               (sdk_mode=="--sdk-analyze"&&!out.empty())))
-            throw std::runtime_error("SDK modes cannot be combined with other modes, MIR optimization, or analyzer output files");
+             throw std::runtime_error("SDK modes cannot be combined with other modes, non-target --optimize-ir, or analyzer output files");
 #ifdef ON1X_WITH_EXTENSION_SDK
            if(!plugin_selectors.empty()&&sdk_mode.empty())
             throw std::runtime_error("--plugin requires --sdk-analyze or --sdk-emit");
@@ -730,7 +825,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           throw command_failure(CommandFailure::RepairOptions);
          }
          if(scrutiny_option)throw command_failure(CommandFailure::RepairPolicy);
-         return repair_source(source,out,loader,*diagnostic_catalog,diagnostic_format,color);
+          return repair_source(source,out,loader,policy.rules,*diagnostic_catalog,diagnostic_format,color);
 #else
          throw command_failure(CommandFailure::RepairUnavailable);
 #endif
@@ -770,13 +865,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(!admitted.emplace(name,std::move(entry)).second)throw std::runtime_error("duplicate admitted extern across evidence files: "+name);
      }
 #endif
-     bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
      if(analysis_limit&&mode!="--analyze-ir")throw std::runtime_error("--analysis-work requires --analyze-ir");
 #ifndef ON1X_WITH_NOVOSTONE
      if(analysis_mode)throw std::runtime_error("MIR analysis unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
 #endif
-       bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||mode=="--run-ir"||mode=="--dump-passes"||analysis_mode;
-       mir_mode=mir_mode||!sdk_mode.empty();
 #ifdef ON1X_WITH_EXTENSION_SDK
        auto sdk_output=[&](const on1x::mir::Module& input){
         const bool emit=sdk_mode=="--sdk-emit";
@@ -808,9 +900,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         throw std::runtime_error("--kernel-c11 requires direct C11 emission without PPX, extensions or independent checker modes");
        loader.extensions.execute=false;
       }
-     optimize=optimize||mode=="--dump-passes";
-     if(optimize&&!mir_mode)throw std::runtime_error("--optimize-ir requires a MIR mode");
-     if(opt_limit&&!optimize)throw std::runtime_error("optimization budgets require --optimize-ir or --dump-passes");
       if(ir_input){
        if(!loader.extensions.enabled.empty()||!loader.extensions.disabled.empty())throw std::runtime_error("--ir-input cannot enable source extensions");
        if(!mir_mode||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)throw std::runtime_error("--ir-input requires a MIR mode without PPX options");
@@ -824,7 +913,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_EXTENSION_SDK
        if(!sdk_mode.empty())return sdk_output(module);
 #endif
-       return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr);
+        return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes);
     }
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(mode=="--kernel-imports"){
@@ -852,7 +941,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        auto& unit=loaded.unit;
        if(interface_mode){
         on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
-        on1x::check_interfaces(std::move(unit),loaded.interfaces,context);
+         on1x::check_interfaces(std::move(unit),loaded.interfaces,context,policy.rules);
         if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
         publish_diagnostics();
         std::cout<<"OK: "<<loaded.interfaces.size()<<" interface members\n";return 0;
@@ -870,8 +959,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     on1x::meta::rewrite(unit,ppx);
      on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
       on1x::processor::Report processor_report;
-      if(mode=="--dump-processor")on1x::check(unit,analysis_context,processor_report);
-      else on1x::check(unit,analysis_context);
+       on1x::check(unit,analysis_context,policy.rules,mode=="--dump-processor"?&processor_report:nullptr);
      if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
      auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
@@ -892,11 +980,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
       if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
        if(mir_mode){
-        auto module=on1x::mir::lower(unit);
+          auto module=(mode=="--emit-vm"||mode=="--run-vm")
+            ?on1x::mir::lower_for_vm(unit,{.decision_ssa=policy.decision_ssa})
+            :on1x::mir::lower(unit,{.decision_ssa=policy.decision_ssa});
 #ifdef ON1X_WITH_EXTENSION_SDK
         if(!sdk_mode.empty())return sdk_output(module);
 #endif
-        auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr);
+         auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes);
        publish_diagnostics();return result;
       }
    if(mode=="--types"){

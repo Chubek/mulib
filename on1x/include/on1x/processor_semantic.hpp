@@ -1,6 +1,7 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <on1x/processor.hpp>
+#include <on1x/partial_eval.hpp>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,6 +19,7 @@ struct Report {
  bool verified=false;
  Stats desugar,canonicalize;
  SemanticStats structural,typed_before,typed_after;
+ PartialEvalStats partial_eval;
 };
 // Deterministic compiler-side report, with rule-source provenance.
 std::string report(const Report&);

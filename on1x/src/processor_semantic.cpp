@@ -241,7 +241,12 @@ std::string report(const Report& result){
  statistics(out,result.typed_before);out<<",\"desugar\":";
  statistics(out,result.desugar);out<<",\"canonicalize\":";
  statistics(out,result.canonicalize);out<<",\"typed_after\":";
- statistics(out,result.typed_after);out<<"}\n";
+ statistics(out,result.typed_after);
+ const auto& pe=result.partial_eval;
+ out<<",\"partial_eval\":{\"enabled\":"<<(pe.enabled?"true":"false")
+    <<",\"limited\":"<<(pe.limited?"true":"false")<<",\"work\":"<<pe.work
+    <<",\"folds\":"<<pe.folds<<",\"static_calls\":"<<pe.static_calls
+    <<",\"residual_calls\":"<<pe.residual_calls<<"}}\n";
  return out.str();
 }
 }

@@ -1,0 +1,70 @@
+#include "On1xVM.h"
+
+int On1xVM_step(On1xVM_vm *vm, uint32_t opcode) {
+  size_t base=0; const On1xVM_metadata *info=NULL;
+  int status=On1xVM_vw_check(vm,opcode,&base,&info); if(status) return status;
+  switch(opcode) {
+  case 2u: On1xVM_Add(vm); break;
+  case 19u: On1xVM_Assert(vm); break;
+  case 43u: On1xVM_Branch(vm); break;
+  case 17u: On1xVM_Call(vm); break;
+  case 1u: On1xVM_Constant(vm); break;
+  case 5u: On1xVM_Div(vm); break;
+  case 41u: On1xVM_Enter(vm); break;
+  case 9u: On1xVM_Eq(vm); break;
+  case 39u: On1xVM_Extract(vm); break;
+  case 20u: On1xVM_FloatAdd(vm); break;
+  case 23u: On1xVM_FloatDiv(vm); break;
+  case 25u: On1xVM_FloatEq(vm); break;
+  case 33u: On1xVM_FloatFromBits(vm); break;
+  case 31u: On1xVM_FloatFromI64(vm); break;
+  case 30u: On1xVM_FloatGe(vm); break;
+  case 29u: On1xVM_FloatGt(vm); break;
+  case 36u: On1xVM_FloatIsFinite(vm); break;
+  case 35u: On1xVM_FloatIsNaN(vm); break;
+  case 28u: On1xVM_FloatLe(vm); break;
+  case 27u: On1xVM_FloatLt(vm); break;
+  case 22u: On1xVM_FloatMul(vm); break;
+  case 26u: On1xVM_FloatNe(vm); break;
+  case 24u: On1xVM_FloatNeg(vm); break;
+  case 37u: On1xVM_FloatSignbit(vm); break;
+  case 21u: On1xVM_FloatSub(vm); break;
+  case 34u: On1xVM_FloatToBits(vm); break;
+  case 32u: On1xVM_FloatToI64(vm); break;
+  case 14u: On1xVM_Ge(vm); break;
+  case 13u: On1xVM_Gt(vm); break;
+  case 42u: On1xVM_Jump(vm); break;
+  case 12u: On1xVM_Le(vm); break;
+  case 15u: On1xVM_Load(vm); break;
+  case 11u: On1xVM_Lt(vm); break;
+  case 6u: On1xVM_Mod(vm); break;
+  case 4u: On1xVM_Mul(vm); break;
+  case 10u: On1xVM_Ne(vm); break;
+  case 7u: On1xVM_Neg(vm); break;
+  case 8u: On1xVM_Not(vm); break;
+  case 40u: On1xVM_Numeric(vm); break;
+  case 18u: On1xVM_Print(vm); break;
+  case 44u: On1xVM_Return(vm); break;
+  case 16u: On1xVM_Store(vm); break;
+  case 3u: On1xVM_Sub(vm); break;
+  case 38u: On1xVM_Tuple(vm); break;
+  default: return -1;
+  }
+  return On1xVM_vw_finish(vm,base,info);
+}
+
+int On1xVM_run(On1xVM_vm *vm, const On1xVM_tape *tape, size_t budget) {
+  size_t steps=0, i; int status=0;
+  if(!vm || !tape || tape->size>tape->capacity || (tape->size && !tape->data)) return -1;
+  if(vm->vw_pc>tape->size) return -4;
+  for(i=0;i<tape->size;++i) if(On1xVM_vw_validate_instruction(&tape->data[i],tape->size)) return -4;
+  vm->vw_code_size=tape->size; vm->vw_halted=0;
+  while(!vm->vw_halted && vm->vw_pc<tape->size) {
+    const On1xVM_metadata *info; size_t origin=vm->vw_pc;
+    if(steps++>=budget) {status=-7; break;}
+    vm->vw_current=&tape->data[vm->vw_pc]; info=On1xVM_lookup(vm->vw_current->opcode);
+    if(!info || vm->vw_current->operand_count!=info->operands) {status=-4; break;}
+    ++vm->vw_pc; status=On1xVM_step(vm,vm->vw_current->opcode); if(status) {vm->vw_pc=origin; break;}
+  }
+  vm->vw_current=NULL; return status;
+}

@@ -173,6 +173,12 @@ def integer_normal(node):
     kind, text, children = node
     if kind in {"Capture", "Integer"}:
         return node
+    if kind == "Unary" and text == "-":
+        # This is a literal spelling of signed zero, not a license to
+        # evaluate checked negation (in particular, -INT64_MIN traps).
+        if children[0] == ("Integer", "0", ()):
+            return children[0]
+        fail("unproved checked-i64 negation: only literal zero is admitted")
     if kind == "Unary" and text == "!":
         child = integer_normal(children[0])
         if child[0] == "Not":
@@ -199,6 +205,8 @@ def integer_normal(node):
 def integer_type(node):
     kind, text, children = node
     if kind in {"Capture", "Integer"}:
+        return "i64"
+    if kind == "Unary" and text == "-" and integer_type(children[0]) == "i64":
         return "i64"
     if kind == "Unary" and text == "!" and integer_type(children[0]) == "bool":
         return "bool"

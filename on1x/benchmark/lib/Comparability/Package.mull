@@ -1,0 +1,156 @@
+val H <- G:Native("bench-host");
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+val Has <- fn(record, key) {
+  val keys <- H:Keys(record);
+  var i <- 0;
+  while i < G:Len(keys) {
+    if keys[i] == key { return true; }
+    i <- i + 1;
+  }
+  return false;
+};
+val Success <- fn(probe) {
+  if probe == nil { return false; }
+  val r <- probe:command:result;
+  return r:exit_code == 0 and r:signal == 0 and not r:timed_out;
+};
+val Hashes <- fn(probe) {
+  if not Success(probe) { return nil; }
+  val lines <- T:Split(probe:stdout, "\n");
+  var hashes <- [];
+  var i <- 0;
+  while i < G:Len(lines) {
+    if lines[i] != "" {
+      val hash <- T:Split(lines[i], " ")[0];
+      if G:Len(hash) != 64 { return nil; }
+      var j <- 0;
+      while j < 64 {
+        if G:Len(T:Split("0123456789abcdef", hash[j])) != 2 { return nil; }
+        j <- j + 1;
+      }
+      hashes <- hashes + [hash];
+    }
+    i <- i + 1;
+  }
+  if G:Len(hashes) == 0 { return nil; }
+  return hashes;
+};
+val FixtureHash <- fn(report, fixture) {
+  var found <- nil;
+  var count <- 0;
+  var i <- 0;
+  while i < G:Len(report:mir) {
+    if report:mir[i]:fixture == fixture {
+      found <- Hashes(report:mir[i]:source_hash);
+      count <- count + 1;
+    }
+    i <- i + 1;
+  }
+  if count != 1 or found == nil or G:Len(found) != 1 { return nil; }
+  return found[0];
+};
+val CpuIdentity <- fn(probe) {
+  if not Success(probe) { return nil; }
+  # lscpu also prints live frequency/utilization; those are not machine identity.
+  val fields <- ["Architecture", "Byte Order", "CPU(s)", "Vendor ID", "Model name",
+    "Thread(s) per core", "Core(s) per socket", "Socket(s)"];
+  val lines <- T:Split(probe:stdout, "\n");
+  var identity <- [];
+  var i <- 0;
+  while i < G:Len(fields) {
+    var j <- 0;
+    while j < G:Len(lines) {
+      if T:Split(lines[j], ":")[0] == fields[i] { identity <- identity + [lines[j]]; }
+      j <- j + 1;
+    }
+    i <- i + 1;
+  }
+  if G:Len(identity) < 3 { return nil; }
+  return identity;
+};
+val Context <- fn(before, after) {
+  var reasons <- [];
+  if before:schema != "on1x.benchmark.v1" or after:schema != before:schema {
+    reasons <- reasons + ["report-schema"];
+  }
+  if before:failures != 0 or after:failures != 0 { reasons <- reasons + ["failed-run"]; }
+  val keys <- ["iterations", "seed", "cflags", "warmups", "compile_warmups", "timeout_ms"];
+  var i <- 0;
+  while i < G:Len(keys) {
+    if before:config[keys[i]] != after:config[keys[i]] {
+      reasons <- reasons + ["config:" + keys[i]];
+    }
+    i <- i + 1;
+  }
+  if before:provenance:machine != after:provenance:machine { reasons <- reasons + ["machine"]; }
+  if before:methodology != after:methodology { reasons <- reasons + ["measurement-methodology"]; }
+  val compiler_a <- Hashes(before:provenance:compiler_hash);
+  val compiler_b <- Hashes(after:provenance:compiler_hash);
+  if compiler_a == nil or compiler_b == nil { reasons <- reasons + ["missing-compiler-identity"]; }
+  if not Has(before, "comparison_context") or not Has(after, "comparison_context") {
+    return reasons + ["missing-target-runtime-context"];
+  }
+  val a <- before:comparison_context;
+  val b <- after:comparison_context;
+  if a:schema != "on1x.benchmark-context.v1" or a:schema != b:schema {
+    reasons <- reasons + ["context-schema"];
+  }
+  # Versions alone cannot identify a rebuilt runtime; compare compiled object bytes.
+  val probes <- ["cc_target", "cc_version", "runtime_objects", "runtime_sources", "harness_sources", "cpu"];
+  i <- 0;
+  while i < G:Len(probes) {
+    val key <- probes[i];
+    val ap <- a[key]; val bp <- b[key];
+    if not Success(ap) or not Success(bp) { reasons <- reasons + ["unavailable:" + key]; }
+    else if key == "runtime_objects" or key == "runtime_sources" or key == "harness_sources" {
+      val ah <- Hashes(ap); val bh <- Hashes(bp);
+      if ah == nil or bh == nil or ah != bh { reasons <- reasons + ["identity:" + key]; }
+    } else if key == "cpu" {
+      val ai <- CpuIdentity(ap); val bi <- CpuIdentity(bp);
+      if ai == nil or bi == nil or ai != bi { reasons <- reasons + ["identity:cpu"]; }
+    } else if ap:stdout == "" or ap:stdout != bp:stdout { reasons <- reasons + ["identity:" + key]; }
+    i <- i + 1;
+  }
+  if a:runtime_flags != b:runtime_flags { reasons <- reasons + ["runtime-flags"]; }
+  if a:link_flags != b:link_flags { reasons <- reasons + ["link-flags"]; }
+  return reasons;
+};
+val Pair <- fn(before, after, old, row) {
+  var reasons <- [];
+  if old:fixture != row:fixture or old:backend != row:backend { return ["row-identity"]; }
+  if not old:valid or not row:valid { reasons <- reasons + ["correctness-gate"]; }
+  if not old:timed or not row:timed { reasons <- reasons + ["correctness-only"]; }
+  if G:Len(old:runtime_samples_ns) == 0 or G:Len(row:runtime_samples_ns) == 0 {
+    reasons <- reasons + ["missing-runtime-samples"];
+  }
+  val a <- FixtureHash(before, row:fixture);
+  val b <- FixtureHash(after, row:fixture);
+  if a == nil or b == nil or a != b { reasons <- reasons + ["fixture-source-hash"]; }
+  if row:backend != "c11" {
+    if before:archon_provenance == nil or after:archon_provenance == nil {
+      reasons <- reasons + ["missing-native-tool-identity"];
+    } else if Hashes(before:archon_provenance:hash) == nil or Hashes(after:archon_provenance:hash) == nil {
+      reasons <- reasons + ["missing-native-tool-identity"];
+    }
+    if not Has(before, "comparison_context") or not Has(after, "comparison_context") {
+      return reasons + ["missing-native-target"];
+    }
+    val keys <- ["archon_target", "archon_abi"];
+    var i <- 0;
+    while i < G:Len(keys) {
+      val ap <- before:comparison_context[keys[i]];
+      val bp <- after:comparison_context[keys[i]];
+      if ap == nil or bp == nil { reasons <- reasons + ["missing:" + keys[i]]; }
+      else if not Success(ap) or not Success(bp) or ap:stdout == "" or ap:stdout != bp:stdout {
+        reasons <- reasons + ["identity:" + keys[i]];
+      }
+      i <- i + 1;
+    }
+    val ah <- Hashes(before:comparison_context:scalar_abi_object);
+    val bh <- Hashes(after:comparison_context:scalar_abi_object);
+    if ah == nil or bh == nil or ah != bh { reasons <- reasons + ["scalar-abi-object"]; }
+  }
+  return reasons;
+};
+return {Has: Has, Hashes: Hashes, Context: Context, Pair: Pair, FixtureHash: FixtureHash,
+  CpuIdentity: CpuIdentity};

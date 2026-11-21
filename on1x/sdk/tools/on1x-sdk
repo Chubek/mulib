@@ -271,10 +271,11 @@ def validate_contract(value):
 def project_engine():
     here = Path(__file__).resolve()
     candidates = [
-        here.parents[2] / "tools/on1x-project.py",  # source tree
         here.parent.parent / "share/on1x/tools/on1x-project.py",
         here.parent.parent / "libexec/on1x/on1x-project.py",
     ]
+    if here.parent.name == "tools" and here.parent.parent.name == "sdk":
+        candidates.insert(0, here.parents[2] / "tools/on1x-project.py")
     for path in candidates:
         if path.is_file():
             spec = importlib.util.spec_from_file_location("_on1x_project_engine", path)
@@ -306,8 +307,8 @@ def validate_project(family, path, data):
         engine.root_manifest(data, path)
         return "on1xfile/1"
     if family == "lock":
-        engine.parse_lock(data, path)
-        return "on1x.lock/v1"
+        _, policy = engine.parse_lock(data, path)
+        return "on1x.lock/v2" if policy else "on1x.lock/v1"
     raise AssertionError(family)
 
 

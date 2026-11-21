@@ -116,6 +116,175 @@ class ProjectTests(unittest.TestCase):
         self.app(extra='scrutiny off\n', implementation='@scrutiny off;\n' + division)
         self.build('--scrutiny', 'strict', negative='ON1X-ANALYSIS-DIVZERO')
 
+    def test_optimizer_policy_plan_lock_and_build(self):
+        program = ('fn plus(x:i64)->i64{return (x+0)*1;}'
+                   'fn main(){println(plus(40+2));}\n')
+        rules = ('optimization-profile debug\n'
+                 'optimization "integer_add_zero_right" on\n')
+        self.app(extra=rules, implementation=program)
+        lock = self.lock('--on1xc', OPTIONS.on1xc)
+        self.assertEqual(json.loads(lock.read_bytes())['optimization'],
+                         {'optimization-profile': 'debug', 'selections': {'integer_add_zero_right': True}})
+        plan = json.loads(subprocess.check_output(
+            [sys.executable, OPTIONS.driver, 'plan', self.project, '--frozen', '--on1xc', OPTIONS.on1xc],
+            text=True, timeout=60))
+        self.assertFalse(self.output.exists())
+        self.assertEqual(plan['targets'], {'sample': 'src/main.on1x'})
+        def built(*args):
+            out = self.build('--frozen', *args)
+            self.run_bin(out)
+            return json.loads((out / '.on1x-build.json').read_text())
+        first = built()
+        self.assertEqual(first['optimization'], plan['optimization'])
+        def enabled(record):
+            return {item['name'] for item in record['optimization']['optimizations'] if item['enabled']}
+        self.assertEqual(enabled(first), {'integer_add_zero_right'})
+        second = built('--disable-opt', 'all')
+        self.assertEqual(enabled(second), set())
+        self.assertNotEqual(first['outputs']['sample'], second['outputs']['sample'])
+        mir = built('--via-mir', '--enable-opt', 'constant-fold')
+        self.assertEqual(enabled(mir), {'integer_add_zero_right', 'constant-fold'})
+        self.assertEqual(mir['optimization']['active_stages'], ['processor', 'lowering', 'mir'])
+        mir_unfolded = built('--via-mir', '--disable-opt', 'constant-fold')
+        self.assertNotEqual(mir['outputs']['sample'], mir_unfolded['outputs']['sample'])
+        release = built('--opt-profile', 'release', '--disable-opt', 'decision-ssa', '--via-mir')
+        self.assertNotIn('decision-ssa', enabled(release))
+        self.assertIn('constant-fold', enabled(release))
+        self.assertEqual(release['cflags'], ['-O0', '-g'])
+        self.build('--enable-opt', 'dead-pure', negative='requires a MIR backend')
+        self.build('--enable-opt', 'not_a_rule', negative='unknown optimization')
+        self.build('--enable-opt', 'all', '--no-optimizations', negative='conflicting optimization')
+        self.assertEqual(json.loads((self.output / '.on1x-build.json').read_text()), release)
+        self.app(extra=rules + 'backend mir-c11\n', implementation=program)
+        self.build('--frozen', negative='stale optimization policy')
+        self.lock('--on1xc', OPTIONS.on1xc)
+        self.assertEqual(built()['optimization']['backend'], 'mir-c11')
+        self.app(extra='optimization "not_a_rule" on\n', implementation=program)
+        self.lock('--on1xc', OPTIONS.on1xc, negative='unknown optimization')
+        self.app(extra='optimization-profile debug\n', implementation='fn main(){println(missing);}\n')
+        self.lock()
+        self.build('--no-optimizations', negative='undefined')
+
+    def test_scoped_optimizer_selections(self):
+        self.app(extra='backend mir-c11\noptimization-profile debug\n'
+                 'optimization "integer_add_zero_right" on\n'
+                 'optimization "dev" "integer_multiply_one_right" on\n'
+                 'optimization "release" "all" off\n'
+                 'optimization "release" "constant-fold" on\n')
+        lock = self.lock('--on1xc', OPTIONS.on1xc)
+        declared = json.loads(lock.read_text())['optimization']
+        self.assertEqual(declared['scoped']['release'], {'all': False, 'constant-fold': True})
+        for flags, expected in [
+                ([], {'integer_add_zero_right', 'integer_multiply_one_right'}),
+                (['--release'], {'constant-fold'}),
+                (['--release', '--no-optimizations', '--enable-opt', 'dead-pure'], {'dead-pure'})]:
+            output = self.build('--frozen', *flags)
+            self.run_bin(output)
+            record = json.loads((output / '.on1x-build.json').read_text())['optimization']
+            self.assertEqual(record['declared'], declared)
+            self.assertEqual({r['name'] for r in record['optimizations'] if r['enabled']}, expected)
+        root = self.project / 'On1xfile'
+        root.write_text(root.read_text().replace('"release" "constant-fold" on', '"release" "constant-fold" off'))
+        self.build('--frozen', negative='stale optimization policy')
+        self.app(extra='optimization "undeclared" "all" on\n')
+        self.build(negative='unknown optimization scope')
+        self.app(extra='optimization "dev" "all" off\noptimization "dev" "all" on\n')
+        self.build(negative='duplicate declaration')
+
+    def test_project_backend_scope_lock_and_precedence(self):
+        self.app(extra='backend c11\nbackend "dev" mir-vm\nbackend "release" mir-archon\n')
+        lock = self.lock()
+        self.assertEqual(json.loads(lock.read_text())['optimization']['backend_scopes'],
+                         {'dev': 'mir-vm', 'release': 'mir-archon'})
+        # CLI can choose a different qualified backend even if the scoped
+        # choice has no compiler/runtime installed on this machine.
+        out = self.build('--via-mir', '--frozen')
+        self.run_bin(out)
+        self.assertEqual(json.loads((out / '.on1x-build.json').read_text())['backend']['name'], 'mir-c11')
+        manifest = self.project / 'On1xfile'
+        manifest.write_text(manifest.read_text().replace('"release" mir-archon', '"release" c11'))
+        self.build('--backend', 'c11', '--frozen', negative='stale optimization policy')
+        self.app(extra='backend "typo" mir-archon\n')
+        self.build(negative='unknown backend scope')
+        self.app(extra='backend "dev" c11\nbackend "dev" mir-vm\n')
+        self.build(negative='duplicate declaration')
+        self.app(extra='backend "dev" nonexistent\n')
+        self.build(negative='unknown project backend')
+
+    def test_backend_discovery(self):
+        # Probe installed/build tools using fixed trusted input, independently
+        # of the current project's manifest and without registering a target.
+        self.write('On1xfile', 'this is not a project\n')
+        out = subprocess.check_output([sys.executable, OPTIONS.driver, 'backends',
+                                      '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc], cwd=self.project)
+        result = json.loads(out)
+        self.assertEqual(result['schema'], 'on1x.project-backends/v1')
+        rows = {r['name']: r for r in result['backends']}
+        self.assertEqual(set(rows), {'c11', 'mir-c11', 'mir-archon', 'mir-vm'})
+        self.assertTrue(rows['c11']['available'] and rows['mir-c11']['available'])
+        for item in rows.values():
+            if not item['available']:
+                self.assertTrue(item['reason'])
+        self.assertFalse((self.project/'target').exists())
+
+    def test_native_project_runner(self):
+        self.app(extra='backend "dev" mir-archon\n')
+        build = Path(OPTIONS.on1xc).resolve().parent
+        archon = build/'backends/mir-archon/on1x-archon-mir'
+        if (not archon.is_file() or subprocess.check_output([archon, '--print-target'], text=True).strip()
+                != 'x86_64-unknown-linux-gnu'):
+            self.build(negative='mir-archon unavailable')
+            return
+        self.lock()
+        out = self.build('--frozen')
+        self.run_bin(out)
+        report = json.loads((out / '.on1x-build.json').read_text())
+        self.assertEqual(report['backend']['artifact'], 'elf-executable')
+        self.assertTrue({'archon', 'archon_manifest', 'runtime', 'scalar_abi', 'assembler', 'linker'}
+                        <= report['tools'].keys())
+        self.assertTrue((out/'sample').read_bytes().startswith(b'\x7fELF'))
+        self.build('--frozen')
+        self.assertEqual(json.loads((out / '.on1x-build.json').read_text()), report)
+        self.write('src/main.on1x', 'fn main(){println("not scalar MIR");}\n')
+        self.build('--frozen', negative='MIR')
+        self.run_bin(out)
+
+    def test_vm_project_runner(self):
+        self.app(extra='backend "dev" mir-vm\n',
+                 implementation='import "divide.on1x";fn main(){println(divide(84,2));}\n')
+        self.write('src/On1xfile.m', 'on1xfile 1\nsource "main.on1x"\nlibrary "divide.on1x"\n')
+        self.write('src/divide.on1x', 'fn divide(x:i64,d:i64)->i64{return x/d;}\n')
+        runner = Path(OPTIONS.on1xc).resolve().with_name('on1x-vm')
+        if not runner.is_file():
+            self.build(negative='mir-vm unavailable')
+            return
+        self.lock()
+        out = self.build('--frozen')
+        report = json.loads((out / '.on1x-build.json').read_text())
+        self.assertEqual(report['backend']['artifact'], 'bytecode')
+        self.assertFalse(report['cflags'])
+        self.assertNotIn('cc', report['tools'])
+        for name in ('sample', 'sample.o1vm', '.on1x-vm-runner'):
+            self.assertEqual(hashlib.sha256((out / name).read_bytes()).hexdigest(), report['outputs'][name])
+        self.assertEqual(report['tools']['vm_runner'], report['outputs']['.on1x-vm-runner'])
+        relocated = self.root / 'moved VM generation'
+        out.rename(relocated)
+        self.run_bin(relocated)
+        plan = subprocess.run([sys.executable, OPTIONS.driver, 'plan', self.project, '--frozen',
+                               '--on1xc', OPTIONS.on1xc, '--cc', '/no-host-compiler'], text=True,
+                              capture_output=True, timeout=60)
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        self.assertEqual(json.loads(plan.stdout)['tools'], report['tools'])
+        self.build('--frozen')
+        self.assertEqual(json.loads((out / '.on1x-build.json').read_text()), report)
+        self.write('src/main.on1x', 'import "divide.on1x";fn main(){println(divide(84,0));}\n')
+        self.build('--frozen')
+        trapped = subprocess.run([out/'sample'], text=True, capture_output=True)
+        self.assertEqual(trapped.returncode, 70)
+        self.assertIn('/__on1x__/project/src/divide.on1x:1:', trapped.stderr)
+        (relocated / 'sample.o1vm').write_bytes(b'not bytecode')
+        self.assertNotEqual(subprocess.run([relocated/'sample'], capture_output=True).returncode, 0)
+
     def test_only_declared_roles_and_imports(self):
         self.app(implementation='import private as P;\nfn main() -> i64 { println(P.number()); return 0; }\n')
         self.write('src/private.on1x', 'fn number() -> i64 { return 42; }\n')

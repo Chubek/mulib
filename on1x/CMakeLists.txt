@@ -116,7 +116,7 @@ configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ext
 add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp
-  src/processor.cpp src/processor_semantic.cpp)
+  src/processor.cpp src/processor_semantic.cpp processor/partial_eval.cpp src/backend/vm_closures.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
@@ -162,7 +162,9 @@ if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
 add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
-target_link_libraries(on1xc PRIVATE on1x_frontend on1x_pretty_kernels)
+add_subdirectory(backends/mir-vm)
+set_target_properties(on1x-vm PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(on1xc PRIVATE on1x_frontend on1x_pretty_kernels on1x_mir_vm)
 target_compile_definitions(on1xc PRIVATE ON1X_DRIVER_SOURCE_TOOLS="${CMAKE_CURRENT_SOURCE_DIR}/tools")
 if(ON1X_BUILD_EXTENSION_SDK)
   add_subdirectory(backends)
@@ -302,7 +304,7 @@ install(TARGETS on1xc RUNTIME DESTINATION bin)
 install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
-install(FILES tools/on1x_project.py tools/on1x_inline.py DESTINATION share/on1x/tools)
+install(FILES tools/on1x_project.py tools/on1x_inline.py tools/on1x_optimization.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -530,6 +532,23 @@ if(BUILD_TESTING)
       "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.processor_engine on1x.processor_semantic
     on1x.processor_integration PROPERTIES TIMEOUT 240)
+  add_test(NAME on1x.processor_predicates
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_processor_predicates.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/processor-predicates"
+      "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.processor_predicates PROPERTIES TIMEOUT 240)
+  add_test(NAME on1x.partial_eval
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_partial_eval.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/partial-eval" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.partial_eval PROPERTIES TIMEOUT 240)
+  add_test(NAME on1x.optimization_cli
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_optimization_cli.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/optimization-cli"
+      "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.optimization_cli PROPERTIES TIMEOUT 240)
   target_link_libraries(on1x_pass_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.passes_hir COMMAND on1x_pass_tests)
   set_tests_properties(on1x.passes_hir PROPERTIES TIMEOUT 120)
@@ -549,6 +568,10 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/mir-decision"
       "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.mir_decision_hir on1x.mir_decision PROPERTIES TIMEOUT 240)
+  add_test(NAME on1x.vm_data COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vm_data.py" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/vm-data" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.vm_data PROPERTIES TIMEOUT 120)
   target_link_libraries(on1x_mir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_hir COMMAND on1x_mir_tests)
   set_tests_properties(on1x.mir_hir PROPERTIES TIMEOUT 40)

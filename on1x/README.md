@@ -310,6 +310,13 @@ typed invariants at the phase boundaries.
 `on1xc --dump-processor INPUT [-o REPORT.json]` reports deterministic phase
 counters, rule hits and authored source locations. Rule execution is native
 compiler code; emitted programs do not require LLSynth, Perl or Python.
+Use `on1xc --list-optimizations` for the active compiler's inventory.
+[`default`, `debug`, and `release` optimization profiles](docs/optimization-profiles.md)
+select generated rules, boolean decision lowering, and handwritten MIR passes.
+For example, `--no-optimizations --enable-opt integer_add_zero_right` runs just
+that rule. Type, ownership, and semantic verification still apply.
+The [paired zero-cost gate](benchmark/ZERO_COST.md) compares the emitted code
+of explicit and wrapped On1x under the same profile.
 Per-backend measurements and implementation recommendations are recorded in
 [`benchmark/PROCESSOR_FEEDBACK.md`](benchmark/PROCESSOR_FEEDBACK.md).
 The follow-up [boolean decision lowering comparison](benchmark/OPTIMIZATION_ROUND2.md)

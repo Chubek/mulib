@@ -346,7 +346,7 @@ Result run(const Module& module,Options options){
   if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2"&&options.target!="portable-numeric-v3")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
   if(module.version==format_version)options.target="portable-numeric-product-v2";
   if(module.version==numeric_format_version)options.target="portable-numeric-v3";
- if(options.pipeline.empty()||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds");
+ if((options.pipeline.empty()&&!options.allow_empty)||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds unless explicitly disabled");
  for(auto pass:options.pipeline)(void)descriptor(pass);
  verify(module,options.verification);Result result(module,serialize(module),options);
   Budget budget{options.work,options.rewrites,0,0,&options.control};std::size_t revision=0;

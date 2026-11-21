@@ -1,0 +1,27 @@
+# Exercise the actual native process boundary; these are helper tests, not benchmarks.
+val H <- G:Native("bench-host");
+val Test <- fn(directory) {
+  H:Mkdir(directory);
+  val out <- directory + "/stdout";
+  val err <- directory + "/stderr";
+  val literal <- "$(touch should-not-exist); spaces ' and \"quotes\"";
+  val success <- H:Run(["/usr/bin/printf", "%s", literal], out, err, 1000);
+  G:Assert(success:exit_code == 0 and success:signal == 0 and not success:timed_out);
+  G:Assert(success:elapsed_ns > 0 and success:host_error == "");
+  G:Assert(H:Read(out) == literal and H:Read(err) == "");
+  val failure <- H:Run(["/usr/bin/false"], out, err, 1000);
+  G:Assert(failure:exit_code == 1 and failure:signal == 0 and not failure:timed_out);
+  G:Assert(H:Read(out) == "" and H:Read(err) == "");
+  val timeout <- H:Run(["/usr/bin/sleep", "5"], out, err, 10);
+  G:Assert(timeout:timed_out and timeout:signal == 9 and timeout:exit_code == -1);
+  G:Assert(timeout:elapsed_ns >= 10000000 and timeout:elapsed_ns < 2000000000);
+  val missing <- H:Run([directory + "/absent-program"], out, err, 1000);
+  G:Assert(missing:exit_code == -1 and missing:host_error != "" and not missing:timed_out);
+  G:Assert(G:Len(H:Read(err)) > 0);
+  # Ensure timeout/error paths leave the host usable and re-truncate both streams.
+  val again <- H:Run(["/usr/bin/printf", "reaped"], out, err, 1000);
+  G:Assert(again:exit_code == 0 and H:Read(out) == "reaped" and H:Read(err) == "");
+  G:GetStdout()("native argv, redirection, nonzero, timeout, and spawn-error tests passed\n");
+  return 0;
+};
+return {Test: Test};

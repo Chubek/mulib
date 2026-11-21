@@ -5,6 +5,7 @@ import ctypes
 from dataclasses import dataclass
 import errno
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,13 @@ import sys
 import tempfile
 import time
 
+# The SDK also loads this engine by filename under isolated Python (-I).
+# Always use our shipped sibling, independent of sys.path or the project cwd.
+_opt_spec = importlib.util.spec_from_file_location(
+    '_on1x_optimization', Path(__file__).resolve().with_name('on1x_optimization.py'))
+optimization = importlib.util.module_from_spec(_opt_spec)
+_opt_spec.loader.exec_module(optimization)
+
 try:
     import fcntl
 except ImportError:  # Non-POSIX hosts can still validate/format manifests.
@@ -26,6 +34,7 @@ except ImportError:  # Non-POSIX hosts can still validate/format manifests.
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / 'stdlib/on1xfile'
 MAX_MANIFEST = 64 * 1024
+BACKENDS = ('c11', 'mir-c11', 'mir-vm', 'mir-archon')
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
@@ -62,6 +71,25 @@ def fail(message):
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def tool_digest(path):
+    # Debug compiler/runners can exceed the source/process-output budget.
+    with path.open('rb') as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 512 * 1024 * 1024:
+            fail(f'{path}: invalid or oversized tool')
+        result = hashlib.sha256()
+        remaining = info.st_size
+        while remaining:
+            chunk = stream.read(min(1024 * 1024, remaining))
+            if not chunk:
+                fail(f'{path}: tool changed while fingerprinting')
+            result.update(chunk)
+            remaining -= len(chunk)
+        if stream.read(1):
+            fail(f'{path}: tool changed while fingerprinting')
+        return result.hexdigest()
 
 
 def name(value, pattern=NAME):
@@ -202,6 +230,7 @@ def git_selector(kind, value):
 
 def root_manifest(payload, origin, dependency=False):
     options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
+    selections, scoped, backend_scopes = {}, {}, {}
     for at, verb, args in rows(payload, origin):
         try:
             if verb == 'kind':
@@ -217,6 +246,32 @@ def root_manifest(payload, origin, dependency=False):
                 if not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', value):
                     fail('invalid scrutiny level')
                 unique(options, verb, value)
+            elif verb == 'optimization-profile' and not dependency:
+                value, = fields(args, 'w')
+                if value not in optimization.PROFILES:
+                    fail(f'unknown optimization profile: {value}')
+                unique(options, verb, value)
+            elif verb == 'optimization' and not dependency:
+                if len(args) == 3:
+                    scope, key, value = fields(args, '""w')
+                    choices = scoped.setdefault(name(scope), {})
+                else:
+                    key, value = fields(args, '"w')
+                    choices = selections
+                if value not in ('on', 'off'):
+                    fail('optimization selection must be on or off')
+                unique(choices, optimization.selector(key), value == 'on')
+                if len(selections) + sum(map(len, scoped.values())) > 512:
+                    fail('optimization selector count budget exceeded')
+            elif verb == 'backend' and not dependency:
+                if len(args) == 2:
+                    scope, value = fields(args, '"w')
+                    unique(backend_scopes, name(scope), value)
+                else:
+                    value, = fields(args, 'w')
+                    unique(options, verb, value)
+                if value not in BACKENDS:
+                    fail(f'unknown project backend {value!r}; choose from {", ".join(BACKENDS)}')
             elif verb == 'target' and not dependency:
                 key, value = fields(args, '""')
                 unique(targets, name(key), local(value))
@@ -280,10 +335,17 @@ def root_manifest(payload, origin, dependency=False):
         fail(f'{origin}: declaration count budget exceeded')
     if commands.keys() & profiles.keys():
         fail(f'{origin}: a command cannot have the same name as a profile')
+    unknown = scoped.keys() - (profiles.keys() | {'dev', *optimization.PROFILES})
+    if unknown:
+        fail(f'{origin}: unknown optimization scope {min(unknown)!r}')
+    unknown = backend_scopes.keys() - (profiles.keys() | {'dev', *optimization.PROFILES})
+    if unknown:
+        fail(f'{origin}: unknown backend scope {min(unknown)!r}')
     if len(commands) > 32:
         fail(f'{origin}: command declaration count budget exceeded')
     options.update(targets=targets, deps=deps, defines=defines,
-                   profiles=profiles, kernels=list(kernels), commands=commands)
+                   profiles=profiles, kernels=list(kernels), commands=commands,
+                   selections=selections, scoped=scoped, backend_scopes=backend_scopes)
     return options
 
 
@@ -304,9 +366,22 @@ def lock_entry(dependency, commit):
     }
 
 
-def lock_bytes(entries):
+def declared_policy(config):
+    policy = {k: config[k] for k in ('optimization-profile', 'backend') if k in config}
+    if config['selections']:
+        policy['selections'] = config['selections']
+    if config['scoped']:
+        policy['scoped'] = config['scoped']
+    if config['backend_scopes']:
+        policy['backend_scopes'] = config['backend_scopes']
+    return policy
+
+
+def lock_bytes(entries, policy):
     document = {'schema': 'on1x.lock/v1',
                 'dependencies': {key: entries[key] for key in sorted(entries)}}
+    if policy:
+        document.update(schema='on1x.lock/v2', optimization=policy)
     return (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=True) + '\n').encode()
 
 
@@ -324,10 +399,42 @@ def parse_lock(payload, origin):
         document = json.loads(payload.decode('utf-8'), object_pairs_hook=unique_json_object)
     except (UnicodeError, ValueError, RecursionError) as error:
         fail(f'{origin}: invalid lockfile JSON: {error}')
-    if (not isinstance(document, dict) or set(document) != {'schema', 'dependencies'}
-            or document.get('schema') != 'on1x.lock/v1'
-            or not isinstance(document.get('dependencies'), dict)):
-        fail(f'{origin}: expected an on1x.lock/v1 object')
+    if not isinstance(document, dict) or not isinstance(document.get('dependencies'), dict):
+        fail(f'{origin}: expected an On1x lock object')
+    policy = {}
+    if document.get('schema') == 'on1x.lock/v2' and set(document) == {'schema', 'dependencies', 'optimization'}:
+        policy = document['optimization']
+        if (not isinstance(policy, dict) or not policy
+                or set(policy) - {'optimization-profile', 'backend', 'backend_scopes', 'selections', 'scoped'}
+                or policy.get('optimization-profile', 'default') not in optimization.PROFILES
+                or policy.get('backend', 'c11') not in BACKENDS):
+            fail(f'{origin}: invalid locked optimization policy')
+        if 'backend_scopes' in policy:
+            mapping = policy['backend_scopes']
+            if not isinstance(mapping, dict) or not 1 <= len(mapping) <= 36:
+                fail(f'{origin}: invalid locked backend scopes')
+            for scope, backend in mapping.items():
+                name(scope)
+                if backend not in BACKENDS:
+                    fail(f'{origin}: invalid locked backend {backend!r}')
+        scopes = policy.get('scoped', {})
+        if not isinstance(scopes, dict) or len(scopes) > 36 or 'scoped' in policy and not scopes:
+            fail(f'{origin}: invalid locked optimization scopes')
+        for scope in scopes:
+            name(scope)
+        total = 0
+        for choices in ([policy['selections']] if 'selections' in policy else []) + list(scopes.values()):
+            if not isinstance(choices, dict) or not 1 <= len(choices) <= 512:
+                fail(f'{origin}: invalid locked optimization selections')
+            total += len(choices)
+            for key, value in choices.items():
+                optimization.selector(key)
+                if not isinstance(value, bool):
+                    fail(f'{origin}: invalid locked optimization selection for {key!r}')
+        if total > 512:
+            fail(f'{origin}: locked selector count budget exceeded')
+    elif document.get('schema') != 'on1x.lock/v1' or set(document) != {'schema', 'dependencies'}:
+        fail(f'{origin}: expected an on1x.lock/v1 or on1x.lock/v2 object')
     dependencies = document['dependencies']
     if len(dependencies) > 32:
         fail(f'{origin}: dependency count budget exceeded')
@@ -350,7 +457,7 @@ def parse_lock(payload, origin):
             result[key] = entry
         except ValueError as error:
             fail(f'{origin}: dependency {key!r}: {error}')
-    return result
+    return result, policy
 
 
 def read_lock(project, config, *, required=False, strict=True, snapshot=None):
@@ -364,7 +471,9 @@ def read_lock(project, config, *, required=False, strict=True, snapshot=None):
     if not stat.S_ISREG(mode):
         fail(f'{path}: expected a regular lockfile')
     payload = read(path, MAX_LOCKFILE)
-    entries = parse_lock(payload, path)
+    entries, policy = parse_lock(payload, path)
+    if strict and policy != declared_policy(config):
+        fail(f'{path}: stale optimization policy does not match On1xfile')
     if snapshot is not None:
         snapshot.record('project/On1xfile.lock', payload)
     git_dependencies = {key: dependency for key, dependency in config['deps'].items()
@@ -398,7 +507,7 @@ def require_locked(entries, config, keys=None):
         fail('lockfile is missing Git dependencies: ' + ', '.join(missing))
 
 
-def write_lock(project, entries):
+def write_lock(project, entries, config):
     path = project / 'On1xfile.lock'
     try:
         mode = path.lstat().st_mode
@@ -406,7 +515,7 @@ def write_lock(project, entries):
             fail(f'{path}: refusing to replace a non-regular lockfile')
     except FileNotFoundError:
         pass
-    payload = lock_bytes(entries)
+    payload = lock_bytes(entries, declared_policy(config))
     descriptor, temporary = tempfile.mkstemp(dir=project, prefix='.On1xfile.lock-')
     temporary = Path(temporary)
     try:
@@ -480,6 +589,21 @@ def program(value):
     if not path.is_file() or not os.access(path, os.X_OK):
         fail(f'executable unavailable: {value}')
     return path
+
+
+def compiler_path(explicit):
+    return program(explicit or (str(ROOT / 'build/on1xc') if (ROOT / 'build/on1xc').is_file() else 'on1xc'))
+
+
+def validate_locked_names(args, config, project):
+    names = declared_names(config)
+    if names:
+        flags = optimization.flags(None, dict.fromkeys(names, True))
+        run([compiler_path(args.on1xc), '--list-optimizations', *flags], project, bound=MAX_MANIFEST)
+
+
+def declared_names(config):
+    return set(config['selections']).union(*config['scoped'].values()) - {'all'}
 
 
 def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memory=None):
@@ -746,7 +870,7 @@ class Execution:
             self.run(['/usr/bin/true'], bound=32)
 
     def mount(self, path):
-        if not self.prefix or not path.exists():
+        if not self.prefix or path is None or not path.exists():
             return
         path = path.resolve()
         if path.is_relative_to('/usr') or path in self.mounts:
@@ -1032,6 +1156,7 @@ def fetch_dependency(args):
     manifest = project / 'On1xfile'
     manifest_payload = read(manifest, MAX_MANIFEST)
     config = root_manifest(manifest_payload, manifest)
+    validate_locked_names(args, config, project)
     key = name(args.name, IDENT)
     dependency = config['deps'].get(key)
     if dependency is None or dependency.kind != 'git-remote':
@@ -1060,7 +1185,7 @@ def fetch_dependency(args):
         updated = dict(entries)
         updated[key] = lock_entry(dependency, resolved)
         if not locked:
-            write_lock(project, updated)
+            write_lock(project, updated, config)
     print(destination)
 
 
@@ -1071,6 +1196,7 @@ def lock_dependencies(args):
     manifest = project / 'On1xfile'
     manifest_payload = read(manifest, MAX_MANIFEST)
     config = root_manifest(manifest_payload, manifest)
+    validate_locked_names(args, config, project)
     if config['kind'] == 'library' and config['deps']:
         fail('standalone source libraries cannot declare dependencies')
     offline, locked = dependency_modes(args)
@@ -1103,7 +1229,7 @@ def lock_dependencies(args):
                     ca_file=args.ca_file)
             resolved_entries[key] = lock_entry(dependency, resolved)
         if not locked:
-            path = write_lock(project, resolved_entries)
+            path = write_lock(project, resolved_entries, config)
         else:
             path = project / 'On1xfile.lock'
     print(path)
@@ -1160,11 +1286,11 @@ def verify_graph(executor, compiler, source, flags, permitted, trusted_roots):
             fail(f'{source}: import is outside the declared module graph: {item}')
 
 
-def verify_interfaces(executor, compiler, staged, roles, flags, permitted, trusted_roots, graph_checked=()):
+def verify_interfaces(executor, compiler, staged, roles, loader, flags, permitted, trusted_roots, graph_checked=()):
     for path in sorted(path for path, role in roles.items() if role == 'interface'):
         entry = executor.path(staged / path.with_suffix('.on1x'))
         if entry not in graph_checked:
-            verify_graph(executor, compiler, entry, flags, permitted | {entry}, trusted_roots)
+            verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
         executor.run([compiler, '--check-interfaces', entry, '--interface',
                       executor.path(staged / path), *flags])
 
@@ -1189,13 +1315,69 @@ def publish(stage, output, report):
         raise OSError(code or errno.EIO, os.strerror(code or errno.EIO), output)
 
 
+def native_tools(compiler, cc, executor, chosen_tools):
+    """Resolve the exact artifacts used by the native helper; mount files, not a host build tree."""
+    helper = ROOT / 'tools/on1x-native-build.py'
+    spec = importlib.util.spec_from_file_location('_on1x_native_build', helper)
+    native = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(native)
+    build = compiler.parent
+    archon, scalar, runtime = native.layout(build)
+    try:
+        manifest = native.manifest_path(build, None)
+        for path in (archon, scalar, runtime, manifest):
+            if not path.is_file():
+                fail(f'missing {path.name}')
+            executor.mount(path)
+        executor.mount(Path(sys.executable))
+        command = [sys.executable, helper, '--on1xc', compiler, '--target', native.TARGET,
+                   '--cc', cc, '--archon-mir', archon, '--scalar-abi', scalar,
+                   '--runtime', runtime, '--archon-manifest', manifest]
+        probe = json.loads(executor.run([*command, '--probe'], bound=4096))
+    except (ValueError, OSError, native.BuildError) as error:
+        fail(f'mir-archon unavailable: {error}')
+    assembler, linker = Path(probe.pop('assembler')), Path(probe.pop('linker'))
+    chosen_tools.update(native_helper=helper, archon=archon, scalar_abi=scalar, runtime=runtime,
+                        archon_manifest=manifest, assembler=assembler, linker=linker)
+    return [*command, '--assembler', assembler, '--linker', linker], probe
+
+
+def vm_launcher(key):
+    # `name()` restricts the artifact stem to a portable ASCII identifier.
+    return ('#!/bin/sh\n'
+            'case "$0" in */*) dir=${0%/*};; *) dir=.;; esac\n'
+            f'exec "$dir/.on1x-vm-runner" "$dir/{key}.o1vm" "$@"\n').encode()
+
+
+def backend_inventory(args):
+    """Probe complete tool installations without executing project policy or the produced programs."""
+    compiler = compiler_path(args.on1xc)
+    helper = ROOT / 'tools/on1x-build.py'
+    rows = []
+    with tempfile.TemporaryDirectory(prefix='on1x-backend-probe-') as directory:
+        work = Path(directory)
+        source = work / 'probe.on1x'
+        stage_bytes(source, b'fn main()->i64{return 0;}\n')
+        for backend in BACKENDS:
+            row = {'name': backend}
+            try:
+                run([sys.executable, helper, source, '--backend', backend, '--no-prelude',
+                     '--on1xc', compiler, '--cc', args.cc, '-o', work / backend], work)
+                row['available'] = True
+            except (OSError, ValueError) as error:
+                row.update(available=False, reason=str(error).replace(directory, '<probe>'))
+            rows.append(row)
+    print(json.dumps({'schema': 'on1x.project-backends/v1', 'compiler_sha256': tool_digest(compiler),
+                      'backends': rows}, indent=2, sort_keys=True))
+
+
 def build(args):
     if args.sandbox and args.allow_shell:
         fail('--sandbox cannot be combined with --allow-shell')
     project = args.root.resolve(strict=True)
     if not project.is_dir():
         fail(f'{project}: expected project directory')
-    compiler = program(args.on1xc or (str(ROOT / 'build/on1xc') if (ROOT / 'build/on1xc').is_file() else 'on1xc'))
+    compiler = compiler_path(args.on1xc)
     mulib = (args.mulib_root or ROOT.parent).resolve()
     snapshot = Snapshot()
     disk = Disk(project)
@@ -1209,7 +1391,7 @@ def build(args):
             if (args.sandbox or args.allow_shell or args.target or args.output_dir or args.stdlib
                     or args.cc != 'cc' or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
-                    or args.scrutiny):
+                    or args.scrutiny or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -1219,14 +1401,21 @@ def build(args):
             sys.stdout.buffer.write(run([compiler, 'fmt', input_path, '--target', target], project))
             return
         args.profile = args.project_command
-    cc = program(args.cc)
+    chosen = args.profile or ('release' if args.release else 'dev')
+    name(chosen)
+    backend = args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11')
+    cc = program(args.cc) if backend != 'mir-vm' else None
+    if config['kernels'] and backend not in ('c11', 'mir-c11'):
+        fail(f'{backend} cannot link project kernel declarations')
+    if config['kind'] == 'library' and backend != 'c11':
+        fail('source libraries do not have a MIR code generation stage')
     if config['kind'] == 'library' and (config['deps'] or config['kernels']):
         fail('standalone source libraries cannot declare dependencies or kernels')
     _, locked = dependency_modes(args)
     git_keys = {key for key, dependency in config['deps'].items()
                 if dependency.kind in ('git', 'git-remote')}
     lock_entries, lock_payload = read_lock(
-        project, config, required=locked and bool(git_keys), strict=True, snapshot=snapshot)
+        project, config, required=locked and bool(git_keys or declared_policy(config)), strict=True, snapshot=snapshot)
     if locked:
         require_locked(lock_entries, config)
     resolved_dependencies = {}
@@ -1249,8 +1438,6 @@ def build(args):
     if any(directory.is_relative_to(location)
            for _, location, _ in resolved_dependencies.values()):
         fail('the project source directory cannot be inside a dependency store')
-    chosen = args.profile or ('release' if args.release else 'dev')
-    name(chosen)
     if args.target and args.target not in config['targets']:
         fail(f'unknown target {args.target!r}')
     targets = {key: source for key, source in config['targets'].items() if not args.target or args.target == key}
@@ -1275,7 +1462,12 @@ def build(args):
             stdlib = Path(run([compiler, '--print-stdlib', *stdlib_args], work / 'cwd',
                               bound=4096).decode().strip()).resolve(strict=True)
         executor = Execution(args, work, compiler, cc, stdlib, mulib)
-        chosen_tools = {'on1xc': compiler, 'cc': cc}
+        chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
+                        'optimization_helper': Path(optimization.__file__)}
+        if cc is not None:
+            chosen_tools['cc'] = cc
+        if backend in ('c11', 'mir-c11'):
+            chosen_tools['build_helper'] = ROOT / 'tools/on1x-build.py'
         model = {'profile': chosen, 'project': config['name'], 'kind': config['kind']}
         for key, (kind, value) in sorted(config['defines'].items()):
             if key in model:
@@ -1332,8 +1524,8 @@ def build(args):
             lua = executor.run([helper, origin], data=data, bound=8 * MAX_MANIFEST, timeout=10)
             return mune('render', lua, origin)
 
-        if chosen in ('dev', 'release'):
-            setting = (0, 1) if chosen == 'dev' else (3, 0)
+        if chosen in ('dev', 'release', 'debug', 'default') and chosen not in config['profiles']:
+            setting = (3, 0) if chosen == 'release' else (0, 1)
         else:
             path = config['profiles'].get(chosen)
             if path is None:
@@ -1344,6 +1536,51 @@ def build(args):
                 fail('invalid Mune profile protocol response')
             setting = tuple(map(int, result.split()))
         cflags = [f'-O{setting[0]}', *(['-g'] if setting[1] else [])]
+        # Keep ordinary dev and existing custom C profiles backwards compatible.
+        builtin = chosen if chosen in optimization.PROFILES and chosen not in config['profiles'] else None
+        opt_profile = args.opt_profile or config.get('optimization-profile') or builtin or 'default'
+        cli_select = args.opt_select or {}
+        selections = dict(config['selections'])
+        for layer in (config['scoped'].get(chosen, {}), cli_select):
+            if 'all' in layer:
+                selections.clear()
+            selections.update(layer)
+        if args.optimize_ir and backend == 'c11':
+            fail('--optimize-ir requires a MIR backend')
+        native_command = None
+        backend_info = {'name': backend}
+        if backend == 'mir-archon':
+            native_command, probe = native_tools(compiler, cc, executor, chosen_tools)
+            backend_info.update(artifact='elf-executable', **probe)
+        elif backend == 'mir-vm':
+            runner = compiler.parent / 'on1x-vm'
+            if not runner.is_file() or not os.access(runner, os.X_OK):
+                fail('mir-vm unavailable: missing on1x-vm beside the selected compiler')
+            chosen_tools['vm_runner'] = runner
+            executor.mount(runner)
+            cflags = []
+            backend_info.update(artifact='bytecode', runner='.on1x-vm-runner')
+        else:
+            backend_info['artifact'] = 'source-library' if config['kind'] == 'library' else 'host-executable'
+        if config['kind'] != 'library':
+            backend_info['artifacts'] = sorted([*targets] + (
+                [key + '.o1vm' for key in targets] + ['.on1x-vm-runner'] if backend == 'mir-vm' else []))
+        opt_flags = optimization.flags(opt_profile, selections)
+        if args.optimize_ir:
+            opt_flags.append('--optimize-ir')
+        inventory = json.loads(executor.run([compiler, '--list-optimizations', *opt_flags], bound=MAX_MANIFEST))
+        stages = {entry['name']: entry['stage'] for entry in inventory['optimizations']}
+        for key in sorted(declared_names(config)):
+            if key not in stages:
+                fail(f'unknown optimization in On1xfile: {key}')
+        for key in selections:
+            if key != 'all' and stages[key] != 'processor' and backend == 'c11':
+                fail(f'optimization {key} requires a MIR backend')
+        check_flags = optimization.flags(opt_profile, {key: on for key, on in selections.items()
+                                                       if key == 'all' or stages[key] == 'processor'})
+        policy = dict(backend=backend, args=opt_flags, declared=declared_policy(config),
+                      active_stages=['processor', 'lowering', 'mir'] if backend != 'c11' else ['processor'],
+                      **inventory)
         project_stage = work / 'input/project'
         deps_stage = work / 'input/deps'
         roles = layouts(disk, config, 'project', project_stage, snapshot, preprocess)
@@ -1387,24 +1624,56 @@ def build(args):
             analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
         if args.scrutiny:
             analysis_flags.extend(('--scrutiny', args.scrutiny))
-        compiler_flags = [*loader, *analysis_flags]
+        compiler_flags = [*loader, *analysis_flags, *check_flags]
         dependency_loader = loader[:-2]
-        dependency_compiler_flags = [*dependency_loader, *analysis_flags]
+        dependency_compiler_flags = [*dependency_loader, *analysis_flags, *check_flags]
         for key, modules in dep_modules.items():
             own_files = {executor.path(path) for path in modules}
             for entry in sorted(own_files):
                 verify_graph(executor, compiler, entry, dependency_loader, own_files, trusted_roots)
             verify_interfaces(executor, compiler, deps_stage / key, dep_roles[key],
-                              dependency_compiler_flags, own_files, trusted_roots, graph_checked=own_files)
+                              dependency_loader, dependency_compiler_flags, own_files, trusted_roots, graph_checked=own_files)
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]}
-        verify_interfaces(executor, compiler, project_stage, roles, compiler_flags, permitted, trusted_roots)
+        verify_interfaces(executor, compiler, project_stage, roles, loader, compiler_flags, permitted, trusted_roots)
         outputs = {}
+        if backend == 'mir-vm' and args.command != 'plan':
+            bundled = work / 'artifact/.on1x-vm-runner'
+            shutil.copyfile(runner, bundled)
+            bundled.chmod(0o755)
+            outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
             verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
+            if args.command == 'plan':
+                continue
             output = executor.path(work / 'artifact' / key)
+            if backend == 'mir-vm':
+                tape = work / 'artifact' / (key + '.o1vm')
+                # The VM keeps diagnostic locations in its bytecode. Map staged
+                # and installed directories to reproducible logical filenames.
+                source_roots = [(executor.path(project_stage), '/__on1x__/project'),
+                                (executor.path(deps_stage), '/__on1x__/deps'),
+                                (standard, '/__on1x__/stdlib'), (stdlib.parent / 'std', '/__on1x__/std')]
+                map_flags = [v for src, dest_root in source_roots
+                             for v in ('--vm-source-prefix', src, dest_root)]
+                executor.run([compiler, '--emit-vm', entry, '-o', executor.path(tape),
+                              *loader, *analysis_flags, *opt_flags, *map_flags])
+                executor.run([executor.path(bundled), '--verify', executor.path(tape)])
+                launcher = work / 'artifact' / key
+                stage_bytes(launcher, vm_launcher(key))
+                launcher.chmod(0o755)
+                outputs[tape.name] = digest(read(tape, MAX_PROCESS))
+                outputs[key] = digest(read(launcher, 4096))
+                continue
+            if backend == 'mir-archon':
+                executor.run([*native_command, entry, '-o', output, *opt_flags,
+                              *(f'--on1xc-arg={flag}' for flag in [*loader, *analysis_flags]),
+                              *(f'--cflag={flag}' for flag in cflags)], timeout=180)
+                outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
+                continue
             command = [sys.executable, ROOT / 'tools/on1x-build.py', entry, '-o', output,
-                       '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *compiler_flags,
+                       '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader, *analysis_flags,
+                       *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
                        *(f'--cflag={flag}' for flag in cflags)]
             if setting[1]:
                 command.extend(('--debug-build-root', executor.path(work)))
@@ -1425,6 +1694,7 @@ def build(args):
                 entry = executor.path(check)
                 verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
                 executor.run([compiler, '--check', entry, *compiler_flags])
+        if config['kind'] == 'library' and args.command != 'plan':
             package = work / 'artifact' / 'library'
             shutil.copytree(project_stage, package)
             # Preserve checked interface bytes, but publish only plain,
@@ -1444,11 +1714,19 @@ def build(args):
 
         report = dict(schema='on1x.project-build/v1', project=config['name'], kind=config['kind'],
                       profile=chosen, cflags=cflags, sandbox=bool(args.sandbox), shell=bool(args.allow_shell),
+                      optimization=policy, backend=backend_info,
                       scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
-                      tools={key: digest(read(path, MAX_PROCESS)) for key, path in chosen_tools.items()})
+                      tools={key: tool_digest(path) for key, path in chosen_tools.items()})
         if lock_payload is not None:
             report['lockfile'] = digest(lock_payload)
+        if backend == 'mir-vm' and args.command != 'plan' and report['tools']['vm_runner'] != outputs[bundled.name]:
+            fail('mir-vm runner changed during project build')
+        if args.command == 'plan':
+            report.update(schema='on1x.project-plan/v1', targets={k: p.as_posix() for k, p in targets.items()})
+            del report['outputs']
+            print(json.dumps(report, indent=2, sort_keys=True))
+            return
         stage_bytes(work / 'artifact/.on1x-build.json',
                     (json.dumps(report, indent=2, sort_keys=True) + '\n').encode())
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1463,7 +1741,9 @@ def format_manifest(args):
     path = args.input
     data = read(path, MAX_MANIFEST)
     if path.name == 'On1xfile':
-        root_manifest(data, path)
+        config = root_manifest(data, path)
+        if args.on1xc:
+            validate_locked_names(args, config, path.resolve().parent)
     elif path.name in ('On1xfile.m', 'On1xfile.i'):
         if QMR_TAG.search(data):
             fail(f'{path}: formatting QMR templates is unsupported; no template code was executed')
@@ -1498,7 +1778,7 @@ def format_manifest(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
-    command = commands.add_parser('build')
+    command = argparse.ArgumentParser(add_help=False)
     command.add_argument('root', type=Path, nargs='?', default=Path('.'))
     command.add_argument('--on1xc')
     command.add_argument('--cc', default='cc')
@@ -1510,6 +1790,13 @@ def main():
     mode = command.add_mutually_exclusive_group()
     mode.add_argument('--profile')
     mode.add_argument('--release', action='store_true')
+    optimization.arguments(command, alias=False)
+    backends = command.add_mutually_exclusive_group()
+    backends.add_argument('--backend', choices=BACKENDS,
+                          help='override the selected build profile and root backend')
+    backends.add_argument('--via-mir', dest='backend', action='store_const', const='mir-c11',
+                          help='shorthand for --backend mir-c11')
+    command.add_argument('--optimize-ir', action='store_true')
     command.add_argument('--target')
     command.add_argument('--project-command', help=argparse.SUPPRESS)
     command.add_argument('--output-dir', type=Path, help='exact generation output directory')
@@ -1521,26 +1808,34 @@ def main():
     command.add_argument('--locked', action='store_true',
                          help='require a complete, current On1xfile.lock')
     command.add_argument('--frozen', action='store_true',
-                         help='equivalent to --offline --locked')
+                          help='equivalent to --offline --locked')
+    commands.add_parser('build', parents=[command])
+    commands.add_parser('plan', parents=[command], help='print the resolved build policy and inputs without publishing')
+    inventory = commands.add_parser('backends', help='probe the actual installed backend tools using fixed input')
+    inventory.add_argument('--on1xc')
+    inventory.add_argument('--cc', default='cc')
     formatting = commands.add_parser('format', help='validate and format a plain On1xfile without running its policy')
     formatting.add_argument('input', type=Path)
     formatting.add_argument('--check', action='store_true')
+    formatting.add_argument('--on1xc', help='also validate optimizer names against this compiler inventory')
     fetch = commands.add_parser('fetch', help='explicitly resolve and fetch one git-remote library over HTTPS')
     fetch.add_argument('name', help='dependency name declared in On1xfile')
     fetch.add_argument('root', type=Path, nargs='?', default=Path('.'))
+    fetch.add_argument('--on1xc', help='compiler used to validate named optimization directives')
     fetch.add_argument('--ca-file', type=Path, help='explicit trusted PEM CA bundle for this fetch')
     fetch.add_argument('--offline', action='store_true', help='validate only an existing locked cache entry')
     fetch.add_argument('--locked', action='store_true', help='do not change On1xfile.lock')
     fetch.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     locking = commands.add_parser('lock', help='resolve Git selectors and atomically write On1xfile.lock')
     locking.add_argument('root', type=Path, nargs='?', default=Path('.'))
+    locking.add_argument('--on1xc', help='compiler used to validate named optimization directives')
     locking.add_argument('--ca-file', type=Path, help='explicit trusted PEM CA bundle for HTTPS Git')
     locking.add_argument('--offline', action='store_true', help='use local stores and existing remote cache entries only')
     locking.add_argument('--locked', action='store_true', help='validate without changing On1xfile.lock')
     locking.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     try:
         arguments = parser.parse_args()
-        {'build': build, 'format': format_manifest, 'fetch': fetch_dependency,
+        {'build': build, 'plan': build, 'backends': backend_inventory, 'format': format_manifest, 'fetch': fetch_dependency,
          'lock': lock_dependencies}[arguments.command](arguments)
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)

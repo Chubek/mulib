@@ -1,0 +1,40 @@
+val Sort <- G:LoadLib("sort") or G:DieWith("$E?");
+val M <- G:LoadLib("math") or G:DieWith("$E?");
+val Quantile <- fn(sorted, p) {
+  G:Assert(G:Len(sorted) > 0 and p >= 0 and p <= 1);
+  val index <- (G:Len(sorted) - 1) * p;
+  val lo <- M:Floor(index);
+  val hi <- M:Ceil(index);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (index - lo);
+};
+val Describe <- fn(samples) {
+  if G:Len(samples) == 0 { return nil; }
+  val sorted <- Sort:Ascending(samples);
+  var mean <- 0;
+  var m2 <- 0;
+  var i <- 0;
+  while i < G:Len(samples) {
+    G:Assert(samples[i] >= 0);
+    val delta <- samples[i] - mean;
+    mean <- mean + delta / (i + 1);
+    m2 <- m2 + delta * (samples[i] - mean);
+    i <- i + 1;
+  }
+  var deviation <- 0;
+  if i > 1 { deviation <- M:Sqrt(m2 / (i - 1)); }
+  var cv <- nil;
+  if mean > 0 { cv <- deviation / mean; }
+  val median <- Quantile(sorted, 0.5);
+  var deviations <- [];
+  i <- 0;
+  while i < G:Len(samples) {
+    deviations <- deviations + [M:Abs(samples[i] - median)];
+    i <- i + 1;
+  }
+  return {count: G:Len(samples), min: sorted[0], max: sorted[G:Len(sorted) - 1],
+    mean: mean, median: median, p05: Quantile(sorted, 0.05),
+    p95: Quantile(sorted, 0.95), stddev_sample: deviation,
+    median_absolute_deviation: Quantile(Sort:Ascending(deviations), 0.5),
+    coefficient_of_variation: cv};
+};
+return {Describe: Describe, Quantile: Quantile};

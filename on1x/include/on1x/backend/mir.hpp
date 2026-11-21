@@ -45,12 +45,15 @@ struct Function {
  std::vector<Block> blocks;
 };
 struct Module { unsigned version=legacy_format_version; Id id=1; std::vector<Function> functions; };
-struct Limits { std::size_t nodes=65536, work=4194304; };
+struct Limits { std::size_t nodes=65536, work=4194304; bool decision_ssa=true; };
 Effect effect(Op op);
 std::string_view op_name(Op op);
 void verify(const Module& module, Limits limits={});
 // Requires checked, elaborated HIR; unsupported operations fail with source locations.
 Module lower(const Unit& unit, Limits limits={});
+// VM entry: erase verified, unmanaged data layouts to portable product values.
+// This does not change the existing public scalar backend admission profile.
+Module lower_for_vm(const Unit& unit, Limits limits={});
 std::string serialize(const Module& module);
 Module deserialize(std::string_view text, const std::string& filename="<mir>");
 bool structurally_equal(const Module& a, const Module& b);

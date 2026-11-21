@@ -1,0 +1,32 @@
+{
+  "budgets": {
+    "depth": 520,
+    "nodes": 262144,
+    "steps": 8388608
+  },
+  "constraints": 45,
+  "generator_sha256": "628ce6137c829189a95d4dfa31ec512f1cebfccf07a39683687ec630024487dc",
+  "nodes": 145,
+  "output_sha256": "f8d0ac77e1c85c9930be10a57b7ec04ad2c34e37c0641e07b4e92f63ddd5ef44",
+  "parser": "LibStone LLSynth generated LR/DFA",
+  "parser_sha256": "9e3877b37bf83675fb51e33d1d02105e84ee58d4054f527317a61fdd1d81d358",
+  "payload_sha256": "f9cdc446e479782b3b7a746d91216c6195279c872f16bac39ffb003977f226b5",
+  "program_sha256": "4049525ac80f15e1e4a4831e0c2027ba748a42f5ba9f898013f8a77834287c60",
+  "rules": 29,
+  "schema": 1,
+  "schema_sha256": "8b172e333b50b943e948d366f69b2f312a2834fb972fbd16913abf748f539d4d",
+  "sources": [
+    {
+      "file": "canonicalize.o1m",
+      "sha256": "cdf222385af8d89e03fea5bc6049befeb78dd39e3624246bee77d7073c95f889"
+    },
+    {
+      "file": "desugar.o1m",
+      "sha256": "81c4c1dc0b5210a4add698fd1c1b6abbaec03b893a86ce40a60ac69f7079b971"
+    },
+    {
+      "file": "semantic.o1m",
+      "sha256": "60fe7103929983746f4fa6df66315f6d2e1fc0e704aef4bb83fb05d1005f7b65"
+    }
+  ]
+}

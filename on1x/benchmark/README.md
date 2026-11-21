@@ -56,6 +56,10 @@ dynamic short-circuit conditions, constant unreachable traps, checked neutral
 identities, and boolean/comparison canonicalization. They use bounded periodic
 checksum oracles and can run at 1,000,000 iterations without scaling oracle work.
 They are not part of the historical default eight-workload population.
+`zero-explicit,zero-wrapped` are a separate opt-in pair. Run both in one
+cross-backend report, then `on1x-benchmark zero-cost RUN_DIR` for the
+correctness and machine-code identity gate. See [ZERO_COST.md](ZERO_COST.md)
+for the exact scope, normalization, timings and reproduction command.
 `generate` accepts the same options and writes `.on1x`, config, and manifest
 without running a compiler. Configuration JSON is merged in argument order;
 later command-line options override earlier values. Unknown keys, duplicate

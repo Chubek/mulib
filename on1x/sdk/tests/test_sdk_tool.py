@@ -135,6 +135,12 @@ class Tool(unittest.TestCase):
         })
         report, _ = self.run_tool("validate", "lock", lock)
         self.assertEqual(report["input_schema"], "on1x.lock/v1")
+        lock = self.write_json("On1xfile.lock", {
+            "schema": "on1x.lock/v2", "dependencies": {},
+            "optimization": {"scoped": {"release": {"local-slots": False}}},
+        })
+        report, _ = self.run_tool("validate", "lock", lock)
+        self.assertEqual(report["input_schema"], "on1x.lock/v2")
 
     def test_malformed_oversized_duplicate_and_symlink_inputs(self):
         duplicate = self.work / "duplicate.json"

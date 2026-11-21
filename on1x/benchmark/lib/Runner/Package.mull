@@ -1,0 +1,232 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val S <- G:LoadLib("Stats") or G:DieWith("$E?");
+val F <- G:LoadLib("Fixtures") or G:DieWith("$E?");
+val Metrics <- G:LoadLib("Metrics") or G:DieWith("$E?");
+val Run <- fn(c) {
+  # Fresh directories prevent stale artifacts from masquerading as successful builds.
+  if H:Exists(c:output + "/logs") or H:Exists(c:output + "/report.json") {
+    return G:DieWith("output already contains a run; choose a new --output");
+  }
+  H:Mkdir(c:output + "/logs");
+  H:Mkdir(c:output + "/artifacts");
+  H:Mkdir(c:output + "/tools");
+  # Pin tool bytes against concurrent relinks in a shared development build.
+  val compiler <- c:output + "/tools/on1xc";
+  H:Copy(c:compiler, compiler);
+  val archon <- c:output + "/tools/on1x-archon-mir";
+  if c:backend != "c11" { H:Copy(c:archon, archon); }
+  val fixtures <- F:Generate(c);
+  H:Write(c:output + "/config.json", J:Encode(c) + "\n");
+  H:Write(c:output + "/manifest.json", J:Encode(fixtures) + "\n");
+  var commands <- [];
+  var sequence <- 0;
+  val Command <- fn(label, argv) {
+    val prefix <- c:output + "/logs/" + G:Str(sequence);
+    sequence <- sequence + 1;
+    val result <- H:Run(argv, prefix + ".stdout", prefix + ".stderr", c:timeout_ms);
+    val record <- {label: label, argv: argv, result: result,
+      stdout_path: prefix + ".stdout", stderr_path: prefix + ".stderr"};
+    commands <- commands + [record];
+    # Individual journal records avoid quadratic serialization over long runs.
+    H:Write(prefix + ".json", J:Encode(record) + "\n");
+    return record;
+  };
+  val OK <- fn(command) {
+    val r <- command:result;
+    return r:exit_code == 0 and r:signal == 0 and not r:timed_out;
+  };
+  val Probe <- fn(label, argv) {
+    val result <- Command(label, argv);
+    return {command: result, stdout: H:Read(result:stdout_path),
+      stderr: H:Read(result:stderr_path)};
+  };
+  val provenance <- {
+    machine: H:Machine, epoch_seconds: H:EpochSeconds,
+    repository: Probe("repository revision", ["git", "-C", c:root, "rev-parse", "HEAD"]),
+    working_tree: Probe("working tree", ["git", "-C", c:root, "status", "--porcelain"]),
+    libstone: Probe("LibStone revision", ["git", "-C", c:root + "/on1x/third_party/libstone", "rev-parse", "HEAD"]),
+    cc: Probe("C compiler version", [c:cc, "--version"]),
+    compiler: Probe("On1x compiler help", [compiler, "--help"]),
+    compiler_hash: Probe("On1x compiler hash", ["sha256sum", compiler]),
+    cpu: Probe("CPU description", ["uname", "-a"]),
+    sources: Probe("runtime source hashes", ["sha256sum", c:root + "/on1x/runtime/on1x_runtime.c",
+      c:root + "/on1x/runtime/on1x_runtime.h", c:root + "/on1x/backends/mir-archon/ScalarABI.c"])
+  };
+  var archon_provenance <- nil;
+  if c:backend != "c11" {
+    archon_provenance <- {
+      help: Probe("Archon bridge help", [archon, "--help"]),
+      hash: Probe("Archon bridge hash", ["sha256sum", archon])
+    };
+  }
+  val runtime <- c:output + "/artifacts/runtime.o";
+  val abi <- c:output + "/artifacts/scalar-abi.o";
+  val base <- [c:cc, "-std=c11", "-I" + c:root + "/on1x/runtime"] + c:cflags;
+  val setup_runtime <- Command("runtime setup", base
+    + ["-c", c:root + "/on1x/runtime/on1x_runtime.c", "-o", runtime]);
+  var setup_ok <- OK(setup_runtime);
+  if c:backend != "c11" {
+    val setup_abi <- Command("scalar ABI setup", base
+      + ["-c", c:root + "/on1x/backends/mir-archon/ScalarABI.c", "-o", abi]);
+    setup_ok <- setup_ok and OK(setup_abi);
+  }
+  var native_target <- nil; var native_abi <- nil; var abi_hash <- nil;
+  if c:backend != "c11" {
+    native_target <- Probe("native target identity", [archon, "--print-target"]);
+    native_abi <- Probe("native ABI identity", [archon, "--print-backend-target"]);
+    if setup_ok { abi_hash <- Probe("compiled ABI hash", ["sha256sum", abi]); }
+  }
+  var runtime_hash <- nil;
+  if setup_ok { runtime_hash <- Probe("compiled runtime hash", ["sha256sum", runtime]); }
+  val packages <- ["Analyze", "Comparability", "Config", "Fixtures", "Json", "Metrics",
+    "Runner", "Stagecost", "Stats", "ZeroCost"];
+  var harness_files <- [c:root + "/on1x/benchmark/main.mull",
+    c:root + "/on1x/benchmark/native/main.cpp", c:root + "/on1x/benchmark/native/bench_host.c",
+    c:root + "/on1x/benchmark/native/bench_host.h"];
+  var pi <- 0;
+  while pi < G:Len(packages) {
+    harness_files <- harness_files + [c:root + "/on1x/benchmark/lib/" + packages[pi] + "/Package.mull"];
+    pi <- pi + 1;
+  }
+  val comparison_context <- {schema: "on1x.benchmark-context.v1",
+    cc_target: Probe("C compiler target", [c:cc] + c:cflags + ["-dumpmachine"]),
+    cc_version: provenance:cc, archon_target: native_target, archon_abi: native_abi,
+    runtime_objects: runtime_hash, scalar_abi_object: abi_hash, runtime_sources: provenance:sources,
+    harness_sources: Probe("benchmark implementation hashes", ["sha256sum"] + harness_files),
+    cpu: Probe("CPU model and topology", ["lscpu"]),
+    runtime_flags: ["-std=c11"] + c:cflags, link_flags: ["-no-pie", "-lm"]};
+  var rows <- [];
+  var metrics <- [];
+  var failures <- 0;
+  if not setup_ok { failures <- failures + 1; }
+  var variants <- [];
+  if c:backend != "mir-archon" { variants <- variants + [{name: "c11", optimize: false}]; }
+  if c:backend != "c11" {
+    if c:optimization != "on" { variants <- variants + [{name: "mir-archon", optimize: false}]; }
+    if c:optimization != "off" { variants <- variants + [{name: "mir-archon-opt", optimize: true}]; }
+  }
+  val Gate <- fn(command, fixture) {
+    val r <- command:result;
+    return not r:timed_out and r:signal == 0 and r:exit_code == fixture:expected_exit
+      and H:Read(command:stdout_path) == fixture:expected_stdout
+      and H:Read(command:stderr_path) == fixture:expected_stderr;
+  };
+  var fi <- 0;
+  while setup_ok and fi < G:Len(fixtures) {
+    val fixture <- fixtures[fi];
+    val source <- c:output + "/fixtures/" + fixture:name + ".on1x";
+    val prefix <- c:output + "/artifacts/" + fixture:name;
+    val hash <- Probe("fixture hash", ["sha256sum", source]);
+    val before <- Command("MIR before", [compiler, "--emit-ir", source, "-o", prefix + ".before.mir"]);
+    val after <- Command("MIR after", [compiler, "--emit-ir", "--optimize-ir", source, "-o", prefix + ".after.mir"]);
+    val passes <- Command("pass provenance", [compiler, "--dump-passes", source, "-o", prefix + ".passes.sexpr"]);
+    var metric <- nil;
+    if OK(before) and OK(after) and OK(passes) {
+      metric <- Metrics:Compare(Metrics:Count(H:Read(prefix + ".before.mir")),
+        Metrics:Count(H:Read(prefix + ".after.mir")));
+    } else { failures <- failures + 1; }
+    metrics <- metrics + [{fixture: fixture:name, metrics: metric,
+      pass_report: prefix + ".passes.sexpr", source_hash: hash}];
+    var vi <- 0;
+    while vi < G:Len(variants) {
+      val variant <- variants[vi];
+      val stem <- prefix + "." + variant:name;
+      var compile_samples <- [];
+      var compile_stages <- [];
+      var runtime_samples <- [];
+      var valid <- true;
+      var reason <- "";
+      var artifact <- stem + ".c";
+      if variant:name != "c11" { artifact <- stem + ".s"; }
+      var ci <- 0;
+      while valid and ci < c:compile_warmups + c:compile_repeats {
+        var stages <- [];
+        if variant:name == "c11" {
+          stages <- stages + [Command("C11 emit", [compiler, "--emit-c", source, "-o", artifact])];
+        } else {
+          var flags <- [];
+          if variant:optimize { flags <- ["--optimize-ir"]; }
+          val lower <- Command("MIR lower", [compiler, "--emit-ir"] + flags + [source, "-o", stem + ".mir"]);
+          stages <- stages + [lower];
+          if OK(lower) {
+            stages <- stages + [Command("Archon emit", [archon, "--ir-input", stem + ".mir", "-o", artifact])];
+          }
+        }
+        var stage_ns <- [];
+        var total <- 0;
+        var si <- 0;
+        while si < G:Len(stages) {
+          valid <- valid and OK(stages[si]);
+          total <- total + stages[si]:result:elapsed_ns;
+          stage_ns <- stage_ns + [{stage: stages[si]:label, elapsed_ns: stages[si]:result:elapsed_ns}];
+          si <- si + 1;
+        }
+        if valid {
+          var extra <- [];
+          if variant:name != "c11" { extra <- [abi]; }
+          val link <- Command("assemble/compile and link", base + ["-no-pie", artifact, runtime]
+            + extra + ["-lm", "-o", stem + ".exe"]);
+          valid <- OK(link);
+          total <- total + link:result:elapsed_ns;
+          stage_ns <- stage_ns + [{stage: link:label, elapsed_ns: link:result:elapsed_ns}];
+        }
+        if not valid { reason <- "compile-failed"; }
+        if valid and ci >= c:compile_warmups {
+          compile_samples <- compile_samples + [total];
+          compile_stages <- compile_stages + [stage_ns];
+        }
+        ci <- ci + 1;
+      }
+      var gate <- nil;
+      if valid {
+        gate <- Command("correctness gate", [stem + ".exe"]);
+        valid <- Gate(gate, fixture);
+        if not valid { reason <- "oracle-mismatch"; }
+      }
+      var ri <- 0;
+      while valid and fixture:timed and ri < c:warmups + c:repeats {
+        val sample <- Command("runtime sample", [stem + ".exe"]);
+        valid <- Gate(sample, fixture);
+        if not valid { reason <- "sample-mismatch"; }
+        if valid and ri >= c:warmups { runtime_samples <- runtime_samples + [sample:result:elapsed_ns]; }
+        ri <- ri + 1;
+      }
+      var sizes <- nil;
+      var executable_hash <- nil;
+      if valid {
+        sizes <- {source: H:Size(source), emitted: H:Size(artifact),
+          executable: H:Size(stem + ".exe"), stdout: G:Len(fixture:expected_stdout),
+          stderr: G:Len(fixture:expected_stderr)};
+        executable_hash <- Probe("executable hash", ["sha256sum", stem + ".exe"]);
+      } else {
+        failures <- failures + 1;
+        # Never publish performance summaries for a failed correctness gate.
+        runtime_samples <- [];
+      }
+      val row <- {fixture: fixture:name, backend: variant:name, valid: valid, reason: reason,
+        correctness: gate, timed: fixture:timed, sizes_bytes: sizes, executable_hash: executable_hash,
+        compile_samples_ns: compile_samples, compile_stages: compile_stages,
+        compile_ns: S:Describe(compile_samples), runtime_samples_ns: runtime_samples,
+        runtime_ns: S:Describe(runtime_samples)};
+      rows <- rows + [row];
+      H:Write(stem + ".result.json", J:Encode(row) + "\n");
+      G:GetStdout()(fixture:name + " / " + variant:name + ": " + G:Str(valid) + " " + reason + "\n");
+      vi <- vi + 1;
+    }
+    fi <- fi + 1;
+  }
+  val report <- {schema: "on1x.benchmark.v1", config: c, provenance: provenance,
+    comparison_context: comparison_context,
+    archon_provenance: archon_provenance, failures: failures, rows: rows, mir: metrics,
+    methodology: {clock: "CLOCK_MONOTONIC", unit: "nanoseconds",
+      runtime_scope: "process launch through reaping; stdout/stderr redirected; includes startup",
+      compile_scope: "source emission plus assembly/C compilation and link; runtime objects prebuilt",
+      order: "fixture then backend; serial; no CPU pinning or cache flushing",
+      quantiles: "linear interpolation at (n-1)*p", deviation: "sample standard deviation",
+      warmups_excluded: true, correctness: "exact stdout/stderr/status for every execution"}};
+  H:Write(c:output + "/commands.json", J:Encode(commands) + "\n");
+  H:Write(c:output + "/report.json", J:Encode(report) + "\n");
+  return report;
+};
+return {Run: Run};

@@ -11,6 +11,7 @@ if G:Len(args) == 0 or args[0] == "help" or args[0] == "--help" {
     + "  on1x-benchmark generate [same options]\n"
     + "  on1x-benchmark analyze REPORT.json\n"
     + "  on1x-benchmark compare BASELINE.json CURRENT.json\n"
+    + "  on1x-benchmark zero-cost RUN_DIR (checks zero-explicit / zero-wrapped)\n"
     + "  on1x-benchmark selftest\n");
   return 0;
 }
@@ -38,6 +39,11 @@ if args[0] == "decode" {
   G:Assert(G:Len(args) == 2);
   G:GetStdout()(J:Encode(J:Decode(args[1])) + "\n");
   return 0;
+}
+if args[0] == "zero-cost" {
+  G:Assert(G:Len(args) == 2);
+  val Z <- G:LoadLib("ZeroCost") or G:DieWith("$E?");
+  return Z:Check(args[1]);
 }
 if args[0] == "analyze" or args[0] == "compare" {
   val A <- G:LoadLib("Analyze") or G:DieWith("$E?");

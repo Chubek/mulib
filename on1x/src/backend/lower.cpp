@@ -1,4 +1,6 @@
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/vm_closures.hpp>
+#include <on1x/sema.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/nominal.hpp>
 #include <on1x/meta.hpp>
@@ -32,11 +34,65 @@ class Lowering {
   // Optional shape recognition has its own finite allowance. Exhaustion falls
   // back to ordinary storage lowering, never bypasses HIR/MIR verification.
   std::size_t decision_work;
+  bool vm_products;
+  std::map<Type,Type> layouts;
+  std::size_t layout_work;
+  // Array extents are compact in HIR but multiplicative when represented as
+  // products. Bound expanded fields *before* allocating or comparing a layout.
+  std::size_t layout_width(const Type& source,const Location& at,std::size_t depth=0){
+   if(depth>32||!layout_work)unsupported(at,"VM value layout budget exhausted");
+   --layout_work;
+   constexpr std::size_t cap=16384;
+   if(source.kind()==Type::Array||source.kind()==Type::Slice){
+    const auto width=layout_width(source.elements()[0],at,depth+1);
+    if(source.extent()>(cap-5)/width)unsupported(at,"VM value exceeds expanded layout limit");
+    return 5+source.extent()*width;
+   }
+   std::size_t width=1;
+   if(source.is_data()||source.is_tuple()){
+    ++width;
+    for(const auto& child:source.elements()){
+     auto n=layout_width(child,at,depth+1);
+     if(n>cap-width)unsupported(at,"VM value exceeds expanded layout limit");
+     width+=n;
+    }
+   }
+   return width;
+  }
+  Type representation(const Type& t,const Location& at,std::size_t depth=0){
+   if(!vm_products||(!t.is_data()&&!t.is_tuple()))return t;
+   if(depth>32||!layout_work)unsupported(at,"VM value layout budget exhausted");
+   --layout_work;
+   if(auto it=layouts.find(t);it!=layouts.end())return it->second;
+   (void)layout_width(t,at);
+   // Source identity, field order, active-tag evidence and ownership have been
+   // checked before any layout erasure. There are no guest addresses here.
+   if(t.has_functions()||t.contains_unique())unsupported(at,"managed VM data requires a runtime layout");
+   std::vector<Type> parts;
+   if(t.kind()==Type::Slice){
+    parts={representation(Type::data(Type::Array,t.elements(),{},t.extent()),at,depth+1),Type::I64,Type::I64};
+   }else if(t.kind()==Type::Array){
+    auto element=representation(t.elements().at(0),at,depth+1);
+    parts.assign(t.extent(),element);
+   }else{
+    if(t.kind()==Type::Sum)parts.emplace_back(Type::I64);
+    for(const auto& e:t.elements())parts.push_back(representation(e,at,depth+1));
+   }
+   // Empty data and single-field data also have concrete value layouts.
+   Type result=Type::Bool;
+   if(!parts.empty()){
+    if(parts.size()==1)parts.emplace_back(Type::Bool);
+    result=Type::tuple(std::move(parts));
+   }
+   layouts.emplace(t,result);
+   return result;
+  }
  [[noreturn]] void unsupported(const Location& at,const std::string& why){
   throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
  }
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
- unsigned type_version(const Type& t,const Location& at,bool allow_void=false){
+  unsigned type_version(const Type& t,const Location& at,bool allow_void=false){
+   if(vm_products&&t.is_data())return type_version(representation(t,at),at,allow_void);
   if(t.contains_unique())
    unsupported(at,"unique ownership requires typed move/drop and cleanup MIR events (direct C11 HIR backend only)");
   if(t==Type::F32||t.is_unsigned())return numeric_format_version;
@@ -75,7 +131,7 @@ class Lowering {
   return loop.latch;
  }
   Id emit(Op op,Type type,std::vector<Id> args,const Location& at,Id target=0,std::int64_t immediate=0){
-  scalar(type,at,true);Instruction i;i.id=fresh(at);i.type=type;i.op=op;i.operands=std::move(args);i.where=at;i.target=target;i.immediate=immediate;
+   scalar(type,at,true);Instruction i;i.id=fresh(at);i.type=representation(type,at);i.op=op;i.operands=std::move(args);i.where=at;i.target=target;i.immediate=immediate;
   if(effect(op)!=Effect::Pure){i.effect_in=token();i.effect_out=fresh(at);}
   auto result=type==Type::Void?0:i.id;block().instructions.push_back(std::move(i));return result;
  }
@@ -113,6 +169,13 @@ class Lowering {
    if(e.kind==E::RegexLiteral||e.kind==E::RegexMatch||e.kind==E::RegexCapture)
     unsupported(e.where,"core regex operations require the direct C11 backend");
    auto version=type_version(e.type,e.where,true);
+   if(vm_products){
+    switch(e.kind){
+     case E::Record:case E::Array:case E::Variant:case E::TagTest:case E::Payload:
+     case E::Field:case E::Index:case E::Length:case E::Slice:return version;
+     default:break;
+    }
+   }
    switch(e.kind){
     case E::Unit:case E::Region:case E::Project:case E::Integer:case E::Boolean:
     case E::Float:case E::Tuple:case E::Unary:case E::Binary:case E::Call:return version;
@@ -224,12 +287,98 @@ class Lowering {
     if(no_tail!=ended){current=no_tail;jump(merge,branch.otherwise[0].where,{no_result});}
     current=merge;return result;
    }
+  Id constant(std::int64_t n,const Location& at){return emit(Op::Constant,Type::I64,{},at,0,n);}
+  Id zero(const Type& layout,const Location& at){
+   if(!layout.is_tuple())return emit(Op::Constant,layout,{},at);
+   std::vector<Id> members;
+   for(const auto& field:layout.elements())members.push_back(zero(field,at));
+   return emit(Op::Tuple,layout,std::move(members),at);
+  }
+  Id pack(const Type& t,std::vector<Id> members,const Location& at){
+   auto layout=representation(t,at);
+   if(members.empty())return zero(layout,at);
+   if(members.size()==1)members.push_back(zero(Type::Bool,at));
+   return emit(Op::Tuple,layout,std::move(members),at);
+  }
+  Id field(Id root,const Type& t,std::size_t i,const Location& at){
+   return emit(Op::Extract,representation(t,at),{root},at,0,static_cast<std::int64_t>(i));
+  }
+  // A checked dynamic index becomes a balanced tree of constant extracts. No
+  // out-of-range guest index ever becomes a host pointer or a MIR extract index.
+  void index_edges(Id root,Id index,const Type& elem,std::size_t lo,std::size_t hi,
+                   std::size_t done,const Location& at){
+   if(hi-lo==1){jump(done,at,{field(root,elem,lo,at)});return;}
+   const auto mid=lo+(hi-lo)/2;
+   auto l=make_block(at),r=make_block(at);
+   auto before=emit(Op::Lt,Type::Bool,{index,constant(static_cast<std::int64_t>(mid),at)},at);
+   terminate(Exit::Branch,before,{edge(l),edge(r)},at);
+   current=l;index_edges(root,index,elem,lo,mid,done,at);
+   current=r;index_edges(root,index,elem,mid,hi,done,at);
+  }
+  void bounds_check(Id a,Id b,Op relation,const Location& at){
+   auto condition=emit(relation,Type::Bool,{a,b},at);
+   emit(Op::Assert,Type::Void,{condition},at);
+  }
+  Id data(const Expr& e){
+   using E=Expr::Kind;
+   const auto& at=e.where;
+   if(e.kind==E::Array||e.kind==E::Record){
+    std::vector<Id> fields(e.children.size());
+    for(std::size_t i=0;i<fields.size();++i){
+     auto v=expression(*e.children[i]);if(current==ended)return 0;
+     // Evaluate in *source* order, store in canonical label order.
+     const auto& labels=e.type.labels();
+     const auto pos=e.kind==E::Array?i:static_cast<std::size_t>(
+       std::lower_bound(labels.begin(),labels.end(),e.labels.at(i))-labels.begin());
+     fields.at(pos)=v;
+    }
+    return pack(e.type,std::move(fields),at);
+   }
+   if(e.kind==E::Variant){
+    auto active=expression(*e.children.at(0));if(current==ended)return 0;
+    std::vector<Id> parts{constant(static_cast<std::int64_t>(e.projection),at)};
+    for(std::size_t i=0;i<e.type.elements().size();++i)
+     parts.push_back(i==e.projection?active:zero(representation(e.type.elements()[i],at),at));
+    return pack(e.type,std::move(parts),at);
+   }
+   auto root=expression(*e.children.at(0));if(current==ended)return 0;
+   if(e.kind==E::Field)return field(root,e.type,e.projection,at);
+   if(e.kind==E::Payload)return field(root,e.type,e.projection+1,at);
+   if(e.kind==E::TagTest)return emit(Op::Eq,Type::Bool,
+       {field(root,Type::I64,0,at),constant(static_cast<std::int64_t>(e.projection),at)},at);
+   const auto& source=e.children[0]->type;
+   if(source.kind()!=Type::Array&&source.kind()!=Type::Slice)
+    unsupported(at,"VM indexed value requires an array or slice");
+   const bool slice=source.kind()==Type::Slice;
+   const auto extent=source.extent();
+   const auto& elem=source.elements().at(0);
+   const auto length=slice?field(root,Type::I64,2,at):constant(static_cast<std::int64_t>(extent),at);
+   if(e.kind==E::Length)return length;
+   auto lo=expression(*e.children.at(1));if(current==ended)return 0;
+   Id hi=0;
+   if(e.kind==E::Slice){hi=expression(*e.children.at(2));if(current==ended)return 0;}
+   bounds_check(constant(0,at),lo,Op::Le,at);
+   if(e.kind==E::Slice){
+    bounds_check(lo,hi,Op::Le,at);bounds_check(hi,length,Op::Le,at);
+   }else bounds_check(lo,length,Op::Lt,at);
+   auto backing=slice?field(root,Type::data(Type::Array,{elem},{},extent),0,at):root;
+   auto position=slice?emit(Op::Add,Type::I64,{field(root,Type::I64,1,at),lo},at):lo;
+   if(e.kind==E::Slice)
+    return pack(e.type,{backing,position,emit(Op::Sub,Type::I64,{hi,lo},at)},at);
+   if(!extent)return zero(representation(elem,at),at); // the preceding assertion always traps
+   auto done=make_block(at);auto result=fresh(at);
+   fn().blocks[done].parameters.push_back({result,representation(elem,at),at});
+   index_edges(backing,position,elem,0,extent,done,at);current=done;return result;
+  }
    Id expression(const Expr& e){
    module.version=std::max(module.version,expression_profile(e));
    switch(e.kind){
+   case Expr::Kind::Record:case Expr::Kind::Array:case Expr::Kind::Variant:
+   case Expr::Kind::Field:case Expr::Kind::Payload:case Expr::Kind::TagTest:
+   case Expr::Kind::Index:case Expr::Kind::Length:case Expr::Kind::Slice:return data(e);
    case Expr::Kind::Unit:return 0;
     case Expr::Kind::Region:{
-     if(boolean_decision(e))return decision(e);
+     if(limits.decision_ssa&&boolean_decision(e))return decision(e);
      scopes.emplace_back();body(e.body,false);auto result=current==ended?Id{0}:expression(*e.children.at(0));scopes.pop_back();return result;
     }
    case Expr::Kind::Project:{auto root=expression(*e.children.at(0));return emit(Op::Extract,e.type,{root},e.where,0,static_cast<std::int64_t>(e.projection));}
@@ -250,13 +399,16 @@ class Lowering {
     return emit(e.type==Type::F64?Op::FloatNeg:e.text=="-"?Op::Neg:Op::Not,e.type,{operand},e.where);}
   case Expr::Kind::Binary:{
    auto left=expression(*e.children.at(0));
-   if(e.text=="&&"||e.text=="||"){
+    if(e.text=="&&"||e.text=="||"){
+     if(current==ended)return 0;
     auto rhs=make_block(e.where),merge=make_block(e.where);Id result=fresh(e.where);
     fn().blocks[merge].parameters.push_back({result,Type::Bool,e.where});
     auto yes=e.text=="&&"?edge(rhs):edge(merge,{left});
     auto no=e.text=="&&"?edge(merge,{left}):edge(rhs);
     terminate(Exit::Branch,left,{yes,no},e.where);
-    current=rhs;auto right=expression(*e.children.at(1));jump(merge,e.where,{right});current=merge;return result;
+     current=rhs;auto right=expression(*e.children.at(1));
+     if(current!=ended)jump(merge,e.where,{right});
+     current=merge;return result;
    }
      auto right=expression(*e.children.at(1));
      if(e.children[0]->type==Type::F32||e.children[0]->type.is_unsigned()){
@@ -305,13 +457,15 @@ class Lowering {
     auto value=expression(*s.value);scalar(s.value->type,s.where);
     if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
     Binding b{value,s.value->type,false};
-    if(s.mutable_binding){b.id=fresh(s.where);b.slot=true;fn().slots.push_back({b.id,b.type,s.where});emit(Op::Store,Type::Void,{value},s.where,b.id);}
+     if(s.mutable_binding){b.id=fresh(s.where);b.slot=true;fn().slots.push_back({b.id,representation(b.type,s.where),s.where});emit(Op::Store,Type::Void,{value},s.where,b.id);}
     scopes.back().emplace(s.name,b);break;
    }
-   case Stmt::Kind::Storage:{scalar(s.declared,s.where);auto id=fresh(s.where);fn().slots.push_back({id,s.declared,s.where});scopes.back().emplace(s.name,Binding{id,s.declared,true});break;}
+   case Stmt::Kind::Storage:{scalar(s.declared,s.where);auto id=fresh(s.where);fn().slots.push_back({id,representation(s.declared,s.where),s.where});scopes.back().emplace(s.name,Binding{id,s.declared,true});break;}
    case Stmt::Kind::Initialize:case Stmt::Kind::Assign:{
     auto b=binding(s.name,s.where);if(!b.slot)unsupported(s.where,"assignment to immutable HIR binding");
-    auto value=expression(*s.value);emit(Op::Store,Type::Void,{value},s.where,b.id);break;
+     auto value=expression(*s.value);
+     if(current!=ended)emit(Op::Store,Type::Void,{value},s.where,b.id);
+     break;
    }
    case Stmt::Kind::Return:{auto value=s.value?expression(*s.value):0;if(current!=ended)terminate(Exit::Return,value,{},s.where);break;}
    case Stmt::Kind::Expr:(void)expression(*s.value);break;
@@ -362,7 +516,8 @@ class Lowering {
   if(scope)scopes.pop_back();
  }
 public:
-  Lowering(const Unit& u,Limits l):unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)){}
+  Lowering(const Unit& u,Limits l,bool products=false):unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)),
+   vm_products(products),layout_work(l.work){}
    Module run(){
       inherent::verify_elaborated(unit);
       cliches::verify_elaborated(unit);
@@ -382,14 +537,14 @@ public:
        "borrowed parameters require addressable-place and loan MIR descriptors "
        "(C11 HIR backend only)");
    if(f.external)unsupported(f.where,"raw extern declarations require typed foreign MIR descriptors");
-   scalar(f.result,f.where,true);Function target;target.id=fresh(f.where);target.name=f.name;target.result=f.result;target.where=f.where;
+    scalar(f.result,f.where,true);Function target;target.id=fresh(f.where);target.name=f.name;target.result=representation(f.result,f.where);target.where=f.where;
    functions.emplace(f.name,target.id);module.functions.push_back(std::move(target));
   }
   for(const auto& f:unit.functions){
    if(f.prototype)continue;
    current=make_block(f.where);scopes.emplace_back();
    for(const auto& p:f.params){
-    scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,p.type,p.where});scopes.back().emplace(p.name,Binding{id,p.type,false});
+     scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,representation(p.type,p.where),p.where});scopes.back().emplace(p.name,Binding{id,p.type,false});
     if(p.pattern)bind_pattern(*p.pattern,p.type,id);
    }
    body(f.body,false);
@@ -401,4 +556,14 @@ public:
 };
 }
 Module lower(const Unit& unit,Limits limits){extensions::verify_evidence(unit);return Lowering(unit,limits).run();}
+Module lower_for_vm(const Unit& unit,Limits limits){
+ extensions::verify_evidence(unit);canonical::verify_control(unit);canonical::verify_values(unit);
+ cliches::verify_elaborated(unit);inherent::verify_elaborated(unit);csp::verify(unit,true);
+ verify_nominals(unit);meta::require_core(unit);
+ if(auto converted=vm_closures(unit,limits)){
+  recheck_checked_hir(*converted);
+  return Lowering(*converted,limits,true).run();
+ }
+ return Lowering(unit,limits,true).run();
+}
 }

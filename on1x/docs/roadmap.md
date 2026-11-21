@@ -10,7 +10,18 @@ machine-code backend is added.
 
 ## Current feature matrix
 
-On1xMETA continuation (2026-11-21): the normal semantic pipeline now consumes
+On1xMETA now has 17 canonicalization rules and 12 desugar rules. A bounded
+bottom-up normalizer exposes composed neutral boolean operands before lazy
+expressions expand. On the [frozen wrapper/explicit benchmark](../benchmark/ZERO_COST.md)
+the default pipeline produces identical direct C11 and native machine code for
+the pair. The [driver policy](optimization-profiles.md) selects generated rules,
+decision SSA and MIR passes without changing mandatory admission. The root
+[On1xfile](../stdlib/on1xfile/README.md#compiler-optimizations) can set policy
+globally or for a specific build profile; CLI selectors override the manifest.
+These results
+do not imply zero overhead for arbitrary functions, closures or aggregates.
+
+Initial On1xMETA continuation (2026-11-21): the normal semantic pipeline first consumed
 LLSynth-compiled [`processor/*.o1m`](../processor/README.md) programs: 6 typed
 desugaring rules, 13 canonicalization rules, and 45 structural/typed semantic
 constraints. Rewrites follow original ownership/control verification and are

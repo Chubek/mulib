@@ -96,6 +96,27 @@ with tempfile.TemporaryDirectory(dir=t.work, prefix='projects-') as tmp:
        *['--cflag=' + flag for flag in t.flags], cwd=work)
     assert ok([binary], cwd=work) == '42\n'
 
+    source.write_text('fn plus(x:i64)->i64{return x+0;}fn main(){println(plus(42));}\n')
+    generated = work / 'generated.c'
+    for args, checked_add in [(['--profile', 'debug'], True),
+                              (['--no-optimizations', '--enable-opt', 'integer_add_zero_right'], False)]:
+        ok(helper, source, '--emit-only', *args, '--on1xc', t.compiler, '-o', generated, cwd=work)
+        assert ('on1x_add_i64(' in generated.read_text()) == checked_add
+    saved = generated.read_bytes()
+    reject(helper, source, '--emit-only', '--enable-opt', 'dead-pure', '--on1xc', t.compiler,
+           '-o', generated, cwd=work, message='not applicable')
+    assert generated.read_bytes() == saved
+    for backend, tool in [('mir-archon', t.compiler.parent/'backends/mir-archon/on1x-archon-mir'),
+                          ('mir-vm', t.compiler.with_name('on1x-vm'))]:
+        if tool.is_file():
+            if backend == 'mir-archon' and ok([tool], '--print-target', cwd=work).strip() != 'x86_64-unknown-linux-gnu':
+                continue
+            artifact = work / ('standalone-' + backend)
+            ok(helper, source, '--backend', backend, '--on1xc', t.compiler, '--cc', t.cc,
+               '-o', artifact, cwd=work)
+            invocation = [tool, artifact] if backend == 'mir-vm' else [artifact]
+            assert ok(invocation, cwd=work) == '42\n'
+
     # The driver is transport, not a second evaluator. Assert exact argument,
     # cwd, and status propagation using a test engine installed beside it.
     fixture = work / 'fixture driver'
@@ -122,6 +143,21 @@ with tempfile.TemporaryDirectory(dir=t.work, prefix='projects-') as tmp:
             output = Path(ok(command, 'exec', subcommand, executable_root, *engine_flags, cwd=work).strip())
             assert (output / '.on1x-build.json').is_file()
             assert ok([output / 'a-new-bin'], cwd=work) == 'Hello from On1x!\n'
+        # The public on1xc exec route reads manifest policy and accepts CLI
+        # overrides independently of the host optimization flags.
+        (target / 'src/main.on1x').write_text(
+            'fn plus(x:i64)->i64{return x+0;}fn main(){println(plus(42));}\n')
+        manifest.write_text(manifest_text + 'optimization-profile debug\n')
+        def selected(option):
+            out = Path(ok(driver, 'exec', 'build', target, *engine_flags, '--profile', 'release',
+                          option, 'integer_add_zero_right', cwd=work).strip())
+            report = json.loads((out / '.on1x-build.json').read_text())
+            assert report['cflags'] == ['-O3'] and report['optimization']['profile'] == 'debug'
+            assert ok([out / 'a-new-bin'], cwd=work) == '42\n'
+            return {r['name'] for r in report['optimization']['optimizations'] if r['enabled']}
+        assert selected('--enable-opt') == {'integer_add_zero_right'}
+        assert selected('--disable-opt') == set()
+        manifest.write_text(manifest_text)
         complex_root = projects['--proj']
         output = Path(ok(driver, 'exec', 'build', *engine_flags, cwd=complex_root).strip())
         assert ok([output / 'proj-project'], cwd=work) == 'Hello from On1x!\n'
@@ -131,10 +167,15 @@ with tempfile.TemporaryDirectory(dir=t.work, prefix='projects-') as tmp:
         assert (output / 'src/__init__.on1x').is_file() and (output / 'On1xfile').is_file()
         if (t.compiler.parent / 'on1x-mune-runner').is_file():
             (target / 'preview.lua').write_text('return on1xfile.profile { optimize = 1, debug = true }\n')
-            manifest.write_text(manifest_text + 'profile "preview" "preview.lua"\n')
+            manifest.write_text(manifest_text + 'profile "preview" "preview.lua"\nbackend "preview" mir-c11\n'
+                                'optimization "preview" "all" off\n'
+                                'optimization "preview" "integer_add_zero_right" on\n')
             output = Path(ok(driver, 'exec', 'preview', *engine_flags, cwd=target).strip())
             report = json.loads((output / '.on1x-build.json').read_text())
             assert report['profile'] == 'preview' and '-O1' in report['cflags'], report
+            assert report['backend']['name'] == 'mir-c11'
+            assert {r['name'] for r in report['optimization']['optimizations'] if r['enabled']} == {
+                'integer_add_zero_right'}
         policy = manifest_text + 'define ignored shell "exit 9"\n'
         manifest.write_text(policy + ''.join(
             f'command "listing_{mode}" format {mode} "src/main.on1x"\n'

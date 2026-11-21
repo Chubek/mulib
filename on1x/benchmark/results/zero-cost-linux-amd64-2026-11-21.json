@@ -1,0 +1,5589 @@
+{
+  "schema": "on1x.zero-cost-evidence.v1",
+  "runs": [
+    {
+      "order": "first-baseline",
+      "compiler_sha256": "beb339dbf2417c55239789eba68dfbc88a61ce3971672c07451a6d71ec4aba3e",
+      "report_failures": 0,
+      "rows": [
+        {
+          "fixture": "zero-explicit",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            42297647,
+            41859296,
+            41682647,
+            41632875,
+            40987364
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11930613,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30367034,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11569161,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30290135,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11782619,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29900028,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11743026,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29889849,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11569600,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29417764,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5724483,
+            5492344,
+            5547213,
+            5674332,
+            5584110,
+            5512801,
+            5515634,
+            5435834,
+            5668959,
+            5597648,
+            5646178,
+            5560306,
+            5470780,
+            5464700,
+            5423198
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            30335409,
+            30327719,
+            30480342,
+            30921945,
+            30950959
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12858971,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3020748,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14455690,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13048886,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3001626,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14277207,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12980802,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3036006,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14463534,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12937058,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3181431,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14803456,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12826761,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2948416,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15175782,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8752437,
+            8611163,
+            8813997,
+            8703488,
+            8770721,
+            8753756,
+            8604918,
+            8572896,
+            8598995,
+            8667093,
+            8800984,
+            8803396,
+            8593244,
+            8563489,
+            8723113
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            42052376,
+            42186048,
+            41582758,
+            41804796,
+            42291848
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 24563435,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2943771,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14545170,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24592499,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2988307,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14605242,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24388799,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2846489,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14347470,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24377766,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2964778,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14462252,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24505962,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3055378,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14730508,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8223562,
+            8304170,
+            8313754,
+            8439942,
+            8324653,
+            8238603,
+            8297473,
+            8462165,
+            8257428,
+            8370157,
+            8175855,
+            8523510,
+            8210366,
+            8501560,
+            8292458
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            43628941,
+            44693893,
+            43471890,
+            43749250,
+            43502022
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 13120029,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30508912,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13174539,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 31519354,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12856950,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30614940,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13280725,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30468525,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13316849,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30185173,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5392297,
+            5618741,
+            5291680,
+            5628344,
+            5331388,
+            5612775,
+            5408122,
+            5666990,
+            5711800,
+            5318901,
+            5474442,
+            5332241,
+            5278308,
+            5361172,
+            5587577
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            33057124,
+            33216139,
+            32261389,
+            32886607,
+            33024826
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 14511227,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3556376,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14989521,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14696320,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3516491,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15003328,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14581705,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3407556,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14272128,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14639548,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3500921,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14746138,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14935762,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3334437,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14754627,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            11400943,
+            11460628,
+            11589222,
+            11754331,
+            11589002,
+            11699378,
+            11720495,
+            11640021,
+            11642435,
+            11730236,
+            11471407,
+            11559731,
+            11830732,
+            11874607,
+            11602249
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            47547492,
+            48010782,
+            47587665,
+            47926539,
+            48396203
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 29637734,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3420870,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14488888,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 30063444,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3449637,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14497701,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 29796994,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3197854,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14592817,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 30106601,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3419514,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14400424,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 30103410,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3497033,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14795760,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10840288,
+            10827085,
+            10795983,
+            10727477,
+            10580838,
+            10815140,
+            10844568,
+            10790003,
+            10625395,
+            10661723,
+            10612425,
+            10779874,
+            10602135,
+            10578530,
+            10596837
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51728,
+          "compile_samples_ns": [
+            43227958,
+            43025054,
+            42725426,
+            42707722,
+            42657376
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12348139,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30879819,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12343645,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30681409,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12227032,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30498394,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12219638,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30488084,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12341843,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30315533,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6715954,
+            6821439,
+            6756063,
+            6689744,
+            6761562,
+            6891500,
+            6976692,
+            6826692,
+            6770286,
+            6770901,
+            6841250,
+            6730213,
+            6850390,
+            6826888,
+            6766412
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            32455356,
+            33121769,
+            32235005,
+            32708223,
+            32900804
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 13971103,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3591819,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14892434,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14599955,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3530742,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14991072,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13945183,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3633046,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14656776,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14157872,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3602461,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14947890,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14172646,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3718156,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15010002,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            11245074,
+            11437459,
+            11316370,
+            11338996,
+            11442587,
+            11336367,
+            11351397,
+            11387165,
+            11338924,
+            11371528,
+            11325731,
+            11531926,
+            11127568,
+            11126801,
+            11242791
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            52236725,
+            51927321,
+            52128466,
+            52194197,
+            52545826
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 34169748,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3221745,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14845232,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34181197,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3199737,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14546387,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34113618,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3173868,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14840980,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34271540,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3276012,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14646645,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34509375,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3247013,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14789438,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10105776,
+            10163650,
+            10506052,
+            10242882,
+            10155100,
+            10069597,
+            10214164,
+            10076337,
+            10137500,
+            10244039,
+            10026153,
+            10495266,
+            10196305,
+            10118479,
+            10098823
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51736,
+          "compile_samples_ns": [
+            40412833,
+            40203906,
+            40205698,
+            39758348,
+            39975805
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11594473,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28818360,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11623588,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28580318,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11623102,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28582596,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11520034,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28238314,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11843666,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28132139,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            3619306,
+            3764381,
+            3775034,
+            3835055,
+            3847257,
+            3873147,
+            3792294,
+            3855692,
+            3807453,
+            3780525,
+            3820681,
+            3845455,
+            4377061,
+            4100169,
+            3854531
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            29934821,
+            29915172,
+            29741789,
+            30425524,
+            30075138
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12644836,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2525001,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14764984,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12592162,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2754655,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14568355,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12456143,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2641052,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14644594,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12279852,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3449036,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14696636,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12429975,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2942615,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14702548,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6917020,
+            6813840,
+            6643893,
+            6850387,
+            6796075,
+            6855863,
+            6699644,
+            6737929,
+            6868635,
+            6842474,
+            6672833,
+            6642109,
+            6762364,
+            6812488,
+            6896624
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            37526933,
+            38411818,
+            37839278,
+            38474005,
+            38742226
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 20822230,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2589980,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14114723,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20905341,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2771665,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14734812,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20775571,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2791324,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14272383,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 21016624,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2773114,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14684267,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20912377,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2792120,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15037729,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6309386,
+            6415700,
+            6391023,
+            6313637,
+            6272848,
+            6525371,
+            6411178,
+            6340450,
+            6332491,
+            6390527,
+            6434622,
+            6231993,
+            6269127,
+            6361679,
+            6227635
+          ]
+        }
+      ],
+      "mir": [
+        {
+          "fixture": "zero-explicit",
+          "before": {
+            "blocks": 9,
+            "bytes": 8454,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8184,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-wrapped",
+          "before": {
+            "blocks": 15,
+            "bytes": 10936,
+            "edges": 18,
+            "functions": 3,
+            "instructions": 43,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 13,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "not": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 15,
+            "bytes": 10465,
+            "edges": 14,
+            "functions": 3,
+            "instructions": 40,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 7,
+              "lt": 2,
+              "mod.checked": 2,
+              "not": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-lazy",
+          "before": {
+            "blocks": 18,
+            "bytes": 11918,
+            "edges": 23,
+            "functions": 2,
+            "instructions": 46,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 18,
+              "div.checked": 2,
+              "eq": 5,
+              "load": 6,
+              "lt": 1,
+              "mod.checked": 3,
+              "mul.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 5
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 16,
+            "bytes": 9208,
+            "edges": 18,
+            "functions": 2,
+            "instructions": 32,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 11,
+              "eq": 3,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 3,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-identities",
+          "before": {
+            "blocks": 8,
+            "bytes": 6548,
+            "edges": 8,
+            "functions": 2,
+            "instructions": 26,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 8,
+            "bytes": 6390,
+            "edges": 7,
+            "functions": 2,
+            "instructions": 25,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 4,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        }
+      ],
+      "identity": {
+        "passed": false,
+        "rows": [
+          {
+            "backend": "c11",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "29f25267a5b9060df407c18aae376c2d0315e798a681c5af2164e94adb72db59",
+                "fixture": "zero-explicit",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              },
+              {
+                "emitted": "045e12160b1bdbeb75dadbdf87e56c06870cea37b1915501d306c5011af617ac",
+                "executable": "f4b13f0c936721946c73ac8e7432fc20bdacc24de1267a7770e9724cbb39da95",
+                "fixture": "zero-wrapped",
+                "mir": null,
+                "normalized_elf": "54e6eb5bb9ff321454222822bab8e8d2d6ddd5beab571803713787255964fe3e"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-explicit",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              },
+              {
+                "emitted": "b2bfc458e7a121853383684b806eeaf961971ee0b6de5b77eb294bf884b723dc",
+                "executable": "5ef0ba93fc83c75c3d94ec79b7f05f044cd84eadf42821aff8ffb1647b422421",
+                "fixture": "zero-wrapped",
+                "mir": "48d0716a2f72f9a2155360f4bccb5f2d71d426b281b119d18f160c5ad42612f9",
+                "normalized_elf": "e4351396135bc6787703557c25c793446f8b3244acb23933e74f9500b4905c3b"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon-opt",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-explicit",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              },
+              {
+                "emitted": "54ce41a986deee107895c2a216e21ecfb6526b662ff67c8200414eb66030b1e2",
+                "executable": "14cc4349036feff7bd7ac79e0b2749776dec2334527cd58c3d95327e7a1a4ea6",
+                "fixture": "zero-wrapped",
+                "mir": "8ae43851e151119f0ce88af7a17b447c64a1a5869e208285460ef779ec463536",
+                "normalized_elf": "0b55b929bd53e112bea667a49efd69e117c13a4c324a383e61dd6e11eb825c2f"
+              }
+            ]
+          }
+        ],
+        "schema": "on1x.zero-cost.v1"
+      }
+    },
+    {
+      "order": "first-candidate",
+      "compiler_sha256": "7187a0edadf292bbe3412d16f1c811d6abe48e984ab849eea2dce860671c1bba",
+      "report_failures": 0,
+      "rows": [
+        {
+          "fixture": "zero-explicit",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            41999520,
+            42296067,
+            41799554,
+            42891081,
+            41691241
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11776500,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30223020,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11614053,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30682014,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11549480,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30250074,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11897432,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30993649,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12071063,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29620178,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5750740,
+            5931384,
+            5721307,
+            5894065,
+            5671498,
+            5622532,
+            5505288,
+            5661030,
+            5773317,
+            5779513,
+            5554665,
+            5613234,
+            5583813,
+            5795149,
+            5716220
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            30600029,
+            30260561,
+            30313864,
+            30677423,
+            29848034
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12822702,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3009997,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14767330,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12619795,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3097353,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14543413,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12859202,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2949864,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14504798,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12908054,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3189800,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14579569,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12961997,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2959177,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 13926860,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8616516,
+            8769449,
+            8855420,
+            8909765,
+            8734056,
+            8789372,
+            8854177,
+            8883044,
+            8825766,
+            8642567,
+            8658507,
+            8605740,
+            8541406,
+            8793071,
+            8703935
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            42246504,
+            41534057,
+            43131589,
+            41815957,
+            42119447
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 24906041,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3097845,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14242618,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24253827,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2930147,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14350083,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24462346,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3141548,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15527695,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24463084,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2914366,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14438507,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24572548,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2977275,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14569624,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8375402,
+            8401774,
+            8359177,
+            8411091,
+            8532436,
+            8410352,
+            8381857,
+            8409795,
+            8461549,
+            8385634,
+            8530215,
+            8356214,
+            8534652,
+            8482746,
+            8227675
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            53054422,
+            45830757,
+            46453719,
+            45244138,
+            42498554
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 20929441,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 32124981,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12658663,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 33172094,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13200316,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 33253403,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14746596,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30497542,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12523475,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29975079,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5588740,
+            5664647,
+            5548786,
+            5801120,
+            5840488,
+            5623100,
+            5567184,
+            5799116,
+            5674997,
+            5776052,
+            5596330,
+            5669787,
+            5500950,
+            5607615,
+            5971143
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            31237487,
+            30781189,
+            31726947,
+            33030025,
+            56025971
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 13523613,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3086294,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14627580,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13412858,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3055737,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14312594,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13663041,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3277037,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14786869,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13541621,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3050144,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 16438260,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14449988,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 9284005,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 32291978,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            9177896,
+            8857671,
+            9083487,
+            8981393,
+            8746816,
+            8953730,
+            9056639,
+            9020971,
+            8855307,
+            8731189,
+            9647729,
+            8858914,
+            9012391,
+            15139739,
+            15144741
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            42877496,
+            43395930,
+            43340033,
+            42982201,
+            44329487
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 25356650,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2961185,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14559661,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 25772223,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3080943,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14542764,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 25365531,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3401162,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14573340,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 25165656,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2968399,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14848146,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 26244745,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3467938,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14616804,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8383882,
+            8456745,
+            8300341,
+            8373469,
+            8444972,
+            8280971,
+            8425587,
+            8416160,
+            8427630,
+            8277811,
+            8299605,
+            8332610,
+            8281058,
+            8354213,
+            8569127
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51728,
+          "compile_samples_ns": [
+            42871692,
+            42876273,
+            43309772,
+            43120474,
+            43392420
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12206122,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30665570,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12062161,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30814112,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12427944,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30881828,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12275907,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30844567,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12607430,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30784990,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6925285,
+            6831543,
+            6879428,
+            7024870,
+            6764706,
+            6838764,
+            6880589,
+            6824255,
+            6863258,
+            6851896,
+            6881225,
+            6842291,
+            6855408,
+            7015723,
+            6838057
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            32987477,
+            32105219,
+            32379620,
+            32266568,
+            32401819
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 14190140,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3884452,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14912885,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13930723,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3634663,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14539833,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13972893,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3576647,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14830080,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13856978,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3738965,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14670625,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14193578,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3774399,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14433842,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10803523,
+            10780736,
+            11002517,
+            10792905,
+            10796419,
+            10735888,
+            10740094,
+            10668660,
+            10776351,
+            10827170,
+            10849250,
+            10986972,
+            10839377,
+            10870752,
+            11096546
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            51287438,
+            51768562,
+            51263160,
+            52049131,
+            51108964
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 33786557,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3325773,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14175108,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33707519,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3210261,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14850782,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33983601,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3228581,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14050978,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33838555,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3431423,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14779153,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33741590,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3183069,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14184305,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            9686774,
+            9825897,
+            9649677,
+            9712199,
+            9695229,
+            9714587,
+            9839099,
+            9706916,
+            9619594,
+            9651893,
+            9711505,
+            9718130,
+            9784506,
+            9757423,
+            9612629
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51736,
+          "compile_samples_ns": [
+            39413447,
+            39568339,
+            39760102,
+            39881402,
+            39613476
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11469870,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 27943577,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11469251,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28099088,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11515919,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28244183,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11421525,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28459877,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11440379,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28173097,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            3710890,
+            3906299,
+            3850408,
+            3756278,
+            3900588,
+            3926537,
+            3655834,
+            3860931,
+            3846785,
+            3869254,
+            3771330,
+            3769220,
+            3985230,
+            3814031,
+            3832812
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            29918954,
+            29557874,
+            29742643,
+            28992217,
+            29882775
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12554005,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2813845,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14551104,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12284281,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2895767,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14377826,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12167349,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2764284,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14811010,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12327855,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2623022,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14041340,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12608623,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2617220,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14656932,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6233958,
+            6070499,
+            6087009,
+            5988554,
+            6128870,
+            6342822,
+            6187030,
+            6189871,
+            6131867,
+            6121833,
+            6044604,
+            6232458,
+            6103493,
+            6319858,
+            6231476
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            37864168,
+            37149855,
+            37482150,
+            37288747,
+            37434249
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 20281292,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2746651,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14836225,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20232763,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2649037,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14268055,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20250111,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2723288,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14508751,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20593512,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2748636,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 13946599,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20473386,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2647054,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14313809,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6050627,
+            5872171,
+            5723892,
+            5832512,
+            5858584,
+            5982545,
+            6029845,
+            5908237,
+            5753060,
+            5882822,
+            5891872,
+            5744337,
+            5695881,
+            5976505,
+            5853184
+          ]
+        }
+      ],
+      "mir": [
+        {
+          "fixture": "zero-explicit",
+          "before": {
+            "blocks": 9,
+            "bytes": 8519,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8247,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-wrapped",
+          "before": {
+            "blocks": 9,
+            "bytes": 8455,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8184,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-lazy",
+          "before": {
+            "blocks": 17,
+            "bytes": 11621,
+            "edges": 21,
+            "functions": 2,
+            "instructions": 46,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 18,
+              "div.checked": 2,
+              "eq": 5,
+              "load": 6,
+              "lt": 1,
+              "mod.checked": 3,
+              "mul.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 5
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 15,
+            "bytes": 9023,
+            "edges": 17,
+            "functions": 2,
+            "instructions": 32,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 11,
+              "eq": 3,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 3,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-identities",
+          "before": {
+            "blocks": 7,
+            "bytes": 6203,
+            "edges": 6,
+            "functions": 2,
+            "instructions": 26,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 7,
+            "bytes": 6060,
+            "edges": 6,
+            "functions": 2,
+            "instructions": 25,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 4,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        }
+      ],
+      "identity": {
+        "passed": true,
+        "rows": [
+          {
+            "backend": "c11",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "29f25267a5b9060df407c18aae376c2d0315e798a681c5af2164e94adb72db59",
+                "fixture": "zero-explicit",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              },
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "10289a3cf7683b15b90d52b2cd3bd5ec974243943cc2f86a2423c2749921c9d4",
+                "fixture": "zero-wrapped",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-explicit",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              },
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-wrapped",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon-opt",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-explicit",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              },
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-wrapped",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              }
+            ]
+          }
+        ],
+        "schema": "on1x.zero-cost.v1"
+      }
+    },
+    {
+      "order": "reverse-candidate",
+      "compiler_sha256": "7187a0edadf292bbe3412d16f1c811d6abe48e984ab849eea2dce860671c1bba",
+      "report_failures": 0,
+      "rows": [
+        {
+          "fixture": "processor-identities",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51736,
+          "compile_samples_ns": [
+            40145675,
+            39612935,
+            39715312,
+            39650911,
+            39546835
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11361151,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28784524,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11473173,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28139762,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11623042,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28092270,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11350332,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28300579,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11356584,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28190251,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            3969162,
+            3795527,
+            3665600,
+            3934688,
+            3669846,
+            3702984,
+            3893493,
+            3881931,
+            3798427,
+            3958082,
+            3861580,
+            3834072,
+            3666607,
+            3893540,
+            3801505
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            29303851,
+            29373709,
+            29193235,
+            29288634,
+            28878645
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12254169,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2515269,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14534413,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12103603,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2535714,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14734392,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12088739,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2554409,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14550087,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12108102,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2556811,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14623721,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12223876,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2552779,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14101990,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6165933,
+            6283345,
+            6226413,
+            6265947,
+            6077910,
+            6169802,
+            6274059,
+            6314242,
+            6104723,
+            6159489,
+            6051547,
+            6026106,
+            6160352,
+            6113244,
+            6245516
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            37827547,
+            37401129,
+            36891254,
+            38784512,
+            37388029
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 20049079,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2513980,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15264488,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20435556,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2647510,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14318063,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 19828302,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2472033,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14590919,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 21047558,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3299381,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14437573,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 19972624,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2879547,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14535858,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5797886,
+            5934169,
+            5815579,
+            5782692,
+            5880892,
+            5773192,
+            6087451,
+            5931366,
+            5809313,
+            5907640,
+            5870964,
+            6165053,
+            5802420,
+            5906232,
+            5954227
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51728,
+          "compile_samples_ns": [
+            42850178,
+            42557257,
+            42221006,
+            42783711,
+            42797519
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12434821,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30415357,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11883997,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30673260,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11951863,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30269143,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11876569,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30907142,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12302600,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30494919,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6838824,
+            7073372,
+            6904150,
+            6799121,
+            6857627,
+            6785456,
+            6835471,
+            6944486,
+            6816655,
+            6899526,
+            6933969,
+            6836521,
+            6799121,
+            6889428,
+            6749702
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            31835757,
+            32510535,
+            32270254,
+            31836972,
+            31926729
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 14010872,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3398619,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14426266,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13913716,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3536138,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15060681,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13809933,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3671396,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14788925,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13928625,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3494897,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14413450,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13823504,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3668674,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14434551,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10747129,
+            11025896,
+            10866085,
+            10580175,
+            10675404,
+            10829477,
+            10626702,
+            10747183,
+            11286560,
+            10831848,
+            10825529,
+            10647676,
+            10640408,
+            10783350,
+            10726823
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            51056371,
+            51085845,
+            50823922,
+            51363709,
+            51286620
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 33322516,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3337015,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14396840,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33551121,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3166476,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14368248,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33315514,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3131975,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14376433,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33641886,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3233311,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14488512,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33448166,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3209944,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14628510,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            9617786,
+            9621285,
+            9601785,
+            9616169,
+            9666256,
+            9729697,
+            9724223,
+            9823170,
+            9674168,
+            9866026,
+            9755090,
+            9849718,
+            9508464,
+            9599667,
+            9719514
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            42289913,
+            42048019,
+            42612702,
+            41799295,
+            42930782
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12469888,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29820025,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12356388,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29691631,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12439467,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30173235,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12205200,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29594095,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12936624,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29994158,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5681636,
+            5623457,
+            5531855,
+            5770067,
+            5637297,
+            5644873,
+            5909598,
+            5897902,
+            5641339,
+            5559042,
+            5470377,
+            5874225,
+            5609274,
+            5581064,
+            5571725
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            31604517,
+            30970018,
+            30993525,
+            30895912,
+            30795424
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 13728684,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3088630,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14787203,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13524700,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3269243,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14176075,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13472193,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3160503,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14360829,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13758917,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3119315,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14017680,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13474094,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3011540,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14309790,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8566499,
+            8863701,
+            8776726,
+            8553312,
+            8627876,
+            8555680,
+            8622244,
+            8806824,
+            8572629,
+            8665930,
+            8628477,
+            8849277,
+            8669914,
+            8826469,
+            8779353
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            42384844,
+            42549336,
+            45710934,
+            43872992,
+            43138518
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 24820638,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2963842,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14600364,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24977504,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2934963,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14636869,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 25415980,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 5238300,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15056654,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24978350,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3678207,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15216435,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 25312135,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3070214,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14756169,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8504965,
+            8421793,
+            8317058,
+            8419856,
+            8311972,
+            8508683,
+            8326107,
+            8317092,
+            8632698,
+            8624904,
+            8520345,
+            8406596,
+            8393333,
+            8221546,
+            8195488
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            41291774,
+            41462077,
+            41658498,
+            41210108,
+            41596219
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11516129,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29775645,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11393427,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30068650,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11615779,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30042719,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11485916,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29724192,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11551588,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30044631,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5599033,
+            5775778,
+            5799018,
+            5765004,
+            5583341,
+            5584811,
+            5583935,
+            5816095,
+            5548579,
+            5770265,
+            5550475,
+            5619854,
+            5605378,
+            5441542,
+            5667607
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            30088626,
+            30717141,
+            29994443,
+            31026102,
+            29978501
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12967684,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3213578,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 13907364,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12734311,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3166366,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14816464,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12774437,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2932491,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14287515,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12566399,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3246990,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15212713,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12549656,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2990217,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14438628,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8711411,
+            8713863,
+            8762210,
+            8588407,
+            8711050,
+            8762763,
+            8586766,
+            8564922,
+            8654797,
+            8693897,
+            8568494,
+            8738354,
+            8737072,
+            8650821,
+            8812962
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            42641987,
+            41875155,
+            42241109,
+            42024551,
+            41930377
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 24497503,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3184186,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14960298,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24330864,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3152689,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14391602,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24359615,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3109864,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14771630,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24441655,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3131837,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14451059,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 23992828,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3129902,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14807647,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8490989,
+            8430467,
+            8366319,
+            8557070,
+            8299499,
+            8283403,
+            8376474,
+            8415244,
+            8386980,
+            8516268,
+            8509580,
+            8382698,
+            8486768,
+            8412127,
+            8416343
+          ]
+        }
+      ],
+      "mir": [
+        {
+          "fixture": "processor-identities",
+          "before": {
+            "blocks": 7,
+            "bytes": 6293,
+            "edges": 6,
+            "functions": 2,
+            "instructions": 26,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 7,
+            "bytes": 6148,
+            "edges": 6,
+            "functions": 2,
+            "instructions": 25,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 4,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-lazy",
+          "before": {
+            "blocks": 17,
+            "bytes": 11797,
+            "edges": 21,
+            "functions": 2,
+            "instructions": 46,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 18,
+              "div.checked": 2,
+              "eq": 5,
+              "load": 6,
+              "lt": 1,
+              "mod.checked": 3,
+              "mul.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 5
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 15,
+            "bytes": 9161,
+            "edges": 17,
+            "functions": 2,
+            "instructions": 32,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 11,
+              "eq": 3,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 3,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-wrapped",
+          "before": {
+            "blocks": 9,
+            "bytes": 8585,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8310,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-explicit",
+          "before": {
+            "blocks": 9,
+            "bytes": 8649,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8373,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        }
+      ],
+      "identity": {
+        "passed": true,
+        "rows": [
+          {
+            "backend": "c11",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "29f25267a5b9060df407c18aae376c2d0315e798a681c5af2164e94adb72db59",
+                "fixture": "zero-explicit",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              },
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "10289a3cf7683b15b90d52b2cd3bd5ec974243943cc2f86a2423c2749921c9d4",
+                "fixture": "zero-wrapped",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-explicit",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              },
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-wrapped",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon-opt",
+            "equal": true,
+            "sides": [
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-explicit",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              },
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-wrapped",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              }
+            ]
+          }
+        ],
+        "schema": "on1x.zero-cost.v1"
+      }
+    },
+    {
+      "order": "reverse-baseline",
+      "compiler_sha256": "beb339dbf2417c55239789eba68dfbc88a61ce3971672c07451a6d71ec4aba3e",
+      "report_failures": 0,
+      "rows": [
+        {
+          "fixture": "processor-identities",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51736,
+          "compile_samples_ns": [
+            39799666,
+            39851462,
+            39829318,
+            39904198,
+            40088553
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11666048,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28133618,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11764564,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28086898,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11450147,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28379171,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11535101,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28369097,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11634867,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 28453686,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            3797500,
+            3634832,
+            3663108,
+            3931720,
+            3850039,
+            3762553,
+            3693842,
+            3917274,
+            3867956,
+            3799664,
+            3789926,
+            3789506,
+            3839786,
+            3983521,
+            3829356
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            29493550,
+            29994495,
+            29675861,
+            29219708,
+            29288933
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12224931,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2784565,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14484054,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12296961,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2896796,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14800738,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12307624,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2675194,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14693043,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12387287,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2622300,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14210121,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12396413,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2749924,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14142596,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6877399,
+            6891079,
+            6709872,
+            6743713,
+            6694578,
+            6798646,
+            6821444,
+            6667890,
+            6926495,
+            6641499,
+            6595987,
+            6779833,
+            6803078,
+            6529670,
+            7014270
+          ]
+        },
+        {
+          "fixture": "processor-identities",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            38488265,
+            38396650,
+            38454136,
+            38586854,
+            38284069
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 21180106,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2762701,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14545458,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20504299,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3226314,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14666037,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20648741,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2952751,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14852644,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 21103161,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3006356,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14477337,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 20869450,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 2719774,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14694845,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6246698,
+            6311121,
+            6309642,
+            6234887,
+            6437173,
+            6236492,
+            6267502,
+            6194848,
+            6398760,
+            6245023,
+            6355870,
+            6260063,
+            6272933,
+            6270694,
+            6280567
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51728,
+          "compile_samples_ns": [
+            42850670,
+            42481860,
+            42630190,
+            42906360,
+            43532817
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12079357,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30771313,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12346382,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30135478,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12555326,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30074864,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12556219,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30350141,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12247893,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 31284924,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            6801603,
+            6670005,
+            6758296,
+            6762193,
+            6827521,
+            6718085,
+            6655889,
+            6656370,
+            6718560,
+            6735532,
+            6701701,
+            6839447,
+            6766073,
+            6896179,
+            6725495
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            33300198,
+            32298608,
+            31910191,
+            32234066,
+            40773698
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 14727137,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3854418,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14718643,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13924722,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3540545,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14833341,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13998909,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3459584,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14451698,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14141980,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3590204,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14501882,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 19004182,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 6860146,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14909370,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            11340060,
+            11501891,
+            11812533,
+            11382464,
+            11273430,
+            11241140,
+            11285656,
+            11201684,
+            11175164,
+            11375780,
+            11275410,
+            11376711,
+            11244224,
+            11255003,
+            11273918
+          ]
+        },
+        {
+          "fixture": "processor-lazy",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70712,
+          "compile_samples_ns": [
+            52208214,
+            52274795,
+            52521230,
+            52088003,
+            51622323
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 34293108,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3185153,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14729953,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34496626,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3241808,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14536361,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34615145,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3204753,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14701332,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 34142064,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3280997,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14664942,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 33745137,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3177356,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14699830,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10215242,
+            9953341,
+            10052632,
+            10134571,
+            9981038,
+            10180174,
+            10057276,
+            9886017,
+            10181938,
+            10074534,
+            9972521,
+            9902137,
+            10016141,
+            9949297,
+            10105555
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            43045312,
+            42978073,
+            43093809,
+            43386331,
+            42896324
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 13104313,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29940999,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13038707,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29939366,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12971931,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30121878,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13167080,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30219251,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12893029,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30003295,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5477692,
+            5297406,
+            5547001,
+            5512821,
+            5301652,
+            5343603,
+            5465584,
+            5287147,
+            5422961,
+            5329702,
+            5241121,
+            5407694,
+            5510363,
+            5493202,
+            5269356
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            32661112,
+            32426226,
+            32093858,
+            32200679,
+            32098956
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 14440078,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3421178,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14799856,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14496462,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3354026,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14575738,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14550051,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3512975,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14030832,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14588082,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3328770,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14283827,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 14546128,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3505611,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14047217,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            11661618,
+            11763557,
+            11668506,
+            11549039,
+            11561434,
+            11697025,
+            11563321,
+            11562957,
+            11639407,
+            11556916,
+            11733639,
+            11550204,
+            11854002,
+            11570723,
+            11584235
+          ]
+        },
+        {
+          "fixture": "zero-wrapped",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            48871363,
+            48547600,
+            47559190,
+            47610489,
+            47818088
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 30209235,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3543462,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15118666,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 30069631,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3432037,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15045932,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 30043719,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3461943,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14053528,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 29903843,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3276546,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14430100,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 29859145,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3428731,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14530212,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            10870780,
+            10845632,
+            10868944,
+            10600284,
+            11075778,
+            10982581,
+            11095817,
+            19776810,
+            26684289,
+            11048761,
+            10767571,
+            11147641,
+            11126587,
+            11122369,
+            11113033
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "c11",
+          "valid": true,
+          "executable_bytes": 51768,
+          "compile_samples_ns": [
+            42388792,
+            42361533,
+            41599927,
+            42715719,
+            41705778
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 11960096,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30428696,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11882810,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30478723,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11749926,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29850001,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12009771,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 30705948,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 11893976,
+                "stage": "C11 emit"
+              },
+              {
+                "elapsed_ns": 29811802,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            5513332,
+            5573918,
+            5745186,
+            5604740,
+            5568211,
+            5787785,
+            5707681,
+            5488748,
+            5578186,
+            5733237,
+            5586839,
+            5621341,
+            5771428,
+            5572073,
+            5635759
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            30043053,
+            30864732,
+            30820568,
+            30752648,
+            30989772
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 12819815,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3216305,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14006933,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13292870,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3037110,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14534752,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12890984,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3239987,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14689597,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 13118997,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3073304,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14560347,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 12944723,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3120617,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14924432,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8632436,
+            8820327,
+            8637966,
+            8608063,
+            8637893,
+            8675468,
+            8595209,
+            8690073,
+            8526440,
+            8611242,
+            8533521,
+            8607383,
+            8716255,
+            8827497,
+            8381370
+          ]
+        },
+        {
+          "fixture": "zero-explicit",
+          "backend": "mir-archon-opt",
+          "valid": true,
+          "executable_bytes": 70752,
+          "compile_samples_ns": [
+            43043553,
+            41920848,
+            42849564,
+            41862236,
+            42261501
+          ],
+          "compile_stages": [
+            [
+              {
+                "elapsed_ns": 24857558,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3160349,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 15025646,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24605437,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3089879,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14225532,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24972421,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3113380,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14763763,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24231918,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3261606,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14368712,
+                "stage": "assemble/compile and link"
+              }
+            ],
+            [
+              {
+                "elapsed_ns": 24486259,
+                "stage": "MIR lower"
+              },
+              {
+                "elapsed_ns": 3127865,
+                "stage": "Archon emit"
+              },
+              {
+                "elapsed_ns": 14647377,
+                "stage": "assemble/compile and link"
+              }
+            ]
+          ],
+          "runtime_samples_ns": [
+            8298183,
+            8564686,
+            8520859,
+            8384275,
+            8275300,
+            8427747,
+            8489806,
+            8417603,
+            8792389,
+            8425646,
+            8566299,
+            8359006,
+            8382487,
+            8297210,
+            8424244
+          ]
+        }
+      ],
+      "mir": [
+        {
+          "fixture": "processor-identities",
+          "before": {
+            "blocks": 8,
+            "bytes": 6644,
+            "edges": 8,
+            "functions": 2,
+            "instructions": 26,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 8,
+            "bytes": 6484,
+            "edges": 7,
+            "functions": 2,
+            "instructions": 25,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 8,
+              "div.checked": 1,
+              "gt": 1,
+              "load": 4,
+              "lt": 1,
+              "mod.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "processor-lazy",
+          "before": {
+            "blocks": 18,
+            "bytes": 12100,
+            "edges": 23,
+            "functions": 2,
+            "instructions": 46,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 18,
+              "div.checked": 2,
+              "eq": 5,
+              "load": 6,
+              "lt": 1,
+              "mod.checked": 3,
+              "mul.checked": 1,
+              "not": 1,
+              "print": 1,
+              "store": 5
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 16,
+            "bytes": 9350,
+            "edges": 18,
+            "functions": 2,
+            "instructions": 32,
+            "opcodes": {
+              "add.checked": 2,
+              "call": 1,
+              "const": 11,
+              "eq": 3,
+              "load": 5,
+              "lt": 1,
+              "mod.checked": 3,
+              "not": 1,
+              "print": 1,
+              "store": 4
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-wrapped",
+          "before": {
+            "blocks": 15,
+            "bytes": 11106,
+            "edges": 18,
+            "functions": 3,
+            "instructions": 43,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 13,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "not": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 15,
+            "bytes": 10629,
+            "edges": 14,
+            "functions": 3,
+            "instructions": 40,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 7,
+              "lt": 2,
+              "mod.checked": 2,
+              "not": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        },
+        {
+          "fixture": "zero-explicit",
+          "before": {
+            "blocks": 9,
+            "bytes": 8584,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 39,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 8,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          },
+          "after": {
+            "blocks": 9,
+            "bytes": 8310,
+            "edges": 8,
+            "functions": 3,
+            "instructions": 37,
+            "opcodes": {
+              "add.checked": 3,
+              "call": 2,
+              "const": 11,
+              "eq": 2,
+              "load": 6,
+              "lt": 2,
+              "mod.checked": 2,
+              "print": 1,
+              "store": 7,
+              "sub.checked": 1
+            },
+            "version": "1"
+          }
+        }
+      ],
+      "identity": {
+        "passed": false,
+        "rows": [
+          {
+            "backend": "c11",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "27cc4b4190020cfcf37a7dd82d89e8fa31f4aac003d3e1d5eb1185a24c486a51",
+                "executable": "29f25267a5b9060df407c18aae376c2d0315e798a681c5af2164e94adb72db59",
+                "fixture": "zero-explicit",
+                "mir": null,
+                "normalized_elf": "3abd9731507addb68bb80de705f2d5de2f22c64d143e38a5e8b0514b59abacc2"
+              },
+              {
+                "emitted": "045e12160b1bdbeb75dadbdf87e56c06870cea37b1915501d306c5011af617ac",
+                "executable": "f4b13f0c936721946c73ac8e7432fc20bdacc24de1267a7770e9724cbb39da95",
+                "fixture": "zero-wrapped",
+                "mir": null,
+                "normalized_elf": "54e6eb5bb9ff321454222822bab8e8d2d6ddd5beab571803713787255964fe3e"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "08eb8edea4c89aa11bd9f5ffb61992979bf18ed439b795057694790ea449c349",
+                "executable": "d59ab6d8700d8760b40ad1b344af6810b2128b1c22ca346e6f83d1b3cc5e3ebd",
+                "fixture": "zero-explicit",
+                "mir": "8693fe35e010af222d5570decc668d38d8a65b14dcd63b667a63e4732d23b40c",
+                "normalized_elf": "30e3d2d4b1a7e2b27a44f28f3bc48a3f4e87679bb486993295f097c081ff66c2"
+              },
+              {
+                "emitted": "b2bfc458e7a121853383684b806eeaf961971ee0b6de5b77eb294bf884b723dc",
+                "executable": "5ef0ba93fc83c75c3d94ec79b7f05f044cd84eadf42821aff8ffb1647b422421",
+                "fixture": "zero-wrapped",
+                "mir": "48d0716a2f72f9a2155360f4bccb5f2d71d426b281b119d18f160c5ad42612f9",
+                "normalized_elf": "e4351396135bc6787703557c25c793446f8b3244acb23933e74f9500b4905c3b"
+              }
+            ]
+          },
+          {
+            "backend": "mir-archon-opt",
+            "equal": false,
+            "sides": [
+              {
+                "emitted": "2b5751d8266d4c0967f67fd46940b7f7d51961824f4b2644434bd68063b5d2ff",
+                "executable": "0c016226dee5a7061c66f75f64aef8716b0ae34108fbf06c3ca0d0a6fc16f896",
+                "fixture": "zero-explicit",
+                "mir": "bb8d631ab4fd6b4bef7960a5497f0d5f39d477eb15d91a3c7c1eba7bd435ecbe",
+                "normalized_elf": "53bd49fa7fc205ae192a850c95f2b4e3c328354241dcffd1a5caf234570a2a46"
+              },
+              {
+                "emitted": "54ce41a986deee107895c2a216e21ecfb6526b662ff67c8200414eb66030b1e2",
+                "executable": "14cc4349036feff7bd7ac79e0b2749776dec2334527cd58c3d95327e7a1a4ea6",
+                "fixture": "zero-wrapped",
+                "mir": "8ae43851e151119f0ce88af7a17b447c64a1a5869e208285460ef779ec463536",
+                "normalized_elf": "0b55b929bd53e112bea667a49efd69e117c13a4c324a383e61dd6e11eb825c2f"
+              }
+            ]
+          }
+        ],
+        "schema": "on1x.zero-cost.v1"
+      }
+    }
+  ]
+}

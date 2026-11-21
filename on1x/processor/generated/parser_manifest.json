@@ -1,0 +1,14 @@
+{
+  "generator": "LibStone cornerstone/LLSynth",
+  "generator_sources": {
+    "LLSynthCompanions.pm": "5006d72e9af265821963705368f77f3f6f814cc37cc9ab802b47816f560bb39d",
+    "LLSynthCompiler.pm": "819798f589a8fc9895b8bee1b0b696fe776f0eab3ff3b89ee64d213c0588b7aa",
+    "LLSynthEmit.pm": "cb540f6471bbae9fe94adf1cd7ba57b3660977d915ca72f6269ce6b0f466d155",
+    "LLSynthExtensions.pm": "40614a57a17206f3a4fcca2432e1bb51c59267f2f83b8ac3634f44c93fc7a48f",
+    "LLSynthMeta.pm": "b026225a7f88713271ea38b06afc182424c921bd88b6df222d21a5862964271c",
+    "LLSynthModules.pm": "332a26e297a2b96519831ec6f1300c76d71c5779ca4846aee3974ce45839b174",
+    "llsynth.pl": "ed7da085502cf9a9c190d14daf6de890a9ff129886814b3e9fe14fc84f8730d0"
+  },
+  "grammar_sha256": "211e0dbba45ffb0a1340772d409193e455f63d77cc2d2884d7ef137b3d8aad60",
+  "parser_sha256": "9e3877b37bf83675fb51e33d1d02105e84ee58d4054f527317a61fdd1d81d358"
+}

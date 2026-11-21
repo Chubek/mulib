@@ -60,6 +60,8 @@ install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/../tools/on1x-project.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/../tools/generate-diagnostic-catalog.py"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools"
     COMPONENT On1xSDK)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../tools/on1x_optimization.py"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools" COMPONENT On1xSDK)
 
 if(BUILD_TESTING)
     add_executable(on1x_sdk_test_project tests/project.cpp)

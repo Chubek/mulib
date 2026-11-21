@@ -1,0 +1,99 @@
+val H <- G:Native("bench-host");
+val L <- G:LoadLib("list") or G:DieWith("$E?");
+val Count <- fn(source) {
+  # Tokenize canonical S-expressions while skipping quoted source locations.
+  # Searching raw substrings would count "(instruction" inside filenames.
+  var functions <- 0; var blocks <- 0; var instructions <- 0; var edges <- 0;
+  var histogram <- [];
+  var previous <- ""; var second <- ""; var third <- "";
+  var version <- "";
+  var token_count <- 0;
+  val Token <- fn(token) {
+    if token_count == 0 { G:Assert(token == "("); }
+    if token_count == 1 { G:Assert(token == "on1x.mir"); }
+    if token_count == 2 { version <- token; }
+    if previous == "(" {
+      if token == "function" { functions <- functions + 1; }
+      if token == "block" { blocks <- blocks + 1; }
+      if token == "edge" { edges <- edges + 1; }
+    }
+    if third == "(" and second == "instruction" {
+      instructions <- instructions + 1;
+      var j <- 0; var found <- false;
+      while j < G:Len(histogram) {
+        if histogram[j][0] == token {
+          histogram <- L:Set(histogram, j, [token, histogram[j][1] + 1]);
+          found <- true; break;
+        }
+        j <- j + 1;
+      }
+      if not found { histogram <- histogram + [[token, 1]]; }
+    }
+    third <- second; second <- previous; previous <- token;
+    token_count <- token_count + 1;
+  };
+  var i <- 0;
+  while i < G:Len(source) {
+    val c <- source[i];
+    if c == "\"" {
+      i <- i + 1;
+      while i < G:Len(source) and source[i] != "\"" {
+        if source[i] == "\\" { i <- i + 1; }
+        i <- i + 1;
+      }
+      G:Assert(i < G:Len(source));
+      Token("quoted");
+      i <- i + 1;
+    } else if c == "(" or c == ")" {
+      Token(c); i <- i + 1;
+    } else if c == " " or c == "\n" or c == "\r" or c == "\t" { i <- i + 1; }
+    else {
+      var atom <- "";
+      while i < G:Len(source) {
+        val a <- source[i];
+        if a == "(" or a == ")" or a == " " or a == "\n" or a == "\r" or a == "\t" { break; }
+        atom <- atom + a; i <- i + 1;
+      }
+      Token(atom);
+    }
+  }
+  G:Assert(token_count > 3);
+  return {bytes: G:Len(source), version: version, functions: functions,
+    blocks: blocks, edges: edges, instructions: instructions, opcodes: H:Record(histogram)};
+};
+val OpcodeCount <- fn(metrics, op) {
+  val keys <- H:Keys(metrics:opcodes);
+  var i <- 0;
+  while i < G:Len(keys) {
+    if keys[i] == op { return metrics:opcodes[op]; }
+    i <- i + 1;
+  }
+  return 0;
+};
+val OpcodeChanges <- fn(before, after) {
+  var keys <- H:Keys(before:opcodes);
+  val extra <- H:Keys(after:opcodes);
+  var i <- 0;
+  while i < G:Len(extra) {
+    var found <- false; var j <- 0;
+    while j < G:Len(keys) { if keys[j] == extra[i] { found <- true; } j <- j + 1; }
+    if not found { keys <- keys + [extra[i]]; }
+    i <- i + 1;
+  }
+  var changes <- [];
+  i <- 0;
+  while i < G:Len(keys) {
+    val a <- OpcodeCount(before, keys[i]);
+    val b <- OpcodeCount(after, keys[i]);
+    if a != b { changes <- changes + [{opcode: keys[i], before: a, after: b, removed: a - b}]; }
+    i <- i + 1;
+  }
+  return changes;
+};
+val Compare <- fn(before, after) {
+  return {before: before, after: after,
+    opcode_changes: OpcodeChanges(before, after),
+    removed_instructions: before:instructions - after:instructions,
+    removed_blocks: before:blocks - after:blocks, byte_delta: after:bytes - before:bytes};
+};
+return {Count: Count, Compare: Compare, OpcodeChanges: OpcodeChanges, OpcodeCount: OpcodeCount};

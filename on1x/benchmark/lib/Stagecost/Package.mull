@@ -1,0 +1,92 @@
+val S <- G:LoadLib("Stats") or G:DieWith("$E?");
+val M <- G:LoadLib("math") or G:DieWith("$E?");
+val Stages <- fn(row) {
+  if not row:valid or G:Len(row:compile_stages) == 0 { return []; }
+  G:Assert(G:Len(row:compile_stages) == G:Len(row:compile_samples_ns));
+  val layout <- row:compile_stages[0];
+  var results <- [];
+  var si <- 0;
+  while si < G:Len(layout) {
+    var values <- [];
+    var ri <- 0;
+    while ri < G:Len(row:compile_stages) {
+      val sample <- row:compile_stages[ri];
+      G:Assert(G:Len(sample) == G:Len(layout));
+      G:Assert(sample[si]:stage == layout[si]:stage);
+      G:Assert(sample[si]:elapsed_ns >= 0);
+      values <- values + [sample[si]:elapsed_ns];
+      # The recorded total must equal the stage durations, not interpreter overhead.
+      if si == 0 {
+        var total <- 0; var j <- 0;
+        while j < G:Len(sample) { total <- total + sample[j]:elapsed_ns; j <- j + 1; }
+        G:Assert(total == row:compile_samples_ns[ri]);
+      }
+      ri <- ri + 1;
+    }
+    results <- results + [{stage: layout[si]:stage, samples_ns: values, ns: S:Describe(values)}];
+    si <- si + 1;
+  }
+  return results;
+};
+val Tradeoff <- fn(before, after) {
+  G:Assert(before:fixture == after:fixture);
+  if not before:valid or not after:valid or not before:timed or not after:timed
+    or G:Len(before:runtime_samples_ns) == 0 or G:Len(after:runtime_samples_ns) == 0
+    or G:Len(before:compile_samples_ns) == 0 or G:Len(after:compile_samples_ns) == 0 { return nil; }
+  val a <- S:Describe(before:runtime_samples_ns);
+  val b <- S:Describe(after:runtime_samples_ns);
+  val ca <- S:Describe(before:compile_samples_ns);
+  val cb <- S:Describe(after:compile_samples_ns);
+  val saving <- a:median - b:median;
+  val cost <- cb:median - ca:median;
+  var break_even <- nil;
+  if saving > 0 { break_even <- M:Ceil(M:Max(0, cost) / saving); }
+  var assessment <- "inconclusive: runtime distributions overlap";
+  if a:count < 3 or b:count < 3 { assessment <- "inconclusive: fewer than three runtime samples"; }
+  else if b:p95 < a:p05 {
+    assessment <- "observed runtime improvement; use break-even executions to weigh compile cost";
+  } else if b:p05 > a:p95 {
+    assessment <- "observed runtime regression; inspect MIR and code generation before enabling";
+  }
+  val stages_before <- Stages(before);
+  val stages_after <- Stages(after);
+  var changes <- [];
+  var i <- 0;
+  while i < G:Len(stages_after) {
+    var j <- 0;
+    while j < G:Len(stages_before) {
+      if stages_after[i]:stage == stages_before[j]:stage {
+        changes <- changes + [{stage: stages_after[i]:stage,
+          before_median_ns: stages_before[j]:ns:median, after_median_ns: stages_after[i]:ns:median,
+          median_delta_ns: stages_after[i]:ns:median - stages_before[j]:ns:median}];
+      }
+      j <- j + 1;
+    }
+    i <- i + 1;
+  }
+  return {fixture: before:fixture, runtime_saving_median_ns: saving,
+    compile_extra_median_ns: cost, estimated_break_even_executions: break_even,
+    stage_changes: changes, assessment: assessment,
+    caveat: "Descriptive p05/p95 separation, not a significance test; break-even assumes repeated whole-program executions."};
+};
+val Analyze <- fn(rows) {
+  var summaries <- []; var tradeoffs <- [];
+  var i <- 0;
+  while i < G:Len(rows) {
+    val row <- rows[i];
+    summaries <- summaries + [{fixture: row:fixture, backend: row:backend, stages: Stages(row)}];
+    if row:backend == "mir-archon-opt" {
+      var j <- 0;
+      while j < G:Len(rows) {
+        if rows[j]:fixture == row:fixture and rows[j]:backend == "mir-archon" {
+          val tradeoff <- Tradeoff(rows[j], row);
+          if tradeoff != nil { tradeoffs <- tradeoffs + [tradeoff]; }
+        }
+        j <- j + 1;
+      }
+    }
+    i <- i + 1;
+  }
+  return {stages: summaries, optimization_tradeoffs: tradeoffs};
+};
+return {Stages: Stages, Tradeoff: Tradeoff, Analyze: Analyze};

@@ -39,6 +39,13 @@ the final ELF64 machine/type. `--toolchain-prefix` overrides manifest discovery
 from `ArchonBackend_DIR` in the combined build's CMake cache. Trusted tools and
 runtime archives can be selected explicitly by absolute paths; this is a
 trusted host build, not an untrusted-tool sandbox.
+With an installed compiler, `--on1xc /prefix/bin/on1xc` locates the
+adjacent Archon tool, `/prefix/lib` archives and installed
+`share/on1x/backends/mir-archon/BackendManifest.json` without a CMake cache.
+`--probe` checks the configured target, assembler and linker without building
+or executing user input; omit both the source and `-o` when probing. See
+[project backend selection](../../stdlib/on1xfile/README.md#backend-selection)
+for On1xfile profiles and their tool fingerprints.
 The helper resolves and directly invokes the selected GNU-compatible assembler;
 it pins the linker through a private `-B` directory, ignoring ambient GCC
 tool-search overrides.
