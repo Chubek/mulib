@@ -1,0 +1,10 @@
+%% checklists: Review and implementation checklists
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-checklists}[2026/11/24 v0.1 On1x book: checklists]
+\RequirePackage{amssymb}
+\RequirePackage{enumitem}
+\newlist{OnxChecklist}{itemize}{1}
+\setlist[OnxChecklist]{label=$\square$,leftmargin=*,itemsep=.25ex}
+\newcommand{\OnxDone}{\item[$\boxtimes$]}
+
+\endinput

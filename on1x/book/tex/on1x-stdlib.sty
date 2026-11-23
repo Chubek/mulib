@@ -1,0 +1,9 @@
+%% stdlib: Standard library API callouts
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-stdlib}[2026/11/24 v0.1 On1x book: stdlib]
+\RequirePackage{on1x-boxes}
+\newcommand{\OnxLibrary}[1]{\textsf{\bfseries #1}}
+\newcommand{\OnxStdlibPath}[1]{\texttt{stdlib/\detokenize{#1}}}
+\newenvironment{OnxLibraryCard}[1]{\begin{OnxPanel}{Library: #1}}{\end{OnxPanel}}
+
+\endinput

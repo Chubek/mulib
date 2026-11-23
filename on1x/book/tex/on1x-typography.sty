@@ -1,0 +1,15 @@
+%% typography: Serif text with microtypography and mono code settings
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-typography}[2026/11/24 v0.1 On1x book: typography]
+\RequirePackage[T1]{fontenc}
+\IfFileExists{lmodern.sty}{\RequirePackage{lmodern}}{}
+\RequirePackage{microtype}
+\RequirePackage{setspace}
+\setstretch{1.075}
+\setlength{\parindent}{1.15em}
+\setlength{\parskip}{0pt}
+\newcommand{\OnxTightText}{\setstretch{1.0}}
+\newcommand{\OnxSpaciousText}{\setstretch{1.17}}
+\newcommand{\OnxUI}[1]{{\sffamily\bfseries #1}}
+
+\endinput

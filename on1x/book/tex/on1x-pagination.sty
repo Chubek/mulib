@@ -1,0 +1,8 @@
+%% pagination: Roman/Arabic page styles and intentional page breaks
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-pagination}[2026/11/24 v0.1 On1x book: pagination]
+\newcommand{\OnxRomanPages}{\cleardoublepage\pagenumbering{roman}}
+\newcommand{\OnxArabicPages}{\cleardoublepage\pagenumbering{arabic}}
+\newcommand{\OnxBlankPage}{\clearpage\thispagestyle{empty}\null\clearpage}
+
+\endinput

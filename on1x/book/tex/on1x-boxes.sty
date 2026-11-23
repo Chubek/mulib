@@ -1,0 +1,9 @@
+%% boxes: Common styling for textbook panels
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-boxes}[2026/11/24 v0.1 On1x book: boxes]
+\RequirePackage{on1x-core}
+\RequirePackage[most]{tcolorbox}
+\tcbset{onxpanel/.style={enhanced,breakable,colback=onxAccentLight,colframe=onxAccent,boxrule=.6pt,arc=1.5mm,left=2mm,right=2mm,top=1.5mm,bottom=1.5mm,fonttitle=\sffamily\bfseries,before skip=1.1ex,after skip=1.1ex}}
+\newtcolorbox{OnxPanel}[2][]{onxpanel,title={#2},#1}
+
+\endinput

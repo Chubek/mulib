@@ -1,0 +1,11 @@
+%% concurrency: Concurrency operation labels and channel diagrams
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-concurrency}[2026/11/24 v0.1 On1x book: concurrency]
+\RequirePackage{on1x-math}
+\newcommand{\OnxTask}[1]{\textsf{task\,#1}}
+\newcommand{\OnxChannel}[1]{\ensuremath{\mathsf{chan}\langle #1\rangle}}
+\newcommand{\OnxSend}[2]{\ensuremath{#1\,!\,#2}}
+\newcommand{\OnxReceive}[2]{\ensuremath{#1\,?\,#2}}
+\newcommand{\OnxHappensBefore}{\ensuremath{\prec_{\mathrm{hb}}}}
+
+\endinput

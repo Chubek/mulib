@@ -1,0 +1,19 @@
+%% headers: Running chapter and section headers
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-headers}[2026/11/24 v0.1 On1x book: headers]
+\RequirePackage{fancyhdr}
+\pagestyle{fancy}\fancyhf{}
+\if@twoside
+\fancyhead[LE]{\small\sffamily\nouppercase{\leftmark}}
+\fancyhead[RO]{\small\sffamily\nouppercase{\rightmark}}
+\fancyfoot[LE,RO]{\sffamily\thepage}
+\else
+\fancyhead[L]{\small\sffamily\nouppercase{\leftmark}}
+\fancyhead[R]{\small\sffamily\nouppercase{\rightmark}}
+\fancyfoot[C]{\sffamily\thepage}
+\fi
+\renewcommand{\headrulewidth}{0.3pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\sffamily\thepage}\renewcommand{\headrulewidth}{0pt}}
+\newcommand{\OnxHeaderTitle}[1]{\markboth{#1}{#1}}
+
+\endinput

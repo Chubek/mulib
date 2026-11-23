@@ -1,0 +1,8 @@
+%% code-lines: Numbered code blocks for discussion by line
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-code-lines}[2026/11/24 v0.1 On1x book: code-lines]
+\RequirePackage{on1x-code}
+\lstnewenvironment{OnxNumberedCode}[1][]{\lstset{style=onxcode,numbers=left,stepnumber=1,firstnumber=1,#1}}{}
+\newcommand{\OnxCodeLine}[1]{line~#1}
+
+\endinput

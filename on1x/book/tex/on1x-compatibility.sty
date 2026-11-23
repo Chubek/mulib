@@ -1,0 +1,9 @@
+%% compatibility: Compiler version and profile requirement notes
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-compatibility}[2026/11/24 v0.1 On1x book: compatibility]
+\RequirePackage{on1x-boxes}
+\newenvironment{OnxCompatibility}{\begin{OnxPanel}[colframe=onxGold,colback=onxGold!3!white]{Compatibility}}{\end{OnxPanel}}
+\newcommand{\OnxRequiresVersion}[1]{\par\noindent\textbf{Requires version:} #1\par}
+\newcommand{\OnxProfile}[1]{\textsf{profile:\,#1}}
+
+\endinput

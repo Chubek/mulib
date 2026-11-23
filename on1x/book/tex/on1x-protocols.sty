@@ -1,0 +1,9 @@
+%% protocols: Protocol descriptions and wire formats
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-protocols}[2026/11/24 v0.1 On1x book: protocols]
+\RequirePackage{on1x-boxes}
+\newenvironment{OnxProtocol}[1]{\begin{OnxPanel}[colback=white]{Protocol: #1}}{\end{OnxPanel}}
+\newcommand{\OnxMessage}[2]{\par\noindent\texttt{#1}\quad #2\par}
+\newcommand{\OnxWireField}[3]{\par\noindent\texttt{#1}\enspace(\texttt{#2}) --- #3\par}
+
+\endinput

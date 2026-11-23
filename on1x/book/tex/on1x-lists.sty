@@ -1,0 +1,10 @@
+%% lists: Compact pedagogical and step-by-step list styles
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-lists}[2026/11/24 v0.1 On1x book: lists]
+\RequirePackage{enumitem}
+\newlist{OnxSteps}{enumerate}{2}
+\setlist[OnxSteps]{label=\textsf{\bfseries\arabic*.},leftmargin=*,itemsep=.3em}
+\newlist{OnxCompactItems}{itemize}{1}
+\setlist[OnxCompactItems]{leftmargin=*,nosep}
+
+\endinput

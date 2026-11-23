@@ -1,0 +1,52 @@
+\documentclass[14pt, a4paper]{on1x-book}
+
+\usepackage{iftex, etoolbox}
+
+\newbool{HasUnicode}
+\newbool{HasLua}
+
+\ifTUTeX
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \booltrue{HasUnicode}
+
+  \setmainfont{TeX Gyre Pagella}
+  \setsansfont{TeX Gyre Heros}
+  \setmonofont{DejaVu Sans Mono}
+\else
+  \usepackage{fontenc, inputenc}
+  \usepackage{newtxtext, newtxmath}
+\fi
+
+\ifLuaTeX
+   \booltrue{HasLua}
+   \usepackage{luacode}
+\fi
+
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage{xcolor, tcolorbox}
+\usepackage{geometry, setspace, parskip}
+\usepackage{array, booktabs, tikz}
+\usepackage{xparse, xspace}
+
+\usepackage[backend=biber, style=authoryear, sorting=nyt]{biblatex}
+\addbibresource{references.bib}
+
+\usepackage[xindy]{imakeidx}
+\makeindex
+
+\usepackage{hyperref, cleveref}
+
+
+\title{}
+\author{}
+\date{}
+
+\begin{document}
+
+
+
+\printbibliography
+\printindex
+
+\end{document}

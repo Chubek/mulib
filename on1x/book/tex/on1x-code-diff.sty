@@ -1,0 +1,9 @@
+%% code-diff: Patch hunks and before/after code comparisons
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-code-diff}[2026/11/24 v0.1 On1x book: code-diff]
+\RequirePackage{on1x-code}
+\lstdefinestyle{onxdiff}{basicstyle=\ttfamily\footnotesize,frame=single,backgroundcolor=\color{black!3},columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true}
+\lstnewenvironment{OnxDiff}[1][]{\lstset{style=onxdiff,#1}}{}
+\newcommand{\OnxBeforeAfter}[2]{\noindent\begin{minipage}[t]{.48\linewidth}\textbf{Before}\par\smallskip #1\end{minipage}\hfill\begin{minipage}[t]{.48\linewidth}\textbf{After}\par\smallskip #2\end{minipage}\par}
+
+\endinput

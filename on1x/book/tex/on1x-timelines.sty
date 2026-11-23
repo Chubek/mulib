@@ -1,0 +1,9 @@
+%% timelines: Milestone lists for compiler evolution
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-timelines}[2026/11/24 v0.1 On1x book: timelines]
+\RequirePackage{on1x-core}
+\RequirePackage{enumitem}
+\newenvironment{OnxTimeline}{\begin{description}[style=nextline,leftmargin=2.6cm,font=\sffamily\bfseries\color{onxAccent}]}{\end{description}}
+\newcommand{\OnxMilestone}[2]{\item[#1] #2}
+
+\endinput

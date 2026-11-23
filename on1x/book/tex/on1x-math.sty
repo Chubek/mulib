@@ -1,0 +1,14 @@
+%% math: General math symbols, vectors and set operators
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-math}[2026/11/24 v0.1 On1x book: math]
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{mathtools}
+\newcommand{\OnxSet}[1]{\left\{#1\right\}}
+\newcommand{\OnxTuple}[1]{\left\langle #1\right\rangle}
+\newcommand{\OnxMapsTo}{\ensuremath{\mapsto}}
+\newcommand{\OnxPartialMap}{\ensuremath{\rightharpoonup}}
+\DeclareMathOperator{\OnxDom}{dom}
+\DeclareMathOperator{\OnxFV}{FV}
+
+\endinput

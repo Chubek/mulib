@@ -1,0 +1,12 @@
+%% statuses: Feature maturity statuses, independent of kernel admission
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-statuses}[2026/11/24 v0.1 On1x book: statuses]
+\RequirePackage{on1x-core}
+\newcommand{\OnxStatusBadge}[2]{\begingroup\setlength{\fboxsep}{3pt}\colorbox{#1!12!white}{\textcolor{#1!80!black}{\sffamily\footnotesize\bfseries #2}}\endgroup}
+\newcommand{\OnxVerified}{\OnxStatusBadge{onxSuccess}{VERIFIED}}
+\newcommand{\OnxExecutable}{\OnxStatusBadge{onxSuccess}{EXECUTABLE}}
+\newcommand{\OnxPartial}{\OnxStatusBadge{onxGold}{PARTIAL}}
+\newcommand{\OnxAbsent}{\OnxStatusBadge{onxDanger}{ABSENT}}
+\newcommand{\OnxFeatureStatus}[2]{\par\noindent\textsf{\bfseries #1}\quad #2\par}
+
+\endinput

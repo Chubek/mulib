@@ -1,0 +1,16 @@
+%% code: On1x code listing language and baseline style
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-code}[2026/11/24 v0.1 On1x book: code]
+\RequirePackage{on1x-palette}
+\RequirePackage{listings}
+\RequirePackage{upquote}
+\lstdefinelanguage{On1x}{%
+morekeywords={fn,let,var,return,if,else,match,with,for,while,break,continue,record,enum,type,module,import,export,extern,borrow,ref,mut,taskgroup,launch,join,defer,using,async,await},
+morekeywords=[2]{i8,i16,i32,i64,u8,u16,u32,u64,f32,f64,bool,string,void,Result,Option},
+sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]",
+}
+\lstdefinestyle{onxcode}{language=On1x,basicstyle=\ttfamily\small,keywordstyle=\color{onxSyntax}\bfseries,keywordstyle=[2]\color{onxType},commentstyle=\itshape\color{black!50},stringstyle=\color{onxSuccess},numbers=left,numberstyle=\tiny\color{black!55},numbersep=8pt,frame=single,rulecolor=\color{onxRule},backgroundcolor=\color{onxCodeBackground},breaklines=true,showstringspaces=false,keepspaces=true,columns=fullflexible,tabsize=2,aboveskip=1ex,belowskip=1ex}
+\lstnewenvironment{OnxCodeBlock}[1][]{\lstset{style=onxcode,#1}}{}
+\newcommand{\OnxInputCode}[2][]{\lstinputlisting[style=onxcode,#1]{#2}}
+
+\endinput

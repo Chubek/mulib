@@ -1,0 +1,10 @@
+%% layout: Print-sized geometry and text block controls
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-layout}[2026/11/24 v0.1 On1x book: layout]
+\RequirePackage{on1x-core}
+\RequirePackage{geometry}
+\geometry{paperwidth=6.25in,paperheight=9.25in,inner=0.92in,outer=0.73in,top=0.82in,bottom=0.88in,headheight=15pt,headsep=20pt}
+\newcommand{\OnxWideLayout}{\newgeometry{inner=0.65in,outer=0.65in,top=0.72in,bottom=0.75in}}
+\newcommand{\OnxRestoreLayout}{\restoregeometry}
+
+\endinput

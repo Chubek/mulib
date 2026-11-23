@@ -1,0 +1,8 @@
+%% commands: Command-line option and executable documentation
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-commands}[2026/11/24 v0.1 On1x book: commands]
+\RequirePackage{enumitem}
+\newenvironment{OnxOptions}{\begin{description}[style=nextline,leftmargin=3cm,font=\ttfamily\bfseries]}{\end{description}}
+\newcommand{\OnxOption}[2]{\item[#1] #2}
+
+\endinput

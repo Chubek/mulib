@@ -1,0 +1,12 @@
+%% palette: Additional semantic color roles
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-palette}[2026/11/24 v0.1 On1x book: palette]
+\RequirePackage{on1x-core}
+\colorlet{onxSyntax}{onxAccent!85!black}
+\colorlet{onxType}{violet!65!black}
+\colorlet{onxRuntime}{onxSuccess}
+\colorlet{onxEditorial}{onxGold}
+\colorlet{onxCodeBackground}{black!3}
+\newcommand{\OnxColorSwatch}[1]{\begingroup\setlength{\fboxsep}{5pt}\colorbox{#1}{\strut\hspace{1em}}\endgroup}
+
+\endinput

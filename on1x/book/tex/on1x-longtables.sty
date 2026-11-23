@@ -1,0 +1,9 @@
+%% longtables: Paginated tables for language or API catalogs
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-longtables}[2026/11/24 v0.1 On1x book: longtables]
+\RequirePackage{longtable}
+\RequirePackage{booktabs}
+\newenvironment{OnxLongTable}[1]{\begin{longtable}{#1}\toprule}{\bottomrule\end{longtable}}
+\newcommand{\OnxRepeatHeader}[1]{#1\\\midrule\endfirsthead\toprule #1\\\midrule\endhead}
+
+\endinput

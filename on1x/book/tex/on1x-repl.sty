@@ -1,0 +1,9 @@
+%% repl: Interactive On1x input/output session panels
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-repl}[2026/11/24 v0.1 On1x book: repl]
+\RequirePackage{on1x-code}
+\lstdefinestyle{onxrepl}{basicstyle=\ttfamily\footnotesize,frame=single,backgroundcolor=\color{onxAccentLight},columns=fullflexible,breaklines=true,showstringspaces=false}
+\lstnewenvironment{OnxREPL}[1][]{\lstset{style=onxrepl,#1}}{}
+\newcommand{\OnxREPLPrompt}{\texttt{on1x>}}
+
+\endinput

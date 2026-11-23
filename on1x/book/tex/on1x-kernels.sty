@@ -1,0 +1,9 @@
+%% kernels: MuLIB kernel reference entries
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-kernels}[2026/11/24 v0.1 On1x book: kernels]
+\RequirePackage{on1x-boxes}
+\newcommand{\OnxKernel}[1]{\texttt{\detokenize{#1}}}
+\newenvironment{OnxKernelCard}[1]{\begin{OnxPanel}{Kernel: \OnxKernel{#1}}}{\end{OnxPanel}}
+\newcommand{\OnxKernelAdmission}[1]{\par\noindent\textbf{On1x admission:} #1\par}
+
+\endinput

@@ -1,0 +1,11 @@
+%% figures: Figure captions, panels, and source acknowledgements
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-figures}[2026/11/24 v0.1 On1x book: figures]
+\RequirePackage{graphicx}
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\captionsetup{font=small,labelfont={bf,sf},labelsep=period}
+\newcommand{\OnxFigureSource}[1]{\par\vspace{.5ex}{\footnotesize\itshape Source: #1}}
+\newcommand{\OnxImage}[2][]{\includegraphics[width=\linewidth,#1]{#2}}
+
+\endinput

@@ -1,0 +1,10 @@
+%% contracts: Preconditions, postconditions and invariants
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-contracts}[2026/11/24 v0.1 On1x book: contracts]
+\RequirePackage{on1x-math}
+\newcommand{\OnxRequires}[1]{\par\noindent\textbf{Requires:} #1\par}
+\newcommand{\OnxEnsures}[1]{\par\noindent\textbf{Ensures:} #1\par}
+\newcommand{\OnxInvariant}[1]{\par\noindent\textbf{Invariant:} #1\par}
+\newcommand{\OnxHoare}[3]{\ensuremath{\{#1\}\;#2\;\{#3\}}}
+
+\endinput

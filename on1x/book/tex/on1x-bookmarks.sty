@@ -1,0 +1,9 @@
+%% bookmarks: PDF metadata and link appearance
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-bookmarks}[2026/11/24 v0.1 On1x book: bookmarks]
+\RequirePackage{on1x-core}
+\RequirePackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=onxAccent,citecolor=onxSuccess,urlcolor=onxAccent,bookmarksopen=true,pdfstartview=FitH}
+\newcommand{\OnxPDFMetadata}[3]{\hypersetup{pdftitle={#1},pdfauthor={#2},pdfsubject={#3}}}
+
+\endinput

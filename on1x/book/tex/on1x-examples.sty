@@ -1,0 +1,9 @@
+%% examples: Numbered worked-example panels
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-examples}[2026/11/24 v0.1 On1x book: examples]
+\RequirePackage{on1x-boxes}
+\newcounter{onxexample}[chapter]
+\renewcommand{\theonxexample}{\thechapter.\arabic{onxexample}}
+\NewDocumentEnvironment{OnxExample}{O{Worked example}}{\refstepcounter{onxexample}\begin{OnxPanel}{Example~\theonxexample: #1}}{\end{OnxPanel}}
+
+\endinput

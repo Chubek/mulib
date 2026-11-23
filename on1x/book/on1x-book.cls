@@ -1,0 +1,21 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{on1x-book}[2026/11/24 v0.1 Technical book class for On1x]
+\newif\ifonx@print\onx@printfalse
+\newif\ifonx@light\onx@lightfalse
+\DeclareOption{print}{\onx@printtrue}
+\DeclareOption{screen}{\onx@printfalse}
+\DeclareOption{light}{\onx@lighttrue}
+\DeclareOption{full}{\onx@lightfalse}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{book}}
+\ExecuteOptions{11pt,twoside,openright,screen,full}
+\ProcessOptions\relax
+\LoadClass{book}
+\ifonx@light\RequirePackage[light]{on1x-suite}\else\RequirePackage[full]{on1x-suite}\fi
+\ifonx@print
+  \geometry{paperwidth=6.25in,paperheight=9.25in,inner=1in,outer=.75in}
+  \hypersetup{hidelinks}
+\fi
+\makeatletter
+\renewcommand{\maketitle}{\OnxTitlePage}
+\makeatother
+\endinput

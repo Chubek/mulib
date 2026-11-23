@@ -1,0 +1,9 @@
+%% ast: Abstract syntax tree visualization helpers
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-ast}[2026/11/24 v0.1 On1x book: ast]
+\RequirePackage{on1x-core}
+\RequirePackage{forest}
+\forestset{onxast/.style={for tree={draw=onxAccent!70,rounded corners,fill=onxAccentLight,font=\ttfamily\footnotesize,align=center,edge={onxAccent},s sep=8mm,l sep=10mm}}}
+\NewDocumentEnvironment{OnxAST}{+b}{\begin{center}\begin{forest}onxast #1\end{forest}\end{center}}{}
+
+\endinput

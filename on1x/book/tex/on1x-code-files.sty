@@ -1,0 +1,8 @@
+%% code-files: External code snippet inclusion from source files
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-code-files}[2026/11/24 v0.1 On1x book: code-files]
+\RequirePackage{on1x-code}
+\newcommand{\OnxCodeFile}[2][]{\lstinputlisting[style=onxcode,caption={\texttt{\detokenize{#2}}},#1]{#2}}
+\newcommand{\OnxCodeRange}[3]{\lstinputlisting[style=onxcode,firstline=#2,lastline=#3]{#1}}
+
+\endinput

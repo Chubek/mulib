@@ -1,0 +1,11 @@
+%% feature-matrix: Capability support tables for documented versions
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-feature-matrix}[2026/11/24 v0.1 On1x book: feature-matrix]
+\RequirePackage{on1x-tables}
+\RequirePackage{on1x-statuses}
+\RequirePackage{tabularx}
+\RequirePackage{booktabs}
+\newenvironment{OnxFeatureMatrix}{\par\noindent\begin{tabular}{@{}p{.29\linewidth}p{.22\linewidth}p{.4\linewidth}@{}}\toprule Feature & Status & Notes\\\midrule}{\bottomrule\end{tabular}\par\smallskip}
+\newcommand{\OnxFeatureRow}[3]{#1 & #2 & #3\\}
+
+\endinput

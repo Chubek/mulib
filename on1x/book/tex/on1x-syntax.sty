@@ -1,0 +1,12 @@
+%% syntax: Inline literals, metavariables, and syntax classifications
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-syntax}[2026/11/24 v0.1 On1x book: syntax]
+\RequirePackage{on1x-palette}
+\NewDocumentCommand{\OnxLiteral}{m}{\texttt{\detokenize{#1}}}
+\NewDocumentCommand{\OnxKeyword}{m}{{\color{onxSyntax}\ttfamily\bfseries #1}}
+\NewDocumentCommand{\OnxNonterminal}{m}{\ensuremath{\langle\mathit{#1}\rangle}}
+\NewDocumentCommand{\OnxTerminal}{m}{\texttt{\detokenize{#1}}}
+\newcommand{\OnxOptional}[1]{\ensuremath{[\,#1\,]}}
+\newcommand{\OnxRepeat}[1]{\ensuremath{\{\,#1\,\}}}
+
+\endinput

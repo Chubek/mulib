@@ -1,0 +1,16 @@
+%% references: Reference labels and section-aware cross-referencing
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-references}[2026/11/24 v0.1 On1x book: references]
+\RequirePackage{on1x-bookmarks}
+\RequirePackage{cleveref}
+\crefname{chapter}{chapter}{chapters}
+\Crefname{chapter}{Chapter}{Chapters}
+\crefname{section}{section}{sections}
+\crefname{onxexample}{example}{examples}
+\Crefname{onxexample}{Example}{Examples}
+\crefname{onxexercise}{exercise}{exercises}
+\Crefname{onxexercise}{Exercise}{Exercises}
+\newcommand{\OnxRef}[1]{\cref{#1}}
+\newcommand{\OnxPageRef}[1]{p.~\pageref{#1}}
+
+\endinput

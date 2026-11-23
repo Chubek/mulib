@@ -1,0 +1,9 @@
+%% algorithms: Pseudocode algorithm floats
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-algorithms}[2026/11/24 v0.1 On1x book: algorithms]
+\RequirePackage[ruled,vlined,linesnumbered]{algorithm2e}
+\newenvironment{OnxAlgorithm}[1]{\begin{algorithm}[htbp]\caption{#1}}{\end{algorithm}}
+\newcommand{\OnxAlgoInput}[1]{\KwIn{#1}}
+\newcommand{\OnxAlgoOutput}[1]{\KwOut{#1}}
+
+\endinput

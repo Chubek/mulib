@@ -1,0 +1,10 @@
+%% effects: Effect annotations and resource judgment notation
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-effects}[2026/11/24 v0.1 On1x book: effects]
+\RequirePackage{on1x-math}
+\newcommand{\OnxEffectType}[2]{\ensuremath{#1\;!\;\{#2\}}}
+\newcommand{\OnxEffectRow}[1]{\ensuremath{\langle #1\rangle}}
+\newcommand{\OnxCapability}[1]{\textsf{cap:#1}}
+\newcommand{\OnxEffectJudgment}[4]{\ensuremath{#1\vdash #2:#3\;!\;#4}}
+
+\endinput

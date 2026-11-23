@@ -1,0 +1,9 @@
+%% grammar: Long-form grammar productions
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{on1x-grammar}[2026/11/24 v0.1 On1x book: grammar]
+\RequirePackage{longtable}
+\RequirePackage{booktabs}
+\newenvironment{OnxGrammar}{\begin{longtable}{@{}llp{.63\linewidth}@{}}\toprule Nonterminal & & Production\\\midrule\endfirsthead\toprule Nonterminal & & Production\\\midrule\endhead}{\bottomrule\end{longtable}}
+\newcommand{\OnxProduction}[2]{\ensuremath{\langle\mathit{#1}\rangle} & $\longrightarrow$ & #2\\}
+
+\endinput
