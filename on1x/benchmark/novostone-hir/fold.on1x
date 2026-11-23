@@ -1,0 +1,11 @@
+fn mark(tag: i64, index: i64) -> i64 {
+    println(tag);
+    return index;
+}
+
+fn main() {
+    let a = array[11, 22, 33];
+    println(a[(2 * 3) - 5]);
+    println(a[mark(101, 0)]);
+    println(2147483647 + 1);
+}

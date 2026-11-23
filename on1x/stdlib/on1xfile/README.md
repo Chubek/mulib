@@ -128,13 +128,18 @@ optimization "release" "local-slots" off
 ```
 
 Only the MIR backends accept named lowering or MIR passes.
+With a Novostone-enabled compiler, `optimization "novostone-hir" on`
+selects the [checked-HIR pass](../../hir/README.md) on any project backend.
+`optimization "firestone-hir" on` works the same way for the
+[Firestone pass](../../hir/README.md#firestone).
 
 **Project `--profile` selects the build profile** (output directory, C flags,
 and optional Lua settings). **`--opt-profile default|debug|release` selects
 the compiler policy**, independently of C flags. The compiler's `default`
 keeps generated rewrites and decision SSA enabled, with MIR passes opt-in
 (`--optimize-ir` on the MIR path); `debug` turns all optional optimizations
-off; `release` turns them on for applicable stages. Original typing,
+off; `release` enables the standard optimizations for applicable stages.
+`novostone-hir` and `firestone-hir` stay off unless explicitly selected. Original typing,
 ownership, semantic and MIR verification still run.
 
 Without a manifest or CLI compiler profile, built-in `release` and `debug`
@@ -183,6 +188,7 @@ A root manifest may set the project-wide fallback policy:
 
 ```text
 scrutiny standard
+scrutiny-work 8192
 ```
 
 The value is a lowercase catalog level. The driver forwards it as
@@ -193,6 +199,13 @@ The selected value is recorded in `.on1x-build.json`. With the embedded
 catalog, the levels are `off`, `standard`, and `strict`; an unknown level is
 rejected by the compiler. See [diagnostics and scrutiny](../../docs/diagnostics.md)
 for the exact supported Wetstone subset and unavailable-SDK behavior.
+
+`scrutiny-work` sets the compiler's optional analysis budget per invocation
+(an unquoted decimal integer from `1` to `10000000`). `on1xc exec build
+--scrutiny-work N` overrides it for that build. The effective explicit budget
+is recorded as `scrutiny_work` in `plan` and `.on1x-build.json`. If neither
+setting is supplied, the compiler uses its default. The budget does not limit
+mandatory type, ownership, or borrow checking. Dependency manifests cannot set it.
 
 `on1x-project.py format PATH [--check]` validates and canonically spaces a
 plain root, module, or interface manifest, preserving comment text and order.

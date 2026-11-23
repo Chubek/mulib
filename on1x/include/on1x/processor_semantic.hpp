@@ -19,7 +19,9 @@ struct Report {
  bool verified=false;
  Stats desugar,canonicalize;
  SemanticStats structural,typed_before,typed_after;
- PartialEvalStats partial_eval;
+  PartialEvalStats partial_eval;
+  NovostoneStats novostone_hir;
+  FirestoneStats firestone_hir;
 };
 // Deterministic compiler-side report, with rule-source provenance.
 std::string report(const Report&);

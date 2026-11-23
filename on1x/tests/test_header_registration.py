@@ -29,6 +29,9 @@ headers = {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-
 assert headers
 inventory = contracts.inventory(root)
 modules = inventory['modules']
+reservations = set(inventory['reserved_headers'])
+assert reservations <= headers
+headers -= reservations
 assert {m['header'] for m in modules.values()} == headers
 assert len(modules) == len(headers), 'duplicate canonical header registration'
 assert not inventory['auxiliary_headers']
@@ -44,6 +47,7 @@ for tool in ('on1x-contracts.py', 'on1x-exotract.py'):
     assert result.returncode == 0, result.stderr
     listed = json.loads(result.stdout)
     assert listed['modules'] == modules
+    assert set(listed['reserved_headers']) == reservations
     assert not listed['auxiliary_headers'] and listed['safe_export'] is False
 
 # The shared archive/discovery planner must retain every selected header and

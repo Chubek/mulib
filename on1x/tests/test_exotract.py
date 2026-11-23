@@ -33,7 +33,8 @@ def client(path,dest,expected,extra=()):
     assert p.returncode==0,p.stderr
     p=run([exe]);assert p.returncode==0 and p.stdout==expected,(p.stdout,p.stderr)
 data=json.loads(run(command('list')).stdout)
-assert len(data['modules'])+len(data['auxiliary_headers'])==len(list((a.root.parent/'include').glob('mulib-*.h')))
+assert (len(data['modules']) + len(data['auxiliary_headers']) + len(data['reserved_headers'])
+        == len(list((a.root.parent/'include').glob('mulib-*.h'))))
 assert 'b+tree' in data['modules'] and 'microjs' in data['modules']
 p=run(command('plan','json','vec','parsec'));assert p.returncode==0,p.stderr
 plan=json.loads(p.stdout)

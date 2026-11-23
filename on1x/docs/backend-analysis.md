@@ -60,8 +60,10 @@ cmake -S on1x -B /tmp/opencode/on1x-analysis-package \
 `SOURCE` (default) uses the checkout's CMake targets and build-time Perl
 generators. `PACKAGE` uses `find_package(Novostone CONFIG REQUIRED)` and the
 installed public headers/libraries. A missing requested provider fails configure.
-Only Datalog and CCDB are linked into the compiler; generated applications still
-link their C11 runtime. `on1x-build-info.txt` records selection, source checkout
+The MIR analysis itself uses only Datalog and CCDB. The same compiler build
+supports the separate [checked-HIR opt-in](../hir/README.md); neither feature
+adds a Novostone dependency to generated applications.
+`on1x-build-info.txt` records selection, source checkout
 identity when available, package directory/version, and the On1x rule-file hash.
 An installed package's upstream commit is not inferred from an unrelated source
 checkout. See [measured verification](../VERIFICATION.md).

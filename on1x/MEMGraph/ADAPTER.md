@@ -8,6 +8,11 @@ C11 backend uses the same emitter. This profile observes only emitted
 fixed-array index/slice sites; all other normalized operators are outside its
 projection. The existing emitter and runtime remain authoritative for them.
 
+When enabled, the [Firestone and Novostone HIR passes](../hir/README.md) run
+earlier in the processor. This adapter sees the final rechecked HIR, not
+their internal representations or proof records. A folded literal must pass MEMGraph's
+ordinary shape, layout and range checks.
+
 `CheckedArrayIndex(base, index)` and `CheckedArraySlice(base, lo, hi)` project
 the exact checked operation, result type and source point. Each capture refers
 to an original, immutable HIR child in evaluation order; the adapter does not

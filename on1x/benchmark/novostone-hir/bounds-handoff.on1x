@@ -1,0 +1,10 @@
+fn index(i: i64) -> i64 {
+    let a = array[11, 22, 33];
+    return a[i];
+}
+
+fn main() {
+    let a = array[11, 22, 33];
+    println(a[(6000000019-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1) % 6000000000]);
+    println(index(2));
+}

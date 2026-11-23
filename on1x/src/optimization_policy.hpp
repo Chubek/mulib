@@ -2,6 +2,12 @@
 #include <on1x/backend/passes.hpp>
 #include <on1x/c11.hpp>
 #include <on1x/processor.hpp>
+#ifdef ON1X_WITH_NOVOSTONE
+#include "../hir/novostone.hpp"
+#endif
+#ifdef ON1X_WITH_FIRESTONE_HIR
+#include "../hir/firestone.hpp"
+#endif
 #include <algorithm>
 #include <map>
 #include <optional>
@@ -70,6 +76,22 @@ struct OptimizationRequest {
   }
    policy.rules.partial_eval=enabled("partial-eval",policy.profile=="release");
    policy.entries.push_back({"partial-eval",Stage::Processor,policy.rules.partial_eval});
+#ifdef ON1X_WITH_NOVOSTONE
+   const bool novostone=enabled("novostone-hir",false);
+   if(novostone)policy.rules.novostone_hir=hir::fold_with_novostone;
+   policy.entries.push_back({"novostone-hir",Stage::Processor,novostone});
+#else
+   if(selectors.contains("novostone-hir"))
+    throw std::runtime_error("optimization novostone-hir is unavailable: configure with ON1X_WITH_NOVOSTONE=ON");
+#endif
+#ifdef ON1X_WITH_FIRESTONE_HIR
+   const bool firestone=enabled("firestone-hir",false);
+   if(firestone)policy.rules.firestone_hir=hir::fold_with_firestone;
+   policy.entries.push_back({"firestone-hir",Stage::Processor,firestone});
+#else
+   if(selectors.contains("firestone-hir"))
+    throw std::runtime_error("optimization firestone-hir is unavailable: configure with ON1X_WITH_FIRESTONE_HIR=ON");
+#endif
    if(memgraph::available()){
     policy.memgraph_bounds=enabled("memgraph-bounds",inspect_memgraph||policy.profile=="release");
     policy.entries.push_back({"memgraph-bounds",Stage::C11,policy.memgraph_bounds});

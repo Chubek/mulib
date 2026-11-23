@@ -60,6 +60,11 @@ They are not part of the historical default eight-workload population.
 cross-backend report, then `on1x-benchmark zero-cost RUN_DIR` for the
 correctness and machine-code identity gate. See [ZERO_COST.md](ZERO_COST.md)
 for the exact scope, normalization, timings and reproduction command.
+For a direct-C11 differential check of the optional checked-HIR optimization,
+see [Novostone HIR](NOVOSTONE_HIR.md). It runs independently of Archon and
+does not alter the historical workloads.
+The [Firestone HIR benchmark](FIRESTONE_HIR.md) also measures a loop that
+exercises the divide-by-one rewrite.
 `generate` accepts the same options and writes `.on1x`, config, and manifest
 without running a compiler. Configuration JSON is merged in argument order;
 later command-line options override earlier values. Unknown keys, duplicate

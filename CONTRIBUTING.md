@@ -53,6 +53,25 @@ updates combined-test inclusion without replacing existing manifest descriptions
 It also promotes implemented reservations and refreshes dependency/switch fields;
 invalid input is rejected before writing inventory files.
 The same command refreshes On1x's generated KernelBind discovery catalog.
+
+Enable automatic registration for this clone with `python3 tools/install_hooks.py`.
+When you stage a new `include/mulib-*.h`, also stage its manual and any required
+manifest metadata. The pre-commit hook uses staged inputs and stages changes
+only to `MANIFEST.yaml` and `on1x/contracts-exotract/kernel-auto.json`. It stops
+rather than overwriting unstaged edits to either output. Use `git add` followed
+by an ordinary `git commit`, not `git commit --only <paths>`, when registration
+needs to update the index. If you already have a pre-commit hook, the installer
+leaves it in place; run `.githooks/pre-commit` from the repository root in your
+existing hook chain.
+
+The hook is metadata-only. Run the full inventory sync for combined-test
+wiring, for promotions of existing reserved headers, and when consuming
+`MANIFEST.yaml.additions` or `MANIFESTS.yaml.additions`.
+A new module without an implementation switch
+needs an explicit manifest entry with `implementation: static-inline` or
+`implementation: static-data` and `status: bounded`, unless it is a
+comment-only reservation.
+
 For direct edits to `MANIFEST.yaml`, run `python3 tools/extend-kernelbind.py`
 (or `make extend-kernelbind`). Verification checks for drift; registration
 does not create an ABI adapter or grant permission to call a kernel.

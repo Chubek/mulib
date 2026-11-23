@@ -42,6 +42,12 @@ the existing HIR/MIR bridge, not another parser or execution IR.
 
 ## Phases
 
+The optional [Firestone and Novostone HIR passes](../hir/README.md) run inside
+the processor's checked-HIR transaction, before authored rewrites. They fold
+eligible scalar expressions; Firestone can also remove a checked divide by
+literal one without dropping its numerator. The processor and C11/MEMGraph
+emitter consume the rechecked On1x HIR, not either library's internal representation.
+
 An opt-in backend-neutral [scalar MIR v1](backend-mir.md) now branches from checked
 HIR into verified blocks/SSA values, function-local scalar slots and effect
 chains. It has deterministic round-trip serialization, a bounded reference

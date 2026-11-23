@@ -267,6 +267,19 @@ def module_info(root, name, manifest=None):
     return module_fields(name, match[1])
 
 
+def manifest_alias(name):
+    logical = name.replace('-', '_').replace('+', '_plus_')
+    return 'k_'+logical if logical[0].isdigit() else logical
+
+
+def manifest_aliases(modules):
+    """Index source spellings without letting one canonical name shadow another."""
+    aliases = {}
+    for name in modules:
+        aliases.setdefault(manifest_alias(name), []).append(name)
+    return aliases
+
+
 def local(root, name):
     path = Path(name)
     if path.is_absolute() or '..' in path.parts or not path.parts:
@@ -277,7 +290,7 @@ def local(root, name):
     return resolved
 
 
-def manifest_inventory(root, *, raw=None, registration=False):
+def manifest_inventory(root, *, raw=None, registration=False, reservations=None):
     if raw is None:
         raw = read(local(root, 'MANIFEST.yaml'), 8*1024*1024)
     # Strip plain trailing comments as the generator does. Preserve everything
@@ -304,6 +317,10 @@ def manifest_inventory(root, *, raw=None, registration=False):
             if (manifest_scalar(entry, 'header', r'[A-Za-z0-9_./+-]+') != 'include/mulib-'+name+'.h'
                     or re.search(r'^  (macro|implementation):', entry, re.M)):
                 reject('invalid MANIFEST reservation: '+name)
+            if manifest_list(entry, 'dependencies', r'[a-z0-9][a-z0-9_+-]*'):
+                reject('reserved MANIFEST module cannot declare dependencies: '+name)
+            if reservations is not None:
+                reservations.add('include/mulib-'+name+'.h')
             continue
         item = module_fields(name, entry, registration=registration)
         if item['header'] != 'include/mulib-'+name+'.h':
@@ -311,16 +328,18 @@ def manifest_inventory(root, *, raw=None, registration=False):
         local(root, item['header'])
         local(root, item['manual'])
         modules[name] = item
-    dependencies = names if registration else modules.keys()
     for name, item in modules.items():
-        if set(item['manifest_dependencies']) - dependencies:
+        if set(item['manifest_dependencies']) - names:
             reject('unknown MANIFEST dependency: '+name)
+        if set(item['manifest_dependencies']) - modules.keys():
+            reject('reserved MANIFEST dependency: '+name)
     return modules
 
 
 def inventory(root):
     """Inventory only: report existing sidecars, never infer contracts from C."""
-    modules = manifest_inventory(root)
+    reservations = set()
+    modules = manifest_inventory(root, reservations=reservations)
     exo = exotract_catalog()
     core = contract_catalog()['profiles']
     if (core.keys() | exo['profiles'].keys()) - modules.keys():
@@ -355,7 +374,8 @@ def inventory(root):
                               snapshot_profile=name in core,
                               archive_recipe=None if reason else exo['profiles'].get(name, {}).get('recipe', exo['default_recipe']),
                               discovery_only_reason=reason)
-    return dict(modules=modules, auxiliary_headers=sorted(headers - known), coverage=coverage,
+    return dict(modules=modules, auxiliary_headers=sorted(headers - known - reservations),
+                reserved_headers=sorted(headers & reservations), coverage=coverage,
                 non_kernel_sidecars=non_kernel, safe_export=False)
 
 

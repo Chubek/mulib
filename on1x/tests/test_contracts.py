@@ -29,8 +29,10 @@ modules, coverage = inventory['modules'], inventory['coverage']
 auxiliary = set(inventory['auxiliary_headers'])
 assert not auxiliary, sorted(auxiliary)
 registered = {m['header'] for m in modules.values()}
-assert not registered & auxiliary
-assert registered | auxiliary == {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
+reserved = set(inventory['reserved_headers'])
+assert not registered & (auxiliary | reserved)
+assert registered | auxiliary | reserved == {
+    p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
 assert set(coverage) == set(modules) and inventory['safe_export'] is False
 assert {n for n, p in coverage.items() if p['snapshot_profile']} == lint['profiles'].keys()
 assert coverage['clamp']['semantic_sidecar'] == 'clamp.exocontract.json'

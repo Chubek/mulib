@@ -12,6 +12,11 @@ and compiler rule execution require neither Python nor Perl.
 
 The optional [typed partial evaluator](PARTIAL_EVALUATION.md) is independent
 of the authored structural rule tables. Enable it with `--enable-opt partial-eval`.
+The [Novostone HIR pass](../hir/README.md) can also fold closed checked
+expressions before the authored rules. Its report is available with
+`--enable-opt novostone-hir --dump-processor`.
+The [Firestone pass](../hir/README.md#firestone) can expose additional `i64`
+rewrites before the authored rules, including full-width constant arithmetic.
 
 ## Authoring
 

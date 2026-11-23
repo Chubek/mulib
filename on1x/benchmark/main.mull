@@ -12,6 +12,8 @@ if G:Len(args) == 0 or args[0] == "help" or args[0] == "--help" {
     + "  on1x-benchmark analyze REPORT.json\n"
     + "  on1x-benchmark compare BASELINE.json CURRENT.json\n"
     + "  on1x-benchmark zero-cost RUN_DIR (checks zero-explicit / zero-wrapped)\n"
+     + "  on1x-benchmark novostone-hir ON1XC CC FRESH_DIR (direct C11 differential)\n"
+     + "  on1x-benchmark firestone-hir ON1XC CC FRESH_DIR (direct C11 and runtime differential)\n"
     + "  on1x-benchmark selftest\n");
   return 0;
 }
@@ -44,6 +46,11 @@ if args[0] == "zero-cost" {
   G:Assert(G:Len(args) == 2);
   val Z <- G:LoadLib("ZeroCost") or G:DieWith("$E?");
   return Z:Check(args[1]);
+}
+if args[0] == "novostone-hir" or args[0] == "firestone-hir" {
+   if G:Len(args) != 4 { return G:DieWith("usage: on1x-benchmark " + args[0] + " ON1XC CC FRESH_DIR"); }
+   val N <- G:LoadLib("NovostoneHIR") or G:DieWith("$E?");
+   return N:Run(args[1], args[2], args[3], args[0]);
 }
 if args[0] == "analyze" or args[0] == "compare" {
   val A <- G:LoadLib("Analyze") or G:DieWith("$E?");

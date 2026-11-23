@@ -1,4 +1,4 @@
-# On1x verification — through 2026-11-21
+# On1x verification — through 2026-11-23
 
 Historical evidence below remains attached to its original revision and build
 profiles. A [cross-layer integration record](../manual/integration-verification.md)
@@ -6,6 +6,99 @@ preserves the baseline and integrated suite totals. Current requirements are des
 [representation contracts](../manual/representation-contracts.md).
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
+
+## Static kernel registry and pre-commit registration — 2026-11-23
+
+MuLIB baseline `f10609e5` with existing local changes; LibStone
+`4c35077601899944594737559534aafd9014f330`. Native Linux x86-64,
+GCC 16.2.1, Clang 22.1.8, and Git 2.55.0. The existing
+`build/kernel-shared-general` On1x and Exotract binaries were reused.
+
+The static registry resolves all 2,049 current headers. The real scanner
+accepted every alias in batches. Real Exotract inspected declarations for
+`qvm` and a newly registered kernel with a leading digit and punctuation; the
+unprofiled kernel's safe and unsafe builds both rejected without publication.
+The dedicated static regression also passed with Clang.
+
+```sh
+python3 -B tests/test_header_registration_hook.py
+python3 -B tests/test_extend_kernelbind.py
+python3 -B tools/extend-kernelbind.py --check
+```
+
+The hook suite passed 14 tests and the generator suite passed 11. A separate
+real commit in a disposable checkout registered a switched header and its
+manual, then the contract inventory, archive and source-bundle plans, and real
+static KernelBind declaration inspection all found the same kernel. The two
+generated inventory files in the main checkout were already current.
+
+The focused CTest run passed 14/14: `header_registration_hook`,
+`static_kernel_registration`, `kernel_auto_catalog`, `kernel_auto_generator`,
+`kernel_auto_discovery_sdk`, `header_registration`, `kernel_imports_sdk`,
+`kernel_review_sdk`, `kernel_dynlib`, `kernel_ipc_sdk`, `bounded_kernel_inventory`,
+`contracts`, `mulib`, and `exotract`. The separate `contracts_sdk` target was
+not verified in this build because `on1x-bind` was unavailable.
+
+## Firestone checked-HIR optimization — 2026-11-23
+
+Linux x86-64, GCC 16.2.1 and pinned LibStone
+`4c35077601899944594737559534aafd9014f330`. An enabled build with Novostone
+(Satie off) and MEMGraph passed 6/6 focused CTests. A build with both HIR passes
+disabled passed 3/3 selected CLI, processor and MEMGraph CTests:
+
+```sh
+ctest --test-dir build/firestone-hir --output-on-failure -j 5 \
+  -R '^on1x\.(firestone_hir|novostone_hir|optimization_cli|processor_integration|memgraph\.c11|compiler)$'
+```
+
+The dedicated test compared reference C11 and optimized C11 behavior, checked
+the MIR evaluator, and verified both the On1xMETA authored-rule and MEMGraph
+handoffs. Clang 22.1.8 also passed the differential with ASan/UBSan on generated
+C and runtime code (not on the compiler). The
+[Firestone benchmark](benchmark/FIRESTONE_HIR.md) passed 24 configurations each
+with GCC and Clang; a local GCC loop speedup repeated with the checked divide
+removed. No cross-target results are claimed.
+
+## Novostone checked-HIR optimization — 2026-11-23
+
+Base MuLIB `87cbf7c361667c62f82759bd0c02834b2b07315c`, pinned LibStone
+`4c35077601899944594737559534aafd9014f330`; no LibStone edits. Tested on
+Linux x86-64 with GCC 16.2.1, Clang 22.1.8, CMake 4.4.3, Perl 5.42.2 and
+Python 3.14.7. These are focused runs, not the whole repository test suite.
+
+| Configuration | Observed result |
+| --- | --- |
+| Baseline direct C11, processor, MEMGraph and MIR relational-option smoke | 5/5 selected CTests passed before the change. |
+| Novostone disabled, MEMGraph enabled | 5/5 selected CTests passed, including explicit rejection of `novostone-hir`. |
+| Novostone source provider, no Satie, MEMGraph enabled | 14/14 selected CTests passed. Three fixtures under debug/default/release emitted byte-identical C to the baseline when not opting in. |
+| Novostone source provider, Satie required, SDK enabled | 4/4 selected CTests passed, including the SDK frontend and relocated installed consumer. Satie discharged all six obligations from the benchmark fold. |
+| Novostone installed-package provider, tests disabled | Built `on1xc`; `--enable-opt novostone-hir --run-ir on1x/examples/optimize.on1x` returned the reference output `1`, `43`, `42`. |
+| Generated C11 compiled with Clang and ASan/UBSan | The full `test_novostone_hir.py` differential passed; this instruments generated C, the runtime and the C oracle, not the GCC-built compiler. |
+| `on1x-benchmark novostone-hir` | All 16 configurations per C compiler passed with GCC and Clang, including exact exit status and trap diagnostics. A fresh benchmark build passed 9/9 harness tests. [Benchmark results and limitations](benchmark/NOVOSTONE_HIR.md). |
+
+`on1x.novostone_hir` compares C11 and MIR execution against a separate
+ActionSemantics-generated checked-i32 oracle (including a seeded corpus). It
+also checks i64 overflow and division traps, effect and `defer` order,
+invalid unique-owner use, the unit attempt cap, and MEMGraph independently
+proving an index after folding. No full-HIR native ABI, ownership or FFI
+optimization is claimed. The baseline cached Cephyr build passed 7/8 selected
+QML/FactIR/embedding tests; `cephyr.c-api` failed at the native-artifact
+assertion before this change. The checked-HIR tests did not enable Cephyr or
+cross-compile.
+
+```sh
+cmake -S on1x -B build/novostone-hir-make -DCMAKE_BUILD_TYPE=Release \
+  '-DCMAKE_CXX_FLAGS_RELEASE=-O1 -DNDEBUG' \
+  -DON1X_WITH_NOVOSTONE=ON -DON1X_WITH_MEMGRAPH=ON \
+  -DON1X_BUILD_EXTENSION_SDK=OFF -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_WITH_PROJECT_QMR=OFF -DON1X_WITH_SYREN=OFF -DON1X_WITH_WETSTONE=OFF \
+  -DNOVOSTONE_PCC_USE_SATIE=OFF
+cmake --build build/novostone-hir-make --parallel 6 --target on1xc \
+  on1x_hir_action_oracle on1x_pass_tests on1x_processor_engine_tests \
+  on1x_processor_semantic_tests on1x_memgraph_hir_tests on1x_relational_tests
+ctest --test-dir build/novostone-hir-make --output-on-failure -j 6 \
+  -R '^on1x\.(novostone_hir|compiler|passes_hir|optimization_cli|partial_eval|processor_.*|memgraph\..*|relational.*)$'
+```
 
 ## MEMGraph fixed-array C11 lowering — 2026-11-21
 

@@ -116,6 +116,60 @@ class ProjectTests(unittest.TestCase):
         self.app(extra='scrutiny off\n', implementation='@scrutiny off;\n' + division)
         self.build('--scrutiny', 'strict', negative='ON1X-ANALYSIS-DIVZERO')
 
+    def test_scrutiny_work_policy(self):
+        self.app(extra='scrutiny-work 8192\n')
+        manifest = self.project / 'On1xfile'
+        formatter = [sys.executable, OPTIONS.driver, 'format', str(manifest)]
+        self.assertEqual(subprocess.check_output(formatter, timeout=20), manifest.read_bytes())
+        plan = [sys.executable, OPTIONS.driver, 'plan', str(self.project), '--on1xc', OPTIONS.on1xc]
+        self.assertEqual(json.loads(subprocess.check_output(plan, timeout=30))['scrutiny_work'], 8192)
+        self.assertEqual(json.loads(subprocess.check_output(
+            [*plan, '--scrutiny-work', '1'], timeout=30))['scrutiny_work'], 1)
+        self.assertFalse(self.output.exists())
+
+        for flags, expected in [((), 8192), (('--via-mir', '--scrutiny-work', '10000000'), 10_000_000)]:
+            out = self.build(*flags)
+            self.run_bin(out)
+            self.assertEqual(json.loads((out / '.on1x-build.json').read_bytes())['scrutiny_work'], expected)
+
+        marker = self.output / '.on1x-build.json'
+        previous = marker.read_bytes()
+        error = 'scrutiny-work requires a decimal integer from 1 to 10000000'
+        for setting in ('0', '-1', '10000001', '9' * 120, 'abc'):
+            with self.subTest(setting=setting):
+                self.app(extra='scrutiny-work 8192\n')
+                self.build('--scrutiny-work', setting, negative=error)
+                self.app(extra=f'scrutiny-work {setting}\n')
+                self.build(negative=error)
+                self.assertEqual(marker.read_bytes(), previous)
+
+        self.app(extra='scrutiny-work "8192"\n')
+        self.build(negative='incorrectly quoted fields')
+        self.app(extra='scrutiny-work 5\nscrutiny-work 6\n')
+        self.build(negative='duplicate declaration scrutiny-work')
+        self.app(extra='dependency "dep" local "dep"\n')
+        self.library('dep', 'dep')
+        dep = self.project / 'dep/On1xfile'
+        dep.write_text(dep.read_text() + 'scrutiny-work 4\n')
+        self.build(negative="unsupported 'scrutiny-work' in dependency On1xfile")
+
+    def test_scrutiny_work_reaches_analysis(self):
+        self.app(extra='scrutiny strict\nscrutiny-work 1\n',
+                 implementation='fn main()->i64{return 42/0;}\n')
+        probe = subprocess.run(
+            [OPTIONS.on1xc, '--no-prelude', '--check', '--scrutiny', 'strict', self.project/'src/main.on1x'],
+            text=True, capture_output=True, timeout=20)
+        if probe.returncode == 0:
+            self.skipTest('Wetstone analysis is unavailable in this build')
+        self.assertIn('ON1X-ANALYSIS-DIVZERO', probe.stderr)
+        for flags in [(), ('--via-mir',)]:
+            out = self.build(*flags)
+            marker = out / '.on1x-build.json'
+            before = marker.read_bytes()
+            self.assertEqual(json.loads(before)['scrutiny_work'], 1)
+            self.build(*flags, '--scrutiny-work', '8192', negative='ON1X-ANALYSIS-DIVZERO')
+            self.assertEqual(marker.read_bytes(), before)
+
     def test_optimizer_policy_plan_lock_and_build(self):
         program = ('fn plus(x:i64)->i64{return (x+0)*1;}'
                    'fn main(){println(plus(40+2));}\n')
@@ -179,6 +233,26 @@ class ProjectTests(unittest.TestCase):
         self.assertIn({'name': 'memgraph-bounds', 'stage': 'c11', 'enabled': True},
                       policy['optimizations'])
         self.build('--via-mir', negative='optimization memgraph-bounds requires the C11 backend')
+
+    def test_novostone_hir_manifest(self):
+        listing = json.loads(subprocess.check_output(
+            [OPTIONS.on1xc, '--list-optimizations'], text=True, timeout=30))
+        self.app(extra='optimization-profile debug\noptimization "novostone-hir" on\n',
+                 implementation='fn main(){println(6*7);}\n')
+        if not any(row['name'] == 'novostone-hir' for row in listing['optimizations']):
+            self.build(negative='novostone-hir')
+            return
+        lock = self.lock('--on1xc', OPTIONS.on1xc)
+        self.assertEqual(json.loads(lock.read_bytes())['optimization']['selections'], {'novostone-hir': True})
+        outputs = []
+        for flags in [(), ('--disable-opt', 'novostone-hir')]:
+            out = self.build('--frozen', *flags)
+            self.run_bin(out)
+            report = json.loads((out / '.on1x-build.json').read_bytes())
+            rule = next(row for row in report['optimization']['optimizations'] if row['name'] == 'novostone-hir')
+            self.assertEqual(rule, {'name': 'novostone-hir', 'stage': 'processor', 'enabled': not flags})
+            outputs.append(report['outputs']['sample'])
+        self.assertNotEqual(*outputs)
 
     def test_scoped_optimizer_selections(self):
         self.app(extra='backend mir-c11\noptimization-profile debug\n'

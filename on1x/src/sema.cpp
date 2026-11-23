@@ -996,7 +996,8 @@ class Checker {
     // precede any compiled rewrite that could remove an invalid operand.
     evidence.typed_before=processor::validate(u,processor::SemanticStage::Typed);
     if(analysis_context&&analysis_context->diagnostics.has_errors())return;
-    if(!selection.partial_eval&&!selection.default_enabled&&selection.overrides.empty()){
+    if(!selection.firestone_hir&&!selection.novostone_hir&&!selection.partial_eval&&
+       !selection.default_enabled&&selection.overrides.empty()){
      // Nothing may change the already verified unit. In particular, disabling
      // rewrites never disables the structural or typed semantic contracts.
      if(output){evidence.typed_after=processor::validate(u,processor::SemanticStage::Typed);
@@ -1010,6 +1011,16 @@ class Checker {
      // inference, macro expansion or source lowering on this private HIR.
      evidence.typed_after=recheck_candidate(candidate,interfaces);
     };
+     // The cheap full-width fold runs first; Novostone can still operate on
+     // its supported Boolean projections when both passes are selected.
+     if(selection.firestone_hir){
+      evidence.firestone_hir=selection.firestone_hir(candidate);
+      verify_candidate();
+     }
+     if(selection.novostone_hir){
+      evidence.novostone_hir=selection.novostone_hir(candidate);
+      verify_candidate();
+     }
     // Expose neutral operands before desugaring can turn them into decisions
     // (e.g. `x && !false`). Desugaring may itself introduce canonical redexes.
     evidence.canonicalize=processor::apply(candidate,processor::Phase::Canonicalize,{},selection);

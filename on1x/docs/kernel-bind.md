@@ -17,8 +17,9 @@ the repository ships no production approval.
 
 ### Compile the implementation as a shared library
 
-`import kernel[dynlib] mulib.clamp as Clamp;` selects Cephyr for the kernel
-implementation. It requires the same signed review as the plain safe import.
+`import kernel[dynlib] mulib.clamp as Clamp;` places the implementation in a
+shared library. It requires independent signed review, like the plain safe
+import, but the review must cover the shared build specifically.
 The explicitly unsafe spelling is `unsafe import kernel[dynlib] mulib.clamp as Clamp;`.
 Call syntax, types and `unsafe` blocks are the same with either linkage.
 Plain `import kernel` keeps the existing static build.
@@ -33,21 +34,38 @@ python3 on1x/tools/on1x-build.py dynamic.on1x --kernel-bind \
 build/dynamic/program
 ```
 
-Use a fresh output directory. The Cephyr-enabled `on1xc` build supplies a
-sibling `on1x-cephyr-kernel` helper. During the build it passes the planner's
-implementation TU to `libcephyr` for PIC compilation and shared linking.
+Use a fresh output directory. By default, the Cephyr-enabled `on1xc` build
+supplies a sibling `on1x-cephyr-kernel` helper that passes the planner's
+implementation translation unit to `libcephyr` for PIC compilation and shared
+linking. This path is tested with raw and reviewed `mulib.clamp` on native
+AMD64 Linux. External link libraries are not supported by the Cephyr helper;
+for framed IPC its bundled headers also lack `poll.h` and `sys/socket.h`.
+There is no automatic fallback.
+
+To explicitly use the selected host C compiler instead, pass
+`--kernel-dynlib-compiler=host` to `on1x-build.py`. This requires a native AMD64
+Linux toolchain, but not a Cephyr-enabled `on1xc`. The host path builds the
+verified closure as PIC and links the planner's libraries into the DSO, for
+example `libm` for reviewed `mulib.histprice` and `mulib.priceopt`. The existing
+unsafe `mulib.ipc_framed` adapter remains in the executable and calls its MuLIB
+implementation in the DSO. Both static and dynamic imports may appear in a
+reviewed program if their implementation switches do not overlap. Each
+partition gets its own implementation translation unit and link dependencies.
+Standalone native companions, extra code-generation flags and discovery-only
+kernels remain unsupported by these shared-build profiles.
+
+For reviewed imports, use the same compiler choice for
+`--kernel-review-candidate` and `--kernel-bind`. The signed subject binds the
+selected backend, dynamic kernel closure and DSO digest. The build runs the
+existing executable boundary probes against that DSO before publication;
+`admission.json` records the artifact digest and probe result, and
+`build-plan.json` records implementation placement.
+
 The host compiler links the application against `libon1x_kernels.so`; the
 executable finds it alongside itself using `$ORIGIN`. Move and deploy the
-directory together and protect both files as application code. The deployed
-program does not require Cephyr. Reviewed bundles also include the DSO in
-the signed review subject by digest, exercise it with the existing boundary
-probe, and record it in `admission.json`.
-
-The tested profile is native AMD64 Linux `mulib.clamp` (raw and reviewed).
-Discovery-only kernels do not become callable. Native companions, external
-kernel link libraries, extra code-generation flags, and overlapping static and
-dynamic implementation closures are rejected. Unsupported headers produce a
-Cephyr diagnostic before publication; there is no host-compiler fallback.
+directory together. The DSO executes with the application's privileges:
+protect both files and trust the deployment's loader environment and system
+libraries. The deployed program does not require Cephyr, Exotract or Python.
 
 ### Existing static build
 
@@ -124,7 +142,8 @@ it does not run the SDK or link an executable.
 
 The generated `on1x/contracts-exotract/kernel-auto.json` tracks public
 kernels from the MuLIB manifest. Regenerate after adding or reconfiguring a
-kernel. `tools/sync_inventory.py` does this after synchronizing the manifest.
+kernel. See [kernel registration](kernel-registration.md) for the shared
+manifest, contributor hook, and manual workflow.
 
 ```sh
 python3 tools/extend-kernelbind.py

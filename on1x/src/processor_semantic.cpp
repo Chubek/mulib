@@ -246,7 +246,19 @@ std::string report(const Report& result){
  out<<",\"partial_eval\":{\"enabled\":"<<(pe.enabled?"true":"false")
     <<",\"limited\":"<<(pe.limited?"true":"false")<<",\"work\":"<<pe.work
     <<",\"folds\":"<<pe.folds<<",\"static_calls\":"<<pe.static_calls
-    <<",\"residual_calls\":"<<pe.residual_calls<<"}}\n";
+     <<",\"residual_calls\":"<<pe.residual_calls<<'}';
+  const auto& novo=result.novostone_hir;
+  if(novo.enabled)
+   out<<",\"novostone_hir\":{\"enabled\":true,\"limited\":"<<(novo.limited?"true":"false")
+      <<",\"attempted\":"<<novo.attempted<<",\"applied\":"<<novo.applied
+      <<",\"specialized\":"<<novo.specialized<<",\"obligations\":"<<novo.obligations
+      <<",\"smt_proved\":"<<novo.smt_proved<<'}';
+  const auto& fire=result.firestone_hir;
+  if(fire.enabled)
+   out<<",\"firestone_hir\":{\"enabled\":true,\"limited\":"<<(fire.limited?"true":"false")
+      <<",\"visited\":"<<fire.visited<<",\"folds\":"<<fire.folds
+      <<",\"divide_one\":"<<fire.divide_one<<",\"applied\":"<<fire.folds+fire.divide_one<<'}';
+  out<<"}\n";
  return out.str();
 }
 }

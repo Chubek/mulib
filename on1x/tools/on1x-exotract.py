@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MuLIB static archives and typed import manifests through real Exotract.
+"""MuLIB static kernel registration, archives and typed imports.
 
 No generated On1x ABI guesses: Exotract emits typed metadata. C11 clients link
 the generated static archive; On1x clients still require an admitted ABI adapter.
@@ -35,6 +35,9 @@ PRICING_EXPORTS = ('mulib_priceopt_optimize', 'mulib_priceopt_candidates')
 PRICING_IMPL = ['MULIB_IMPL_PRICEOPT']
 IPC_RAW_PROFILE = 'unsafe-ipc-framed-local-pair/v1'
 IPC_IMPL = ['MULIB_IMPL_SANDBOX_PROFILE', 'MULIB_IMPL_IPC_FRAMED']
+CLAMP_MODULE = 'mulib.clamp'
+IPC_MODULE = 'mulib.ipc_framed'
+REVIEWED_KERNEL_MODULES = frozenset((CLAMP_MODULE, 'mulib.histprice', 'mulib.priceopt'))
 # Profile v1's known entry points are sanity checks, not binding allowlists.
 KERNEL_MODULES = {
     'clamp': (None, list(CLAMP_EXPORTS)),
@@ -305,15 +308,8 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
                 **({'automatic_registration': automatic} if automatic is not None else {}))
 
 
-def manifest_aliases(modules):
-    """Index source spellings without letting one canonical name shadow another."""
-    aliases = {}
-    for name in modules:
-        logical = name.replace('-', '_').replace('+', '_plus_')
-        if logical[0].isdigit():
-            logical = 'k_'+logical
-        aliases.setdefault(logical, []).append(name)
-    return aliases
+# Preserve the existing tool helper for callers; the generator uses it too.
+manifest_aliases = contracts.manifest_aliases
 
 
 def manifest_discovery_name(logical, aliases):
@@ -321,6 +317,76 @@ def manifest_discovery_name(logical, aliases):
     if len(candidates) > 1:
         raise ValueError('ambiguous manifest alias: mulib.'+logical+' ('+', '.join(sorted(candidates))+')')
     return candidates[0] if candidates else None
+
+
+def kernel_discovery_profile(logical, name, profiles):
+    """Select the discovery route, not a compile or admission decision."""
+    if logical in SANDBOX_MODULES:
+        return 'sandbox' if name == SANDBOX_MODULES[logical] else None
+    if logical in KERNEL_MODULES:
+        return 'handwritten' if name == logical else None
+    return 'automatic-legacy' if contracts.discovery_only_reason(name, profiles) else 'automatic'
+
+
+def kernel_input_observer():
+    observed = {}
+
+    def observe(path, expected=None):
+        real = Path(path).resolve()
+        digest = contracts.digest(real)
+        if (expected is not None and digest != expected) or (real in observed and digest != observed[real]):
+            raise ValueError('KernelBind discovery input drift: '+str(real))
+        observed[real] = digest
+        return real
+
+    return observed, observe
+
+
+def kernel_source_inventory(root, observe):
+    manifest_path = housekeeping.local(root, 'MANIFEST.yaml')
+    raw = contracts.read(manifest_path, 8*1024*1024)
+    manifest = housekeeping.inventory(root, raw=raw, registration=True)
+    observe(manifest_path, hashlib.sha256(raw).hexdigest())
+    observe(CATALOG)
+    return manifest, contracts.exotract_catalog()
+
+
+def registered_kernel_declarations(manifest, observe):
+    automatic, digest = contracts.kernel_auto_catalog(manifest)
+    observe(contracts.KERNEL_AUTO_CATALOG, digest)
+    return automatic
+
+
+def static_kernel_registry(root):
+    """List static source routes; eligibility does not imply target extraction or admission."""
+    observed, observe = kernel_input_observer()
+    for tool in (__file__, contracts.__file__, housekeeping.__file__):
+        observe(tool)
+    manifest, profiles = kernel_source_inventory(root, observe)
+    registration = registered_kernel_declarations(manifest, observe)
+    aliases = manifest_aliases(manifest)
+    modules = {}
+    for name, item in registration.items():
+        logical = contracts.manifest_alias(name)
+        source = 'mulib.'+logical
+        candidates = aliases[logical]
+        profile = kernel_discovery_profile(logical, name, profiles)
+        status = ('ambiguous' if len(candidates) > 1 else
+                  'eligible' if profile else 'profile_mismatch')
+        eligible = status == 'eligible'
+        # Static profiles are still subject to the import mode, target/CDecl
+        # checks, and (for safe imports) independent review and usage checks.
+        modules[name] = dict(
+            declaration=item, source_module=source, source_status=status,
+            source_candidates=sorted(candidates), discovery_profile=profile if eligible else None,
+            discovery_only_reason=contracts.module_discovery_only_reason(name, manifest[name], profiles),
+            static_compile=dict(
+                unsafe='requires_checked_adapter' if eligible and source in (CLAMP_MODULE, IPC_MODULE) else 'unsupported',
+                safe='requires_review' if eligible and source in REVIEWED_KERNEL_MODULES else 'unsupported'))
+    for path, digest in list(observed.items()):
+        observe(path, digest)
+    return dict(schema='on1x.static-kernel-registry/v1', safe_export=False,
+                inputs={str(p): h for p, h in observed.items()}, modules=modules)
 
 
 def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cflags, pins_before_load, *, review=False):
@@ -335,28 +401,14 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                {'file': os.fsdecode(bytes.fromhex(r['file_hex']))} for r in requests['requests']]
     if not imports or len(imports) > 1024:
         raise ValueError('KernelBind inspection requires 1..1024 source requests')
-    observed = {}
-
-    def observe(path, expected=None):
-        real = Path(path).resolve()
-        digest = contracts.digest(real)
-        if (expected is not None and digest != expected) or (real in observed and digest != observed[real]):
-            raise ValueError('KernelBind discovery input drift: '+str(real))
-        observed[real] = digest
-        return real
-
+    observed, observe = kernel_input_observer()
     for path, digest in sources.items():
         observe(path, digest)
     for path, digest in pins_before_load.items():
         observe(path, digest)
     selected, automatic = {}, None
     try:
-        manifest_path = housekeeping.local(root, 'MANIFEST.yaml')
-        raw = contracts.read(manifest_path, 8*1024*1024)
-        manifest = housekeeping.inventory(root, raw=raw, registration=True)
-        observe(manifest_path, hashlib.sha256(raw).hexdigest())
-        observe(CATALOG)
-        profiles = contracts.exotract_catalog()
+        manifest, profiles = kernel_source_inventory(root, observe)
     except (ValueError, OSError, TypeError, KeyError) as error:
         raise ValueError(location(imports[0])+'ON1X-KERNEL-PROFILE: '+str(error)) from error
     aliases = manifest_aliases(manifest)
@@ -367,19 +419,15 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
             name = manifest_discovery_name(logical, aliases)
             if name is None:
                 raise ValueError('no discovery profile: '+request['module'])
-            explicit = logical in KERNEL_MODULES or logical in SANDBOX_MODULES
-            if explicit and name != SANDBOX_MODULES.get(logical, logical):
+            profile = kernel_discovery_profile(logical, name, profiles)
+            if profile is None:
                 raise ValueError('handwritten KernelBind profile has no canonical MANIFEST module: '+name)
-            registration, legacy = None, True
-            if not explicit:
+            registration = None
+            if profile in ('automatic', 'automatic-legacy'):
                 if automatic is None:
-                    automatic, digest = contracts.kernel_auto_catalog(manifest)
-                    observe(contracts.KERNEL_AUTO_CATALOG, digest)
+                    automatic = registered_kernel_declarations(manifest, observe)
                 registration = automatic[name]
-                # Keep the explicitly configured CDD discovery recipe. A
-                # bounded static-inline header otherwise needs no build plan.
-                legacy = bool(contracts.discovery_only_reason(name, profiles))
-            selected.setdefault(logical, (request, name, registration, legacy))
+            selected.setdefault(logical, (request, name, registration, profile))
         except (ValueError, OSError, TypeError, KeyError) as error:
             raise ValueError(location(request)+'ON1X-KERNEL-PROFILE: '+str(error)) from error
     exotract, compiler = map(executable, [exotract, compiler])
@@ -392,7 +440,7 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
     options = kernel_options(cflags)
 
     discovered = {}
-    for logical, (request, name, registration, legacy) in selected.items():
+    for logical, (request, name, registration, profile) in selected.items():
         try:
             sandbox = sandbox_profile(name)
             sidecar_name, required = (sandbox['sandbox_contract'], []) if sandbox else KERNEL_MODULES.get(name, (None, []))
@@ -400,9 +448,11 @@ def kernel_discovery(requests, root, paths, exotract, compiler, resource_dir, cf
                 sidecar_name = 'clamp.exocontract.json'
             if name in ('histprice', 'priceopt') and review:
                 sidecar_name = name+'.exocontract.json'
-            recipe = (plan(root, [name], paths=paths, discovery=True) if legacy
+            # Keep the configured CDD recipe; other automatic entries only
+            # need declaration inputs, not an implementation build plan.
+            recipe = (plan(root, [name], paths=paths, discovery=True) if profile != 'automatic'
                       else housekeeping.declaration_plan(root, name, manifest, paths))
-            if not legacy and (reason := contracts.module_discovery_only_reason(name, manifest[name], profiles)):
+            if profile == 'automatic' and (reason := contracts.module_discovery_only_reason(name, manifest[name], profiles)):
                 recipe['discovery_only'] = {name: reason}
             discovered['mulib.'+logical] = extract_exolib(
                 name, recipe, root, exotract, compiler, resource, target, options, observe,
@@ -426,7 +476,7 @@ def clamp_scalar_interface(report, *, unsafe):
     is not a reader for public discovery reports or admission certificates.
     """
     for request in report['requests']:
-        if request['unsafe'] is not unsafe or request['module'] != 'mulib.clamp':
+        if request['unsafe'] is not unsafe or request['module'] != CLAMP_MODULE:
             code = 'UNSAFE-UNSUPPORTED' if request['unsafe'] else 'NOT-ADMITTED'
             raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
                              f"ON1X-KERNEL-{code}: {request['module']}")
@@ -482,7 +532,7 @@ def clamp_scalar_interface(report, *, unsafe):
 def ipc_raw_interface(report):
     """Admit only the ABI of the fixed local-pair adapter, never a safe export."""
     for request in report['requests']:
-        if request['unsafe'] is not True or request['module'] != 'mulib.ipc_framed':
+        if request['unsafe'] is not True or request['module'] != IPC_MODULE:
             code = 'UNSAFE-UNSUPPORTED' if request['unsafe'] else 'NOT-ADMITTED'
             raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
                              f"ON1X-KERNEL-{code}: {request['module']} cannot join the raw framed transport profile")
@@ -788,9 +838,9 @@ def pricing_interface(report):
 def reviewed_interface(report):
     modules = {}
     for r in report['requests']:
-        if r['unsafe'] and r['module'] == 'mulib.clamp':
+        if r['unsafe'] and r['module'] == CLAMP_MODULE:
             continue
-        if r['unsafe'] or r['module'] not in ('mulib.clamp', 'mulib.histprice', 'mulib.priceopt'):
+        if r['unsafe'] or r['module'] not in REVIEWED_KERNEL_MODULES:
             code = 'UNSAFE-UNSUPPORTED' if r['unsafe'] else 'NOT-ADMITTED'
             raise ValueError(f"{r['file']}:{r['line']}:{r['column']}: ON1X-KERNEL-{code}: {r['module']}")
         modules.setdefault(r['module'], []).append(r)
@@ -810,6 +860,28 @@ def reviewed_interface(report):
 
 def interface_members(interface):
     return interface['modules'] if 'modules' in interface else {interface['module']: interface}
+
+
+def kernel_implementation_plan(report, root, paths, modules):
+    """Replan a linkage partition from the canonical names verified by discovery."""
+    selected = [report['modules'][name] for name in sorted(modules)]
+    recipe = housekeeping.plan(root, [m['exolib']['name'] for m in selected], (), paths)
+    # The callable discovery profiles don't verify these build requirements.
+    if any(recipe[key] for key in ('dependency_cycles', 'native_sources', 'include_headers',
+                                   'generator_checks', 'files')):
+        raise ValueError('KernelBind linkage partition has unsupported build requirements')
+    headers, macros = set(), set()
+    for module in selected:
+        impl = module['exolib']['header_only']
+        headers.update([module['exolib']['header'], *impl['dependencies']])
+        macros.update(impl['implementation_defines'])
+    if (headers != {m['header_path'] for m in recipe['modules']} or
+            macros != set(recipe['implementation_macros'])):
+        raise ValueError('KernelBind linkage partition differs from discovered implementation closure')
+    for path, digest in recipe['inputs'].items():
+        if report['inputs'].get(path) != digest:
+            raise ValueError('KernelBind discovery/link input drift: '+path)
+    return recipe
 
 
 def review_candidate(report):
@@ -1437,6 +1509,8 @@ def main():
     cli.add_argument('--mulib-path',action='append',default=[],metavar='DIR:DIR')
     sub=cli.add_subparsers(dest='mode',required=True)
     sub.add_parser('list')
+    sub.add_parser('list-kernels', help='list static source names and ABI gates without compiler probes',
+                   description='Report static kernel registration as JSON. Eligibility is not ABI admission.')
     p=sub.add_parser('plan');p.add_argument('libraries',nargs='+');p.add_argument('--fixture',action='append',default=[])
     b=sub.add_parser('build');b.add_argument('libraries',nargs='+')
     b.add_argument('--fixture',action='append',default=[])
@@ -1453,6 +1527,8 @@ def main():
         root=housekeeping.kernel_root(args.root,HOME.parent,args.paths)
         if args.mode=='list':
             print(contracts.dumps(dict(schema='on1x.exotract-inventory/v1', **contracts.inventory(root))),end='')
+        elif args.mode=='list-kernels':
+            print(contracts.dumps(static_kernel_registry(root)),end='')
         elif args.mode=='plan':print(contracts.dumps(plan(root,args.libraries,args.fixture,args.paths,discovery=True)),end='')
         elif args.mode=='wrap-inline':wrap_inline(args,root);print(args.output)
         else:build(args,root);print(args.output)

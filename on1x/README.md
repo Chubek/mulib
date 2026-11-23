@@ -18,6 +18,13 @@ at build time. It lets `on1xc` omit fixed-array bounds checks only when the
 compiler proves they cannot trap; it does not add a runtime dependency or
 widen ownership or foreign-call admission.
 
+The optional [Novostone HIR pass](hir/README.md) folds a bounded subset of
+closed checked expressions before On1xMETA and C11/MEMGraph. Enable it with
+`--enable-opt novostone-hir` in an `ON1X_WITH_NOVOSTONE=ON` build.
+The [Firestone HIR pass](hir/README.md#firestone) adds full-width checked
+integer folding and a divide-by-one rewrite. Enable it with
+`--enable-opt firestone-hir` in an `ON1X_WITH_FIRESTONE_HIR=ON` build.
+
 ## Project tools
 
 Use `on1xc init --bin`, `on1xc init --proj`, or `on1xc init --lib` to

@@ -3,8 +3,9 @@
 
 This is an inventory, not a declaration extractor, implementation recipe,
 sidecar, or callable profile. It copies exact MANIFEST names (including legacy
-spellings), never source aliases. Unregistered headers are rejected; reservations
-are not exported. Dependencies retain their MANIFEST names and order.
+spellings), never source aliases. Ambiguous source aliases and unregistered
+headers are rejected. Reserved headers are not exported and cannot participate
+in dependencies. Dependencies retain their MANIFEST names and order.
 """
 
 import argparse
@@ -136,6 +137,8 @@ def project_entry(contracts, name, lines):
         item["implementation"] = implementation
     elif status != "reserved" or macro is not None or implementation is not None:
         raise ValueError("implementation metadata does not match status")
+    if status == "reserved" and item["dependencies"]:
+        raise ValueError("reserved MANIFEST module cannot declare dependencies")
     if "optional_dependency" in fields:
         value = fields["optional_dependency"]
         if not re.fullmatch(r"[A-Za-z0-9][ -~]{0,511}", value) or re.search(r":(?:\s|$)", value):
@@ -144,10 +147,14 @@ def project_entry(contracts, name, lines):
     return item
 
 
-def generate(root):
+def generate(root, *, raw_manifest=None):
     contracts = contract_tools()
     manifest = contracts.local(root, "MANIFEST.yaml")
-    text = contracts.read(manifest, MAX_MANIFEST_BYTES).decode("utf-8")
+    if raw_manifest is None:
+        raw_manifest = contracts.read(manifest, MAX_MANIFEST_BYTES)
+    if len(raw_manifest) > MAX_MANIFEST_BYTES:
+        raise ValueError("MANIFEST.yaml: input byte limit exceeded")
+    text = raw_manifest.decode("utf-8")
     if "\0" in text:
         raise ValueError("MANIFEST.yaml: unexpected NUL byte")
     modules = {}
@@ -178,12 +185,20 @@ def generate(root):
         for dependency in item["dependencies"]:
             if dependency not in modules:
                 raise ValueError(f"MANIFEST.yaml: {name}: unknown dependency: {dependency}")
+            if modules[dependency]["status"] == "reserved":
+                raise ValueError(f"MANIFEST.yaml: {name}: reserved MANIFEST dependency: {dependency}")
     eligible = {name: item for name, item in modules.items() if item["status"] != "reserved"}
+    for alias, names in sorted(contracts.manifest_aliases(eligible).items()):
+        if len(names) > 1:
+            raise ValueError(f"ambiguous manifest alias: mulib.{alias} ({', '.join(sorted(names))})")
     registered = {item["header"] for item in modules.values()}
     headers = {path.relative_to(root).as_posix() for path in root.glob("include/mulib-*.h")}
     missing = sorted(headers - registered)
     if missing:
         raise ValueError("unregistered kernel header: " + missing[0] + "; register in MANIFEST.yaml")
+    # Publication must also pass the shared consumer's registration checks,
+    # including the manual and extra switch metadata not copied to the catalog.
+    contracts.manifest_inventory(root, raw=raw_manifest, registration=True)
     data = {"schema": SCHEMA, "safe_export": False, "modules": eligible}
     output = (json.dumps(data, sort_keys=True, indent=2, ensure_ascii=True) + "\n").encode("ascii")
     if len(output) > MAX_CATALOG_BYTES:

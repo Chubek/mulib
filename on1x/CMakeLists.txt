@@ -42,7 +42,8 @@ endif()
 if(ON1X_WITH_EXOTRACT AND NOT ON1X_WITH_EXOML_EXTRACT)
   message(FATAL_ERROR "ON1X_WITH_EXOTRACT requires ON1X_WITH_EXOML=ON and ON1X_WITH_EXOML_EXTRACT=ON")
 endif()
-option(ON1X_WITH_NOVOSTONE "Build optional MIR Datalog/CCDB analyses" OFF)
+option(ON1X_WITH_NOVOSTONE "Build optional checked-HIR optimization and MIR relational analyses" OFF)
+option(ON1X_WITH_FIRESTONE_HIR "Build the optional Firestone checked-HIR scalar pass" OFF)
 option(ON1X_WITH_CHISEL "Build optional resource memory checking" OFF)
 option(ON1X_WITH_NEROTYPICAL "Build optional independent HIR structural type checking" OFF)
 set(_on1x_syren_default OFF)
@@ -164,6 +165,15 @@ if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
 add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
+if(ON1X_WITH_FIRESTONE_HIR)
+  if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/libsema/OverflowCheck.hpp" OR
+     NOT EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/librewrite/Term.hpp")
+    message(FATAL_ERROR "ON1X_WITH_FIRESTONE_HIR needs Firestone under ON1X_LIBSTONE_ROOT")
+  endif()
+  target_sources(on1xc PRIVATE hir/firestone.cpp)
+  target_include_directories(on1xc SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone")
+  target_compile_definitions(on1xc PRIVATE ON1X_WITH_FIRESTONE_HIR=1)
+endif()
 if(ON1X_WITH_CEPHYR)
   if(CMAKE_CROSSCOMPILING OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
      NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -398,6 +408,9 @@ install(TARGETS on1xc RUNTIME DESTINATION bin)
 install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
+endif()
 install(FILES tools/on1x_project.py tools/on1x_inline.py tools/on1x_optimization.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
@@ -489,11 +502,25 @@ if(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+      AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+    add_test(NAME on1x.toolchain_probe COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
+      -s "${CMAKE_CURRENT_SOURCE_DIR}/toolchains/tests" -v)
+    set_tests_properties(on1x.toolchain_probe PROPERTIES TIMEOUT 180)
+  endif()
   add_test(NAME on1x.kernel_auto_catalog
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/extend-kernelbind.py" --check)
   add_test(NAME on1x.kernel_auto_generator
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_extend_kernelbind.py")
   set_tests_properties(on1x.kernel_auto_catalog on1x.kernel_auto_generator PROPERTIES TIMEOUT 60)
+  if(UNIX)
+    find_program(ON1X_REGISTRATION_TEST_GIT git)
+    if(ON1X_REGISTRATION_TEST_GIT)
+      add_test(NAME on1x.header_registration_hook COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_header_registration_hook.py")
+      set_tests_properties(on1x.header_registration_hook PROPERTIES TIMEOUT 90)
+    endif()
+  endif()
   add_test(NAME on1x.addon_chatgpt COMMAND "${Python3_EXECUTABLE}" -B
     "${CMAKE_CURRENT_SOURCE_DIR}/addons/chatgpt/test_chatgpt.py")
   set_tests_properties(on1x.addon_chatgpt PROPERTIES TIMEOUT 60)
@@ -643,6 +670,18 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/optimization-cli"
       "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.optimization_cli PROPERTIES TIMEOUT 240)
+  if(ON1X_WITH_FIRESTONE_HIR AND NOT CMAKE_CROSSCOMPILING)
+    set(_firestone_test_flags)
+    foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
+      list(APPEND _firestone_test_flags "--cflag=${_flag}")
+    endforeach()
+    add_test(NAME on1x.firestone_hir
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_firestone_hir.py"
+        "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/firestone-hir" "${CMAKE_C_COMPILER}"
+        ${_firestone_test_flags})
+    set_tests_properties(on1x.firestone_hir PROPERTIES TIMEOUT 120)
+  endif()
   target_link_libraries(on1x_pass_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.passes_hir COMMAND on1x_pass_tests)
   set_tests_properties(on1x.passes_hir PROPERTIES TIMEOUT 120)
@@ -651,6 +690,23 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_relational_tests PRIVATE on1x_novostone)
     add_test(NAME on1x.relational_hir COMMAND on1x_relational_tests)
     set_tests_properties(on1x.relational_hir PROPERTIES TIMEOUT 120)
+    if(NOT CMAKE_CROSSCOMPILING)
+      add_executable(on1x_hir_action_oracle tests/hir_action_oracle.cpp)
+      target_link_libraries(on1x_hir_action_oracle PRIVATE Novostone::ActionSemantics)
+      set(_hir_test_options)
+      foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
+        list(APPEND _hir_test_options "--cflag=${_flag}")
+      endforeach()
+      if(ON1X_NOVOSTONE_PROVIDER STREQUAL "SOURCE" AND NOVOSTONE_PCC_REQUIRE_SATIE)
+        list(APPEND _hir_test_options --expect-smt)
+      endif()
+      add_test(NAME on1x.novostone_hir
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_novostone_hir.py"
+          "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+          "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/novostone-hir" "${CMAKE_C_COMPILER}"
+          "$<TARGET_FILE:on1x_hir_action_oracle>" ${_hir_test_options})
+      set_tests_properties(on1x.novostone_hir PROPERTIES TIMEOUT 120)
+    endif()
   endif()
   add_executable(on1x_mir_tests tests/test_mir.cpp)
   add_executable(on1x_mir_decision_tests tests/test_mir_decision.cpp)
@@ -928,8 +984,8 @@ if(BUILD_TESTING)
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-imports-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
      set_tests_properties(on1x.kernel_imports_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
-    if(ON1X_WITH_CEPHYR)
-      add_test(NAME on1x.kernel_dynlib COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_dynlib.py"
+     if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+       add_test(NAME on1x.kernel_dynlib COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_dynlib.py"
         "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
       set_tests_properties(on1x.kernel_dynlib PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
     endif()
@@ -937,7 +993,14 @@ if(BUILD_TESTING)
        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_auto_discovery_sdk.py"
        "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
        "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-auto-discovery-sdk" "${CMAKE_C_COMPILER}")
-     set_tests_properties(on1x.kernel_auto_discovery_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+      set_tests_properties(on1x.kernel_auto_discovery_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+      if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_test(NAME on1x.static_kernel_registration COMMAND "${Python3_EXECUTABLE}" -B
+          "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_static_kernel_registration.py"
+          "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+          "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/static-kernel-registration" "${CMAKE_C_COMPILER}")
+        set_tests_properties(on1x.static_kernel_registration PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+      endif()
     add_test(NAME on1x.kernel_review_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_review_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-review-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
@@ -951,6 +1014,16 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-ipc-sdk"
       "${CMAKE_C_COMPILER}" "${CMAKE_CXX_COMPILER}" ${_test_c_flags})
     set_tests_properties(on1x.kernel_ipc_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      find_program(ON1X_DAEMON_TEST_CLANG clang)
+      if(ON1X_DAEMON_TEST_CLANG)
+        add_test(NAME on1x.daemon_ipc COMMAND "${Python3_EXECUTABLE}" -B
+          "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/daemon/test_daemon_ipc.py"
+          --on1xc "$<TARGET_FILE:on1xc>" --exotract "$<TARGET_FILE:exotract>"
+          --cc "${CMAKE_C_COMPILER}" --clang "${ON1X_DAEMON_TEST_CLANG}")
+        set_tests_properties(on1x.daemon_ipc PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+      endif()
+    endif()
   endif()
   if(ON1X_WITH_NEROTYPICAL)
     list(APPEND _meta_tests type_safety)

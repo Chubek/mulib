@@ -212,13 +212,17 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
          ('ON1X-KERNEL-PROFILE', 'catalog/MANIFEST registration drift'))
     result = run(generate)
     assert result.returncode == 0, result
+    before_collision = catalog.read_bytes()
     register('future_kernel', 'int no_silent_selection(void);\n')
-    # Give the colliding registration a different switch so generation can succeed.
+    # Give the colliding registration a different switch so the alias, not
+    # the switch, is the reason regeneration fails.
     manifest.write_text(manifest.read_text().replace(
         '  macro: MULIB_IMPL_FUTURE_KERNEL\n  status: implemented\n  dependencies: []',
         '  macro: MULIB_IMPL_COLLIDING_FUTURE\n  status: implemented\n  dependencies: []'))
     result = run(generate)
-    assert result.returncode == 0, result
+    assert result.returncode != 0 and 'ambiguous manifest alias' in result.stderr, result
+    assert 'future-kernel, future_kernel' in result.stderr
+    assert catalog.read_bytes() == before_collision
     fail('--inspect-kernels', future_import, ('ambiguous manifest alias', 'future-kernel, future_kernel'))
     register('ipc-framed', 'int handwritten_profile(void);\n')
     register('ipc_framed', 'int no_silent_handwritten_selection(void);\n')

@@ -1,0 +1,226 @@
+val H <- G:Native("bench-host");
+val J <- G:LoadLib("Json") or G:DieWith("$E?");
+val S <- G:LoadLib("Stats") or G:DieWith("$E?");
+val T <- G:LoadLib("text") or G:DieWith("$E?");
+
+val Select <- fn(enabled, name) {
+  if enabled { return ["--enable-opt", name]; }
+  return ["--disable-opt", name];
+};
+val Count <- fn(text, helper) { return G:Len(T:Split(text, helper + "(")) - 1; };
+val Emission <- fn(fixture, generated, hir, bounds, fire) {
+  if fixture == "divide-one" {
+    var divisions <- 1;
+    if hir { divisions <- 0; }
+    return Count(generated, "on1x_div_i64") == divisions;
+  }
+  if fixture == "bounds-handoff" {
+    var checks <- 2;
+    if hir and bounds { checks <- 1; }
+    return Count(generated, "on1x_bounds_index") == checks;
+  }
+  if fixture == "fold" {
+    var arithmetic <- 1; var checks <- 2;
+    var adds <- 1;
+    if hir { arithmetic <- 0; }
+    if bounds { checks <- 1; }
+    if fire and hir { adds <- 0; }
+    return Count(generated, "on1x_mul_i64") == arithmetic
+      and Count(generated, "on1x_sub_i64") == arithmetic
+      and Count(generated, "on1x_add_i64") == adds
+      and Count(generated, "on1x_bounds_index") == checks;
+  }
+  if fixture == "overflow" { return Count(generated, "on1x_add_i64") == 1; }
+  if fixture == "division" { return Count(generated, "on1x_div_i64") == 1; }
+  return Count(generated, "on1x_bounds_index") == 1;
+};
+
+val Run <- fn(on1xc, cc, out, pass) {
+  if H:Exists(out) { return G:DieWith("choose a fresh HIR benchmark output directory"); }
+  val fire <- pass == "firestone-hir";
+  var field <- "novostone_hir";
+  if fire { field <- "firestone_hir"; }
+  H:Mkdir(out + "/logs");
+  H:Mkdir(out + "/tools");
+  H:Mkdir(out + "/fixtures");
+  val compiler <- out + "/tools/on1xc";
+  H:Copy(on1xc, compiler);
+  var sequence <- 0;
+  var commands <- [];
+  val Command <- fn(label, argv) {
+    val prefix <- out + "/logs/" + G:Str(sequence);
+    sequence <- sequence + 1;
+    val result <- H:Run(argv, prefix + ".stdout", prefix + ".stderr", 30000);
+    val entry <- {label: label, argv: argv, result: result,
+      stdout_path: prefix + ".stdout", stderr_path: prefix + ".stderr"};
+    commands <- commands + [entry];
+    H:Write(prefix + ".json", J:Encode(entry) + "\n");
+    return entry;
+  };
+  val Require <- fn(label, argv) {
+    val entry <- Command(label, argv);
+    val result <- entry:result;
+    if result:exit_code != 0 or result:signal != 0 or result:timed_out {
+      return G:DieWith(label + " failed; see " + entry:stderr_path);
+    }
+    return entry;
+  };
+  val Probe <- fn(label, argv) { return H:Read(Require(label, argv):stdout_path); };
+  val runtime <- H:Root + "/on1x/runtime";
+  val runtime_obj <- out + "/runtime.o";
+  val corpus <- H:Root + "/on1x/benchmark/novostone-hir/";
+  val base <- [cc, "-std=c11", "-O2", "-I" + runtime];
+  val profile <- ["--opt-profile", "debug"];
+  val provenance <- {
+    machine: H:Machine, repository: Probe("MuLIB revision", ["git", "-C", H:Root, "rev-parse", "HEAD"]),
+    working_tree: Probe("working tree", ["git", "-C", H:Root, "status", "--porcelain"]),
+    libstone: Probe("LibStone revision", ["git", "-C", H:Root + "/on1x/third_party/libstone", "rev-parse", "HEAD"]),
+    cc: Probe("C compiler version", [cc, "--version"]),
+    target: Probe("C compiler target", [cc, "-dumpmachine"]),
+    hashes: Probe("compiler and benchmark inputs", ["sha256sum", compiler,
+      H:Root + "/on1x/benchmark/main.mull",
+      H:Root + "/on1x/benchmark/lib/NovostoneHIR/Package.mull",
+      runtime + "/on1x_runtime.c", runtime + "/on1x_runtime.h", runtime + "/on1x_bounds.h"])
+  };
+  Require("runtime setup", base + ["-c", runtime + "/on1x_runtime.c", "-o", runtime_obj]);
+  var fixtures <- [
+    {name: "fold", status: 0, stdout: "22\n101\n11\n2147483648\n", stderr: ""},
+    {name: "overflow", status: 70, stdout: "17\n", stderr: "On1x arithmetic error: addition overflow\n"},
+    {name: "division", status: 70, stdout: "17\n", stderr: "On1x arithmetic error: invalid division\n"},
+    {name: "bounds", status: 70, stdout: "17\n23\n24\n", stderr: ":9: On1x value error: index out of bounds\n"}
+  ];
+  if fire {
+    fixtures <- fixtures + [
+      {name: "divide-one", status: 0, stdout: "499999500000\n", stderr: ""},
+      {name: "bounds-handoff", status: 0, stdout: "22\n33\n", stderr: ""}
+    ];
+  }
+  var rows <- [];
+  var fi <- 0;
+  while fi < G:Len(fixtures) {
+    val fixture <- fixtures[fi];
+    val src <- out + "/fixtures/" + fixture:name + ".on1x";
+    H:Copy(corpus + fixture:name + ".on1x", src);
+    val abs <- T:Split(Probe("canonical fixture path", ["realpath", src]), "\n")[0];
+    val source_hash <- Probe("fixture hash", ["sha256sum", src]);
+    var stderr <- fixture:stderr;
+    if fixture:name == "bounds" { stderr <- abs + stderr; }
+    var reports <- [];
+    var hi <- 0;
+    while hi < 2 {
+      val report_path <- out + "/" + fixture:name + ".hir-" + G:Str(hi) + ".processor.json";
+      Require("processor report", [compiler, "--dump-processor"] + profile
+        + Select(hi == 1, pass) + [src, "-o", report_path]);
+      val decoded <- J:Decode(H:Read(report_path));
+      val keys <- H:Keys(decoded);
+      var report <- nil;
+      var ki <- 0;
+      while ki < G:Len(keys) {
+        if keys[ki] == field {
+          if fire { report <- decoded:firestone_hir; }
+          else { report <- decoded:novostone_hir; }
+        }
+        ki <- ki + 1;
+      }
+      var applied <- 0;
+      if report != nil { applied <- report:applied; }
+      if (hi == 1 and (report == nil or G:Type(applied) != "number" or applied < 0
+                      or applied % 1 != 0
+                      or ((fixture:name == "fold" or fixture:name == "divide-one" or fixture:name == "bounds-handoff") and applied == 0)))
+         or (hi == 0 and applied != 0) {
+        return G:DieWith("unexpected " + pass + " apply count; see " + report_path);
+      }
+      reports <- reports + [{path: report_path, applied: applied}];
+      hi <- hi + 1;
+    }
+    var rounds <- 1;
+    if fixture:name == "fold" or fixture:name == "divide-one" { rounds <- 6; } # one warmup, five samples
+    var bi <- 0;
+    while bi < 2 {
+      var opt_in_reference <- nil;
+      if fixture:name == "fold" {
+        val default_c <- out + "/fold.bounds-" + G:Str(bi) + ".omitted.c";
+        Require("C11 emission without " + pass + " selector", [compiler, "--emit-c"] + profile
+          + Select(bi == 1, "memgraph-bounds") + [src, "-o", default_c]);
+        opt_in_reference <- H:Read(default_c);
+      }
+      var all_samples <- [];
+      var ri <- 0;
+      while ri < rounds {
+        var vi <- 0;
+        while vi < 2 {
+          val index <- (vi + ri) % 2; # alternate AB/BA compiler order
+          val hir <- index == 1;
+          val stem <- out + "/" + fixture:name + ".bounds-" + G:Str(bi) + ".hir-" + G:Str(index);
+          val flags <- profile + Select(bi == 1, "memgraph-bounds") + Select(hir, pass);
+          val emit <- Require("C11 emission", [compiler, "--emit-c"] + flags + [src, "-o", stem + ".c"]);
+          val generated <- H:Read(stem + ".c");
+          if not Emission(fixture:name, generated, hir, bi == 1, fire) {
+            return G:DieWith("unexpected checked helper calls in " + stem + ".c");
+          }
+          if not hir and opt_in_reference != nil and generated != opt_in_reference {
+            return G:DieWith("omitted " + pass + " selector disagrees with explicitly disabled: " + stem + ".c");
+          }
+          val link <- Require("C11 compile and link",
+            base + ["-no-pie", stem + ".c", runtime_obj, "-lm", "-o", stem + ".exe"]);
+          val run <- Command("correctness gate", [stem + ".exe"]);
+          val result <- run:result;
+          if result:exit_code != fixture:status or result:signal != 0 or result:timed_out
+            or H:Read(run:stdout_path) != fixture:stdout or H:Read(run:stderr_path) != stderr {
+            return G:DieWith("incorrect execution of " + stem + ".exe; see " + run:stdout_path + " and " + run:stderr_path);
+          }
+          if ri > 0 {
+            if fire {
+              all_samples <- all_samples + [{index: index,
+                emit_ns: emit:result:elapsed_ns, compile_link_ns: link:result:elapsed_ns,
+                execute_ns: run:result:elapsed_ns}];
+            } else {
+              all_samples <- all_samples + [{index: index,
+                emit_ns: emit:result:elapsed_ns, compile_link_ns: link:result:elapsed_ns}];
+            }
+          }
+          vi <- vi + 1;
+        }
+        ri <- ri + 1;
+      }
+      hi <- 0;
+      while hi < 2 {
+        var samples <- []; var emit_ns <- []; var compile_link_ns <- []; var total_ns <- []; var execute_ns <- [];
+        var si <- 0;
+        while si < G:Len(all_samples) {
+          val sample <- all_samples[si];
+          if sample:index == hi {
+            samples <- samples + [sample];
+            emit_ns <- emit_ns + [sample:emit_ns];
+            compile_link_ns <- compile_link_ns + [sample:compile_link_ns];
+            total_ns <- total_ns + [sample:emit_ns + sample:compile_link_ns];
+            if fire { execute_ns <- execute_ns + [sample:execute_ns]; }
+          }
+          si <- si + 1;
+        }
+        val expected <- {stdout: fixture:stdout, stderr: stderr, status: fixture:status};
+        if fire {
+          rows <- rows + [{fixture: fixture:name, source_hash: source_hash,
+            memgraph_bounds: bi == 1, firestone_hir: hi == 1, processor: reports[hi], expected: expected,
+            verified_executions: rounds, samples: samples, emission_ns: S:Describe(emit_ns),
+            compile_link_ns: S:Describe(compile_link_ns), total_compile_ns: S:Describe(total_ns),
+            execute_ns: S:Describe(execute_ns)}];
+        } else {
+          rows <- rows + [{fixture: fixture:name, source_hash: source_hash,
+            memgraph_bounds: bi == 1, novostone_hir: hi == 1, processor: reports[hi], expected: expected,
+            verified_executions: rounds, compile_samples: samples, emission_ns: S:Describe(emit_ns),
+            compile_link_ns: S:Describe(compile_link_ns), total_compile_ns: S:Describe(total_ns)}];
+        }
+        hi <- hi + 1;
+      }
+      bi <- bi + 1;
+    }
+    fi <- fi + 1;
+  }
+  H:Write(out + "/commands.json", J:Encode(commands) + "\n");
+  H:Write(out + "/report.json", J:Encode({schema: "on1x." + pass + "-benchmark.v1",
+    passed: true, provenance: provenance, rows: rows}) + "\n");
+  G:GetStdout()(pass + ": " + G:Str(G:Len(rows)) + " passing configurations; " + out + "/report.json\n");
+  return 0;
+};
+return {Run: Run};

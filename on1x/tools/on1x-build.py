@@ -16,6 +16,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MULIB = ROOT.parent
+STRICT_C11 = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror']
 
 class OrderedAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -49,6 +50,37 @@ def project_debug_flags(stage, generated_dir, mulib, stdlib):
             flags.append(f'-fdebug-prefix-map={prefix}={roots[root]}')
         flags.append(f'-fdebug-prefix-map={prefix}/={roots[root]}/')
     return flags
+
+def build_kernel_shared(exo, report, root, recipe, stage, cephyr):
+    """Compile exactly the selected implementation TU, never fall back."""
+    house = exo.housekeeping
+    source, shared = stage/'mulib-dyn.c', stage/'libon1x_kernels.so'
+    source.write_text(house.implementation(root, recipe))
+    if cephyr:
+        if recipe['link_libraries']:
+            raise ValueError('Cephyr kernel[dynlib] cannot link external libraries; '
+                             'select --kernel-dynlib-compiler=host explicitly')
+        with source.open('rb') as stream, shared.open('xb') as output:
+            subprocess.run([cephyr, root/'include'], stdin=stream, stdout=output,
+                           check=True, timeout=120)
+    else:
+        flags = [*STRICT_C11, '-fPIC', '-I', str(root/'include')]
+        source_path = str(source.resolve())
+        for path, digest in house.compile_inputs(report['compiler'], flags, source).items():
+            if path != source_path and report['inputs'].setdefault(path, digest) != digest:
+                raise ValueError('KernelBind dynlib input drift: '+path)
+        subprocess.run([report['compiler'], *flags, '-shared', '-Wl,-z,defs',
+                        '-Wl,-soname,'+shared.name, source,
+                        *['-l'+library for library in recipe['link_libraries']], '-o', shared],
+                       check=True, timeout=120)
+        with shared.open('rb') as output:
+            header = output.read(64)
+        if len(header) != 64 or header[:6] != b'\x7fELF\x02\x01' or header[16:20] != b'\x03\x00\x3e\x00':
+            raise ValueError('host kernel compiler did not return an AMD64 ELF shared library')
+    for path, digest in report['inputs'].items():
+        if exo.contracts.digest(path) != digest:
+            raise ValueError('KernelBind dynlib input drift: '+path)
+    return source, shared
 
 def main():
     if len(sys.argv) > 1 and sys.argv[1] in ('init', 'exec'):
@@ -115,6 +147,8 @@ def main():
     cli.add_argument('--inspect-kernels', action='store_true',
                      help='publish KernelBind discovery JSON without building a program or archive')
     cli.add_argument('--kernel-bind', action='store_true', help='build a supported KernelBind C11 profile')
+    cli.add_argument('--kernel-dynlib-compiler', choices=('cephyr', 'host'),
+                     help='compile trusted [dynlib] kernel implementations with Cephyr (default) or --cc in PIC mode')
     cli.add_argument('--kernel-review-candidate', action='store_true',
                      help='inspect a supported safe import and publish its unsigned review subject')
     cli.add_argument('--kernel-review', type=Path,
@@ -149,6 +183,8 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
     if args.kernel_review_candidate:
         args.inspect_kernels = True
+    if args.kernel_dynlib_compiler and not (args.kernel_bind or args.kernel_review_candidate):
+        cli.error('--kernel-dynlib-compiler requires --kernel-bind or --kernel-review-candidate')
     review_options = (args.kernel_review, args.kernel_review_key, args.kernel_review_signature)
     if any(review_options):
         if not all(review_options) or not args.kernel_bind:
@@ -268,15 +304,23 @@ def main():
             paths = exo.housekeeping.search_paths(args.mulib_path)
             root = exo.housekeeping.kernel_root(args.mulib_root, MULIB, paths)
             requests = exo.contracts.load(requests_path)
-            dyn_modules = {r['module'] for r in requests['requests'] if r.get('linkage') == 'dynlib'}
-            if dyn_modules and (args.kernel_bind or args.kernel_review_candidate):
+            if args.kernel_bind or args.kernel_review_candidate:
+                dyn_modules = {r['module'] for r in requests['requests'] if r.get('linkage') == 'dynlib'}
+            if args.kernel_dynlib_compiler and not dyn_modules:
+                raise ValueError('--kernel-dynlib-compiler requires at least one kernel[dynlib] import')
+            cephyr = None
+            if dyn_modules:
                 static_modules = {r['module'] for r in requests['requests'] if 'linkage' not in r}
                 if static_modules & dyn_modules:
                     raise ValueError('conflicting static and dynlib imports of the same kernel')
-                kernel_compiler = Path(compiler[0]).with_name('on1x-cephyr-kernel')
-                if not kernel_compiler.is_file():
-                    raise ValueError('import kernel[dynlib] requires an ON1X_WITH_CEPHYR build')
-                driver_pins[kernel_compiler] = exo.contracts.digest(kernel_compiler)
+                if sys.platform != 'linux' or os.uname().machine != 'x86_64':
+                    raise ValueError('kernel[dynlib] requires native AMD64 Linux')
+                if args.kernel_dynlib_compiler != 'host':
+                    cephyr = Path(compiler[0]).with_name('on1x-cephyr-kernel')
+                    if not cephyr.is_file():
+                        raise ValueError('kernel[dynlib] defaults to an ON1X_WITH_CEPHYR build; '
+                                         'select --kernel-dynlib-compiler=host explicitly to use --cc')
+                    driver_pins[cephyr] = exo.contracts.digest(cephyr)
                 if args.cflag:
                     raise ValueError('kernel[dynlib] does not support user C code-generation flags')
                 if args.mulib_plan:
@@ -290,30 +334,34 @@ def main():
             report = exo.kernel_discovery(requests, root, paths, args.exotract, args.cc, args.resource_dir,
                                           args.cflag, driver_pins,
                                           review=bool(args.kernel_review_candidate or args.kernel_review))
-            shared = None
-            if dyn_modules and (args.kernel_bind or args.kernel_review_candidate):
-                # Admit the requested declaration profile before compiling any header.
-                if args.kernel_review_candidate or args.kernel_review:
-                    exo.reviewed_interface(report)
-                elif ipc_raw:
-                    exo.ipc_raw_interface(report)
-                else:
-                    exo.clamp_scalar_interface(report, unsafe=True)
-                def partition(names):
-                    return exo.housekeeping.plan(root, [name.removeprefix('mulib.').replace('_', '-')
-                                                        for name in sorted(names)], (), paths)
-                dynamic_recipe = partition(dyn_modules)
-                if dynamic_recipe['native_sources'] or dynamic_recipe['link_libraries']:
-                    raise ValueError('kernel[dynlib] does not support native companions or external link libraries')
-                if any(report['inputs'].get(p) != h for p,h in dynamic_recipe['inputs'].items()):
-                    raise ValueError('KernelBind dynlib discovery input drift')
-                dyn_impl = Path(temp)/'mulib-dyn.c'
-                dyn_impl.write_text(exo.housekeeping.implementation(root, dynamic_recipe))
-                shared = Path(temp)/'libon1x_kernels.so'
-                with dyn_impl.open('rb') as source, shared.open('xb') as destination:
-                    subprocess.run([kernel_compiler, root/'include'], stdin=source,
-                                   stdout=destination, check=True, timeout=120)
-                report['dynlib'] = dict(modules=sorted(dyn_modules), sha256=exo.contracts.digest(shared))
+            # Check the existing callable CDecl/ABI profiles before compiling a DSO.
+            if args.kernel_review_candidate or args.kernel_review:
+                kernel_interface = exo.reviewed_interface(report)
+                raw_requests = [r for r in report['requests'] if r['unsafe']]
+                if raw_requests:
+                    raw_kernel_interface = exo.clamp_scalar_interface(dict(report, requests=raw_requests), unsafe=True)
+            elif args.kernel_bind:
+                kernel_interface = (exo.ipc_raw_interface(report) if ipc_raw else
+                                    exo.clamp_scalar_interface(report, unsafe=True))
+            shared = static_recipe = None
+            if dyn_modules:
+                dynamic_recipe = exo.kernel_implementation_plan(report, root, paths, dyn_modules)
+                full_recipe = dynamic_recipe
+                if static_modules:
+                    static_recipe = exo.kernel_implementation_plan(report, root, paths, static_modules)
+                    full_recipe = exo.kernel_implementation_plan(report, root, paths, dyn_modules | static_modules)
+                    dyn_macros, stat_macros = map(set, (dynamic_recipe['implementation_macros'],
+                                                      static_recipe['implementation_macros']))
+                    if dyn_macros & stat_macros:
+                        raise ValueError('static and dynlib kernel implementation closures overlap')
+                    for field in ('implementation_macros', 'link_libraries'):
+                        if set(full_recipe[field]) != set(dynamic_recipe[field]) | set(static_recipe[field]):
+                            raise ValueError('static and dynlib kernel closures differ from the verified plan: '+field)
+                dyn_impl, shared = build_kernel_shared(exo, report, root, dynamic_recipe, Path(temp), cephyr)
+                report['dynlib'] = dict(modules=sorted(dyn_modules), backend='cephyr' if cephyr else 'host',
+                                        implementation_macros=dynamic_recipe['implementation_macros'],
+                                        link_libraries=dynamic_recipe['link_libraries'],
+                                        sha256=exo.contracts.digest(shared))
             candidate = exo.review_candidate(report) if args.kernel_review_candidate else None
             if args.inspect_kernels:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -327,17 +375,9 @@ def main():
                 return
             kernel_report = report
             if args.kernel_review:
-                kernel_interface = exo.reviewed_interface(report)
-                raw_requests = [r for r in report['requests'] if r['unsafe']]
-                if raw_requests:
-                    raw_kernel_interface = exo.clamp_scalar_interface(dict(report, requests=raw_requests), unsafe=True)
                 review = exo.authorize_review(report, args.kernel_review_key, args.kernel_review,
                                               args.kernel_review_signature, Path(temp))
                 compiler.append('--kernel-stage')
-            elif ipc_raw:
-                kernel_interface = exo.ipc_raw_interface(report)
-            else:
-                kernel_interface = exo.clamp_scalar_interface(report, unsafe=True)
             args.cc = report['compiler']
             compiler.append('--kernel-c11')
         compiler_env = os.environ.copy()
@@ -392,12 +432,13 @@ def main():
         paths=house.search_paths(args.mulib_path)
         mulib_root=house.kernel_root(args.mulib_root,MULIB,paths)
         includes=house.include_paths(mulib_root,paths)
-        if args.kernel_review or ipc_raw:
+        if args.kernel_review or ipc_raw or dyn_modules:
             # Discovery checked alternate kernel candidates but did not add
             # those search roots to ExoLib's C header search path.
             includes=[mulib_root/'include']
         include_flags=[part for path in includes for part in ['-I',str(path)]]
-        cmd = [args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+        compile_flags = [*STRICT_C11, *include_flags, *args.cflag]
+        cmd = [args.cc, *STRICT_C11,
                '-I', str(ROOT / 'runtime'), *include_flags,
                 str(generated), str(ROOT / 'runtime/on1x_runtime.c')]
         has_json = 'on1x_json_' in code
@@ -490,7 +531,9 @@ def main():
                 for kernel in ('xatomics', 'xthreads'):
                     if kernel not in kernels:
                         kernels.append(kernel)
-            recipe = house.plan(mulib_root, kernels, args.mulib_fixture,paths) if kernels or args.mulib_fixture or args.mulib_archive else None
+            recipe = full_recipe if dyn_modules else (
+                house.plan(mulib_root, kernels, args.mulib_fixture,paths)
+                if kernels or args.mulib_fixture or args.mulib_archive else None)
             if any('MULIB_IMPL_' in flag for flag in args.cflag):
                 raise ValueError('MuLIB implementation macros belong to the single generated TU')
             if args.mulib_archive:
@@ -541,23 +584,20 @@ def main():
                         if house.contracts.digest(path)!=module[field+'_sha256']:raise ValueError('MuLIB kernel/archive mismatch: '+str(path))
                         fingerprints[str(path)]=module[field+'_sha256']
                 cmd += ['-D'+item for item in recipe['compile_definitions']]
+                link_recipe = recipe
                 if not args.mulib_archive:
-                    static_recipe = recipe
                     if dyn_modules:
-                        static_recipe = partition(static_modules) if static_modules else None
-                        dynamic_macros = set(dynamic_recipe['implementation_macros'])
-                        static_macros = set(static_recipe['implementation_macros']) if static_recipe else set()
-                        if dynamic_macros & static_macros or dynamic_macros | static_macros != set(expected_macros):
-                            raise ValueError('static and dynlib kernel implementation closures overlap or differ from the verified plan')
                         fingerprints[str(shared)] = kernel_report['dynlib']['sha256']
                         # A basename DT_NEEDED, resolved relative to either the probe
                         # or the published program. Never embed the staging path.
-                        native_links += ['-L'+temp, '-Wl,-rpath,$ORIGIN', '-l:'+shared.name]
+                        native_links += ['-L'+temp, '-Wl,-rpath,$ORIGIN', '-Wl,--push-state,--no-as-needed',
+                                         '-l:'+shared.name, '-Wl,--pop-state']
+                    else:
+                        static_recipe = recipe
+                    link_recipe = static_recipe
                     if static_recipe:
                         impl = Path(temp)/'mulib.c'
                         impl.write_text(house.implementation(mulib_root,static_recipe))
-                    compile_flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                                     *include_flags, *args.cflag]
                     if static_recipe and args.kernel_review:
                         # Reuse the canonical planner's single TU and compile it
                         # once; the adapter probe and application link this archive.
@@ -574,8 +614,10 @@ def main():
                         native_links.append(str(archive))
                     elif static_recipe:
                         cmd.append(str(impl))
-                    cmd += [str(mulib_root/path) for path in recipe['native_sources']]
-                native_links += ['-l'+link for link in recipe['link_libraries']]
+                    if static_recipe:
+                        cmd += [str(mulib_root/path) for path in static_recipe['native_sources']]
+                if link_recipe:
+                    native_links += ['-l'+link for link in link_recipe['link_libraries']]
                 for extra in args.extra_c:
                     path=Path(extra)
                     if path.suffix=='.c' and path.is_file():
@@ -712,10 +754,14 @@ def main():
             else:
                 probe.write_text(next(iter(profiles.values()))[2]())
             probe_binary = Path(temp)/'kernel-probe'
-            subprocess.run([args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                            *include_flags, *args.cflag, str(probe), str(adapter_obj), *native_links,
+            subprocess.run([args.cc, *compile_flags, str(probe), str(adapter_obj), *native_links,
                             '-o', str(probe_binary)], check=True)
-            subprocess.run([str(probe_binary)], check=True, timeout=30)
+            probe_env = None
+            if shared:
+                # An ambient loader override must not replace the reviewed DSO.
+                probe_env = {k: v for k, v in os.environ.items()
+                             if k not in ('LD_LIBRARY_PATH', 'LD_PRELOAD', 'LD_AUDIT')}
+            subprocess.run([str(probe_binary)], check=True, timeout=30, env=probe_env)
         cmd += ['-o', str(binary)]
         subprocess.run(cmd, check=True)
         if native:
@@ -745,7 +791,16 @@ def main():
                     if raw_kernel_interface:
                         save('unsafe-interface.json', raw_kernel_interface)
                     save('discovery.json', kernel_report)
-                    save('build-plan.json', recipe)
+                    published_recipe = recipe
+                    if shared:
+                        partitions = {'dynlib': dynamic_recipe}
+                        if static_recipe:
+                            partitions['static'] = static_recipe
+                        published_recipe = dict(recipe, implementation_translation_units=len(partitions),
+                            implementation_partitions={linkage: {key: plan[key] for key in (
+                                'libraries', 'implementation_macros', 'link_libraries')}
+                                for linkage, plan in partitions.items()})
+                    save('build-plan.json', published_recipe)
                     stable = {p: h for p, h in fingerprints.items() if not Path(p).is_relative_to(Path(temp))}
                     save('admission.json', dict(schema='on1x.kernel-admission/v1',
                          profile=kernel_interface['profile'], safe_export=True, review=review,

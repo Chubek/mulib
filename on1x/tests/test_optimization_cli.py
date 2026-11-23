@@ -24,14 +24,24 @@ def listing(*args):
 debug = ['--opt-profile', 'debug']
 release = ['--profile', 'release']
 baseline = listing()
+explicit_hir = {'novostone-hir', 'firestone-hir'}
 assert baseline == listing('--opt-profile', 'default')
-assert all(on == (stage not in ('mir', 'c11') and name != 'partial-eval')
+assert all(on == (stage not in ('mir', 'c11') and name not in explicit_hir | {'partial-eval'})
            for name, (stage, on) in baseline.items())
 assert {'decision-ssa', 'integer_add_zero_right', 'constant-fold', 'dead-pure'} <= baseline.keys()
 assert not any(on for _, on in listing(*debug).values())
-assert all(on for _, on in listing(*release).values())
-assert listing('--all-optimizations') == listing(*release)
+assert all(on == (name not in explicit_hir) for name, (_, on) in listing(*release).items())
+all_expected = listing(*release)
+for name in explicit_hir & all_expected.keys():
+    all_expected[name] = ('processor', True)
+assert listing('--all-optimizations') == all_expected
 assert listing('--no-optimizations') == listing(*debug)
+if 'novostone-hir' not in baseline:
+    unavailable = run([t.compiler, '--list-optimizations', '--enable-opt', 'novostone-hir'])
+    assert unavailable.returncode == 2 and 'ON1X_WITH_NOVOSTONE=ON' in unavailable.stderr
+if 'firestone-hir' not in baseline:
+    unavailable = run([t.compiler, '--list-optimizations', '--enable-opt', 'firestone-hir'])
+    assert unavailable.returncode == 2 and 'ON1X_WITH_FIRESTONE_HIR=ON' in unavailable.stderr
 one = ['--enable-opt', 'integer_add_zero_right']
 only = listing(*one, '--disable-opt', 'all', *release)
 assert only == listing(*release, '--disable-opt', 'all', *one)

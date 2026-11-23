@@ -41,7 +41,9 @@ Configuration precedence is:
 
 The source directive is file-local after module loading; it does not silently
 change imported modules. Duplicate directives and unknown levels are errors.
-`--scrutiny-work N` accepts `1..10000000` bounded work units.
+`--scrutiny-work N` accepts `1..10000000` bounded work units. For project builds,
+set `scrutiny-work N` in the root [On1xfile](../stdlib/on1xfile/README.md#static-analysis-scrutiny);
+the same CLI switch overrides that value.
 `--no-analysis-repairs` disables Wetstone's advisory repair pass; it does not
 disable ordinary Syren source-repair candidates.
 

@@ -69,6 +69,16 @@ def fail(message):
     raise ValueError(str(message))
 
 
+def scrutiny_work(value):
+    # Match the compiler's accepted range without parsing arbitrary-size integers.
+    digits = value.lstrip('0')
+    if 1 <= len(digits) <= 8 and re.fullmatch(r'[0-9]+', value):
+        budget = int(digits)
+        if budget <= 10_000_000:
+            return budget
+    fail('scrutiny-work requires a decimal integer from 1 to 10000000')
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -246,6 +256,9 @@ def root_manifest(payload, origin, dependency=False):
                 if not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', value):
                     fail('invalid scrutiny level')
                 unique(options, verb, value)
+            elif verb == 'scrutiny-work' and not dependency:
+                value, = fields(args, 'w')
+                unique(options, verb, scrutiny_work(value))
             elif verb == 'optimization-profile' and not dependency:
                 value, = fields(args, 'w')
                 if value not in optimization.PROFILES:
@@ -1391,7 +1404,8 @@ def build(args):
             if (args.sandbox or args.allow_shell or args.target or args.output_dir or args.stdlib
                     or args.cc != 'cc' or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
-                    or args.scrutiny or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
+                    or args.scrutiny or args.scrutiny_work is not None
+                    or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -1401,6 +1415,8 @@ def build(args):
             sys.stdout.buffer.write(run([compiler, 'fmt', input_path, '--target', target], project))
             return
         args.profile = args.project_command
+    analysis_work = (scrutiny_work(args.scrutiny_work) if args.scrutiny_work is not None
+                     else config.get('scrutiny-work'))
     chosen = args.profile or ('release' if args.release else 'dev')
     name(chosen)
     backend = args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11')
@@ -1627,6 +1643,8 @@ def build(args):
             analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
         if args.scrutiny:
             analysis_flags.extend(('--scrutiny', args.scrutiny))
+        if analysis_work is not None:
+            analysis_flags.extend(('--scrutiny-work', str(analysis_work)))
         compiler_flags = [*loader, *analysis_flags, *check_flags]
         dependency_loader = loader[:-2]
         dependency_compiler_flags = [*dependency_loader, *analysis_flags, *check_flags]
@@ -1721,6 +1739,8 @@ def build(args):
                       scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
                       tools={key: tool_digest(path) for key, path in chosen_tools.items()})
+        if analysis_work is not None:
+            report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
             report['lockfile'] = digest(lock_payload)
         if backend == 'mir-vm' and args.command != 'plan' and report['tools']['vm_runner'] != outputs[bundled.name]:
@@ -1806,6 +1826,8 @@ def main():
     command.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
     command.add_argument('--allow-shell', action='store_true', help='allow explicit root shell defines outside sandbox')
     command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
+    command.add_argument('--scrutiny-work', metavar='UNITS',
+                         help='override the On1xfile static-analysis work budget (1..10000000)')
     command.add_argument('--offline', action='store_true',
                          help='explicitly require the normal network-free build behavior')
     command.add_argument('--locked', action='store_true',

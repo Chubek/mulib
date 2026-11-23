@@ -6,11 +6,23 @@
 
 namespace on1x::processor {
 enum class Phase { Desugar, Canonicalize, Semantic };
+struct NovostoneStats {
+  bool enabled=false, limited=false;
+  std::size_t attempted=0, applied=0, specialized=0, obligations=0, smt_proved=0;
+};
+struct FirestoneStats {
+  bool enabled=false, limited=false;
+  std::size_t visited=0, folds=0, divide_one=0;
+};
 struct RuleSelection {
   bool default_enabled=true;
   std::map<std::string,bool,std::less<>> overrides;
   // Separate from authored rules; default API behavior stays unchanged.
   bool partial_eval=false;
+  // Trusted in-tree compiler hook; the SDK/source cannot register transforms
+  // here. Keeping it driver-owned avoids extra dependencies in the SDK archive.
+  NovostoneStats (*novostone_hir)(Unit&) = nullptr;
+  FirestoneStats (*firestone_hir)(Unit&) = nullptr;
   bool enabled(std::string_view name) const {
     auto it=overrides.find(name);
     return it==overrides.end()?default_enabled:it->second;
