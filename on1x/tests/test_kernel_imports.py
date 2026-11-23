@@ -64,6 +64,8 @@ for flags in ([], ['--emit-only'], ['--via-mir']):
     assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and not output.exists(), p
 
 for name, text, diagnostic in (
+    ('bad_linkage', 'import kernel[dynamic] mulib.clamp;', "expected 'dynlib'"),
+    ('unclosed_linkage', 'unsafe import kernel[dynlib mulib.clamp;', "expected ']'"),
     ('missing_semi', 'import kernel mulib.json as J\nfn main(){}', "expected ';'"),
     ('missing_alias', 'import kernel mulib.json as;', 'expected identifier'),
     ('quoted_kernel', 'import kernel "../quote";', 'expected identifier'),

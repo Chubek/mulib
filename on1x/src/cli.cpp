@@ -470,7 +470,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
   first=false;out<<"{\"file_hex\":\""<<path_hex(item.where.file)<<"\",\"line\":"<<item.where.line
     <<",\"column\":"<<item.where.column<<",\"offset\":"<<item.where.offset
     <<",\"module\":\""<<item.module<<"\",\"alias\":\""<<item.alias<<"\",\"unsafe\":"
-    <<(item.is_unsafe?"true":"false")<<"}";
+    <<(item.is_unsafe?"true":"false")<<(item.dynlib?",\"linkage\":\"dynlib\"":"")<<"}";
  }
  out<<"]}\n";
  return out.str();
@@ -479,7 +479,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
 #ifdef ON1X_WITH_CEPHYR
  "       on1xc --emit-cephyr-object INPUT.on1x -o OUTPUT.o [--cephyr-target x86_64-linux-gnu]\n"
- "       [--cephyr-factir on|off] [--cephyr-profile scalar] [--cephyr-qml-pass NAME]\n"
+ "       [--cephyr-factir on|off] [--cephyr-blackstone on|off] [--cephyr-sandslab on|off]\n"
+ "       [--cephyr-profile scalar] [--cephyr-qml-pass NAME]\n"
  "       [--cephyr-trusted-qml-file FILE] [--cephyr-qml-fuel N] [--cephyr-qml-param PHASE.fuel=N]\n"
  "       [--cephyr-sarif FILE] (Cephyr diagnostics; generated C locations)\n"
  "       [--cephyr-factir-facts NEWFILE] [--cephyr-factir-smtlib NEWFILE]\n"
@@ -719,7 +720,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     if(arg=="--verify-types"){type_safety=true;continue;}
     if(arg=="--emit-cephyr-object"){cephyr_object=true;continue;}
 #ifdef ON1X_WITH_CEPHYR
-    if(arg=="--cephyr-factir"||arg=="--cephyr-profile"||arg=="--cephyr-qml-pass"||
+    if(arg=="--cephyr-factir"||arg=="--cephyr-blackstone"||arg=="--cephyr-sandslab"||arg=="--cephyr-profile"||arg=="--cephyr-qml-pass"||
        arg=="--cephyr-trusted-qml-file"||arg=="--cephyr-qml-fuel"||
        arg=="--cephyr-qml-param"||arg=="--cephyr-sarif"||
        arg=="--cephyr-factir-facts"||arg=="--cephyr-factir-smtlib"){
@@ -728,9 +729,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      if(!cephyr_switches.insert(arg).second&&arg!="--cephyr-qml-pass"&&
         arg!="--cephyr-trusted-qml-file"&&arg!="--cephyr-qml-param")
       throw std::runtime_error("duplicate "+arg);
-     if(arg=="--cephyr-factir"){
+     if(arg=="--cephyr-factir"||arg=="--cephyr-sandslab"||arg=="--cephyr-blackstone"){
       if(value!="on"&&value!="off")throw std::runtime_error(arg+" requires on or off");
-      cephyr_options.factir=value=="on";
+      if(arg=="--cephyr-factir")cephyr_options.factir=value=="on";
+      else if(arg=="--cephyr-blackstone")cephyr_options.blackstone=value=="on";
+      else cephyr_options.sandslab=value=="on";
      }else if(arg=="--cephyr-profile")cephyr_options.profile=value;
      else if(arg=="--cephyr-qml-pass")cephyr_options.passes.push_back(value);
      else if(arg=="--cephyr-trusted-qml-file")cephyr_options.trusted_files.emplace_back(value);
@@ -1147,11 +1150,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      if(cephyr_object){
       namespace fs=std::filesystem;
       auto root=fs::canonical("/proc/self/exe").parent_path()/"../share/on1x";
-      auto config=root/"cephyr-baseline.toml";
+      auto config_dir=root;
       if(!fs::is_directory(root)){
        root=fs::path(ON1X_DRIVER_SOURCE_TOOLS).parent_path();
-       config=root/"src/backend/cephyr-baseline.toml";
+       config_dir=ON1X_CEPHYR_BUILD_CONFIG_DIR;
       }
+      auto config=config_dir/(cephyr_options.blackstone?"cephyr-blackstone.toml":"cephyr-baseline.toml");
       auto result=on1x::cephyr::compile_object({generated,source+".c",cephyr_target,
        ON1X_CEPHYR_RESOURCE_ROOT,ON1X_CEPHYR_ARCHON_ROOT,config,{root/"runtime"},cephyr_options});
       using Status=on1x::cephyr::Status;

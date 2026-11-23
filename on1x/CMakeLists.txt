@@ -186,7 +186,7 @@ if(ON1X_WITH_CEPHYR)
       cephyr_request request = {0};
       cephyr_result *result = 0;
       size_t length;
-      if (cephyr_abi_version() != 1 ||
+      if (cephyr_abi_version() != 1 || cephyr_python_version() != 0 ||
           cephyr_compile(&request, &result) != CEPHYR_INVALID_ARGUMENT) return 1;
       (void)cephyr_result_output(result, &length);
       (void)cephyr_result_diagnostics(result, &length);
@@ -195,32 +195,50 @@ if(ON1X_WITH_CEPHYR)
     }]] ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
   cmake_pop_check_state()
   if(NOT ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
-    message(FATAL_ERROR "Cephyr_DIR must select a runnable Cephyr embedding ABI 1 package with cephyr_compile and length-delimited results")
+    message(FATAL_ERROR "Cephyr_DIR must select the project-pinned native-package Cephyr (embedding ABI 1, no embedded CPython). Rebuild and install the selected LibStone checkout.")
   endif()
   target_link_libraries(on1xc PRIVATE Cephyr::Cephyr)
   set(ON1X_CEPHYR_RESOURCE_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr" CACHE PATH
     "Cephyr resource directory containing triples/ and stdlib/")
   set(ON1X_CEPHYR_ARCHON_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Archon" CACHE PATH
-    "Archon package directory containing archon/ and stdspec/")
+    "Archon specification directory containing stdspec/")
   if(NOT EXISTS "${ON1X_CEPHYR_RESOURCE_ROOT}/triples/x86_64-linux-gnu.lua" OR
      NOT IS_DIRECTORY "${ON1X_CEPHYR_RESOURCE_ROOT}/stdlib/include" OR
-     NOT EXISTS "${ON1X_CEPHYR_ARCHON_ROOT}/stdspec/amd64/root.arch" OR
-     NOT IS_DIRECTORY "${ON1X_CEPHYR_ARCHON_ROOT}/archon")
+     NOT EXISTS "${ON1X_CEPHYR_ARCHON_ROOT}/stdspec/amd64/root.arch")
     message(FATAL_ERROR "Set ON1X_CEPHYR_RESOURCE_ROOT and ON1X_CEPHYR_ARCHON_ROOT to the selected Cephyr and Archon resources")
   endif()
   target_sources(on1xc PRIVATE src/backend/cephyr.cpp)
+  set(cephyr_config_dir "${CMAKE_CURRENT_BINARY_DIR}/cephyr-config")
+  foreach(profile baseline blackstone)
+    set(blackstone false)
+    if(profile STREQUAL "blackstone")
+      set(blackstone true)
+    endif()
+    configure_file(src/backend/cephyr.toml.in "${cephyr_config_dir}/cephyr-${profile}.toml" @ONLY)
+    install(FILES "${cephyr_config_dir}/cephyr-${profile}.toml" DESTINATION share/on1x)
+  endforeach()
   add_subdirectory(stdlib/cephyr)
-  target_compile_definitions(on1xc PRIVATE ON1X_WITH_CEPHYR=1
+  add_executable(on1x-cephyr-kernel src/backend/cephyr_kernel.cpp)
+  target_compile_features(on1x-cephyr-kernel PRIVATE cxx_std_17)
+  target_link_libraries(on1x-cephyr-kernel PRIVATE Cephyr::Cephyr)
+  target_compile_definitions(on1x-cephyr-kernel PRIVATE
+    ON1X_CEPHYR_BUILD_CONFIG_DIR="${cephyr_config_dir}"
     ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
     ON1X_CEPHYR_ARCHON_ROOT="${ON1X_CEPHYR_ARCHON_ROOT}")
-  install(FILES src/backend/cephyr-baseline.toml DESTINATION share/on1x)
+  add_dependencies(on1xc on1x-cephyr-kernel)
+  install(TARGETS on1x-cephyr-kernel RUNTIME DESTINATION bin)
+  target_compile_definitions(on1xc PRIVATE ON1X_WITH_CEPHYR=1
+    ON1X_CEPHYR_BUILD_CONFIG_DIR="${cephyr_config_dir}"
+    ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
+    ON1X_CEPHYR_ARCHON_ROOT="${ON1X_CEPHYR_ARCHON_ROOT}")
   if(BUILD_TESTING)
     add_test(NAME on1x.cephyr.native COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_native.py" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.cephyr.native PROPERTIES TIMEOUT 300)
     add_test(NAME on1x.cephyr.clamp_abi COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/cephyr_ffi_compat.py" "$<TARGET_FILE:Cephyr::Cephyr>"
-      --cc "${CMAKE_C_COMPILER}" --libstone-root "${ON1X_LIBSTONE_ROOT}")
+      --cc "${CMAKE_C_COMPILER}" --libstone-root "${ON1X_LIBSTONE_ROOT}"
+      --config "${cephyr_config_dir}/cephyr-baseline.toml")
     set_tests_properties(on1x.cephyr.clamp_abi PROPERTIES TIMEOUT 180)
     add_test(NAME on1x.cephyr.options COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_options.py" "$<TARGET_FILE:on1xc>"
@@ -910,6 +928,11 @@ if(BUILD_TESTING)
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/kernel-imports-sdk" "${CMAKE_C_COMPILER}" ${_test_c_flags})
      set_tests_properties(on1x.kernel_imports_sdk PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    if(ON1X_WITH_CEPHYR)
+      add_test(NAME on1x.kernel_dynlib COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_dynlib.py"
+        "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
+      set_tests_properties(on1x.kernel_dynlib PROPERTIES TIMEOUT 240 SKIP_RETURN_CODE 77)
+    endif()
      add_test(NAME on1x.kernel_auto_discovery_sdk COMMAND "${Python3_EXECUTABLE}"
        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_kernel_auto_discovery_sdk.py"
        "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"

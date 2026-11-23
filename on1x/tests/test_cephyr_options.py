@@ -26,7 +26,12 @@ with tempfile.TemporaryDirectory(prefix='on1x-cephyr-options-') as tmp:
     (work / 'Cephyr.toml').write_text('invalid !\n')
     assert emit().returncode == 0 and not results()
     baseline = obj.read_bytes()
-    assert emit('--cephyr-factir', 'off').returncode == 0 and obj.read_bytes() == baseline
+    assert emit('--cephyr-factir', 'off', '--cephyr-sandslab', 'off', '--cephyr-blackstone', 'off').returncode == 0
+    assert obj.read_bytes() == baseline
+    assert emit('--cephyr-sandslab', 'on').returncode == 0 and not results()
+    assert obj.read_bytes() != baseline, 'SandSLAB did not shorten any Fibonacci constants'
+    assert emit('--cephyr-blackstone', 'on').returncode == 0 and not results()
+    assert obj.read_bytes() != baseline, 'Blackstone did not change the Fibonacci object'
 
     rule = work / 'trusted local.qpass'
     rule.write_text('rewrite local remove_zero : add(?x, 0) => ?x;\n')
@@ -35,7 +40,8 @@ with tempfile.TemporaryDirectory(prefix='on1x-cephyr-options-') as tmp:
               '--cephyr-factir', 'on', '--cephyr-factir-facts', facts,
               '--cephyr-factir-smtlib', proof)
     assert ok.returncode == 0 and not results(), (ok.stderr, results())
-    assert '[function]' in facts.read_text() and 'no applicable add-to-copy candidate' in proof.read_text()
+    assert '[function]' in facts.read_text()
+    assert 'eq(eq(x,0),0)' in proof.read_text() and 'Satie: unsat' in proof.read_text()
 
     obj.write_bytes(sentinel)
     for args, message in [
@@ -48,7 +54,8 @@ with tempfile.TemporaryDirectory(prefix='on1x-cephyr-options-') as tmp:
         failed = emit(*args)
         assert failed.returncode and any(message in r['message']['text'] for r in results()), (args, results())
         assert obj.read_bytes() == sentinel
-    for args in [('--cephyr-factir', 'maybe'), ('--cephyr-factir-smtlib', obj),
+    for args in [('--cephyr-blackstone', 'maybe'), ('--cephyr-sandslab', 'maybe'),
+                 ('--cephyr-factir', 'maybe'), ('--cephyr-factir-smtlib', obj),
                  ('--cephyr-trusted-qml-file', work / 'missing.qpass')]:
         prior = report.read_bytes()
         failed = emit(*args)

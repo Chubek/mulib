@@ -254,6 +254,7 @@ struct KernelImport {
  Location where;
  std::string module,alias;
  bool is_unsafe=false;
+ bool dynlib=false;
 };
 struct NominalDeclaration {
  Location where;

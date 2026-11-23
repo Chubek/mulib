@@ -1,6 +1,9 @@
 # Select this file explicitly to keep working-directory and environment
 # configuration from replacing the baseline tools, target, or QML passes.
-cache_enabled = false
+# Cephyr enables this MIR pass by default. Keep the On1x reference profile
+# and opt-in QML/FactIR evidence independent of Blackstone rewrites.
+[blackstone]
+enabled = @blackstone@
 
 # Named opt-in only. Do not set [qml].profile: the baseline has no QML passes.
 [profiles.scalar]

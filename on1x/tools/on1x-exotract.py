@@ -882,6 +882,7 @@ def review_subject(report, interface):
     def fingerprint(value):
         return hashlib.sha256(contracts.dumps(value).encode('ascii')).hexdigest()
     return dict(schema='on1x.kernel-review-subject/v1', profile=interface['profile'],
+                **({'dynlib':report['dynlib']} if 'dynlib' in report else {}),
                 module=interface['module'], header=interface['header'], header_revision=interface['header_revision'],
                 target=cdecl['target'], compiler=report['compiler'], compiler_version=report['compiler_version'],
                 cflags=report['cflags'], inputs=inputs, cdecl_fingerprint=cdecl['fingerprint'],

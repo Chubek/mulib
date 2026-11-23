@@ -8,6 +8,46 @@
 #include <string.h>
 #include <threads.h>
 
+uint32_t on1x_rt_abi_version(void) { return ON1X_RT_ABI_VERSION; }
+
+On1xRT_Status on1x_rt_instance_call_i64(On1xRT_Engine *engine,
+                                        On1xRT_Instance instance,
+                                        On1xRT_StringView name,
+                                        const int64_t *arguments, size_t count,
+                                        int64_t *result, On1xRT_Error **error) {
+  On1xRT_ValueKind kinds[ON1X_RT_MAX_PARAMETERS];
+  On1xRT_Value values[ON1X_RT_MAX_PARAMETERS], returned;
+  On1xRT_Signature signature = {ON1X_RT_ABI_VERSION,
+                                sizeof(signature),
+                                kinds,
+                                count,
+                                ON1X_RT_VALUE_I64,
+                                0u};
+  On1xRT_Function function = {0};
+  On1xRT_Status status, released;
+  size_t i;
+  if (!result || (count && !arguments) || (error && *error))
+    return ON1X_RT_INVALID_ARGUMENT;
+  if (count > ON1X_RT_MAX_PARAMETERS)
+    return ON1X_RT_LIMIT;
+  for (i = 0; i < count; ++i) {
+    kinds[i] = ON1X_RT_VALUE_I64;
+    values[i] = on1x_rt_value_i64(arguments[i]);
+  }
+  status = on1x_rt_instance_function(engine, instance, name, &signature,
+                                     &function, error);
+  if (status != ON1X_RT_OK)
+    return status;
+  status =
+      on1x_rt_function_call(engine, function, values, count, &returned, error);
+  released = on1x_rt_function_release(engine, &function, NULL);
+  if (status != ON1X_RT_OK)
+    return status;
+  if (released == ON1X_RT_OK)
+    *result = returned.as.i64;
+  return released;
+}
+
 #define ON1X_RT_ENGINE_MAGIC UINT64_C(0x4f4e31585254454e)
 #define ON1X_RT_ERROR_MAGIC UINT64_C(0x4f4e315852544552)
 #define ON1X_RT_CALL_MAGIC UINT64_C(0x4f4e315852544341)

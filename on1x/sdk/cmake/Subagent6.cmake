@@ -18,7 +18,12 @@ install(
     COMPONENT On1xSDK
 )
 
-add_library(on1x_rt_sdk STATIC
+option(ON1X_RT_BUILD_SHARED "Build On1xRT as a shared library for native and Python hosts" OFF)
+set(_on1x_rt_linkage STATIC)
+if(ON1X_RT_BUILD_SHARED)
+    set(_on1x_rt_linkage SHARED)
+endif()
+add_library(on1x_rt_sdk ${_on1x_rt_linkage}
     "${CMAKE_CURRENT_SOURCE_DIR}/../runtime-sdk/src/On1xRT.c"
 )
 add_library(On1x::RT ALIAS on1x_rt_sdk)
@@ -26,6 +31,9 @@ add_library(On1x::Runtime ALIAS on1x_rt_sdk)
 set_target_properties(on1x_rt_sdk PROPERTIES
     EXPORT_NAME RT
     POSITION_INDEPENDENT_CODE ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    BUILD_WITH_INSTALL_RPATH ON
+    SOVERSION 1
 )
 target_compile_features(on1x_rt_sdk PUBLIC c_std_11)
 target_include_directories(on1x_rt_sdk PUBLIC
@@ -55,7 +63,7 @@ export(
 )
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/On1xRTConfigVersion.cmake"
-    VERSION 1.0.0
+    VERSION 1.1.0
     COMPATIBILITY SameMajorVersion
 )
 install(
@@ -68,6 +76,8 @@ install(
     EXPORT On1xRTTargets
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     COMPONENT On1xRT
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xRT
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT On1xRT
 )
 install(
     EXPORT On1xRTTargets
@@ -149,3 +159,4 @@ if(BUILD_TESTING)
         endif()
     endforeach()
 endif()
+include("${CMAKE_CURRENT_LIST_DIR}/../../runtime-sdk/cmake/Embedding.cmake")

@@ -33,7 +33,7 @@ int64_t on1x_cephyr_analyze_v1(const char *source, int64_t mode) {
     }
     /* Explicit baseline: ignore caller's ./Cephyr.toml and CEPHYR_CONFIG. */
     const char *args[] = {"--config", ON1X_CEPHYR_CONFIG, "--target=x86_64-linux-gnu",
-                          "--no-cache", "--no-factir", "-x", "c",
+                          "--no-sandslab", "--no-factir", "-x", "c",
                           mode == 0 ? "-fsyntax-only" : mode == 1 ? "--emit-mir" : "-S",
                           "-", "-o", "-"};
     cephyr_request request = {

@@ -2,7 +2,12 @@
 add_library(on1x_stdlib_cephyr STATIC runtime.c)
 target_compile_features(on1x_stdlib_cephyr PRIVATE c_std_11)
 target_include_directories(on1x_stdlib_cephyr PRIVATE ../../runtime)
-set(ON1X_STDLIB_CEPHYR_CONFIG "${PROJECT_SOURCE_DIR}/src/backend/cephyr-baseline.toml"
+# Migrate the old source-tree default in already-configured builds; retain
+# explicitly selected deployment paths.
+if(ON1X_STDLIB_CEPHYR_CONFIG STREQUAL "${PROJECT_SOURCE_DIR}/src/backend/cephyr-baseline.toml")
+  unset(ON1X_STDLIB_CEPHYR_CONFIG CACHE)
+endif()
+set(ON1X_STDLIB_CEPHYR_CONFIG "${cephyr_config_dir}/cephyr-baseline.toml"
   CACHE FILEPATH "Absolute trusted Cephyr baseline TOML path on the consumer host")
 if(NOT IS_ABSOLUTE "${ON1X_STDLIB_CEPHYR_CONFIG}")
   message(FATAL_ERROR "ON1X_STDLIB_CEPHYR_CONFIG must be an absolute path")

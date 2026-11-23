@@ -20,7 +20,7 @@ def main():
         subprocess.run(link, check=True)
         # An arbitrary caller's config must never select tools, target scripts or hooks.
         (work / "Cephyr.toml").write_text("[invalid TOML")
-        env = dict(os.environ, CEPHYR_CONFIG=str(work / "Cephyr.toml"))
+        env = dict(os.environ, CEPHYR_CONFIG=str(work / "Cephyr.toml"), PATH="")
         asm = work / "square.s"
         with asm.open("wb") as output:
             subprocess.run([exe], cwd=work, check=True, env=env, stdout=output)

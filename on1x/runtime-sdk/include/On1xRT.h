@@ -27,6 +27,8 @@ extern "C" {
 #define ON1X_RT_MAX_EXPORTS 256u
 #define ON1X_RT_MAX_DEPENDENCIES 64u
 
+uint32_t on1x_rt_abi_version(void);
+
 #if defined(_WIN32)
 #define ON1X_RT_EXPORT __declspec(dllexport)
 #elif defined(__GNUC__) || defined(__clang__)
@@ -313,6 +315,13 @@ on1x_rt_instance_function(On1xRT_Engine *engine, On1xRT_Instance instance,
 On1xRT_Status on1x_rt_function_release(On1xRT_Engine *engine,
                                        On1xRT_Function *function,
                                        On1xRT_Error **error);
+/* Look up and invoke an exact (i64, ...) -> i64 export. No handle escapes.
+ * result is written only on success. Uses a temporary function handle. */
+On1xRT_Status on1x_rt_instance_call_i64(On1xRT_Engine *engine,
+                                        On1xRT_Instance instance,
+                                        On1xRT_StringView name,
+                                        const int64_t *arguments, size_t count,
+                                        int64_t *result, On1xRT_Error **error);
 /*
  * arguments and their referenced handles are borrowed for the call.  result is
  * overwritten and therefore must not contain an unreleased owned value.  A

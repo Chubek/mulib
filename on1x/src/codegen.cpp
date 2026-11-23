@@ -1336,7 +1336,7 @@ class Generator {
       continue;
      }
      if(!f.kernel_symbol.empty()){
-     kernel_headers="#include <mulib-clamp.h>\n"
+     kernel_headers="#include <limits.h>\n#include <mulib-clamp.h>\n"
       "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
       "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
       "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";

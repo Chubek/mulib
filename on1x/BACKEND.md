@@ -25,15 +25,22 @@ build/A-enabled/hello  # prints 21
 ctest --test-dir build/A-enabled --output-on-failure -R '^on1x.cephyr.native$'
 ```
 
-The build host needs the matching Archon and Cephyr resources, CPython
-development installation and native toolchain. `on1xc` passes its checked-HIR
-C11 to `libcephyr` in memory; an execution trace showed external compiler,
-assembler and linker tools but no `cephyr` executable. The example links
+At LibStone `4c350776`, building Cephyr requires Python 3.10+, Perl and
+a C/C++20 toolchain. For its bundled CRT/libc, provide GNU target compilers
+for AMD64, AArch64 and RV64 or set `CEPHYR_PREBUILT_RUNTIME_ROOT` as
+described in [Cephyr's build guide](third_party/libstone/cornerstone/Cephyr/README.md).
+`on1xc` passes checked-HIR C11 to `libcephyr` in memory. The library loads
+its prebuilt backend, checks the matching Archon specifications, and runs
+packaged SandAS to assemble the object. No embedded Python is required.
+Keep the installed Cephyr tool and `share/cephyr/native-packages` layout.
+To use installed resources instead of the On1x-selected source checkout, set
+`ON1X_CEPHYR_RESOURCE_ROOT` to `PREFIX/share/cephyr` and
+`ON1X_CEPHYR_ARCHON_ROOT` to `PREFIX/share/archon/cornerstone/Archon`. The example links
 against the host C runtime. `ON1X_WITH_CEPHYR` defaults to `OFF`; ordinary
 `--emit-c` does not need this installation.
 
 See [native optimization and diagnostics](docs/cephyr-optimization.md) for
-opt-in QML/FactIR, SARIF source provenance, and their executable tests.
+opt-in Blackstone, SandSLAB, QML and FactIR, SARIF source provenance, and their executable tests.
 
 On MuLIB `b5b4f045` / LibStone `248ad177`, the native regression compared
 12 executions: Fibonacci, checked overflow and invalid division via both

@@ -1,4 +1,6 @@
 #include <inttypes.h>
+#include <stddef.h>
+#include <stdio.h>
 #include "mulib-clamp.h"
 
 int main(void) {

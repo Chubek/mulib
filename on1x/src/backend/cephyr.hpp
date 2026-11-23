@@ -8,7 +8,7 @@
 namespace on1x::cephyr {
 
 struct Options {
-    bool factir = false, sarif = false;
+    bool factir = false, sarif = false, sandslab = false, blackstone = false;
     std::string profile, fuel;
     std::vector<std::string> passes, parameters;
     std::vector<std::filesystem::path> trusted_files;
@@ -19,7 +19,7 @@ struct Request {
     std::string_view source;
     std::string logical_filename; // Generated C filename for #line, not the On1x source.
     std::string target;
-    std::filesystem::path resource_root, archon_root, baseline_config;
+    std::filesystem::path resource_root, archon_root, config;
     std::vector<std::filesystem::path> include_dirs;
     Options options;
 };

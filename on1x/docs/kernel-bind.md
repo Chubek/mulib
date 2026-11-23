@@ -15,6 +15,42 @@ profiles.
 Reviewed builds require an operator-selected independent Ed25519 review authority;
 the repository ships no production approval.
 
+### Compile the implementation as a shared library
+
+`import kernel[dynlib] mulib.clamp as Clamp;` selects Cephyr for the kernel
+implementation. It requires the same signed review as the plain safe import.
+The explicitly unsafe spelling is `unsafe import kernel[dynlib] mulib.clamp as Clamp;`.
+Call syntax, types and `unsafe` blocks are the same with either linkage.
+Plain `import kernel` keeps the existing static build.
+
+For example, change the import in `on1x/examples/kernel/clamp.on1x` to
+the unsafe `[dynlib]` spelling, save it as `dynamic.on1x`, and run:
+
+```sh
+python3 on1x/tools/on1x-build.py dynamic.on1x --kernel-bind \
+  --on1xc build/A-enabled/on1xc --exotract /path/to/exotract \
+  --cc gcc --resource-dir "$(clang -print-resource-dir)" -o build/dynamic
+build/dynamic/program
+```
+
+Use a fresh output directory. The Cephyr-enabled `on1xc` build supplies a
+sibling `on1x-cephyr-kernel` helper. During the build it passes the planner's
+implementation TU to `libcephyr` for PIC compilation and shared linking.
+The host compiler links the application against `libon1x_kernels.so`; the
+executable finds it alongside itself using `$ORIGIN`. Move and deploy the
+directory together and protect both files as application code. The deployed
+program does not require Cephyr. Reviewed bundles also include the DSO in
+the signed review subject by digest, exercise it with the existing boundary
+probe, and record it in `admission.json`.
+
+The tested profile is native AMD64 Linux `mulib.clamp` (raw and reviewed).
+Discovery-only kernels do not become callable. Native companions, external
+kernel link libraries, extra code-generation flags, and overlapping static and
+dynamic implementation closures are rejected. Unsupported headers produce a
+Cephyr diagnostic before publication; there is no host-compiler fallback.
+
+### Existing static build
+
 ```on1x
 unsafe import kernel mulib.clamp as Clamp;
 

@@ -16,6 +16,11 @@ fn main()
   assert(again == 0);
   assert(basis_string_contains(ir, "archon-mir 1"));
   assert(basis_string_contains(ir, "square"));
+  let (identity_status, identity, identity_notes) = Cephyr.emit_mir(
+    "unsigned long identity(unsigned long x) { return x*1ul; }");
+  assert(identity_status == 0);
+  # A default-enabled Blackstone would have simplified this multiply.
+  assert(basis_string_contains(identity, "\nmul "));
   assert(basis_string_contains(error, "error"));
   let (native, assembly, messages) = Cephyr.emit_assembly("int square(int x) { return x*x; }");
   assert(native == 0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the real clamp declaration with an explicitly supplied libcephyr.
 
-Run on Linux/AMD64 with the Python used to build the selected Cephyr library:
+Run on Linux/AMD64 with CPython 3.10+:
     python3 on1x/tests/cephyr_ffi_compat.py /path/to/libcephyr.so
 
 Exit nonzero on incompatibility. This checks a C compilation prerequisite,
@@ -21,6 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("library", type=Path)
     parser.add_argument("--cc", default="cc")
+    parser.add_argument("--config", type=Path, help="On1x baseline TOML from the enabled build")
     parser.add_argument("--libstone-root", type=Path, default=on1x/"third_party/libstone")
     args = parser.parse_args()
     if sys.platform != "linux" or platform.machine() != "x86_64":
@@ -44,7 +45,10 @@ int main(void) { return contract_add(40,2) != 42; }
     with TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         config = tmp/"Cephyr.toml"
-        config.write_bytes((on1x/"src/backend/cephyr-baseline.toml").read_bytes())
+        if args.config:
+            config = args.config.resolve(strict=True)
+        else:
+            config.write_text("[blackstone]\nenabled = false\n")
 
         def embedded(source, headers):
             return compiler.compile(("--config", config, target, "--stdlib=cephyr",

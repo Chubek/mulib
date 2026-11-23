@@ -28,7 +28,7 @@ On1x tool. The runtime text pool is not a concurrent allocator.
 
 Use the [optional backend build recipe](../../BACKEND.md#0-source-baseline-revisions-and-the-exact-newly-added-work)
 to configure a native AMD64 Linux build against the project-selected LibStone
-(`248ad1777c7b3023cd04902213e456631b4cd8fb`, Cephyr embedding ABI 1).
+(`4c35077601899944594737559534aafd9014f330`, Cephyr embedding ABI 1).
 From the repository root, with the example above saved as `consumer.on1x`:
 
 ```sh
@@ -43,7 +43,8 @@ ctest --test-dir build/A-enabled -R '^on1x\.stdlib\.cephyr$' --output-on-failure
 ```
 
 The consuming executable needs the shared Cephyr library and its matching
-dependencies, including CPython and the configured Cephyr/Archon resources.
+native packages and the configured Cephyr/Archon resources. It does not link
+or initialize CPython.
 The companion embeds absolute resource and config paths. For deployment
 configure `ON1X_STDLIB_CEPHYR_CONFIG` to the trusted installed
 `share/on1x/cephyr-baseline.toml` and set `ON1X_CEPHYR_RESOURCE_ROOT` and
@@ -59,7 +60,7 @@ text and destroys the Cephyr result. `on1x_cephyr_output_v1` and
 The three declarations are raw externs and have no reviewed safe-import
 contract. Syntax checking is not FFI verification. Source, transitive
 includes, build resources and host environment must be trusted: the driver
-can read files, initialize CPython, and use external tools. The baseline
-picks the explicit `x86_64-linux-gnu` target and disables cache and FactIR;
+can read files, load native backends, and use external tools. The baseline
+picks `x86_64-linux-gnu` with Blackstone, SandSLAB and FactIR off and no QML passes;
 the caller's `Cephyr.toml` and `CEPHYR_CONFIG` do not select driver options.
 There is no module loading or invocation API.

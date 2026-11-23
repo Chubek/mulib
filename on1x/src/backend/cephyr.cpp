@@ -38,14 +38,14 @@ Result compile_object(const Request& request) {
         !exists_as(request.resource_root / "stdlib/include", fs::file_type::directory))
         return invalid("Cephyr resource root must contain the AMD64 target script and stdlib/include");
     if (request.archon_root.empty() ||
-        !exists_as(request.archon_root / "archon", fs::file_type::directory) ||
         !exists_as(request.archon_root / "stdspec/amd64/root.arch", fs::file_type::regular))
-        return invalid("Archon resource root must contain archon and stdspec/amd64/root.arch");
-    if (!exists_as(request.baseline_config, fs::file_type::regular))
-        return invalid("missing On1x Cephyr baseline configuration");
+        return invalid("Archon resource root must contain stdspec/amd64/root.arch");
+    if (!exists_as(request.config, fs::file_type::regular))
+        return invalid("missing On1x Cephyr configuration: " + request.config.string());
 
-    std::vector<std::string> args{"--config", request.baseline_config.string(),
+    std::vector<std::string> args{"--config", request.config.string(),
         "--target=" + request.target, request.options.factir ? "--factir" : "--no-factir",
+        request.options.sandslab ? "--sandslab" : "--no-sandslab",
         "-x", "c", "-c", "-o", "-"};
     const auto& options = request.options;
     if (options.sarif) args.emplace_back("--diagnostics-format=sarif");

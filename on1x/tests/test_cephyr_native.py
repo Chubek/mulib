@@ -38,9 +38,9 @@ def main():
 
         target = "x86_64-linux-gnu"
 
-        def emit(source, output, triple=target, check=True):
+        def emit(source, output, triple=target, check=True, options=()):
             return run([compiler, "--emit-cephyr-object", "--cephyr-target", triple,
-                        source, "-o", output], check=check)
+                        *options, source, "-o", output], check=check)
 
         tests = [(root / "examples/hello.on1x", (0, b"21\n", b""))]
         for name, expr, message in (
@@ -54,11 +54,15 @@ def main():
         for source, expected in tests:
             obj, cref, exe = (work / (source.stem + ext) for ext in (".o", ".c", ".exe"))
             emit(source, obj)
+            shortened = obj.with_suffix(".short.o")
+            emit(source, shortened, options=("--cephyr-sandslab", "on"))
+            optimized = obj.with_suffix(".blackstone.o")
+            emit(source, optimized, options=("--cephyr-blackstone", "on"))
             elf = obj.read_bytes()
             assert elf[:6] == b"\x7fELF\x02\x01" and elf[16:20] == b"\x01\0\x3e\0", source
             run([compiler, "--emit-c", source, "-o", cref])
             for cc in sorted(compilers):
-                for program in (cref, obj):
+                for program in (cref, obj, shortened, optimized):
                     run([cc, "-std=c11", "-I", runtime, program, runtime / "on1x_runtime.c",
                          "-o", exe])
                     actual = outcome([exe])
