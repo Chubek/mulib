@@ -1,0 +1,14 @@
+\chapter{Markup, document IR, and publishing kernels}
+\label{ch:108}
+\index{Markup, document IR, and publishing kernels}
+
+Markup and publishing families work with structured representations between input and output. Parsing a format can produce a markup tree, while document IR separates the document model from target-specific rendering. A pretty-printer arranges a supplied document under width and formatting rules. Reuse the representation contract at each boundary to preserve structure, source location and escaping conventions.
+
+\section{Round-trip what the profile promises}
+Use a document with nested blocks, literal special characters and a link. Check the intermediate node structure and render it for two admitted targets. Compare semantic structure separately from formatting and check an unsupported node or target explicitly. The rendered text may normalize whitespace and other presentation details. Preserve a separate golden output when the exact publication layout matters. For a generic source formatter, add trivia and syntax-preservation tests as in \cref{ch:50} and \cref{ch:57}; document IR alone does not parse each programming language.
+
+\section*{Repository sources}
+\OnxSource{manual/markup-ir.md}\par
+\OnxSource{manual/docir-publishing.md}\par
+\OnxSource{manual/mulib-docir.md}\par
+\OnxSource{manual/mulib-prettydoc.md}\par

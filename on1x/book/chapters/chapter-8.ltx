@@ -1,0 +1,14 @@
+\chapter{Integer and floating-point semantics}
+\label{ch:8}
+\index{Integer and floating-point semantics}
+
+On1x exposes checked signed and unsigned operations in its numeric profiles and keeps intentional wrapping explicit. Integer widths matter at both source and foreign boundaries. A value of type \OnxCodeTerm{u64} can represent values beyond the positive range of \OnxCodeTerm{i64}. A numeric conversion tests the value for the destination domain. A bit conversion preserves a representation and can therefore produce a different mathematical interpretation.
+
+\OnxInputCode[]{../../on1x/examples/unsigned_f32.on1x}
+\section{What to test at a boundary}
+The example creates the all-ones unsigned value from a signed bit pattern and wraps it through zero. It also computes a result in \OnxCodeTerm{f32} and inspects its bits. Add cases for a largest supported integer, a narrowing conversion outside range, signed zero, and subnormal values when applicable. Compare the documented trap or bit result for the same profile. Avoid tolerance comparisons when the goal is to verify a bit conversion or distinguish signed zeros. Foreign \OnxCodeTerm{float} and \OnxCodeTerm{double} signatures add target and representation obligations in \cref{ch:96}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/numerics.md}\par
+\OnxSource{on1x/examples/unsigned_f32.on1x}\par
+\OnxSource{on1x/tests/test_numeric_limits.py}\par

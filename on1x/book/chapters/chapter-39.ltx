@@ -1,0 +1,13 @@
+\chapter{Structural macros and local syntax}
+\label{ch:39}
+\index{Structural macros and local syntax}
+
+Structural macro patterns can match nested syntax and collect repetitions. Capture rank records how a bound value sits within repetition dimensions. A template repetition must be driven by compatible capture widths. Empty repetitions must carry their shape so an empty inner list does not look like a missing binding. Matching and copying are budgeted separately.
+
+Local \OnxCodeTerm{let\_syntax} binds transformers against the outer syntax environment. Recursive \OnxCodeTerm{letrec\_syntax} can refer through the group. The implementation tracks definition and caller contexts, then lowers to collision-checked identifiers and erases the local transformer forms before wire transport. For a regression fixture, use one empty inner repetition and another with two elements. Add an unrelated caller binder with the same name as an introduced temporary. These cases distinguish capture rank, width handling, and hygiene from simple token substitution.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/structural_macros.on1x}\par
+\OnxSource{on1x/examples/local_syntax.on1x}\par
+\OnxSource{on1x/src/macro_rules.cpp}\par
+\OnxSource{on1x/docs/metaprogramming.md}\par

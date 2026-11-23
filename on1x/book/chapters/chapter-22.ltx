@@ -1,0 +1,20 @@
+\chapter{Fixed arrays, slices, and checked offsets}
+\label{ch:22}
+\index{Fixed arrays, slices, and checked offsets}
+
+A fixed array carries its element type and extent in the checked layout. Indexing tests that an index belongs to the relevant range. A slice describes a bounded segment and has its own constraints on element representation, bounds, and construction. Read the constructor and indexing rules for the intended backend, since standard MIR and the VM product profiles admit different layouts.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn main()
+{
+  let values = array[3, 5, 8];
+  assert(values[1] == 5);
+}
+\end{OnxCodeBlock}
+
+A boundary test should read the first and last valid elements, then exercise an invalid one-past-end access independently. Also test slicing at the boundary, where an empty slice may be well formed and the same position is still invalid for indexing. MEMGraph can prove specific fixed-array accesses nontrapping at compile time and elide their checks. It leaves dynamic or unproved cases intact. \cref{ch:77} discusses how to inspect that decision.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/data-model.md}\par
+\OnxSource{on1x/examples/data_model.on1x}\par
+\OnxSource{on1x/hir/MEMGraph/README.md}\par

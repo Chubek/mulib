@@ -1,0 +1,19 @@
+\chapter{Kernel manifests, plans, and CDD metadata}
+\label{ch:93}
+\index{Kernel manifests, plans, and CDD metadata}
+\index{Kernels!manifest}
+
+The MuLIB manifest records headers, manuals, dependencies, fixtures and implementation kinds. Planners combine those records with explicitly registered recipes, including support sources under \OnxCodeTerm{library/}. The difference between a dependency include and an implementation object matters when assembling a single kernel translation unit. CDD records describe capabilities and typed declarations, including a target-qualified CDecl profile when extraction is available.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+python3 on1x/tools/on1x-mulib.py plan bitset
+python3 on1x/tools/on1x-exotract.py list-kernels
+\end{OnxCodeBlock}
+
+Compare the plan with the kernel's manifest record and check how inline or external definitions are recorded. A resolved source name can still lack extracted declarations, a native recipe or a callable profile. Capture the target and the qualified C declaration when reporting a mismatch. Check the generated catalogue freshness when changing registered headers. \cref{ch:119} gives a path to navigate the whole manifest.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/kernel-registration.md}\par
+\OnxSource{on1x/stdlib/mulib/housekeeping.py}\par
+\OnxSource{on1x/tools/on1x-mulib.py}\par
+\OnxSource{manual/mulib-cdd-catalogue.md}\par

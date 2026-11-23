@@ -1,0 +1,14 @@
+\chapter{Graphics, UI, and device-facing kernels}
+\label{ch:107}
+\index{Graphics, UI, and device-facing kernels}
+
+The graphics inventory includes representation and geometry utilities, software or device-backed rendering paths, and overlay/display components. Pure integer geometry, a CPU buffer and a display resource have different error and lifetime contracts. Device-facing profiles can depend on the selected platform and host permissions. A kernel header with framebuffer or display functionality does not provide a source On1x rendering API automatically.
+
+\section{Separate deterministic and host tests}
+Verify coordinate transforms and clipping against data fixtures, with cases on boundaries and outside the intended viewport. Test row layout in a CPU buffer independently of a device. For a platform adapter, record which target, device configuration and presentation path were actually used. Compare teardown and failure behavior before testing a long interactive scene. If exposing graphics to source, start with a bounded copy-safe operation or an existing native facade. Broader resource APIs require explicit lifetimes for frames, buffers, events and any foreign handles.
+
+\section*{Repository sources}
+\OnxSource{manual/graphics-overlay.md}\par
+\OnxSource{manual/engineering-kernels.md}\par
+\OnxSource{manual/mulib-framebuffer.md}\par
+\OnxSource{manual/mulib-2dgeom.md}\par

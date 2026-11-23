@@ -1,0 +1,14 @@
+\chapter{Optimization profiles and zero-cost comparisons}
+\label{ch:87}
+\index{Optimization profiles and zero-cost comparisons}
+
+\OnxCodeTerm{default}, \OnxCodeTerm{debug}, and \OnxCodeTerm{release} select enabled HIR rules, decision lowering and applicable MIR passes. An explicit rule selection narrows a question such as whether one neutral rewrite occurred. Paired benchmarks compare authored and wrapped examples under equivalent profiles. Code or artifact identity in a tested pair is evidence for that pair and configuration.
+
+\section{Compare observable costs separately}
+Verify both programs have the same results and traps. Record whether checked C, normalized MIR, assembly or linked native code agree, and report the normalization used. Measure compilation and execution separately. Include repeated runs and a comparable baseline. A macro or source abstraction might disappear in runtime code and still add build work or provenance metadata. Borrowing, allocation and foreign calls need their own comparisons. A benchmark on scalar wrappers does not establish their behavior on those other profiles.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/optimization-profiles.md}\par
+\OnxSource{on1x/benchmark/ZERO_COST.md}\par
+\OnxSource{on1x/benchmark/OPTIMIZATION_ROUND2.md}\par
+\OnxSource{on1x/benchmark/README.md}\par

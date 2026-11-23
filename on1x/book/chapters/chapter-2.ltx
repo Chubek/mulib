@@ -1,0 +1,16 @@
+\chapter{The repository and its evidence}
+\label{ch:2}
+\index{The repository and its evidence}
+
+Start in \OnxCodeTerm{on1x/} for the compiler. The language grammar is in \OnxCodeTerm{grammar/}, source checking and C generation are in \OnxCodeTerm{src/}, checked-HIR passes are in \OnxCodeTerm{hir/}, adapters are in \OnxCodeTerm{backends/}, and generated programs share support in \OnxCodeTerm{runtime/}. The library, native and script processors, and two SDKs have their own directories. At the MuLIB root, \OnxCodeTerm{include/}, \OnxCodeTerm{manual/}, \OnxCodeTerm{examples/}, and \OnxCodeTerm{tests/} provide the kernel headers, usage guides, programs, and checks.
+
+\section{Trace a feature across layers}
+For a value-producing loop, start with the source manual, find the parser and canonical lowering, then compare the C11 execution test with the tests that construct malformed HIR directly. The source test exercises something a user can actually write. A forged-HIR test exercises the independent verifier when inference has been bypassed. Both matter to compiler consumers.
+
+The capability matrix distinguishes executable profiles from partial ones. Verification entries sometimes refer to older revisions or different optional dependencies. Copy the revision, build flags, and target when quoting their results. For MuLIB, start with the manifest entry and inspect its header and companion manual before inferring a callable C ABI or an On1x wrapper.
+
+\section*{Repository sources}
+\OnxSource{README.md}\par
+\OnxSource{on1x/docs/capability-matrix.md}\par
+\OnxSource{on1x/VERIFICATION.md}\par
+\OnxSource{MANIFEST.yaml}\par

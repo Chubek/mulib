@@ -1,0 +1,15 @@
+\chapter{Allocation, containers, and storage kernels}
+\label{ch:101}
+\index{Allocation, containers, and storage kernels}
+
+Allocation and container kernels provide reusable C storage policies. An arena groups allocations under an arena lifetime. A vector maintains logical length and capacity. A bitset maps logical positions into word storage, and serialization or traversal needs the caller's agreed bit numbering and bounds. Each handle or pointer borrows or owns memory according to its concrete API. Growth can invalidate saved pointers into a buffer.
+
+\section{Test the allocation contract}
+Fill a container to capacity and grow it with a controlled allocator. Check the contents through the container's current accessors, and inspect the manual before reusing any old address. Exercise allocation failure and verify the documented return status and resulting state. If several kernel objects use a caller allocator, associate ownership with the allocator domain that must release them. For On1x integration, prefer a documented bridge or wrap a bounded copy-safe operation. Passing the address of an internal C buffer into a raw integer signature loses the lifetime and representation checks.
+
+\section*{Repository sources}
+\OnxSource{manual/mulib-alloc.md}\par
+\OnxSource{manual/mulib-arena.md}\par
+\OnxSource{manual/mulib-vec.md}\par
+\OnxSource{manual/mulib-bitset.md}\par
+\OnxSource{manual/api-kernels.md}\par

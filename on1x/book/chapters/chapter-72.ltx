@@ -1,0 +1,14 @@
+\chapter{Parsing, AST shape, and source locations}
+\label{ch:72}
+\index{Parsing, AST shape, and source locations}
+
+The parser constructs C++ nodes for declarations, statements, expressions, types, and patterns from collected tokens. Precedence and associativity determine which expressions nest. Parentheses can consume parsing depth even when they do not add a durable expression node. The compiler also bounds expression tree depth, since a long sequence of left-associative operators can create a deep tree without deep source parentheses.
+
+\section{Test ambiguous structure before types}
+Create a fixture that makes grouping visible in the source AST, then add a parentheses variant with a different tree. Compare both before and after macro expansion to identify which stage changed the structure. Separately test a deep chain that crosses the limit and a large but shallow program. Preserve locations for synthesized nodes when adding a parser desugaring. A subsequent verifier needs the source location for errors such as an out-of-scope loop exit. Parsed AST alone carries no type, loan, or execution evidence.
+
+\section*{Repository sources}
+\OnxSource{on1x/src/parser.cpp}\par
+\OnxSource{on1x/include/on1x/ast.hpp}\par
+\OnxSource{on1x/src/source.cpp}\par
+\OnxSource{on1x/tests/test_limits.py}\par

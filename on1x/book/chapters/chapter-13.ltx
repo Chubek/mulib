@@ -1,0 +1,13 @@
+\chapter{Tuples and destructuring}
+\label{ch:13}
+\index{Tuples and destructuring}
+
+A tuple is an ordered structural product. Its arity and each element's type are part of its type. A destructuring binding introduces names for the corresponding fields, and a nested pattern requires the same nested shape. A function parameter pattern similarly projects fields at entry. This projection is distinct from a match arm that can conditionally succeed or fail.
+
+\OnxInputCode[firstline=2,lastline=7]{../../on1x/examples/tuples.on1x}
+The C11 backend emits typed product records. A scalar tuple can be copied as a value. A tuple containing a closure needs retain/release operations for its environment, including nested tuple paths. Parameters borrow the incoming aggregate and managed results carry ownership. Ordinary tuple support does not introduce raw foreign aggregate ABI support. To see the difference between arity and element typing, try swapping a two-element tuple and then pass a three-element one. Then inspect a valid generated C declaration to see why the structurally different tuple needs a different layout.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/tuples.md}\par
+\OnxSource{on1x/examples/tuples.on1x}\par
+\OnxSource{on1x/examples/parameter_patterns.on1x}\par

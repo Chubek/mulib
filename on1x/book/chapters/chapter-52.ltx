@@ -1,0 +1,15 @@
+\chapter{Numeric, text, sequence, and functional APIs}
+\label{ch:52}
+\index{Numeric, text, sequence, and functional APIs}
+
+The source wrappers add conventions on top of the core types. \OnxCodeTerm{Int} has division, remainder, and modulus behavior that needs separate tests for negative operands and an overflow boundary. \OnxCodeTerm{String.find} reports a byte position or negative one, so the next step after a found index must still respect UTF-8 boundaries when making a character-level decision. Ascending tabulation and left or right folds give different observable callback orders.
+
+\section{Compose a small data transformation}
+Take a string, test a prefix, and return an optional byte position. Use \OnxCodeTerm{Functional.compose(f,g)} only when the intermediate result matches the parameter type of \OnxCodeTerm{f}; the call applies \OnxCodeTerm{g} first. For a list fold, use an order-sensitive test such as building a string of visited items. Test an empty list and an incorrectly shaped S-expression in addition to the ordinary path. Byte-level search, list traversal and persistent S-expression allocation have different cost models.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/Int.on1x}\par
+\OnxSource{on1x/stdlib/String.on1x}\par
+\OnxSource{on1x/stdlib/List.on1x}\par
+\OnxSource{on1x/stdlib/Functional.on1x}\par
+\OnxSource{on1x/stdlib/README.md}\par

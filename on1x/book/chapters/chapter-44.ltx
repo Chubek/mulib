@@ -1,0 +1,13 @@
+\chapter{Cancellation and monotonic deadlines}
+\label{ch:44}
+\index{Cancellation and monotonic deadlines}
+\index{Cancellation!deadlines}
+
+Internal fiber cancellation consumes the handle. Before dispatch it can prevent the body from starting. For running or blocked children it uses cooperative interruption, withdraws waits, drains checked deferred and lexical cleanup, and accounts for descendants before returning. A well-typed program still needs an execution path that cooperates with cancellation. Cleanup observations can distinguish a cancelled wait from normal return.
+
+A \OnxCodeTerm{poll after} arm gives a timed choice that the program can handle. A \OnxCodeTerm{taskgroup within} deadline has a different contract in this release. Expiry cooperatively drains the timed group and terminates the run with a located diagnostic and exit status 73. Design a regression test that blocks a child and records its cleanup, then check the host-visible result. Keep a separate no-expiry case that consumes all handles normally. Neither deadline form implements general async/await.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/cancellation-deadlines.md}\par
+\OnxSource{on1x/examples/cancellation_deadlines.on1x}\par
+\OnxSource{on1x/tests/test_taskgroup_within.py}\par

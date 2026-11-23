@@ -1,0 +1,14 @@
+\chapter{Choosing a MuLIB integration path}
+\label{ch:91}
+\index{Choosing a MuLIB integration path}
+
+Start with an existing standard-library wrapper when it fits the application. That route uses defined source signatures and the build helper's bridge selection. For a new kernel, inspect the manifest, extract target declarations, and decide whether the goal is metadata, a trusted C archive, a raw On1x call, or an independently reviewed safe call. Each adds evidence. Header discovery only establishes the starting point.
+
+\section{Walk one candidate forward}
+Choose a simple kernel such as clamp. Find its manifest entry and build recipe. Inspect the C declaration and compare it with the intended On1x signature. Verify that the compiler profile supports calls for that kernel and that the linked implementation provides the intended symbol. Then read the contract and admission results if the call is intended to be safe. A discovery-only media or sandbox declaration cannot be substituted into this workflow at the last step. \cref{ch:92} covers placement and \cref{ch:96} covers reviewed admission.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/kernel-registration.md}\par
+\OnxSource{on1x/docs/kernel-bind.md}\par
+\OnxSource{on1x/stdlib/mulib/README.md}\par
+\OnxSource{MANIFEST.yaml}\par

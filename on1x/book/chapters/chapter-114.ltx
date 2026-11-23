@@ -1,0 +1,15 @@
+\chapter{On1xRT embedding and handle lifetimes}
+\label{ch:114}
+\index{On1xRT embedding and handle lifetimes}
+\index{SDK!runtime handles}
+
+On1xRT ABI 1 is a recoverable embedding API for native AOT modules. It is independent of the compiler SDK and the generated application's private runtime ABI. A host creates a thread-confined engine with an allocator table, registers or authorizes providers, and works with exact supported signatures and handle kinds. A generation and an engine identity help the API reject stale handles and cross-engine use.
+
+\section{Close the engine in dependency order}
+Register a module, create an instance, look up a function, and invoke it with admitted scalar or byte values. Release returned owned handles using the matching operations. A borrowed view remains valid only under the documented handle and mutation conditions. Exercise engine destruction with outstanding handles to see the busy result, then release them and complete destruction. Errors retain allocator context requirements. Synchronous callbacks and loaded native code execute with host authority. Design host policy separately from artifact identity; a matching artifact identifies the code that will run.
+
+\section*{Repository sources}
+\OnxSource{on1x/runtime-sdk/README.md}\par
+\OnxDirectory{on1x/runtime-sdk/include}\par
+\OnxDirectory{on1x/runtime-sdk/tests}\par
+\OnxSource{on1x/sdk/README.md}\par

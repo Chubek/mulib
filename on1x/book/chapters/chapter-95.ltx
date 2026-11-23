@@ -1,0 +1,15 @@
+\chapter{ExoML contracts and target-specific CDecls}
+\label{ch:95}
+\index{ExoML contracts and target-specific CDecls}
+\index{FFI!semantic contracts}
+
+A C declaration describes ABI structure. The ExoML semantic sidecar can additionally describe validity conditions, ownership, transfer, borrows, failure conventions and effects. Target-qualified extraction pins the source and toolchain evidence behind the declaration. Verification compares recorded metadata and artifacts with their source provenance. Keep the full contract when a coarse compatibility projection drops conditions such as transfer on success only.
+
+\section{Trace a two-outcome ownership contract}
+Consider a native call whose argument is retained on success but remains with the caller on failure. A type-correct C declaration alone does not specify which branch owns the argument. Record the two outcomes explicitly and test the exact provider behavior in both states. This documentation is necessary for designing adapters, and general conditional foreign ownership still requires appropriate compiler support. \OnxCodeTerm{on1x-bind} can inspect and validate supported contracts and emit bounded adapters where eligible. Read the review requirements before asking for a safe declaration.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/contracts.md}\par
+\OnxSource{on1x/contracts-exoml/README.md}\par
+\OnxSource{on1x/contracts-exoml/obligations.json}\par
+\OnxSource{on1x/tools/on1x-bind.cpp}\par

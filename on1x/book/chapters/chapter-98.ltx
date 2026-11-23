@@ -1,0 +1,15 @@
+\chapter{Raw stdlib bridges and snapshot conventions}
+\label{ch:98}
+\index{Raw stdlib bridges and snapshot conventions}
+\index{FFI!raw bridges}
+
+Raw bridges expose exact, narrow C signatures to source wrapper modules. The build helper chooses bridge groups and compiles the bridge separately from the shared kernel implementation. Status values or out-of-band bounded snapshots can carry more information through the scalar ABI. This approach can avoid exposing native handles directly. Ownership inside the bridge remains the responsibility of its C implementation.
+
+\section{Test a snapshot lifecycle}
+Choose a text or byte operation. Test an ordinary success, zero-length data, and failure. Verify the documented lifetime by issuing a later operation and checking what happens to the earlier result. Exercise allocation failure where the bridge supplies fault injection, and check that temporary resources are released. Look for NUL-free restrictions on text even where the paired byte API allows zeros. A bridge's trust comes from its concrete implementation and evidence; its source wrapper signature alone does not supply reviewed foreign admission.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/_bridge/README.md}\par
+\OnxSource{on1x/stdlib/_bridge/mulib_bridge.c}\par
+\OnxSource{on1x/examples/stdlib_extensions.on1x}\par
+\OnxSource{on1x/tests/test_stdlib_bridge_allocation.c}\par

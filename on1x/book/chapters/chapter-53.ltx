@@ -1,0 +1,14 @@
+\chapter{JSON, YAML, TOML, and INI}
+\label{ch:53}
+\index{JSON, YAML, TOML, and INI}
+
+The format libraries expose focused source operations backed by MuLIB C bridges. They pass supported scalars across the bridge and use bounded snapshots or status tuples where appropriate. JSON compiler intrinsics additionally have the lexical owner/view rules in \cref{ch:28}. General foreign handles are outside both the scalar bridge surface and the safe imports available from reviewed contracts.
+
+\section{Preserve format errors and absence}
+When reading a setting, test an absent key, a present empty string, a valid nonempty string, a malformed document, and a valid document with a value of the wrong kind. Keep the wrapper's status separate from the returned text. A fallback value alone can conflate all five outcomes. Choose the documented snapshot or lifetime for each returned value and check the limits of a large document separately. The standard-library extension example exercises the concrete bridge and build plan. A link failure should lead you to the build helper's selected bridge groups before editing the parser call.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/stdlib_extensions.on1x}\par
+\OnxSource{on1x/stdlib/_bridge/README.md}\par
+\OnxSource{on1x/stdlib/json/__init__.on1x}\par
+\OnxDirectory{on1x/stdlib/tests}\par

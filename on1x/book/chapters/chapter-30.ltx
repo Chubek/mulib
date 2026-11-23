@@ -1,0 +1,14 @@
+\chapter{Option, Result, and propagation}
+\label{ch:30}
+\index{Option, Result, and propagation}
+\index{Cleanup!Result propagation}
+
+The pervasive environment supplies canonical \OnxCodeTerm{Option<T>} and \OnxCodeTerm{Result<T,E>} declarations and copy-safe helper functions. Use Option for optional presence and Result for success with a typed error. On the admitted nominal Result, postfix \OnxCodeTerm{?} evaluates once, yields the success payload, or returns the active error to a compatible enclosing function after cleanup. For local recovery, use a match with both cases.
+
+\OnxInputCode[firstline=3,lastline=15]{../../on1x/examples/pervasive_options.on1x}
+The error code for a negative input differs from the error code for an odd input. Call the example with a positive even number and both kinds of invalid number to confirm the paths. The finite unique-owner profile makes \OnxCodeTerm{?} an explicit consuming site on a move-only result. Generic convenience helpers stay copy-safe and have different admissibility from an explicit owner-bearing construction and consumption. Option does not acquire Result propagation semantics simply because it also has two constructors.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/defer-errors.md}\par
+\OnxSource{on1x/docs/modules.md}\par
+\OnxSource{on1x/examples/pervasive_options.on1x}\par

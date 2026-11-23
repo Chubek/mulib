@@ -1,0 +1,13 @@
+\chapter{Regex literals and captures}
+\label{ch:20}
+\index{Regex literals and captures}
+
+The intrinsic regex profile compiles supported patterns through Firestone during compilation. A slash in an operand context can introduce a regex literal, while an infix slash can denote division. The scanner and parser preserve that distinction. The documented UTF-8 and capture subsets have fixed limits, so check the intended pattern against the implemented forms before choosing it for validation.
+
+\section{Whole matches and captured data}
+A Boolean match answers whether the selected profile finds a match. If you need matched text, exercise the capture API separately and test how the documented result encodes success and absence. An empty captured span and an unmatched capture can otherwise look identical when rendered. Include a multi-byte input to expose offset assumptions. A build without the Firestone headers reports regex as unavailable. Prepare a Firestone-enabled build for positive fixture checks and use the portable bootstrap build to test the availability diagnostic. A compiled regex and an external PPX regex expansion are different extension paths.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-regex.md}\par
+\OnxSource{on1x/src/regex.cpp}\par
+\OnxSource{on1x/tests/test_core_regex.py}\par

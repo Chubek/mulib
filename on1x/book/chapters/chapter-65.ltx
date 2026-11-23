@@ -1,0 +1,13 @@
+\chapter{Backend, target, and optimization selection}
+\label{ch:65}
+\index{Backend, target, and optimization selection}
+
+Project selection can choose \OnxCodeTerm{c11}, \OnxCodeTerm{mir-c11}, \OnxCodeTerm{mir-vm}, or \OnxCodeTerm{mir-archon} in the documented profiles. A scoped or CLI override changes the effective plan; the driver rejects an unavailable path instead of falling back silently. A VM build produces an O1VM artifact, while the native Archon path needs matching target tools and ABI archives. The optimization profile and pass overrides are separate from artifact kind.
+
+\section{Inspect before compiling}
+Use \OnxCodeTerm{on1x-project.py backends} with the intended compiler to probe configured paths. Use the project plan with a backend override to inspect the tools, flags and output kind. For differential checks start with a scalar function that both backends admit. Add an ownership feature in a second fixture to make the representation boundary visible. When reporting different optimization results, include both effective profiles. Named MIR passes cannot simply be applied to an artifact generated directly from HIR.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/docs/optimization-profiles.md}\par
+\OnxSource{on1x/toolchains/README.md}\par

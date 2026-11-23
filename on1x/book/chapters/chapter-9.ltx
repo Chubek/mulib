@@ -1,0 +1,25 @@
+\chapter{Bindings, shadowing, and scope}
+\label{ch:9}
+\index{Bindings, shadowing, and scope}
+
+Use \OnxCodeTerm{let} for an immutable binding and \OnxCodeTerm{var} for local mutable state. A binding belongs to its lexical scope. An inner declaration can shadow a previous name, and a closure that already resolved the earlier binding keeps that lexical identity. Names inside a destructuring initializer are resolved before the new pattern introduces its leaves. Changing a spelling in one scope can change which binding a closure captures.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn main()
+{
+  let limit = 42;
+  {
+    let limit = 7;
+    assert(limit == 7);
+  }
+  assert(limit == 42);
+}
+\end{OnxCodeBlock}
+
+A mutable loop counter is a local state location. A shadowed immutable name is a fresh binding. The checker maintains this distinction through type resolution and C name generation. It also constrains what may be captured and what may escape its scope. See \cref{ch:12} for immutable captures and \cref{ch:27} for the identity of a checked loan over a named place.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/language.md}\par
+\OnxSource{on1x/examples/shadow.on1x}\par
+\OnxSource{on1x/src/sema.cpp}\par
+\OnxSource{on1x/src/infer.cpp}\par

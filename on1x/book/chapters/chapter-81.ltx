@@ -1,0 +1,14 @@
+\chapter{Direct C11 and the generated runtime}
+\label{ch:81}
+\index{Direct C11 and the generated runtime}
+
+The reference backend translates checked HIR into C11 and uses private runtime entry points for operations that need checked arithmetic, allocation, managed environments, resource cleanup, or runtime faults. JSON and cooperative concurrency add companion sources when needed. Shapes and names in the generated code follow compiler layout rules. They are private implementation details with different stability from SDK APIs.
+
+\section{Read the output in execution order}
+Emit C for a closure factory, locate the typed invocation function and environment constructor, then follow the call site and cleanup. Repeat with an ordinary top-level function converted to a function value to see how the environment differs. If behavior depends on a trap or cleanup after an early return, compare the generated statements and the actual executable. Inspect the helper's link plan for missing runtime functions before debugging generated code. Direct C11 can admit profiles that MIR still rejects.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/architecture.md}\par
+\OnxSource{on1x/src/codegen.cpp}\par
+\OnxSource{on1x/runtime/on1x_runtime.h}\par
+\OnxSource{on1x/backends/c11/Backend.cpp}\par

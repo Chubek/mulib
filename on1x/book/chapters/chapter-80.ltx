@@ -1,0 +1,21 @@
+\chapter{MIR serialization, evaluation, and passes}
+\label{ch:80}
+\index{MIR serialization, evaluation, and passes}
+\index{MIR!serialization}
+\index{Optimization!MIR passes}
+
+The text format serializes a versioned MIR profile and can be decoded and independently verified. The reference evaluator executes the admitted subset under bounds. The scalar pass pipeline includes constant folding, control-flow simplification, local-slot optimization and elimination of dead pure values. It works on private candidates and returns the last verified prefix when work or rewrite limits are reached.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+on1xc --emit-ir on1x/examples/mir.on1x -o build/input.mir
+on1xc --run-ir --ir-input build/input.mir
+on1xc --dump-passes --optimize-ir --ir-input build/input.mir
+\end{OnxCodeBlock}
+
+Compare evaluator outcomes before and after a rewrite, including a bounded trap case. Then compare round-trip text or deterministic output under the same profile. A pass removing unused arithmetic must still preserve a trap when that arithmetic can fault. MIR supplied from a file enters at MIR verification and bypasses the earlier source and HIR passes. Record whether the experiment begins with text or source when comparing pass logs.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/backend-mir.md}\par
+\OnxSource{on1x/docs/backend-passes.md}\par
+\OnxSource{on1x/src/backend/serialize.cpp}\par
+\OnxSource{on1x/src/backend/passes.cpp}\par

@@ -1,0 +1,13 @@
+\chapter{Library and processor search paths}
+\label{ch:33}
+\index{Library and processor search paths}
+
+Ordinary libraries, standard-library roots, PPXs, and kernel roots have different discovery settings. \OnxCodeTerm{ON1X\_LIB\_PATH}, \OnxCodeTerm{ON1X\_STDLIB\_PATH}, \OnxCodeTerm{ON1X\_PPX\_PATH}, and \OnxCodeTerm{ON1X\_STDPPX\_PATH} affect the compiler or its build wrapper. \OnxCodeTerm{ON1X\_MULIB\_PATH} is a build and inspection setting. The equivalent flags accept colon-separated lists and ignore empty entries. Relative entries follow the invoking process's working directory. The legacy \OnxCodeTerm{ON1X\_PATH} uses its documented host-specific separator.
+
+\section{Reproduce resolution}
+For a duplicate package problem, invoke the compiler under the same working directory with explicit root flags. Capture the dependency report and compare selected canonical files before looking at their declarations. For a PPX, also confirm that the processor is activated and that the name maps to the expected executable and manifest. For a kernel, resolve the header independently and inspect its build plan. A discovered name can still fail subsequently because of an unavailable processor, incompatible package, or unsupported ABI.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/search-paths.md}\par
+\OnxSource{on1x/src/discovery.cpp}\par
+\OnxSource{on1x/tests/test_discovery.py}\par

@@ -1,0 +1,15 @@
+\chapter{Operating-system, I/O, and time facades}
+\label{ch:58}
+\index{Operating-system, I/O, and time facades}
+
+The I/O, OS, Unix, environment, time, and terminal modules expose specific slices of the host. Distinguish a text snapshot from a byte transfer, an environment key that is absent from a key set to an empty string, and a wall-clock timestamp from a monotonic duration. The terminal profile may require a real terminal; a fixture built around redirected standard output exercises a different host path.
+
+\section{Keep failure observable}
+Use a tempfile fixture for the success case and a known missing path for the failure case. If a wrapper returns a success flag and data, assert both. Include a binary fixture with zero bytes where the API admits it. Source \OnxCodeTerm{shexp} helpers operate on their supported command representations. Process execution uses the explicit cooperative profile in \cref{ch:45} or an appropriate native interface. A project build's sandbox policy is a separate decision covered in \cref{ch:66}.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/README.md}\par
+\OnxSource{on1x/stdlib/unix/unix.on1x}\par
+\OnxSource{on1x/stdlib/io/TextIO.on1x}\par
+\OnxSource{on1x/stdlib/tty/__init__.on1x}\par
+\OnxSource{on1x/stdlib/shexp/__init__.on1x}\par

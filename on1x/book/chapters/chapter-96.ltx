@@ -1,0 +1,18 @@
+\chapter{Reviewed scalar and immutable string admission}
+\label{ch:96}
+\index{Reviewed scalar and immutable string admission}
+\index{FFI!reviewed admission}
+
+The \OnxCodeTerm{on1x-bind emit-safe} workflow combines exact C widths and target ABI with reviewed ExoML metadata, a real Chisel check and a strict C11 execution probe. The versioned profiles cover supported integer widths, Boolean, binary32 and binary64, and a void result. The immutable C-string slice adds directional rules for call-scoped inputs and static immutable results, including bounded byte and null checks. Callbacks, resource transfers and concurrency obligations need additional models.
+
+\section{Signed review for a KernelBind import}
+The clamp example uses a separate KernelBind workflow. The build helper first produces a review subject containing pinned source, ABI, and tool inputs. An independent authority supplies a signed review, and the operator explicitly supplies the verification key and signature to the build. The checkout provides the mechanism and unreviewed annotations. A successful review-gated build publishes a directory with the program, adapter, and admission record.
+
+\OnxInputCode[]{../../on1x/examples/kernel/clamp_safe.on1x}
+Use \OnxCodeTerm{--kernel-imports} to inspect the source request without a review. With independently supplied evidence, follow the build in the kernel review manual and test saturation, valid intervals and reversed bounds. Changing the provider identity requires new evidence. A plain compiler check reports that the kernel is unadmitted when run on this listing without its reviewed provider. \cref{ch:95} explains the contract data reused for those decisions.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/contracts.md}\par
+\OnxSource{on1x/docs/ffi-strings.md}\par
+\OnxSource{on1x/docs/kernel-review.md}\par
+\OnxSource{on1x/examples/kernel/clamp_safe.on1x}\par

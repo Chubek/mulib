@@ -1,0 +1,16 @@
+\chapter{Generated scanner and ASDL transport}
+\label{ch:71}
+\index{Generated scanner and ASDL transport}
+\index{LibStone!ASDL}
+\index{LibStone!Aurocks}
+
+Aurocks generates the C scanner from the grammar input, and ASDL supplies the token structure and arena support. CMake runs the generators at build time using a selected LibStone checkout. The generated scanner has shared parser state, so the C++ wrapper serializes access. Each invocation owns the source buffer and the C++ copies used after the arena is reset. Neither generator is an application dependency.
+
+\section{Extend both scanner paths}
+For a new token, add coverage for exact bytes, offset, display line and byte column. Test adjacency against existing tokens and include the same input in a generated-versus-fallback comparison. Feed a bounded buffer without a trailing NUL to distinguish length-aware scanning from string-style access. Keep token names and the collected locations consistent with the parser's expectations. If generation is unavailable, select the fallback explicitly and record that profile in the verification. The PPX ASDL schema is a separate transport with its own tests.
+
+\section*{Repository sources}
+\OnxSource{on1x/grammar/README.md}\par
+\OnxSource{on1x/grammar/On1x.g}\par
+\OnxSource{on1x/grammar/On1x.asdl}\par
+\OnxSource{on1x/src/lexer.cpp}\par

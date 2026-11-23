@@ -1,0 +1,14 @@
+\chapter{Self-hosted authoring and compiler development}
+\label{ch:90}
+\index{Self-hosted authoring and compiler development}
+
+On1x-authored libraries cover S-expression data, traversal, source/diagnostic structures, schema helpers and native processor logic. A smaller set of runtime/compiler primitives supplies operations those libraries need, including shared values and bounded buffers. The compiler frontend itself still has the C++ implementation discussed in \cref{ch:71} through \cref{ch:78}. Running a native PPX built from On1x exercises a self-hosted component within that larger toolchain.
+
+\section{Add a native authoring operation}
+Try to express the operation using reusable On1x modules and existing checked primitives. Test round-tripping and malformed data at the authoring boundary. A new primitive additionally needs a checked declaration, lowering, runtime behavior and lifetime evidence. Retain/release or I/O changes need tests that observe failure and old outputs, not just a success example. Trace the bootstrap from the compiler executable to the built processor and the processor back through public transport. This identifies a dependency cycle before introducing a new one.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/selfhosting.md}\par
+\OnxSource{on1x/docs/roadmap.md}\par
+\OnxSource{on1x/tests/test_selfhost.py}\par
+\OnxSource{on1x/include/on1x/primitives.hpp}\par

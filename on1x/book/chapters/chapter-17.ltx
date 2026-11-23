@@ -1,0 +1,13 @@
+\chapter{Statement loops and lexical exits}
+\label{ch:17}
+\index{Statement loops and lexical exits}
+
+The intrinsic statement forms include \OnxCodeTerm{while}, \OnxCodeTerm{loop}, checked integer ranges, and a C-style \OnxCodeTerm{for}. A half-open range \OnxCodeTerm{a .. b} excludes the end, while \OnxCodeTerm{a ..= b} includes it. Labels resolve lexical exit targets. In a C-style loop, a continue to that loop executes its step. A continue to an outer loop must skip the rest of the inner body but still obey the outer loop's continuation rules.
+
+\OnxInputCode[firstline=2,lastline=15]{../../on1x/examples/statement_loops.on1x}
+The fixture also exercises an inclusive range at the maximum \OnxCodeTerm{i64}. A correct lowering must recognize the final element without forming the unrepresentable successor. Regression tests should cover an empty range, a one-element range, and a labeled transfer crossing an inner block with cleanup. Canonical lowering assigns resolved target identities so downstream checks can reject forged or out-of-scope exits. A value-producing exit has additional join obligations in \cref{ch:18}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-syntax.md}\par
+\OnxSource{on1x/examples/statement_loops.on1x}\par
+\OnxSource{on1x/src/canonical/control.cpp}\par

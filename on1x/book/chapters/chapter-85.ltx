@@ -1,0 +1,14 @@
+\chapter{Cephyr object emission and C tools}
+\label{ch:85}
+\index{Cephyr object emission and C tools}
+
+The optional Cephyr object mode consumes checked-HIR C11 and compiles within the process for its admitted AMD64 Linux profile. Request it through \OnxCodeTerm{--emit-cephyr-object} with an explicit output file in a compatible build. It produces an object for subsequent linkage and maintains its own semantic and target checks. The Cephyr standard-library and FFI module facilities are separately scoped.
+
+\section{Keep object emission distinct from execution}
+First inspect normal C output and define which symbols the object should provide. Link it against the required matching runtime and run an execution oracle with the same inputs as the reference build. Test rejection of an incompatible target and preserve any verification report. If a generated object needs a provider from the FFI-module profile, check the provider evidence and loader restrictions as well as the object symbol. A successful object build does not exercise a dynamic module lifecycle or certify a foreign ABI.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/cephyr-optimization.md}\par
+\OnxSource{on1x/docs/cephyr-ffi-module-verification.md}\par
+\OnxSource{on1x/src/backend/cephyr.cpp}\par
+\OnxDirectory{on1x/stdlib/cephyr}\par

@@ -1,0 +1,14 @@
+\chapter{Elaboration, semantic checking, and grounded HIR}
+\label{ch:73}
+\index{Elaboration, semantic checking, and grounded HIR}
+
+Elaboration solves type relationships, specializes admitted polymorphic functions, assigns checked identities and produces a grounded program. Semantic checking verifies concrete types, local updates, call signatures, return paths and scoped resource use. The frontend integrates module resolution, hygienic expansion, PPX and quotation checks before the final checked representation is consumed. A transform that changes a call must preserve its resolved target and re-establish the relevant obligations.
+
+\section{Diagnose by phase}
+For an ambiguous source annotation, first inspect the constraints implied by its call sites. For a call that resolves to the wrong function, inspect binding identities through module and macro processing. For a concrete HIR parameter with a forged nominal shape, test the independent checker rather than the parser. This triage narrows regressions while respecting the distinction between inferring an unknown, checking a known type, and approving a concrete layout for an emitter. \cref{ch:78} follows the next boundary into canonical values.
+
+\section*{Repository sources}
+\OnxSource{on1x/src/infer.cpp}\par
+\OnxSource{on1x/src/sema.cpp}\par
+\OnxSource{on1x/docs/architecture.md}\par
+\OnxSource{on1x/include/on1x/sema.hpp}\par

@@ -1,0 +1,14 @@
+\chapter{Scheduling, synchronization, and native IPC kernels}
+\label{ch:104}
+\index{Scheduling, synchronization, and native IPC kernels}
+
+MuLIB supplies native fibers and channels reused by the private On1x C11 cooperative runtime. The scheduler owns dispatch and blocked waits, while On1x supplies checked lexical and affine policies at source level. Native framed IPC handles a separate connection and wire lifecycle. OS-backed native synchronization and source cooperative scheduling make different assumptions about blocking and thread ownership.
+
+\section{Pick an ordering oracle}
+For a rendezvous, have the sender and receiver observe progress before and after transfer. For a bounded queue, make a producer wait on capacity and then unblock it after a receive. Verify cancellation while a wait is registered, and check close after the last sender. Make each test use deterministic coordination instead of sleeps where ordering is being asserted. A C test can verify the primitive's scheduling behavior. A source test should also exercise the On1x handle and endpoint lifetime rules. \cref{ch:41} through \cref{ch:46} cover the checked source profile.
+
+\section*{Repository sources}
+\OnxSource{manual/mulib-fiber.md}\par
+\OnxSource{manual/mulib-ipc-framed.md}\par
+\OnxSource{on1x/runtime/on1x_concurrency.c}\par
+\OnxSource{on1x/docs/concurrency.md}\par

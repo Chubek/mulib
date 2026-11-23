@@ -1,0 +1,14 @@
+\chapter{Typed quotation and staged execution}
+\label{ch:40}
+\index{Typed quotation and staged execution}
+\index{Staging!quotation worlds}
+
+A typed quote represents a bounded later-stage computation. \OnxCodeTerm{lift} embeds an admitted present-stage value, and a splice composes compatible code inside a quote. Lexical quotation regions can contain local statements, cleanup and a tail expression. The checker tracks quotation-world identity as well as depth, so two siblings at equal depth cannot use each other's local binders.
+
+\section{Follow the generated executable}
+The compiler lowers the supported profile to AOT factories and typed thunks. A runtime action invokes the generated code. The running program does not parse a string or call a JIT. Compare a quoted arithmetic example with a normal closure produced by a factory. Observe which operands the staging rules capture, and keep a rejected cross-world binding as a negative test. Operations with restricted ownership, foreign effects, or unsupported staging transport require their own profiles. \OnxCodeTerm{--emit-ast} and emitted C answer different questions about where a stage boundary disappears.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/staging.md}\par
+\OnxSource{on1x/examples/staging.on1x}\par
+\OnxSource{on1x/src/staging.cpp}\par

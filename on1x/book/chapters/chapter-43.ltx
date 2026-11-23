@@ -1,0 +1,14 @@
+\chapter{Atomic poll and heterogeneous readiness}
+\label{ch:43}
+\index{Atomic poll and heterogeneous readiness}
+\index{Channels!poll}
+
+\OnxCodeTerm{poll} presents several eligible channel or captured-stream operations as one choice. A receive arm binds exactly the payload type of its endpoint. EOF has its own outcome. A blocked send must observe backpressure and cannot commit merely because an earlier probe found room. Captured stdout can participate alongside an ordinary channel without converting the ordinary payload to bytes.
+
+\section{Exercise competing arms}
+Use one normal typed sender and one captured byte-stream receiver. Make each become ready first in separate tests. Check the bound payload in the selected arm, and exercise a stream that closes before returning data. If a timer is also present, verify the deadline case in a separate run that does not depend on the scheduler's ordering for simultaneous readiness. Runtime registration and withdrawal belong to the atomic wait. A handwritten loop of \OnxCodeTerm{try\_} calls can have different scheduling and selection behavior.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/stream-poll.md}\par
+\OnxSource{on1x/examples/cooperative_poll.on1x}\par
+\OnxSource{on1x/examples/cooperative_stream_poll.on1x}\par

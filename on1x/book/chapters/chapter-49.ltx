@@ -1,0 +1,14 @@
+\chapter{GrammarEmbed, LuaEmbed, and InlineC11}
+\label{ch:49}
+\index{GrammarEmbed, LuaEmbed, and InlineC11}
+
+These extensions embed different kinds of material. GrammarEmbed handles grammar-specific processing and runtime access through its restricted bridge. LuaEmbed builds and evaluates supported Lua script or module forms through Mune-backed integration. InlineC11 requests native wrapper compilation and its own admission machinery. Treat annotations, target and artifact provenance as separate from the ordinary macro expansion pipeline.
+
+\section{Choose the execution boundary first}
+For a grammar, test valid and invalid inputs to distinguish grammar compilation from parser behavior. For embedded Lua, test how an execution error is reported and where runtime state lives. In InlineC11, pair a minimal typed wrapper with a negative ABI or authorization case. Generated native code has a build-time provider and a linkage boundary that a Unit-v1 source rewrite alone cannot certify. Use each processor's fixture and build options when checking whether an installed toolchain actually supports the desired profile.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdppx/native/GrammarEmbed.on1x}\par
+\OnxSource{on1x/stdppx/native/LuaEmbed.on1x}\par
+\OnxSource{on1x/stdppx/native/InlineC11.on1x}\par
+\OnxSource{on1x/tests/test_inline_c11.py}\par

@@ -1,0 +1,17 @@
+\chapter{Literals, text, characters, and bytes}
+\label{ch:7}
+\index{Literals, text, characters, and bytes}
+\index{UTF-8!source text}
+\index{Strings!embedded NUL}
+
+Ordinary strings interpret escapes and can interpolate expressions. Escape a literal dollar in a normal string or use the raw-string form \OnxCodeTerm{r!"..."}. Triple-quoted strings cover multiline data. A character represents a Unicode scalar. A \OnxCodeTerm{b!} literal belongs to the separate byte or buffer profile, where embedded zero bytes can be meaningful. Ordinary On1x strings follow a NUL-free contract, so a binary payload should use a byte representation.
+
+\section{Test the representation you need}
+To check interpolation, compare an interpolated string with a literal expected value. For JSON text, include a backslash and a quoted character so the test distinguishes source escaping from document escaping. For binary data, assert length and individual bytes. Printing a buffer as text can hide a zero byte or invalid UTF-8 sequence.
+
+The integer scanner recognizes explicit binary and octal forms as well as decimal spellings. A leading zero alone still means decimal. Keep spelling tests separate from range tests. The former exercise tokenization and decoding, and the latter exercise concrete representation checks. The numerical conversions and operations are covered in \cref{ch:8}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-literals.md}\par
+\OnxSource{on1x/examples/numeric_literals.on1x}\par
+\OnxSource{on1x/tests/test_literals_core.py}\par

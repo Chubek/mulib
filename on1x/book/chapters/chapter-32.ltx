@@ -1,0 +1,15 @@
+\chapter{Module identity, caches, and the prelude}
+\label{ch:32}
+\index{Module identity, caches, and the prelude}
+\index{Modules!canonical identity}
+
+The loader constructs a bounded graph of canonical source paths and caches each module for the compiler invocation. Stable identities preserve which declarations a type or value came from even under several import aliases. The prelude is demand-loaded, and explicit imports and local bindings take precedence over pervasive short names. Lowering resolves namespaces before public Unit-v1 PPX transport.
+
+\section{Diagnose an unexpected binding}
+First establish the referring file's scope. Check explicit imports and local bindings, locate any re-export, and only then check the pervasive declaration. A local Option-like name may intentionally shadow the short pervasive name. The actual type identity still matters when using helpers or propagating a Result. For cycles, reproduce the shortest closed dependency path and show the file that introduced each edge. A duplicate textual path to the same canonical module differs from a true cycle or two unrelated modules exporting a same-spelled symbol.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/modules.md}\par
+\OnxSource{on1x/src/loader.cpp}\par
+\OnxSource{on1x/tests/test_loader.cpp}\par
+\OnxSource{on1x/stdlib/pervasive.on1x}\par

@@ -1,0 +1,20 @@
+\chapter{Finding any MuLIB kernel in the source catalogue}
+\label{ch:119}
+\index{Finding any MuLIB kernel in the source catalogue}
+
+The complete MuLIB source inventory lives in \OnxCodeTerm{MANIFEST.yaml}. Use it for families beyond the worked examples in \cref{ch:101} through \cref{ch:110}, including data structures, codecs, search, hardware and engineering, operating systems, graphics, network protocols, DSLs and publishing. Start with a capability or header name, then open the registered manual, implementation and test. Some reserved or bounded entries have narrower evidence than a general implementation.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+rg -n 'name: (cdd-plan|audio-resample|ipc-framed)' MANIFEST.yaml
+python3 on1x/tools/on1x-exotract.py list-kernels
+python3 on1x/tools/on1x-mulib.py plan ipc-framed
+\end{OnxCodeBlock}
+
+Use the implementation kind to choose a compilation strategy, and follow dependency names recursively in the same manifest. Compare the build recipe with the header's required companion sources. Then check whether the On1x standard-library catalogue exposes a suitable wrapper and whether KernelBind lists a callable, discovery-only, or unsupported profile. This procedure covers kernels that have no dedicated chapter and continues to work as operators add or split families.
+
+\section*{Repository sources}
+\OnxSource{MANIFEST.yaml}\par
+\OnxSource{manual/index.md}\par
+\OnxSource{manual/engineering-inventory.json}\par
+\OnxSource{on1x/docs/kernel-registration.md}\par
+\OnxSource{on1x/stdlib/CATALOG.json}\par

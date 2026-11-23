@@ -1,0 +1,15 @@
+\chapter{KernelBind static and dynamic import syntax}
+\label{ch:97}
+\index{KernelBind static and dynamic import syntax}
+\index{FFI!KernelBind}
+
+KernelBind has plain \OnxCodeTerm{import kernel} for static linkage and \OnxCodeTerm{import kernel[dynlib]} for the dynamic provider path. Source spellings use normalized kernel aliases. \OnxCodeTerm{--kernel-imports} reports what the source requested without executing PPX. Header inspection can resolve declarations even for kernels whose calls lack an On1x ABI profile. Raw calls require an explicit unsafe request and the documented supported profile.
+
+\section{Inspect before requesting a call}
+Resolve the intended alias and inspect declarations for the actual target. Check linkage type and supported argument/result shapes. Report admission, build or load failures separately. For a dynamic provider, confirm the selected library and exact symbol instead of assuming a manifest name implies an exported function. For an inline declaration, see the explicit C wrapper path in \cref{ch:94}. Link an approved example with the build helper so compiler call admission and native provider selection are being exercised together.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/kernel-bind.md}\par
+\OnxSource{on1x/docs/kernel-registration.md}\par
+\OnxSource{on1x/src/loader.cpp}\par
+\OnxSource{on1x/tests/test_kernel_imports.py}\par

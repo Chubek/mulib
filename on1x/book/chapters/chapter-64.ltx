@@ -1,0 +1,14 @@
+\chapter{Local dependencies, Git locks, and offline builds}
+\label{ch:64}
+\index{Local dependencies, Git locks, and offline builds}
+\index{Projects!lock files}
+
+Local source dependencies are declared with their project information. Remote Git branch or tag intent must be resolved to an immutable commit through a separate locking step. The fetch command acquires the selected Git source over the documented HTTPS profile. The normal build consumes resolved inputs and does not acquire them implicitly. A frozen build uses the lock and previously fetched artifacts and rejects inconsistent state.
+
+\section{Rehearse a clean acquisition}
+Generate the lock in the intended repository, inspect the resolved revision, and acquire the dependency into the documented cache. Then run a frozen build with network access removed. Change the dependency declaration locally to demonstrate that the old lock no longer matches. Capture the exact lock and provider in a bug report. A source dependency lock pins that input but does not pin the host compiler's sysroot or every optional native tool. Keep C and SDK evidence alongside the lock for native builds.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/tools/on1x-project.py}\par
+\OnxSource{on1x/tests/test_project_fetch.py}\par

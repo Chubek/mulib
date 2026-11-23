@@ -1,0 +1,14 @@
+\chapter{Network, TLS, QUIC, and HTTP kernels}
+\label{ch:103}
+\index{Network, TLS, QUIC, and HTTP kernels}
+
+The native network stack includes bounded protocol-specific kernels and a separate documented QUIC/HTTP3 client profile. For the QUIC/HTTP3 recipe, inspect the native UDP and TLS dependencies and the precise supported client operations, including the HTTP/3 GET path. Registered declaration inspection and native C archive plans exist for these kernels. Their resource-bearing client and buffer API remains outside the documented callable On1x profiles.
+
+\section{Test the layers separately}
+Use a controlled fixture for transport and a protocol-level oracle for headers, data and shutdown. For a native current client recipe, check the expected target and companion TLS/UDP objects; a build of header-only parsing does not exercise a live client. At the source level, the standard-library HTTP module follows its own runtime and supported interface. Validate transport authorization and peer configuration independently before comparing two implementations. Distinguish application parsing, TLS state, connection state and ownership when debugging failures.
+
+\section*{Repository sources}
+\OnxSource{manual/mulib-quic.md}\par
+\OnxSource{manual/mulib-http3.md}\par
+\OnxSource{on1x/stdlib/http/README.md}\par
+\OnxSource{on1x/docs/kernel-registration.md}\par

@@ -1,0 +1,21 @@
+\chapter{A worked project from source to kernel-backed execution}
+\label{ch:118}
+\index{A worked project from source to kernel-backed execution}
+
+The standard-library extension program is an end-to-end exercise that uses source imports, ordinary checked wrappers, generated C, native bridge groups and MuLIB providers. Begin with dependency inspection to find the selected source modules. Then build and run the example via the same compiler and search roots. This tests the conventional bridge path described in \cref{ch:98}.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+on1xc --deps on1x/examples/stdlib_extensions.on1x
+python3 on1x/tools/on1x-build.py \
+  on1x/examples/stdlib_extensions.on1x --on1xc "$(command -v on1xc)" \
+  -o build/stdlib-example
+build/stdlib-example
+\end{OnxCodeBlock}
+
+Select one pure helper and one bridge-backed call. Trace each through its source library and compare the plan needed to execute it. Add a missing-field fixture to the format operation and check both its status and payload. Split this demonstration into a small project with directory-local declarations once it runs as a single source entry. The same analysis applies when replacing one native companion with a pinned archive.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/stdlib_extensions.on1x}\par
+\OnxSource{on1x/tests/test_stdlib_extensions.py}\par
+\OnxSource{on1x/tools/on1x-build.py}\par
+\OnxSource{on1x/stdlib/_bridge/README.md}\par

@@ -1,0 +1,14 @@
+\chapter{Runtime safety and foreign trust boundaries}
+\label{ch:88}
+\index{Runtime safety and foreign trust boundaries}
+
+Ordinary On1x checking controls source types and the resource uses admitted by the model. Canonical verification checks the representation consumed by code generation. Native execution depends on the runtime and on any bridge, archive, or external provider included in the build. A raw extern can have a precise scalar type while still having undocumented side effects or a mismatched implementation. Link and review evidence are needed for those questions.
+
+\section{Name the guarantee you need}
+For a JSON view, source and canonical checks address lexical lifetime. For a C pointer returned by a provider, ownership and invalidation need an explicit foreign contract and a compiler representation that enforces it. For a native extension, the loading arrangement determines authority. Check which layer rejects an invalid use before expecting another profile to enforce the same invariant. \cref{ch:95} covers semantic contract transport and \cref{ch:112} covers isolated versus trusted SDK invocation.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/type-safety.md}\par
+\OnxSource{on1x/docs/memory-model.md}\par
+\OnxSource{on1x/docs/contracts.md}\par
+\OnxSource{on1x/src/safety.cpp}\par

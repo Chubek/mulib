@@ -1,0 +1,26 @@
+\chapter{Top-level functions and recursion}
+\label{ch:10}
+\index{Top-level functions and recursion}
+
+A top-level \OnxCodeTerm{fn} declaration supplies a parameter list, a body, and optionally an explicit return type. Functions that return a value need a valid return on the relevant paths. A statement-only entry point can omit a value result. Recursive calls use the same source signature, and explicit annotations make the intended arithmetic and result paths easy to inspect.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn sum_to(n: i64) -> i64
+{
+  if n <= 0 { return 0; }
+  return n + sum_to(n - 1);
+}
+
+fn main()
+{
+  assert(sum_to(6) == 21);
+}
+\end{OnxCodeBlock}
+
+Parser nesting budgets concern how much input structure the compiler accepts. Runtime recursion uses the execution environment's call stack and is a different limit. To bound stack usage, rewrite this accumulator as a range loop and separately account for integer overflow. For inferred functions, add a result annotation at the first ambiguous call boundary before attributing a failure to recursive control. \cref{ch:14} covers type holes and elaboration.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/hello.on1x}\par
+\OnxSource{on1x/docs/language.md}\par
+\OnxSource{on1x/src/sema.cpp}\par
+\OnxSource{on1x/tests/test_functions.py}\par

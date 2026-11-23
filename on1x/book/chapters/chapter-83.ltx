@@ -1,0 +1,15 @@
+\chapter{VMWeave, O1VM artifacts, and the runner}
+\label{ch:83}
+\index{VMWeave, O1VM artifacts, and the runner}
+\index{MIR!O1VM backend}
+
+The VM backend lowers admitted verified MIR to an O1VM artifact consumed by the VM runner. The repository includes a VMWeave specification and generated snapshots. Bytecode decoding has bounds and type checks independently of the source frontend. The VM profile adds specified unmanaged product layouts such as records, sums, arrays and slices. Its supported closure and foreign operations are limited by the guest representation and wire contract.
+
+\section{Separate producer and consumer}
+Emit one artifact, run it with the installed runner, and compare its results with a native build on a common source fixture. Exercise a truncated or malformed artifact separately to check decoder failure. Bytecode availability on one build does not prove platform-independent behavior for extensions that call native providers. When source diagnostic paths matter, record the configured source prefix mappings. Inspect the VM manual rather than treating every feature named in the source capability matrix as available in the guest.
+
+\section*{Repository sources}
+\OnxSource{on1x/backends/mir-vm/README.md}\par
+\OnxSource{on1x/backends/mir-vm/On1xVM.lua}\par
+\OnxSource{on1x/backends/mir-vm/wire.cpp}\par
+\OnxSource{on1x/backends/mir-vm/tests/source.py}\par

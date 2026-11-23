@@ -1,0 +1,14 @@
+\chapter{Polymorphism and specialization}
+\label{ch:15}
+\index{Polymorphism and specialization}
+\index{Type inference!specialization}
+
+The implemented polymorphic profile generalizes eligible immutable values under a value restriction and elaborates supported top-level and explicit universal forms. Different uses can request different concrete instances of a generalized function. A mutable binding keeps one type. Recursive inference and polymorphic recursion need separate consideration because a recursive call can otherwise demand an unbounded sequence of instances.
+
+\OnxInputCode[firstline=1,lastline=9]{../../on1x/examples/destructuring_polymorphism.on1x}
+Here a tuple pattern introduces independent leaves. The function leaf can be instantiated for both an integer and a Boolean. The Boolean leaf is already concrete. Elaborated C11 has concrete functions and data layouts, so a value restriction or a specialization limit can reject source that would require a runtime universal representation. For an inference regression, test two concrete uses as well as a same-type repeat. Compare the generated symbols or inspected types to confirm the two uses were specialized without leaking a previous constraint.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/polymorphism.md}\par
+\OnxSource{on1x/examples/destructuring_polymorphism.on1x}\par
+\OnxSource{on1x/examples/global_polymorphism.on1x}\par

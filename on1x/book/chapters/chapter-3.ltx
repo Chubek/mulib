@@ -1,0 +1,22 @@
+\chapter{Building and installing the compiler}
+\label{ch:3}
+\index{Building and installing the compiler}
+\index{LibStone!scanner generators}
+
+Build from the MuLIB root with a C11 and C++17 toolchain, CMake, and Python 3. The LibStone gitlink pins the generated scanner inputs. CMake can use the initialized submodule or a compatible checkout supplied with \OnxCodeTerm{ON1X\_LIBSTONE\_ROOT}. Configure the scanner policy explicitly if reproducing a test run. \OnxCodeTerm{ON1X\_REQUIRE\_LIBSTONE=ON} fails when the generators are unavailable, while \OnxCodeTerm{ON1X\_USE\_FALLBACK\_SCANNER=ON} selects the portable bootstrap scanner.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+git submodule update --init on1x/third_party/libstone
+cmake -S on1x -B build/on1x -DBUILD_TESTING=ON
+cmake --build build/on1x --parallel 4
+ctest --test-dir build/on1x --output-on-failure
+cmake --install build/on1x --prefix "$PWD/build/on1x-install"
+\end{OnxCodeBlock}
+
+A separate build directory for each profile keeps CMake caches and generated outputs distinct. Installed compiler, standard-library resources, and SDKs can be tested from the prefix without relying on a source checkout. If a command works in the build tree and fails after relocation, inspect installed resource discovery before changing the source program. Optional backend packages and analysis libraries need the additional steps in their own manuals.
+
+\section*{Repository sources}
+\OnxSource{on1x/CMakeLists.txt}\par
+\OnxSource{on1x/README.md}\par
+\OnxDirectory{on1x/third_party/libstone}\par
+\OnxSource{on1x/stdlib/INSTALL.md}\par

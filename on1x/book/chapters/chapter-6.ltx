@@ -1,0 +1,16 @@
+\chapter{Source files, tokens, and comments}
+\label{ch:6}
+\index{Source files, tokens, and comments}
+
+Identifiers use ASCII letters, underscores, and digits after the first character. A hash begins a line comment except when the scanner recognizes the character-literal opener. Whitespace separates tokens. Source locations count byte columns, so a multi-byte UTF-8 value can make a token's byte column differ from its visual position. Preserve original bytes when reporting a diagnostic.
+
+\section{A scanner boundary}
+A scanner consumes a pointer and an explicit source length. The C++ entry point rejects embedded NUL and oversized source before the scanner runs. In the generated path, temporary token memory lives in an arena. The callback copies the token into C++ storage before the arena is destroyed. The fallback scanner supplies the same boundary and is tested against the generated scanner for token spelling and positions.
+
+Some syntax distinctions depend on adjacency. For example, an adjacent qualified name such as \OnxCodeTerm{pkg.call} is distinct from spaced dotted syntax used in structural macros. When an import or a macro parses unexpectedly, print the tokens and check the actual characters and offsets. Changing precedence rules to repair a scanner issue risks creating inconsistent generated and fallback behavior.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/language.md}\par
+\OnxSource{on1x/grammar/On1x.g}\par
+\OnxSource{on1x/src/lexer.cpp}\par
+\OnxSource{on1x/tests/scanner_parity.py}\par

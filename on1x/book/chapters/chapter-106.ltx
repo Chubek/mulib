@@ -1,0 +1,14 @@
+\chapter{Media clocks, frame layouts, and image or audio providers}
+\label{ch:106}
+\index{Media clocks, frame layouts, and image or audio providers}
+
+Media kernels cover timebases, frame metadata, media buffers and selected transforms. A timestamp has a unit and origin. A frame often has separate width, height, stride and format, while an audio buffer needs its channel layout and sample format. Kernel discovery can report declarations and the supported native provider profile. The media inventory by itself grants no general checked On1x calls.
+
+\section{Test metadata before payloads}
+Convert a timestamp between two declared timebases and choose a test where rounding is visible. For a frame, use a stride larger than its visible row width and prove that consumers respect both fields. For audio, choose samples that expose channel ordering. Check whether native dependencies provide the actual algorithm or only the bounded adapter profile. Determine who releases a returned view before retaining it across operations. Comparing checksums on two frame buffers makes sense only after confirming they use the same format, layout and inclusion of padding.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/kernel-media.md}\par
+\OnxSource{manual/media-review.md}\par
+\OnxSource{manual/mulib-media-frame.md}\par
+\OnxSource{manual/mulib-audio-core.md}\par

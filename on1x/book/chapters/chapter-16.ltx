@@ -1,0 +1,22 @@
+\chapter{Conditionals, state, and returns}
+\label{ch:16}
+\index{Conditionals, state, and returns}
+
+A conditional evaluates its condition and transfers control into the chosen block. Lexical bindings made inside a branch are available only inside that scope. An assignment updates an existing mutable local of the appropriate type. An explicit \OnxCodeTerm{return} exits the function and participates in the checked cleanup sequence. Source short-circuit decisions must preserve which branch or operand executes after lowering.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn choose(flag: bool, n: i64) -> i64
+{
+  var answer = n;
+  if flag { answer = answer + 1; }
+  else { answer = answer - 1; }
+  return answer;
+}
+\end{OnxCodeBlock}
+
+To verify branch behavior, call the helper on the same small input with both flags and assert distinct results. Add a case that would trap if the inactive branch were evaluated. In checked arithmetic, running an extra operation can change observable behavior even if its value is unused. MIR represents scalar control through explicit edges and block arguments, covered in \cref{ch:79}.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/control.on1x}\par
+\OnxSource{on1x/src/sema.cpp}\par
+\OnxSource{on1x/docs/core-syntax.md}\par

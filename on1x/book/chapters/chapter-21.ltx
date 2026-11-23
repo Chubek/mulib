@@ -1,0 +1,13 @@
+\chapter{Structural records and sums}
+\label{ch:21}
+\index{Structural records and sums}
+
+Structural records name their fields, while structural sums name possible constructors and their payload types. A record value always supplies the fields in its declared shape. A sum value selects one constructor, and payload access needs evidence of that tag. Fixed layouts enable the C11 emitter to construct ordinary records and discriminated values. The language still checks field names and types before choosing that layout.
+
+\section{Modeling an outcome}
+Represent a successful count and a failed input as distinct cases so downstream code handles them explicitly. A Boolean paired with a number leaves readers to remember when the number is meaningful. A sum expresses that rule in the shape and supports pattern matching on the active case. For a structural record, reorder the fields in a construction and compare the projection results. For a sum, cover both cases through \OnxCodeTerm{match} and inspect the emitted tag test. Named records and enums can additionally preserve declaration identity, as \cref{ch:23} explains.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/data-model.md}\par
+\OnxSource{on1x/examples/data_model.on1x}\par
+\OnxSource{on1x/src/type.cpp}\par

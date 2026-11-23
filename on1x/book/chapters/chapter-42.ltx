@@ -1,0 +1,15 @@
+\chapter{Directional channels and endpoint lifetimes}
+\label{ch:42}
+\index{Directional channels and endpoint lifetimes}
+\index{Channels!FIFO}
+\index{Channels!rendezvous}
+
+Channels support rendezvous or bounded FIFO transfer for the fixed-size, pointer-free payload classes described in the profile. Sender and receiver types are directional. Creation distributes a declared number of endpoints. Ownership transfer must preserve exact quotas, and last-sender close permits a receiver to observe end-of-stream after pending values drain. \OnxCodeTerm{try\_send} and \OnxCodeTerm{try\_recv} distinguish immediate outcomes without blocking.
+
+\section{Test a two-sender lifecycle}
+Send distinguishable nominal records. Close one sender while the other can still send and confirm the receiver has not reached EOF. After draining the final buffered message and closing the last sender, assert the EOF result. With capacity zero, a send needs a matching receive. With a bounded buffer, test full and empty separately from closure. A channel can carry an admitted record with scalar fields while still rejecting managed fields or foreign resources. Poll can combine actions without exposing a separate probe-and-commit race, as discussed in \cref{ch:43}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/concurrency.md}\par
+\OnxSource{on1x/examples/cooperative_typed_channels.on1x}\par
+\OnxSource{on1x/src/concurrency.cpp}\par

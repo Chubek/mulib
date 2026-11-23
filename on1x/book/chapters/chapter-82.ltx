@@ -1,0 +1,14 @@
+\chapter{MIR-to-C11 and the backend registry}
+\label{ch:82}
+\index{MIR-to-C11 and the backend registry}
+
+The \OnxCodeTerm{mir-c11} adapter consumes verified MIR and emits C11 using its explicit block, value and checked-operation semantics. The core tool also registers MIR text, CFG and evaluator adapters. SDK-enabled drivers can dispatch trusted built-ins through the registry and artifact sink. With the extension SDK disabled, equivalent core modes use the canonical compiler routines. Optional Yellowstone integration generates the registry map at build time.
+
+\section{Compare execution through two paths}
+Choose a scalar fixture that both direct C11 and MIR support. Build one native binary from each and compare outputs and failure behavior for the same edge inputs. If behavior differs, evaluate MIR independently to determine whether the problem appears before or during MIR C emission. Compare semantics before comparing formatting or symbol names. A built-in adapter gets private host-controlled representations. Discoverable external plugins use the separately versioned SDK channels described in \cref{ch:112}.
+
+\section*{Repository sources}
+\OnxSource{on1x/backends/README.md}\par
+\OnxSource{on1x/backends/mir-c11/README.md}\par
+\OnxSource{on1x/src/backend/emit_c.cpp}\par
+\OnxSource{on1x/backends/link/README.md}\par

@@ -1,0 +1,13 @@
+\chapter{Root and directory-local manifests}
+\label{ch:62}
+\index{Root and directory-local manifests}
+
+The root \OnxCodeTerm{On1xfile} is a UTF-8, line-oriented manifest. It declares project policy and target inputs through its participating directories. Directory-local \OnxCodeTerm{On1xfile.m} and \OnxCodeTerm{On1xfile.i} files declare source/library and interface information. The manifest parser owns the grammar, and the regular source loader owns import and type semantics. The existence of Lua-based profile logic does not make the root manifest an arbitrary Lua program.
+
+\section{Make an undeclared input reproducible}
+Start with two functions in separate files and add only one file to the directory manifest. Build and compare the dependency report with the filesystem. Add the missing declaration, then confirm that the build report records the selected canonical paths. Pair a declared interface with the matching source stem to reproduce the signature checks in \cref{ch:34}. Preserve manifest bytes and compiler options when investigating a plan difference. Two projects can share the same physical source files yet select different targets or compiler policies.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/tools/on1x_project.py}\par
+\OnxSource{on1x/tests/test_project_helpers.py}\par

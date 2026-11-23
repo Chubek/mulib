@@ -1,0 +1,14 @@
+\chapter{Isolated builds and artifact publication}
+\label{ch:66}
+\index{Isolated builds and artifact publication}
+\index{Projects!sandbox}
+
+The project driver has a Linux bubblewrap \OnxCodeTerm{--sandbox} profile. It needs working host support and does not retry outside the sandbox when unavailable. It stages inputs and outputs, and reports the selected project, profile, hashes and artifacts. Keep dependency acquisition separate from the build's execution authority. Bound jobs and file outputs to the resources expected in the plan.
+
+\section{Test a failed build's effects}
+Start with a successful artifact and record its contents. Introduce a syntax error or an unavailable tool and rerun the same profile. Examine the reported cause and check the published output, distinguishing staging files from the prior good result. Repeat through the sandbox profile on a supported host. If bubblewrap or namespaces are unavailable, classify that as an unsupported configuration rather than a different result from the source program. The staging environment and mounted tools can still differ between hosts; for path reproducibility see \cref{ch:68}.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/tests/test_project_driver.py}\par
+\OnxSource{on1x/tools/on1x_project.py}\par

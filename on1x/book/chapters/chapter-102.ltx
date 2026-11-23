@@ -1,0 +1,14 @@
+\chapter{Binary formats, compression, hashing, and archives}
+\label{ch:102}
+\index{Binary formats, compression, hashing, and archives}
+
+Binary-format and compression kernels work with explicit byte ranges and output limits. An archive adds an entry structure around bytes, which calls for separate bounds on names, entry counts, and decoded data. A checksum detects particular forms of accidental corruption. Cryptographic hash and authenticated encryption APIs have additional requirements and different security properties. Choose by the documented format or protocol requirement.
+
+\section{Build a format oracle}
+Start with a small valid fixture and record expected bytes, length and configured limits. Exercise a zero-length payload, a truncated header, a declared length larger than the available input, and an output buffer too small for the decoded result. Compare with an independent known-answer fixture when format interoperability matters. A round trip through a single encoder and decoder can preserve the same mistake. Verify ownership of returned storage before passing it to another kernel or a source bridge. Source text wrappers should not replace a binary representation when embedded zeros are valid.
+
+\section*{Repository sources}
+\OnxSource{manual/binary-formats.md}\par
+\OnxSource{manual/compression-codecs.md}\par
+\OnxSource{manual/mulib-archive.md}\par
+\OnxSource{manual/mulib-adler32.md}\par

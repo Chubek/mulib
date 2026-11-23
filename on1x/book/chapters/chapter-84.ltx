@@ -1,0 +1,15 @@
+\chapter{Archon target ABI and native driver}
+\label{ch:84}
+\index{Archon target ABI and native driver}
+\index{MIR!Archon backend}
+
+Archon emits target-pinned assembly for a verified MIR subset. The documented native build uses the Linux AMD64 SysV profile, a matching generated package, scalar ABI support, runtime archives, and an explicit assembler and linker. The optional SDK hook selects an exact target triple. The standalone path can also be built without the extension SDK.
+
+\section{Pin the entire native path}
+Record the verified MIR input, target manifest, assembly tool, linkage options and ABI archive identity. Publish assembly separately first when diagnosing a target issue. After linking, test signed arithmetic boundaries and a supported tuple or block-argument case against the reference MIR evaluator. A mismatch can originate in register/slot lowering, a calling convention, or runtime code. A different architecture label in a local configuration cannot create a matching generated package. Keep native results scoped to the provider and target you actually ran.
+
+\section*{Repository sources}
+\OnxSource{on1x/backends/mir-archon/README.md}\par
+\OnxSource{on1x/backends/mir-archon/TOOLCHAIN.md}\par
+\OnxSource{on1x/backends/mir-archon/ABI.md}\par
+\OnxSource{on1x/backends/mir-archon/DRIVER.md}\par

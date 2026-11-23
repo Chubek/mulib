@@ -1,0 +1,14 @@
+\chapter{MEMGraph and proof-directed bounds lowering}
+\label{ch:77}
+\index{MEMGraph and proof-directed bounds lowering}
+\index{Optimization!bounds checks}
+
+MEMGraph uses a build-time LLSynth rule profile to recognize checked fixed-array accesses with provable safe bounds. A decision can remove a runtime bounds check only when that operation cannot trap under the admitted proof. Unproved accesses retain the original checks. The optimization applies to direct C11 and the supported VM product lowering, with no application runtime dependency on the generator.
+
+\section{Inspect a proof decision}
+Write one access at a statically valid index and one at a dynamic index. Use an enabled build and inspect \OnxCodeTerm{--dump-memgraph}, then compare emitted code. Run the dynamic access for a valid index and an invalid one to show the latter still traps. Test a slicing boundary independently from indexing because legal ranges differ. Provenance of the array extent and access shape is part of the proof. A proof that one index is valid does not authorize a new ownership, foreign, or general MIR representation.
+
+\section*{Repository sources}
+\OnxSource{on1x/hir/MEMGraph/README.md}\par
+\OnxDirectory{on1x/hir/MEMGraph}\par
+\OnxSource{on1x/tests/test_memgraph_hir.cpp}\par

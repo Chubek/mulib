@@ -1,0 +1,13 @@
+\chapter{Editor integrations and the repository knowledge service}
+\label{ch:69}
+\index{Editor integrations and the repository knowledge service}
+
+Editor packages provide On1x source and interface highlighting for the documented editors. The optional stdio language server wraps compiler diagnostics and formatting. Its implemented features and settings should be read from the LSP addon rather than inferred from language servers for other languages. When diagnostics differ from the command line, compare working directory, executable, import roots and enabled actions.
+
+The knowledge addon under \OnxCodeTerm{on1x/addons/mcp} serves read-only repository evidence. It has a bounded evidence model including source references and distinctions among discovery, contracts, implementation and admission. A server response can help a reader find a supporting manual, but it does not compile code, perform a dependency build, or grant foreign admission. Deployment, service authorization, and the contents of the startup snapshot are separate choices. Test editor behavior and addon package behavior using their own fixtures.
+
+\section*{Repository sources}
+\OnxSource{on1x/addons/README.md}\par
+\OnxDirectory{on1x/addons/lsp}\par
+\OnxSource{on1x/addons/mcp/README.md}\par
+\OnxSource{on1x/addons/mcp/SECURITY.md}\par

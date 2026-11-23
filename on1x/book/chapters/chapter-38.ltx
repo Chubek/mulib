@@ -1,0 +1,13 @@
+\chapter{Hygienic expression macros}
+\label{ch:38}
+\index{Hygienic expression macros}
+
+Source macros transform syntax before ordinary inference. Hygienic expansion preserves the origin of names written by the caller and distinguishes names introduced by the transformer. If a macro creates a temporary with a common spelling, a caller's same-spelled local must stay distinct. Expansion owns budgets for recursion and copied data, and the resulting program still meets ordinary type and ownership rules.
+
+\section{Exercise a capture hazard}
+Take an expression macro from the examples and expand it in a scope containing a local with the same spelling as an introduced binder. Make the values distinguishable and inspect the expanded AST with \OnxCodeTerm{--emit-ast}. Use an ill-typed operand to verify that correct expansion still leaves a normal type error. During diagnosis, separate a mismatch in macro input shape from a type failure in the expansion and from an unsupported PPX extension. The first is governed by macro pattern rules, described in \cref{ch:39}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/metaprogramming.md}\par
+\OnxSource{on1x/examples/macros.on1x}\par
+\OnxSource{on1x/src/macros.cpp}\par

@@ -1,0 +1,26 @@
+\chapter{Inference, annotations, and type holes}
+\label{ch:14}
+\index{Inference, annotations, and type holes}
+
+An omitted parameter annotation or a type hole introduces an unknown to solve. Uses add constraints. A call gives an unknown callee a function shape, destructuring gives an unknown product a tuple shape, and explicit types restrict compatible solutions. The compiler grounds the concrete program before lowering. If the surrounding uses leave an ambiguity, one nearby annotation is often enough to recover the intended type.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn twice(x) -> _
+{
+  return x + x;
+}
+
+fn main()
+{
+  let answer: i64 = twice(21);
+  assert(answer == 42);
+}
+\end{OnxCodeBlock}
+
+Use type inspection on the whole source and keep the first diagnostic. A later emitter failure after successful inference often belongs to a representation or backend restriction. The independent semantic checker still owns rules such as assignment permissions, scope exits, and resource use. You cannot remove them by annotating a type hole. Generalizing a binding to allow multiple concrete uses is a separate operation described in \cref{ch:15}.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/inference.on1x}\par
+\OnxSource{on1x/src/infer.cpp}\par
+\OnxSource{on1x/docs/language.md}\par
+\OnxSource{on1x/tests/test_inference.py}\par

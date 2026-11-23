@@ -1,0 +1,12 @@
+\chapter{Direct process launch and reaping}
+\label{ch:45}
+\index{Direct process launch and reaping}
+
+The POSIX profile offers \OnxCodeTerm{launch exec} with an absolute executable and bounded literal arguments. A backtick command literal is parsed by the compiler for the same direct-exec subset. Quotes and escapes preserve arguments, including an argument containing a space. The supported syntax rejects expansion, pipelines, redirection, and command lists. The runtime spawns the process in a process group and associates it with an affine \OnxCodeTerm{xfiber} handle.
+
+A join consumes and reaps the job. Normal exit yields a nonnegative code, while signal termination yields a negative signal number. Cancelling a live external job requests process-group termination and still reaps the tracked process. To check argument boundaries, use a deterministic executable that echoes one received argument and compare it with the intended bytes. Build on the target that supplies that executable path. For captured input and output, account separately for draining and EOF as in \cref{ch:46}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/concurrency.md}\par
+\OnxSource{on1x/examples/cooperative_external.on1x}\par
+\OnxSource{on1x/tests/test_concurrency.py}\par

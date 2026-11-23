@@ -1,0 +1,16 @@
+\chapter{C11 headers, implementation macros, and static inline}
+\label{ch:92}
+\index{C11 headers, implementation macros, and static inline}
+\index{Kernels!implementation macros}
+\index{Kernels!static inline}
+
+Most MuLIB kernels expose interfaces in headers. ABI modules use a \OnxCodeTerm{MULIB\_IMPL\_...} switch in one C translation unit. Other modules are static-inline or static-data and need no implementation switch. Including a header in two downstream files is normal. Turning on the same external implementation in two downstream files can define the same symbol twice. An internal-linkage inline function needs explicit forwarding if a particular consumer expects an external symbol.
+
+\section{Build a two-file C client}
+Choose a documented ABI kernel and use its manual's exact switch and dependencies. Place the switch and include in one file. In the second, include the header without the switch and call a documented operation. Compile both as strict C11 and link them. Remove the implementation file to observe the missing definition, and compare with a static-inline kernel documented as usable directly from its header. Keep platform macros and integration profiles local to the documented implementation rather than exporting them as global compiler flags.
+
+\section*{Repository sources}
+\OnxSource{manual/authoring.md}\par
+\OnxSource{manual/mulib-vec.md}\par
+\OnxSource{manual/mulib-bitset.md}\par
+\OnxSource{MANIFEST.yaml}\par

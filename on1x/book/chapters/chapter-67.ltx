@@ -1,0 +1,14 @@
+\chapter{The native build helper and link plan}
+\label{ch:67}
+\index{The native build helper and link plan}
+
+The single-file build helper runs \OnxCodeTerm{on1xc}, selects companion runtime and standard-library bridge sources, and uses the MuLIB plan for implementation kernels. A kernel group belongs in one implementation translation unit. Consumer and bridge files include declarations and link the implementation. Libraries with independently compiled providers or qualified native runtime companions must also be present in the link plan.
+
+\section{Triage C build failures}
+A generated C syntax or type error points at emission or a declaration mismatch. An undefined symbol at link time points at missing object placement, inaccessible static-inline linkage, or a signature/provider mismatch. A duplicate symbol can indicate the same implementation macro was defined in two translation units. Use emitted C, the helper's chosen plan, and a minimal C caller to isolate the layer. Supplying an Exotract archive is an alternate implementation source described in \cref{ch:94}. Consumer files should not reactivate the implementation macros from that archive.
+
+\section*{Repository sources}
+\OnxSource{on1x/tools/on1x-build.py}\par
+\OnxSource{on1x/stdlib/mulib/housekeeping.py}\par
+\OnxSource{on1x/stdlib/_bridge/README.md}\par
+\OnxSource{on1x/docs/kernel-registration.md}\par

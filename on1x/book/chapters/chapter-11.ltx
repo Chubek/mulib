@@ -1,0 +1,13 @@
+\chapter{Function values and higher-order calls}
+\label{ch:11}
+\index{Function values and higher-order calls}
+
+A function value has a structural type recording each parameter and the result. A call may target a lexical value, a top-level function, an intrinsic, or a raw extern. The checker resolves which case applies. This matters when a local function value shadows a top-level function. The lowering uses the checked callee, preserving the original lookup.
+
+\OnxInputCode[]{../../on1x/examples/higher_order.on1x}
+A higher-order helper can accept an already chosen function and apply it to an ordinary argument. Check argument order and the type of each nested result when composing helpers. A call with the wrong arity fails at type checking, even when a local name happens to have the same spelling as a different function. At the C boundary, internal callable values can carry an environment and a typed invocation pointer. Treat that representation as compiler-owned. Raw extern declarations do not automatically admit function-valued arguments.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/closures.md}\par
+\OnxSource{on1x/examples/higher_order.on1x}\par
+\OnxSource{on1x/include/on1x/type.hpp}\par

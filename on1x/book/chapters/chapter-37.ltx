@@ -1,0 +1,14 @@
+\chapter{Category Protocols and explicit witnesses}
+\label{ch:37}
+\index{Category Protocols and explicit witnesses}
+\index{Protocols!Category witnesses}
+
+The Category processor is activated as \OnxCodeTerm{Protocols}. It reads the balanced \OnxCodeTerm{@extension Protocols \{ ... \}} form, validates concrete protocols and implementations within its supported types, and generates ordinary witness selector functions. The host independently checks forwarding, types, and provenance. Canonical selectors and named alternate witnesses have distinct names and call the selected implementation explicitly.
+
+\OnxInputCode[]{../../on1x/stdppx/examples/category/eq.on1x}
+Use \OnxCodeTerm{--emit-category-plan} in a native-PPX-enabled build to see the chosen members and evidence. In the equality example, the canonical and named witnesses deliberately disagree. Test both; changing one implementation should not affect the other. Missing members, duplicate keys, and unsupported protocol shapes reject. The processor does not establish implicit runtime witness search. Intrinsic cliches in \cref{ch:36} use a separate language mechanism for constrained calls.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/category.md}\par
+\OnxSource{on1x/stdppx/examples/category/eq.on1x}\par
+\OnxSource{on1x/tests/test_category.py}\par

@@ -1,9 +1,26 @@
-# On1x Book Toolkit
+# On1x — Language, Compiler, and MuLIB Kernels
 
-A self-contained, modular LaTeX distribution for authoring a technical book
-about the On1x language, its toolchain, and the MuLIB ecosystem.
+The manuscript has 120 chapters in 12 parts, from a first native program
+through the language, standard library, project driver, compiler, backends,
+foreign contracts, MuLIB kernels, and the compiler and runtime SDKs.
+`on1x-book.ltx` orders the individual files in `chapters/`. Each chapter
+links to the source, tests, or manuals that support its implementation claims.
 
-## Quick start
+## Build the book
+
+From the MuLIB repository root, run:
+
+```sh
+make -C on1x/book book
+```
+
+The output is `on1x/book/build/on1x-book.pdf`. The manuscript uses pdfLaTeX,
+`latexmk`, and `makeindex`, with the standard TeX Live LaTeX and LaTeX Extra
+packages and Latin Modern fonts. Build inside a checkout because some listings
+include the On1x examples directly. The PDF includes a linked table of
+contents, chapter cross-references, and a subject index.
+
+## Use the authoring toolkit
 
 ```sh
 cd examples
@@ -19,9 +36,10 @@ The glossary is opt-in: call `\OnxEnableGlossary` in the preamble and
 
 ## Distribution
 
-- `tex/on1x-book.cls`: two-sided book class; `screen` (default) or `print`,
+- `on1x-book.cls`: two-sided book class with `screen` (default) or `print`,
   and `full` (default) or `light` package sets. The remaining options are passed
   to the standard `book` class (`11pt`, `12pt`, `oneside`, `twoside`, etc.).
+  The `manuscript` option loads the styles used by the main book.
 - `tex/on1x-suite.sty`: aggregated module loader.
 - `tex/on1x-*.sty`: independent modules, loadable individually in other classes.
 - `examples/main.tex`: sample manuscript testing the main concepts.
@@ -55,5 +73,6 @@ make example
 make clean
 ```
 
-`check` statically checks all style modules and performs smoke-compilation of
-the example and a broader feature smoke test; `latexmk` is required. No `-shell-escape` is required.
+`check` builds the manuscript, checks the style modules, and compiles the
+toolkit example and feature smoke test. The toolkit smoke tests additionally
+require the full style dependencies listed above. No `-shell-escape` is required.

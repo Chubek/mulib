@@ -1,0 +1,14 @@
+\chapter{Shared immutable ownership in nominal data}
+\label{ch:25}
+\index{Shared immutable ownership in nominal data}
+\index{Ownership!shared immutable}
+
+The shared-owner slice allows supported nonrecursive nominal fields and enum payloads to hold immutable \OnxCodeTerm{sexpr} values. Several owners may share the same immutable object. The generated retain/release operations keep it alive as nominal values are copied, passed, and returned. The active enum tag determines which managed payload requires cleanup. This is a narrower capability than arbitrary resource ownership inside a field.
+
+\section{Check the lifetime transition}
+Create an S-expression in a local scope, place it in an admitted record, and return the record through an ordinary function. Drop or leave the creating scope before reading the field. The caller's owning record must keep the object alive. A useful negative case substitutes a JSON view, whose validity depends on its owner and follows the different rules in \cref{ch:28}. For optimizer work, inspect which references are copied and released around a match. Reordering publication and cleanup can free a still-needed payload even when scalar evaluations agree.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/owning-adts.md}\par
+\OnxSource{on1x/tests/test_owning_adt.py}\par
+\OnxSource{on1x/runtime/on1x_runtime.c}\par

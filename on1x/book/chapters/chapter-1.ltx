@@ -1,0 +1,15 @@
+\chapter{On1x and MuLIB}
+\label{ch:1}
+\index{On1x and MuLIB}
+
+On1x is a statically compiled, ML-influenced language with imperative control and a C11 reference backend. It supplies the source language, compiler, libraries, and tools. MuLIB supplies reusable C11 kernels. LibStone supplies optional generators, analysis engines, and code-generation tools. An application can use On1x arithmetic and functions without calling a MuLIB kernel. A C program can use many MuLIB kernels without involving the On1x compiler at all.
+
+\section{Follow one expression}
+In \OnxCodeTerm{println(40 + 2)}, the scanner identifies tokens, the parser forms the call and addition, and the checker resolves the operation to a concrete integer type. The compiler can simplify the checked addition before emitting C. The resulting program still needs an implementation of the printing intrinsic. A kernel-backed call adds more questions about signatures, implementation placement, and linkage. \cref{ch:4} traces the build and \cref{ch:91} explains the interop boundary.
+
+Capability claims in this book refer to the repository snapshot and the named execution profile. For a feature you plan to ship, identify the source that accepts it, the backend that lowers it, and a test that executes it or rejects an invalid case. A syntax note or catalogue entry is only one piece of that evidence.
+
+\section*{Repository sources}
+\OnxSource{on1x/README.md}\par
+\OnxSource{on1x/docs/capability-matrix.md}\par
+\OnxSource{manual/representation-contracts.md}\par

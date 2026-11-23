@@ -1,0 +1,23 @@
+\chapter{Modules, imports, and exports}
+\label{ch:31}
+\index{Modules, imports, and exports}
+
+A source import binds either a qualified namespace or selected names in the importing file. \OnxCodeTerm{import std.Int as Int;} provides qualified access. \OnxCodeTerm{from std import String, List;} introduces selected names. Relative \OnxCodeTerm{from .child import item;} follows the file's package directory. Package initializers live in \OnxCodeTerm{\_\_init\_\_.on1x}. Aliases change how the importing unit refers to declarations while preserving their implementation identity.
+
+\begin{OnxCodeBlock}[numbers=none]
+import std.Int as Int;
+from std import String;
+
+fn main()
+{
+  assert(String.contains("On1x modules", "modules"));
+  println(Int.div(-7, 3));
+}
+\end{OnxCodeBlock}
+
+Distinguish explicit exports and re-exports from internal helpers when designing a library. For a package example, have the initializer re-export a single function from a sibling and use that public name from a separate program. Then exercise an unavailable name and see where lookup fails. Inspect \OnxCodeTerm{--deps} if the right name resolves to the wrong file. The qualified spelling needs adjacent dots, as discussed in \cref{ch:6}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/modules.md}\par
+\OnxSource{on1x/examples/modules.on1x}\par
+\OnxSource{on1x/src/loader.cpp}\par

@@ -1,0 +1,27 @@
+\chapter{Function-scoped defer}
+\label{ch:29}
+\index{Function-scoped defer}
+\index{Cleanup!defer}
+
+\OnxCodeTerm{defer call;} snapshots the callable and its arguments at registration. An admitted function drains its deferred calls in last-in, first-out order on its normal return or on a propagated Result error. Leaving a loop body does not drain the surrounding function's defer stack. Defers have bounded registration and capture storage. Fatal traps do not run a general unwinder.
+
+\begin{OnxCodeBlock}[numbers=none]
+fn main()
+{
+  var count = 1;
+  defer println(count);
+  count = 2;
+  defer println(count);
+  println(3);
+}
+\end{OnxCodeBlock}
+
+The ordinary call prints 3. The two saved calls print 2 and 1.
+
+\section{Observe registration and drain separately}
+Register a deferred call with the current integer counter, update the counter, then register a second call. The deferred observer should see the later registration first and the earlier snapshot second. Repeat the case with an early \OnxCodeTerm{?} error so both paths exercise the drain. Keep a value result independent of the deferred side effects and check it at the caller. When a result owns a managed payload, the emitter protects the pending return until it has run defers and lexical cleanup. The runtime test checks this boundary separately from source spelling.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/defer-errors.md}\par
+\OnxSource{on1x/examples/defer_errors.on1x}\par
+\OnxSource{on1x/tests/test_defer_runtime.c}\par

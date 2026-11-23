@@ -1,0 +1,15 @@
+\chapter{Execution containers, profiles, and typed composition}
+\label{ch:110}
+\index{Execution containers, profiles, and typed composition}
+
+MuLIB's execution and container stack includes distinct bounded engines, native integration profiles and capability descriptors. A bytecode engine such as QVM owns guest code and RAM under its documented quotas. A CDD planner picks typed components according to declared capabilities. An On1x container module such as Pod runs a separately defined supervised worker. These components have different artifact, trust and execution boundaries.
+
+\section{Cross a boundary deliberately}
+For a guest engine, test decoding an invalid artifact and exhausting a supported execution budget separately from a normal computation. For a typed composition plan, verify which component satisfied each capability and how a missing provider is reported. For a native worker, document startup, communication, deadline and cleanup outcomes. Do not reuse one positive test as evidence for another mechanism's isolation or type guarantees. Inspect the representation manual and concrete kernel contracts before exposing host resource authority to a guest.
+
+\section*{Repository sources}
+\OnxSource{manual/container-stack.md}\par
+\OnxSource{manual/mulib-container-core.md}\par
+\OnxSource{manual/mulib-qvm.md}\par
+\OnxSource{manual/mulib-cdd-plan.md}\par
+\OnxSource{on1x/stdlib/container/POD.md}\par

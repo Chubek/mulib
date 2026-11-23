@@ -1,0 +1,15 @@
+\chapter{Networks, HTTP, IPC, and cryptographic adapters}
+\label{ch:59}
+\index{Networks, HTTP, IPC, and cryptographic adapters}
+
+The library includes bounded socket and network helpers, HTTP modules with native companions, digest operations, and several messaging facades. Read the exact provider's limits. The small numeric-IPv4 socket bridge and the HTTP client are different interfaces. The in-process IPC mailbox is distinct from process supervision and framed kernel IPC. The \OnxCodeTerm{nng} module name does not imply linkage with upstream libnng.
+
+\section{Test data paths independently}
+Use loopback or fixture-based HTTP tests so response handling does not depend on a live service. Separate peer-close or EOF from zero-length data and from an operation error. Check digests against known-answer inputs, including an empty input and the documented encoding of a nonempty result. The checked source signature and exact bridge layout describe how to pass values. Secure deployment properties such as transport verification and key lifecycle need evidence in the chosen provider and surrounding application. Native network kernel families appear in \cref{ch:103}.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/http/README.md}\par
+\OnxSource{on1x/stdlib/network/network.on1x}\par
+\OnxSource{on1x/stdlib/crypto/crypto.on1x}\par
+\OnxSource{on1x/stdlib/ipc/ipc.on1x}\par
+\OnxSource{on1x/stdlib/daemon/README.md}\par

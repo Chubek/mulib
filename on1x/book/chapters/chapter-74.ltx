@@ -1,0 +1,13 @@
+\chapter{Checked-HIR optimization and candidate validation}
+\label{ch:74}
+\index{Checked-HIR optimization and candidate validation}
+
+Checked HIR is the common high-level input for direct C11 and source-to-MIR lowering. Optimization selects enabled passes over checked data and validates transformed candidates before publishing them. A rewrite can be type-correct yet unsound if it changes an effect, checks a trap in a different order, retains fewer references, or loses an active loan. The rewrite subsystem must preserve more than the nominal result type.
+
+\section{Compare an identity rule}
+Use \OnxCodeTerm{--list-optimizations} to record the active rules. Compare default output with \OnxCodeTerm{--no-optimizations --enable-opt integer\_add\_zero\_right} on a fixture containing that expression. An effectful or trapping operand on the left still needs evaluation. Test a simple constant input, an effectful use within the admitted profile, and a boundary input. If a rule is unavailable, check the selected compiler configuration and profile. MIR block-level optimization runs later and uses a different verifier and work budget.
+
+\section*{Repository sources}
+\OnxSource{on1x/hir/README.md}\par
+\OnxSource{on1x/hir/optimize.cpp}\par
+\OnxSource{on1x/docs/optimization-profiles.md}\par

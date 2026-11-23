@@ -1,0 +1,14 @@
+\chapter{The Basis inventory and compatibility layers}
+\label{ch:51}
+\index{The Basis inventory and compatibility layers}
+
+The standard library uses the SML Basis inventory as a catalogue and implements On1x-specific subsets. A module name alone does not establish complete Standard ML semantics. Check the compatibility and coverage tables before relying on an operation or signature. Directory initializers expose package members, and small compatibility entry points such as \OnxCodeTerm{std.Int} coexist with the grouped source tree.
+
+\section{Select an interface by behavior}
+For a list pipeline, establish what the elements represent. The legacy Basis list operations use proper S-expression lists, so they have different shape and error behavior from a native heterogeneous tuple. The legacy \OnxCodeTerm{std.Option} represents a tagged tuple with a default payload. The pervasive Option is a nominal type with its own helper rules. A successful migration should preserve the meaning of absence and avoid running callbacks on absent inputs. Check signatures and a fixture before porting code by replacing module names. Refresh-generated hashes describe the catalogue's input files, while per-operation tests describe executed behavior.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/README.md}\par
+\OnxSource{on1x/stdlib/COMPATIBILITY.md}\par
+\OnxSource{on1x/stdlib/CATALOG.json}\par
+\OnxSource{on1x/stdlib/COVERAGE.md}\par

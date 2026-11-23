@@ -1,0 +1,20 @@
+\chapter{Your first native executable}
+\label{ch:4}
+\index{Your first native executable}
+
+The example implements Fibonacci by recursion and verifies one result with an assertion. The recursive call has the same explicit signature as the initial call. The local binding in \OnxCodeTerm{main} gives the result a name, and a zero process result signals success. This program deliberately uses the core language and console intrinsics, so it is a good starting point for diagnosing a new compiler installation.
+
+\OnxInputCode[]{../../on1x/examples/hello.on1x}
+\begin{OnxCodeBlock}[numbers=none,language={}]
+build/on1x/on1xc --check on1x/examples/hello.on1x
+python3 on1x/tools/on1x-build.py on1x/examples/hello.on1x \
+  --on1xc build/on1x/on1xc -o build/on1x-hello
+build/on1x-hello
+\end{OnxCodeBlock}
+
+The first command checks the source. The helper runs emission, selects the required runtime sources and kernel groups, and invokes the host toolchain. Running the resulting binary prints 21. Change the argument from 8 to 7 and update the assertion to 13 to distinguish successful recompilation from accidentally running an older binary. Keep the assertion when experimenting with recursion.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/hello.on1x}\par
+\OnxSource{on1x/tools/on1x-build.py}\par
+\OnxSource{on1x/src/cli.cpp}\par

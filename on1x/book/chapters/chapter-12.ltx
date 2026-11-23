@@ -1,0 +1,14 @@
+\chapter{Closures and lexical capture}
+\label{ch:12}
+\index{Closures and lexical capture}
+\index{Closures!environment ownership}
+
+A lambda can retain immutable free values after the scope that created it ends. For \OnxCodeTerm{add\_by}, the surviving value is the captured increment. For a composition closure, the captures are themselves callables. When another nested lambda needs the same value, capture analysis propagates the dependency through the containing function. Capture order is derived from checked source use.
+
+\OnxInputCode[firstline=2,lastline=15]{../../on1x/examples/closures.on1x}
+The C11 path lifts a lambda to static code with a typed environment argument. The environment retains managed captures and releases them when the last owning reference goes away. A function without captures can use a null environment. Capturing mutable locals or JSON owners/views falls outside this profile. An experiment with two closures capturing the same immutable string should keep both valid after their factory returns. A companion negative test should check that replacing the capture with a mutable binding is rejected by the compiler.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/closures.md}\par
+\OnxSource{on1x/examples/closures.on1x}\par
+\OnxSource{on1x/src/codegen.cpp}\par

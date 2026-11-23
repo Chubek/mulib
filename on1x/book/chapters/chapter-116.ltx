@@ -1,0 +1,14 @@
+\chapter{Adding a language feature across the pipeline}
+\label{ch:116}
+\index{Adding a language feature across the pipeline}
+
+Choose one supported vertical slice and state its source semantics, resource rules, required lowering and targets. Update the grammar or tokenizer only when needed. Track the syntax or AST shape, type rules, normalization and checked representation through the actual entry points. Features that cross PPX or interfaces need independently versioned transport decisions. An unsupported backend should reject the feature at its documented ingress.
+
+\section{Trace a value-returning construct}
+For a new expression with several exits, define a common result type, how ordinary returns interact with it, and where lexical cleanup belongs. Identify which canonical nodes can represent these requirements. Test source checking, malformed HIR, normal execution and early cleanup. Compare generated and fallback scanners for new tokens and add migration evidence for any changed interpretation of existing source. Use the wider core-syntax document to find design intent and the executable tests to assess which subset has actually shipped.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/source-migration.md}\par
+\OnxSource{on1x/docs/architecture.md}\par
+\OnxSource{on1x/ON1X_CORE_SYNTAX_ADDITIONS.md}\par
+\OnxSource{on1x/COMPLETION.md}\par

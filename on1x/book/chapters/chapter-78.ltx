@@ -1,0 +1,15 @@
+\chapter{Canonical control, moves, and verified values}
+\label{ch:78}
+\index{Canonical control, moves, and verified values}
+\index{HIR!independent verification}
+
+Canonicalization lowers high-level control and match constructs to typed regions, branches, slots, projections, and exits. Stable lexical identities let an independent verifier check where a break targets, which paths initialize a result slot, whether a projection is dominated by its tag, and whether a move or loan is valid along every path. Backend input is rebuilt after specialization where identities need recomputing.
+
+\section{Verify a rejected candidate}
+For a sum projection, build an invalid test representation in which the projection is moved outside the tag-guarded branch. The corresponding source pattern can still look well formed, so test the bad data directly at verifier ingress. For ownership, attempt to use a consumed binding along only one predecessor and then read it after the join. These cases check path-sensitive obligations after source syntax is erased. Public PPX output cannot publish these private region or proof constructs on the compiler's behalf.
+
+\section*{Repository sources}
+\OnxSource{on1x/src/canonical/control.cpp}\par
+\OnxSource{on1x/src/canonical/values.cpp}\par
+\OnxSource{on1x/src/canonical/verify_values.cpp}\par
+\OnxSource{on1x/docs/architecture.md}\par

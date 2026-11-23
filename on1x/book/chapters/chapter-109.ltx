@@ -1,0 +1,14 @@
+\chapter{Compiler kernels, IRs, and language DSLs}
+\label{ch:109}
+\index{Compiler kernels, IRs, and language DSLs}
+
+MuLIB includes C tools and representations for scanning, parsing, intermediate code, transformation and native toolchain work. The \OnxCodeTerm{mudsl/} tree contains related domain-specific languages including MuLL. Their data formats and lifetimes are independently versioned. A MuLIB IR and On1x MIR solve different integration tasks even when both name instructions, effects, blocks or slots.
+
+\section{Define an explicit bridge}
+Choose a scalar operation and write down its source type, overflow behavior, evaluation order and target representation. Make the receiver reject unknown opcodes and unrepresentable values. Test traps and result values across the boundary. Extend to control flow only after checking how both sides encode entry, arguments and terminators. A name or address resemblance does not establish compatibility. Use the existing verified Archon or VM adapters where their profiles fit. A new adapter needs checking of every accepted translation, plus a build recipe and a semantic comparison against the On1x reference.
+
+\section*{Repository sources}
+\OnxSource{manual/compiler-tools.md}\par
+\OnxSource{manual/representation-contracts.md}\par
+\OnxSource{manual/mulib-anfir.md}\par
+\OnxDirectory{mudsl}\par

@@ -1,0 +1,13 @@
+\chapter{Scoped JSON owners and views}
+\label{ch:28}
+\index{Scoped JSON owners and views}
+
+The intrinsic JSON profile pairs a lexical owner from \OnxCodeTerm{json\_parse\_or\_die} with nested views rooted in that owner. A view can traverse an immutable subtree without acquiring independent ownership. A scope that returns early still has to release the owners it acquired. Passing the view outside the admitted lexical region, copying the owner, or capturing the view in a closure is rejected.
+
+\OnxInputCode[firstline=2,lastline=13]{../../on1x/examples/memory.on1x}
+The local \OnxCodeTerm{nested} owner is created only on one path. The return value is an integer derived from a view of \OnxCodeTerm{root}; it survives cleanup because it is independent of both owners. In a test, exercise the early return and the fallthrough return. Convert the integer result to a view result in a separate negative case to check the boundary. For recoverable format handling through standard-library bridges, see \cref{ch:53}. Those adapters have separate status and ownership conventions.
+
+\section*{Repository sources}
+\OnxSource{on1x/examples/memory.on1x}\par
+\OnxSource{on1x/docs/memory-model.md}\par
+\OnxSource{on1x/runtime/on1x_json.c}\par

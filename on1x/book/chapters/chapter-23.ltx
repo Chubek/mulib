@@ -1,0 +1,13 @@
+\chapter{Nominal records and generic enums}
+\label{ch:23}
+\index{Nominal records and generic enums}
+
+Two named records can share field names and field types yet retain different identities. The compiler associates a nominal value with its declaration, including module identity and any concrete type arguments. Generic enums are instantiated according to their argument list. Construct a value against the intended nominal type and match on constructors of that specific enum.
+
+\OnxInputCode[firstline=1,lastline=19]{../../on1x/examples/nominal_adts.on1x}
+A declaration graph must support a finite layout. By-value declaration cycles are rejected. Copy-safe nominal layouts can use the direct C11 representation. Immutable shared data and recursive unique owning layouts extend it under their own restrictions in \cref{ch:25} and \cref{ch:26}. When debugging a mismatch, compare the resolved module and type arguments as well as the human-readable fields. Two aliases of the same module refer back to its declaration identity. Two independently declared but similarly spelled enums do not become interchangeable by having the same constructors.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/nominal-adts.md}\par
+\OnxSource{on1x/examples/nominal_adts.on1x}\par
+\OnxSource{on1x/src/nominal.cpp}\par

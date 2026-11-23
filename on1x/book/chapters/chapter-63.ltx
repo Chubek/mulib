@@ -1,0 +1,13 @@
+\chapter{Profiles, Mune commands, and QMR templates}
+\label{ch:63}
+\index{Profiles, Mune commands, and QMR templates}
+
+A build profile selects a predefined stage or an allowed script-based operation over a planned project. The Mune runner provides the documented Lua profile commands. Optional QMR integration preprocesses project templates when the required Moonstone component is selected. Profile planning, manifest preprocessing, and compiler source processing are different stages with different inputs and failure messages.
+
+\section{Inspect the selected plan}
+Before debugging a generated artifact, run the project's plan command with the intended profile and backend options. Record the requested artifacts, source entry, tool paths and any resource generation. If a template build fails, check the generated manifest or the template provider before changing import syntax. If a Lua profile calls the build helper, distinguish its own failure from a compiler diagnostic. A profile may add a build step without adding a new source-language construct. Keep deterministic profile inputs and measure repeated builds before inferring hermeticity from a successful local run.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/stdlib/on1xfile/mune_runner.c}\par
+\OnxSource{on1x/tests/test_project_driver.py}\par

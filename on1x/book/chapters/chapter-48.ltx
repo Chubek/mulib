@@ -1,0 +1,14 @@
+\chapter{Authoring and using standard PPXs}
+\label{ch:48}
+\index{Authoring and using standard PPXs}
+
+The standard PPX catalogue covers implemented processor profiles and planned entries. Activation is explicit. \OnxCodeTerm{--use-ppx NAME} uses discovery, while direct processor selection takes a label and program. Native processors can be authored with the On1x PPX libraries. Python implementations and helpers are useful for protocol inspection and independent test oracles. Check the selected executable when reproducing behavior across installations.
+
+\section{Preserve the caller's semantics}
+A pipeline rewrite should evaluate its input once and preserve the ordering of effects in the expanded call. A control or tracing processor needs distinct cases for declarations and expressions and must preserve source origins for diagnostics. Test an identity pass, a supported rewrite, and a rejected or ill-typed output against the real compiler. Where composition is allowed, test the ordered chain because earlier passes can change the AST seen by later ones. Keep a budget and schema mismatch test alongside the success cases.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdppx/README.md}\par
+\OnxSource{on1x/stdppx/CATALOG.json}\par
+\OnxSource{on1x/stdlib/ppx/__init__.on1x}\par
+\OnxSource{on1x/examples/standard_ppx.on1x}\par

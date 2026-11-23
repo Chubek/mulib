@@ -1,0 +1,18 @@
+\chapter{The compiler SDK and its capability matrix}
+\label{ch:111}
+\index{The compiler SDK and its capability matrix}
+
+SDK 2 exposes a C11 boundary to compiler services and keeps the ABI-v1 extension profile distinct. Installed CMake consumers select \OnxCodeTerm{On1xSDK 2} and link \OnxCodeTerm{On1x::SDK}. The project service and semantics/IR support have their own targets. C clients must link the C++ implementation and compatible runtime through a suitable toolchain.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+on1xc sdk info
+on1xc sdk validate catalogue on1x/sdk/CAPABILITY_MATRIX.json
+\end{OnxCodeBlock}
+
+Use the checked capability records to determine required input phase, schema and artifact kind. A tool can examine the catalogue without loading providers. In a versioned C consumer, initialize supported prefixes of the ABI records and use the documented lifetime rules for returned data. Check ordinary rejection paths before extending a host to a new phase. Inspect whether the operation supplies a borrowed compiler view or owns a result that needs release. Runtime embedding uses the independently installed ABI described in \cref{ch:114}.
+
+\section*{Repository sources}
+\OnxSource{on1x/sdk/README.md}\par
+\OnxSource{on1x/sdk/ABI.md}\par
+\OnxSource{on1x/sdk/CAPABILITY_MATRIX.json}\par
+\OnxSource{on1x/sdk/include/On1xSDK.h}\par

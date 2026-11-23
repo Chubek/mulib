@@ -1,0 +1,14 @@
+\chapter{Framed IPC pairs and reusable sessions}
+\label{ch:99}
+\index{Framed IPC pairs and reusable sessions}
+
+The framed IPC profiles bridge bounded native message exchange to selected On1x use cases. The one-shot pair hides much of the lifecycle inside a checked adapter. Reusable sessions have an explicit scoped lifecycle and separate send/receive outcomes. Understand message-size limits and the lifetime of the session before choosing which example to follow. The underlying raw kernel has a larger C surface than the admitted wrapper.
+
+\section{Test state across messages}
+Run a one-shot fixture and compare the reply with its exact request. In a session fixture, send two different messages and ensure each result comes from its matching request. Add the documented negative cases for scope, stale state, or size. Keep transport failure, EOF or closure, and an empty valid payload distinct. Check the build/link selection and any explicit unsafe declaration. The frame decoder and kernel profile are different from language-level channels and from the SDK plugin transport, even if both use framed messages internally.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/kernel-framed.md}\par
+\OnxSource{on1x/examples/kernel/framed_pair.on1x}\par
+\OnxSource{on1x/examples/kernel/framed_session.on1x}\par
+\OnxSource{manual/mulib-ipc-framed.md}\par

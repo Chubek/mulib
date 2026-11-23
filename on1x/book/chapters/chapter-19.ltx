@@ -1,0 +1,15 @@
+\chapter{Structural patterns and guarded matching}
+\label{ch:19}
+\index{Structural patterns and guarded matching}
+\index{Pattern matching!guards}
+\index{Pattern matching!tag dominance}
+
+A match evaluates a scrutinee and tests patterns in order. A structural pattern can open a constructor or product, name selected fields, or ignore data with a wildcard. Guards run with the matching bindings in scope. Guard failure continues selection. An expression match joins the values of its arms, and the coverage checks account for the bounded constructor and pattern forms of the implemented profile.
+
+\OnxInputCode[firstline=8,lastline=18]{../../on1x/examples/structural_match.on1x}
+The \OnxCodeTerm{Pair} guard only accepts a positive first field when the second is true. The following \OnxCodeTerm{Pair} arm is needed for the other cases. A safe payload load must be dominated by the corresponding tag test in canonical HIR. This gives independent verification a concrete check even when the source pattern has been erased. Test a case entering each \OnxCodeTerm{Pair} arm and one entering \OnxCodeTerm{Empty}. A missing complement should be diagnosed when the profile requires exhaustive coverage.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-syntax.md}\par
+\OnxSource{on1x/examples/structural_match.on1x}\par
+\OnxSource{on1x/src/patterns.cpp}\par

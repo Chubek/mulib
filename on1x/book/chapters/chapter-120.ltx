@@ -1,0 +1,15 @@
+\chapter{Reading the roadmap and extending the system}
+\label{ch:120}
+\index{Reading the roadmap and extending the system}
+
+Roadmap and design documents describe intended breadth. Current implementation, target checks and executable fixtures establish what can be used. Full async/await lowering, general resource-bearing foreign calls, and wider checked backend representations require more than source-level syntax. Native C11 can execute features that standard MIR cannot represent. The support profile you choose should follow the application and its evidence.
+
+\section{Audit a feature end to end}
+Choose an operation such as passing framed data to a kernel-backed service. Name the source construct or facade, the ownership and error model, the checked transformation, the provider and artifact, and the tests that execute both outcome paths. If a step lacks a concrete admission model, identify the representation or proof it needs before making the application depend on it. The same audit works for a new optimizer, runtime SDK callback, or library feature. Revisit the capability matrix and the verification record at the revision you intend to ship.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/roadmap.md}\par
+\OnxSource{on1x/docs/capability-matrix.md}\par
+\OnxSource{on1x/BACKEND.md}\par
+\OnxSource{on1x/MOONSTONE.md}\par
+\OnxSource{on1x/KERNEL_DIRECT_USAGE.md}\par

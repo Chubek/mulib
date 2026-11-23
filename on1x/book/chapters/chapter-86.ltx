@@ -1,0 +1,14 @@
+\chapter{Relational MIR facts and snapshot analysis}
+\label{ch:86}
+\index{Relational MIR facts and snapshot analysis}
+
+The optional Novostone integration projects verified MIR to a versioned relational fact schema. Embedded Datalog derives queries such as reachability, call/effect closure and edge-aware liveness. CCDB snapshots and exact identity govern publication and reuse across fact deltas. Facts describe a checked program. Transformations still need the verifier and the relevant preservation checks.
+
+\section{Follow a changed edge}
+Start with a branch with two successors, and find its edge and live-value facts. Simplify the branch or replace the MIR snapshot in the supported API. Compare the changed facts and derived query results. Pay attention to block arguments: their value is passed on a specific edge, so a use on that edge need not imply a use everywhere in the source block. Bound the work and report whether the analysis completed. Different facts may use similar names to the operation-level MIR, but the latter is the execution authority.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/backend-analysis.md}\par
+\OnxSource{on1x/src/backend/Analysis.dl}\par
+\OnxSource{on1x/src/backend/relational.cpp}\par
+\OnxSource{on1x/tests/test_relational.cpp}\par

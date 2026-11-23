@@ -1,0 +1,14 @@
+\chapter{Base, Batteries, collections, and graphs}
+\label{ch:56}
+\index{Base, Batteries, collections, and graphs}
+
+Base provides focused functional helpers and common encodings. Batteries adds convenience collections and utilities. The collection modules include typed and specialized sequence families. Many source helpers represent items through bounded or persistent structures, so check mutability and asymptotic behavior at the concrete entry point. An association-map lookup has different cost and duplicate-key behavior from a hash table.
+
+\section{Traverse a graph reproducibly}
+The graph helpers validate edge shape and perform a bounded breadth-first traversal. Vertices are marked when enqueued, which prevents duplicate work from parallel edges or cycles. The order of adjacency data can determine the order among equally distant vertices. Construct a diamond graph with a return edge, then assert that the join vertex is visited once and at the expected level. Check malformed edge data and resource budgets in separate cases. Distinguish this source API from native MuLIB graph headers when planning a foreign binding.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/base/README.md}\par
+\OnxSource{on1x/stdlib/batteries/README.md}\par
+\OnxSource{on1x/stdlib/graph/traversal.on1x}\par
+\OnxSource{on1x/stdlib/README.md}\par

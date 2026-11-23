@@ -1,0 +1,16 @@
+\chapter{MIR blocks, block arguments, slots, and effects}
+\label{ch:79}
+\index{MIR blocks, block arguments, slots, and effects}
+\index{MIR!block arguments}
+\index{MIR!effects}
+
+MIR has verified control-flow blocks, SSA values, block arguments, local slots and explicit effects. An incoming edge supplies the values expected by its successor. An instruction must use appropriate types, and its operands must be available along the path. A memory slot is handled differently from a pure SSA definition. The verifier checks the supported numeric or product profile before any backend consumes it.
+
+\section{Trace a Boolean join}
+For an eligible short-circuit Boolean, the canonical decision lowering can use block arguments instead of a temporary slot. Draw the two predecessors and mark which value each passes. Verify that the inactive operand has no effects when the earlier decision short-circuits. Then emit MIR and CFG for a scalar fixture and match the drawn edges to the output. A parser accepting a managed record does not establish MIR ownership support. Use the direct C11 path when the program needs a feature outside the selected MIR capability.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/backend-mir.md}\par
+\OnxSource{on1x/src/backend/mir.cpp}\par
+\OnxSource{on1x/hir/lower_mir.cpp}\par
+\OnxSource{on1x/tests/test_mir.cpp}\par

@@ -1,0 +1,13 @@
+\chapter{Enum connectives and case selection}
+\label{ch:24}
+\index{Enum connectives and case selection}
+
+The intrinsic \OnxCodeTerm{value \textasciitilde{} \{ ... \}} syntax provides concise constructor selection for its supported enum profile. The checker resolves the constructors against the operand's enum and admits only the case forms described in the connective manual. Use a structural \OnxCodeTerm{match} when you need the broader pattern or guard syntax. Neither spelling authorizes projecting a payload from an inactive case.
+
+\section{Compare a case table with a match}
+Start with a fixture from the connective test and rewrite the decision as an equivalent set of constructor match arms. Invoke both with every constructor. Include a payload-carrying branch so the test catches an invalid projection or incorrect binding. An operator followed by braces can look like an ordinary binary call in an AST dump, so trace the dedicated parser and canonical-value rules when adding syntax tests. \cref{ch:19} describes structural matching and \cref{ch:78} explains tag domination in the verifier.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-enum-connective.md}\par
+\OnxSource{on1x/tests/test_enum_connective.py}\par
+\OnxSource{on1x/src/canonical/values.cpp}\par

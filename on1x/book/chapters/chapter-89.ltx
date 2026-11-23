@@ -1,0 +1,16 @@
+\chapter{Independent type, memory, and advisory analysis}
+\label{ch:89}
+\index{Independent type, memory, and advisory analysis}
+\index{LibStone!Chisel}
+\index{LibStone!Nerotypical}
+
+Nerotypical can independently validate a concrete structural HIR subset through its prepared solver SDK. Chisel checks lowered resource control flow for admitted ownership and loan profiles. Each requires a compatible optional build and can reject internal representations it cannot model. Wetstone's bounded advisory analysis and Syren reporting address a different job: informing the user and, in supported cases, proposing separately checked repairs.
+
+\section{Interpret tool outcomes}
+Use a valid scalar sample and a violation designed for each analysis. Include an unsupported feature so the test distinguishes failed validation, unavailable solver configuration, and a skipped advisory. A reported proof applies to the modeled obligations and input. A compiler-valid repair can still change user intent. Compare source differences and run a behavior oracle when adopting one. Keep the source checker, canonical verifier, optional analysis and native boundary in the report so readers know which component established each result.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/type-safety.md}\par
+\OnxSource{on1x/docs/memory-safety.md}\par
+\OnxSource{on1x/docs/diagnostics.md}\par
+\OnxSource{on1x/upstream/satie-euf-target.patch}\par

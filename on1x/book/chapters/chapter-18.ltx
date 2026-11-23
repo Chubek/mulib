@@ -1,0 +1,14 @@
+\chapter{Value loops and result joins}
+\label{ch:18}
+\index{Value loops and result joins}
+\index{Control flow!value joins}
+
+A value loop permits \OnxCodeTerm{break with value} and a labeled spelling for an enclosing value loop. The break operands constrain a common result type. An exit to an outer labeled loop can cross inner range and match scopes. Exactly the selected result flows out, while checked lexical cleanup still runs for scopes crossed by the exit.
+
+\OnxInputCode[firstline=2,lastline=20]{../../on1x/examples/value_loops.on1x}
+The implementation lowers the source into canonical regions, exits, and result slots. The verifier checks that a reachable result is initialized before read and that iterations cannot carry an illegally initialized slot around a backedge. The example finds the first square above a threshold and uses a typed fallback when the search is exhausted. Exercise the early exit and the fallback. Then give the fallback an incompatible type to see how the checker locates a failed join. \cref{ch:78} follows the same verification machinery for matches.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/value-loops.md}\par
+\OnxSource{on1x/examples/value_loops.on1x}\par
+\OnxSource{on1x/src/canonical/verify_values.cpp}\par

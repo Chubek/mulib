@@ -1,0 +1,13 @@
+\chapter{Exotract discovery and native archives}
+\label{ch:94}
+\index{Exotract discovery and native archives}
+
+Exotract's catalog and discovery frontend select source headers and extract typed declaration data for a target. A supported build recipe can produce a C archive from one planned implementation translation unit and its documented companions. Some profiles provide declaration inspection only. The locked workflow identifies inputs, toolchain and archive output. The C archive is a provider that a native consumer may link.
+
+\section{Distinguish two linkage cases}
+Compile a strict separate C consumer against a supported archive and check that symbol resolution succeeds without activating implementation macros in the caller. For a selected static-inline function, inspect the documented \OnxCodeTerm{wrap-inline} route and signature constraints before requesting a raw forwarding artifact. An archive can contain valid kernel code and still lack an externally visible symbol for an inline function. Passing an accepted archive to the On1x build helper changes how the implementation is supplied. It does not establish source safety or ownership admission for its API.
+
+\section*{Repository sources}
+\OnxSource{on1x/contracts-exotract/README.md}\par
+\OnxSource{on1x/contracts-exotract/catalog.json}\par
+\OnxSource{on1x/tools/on1x-exotract.py}\par

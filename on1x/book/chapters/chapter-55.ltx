@@ -1,0 +1,14 @@
+\chapter{Persistent S-expressions, visitors, and diagnostics}
+\label{ch:55}
+\index{Persistent S-expressions, visitors, and diagnostics}
+
+The native authoring libraries use persistent S-expressions for schema data, transformations, and diagnostics. Traversal should distinguish atoms from lists and validate expected tags and arities before projection. The low-level compiler intrinsics expose the supported byte-buffer and expression operations. Shared immutable ownership keeps retained nodes alive across visitors and PPX transforms.
+
+\section{Walk and rebuild a tiny tree}
+Write a visitor that rewrites a named node and preserves unrelated nodes and source metadata. Use one leaf, one nested expression, and a malformed tag case as fixtures. If a visit preserves an untouched subtree, it can reuse immutable data rather than rebuild all descendants. Track depth, total node count, and bytes when a transformation can amplify input. For PPX diagnostics, the compiler independently validates registered IDs against its selected diagnostic catalog. A processor-supplied record can convey a location and structured facts within the protocol. It cannot define arbitrary compiler policy merely by using a familiar ID.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/selfhosting.md}\par
+\OnxSource{on1x/stdlib/sexpr/__init__.on1x}\par
+\OnxSource{on1x/stdlib/visitor/__init__.on1x}\par
+\OnxSource{on1x/stdlib/diagnostics/__init__.on1x}\par

@@ -1,0 +1,13 @@
+\chapter{Parser combinators and offset contracts}
+\label{ch:54}
+\index{Parser combinators and offset contracts}
+
+The source Parsec helpers build around text and byte offsets. A scanner result can carry success, a parsed value, and the next offset. The signed decimal helper includes the smallest i64 and rolls back to the starting position on malformed or overflowing input. A parser composed from several operations should define which operations commit and which failures preserve the original position.
+
+\section{Parse a bounded field}
+Test a leading sign with no digits, a maximum in-range field followed by a delimiter, a field overflowing by one, and a start index outside the input. For an optional field, check the next offset even when a default value is returned. An unchanged offset lets an alternative parser reuse the original checkpoint. A successful result with zero width requires care inside repetition, since applying the same parser without progress can loop. The native MuLIB Parsec kernel has its own profile and ownership switches. A source helper's semantics do not select those optional C switches.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/parsec/parsec.on1x}\par
+\OnxSource{on1x/stdlib/README.md}\par
+\OnxSource{manual/mulib-parsec.md}\par

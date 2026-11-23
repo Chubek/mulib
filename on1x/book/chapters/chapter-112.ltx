@@ -1,0 +1,15 @@
+\chapter{Extension activation and plugin isolation}
+\label{ch:112}
+\index{Extension activation and plugin isolation}
+\index{SDK!dynamic isolation}
+
+Explicit SDK analyzer or emitter modes can discover external providers through \OnxCodeTerm{ON1X\_PLUGIN\_PATH} or select a provider with \OnxCodeTerm{--plugin +NAME\_OR\_PATH}. Ordinary compilation does not activate those hooks. In the supported Linux x86-64 dynamic profile, a worker enters the configured isolation before loading plugin code. Failed isolation prevents loading. An explicitly configured linked analyzer runs inside its trusted compiler host and may receive the specified structured verified MIR view.
+
+\section{Select authority along with the hook}
+Check that the requested input schema and artifact kind match the provider. Exercise one valid selection and one ambiguous or mismatched selection. For a dynamic test, verify failure when the worker cannot establish isolation. For a trusted provider, treat the selected source and its dependencies as part of the host build. Give tests an observer outside the provider so a success message from the plugin is never the sole evidence of artifact publication.
+
+\section*{Repository sources}
+\OnxSource{on1x/sdk/README.md}\par
+\OnxSource{on1x/sdk/SECURITY.md}\par
+\OnxSource{on1x/sdk/docs/core-plugins-abi2.md}\par
+\OnxSource{on1x/sdk/docs/trusted-linked-mir-analyzer.md}\par

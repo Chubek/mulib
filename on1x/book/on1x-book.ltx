@@ -1,52 +1,194 @@
-\documentclass[14pt, a4paper]{on1x-book}
+\documentclass[11pt,a4paper,openany,manuscript]{on1x-book}
 
-\usepackage{iftex, etoolbox}
+\usepackage{xurl}
+\usepackage{tocloft}
+\usepackage[noautomatic]{imakeidx}
+\makeindex[intoc]
 
-\newbool{HasUnicode}
-\newbool{HasLua}
+\geometry{a4paper,inner=26mm,outer=23mm,top=24mm,bottom=24mm,headheight=16pt}
+\setlength{\cftchapnumwidth}{2.6em}
+\setlength{\emergencystretch}{2em}
+\setcounter{tocdepth}{0}
+\newcommand{\OnxCodeTerm}[1]{\texttt{#1}}
+\newcommand{\OnxSourceRevision}{2cdceb9c4fb381d31b64d7af4fee735365d17ff9}
+\newcommand{\OnxSource}[1]{%
+  \href{https://github.com/Chubek/mulib/blob/\OnxSourceRevision/#1}{\nolinkurl{#1}}%
+}
+\newcommand{\OnxDirectory}[1]{%
+  \href{https://github.com/Chubek/mulib/tree/\OnxSourceRevision/#1}{\nolinkurl{#1}}%
+}
 
-\ifTUTeX
-  \usepackage{fontspec}
-  \usepackage{unicode-math}
-  \booltrue{HasUnicode}
-
-  \setmainfont{TeX Gyre Pagella}
-  \setsansfont{TeX Gyre Heros}
-  \setmonofont{DejaVu Sans Mono}
-\else
-  \usepackage{fontenc, inputenc}
-  \usepackage{newtxtext, newtxmath}
-\fi
-
-\ifLuaTeX
-   \booltrue{HasLua}
-   \usepackage{luacode}
-\fi
-
-\usepackage{amsmath, amssymb, amsthm, mathtools}
-\usepackage{xcolor, tcolorbox}
-\usepackage{geometry, setspace, parskip}
-\usepackage{array, booktabs, tikz}
-\usepackage{xparse, xspace}
-
-\usepackage[backend=biber, style=authoryear, sorting=nyt]{biblatex}
-\addbibresource{references.bib}
-
-\usepackage[xindy]{imakeidx}
-\makeindex
-
-\usepackage{hyperref, cleveref}
-
-
-\title{}
-\author{}
-\date{}
+\title{On1x\par\medskip{\Large Language, Compiler,\par and MuLIB Kernels}}
+\author{The MuLIB project}
+\date{Repository reference edition}
+\OnxPDFMetadata{On1x: Language, Compiler, and MuLIB Kernels}{The MuLIB project}{On1x and MuLIB reference}
 
 \begin{document}
+\frontmatter
+\maketitle
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+This book follows an On1x program from source to executable. The early
+chapters teach the language and its value and resource models. Later
+parts walk through projects, the compiler and its backends, and the
+boundary between an On1x program and a MuLIB kernel or native host.
 
+Command examples begin at the MuLIB repository root unless a different
+working directory is given. Listings taken from repository examples may
+be excerpts. A heading called Repository sources links to manuals,
+implementation, or tests in the source snapshot on which the chapter
+is based. The revision is \texttt{2cdceb9c}. Use those links to resolve
+details that depend on the selected build, target, or ABI. The book
+calls out bounded and optional profiles where they affect a reader's
+choice of syntax, backend, build tool, or library.
 
+\tableofcontents
+\mainmatter
 
-\printbibliography
+\part{Getting Started with On1x}
+\input{chapters/chapter-1.ltx}
+\input{chapters/chapter-2.ltx}
+\input{chapters/chapter-3.ltx}
+\input{chapters/chapter-4.ltx}
+\input{chapters/chapter-5.ltx}
+\input{chapters/chapter-6.ltx}
+\input{chapters/chapter-7.ltx}
+\input{chapters/chapter-8.ltx}
+\input{chapters/chapter-9.ltx}
+\input{chapters/chapter-10.ltx}
+
+\part{Functions and Control}
+\input{chapters/chapter-11.ltx}
+\input{chapters/chapter-12.ltx}
+\input{chapters/chapter-13.ltx}
+\input{chapters/chapter-14.ltx}
+\input{chapters/chapter-15.ltx}
+\input{chapters/chapter-16.ltx}
+\input{chapters/chapter-17.ltx}
+\input{chapters/chapter-18.ltx}
+\input{chapters/chapter-19.ltx}
+\input{chapters/chapter-20.ltx}
+
+\part{Data and Ownership}
+\input{chapters/chapter-21.ltx}
+\input{chapters/chapter-22.ltx}
+\input{chapters/chapter-23.ltx}
+\input{chapters/chapter-24.ltx}
+\input{chapters/chapter-25.ltx}
+\input{chapters/chapter-26.ltx}
+\input{chapters/chapter-27.ltx}
+\input{chapters/chapter-28.ltx}
+\input{chapters/chapter-29.ltx}
+\input{chapters/chapter-30.ltx}
+
+\part{Modules, Abstraction, and Staging}
+\input{chapters/chapter-31.ltx}
+\input{chapters/chapter-32.ltx}
+\input{chapters/chapter-33.ltx}
+\input{chapters/chapter-34.ltx}
+\input{chapters/chapter-35.ltx}
+\input{chapters/chapter-36.ltx}
+\input{chapters/chapter-37.ltx}
+\input{chapters/chapter-38.ltx}
+\input{chapters/chapter-39.ltx}
+\input{chapters/chapter-40.ltx}
+
+\part{Concurrency and Source Tooling}
+\input{chapters/chapter-41.ltx}
+\input{chapters/chapter-42.ltx}
+\input{chapters/chapter-43.ltx}
+\input{chapters/chapter-44.ltx}
+\input{chapters/chapter-45.ltx}
+\input{chapters/chapter-46.ltx}
+\input{chapters/chapter-47.ltx}
+\input{chapters/chapter-48.ltx}
+\input{chapters/chapter-49.ltx}
+\input{chapters/chapter-50.ltx}
+
+\part{The Standard Library}
+\input{chapters/chapter-51.ltx}
+\input{chapters/chapter-52.ltx}
+\input{chapters/chapter-53.ltx}
+\input{chapters/chapter-54.ltx}
+\input{chapters/chapter-55.ltx}
+\input{chapters/chapter-56.ltx}
+\input{chapters/chapter-57.ltx}
+\input{chapters/chapter-58.ltx}
+\input{chapters/chapter-59.ltx}
+\input{chapters/chapter-60.ltx}
+
+\part{Projects and Builds}
+\input{chapters/chapter-61.ltx}
+\input{chapters/chapter-62.ltx}
+\input{chapters/chapter-63.ltx}
+\input{chapters/chapter-64.ltx}
+\input{chapters/chapter-65.ltx}
+\input{chapters/chapter-66.ltx}
+\input{chapters/chapter-67.ltx}
+\input{chapters/chapter-68.ltx}
+\input{chapters/chapter-69.ltx}
+\input{chapters/chapter-70.ltx}
+
+\part{Inside the Compiler}
+\input{chapters/chapter-71.ltx}
+\input{chapters/chapter-72.ltx}
+\input{chapters/chapter-73.ltx}
+\input{chapters/chapter-74.ltx}
+\input{chapters/chapter-75.ltx}
+\input{chapters/chapter-76.ltx}
+\input{chapters/chapter-77.ltx}
+\input{chapters/chapter-78.ltx}
+\input{chapters/chapter-79.ltx}
+\input{chapters/chapter-80.ltx}
+
+\part{Backends and Verification}
+\input{chapters/chapter-81.ltx}
+\input{chapters/chapter-82.ltx}
+\input{chapters/chapter-83.ltx}
+\input{chapters/chapter-84.ltx}
+\input{chapters/chapter-85.ltx}
+\input{chapters/chapter-86.ltx}
+\input{chapters/chapter-87.ltx}
+\input{chapters/chapter-88.ltx}
+\input{chapters/chapter-89.ltx}
+\input{chapters/chapter-90.ltx}
+
+\part{Foreign Calls and MuLIB}
+\input{chapters/chapter-91.ltx}
+\input{chapters/chapter-92.ltx}
+\input{chapters/chapter-93.ltx}
+\input{chapters/chapter-94.ltx}
+\input{chapters/chapter-95.ltx}
+\input{chapters/chapter-96.ltx}
+\input{chapters/chapter-97.ltx}
+\input{chapters/chapter-98.ltx}
+\input{chapters/chapter-99.ltx}
+\input{chapters/chapter-100.ltx}
+
+\part{Kernel Families and Native Integration}
+\input{chapters/chapter-101.ltx}
+\input{chapters/chapter-102.ltx}
+\input{chapters/chapter-103.ltx}
+\input{chapters/chapter-104.ltx}
+\input{chapters/chapter-105.ltx}
+\input{chapters/chapter-106.ltx}
+\input{chapters/chapter-107.ltx}
+\input{chapters/chapter-108.ltx}
+\input{chapters/chapter-109.ltx}
+\input{chapters/chapter-110.ltx}
+
+\part{SDKs and Engineering Practice}
+\input{chapters/chapter-111.ltx}
+\input{chapters/chapter-112.ltx}
+\input{chapters/chapter-113.ltx}
+\input{chapters/chapter-114.ltx}
+\input{chapters/chapter-115.ltx}
+\input{chapters/chapter-116.ltx}
+\input{chapters/chapter-117.ltx}
+\input{chapters/chapter-118.ltx}
+\input{chapters/chapter-119.ltx}
+\input{chapters/chapter-120.ltx}
+
+\backmatter
 \printindex
-
 \end{document}

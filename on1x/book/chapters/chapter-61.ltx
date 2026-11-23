@@ -1,0 +1,13 @@
+\chapter{Scaffolding a project or source library}
+\label{ch:61}
+\index{Scaffolding a project or source library}
+
+\OnxCodeTerm{on1xc init --bin}, \OnxCodeTerm{--proj}, and \OnxCodeTerm{--lib} create executable, multi-target, and source-library scaffolds. Use the project root as the working directory for \OnxCodeTerm{on1xc exec build} or the selected profile. The scaffold owns a root manifest and participating directory manifests. It gives the loader a place to define inputs and the driver a place to define target policy.
+
+\section{Grow a scaffold incrementally}
+Build the generated starting target, edit one function to make its result observable, and rebuild. Add a library directory that defines a helper, declare the file in its local manifest, and import it using its package identity. Try the build from a clean checkout without stale outputs or private search-path settings. A new source file that is present but undeclared can fail discovery even when the function checks in single-file mode. Separate project target resolution from the actual source type error before editing the helper.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/on1xfile/README.md}\par
+\OnxSource{on1x/tools/on1x-project.py}\par
+\OnxSource{on1x/tests/test_on1x_project.py}\par

@@ -1,0 +1,13 @@
+\chapter{Cliches, coherence, and constrained generics}
+\label{ch:36}
+\index{Cliches, coherence, and constrained generics}
+
+A cliche states obligations that constrained generic code can use. Implementations provide checked member definitions and can include supported associated values. A qualified call such as \OnxCodeTerm{Show<T>::show(value)} selects a checked implementation during elaboration. The resolver applies coherence and orphan rules, can prefer an exact implementation to an eligible blanket implementation, and bounds recursive prerequisite resolution.
+
+\section{Test resolution by changing one head}
+Use a fixture with a blanket and a concrete head, then make the concrete case return a distinguishable result. Test both the specific type and another type satisfying the blanket conditions. Repeat with declarations reordered to check deterministic selection. Add an overlap or a nondecreasing prerequisite as a negative test. Elaborated calls become ordinary concrete functions. There is no need to inspect a runtime dictionary to diagnose the selected implementation. Associated types and general ownership constraints remain outside this slice. \cref{ch:37} compares the separately activated Category mechanism.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/core-cliche.md}\par
+\OnxSource{on1x/src/cliche.cpp}\par
+\OnxSource{on1x/tests/test_cliche.py}\par

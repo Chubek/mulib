@@ -1,0 +1,18 @@
+\chapter{Reproducible debugging and toolchain probes}
+\label{ch:68}
+\index{Reproducible debugging and toolchain probes}
+\index{Debugging!DWARF paths}
+
+Project debug builds retain debug information but can normalize selected paths using \OnxCodeTerm{-fdebug-prefix-map}. This maps paths recorded in DWARF, not actual filesystem locations. The debugger still needs access to the generated C and compatible runtime sources. A matching build helper invocation in emit-only mode can recreate the generated C for inspection.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+set substitute-path /__on1x__/generated /path/to/generated-c
+set substitute-path /__on1x__/sdk /path/to/on1x-sdk
+\end{OnxCodeBlock}
+
+Compare binaries across different checkout roots using the same compiler versions, assembler, linker, flags and sysroot. A path map cannot normalize toolchain-dependent code or strings that a program explicitly embeds. The toolchain probe documents which tools and target details can be collected. Preserve those results alongside the effective manifest and compiler revision. The resulting debugging view is of generated C; use source diagnostics and checked locations to relate findings back to On1x.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/reproducible-debug.md}\par
+\OnxSource{on1x/toolchains/README.md}\par
+\OnxSource{on1x/tests/test_reproducible_debug.py}\par

@@ -1,0 +1,15 @@
+\chapter{Finite recursive ownership}
+\label{ch:26}
+\index{Finite recursive ownership}
+\index{Ownership!unique}
+\index{Cleanup!iterative destruction}
+
+A recursive declaration needs indirection to have a finite layout. The implemented C11 slice admits recursive edges through \OnxCodeTerm{own<Named>}. The \OnxCodeTerm{box} operation creates a unique owner. Transfer uses explicit \OnxCodeTerm{move}, and consuming \OnxCodeTerm{take} and \OnxCodeTerm{drop} have distinct lifecycle effects. A moved binding no longer holds a usable owner. The admitted set excludes unrestricted pointer graphs and shared cycles.
+
+\section{Build and destroy a finite chain}
+Use a base constructor and a link constructor whose next field is an owner. A consumer can use a checked consuming match to transfer the active fields. To stress destruction, grow a large finite chain and drop the root. The runtime queues iterative destruction instead of mirroring the chain on the host C stack. Add a negative case that attempts to use a moved binding twice. The source and independent HIR tests exercise different ingress paths. The same ownership transfers matter for a Result consumed by \OnxCodeTerm{?}, covered in \cref{ch:30}.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/recursive-owning-adts.md}\par
+\OnxSource{on1x/tests/test_recursive_owning_adts.py}\par
+\OnxSource{on1x/tests/test_recursive_owning_adts.cpp}\par

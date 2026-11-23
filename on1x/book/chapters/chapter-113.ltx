@@ -1,0 +1,14 @@
+\chapter{SDK inspection, transforms, and artifact sinks}
+\label{ch:113}
+\index{SDK inspection, transforms, and artifact sinks}
+
+SDK views are governed by documented schema, phase, lifetime and capability records. Read-only analysis can inspect an admitted view and report bounded results. A transformation or backend cannot treat an arbitrary data buffer as verified code. The host checks candidates and stages output before final publication, with trusted built-in and external extension paths admitting different representations.
+
+\section{Design a failure-atomic tool}
+Read the input phase and exact schema before walking blocks or types. Preserve the existing artifact while producing a complete candidate in the staging sink. Test a successful transformation and an error after a partial write to verify the publication rules. For transforms over MIR, verify the candidate and preserve effects, traps and control flow where required. Record unsupported phases as explicit results and surface provider ambiguity separately. The same rule applies when comparing an ABI-1 hook with an ABI-2 record. Each contract describes the data it admits.
+
+\section*{Repository sources}
+\OnxSource{on1x/sdk/docs/analysis-transformation.md}\par
+\OnxSource{on1x/sdk/ARCHITECTURE.md}\par
+\OnxSource{on1x/sdk/EXTENSIONS.md}\par
+\OnxSource{on1x/backends/README.md}\par

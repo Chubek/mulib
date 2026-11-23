@@ -1,0 +1,18 @@
+\chapter{Compiler modes and artifacts}
+\label{ch:5}
+\index{Compiler modes and artifacts}
+
+Use the smallest compiler mode that can answer your question. \OnxCodeTerm{--tokens} investigates tokenization. \OnxCodeTerm{--emit-ast} emits the macro-expanded pre-PPX AST. \OnxCodeTerm{--deps} describes source loading. \OnxCodeTerm{--check} and \OnxCodeTerm{--types} are useful for source and type diagnostics. \OnxCodeTerm{--emit-c} exposes generated C11, while \OnxCodeTerm{--emit-ir}, \OnxCodeTerm{--ir-cfg}, and \OnxCodeTerm{--run-ir} inspect or run the supported MIR subset. Each output has its own consumers and assumptions.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+build/on1x/on1xc --emit-c on1x/examples/hello.on1x -o build/hello.c
+build/on1x/on1xc --emit-ir on1x/examples/mir.on1x -o build/example.mir
+\end{OnxCodeBlock}
+
+Emitting C and linking an executable are separate operations. The generated translation unit expects the runtime and, in some profiles, companion kernels. Use the helper in \cref{ch:4} to link a normal program. Use MIR modes when investigating a verified MIR feature. If MIR rejects a source program that direct C11 accepts, check the backend capability matrix before attempting to change the emitter. A smaller scalar example can isolate the behavior being inspected.
+
+\section*{Repository sources}
+\OnxSource{on1x/src/cli.cpp}\par
+\OnxSource{on1x/docs/backend-mir.md}\par
+\OnxSource{on1x/examples/mir.on1x}\par
+\OnxSource{on1x/addons/CLI.md}\par

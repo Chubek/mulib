@@ -1,0 +1,14 @@
+\chapter{Document pretty-printing and output targets}
+\label{ch:57}
+\index{Document pretty-printing and output targets}
+
+Pretty-printing separates document construction from layout. Build a document from the intended content, layout choices and nesting, then render it for the selected width and output target. A formatter for a particular source language also needs parse-aware decisions about tokens and comments. The On1x formatter and the general PrettyPrint bridge therefore solve related problems at different levels.
+
+\section{Compare width and escaping}
+Render a nested sequence at a width where it fits on one line and another width that forces a break. Check indentation after the break. For a typesetting target, include a symbol that the output language treats specially and verify the intended escaped output. Avoid measuring escaped byte length as source display width. The bridge has bounded document and result representations. For a regression, preserve a layout oracle as well as semantic data: an expected single line is useful only when the chosen width and target stay part of the test.
+
+\section*{Repository sources}
+\OnxSource{on1x/stdlib/prettyprint/README.md}\par
+\OnxSource{on1x/stdlib/prettyprint/runtime.c}\par
+\OnxSource{on1x/docs/formatter.md}\par
+\OnxSource{manual/mulib-prettydoc.md}\par

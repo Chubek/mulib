@@ -1,0 +1,14 @@
+\chapter{Captured process streams and backpressure}
+\label{ch:46}
+\index{Captured process streams and backpressure}
+\index{Processes!stream backpressure}
+
+\OnxCodeTerm{launch capture} returns the process handle and three endpoints for standard input, standard output, and standard error. Input accepts bytes, while the output and error streams deliver bytes. Stream buffers are bounded. Closing input allows the child to see EOF once buffered writes drain. An output stream reaches EOF after the pipe closes and queued bytes have been consumed. NUL is a valid stream byte.
+
+\section{Avoid a blocked producer}
+If a child can fill stdout or stderr, arrange for the program to drain both during execution before relying on join. A blocked pipe writer can otherwise keep the child alive while the parent waits for exit. A focused test should send more than the configured buffer capacity, deliver input EOF, drain both outputs, and join exactly once. Mix byte streams and ordinary channels with \OnxCodeTerm{poll} when the parent must handle both. Keep process supervision failures distinct from empty stream chunks and ordinary EOF.
+
+\section*{Repository sources}
+\OnxSource{on1x/docs/concurrency.md}\par
+\OnxSource{on1x/examples/cooperative_process_streams.on1x}\par
+\OnxSource{on1x/runtime/on1x_concurrency.c}\par
