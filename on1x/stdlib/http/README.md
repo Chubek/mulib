@@ -101,9 +101,10 @@ cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ion1x/runtime -Iinclude \
 `kernels.c` is the standalone implementation translation unit. Omit it if
 the host already provides the full MuLIB dependency closure in a single
 implementation unit; don't compile the same implementation switches twice.
-No OpenSSL runtime library is linked. The standard CMake install copies the
-package sources; no automatic native linkage or restricted project-bundle
-support is supplied.
+No OpenSSL runtime library is linked. The standard CMake install and the
+restricted stdlib source bundle both ship the On1x modules and C companions.
+Bundling the sources does not enable automatic linkage: the native client
+still requires explicit host linkage and an authorization policy.
 
 ## MuLIB coverage
 

@@ -1,4 +1,5 @@
 on1xfile 1
+library "__init__.on1x"
 library "either.on1x"
 library "fn.on1x"
 library "list.on1x"

@@ -1,4 +1,5 @@
 on1xfile 1
+library "__init__.on1x"
 library "base64.on1x"
 library "deque.on1x"
 library "enum.on1x"

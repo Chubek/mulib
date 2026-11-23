@@ -1,4 +1,5 @@
 on1xfile 1
+library "__init__.on1x"
 library "Array.on1x"
 library "Array2.on1x"
 library "ArraySlice.on1x"

@@ -1,4 +1,5 @@
 on1xfile 1
+library "__init__.on1x"
 library "CommandLine.on1x"
 library "OS.on1x"
 library "OS_FileSys.on1x"

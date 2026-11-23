@@ -1,0 +1,4 @@
+# Import the mutable array modules separately; they require the native adapter.
+from . import (BoolVector, BoolVectorSlice, CharVector, CharVectorSlice,
+  IntVector, IntVectorSlice, List, ListPair, Option, Vector, VectorSlice,
+  Word8Vector, Word8VectorSlice);

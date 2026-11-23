@@ -91,6 +91,13 @@ fn main() {
 ```
 
 Quoted imports remain supported and resolve relative to their source files.
+Use `import std.parsec as Parse` to call `Parse.basis_parsec_int` through the
+package entry point, or `import std.numeric as Numeric` to access grouped
+modules such as `Numeric.Int`. Direct child imports such as `std.numeric.Int`
+still work and do not load the package initializer. Grouped facades can omit
+native adapters so portable imports stay portable; for example, use
+`import std.numeric.Real as Real` for decimal-string arithmetic.
+
 `stdlib/sexpr`, `stdlib/visitor`, and `stdlib/ppx` provide the native authoring APIs.
 `stdlib/diagnostics` provides bounded diagnostic values and descriptor-3 PPX
 registration/emission helpers; the compiler still validates every ID against

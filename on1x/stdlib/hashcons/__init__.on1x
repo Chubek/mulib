@@ -1,0 +1,1 @@
+from .hashcons import (hashcons_empty, hashcons_lookup, hashcons_intern);

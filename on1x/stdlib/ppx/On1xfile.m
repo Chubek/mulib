@@ -1,4 +1,5 @@
 on1xfile 1
+library "__init__.on1x"
 library "diagnostic.on1x"
 library "json.on1x"
 library "numbers.on1x"

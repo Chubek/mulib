@@ -1,0 +1,3 @@
+# IEEEReal, LargeReal, Math and Real require the native decimal-string adapter.
+from . import (FixedInt, Int, Int16, Int32, Int64, Int8, IntInf, LargeInt,
+  LargeWord, Position, Word, Word8);

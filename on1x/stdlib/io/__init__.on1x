@@ -1,0 +1,2 @@
+# Import the text and binary I/O adapters separately.
+from . import IO;
