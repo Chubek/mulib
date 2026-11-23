@@ -62,6 +62,8 @@ def main():
     cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc') if (ROOT / 'build' / 'on1xc').is_file() else shutil.which('on1xc') or 'on1xc')
     cli.add_argument('--cc', default=os.environ.get('CC', 'cc'))
     cli.add_argument('--emit-only', action='store_true')
+    cli.add_argument('--trust-inline-c11', action='store_true',
+                     help='authorize the native InlineC11 processor and link its trusted C expressions')
     backend_args = cli.add_mutually_exclusive_group()
     backend_args.add_argument('--backend', choices=('c11', 'mir-c11', 'mir-vm', 'mir-archon'),
                               help='output: direct C11, MIR C11, VM bytecode, or native Archon executable')
@@ -123,6 +125,10 @@ def main():
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
     args = cli.parse_args()
     args.via_mir = args.backend == 'mir-c11'
+    if args.trust_inline_c11 and (args.backend not in (None, 'c11') or args.emit_only or
+            args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or
+            args.memory_check or args.admitted_extern):
+        cli.error('--trust-inline-c11 requires a direct C11 executable build without FFI admission')
     alternate = args.backend in ('mir-vm', 'mir-archon')
     if alternate:
         if (args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or args.extra_c
@@ -296,7 +302,17 @@ def main():
                 kernel_interface = exo.clamp_scalar_interface(report, unsafe=True)
             args.cc = report['compiler']
             compiler.append('--kernel-c11')
-        subprocess.run(compiler, check=True)
+        compiler_env = os.environ.copy()
+        compiler_env.pop('ON1X_TRUSTED_INLINE_C11_OUTPUT', None)
+        if args.trust_inline_c11:
+            companion = Path(temp) / 'inline-c11.c'
+            compiler_env['ON1X_TRUSTED_INLINE_C11_OUTPUT'] = str(companion)
+            compiler += ['--use-ppx', 'InlineC11']
+        subprocess.run(compiler, check=True, env=compiler_env)
+        if args.trust_inline_c11:
+            if not companion.is_file():
+                raise ValueError('InlineC11 processor did not produce its C companion')
+            args.extra_c.append(str(companion))
         if args.backend == 'mir-vm':
             # The compiler writes verified portable bytecode. Verify the exact
             # published bytes with the installed standalone runner as well.

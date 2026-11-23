@@ -1,0 +1,22 @@
+# Raw, synchronous Cephyr ABI-1 companion. See README.md for the link recipe.
+extern fn on1x_cephyr_analyze_v1(source: string, mode: i64) -> i64;
+extern fn on1x_cephyr_output_v1() -> string;
+extern fn on1x_cephyr_diagnostics_v1() -> string;
+
+fn basis_cephyr_check(source: string) -> (i64, string)
+{
+  let status = on1x_cephyr_analyze_v1(source, 0);
+  return (status, on1x_cephyr_diagnostics_v1());
+}
+
+fn basis_cephyr_emit_mir(source: string) -> (i64, string, string)
+{
+  let status = on1x_cephyr_analyze_v1(source, 1);
+  return (status, on1x_cephyr_output_v1(), on1x_cephyr_diagnostics_v1());
+}
+
+fn basis_cephyr_emit_assembly(source: string) -> (i64, string, string)
+{
+  let status = on1x_cephyr_analyze_v1(source, 2);
+  return (status, on1x_cephyr_output_v1(), on1x_cephyr_diagnostics_v1());
+}

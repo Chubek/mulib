@@ -18,6 +18,7 @@ if(DEFINED ENV{ON1X_LIBSTONE_ROOT} AND NOT "$ENV{ON1X_LIBSTONE_ROOT}" STREQUAL "
 endif()
 
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
+option(ON1X_WITH_CEPHYR "Enable in-process Cephyr compilation of checked-HIR C11 to an AMD64 Linux object" OFF)
 option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
 option(ON1X_USE_FALLBACK_SCANNER "Use the bootstrap scanner even when LibStone is present" OFF)
 option(ON1X_WITH_EXOML "Build optional ExoML contract-verification tool" OFF)
@@ -163,6 +164,73 @@ if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
 add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
+if(ON1X_WITH_CEPHYR)
+  if(CMAKE_CROSSCOMPILING OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
+     NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "ON1X_WITH_CEPHYR currently requires a native AMD64 Linux LP64 build")
+  endif()
+  find_package(Cephyr CONFIG QUIET)
+  if(NOT TARGET Cephyr::Cephyr)
+    message(FATAL_ERROR
+      "ON1X_WITH_CEPHYR requires the installed Cephyr::Cephyr embedding library. "
+      "Build and install ${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr, then set "
+      "Cephyr_DIR to its installed lib/cmake/Cephyr directory.")
+  endif()
+  include(CMakePushCheckState)
+  include(CheckCSourceRuns)
+  cmake_push_check_state(RESET)
+  set(CMAKE_REQUIRED_LIBRARIES Cephyr::Cephyr)
+  unset(ON1X_CEPHYR_HAS_EMBEDDING_ABI_1 CACHE)
+  check_c_source_runs([[#include <cephyr/Cephyr.h>
+    int main(void) {
+      cephyr_request request = {0};
+      cephyr_result *result = 0;
+      size_t length;
+      if (cephyr_abi_version() != 1 ||
+          cephyr_compile(&request, &result) != CEPHYR_INVALID_ARGUMENT) return 1;
+      (void)cephyr_result_output(result, &length);
+      (void)cephyr_result_diagnostics(result, &length);
+      cephyr_result_destroy(result);
+      return 0;
+    }]] ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
+  cmake_pop_check_state()
+  if(NOT ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
+    message(FATAL_ERROR "Cephyr_DIR must select a runnable Cephyr embedding ABI 1 package with cephyr_compile and length-delimited results")
+  endif()
+  target_link_libraries(on1xc PRIVATE Cephyr::Cephyr)
+  set(ON1X_CEPHYR_RESOURCE_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr" CACHE PATH
+    "Cephyr resource directory containing triples/ and stdlib/")
+  set(ON1X_CEPHYR_ARCHON_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Archon" CACHE PATH
+    "Archon package directory containing archon/ and stdspec/")
+  if(NOT EXISTS "${ON1X_CEPHYR_RESOURCE_ROOT}/triples/x86_64-linux-gnu.lua" OR
+     NOT IS_DIRECTORY "${ON1X_CEPHYR_RESOURCE_ROOT}/stdlib/include" OR
+     NOT EXISTS "${ON1X_CEPHYR_ARCHON_ROOT}/stdspec/amd64/root.arch" OR
+     NOT IS_DIRECTORY "${ON1X_CEPHYR_ARCHON_ROOT}/archon")
+    message(FATAL_ERROR "Set ON1X_CEPHYR_RESOURCE_ROOT and ON1X_CEPHYR_ARCHON_ROOT to the selected Cephyr and Archon resources")
+  endif()
+  target_sources(on1xc PRIVATE src/backend/cephyr.cpp)
+  add_subdirectory(stdlib/cephyr)
+  target_compile_definitions(on1xc PRIVATE ON1X_WITH_CEPHYR=1
+    ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
+    ON1X_CEPHYR_ARCHON_ROOT="${ON1X_CEPHYR_ARCHON_ROOT}")
+  install(FILES src/backend/cephyr-baseline.toml DESTINATION share/on1x)
+  if(BUILD_TESTING)
+    add_test(NAME on1x.cephyr.native COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_native.py" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
+    set_tests_properties(on1x.cephyr.native PROPERTIES TIMEOUT 300)
+    add_test(NAME on1x.cephyr.options COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_options.py" "$<TARGET_FILE:on1xc>"
+      "$<$<BOOL:${ON1X_WITH_SYREN}>:--syren>")
+    set_tests_properties(on1x.cephyr.options PROPERTIES TIMEOUT 180)
+    if(ON1X_WITH_MEMGRAPH)
+      add_test(NAME on1x.cephyr.optimization COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/MEMGraph/tests/test_reference_effects.py" "$<TARGET_FILE:on1xc>"
+        "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/cephyr-optimization"
+        "${CMAKE_C_COMPILER}" --driver)
+      set_tests_properties(on1x.cephyr.optimization PROPERTIES TIMEOUT 300)
+    endif()
+  endif()
+endif()
 add_subdirectory(backends/mir-vm)
 set_target_properties(on1x-vm PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(on1xc PRIVATE on1x_frontend on1x_pretty_kernels on1x_mir_vm)
@@ -269,7 +337,7 @@ if(ON1X_BUILD_NATIVE_PPX)
   add_library(on1x_luaembed_bridge STATIC stdppx/luaembed/runtime.c "${_luaembed_dir}/luaembed_resources.h")
   target_include_directories(on1x_luaembed_bridge PRIVATE "${_luaembed_dir}" "${CMAKE_CURRENT_SOURCE_DIR}/../include")
   target_link_libraries(on1x_luaembed_bridge PUBLIC on1x_luaembed_kernels)
-  set(_native_processors identity checks control unroll derive fold pipe compose assertions cond format logging state_machine tap trace protocols diagnostics LuaEmbed)
+  set(_native_processors identity checks control unroll derive fold pipe compose assertions cond format logging state_machine tap trace protocols diagnostics LuaEmbed InlineC11)
   include(cmake/GrammarEmbed.cmake)
   foreach(_processor IN LISTS _native_processors)
     string(APPEND _ppx_manifest " (processor \"${_processor}\" \"on1x-ppx-${_processor}\" \"category.schema.json\")\n")
@@ -279,6 +347,9 @@ if(ON1X_BUILD_NATIVE_PPX)
       COMMAND "$<TARGET_FILE:on1xc>" --emit-c "${_native_input}" -o "${_native_c}"
       DEPENDS on1xc ${_native_ppx_sources} ${_native_stdlib} VERBATIM)
     add_executable(on1x_ppx_${_processor} "${_native_c}")
+    if(_processor STREQUAL "InlineC11")
+      target_sources(on1x_ppx_${_processor} PRIVATE stdppx/runtime/inline_c11.c)
+    endif()
     target_link_libraries(on1x_ppx_${_processor} PRIVATE on1x_runtime)
     if(_processor STREQUAL "LuaEmbed")
       target_link_libraries(on1x_ppx_${_processor} PRIVATE on1x_luaembed_bridge)
@@ -752,7 +823,7 @@ if(BUILD_TESTING)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
    set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules prelude libraries stdppx install mulib stdlib_extensions tty container_package f64 unsigned_f32 numeric_limits)
   if(ON1X_BUILD_NATIVE_PPX)
-    list(APPEND _meta_tests luaembed)
+    list(APPEND _meta_tests luaembed inline_c11)
     if(ON1X_BUILD_GRAMMAREMBED)
       list(APPEND _meta_tests grammarembed)
     endif()

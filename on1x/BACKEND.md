@@ -8,6 +8,43 @@
 
 ## 0. Source baseline, revisions and the exact newly added work
 
+**Optional embedded Cephyr object emitter (native AMD64 Linux):** The
+following commands, from the repository root, build the pinned embedding
+library, enable it in `on1xc`, and run the recursive Fibonacci example:
+
+```sh
+cmake -S on1x/third_party/libstone/cornerstone/Cephyr -B build/A-cephyr
+cmake --build build/A-cephyr -j4
+cmake --install build/A-cephyr --prefix "$PWD/build/A-prefix"
+cmake -S on1x -B build/A-enabled -DON1X_WITH_CEPHYR=ON \
+  -DCephyr_DIR="$PWD/build/A-prefix/lib/cmake/Cephyr"
+cmake --build build/A-enabled --target on1xc -j4
+build/A-enabled/on1xc --emit-cephyr-object on1x/examples/hello.on1x -o build/A-enabled/hello.o
+cc -std=c11 -Ion1x/runtime build/A-enabled/hello.o on1x/runtime/on1x_runtime.c -o build/A-enabled/hello
+build/A-enabled/hello  # prints 21
+ctest --test-dir build/A-enabled --output-on-failure -R '^on1x.cephyr.native$'
+```
+
+The build host needs the matching Archon and Cephyr resources, CPython
+development installation and native toolchain. `on1xc` passes its checked-HIR
+C11 to `libcephyr` in memory; an execution trace showed external compiler,
+assembler and linker tools but no `cephyr` executable. The example links
+against the host C runtime. `ON1X_WITH_CEPHYR` defaults to `OFF`; ordinary
+`--emit-c` does not need this installation.
+
+See [native optimization and diagnostics](docs/cephyr-optimization.md) for
+opt-in QML/FactIR, SARIF source provenance, and their executable tests.
+
+On MuLIB `b5b4f045` / LibStone `248ad177`, the native regression compared
+12 executions: Fibonacci, checked overflow and invalid division via both
+compilation paths with GCC 16.2.1 and Clang 22.1.8. It also checked target,
+floating-point ABI and output publication failures. The full pinned Cephyr
+baseline (`ctest --test-dir build/A-cephyr --output-on-failure -j3`)
+passed 46/46 CTest entries, with none reported skipped. Cross-target and
+kernel-stage object emission are unsupported. The [FFI verification
+record](docs/cephyr-ffi-module-verification.md) documents the first
+reproduced incompatibility in a generated MuLIB adapter.
+
 **SDK dispatch:** the [built-in backend adapters](backends/README.md) give
 the existing direct C11 path and four MIR output modes distinct SDK
 registrations and static archives. The canonical emitters/evaluator are

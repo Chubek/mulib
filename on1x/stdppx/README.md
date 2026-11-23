@@ -23,6 +23,41 @@ escaping, fresh names and bounded metaprogram chaining. Activation stays explici
 `firestone/liblr`: Perl 6-like `grammar`/`token`/`rule` constructs emit NFA/DFA
 lexers and LR(1)/LALR(1)/LL(1) parsers with token spans and concrete parse trees.
 
+### Trusted inline C11
+
+[`InlineC11`](native/InlineC11.on1x) embeds a C expression at an On1x call
+site. For example, `@InlineC11("unsafe_i64", "(a0 & a1) * 2", 37, 15)`
+evaluates to `10`. From the repository root, with a configured native PPX build:
+
+```sh
+cmake --build build/on1x --target on1x_ppx_InlineC11
+python3 on1x/tools/on1x-build.py on1x/stdppx/examples/inline_c11.on1x \
+  --on1xc build/on1x/on1xc --stdppx-path build/on1x/stdppx \
+  --trust-inline-c11 -o build/on1x/inline-example
+build/on1x/inline-example
+```
+
+`--trust-inline-c11` selects the processor **and authorizes arbitrary C from the
+whole input program**, including imports and preceding macro/PPX expansions.
+Select only trusted sources, processor search paths and toolchains. The flag
+is required even if `InlineC11` is discoverable. Compiling the literal is not
+a safety check; its arithmetic, side effects and undefined behavior are C's.
+
+The first argument after `"unsafe_i64"` must be a nonempty C expression string
+literal (up to 4,096 bytes). Supply zero to four `i64` operands as ordinary On1x
+expressions. Each is evaluated once, left to right, before the call; C sees local
+`int64_t` values `a0` through `a3` for the operands supplied. The return type is
+`int64_t`; `<stdint.h>` is available. There is no implicit access to On1x locals,
+references, owners or control flow. Up to 32 call sites per expanded unit are
+supported. C diagnostics use the literal's starting file and line, not an
+On1x column map.
+
+The native PPX generates ordinary raw extern calls and writes helper definitions
+to a private C translation unit. The direct C11 build links it with the checked
+On1x program; machine-code inlining is not guaranteed. No runtime compiler or
+Cephyr dependency is needed. MIR, emit-only and FFI admission builds (including
+`--memory-check`) do not support this flag.
+
 The M1 numeric increments add `F64Type` and unsigned decimal `FloatLiteral`
 spelling to the canonical and standalone v1 schemas, and f64 to native/Python
 signature rendering. All existing constructors and

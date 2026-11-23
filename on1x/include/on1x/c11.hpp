@@ -1,11 +1,15 @@
 #pragma once
 #include <on1x/ast.hpp>
+#include <map>
 
 namespace on1x {
 struct C11Options {
     bool memgraph_bounds = false;
     // Optional compiler report; published only after successful C11 emission.
     std::string* memgraph_report = nullptr;
+    // Generated C line checkpoints. An empty file ends the previous range.
+    // Locations identify enclosing HIR statements/declarations, not C tokens.
+    std::map<std::size_t, Location>* origins = nullptr;
 };
 
 std::string emit_c(const Unit&, const std::string& source_name, const C11Options&);

@@ -9,6 +9,10 @@
 #include <on1x/backend/vm.hpp>
 #include <on1x/backend/passes.hpp>
 #include "optimization_policy.hpp"
+#ifdef ON1X_WITH_CEPHYR
+#include "backend/cephyr.hpp"
+#include "backend/cephyr_sarif.hpp"
+#endif
 #ifdef ON1X_WITH_EXTENSION_SDK
 #include "Builtin.hpp"
 #include "Driver.hpp"
@@ -473,6 +477,13 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
 }
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
+#ifdef ON1X_WITH_CEPHYR
+ "       on1xc --emit-cephyr-object INPUT.on1x -o OUTPUT.o [--cephyr-target x86_64-linux-gnu]\n"
+ "       [--cephyr-factir on|off] [--cephyr-profile scalar] [--cephyr-qml-pass NAME]\n"
+ "       [--cephyr-trusted-qml-file FILE] [--cephyr-qml-fuel N] [--cephyr-qml-param PHASE.fuel=N]\n"
+ "       [--cephyr-sarif FILE] (Cephyr diagnostics; generated C locations)\n"
+ "       [--cephyr-factir-facts NEWFILE] [--cephyr-factir-smtlib NEWFILE]\n"
+#endif
   "       on1xc --check-interfaces INPUT.on1x --interface FILE.on1xi [--interface FILE.on1xi ...]\n"
  "       [--ppx LABEL PROGRAM] [--ppx-schema LABEL FILE] [--allow-source-ppx]\n"
  "       [--ppx-timeout-ms MILLISECONDS]\n"
@@ -560,6 +571,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
          bool explicit_c=false;
+         bool cephyr_object=false;
+         std::string cephyr_target;
+#ifdef ON1X_WITH_CEPHYR
+         on1x::cephyr::Options cephyr_options;
+         std::string cephyr_sarif;
+         std::set<std::string> cephyr_switches;
+#endif
      std::size_t analysis_work=10000000;bool analysis_limit=false;
         on1x::mir::passes::Options optimization;bool legacy_optimize=false,opt_limit=false;
          on1x::driver::OptimizationRequest requested_opts;
@@ -699,6 +717,36 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      admission_files.emplace_back(argv[i]);continue;
     }
     if(arg=="--verify-types"){type_safety=true;continue;}
+    if(arg=="--emit-cephyr-object"){cephyr_object=true;continue;}
+#ifdef ON1X_WITH_CEPHYR
+    if(arg=="--cephyr-factir"||arg=="--cephyr-profile"||arg=="--cephyr-qml-pass"||
+       arg=="--cephyr-trusted-qml-file"||arg=="--cephyr-qml-fuel"||
+       arg=="--cephyr-qml-param"||arg=="--cephyr-sarif"||
+       arg=="--cephyr-factir-facts"||arg=="--cephyr-factir-smtlib"){
+     if(++i>=argc||!argv[i][0]||argv[i][0]=='-')throw std::runtime_error(arg+" requires a value");
+     const std::string value=argv[i];
+     if(!cephyr_switches.insert(arg).second&&arg!="--cephyr-qml-pass"&&
+        arg!="--cephyr-trusted-qml-file"&&arg!="--cephyr-qml-param")
+      throw std::runtime_error("duplicate "+arg);
+     if(arg=="--cephyr-factir"){
+      if(value!="on"&&value!="off")throw std::runtime_error(arg+" requires on or off");
+      cephyr_options.factir=value=="on";
+     }else if(arg=="--cephyr-profile")cephyr_options.profile=value;
+     else if(arg=="--cephyr-qml-pass")cephyr_options.passes.push_back(value);
+     else if(arg=="--cephyr-trusted-qml-file")cephyr_options.trusted_files.emplace_back(value);
+     else if(arg=="--cephyr-qml-fuel")cephyr_options.fuel=value;
+     else if(arg=="--cephyr-qml-param")cephyr_options.parameters.push_back(value);
+     else if(arg=="--cephyr-factir-facts")cephyr_options.facts=value;
+     else if(arg=="--cephyr-factir-smtlib")cephyr_options.smtlib=value;
+     else{cephyr_options.sarif=true;cephyr_sarif=value;}
+     continue;
+    }
+#endif
+    if(arg=="--cephyr-target"){
+     if(++i>=argc||!argv[i][0]||argv[i][0]=='-'||!cephyr_target.empty())
+      throw std::runtime_error("--cephyr-target requires one target triple");
+     cephyr_target=argv[i];continue;
+    }
      if(arg=="--check-types"){mode=arg;continue;}
      if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
        if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
@@ -742,6 +790,35 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(arg=="-o"){if(++i>=argc)throw std::runtime_error("-o needs a file");out=argv[i];}
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
+   }
+   if(!cephyr_target.empty()&&!cephyr_object)
+    throw std::runtime_error("--cephyr-target requires --emit-cephyr-object");
+#ifdef ON1X_WITH_CEPHYR
+   if(!cephyr_switches.empty()&&!cephyr_object)
+    throw std::runtime_error("Cephyr options require --emit-cephyr-object");
+#endif
+   if(cephyr_object){
+#ifndef ON1X_WITH_CEPHYR
+    throw std::runtime_error("embedded Cephyr unavailable: configure with ON1X_WITH_CEPHYR=ON");
+#else
+    if(mode!="--emit-c"||explicit_c||ir_input||!sdk_mode.empty()||list_opts||loader.kernel_c11||loader.kernel_stage)
+     throw std::runtime_error("--emit-cephyr-object requires checked source and cannot be combined with another emission mode");
+    if(out.empty()||out=="-")throw std::runtime_error("--emit-cephyr-object requires -o FILE");
+    if(cephyr_target.empty())cephyr_target="x86_64-linux-gnu";
+    cephyr_options.sarif=cephyr_options.sarif||diagnostic_format=="sarif";
+    if(!cephyr_options.facts.empty()||!cephyr_options.smtlib.empty()||!cephyr_sarif.empty()){
+     namespace fs=std::filesystem;
+     auto key=[](const fs::path& p){return fs::weakly_canonical(fs::absolute(p));};
+     std::set<fs::path> paths{key(out)};
+     if(!source.empty())paths.insert(key(source));
+     for(const auto& file:cephyr_options.trusted_files)paths.insert(key(file));
+     for(const auto& path:{fs::path(cephyr_sarif),cephyr_options.facts,cephyr_options.smtlib})
+      if(!path.empty()&&!paths.insert(key(path)).second)
+       throw std::runtime_error("Cephyr reports require distinct files separate from inputs and object output");
+     if(!cephyr_options.factir&&(!cephyr_options.facts.empty()||!cephyr_options.smtlib.empty()))
+      throw std::runtime_error("FactIR evidence requires --cephyr-factir on");
+    }
+#endif
    }
         if(!vm_prefixes.empty()&&mode!="--emit-vm")throw std::runtime_error("--vm-source-prefix requires --emit-vm");
          const bool dump_memgraph=mode=="--dump-memgraph";
@@ -930,6 +1007,14 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    write_all(out,listing.str());return 0;
   }
       auto loaded=on1x::load_unit(source,loader);
+#ifdef ON1X_WITH_CEPHYR
+      if(!cephyr_sarif.empty()){
+       const auto dest=std::filesystem::weakly_canonical(std::filesystem::absolute(cephyr_sarif));
+       for(const auto& path:loaded.dependencies)
+        if(dest==std::filesystem::weakly_canonical(path))
+         throw std::runtime_error("--cephyr-sarif would overwrite a loaded source file");
+      }
+#endif
       for(const auto& path:loaded.dependencies)try{
        if(diagnostic_snapshot_bytes==on1x::diagnostic::max_source_snapshot_bytes)break;
        auto snapshot=on1x::read_source_file(path.string());
@@ -1042,7 +1127,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      publish_diagnostics();write_all(out,listing.str());return 0;
     }
      std::string bounds_report;
-     const on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+     on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+#ifdef ON1X_WITH_CEPHYR
+     std::map<std::size_t,on1x::Location> c11_origins;
+     if(cephyr_options.sarif)c11_options.origins=&c11_origins;
+#endif
  #ifdef ON1X_WITH_EXTENSION_SDK
      auto generated=on1x::backends::run_c11(unit,source,c11_options).bytes;
  #else
@@ -1054,6 +1143,45 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       else publish_regular_file(out,bounds_report,"MEMGraph",".on1x-memgraph-XXXXXX");
       return 0;
      }
+#ifdef ON1X_WITH_CEPHYR
+     if(cephyr_object){
+      namespace fs=std::filesystem;
+      auto root=fs::canonical("/proc/self/exe").parent_path()/"../share/on1x";
+      auto config=root/"cephyr-baseline.toml";
+      if(!fs::is_directory(root)){
+       root=fs::path(ON1X_DRIVER_SOURCE_TOOLS).parent_path();
+       config=root/"src/backend/cephyr-baseline.toml";
+      }
+      auto result=on1x::cephyr::compile_object({generated,source+".c",cephyr_target,
+       ON1X_CEPHYR_RESOURCE_ROOT,ON1X_CEPHYR_ARCHON_ROOT,config,{root/"runtime"},cephyr_options});
+      using Status=on1x::cephyr::Status;
+      if(cephyr_options.sarif&&(result.status==Status::ok||result.status==Status::compile_error)){
+       std::string frontend;
+#ifdef ON1X_WITH_SYREN
+       if(diagnostic_format=="sarif")
+        frontend=on1x::diagnostics::sarif(diagnostic_bundle(diagnostic_registry,*diagnostic_catalog,diagnostic_snapshots));
+#endif
+       auto report=on1x::cephyr::source_sarif(result.diagnostics,source+".c",c11_origins,diagnostic_snapshots,frontend);
+       if(!cephyr_sarif.empty())publish_regular_file(cephyr_sarif,report,"Cephyr SARIF",".on1x-sarif-XXXXXX");
+       if(!frontend.empty()){
+        std::cerr<<report;diagnostics_published=true;
+       }else publish_diagnostics();
+       if(result.status==Status::compile_error){
+        if(frontend.empty())std::cerr<<"on1xc: Cephyr compile error (see "<<terminal_text(cephyr_sarif)<<")\n";
+        return 1;
+       }
+      }else publish_diagnostics();
+      if(result.status!=Status::ok){
+       const char* kind=result.status==Status::compile_error?"compile error":
+        result.status==Status::invalid_argument?"invalid request":
+        result.status==Status::unsupported_target?"unsupported target":"internal error";
+       std::cerr<<"on1xc: Cephyr "<<kind<<": "<<terminal_text(result.diagnostics)<<'\n';
+       return result.status==Status::compile_error?1:2;
+      }
+      if(!cephyr_options.sarif&&!result.diagnostics.empty())std::cerr<<terminal_text(result.diagnostics)<<'\n';
+      publish_regular_file(out,result.object,"Cephyr",".on1x-cephyr-XXXXXX");return 0;
+     }
+#endif
      publish_diagnostics();write_all(out,generated);return 0;
 #ifdef ON1X_WITH_NOVOSTONE
  }catch(const on1x::mir::relational::BudgetExceeded& e){

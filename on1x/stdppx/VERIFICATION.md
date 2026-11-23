@@ -1,5 +1,17 @@
 # Verification report
 
+## InlineC11 — 2026-11-21
+
+On x86-64 Linux, at MuLIB `b5b4f045` with LibStone `248ad177` and Cephyr
+disabled, `ctest --test-dir build/A-reference -R '^on1x.inline_c11$'
+--output-on-failure` passed (1/1, GCC 16.2.1). The same
+`on1x/tests/test_inline_c11.py` suite passed with Clang 22.1.8 and with Clang
+ASan+UBSan on both the processor and the linked client. The suite exercises
+real nested calls, operand order, result values, name collisions, malformed
+carriers, raw argument types, C compiler diagnostics, limits, authorization and
+exclusive companion creation. The standalone stdppx unittest suite passed
+(30/30). Cross-compilation was not tested.
+
 ## GrammarEmbed continuation — 2026-11-18
 
 Native `GrammarEmbed` uses Firestone `liblr` at configured revision

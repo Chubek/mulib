@@ -29,6 +29,10 @@ if(GIT_FOUND AND EXISTS "${ON1X_LIBSTONE_ROOT}/.git")
   endif()
 endif()
 message(STATUS "On1x LibStone: ${ON1X_LIBSTONE_ROOT} (${ON1X_LIBSTONE_REVISION})")
+set(_on1x_native_profile "unimplemented")
+if(ON1X_WITH_CEPHYR)
+  set(_on1x_native_profile "cephyr-c11-object-x86_64-linux-gnu")
+endif()
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/on1x-build-info.txt"
   "schema=on1x.build-info/v1\nsource_revision=${ON1X_SOURCE_REVISION}\n"
   "source_tracked_dirty=${ON1X_SOURCE_TRACKED_DIRTY}\n"
@@ -39,7 +43,7 @@ file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/on1x-build-info.txt"
   "exoml=${ON1X_WITH_EXOML}\nexoml_extract=${ON1X_WITH_EXOML_EXTRACT}\n"
   "exotract=${ON1X_WITH_EXOTRACT}\nexotract_lua=${ON1X_WITH_EXOTRACT_LUA}\n"
    "novostone=${ON1X_WITH_NOVOSTONE}\nchisel=${ON1X_WITH_CHISEL}\nnerotypical=${ON1X_WITH_NEROTYPICAL}\nsyren=${ON1X_WITH_SYREN}\n"
-  "backend=c11\nmir=bounded-v1-v2-v3\nmir_passes=builtin-v1-opt-in\nnative=unimplemented\n")
+  "backend=c11\nmir=bounded-v1-v2-v3\nmir_passes=builtin-v1-opt-in\nnative=${_on1x_native_profile}\n")
 if(ON1X_WITH_EXOTRACT_LUA)
   file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/on1x-build-info.txt" "safe_ffi=bounded-kernelbind-signed-review-required\n")
 elseif(ON1X_WITH_EXOTRACT)

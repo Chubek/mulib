@@ -1,0 +1,122 @@
+import "common.on1x";
+import "../../stdlib/ppx/source.on1x";
+
+# One synchronous, exclusive write to a build-owned private companion.
+extern fn on1x_inline_c11_publish(source: string) -> bool;
+
+# Map C diagnostics back to the literal. A path is data inside a C string:
+# fixed-width octal also avoids C11 trigraphs and ambiguous hex escapes.
+fn inline_line(code: buffer, at: sexpr)
+{
+  buffer_append(code, text_concat("#line ", sx_text(sexpr_nth(at, 3))));
+  buffer_append(code, " \"");
+  let path = sx_text(sexpr_nth(at, 1));
+  for i in 0 .. text_len(path)
+  {
+    let c = text_byte(path, i);
+    if c >= 32 && c <= 126 && c != 34 && c != 63 && c != 92
+    {
+      buffer_byte(code, c);
+    }
+    else
+    {
+      buffer_byte(code, 92);
+      buffer_byte(code, 48 + c / 64);
+      buffer_byte(code, 48 + c / 8 % 8);
+      buffer_byte(code, 48 + c % 8);
+    }
+  }
+  buffer_append(code, "\"\n");
+}
+
+fn inline_walk(node: sexpr, root: sexpr, label: string, helpers: sexpr,
+  code: buffer, depth: i64, work: i64) -> (sexpr, sexpr, i64)
+{
+  if depth >= 256 || work >= 262144
+  {
+    tool_fail("InlineC11: tree limit exceeded");
+  }
+  var used = work + 1;
+  if ! sexpr_list(node)
+  {
+    return (node, helpers, used);
+  }
+  var declarations = helpers;
+  var rest = node;
+  var children = sx_nil();
+  while sx_kind(rest) == 3
+  {
+    let(child, defs, count) = inline_walk(sx_head(rest), root, label,
+      declarations, code, depth + 1, used);
+    declarations = defs;
+    used = count;
+    children = sx_cons(child, children);
+    rest = sx_tail(rest);
+  }
+  let rebuilt = sexpr_reverse(children);
+  if visitor_tag(rebuilt) != "ExtensionExpr" || sx_text(sexpr_nth(rebuilt, 1)) != label
+  {
+    return (rebuilt, declarations, used);
+  }
+  let args = sexpr_nth(rebuilt, 3);
+  let at = sexpr_nth(rebuilt, 4);
+  let arity = sexpr_size(args) - 1;
+  if sx_text(sexpr_nth(rebuilt, 2)) != "unsafe_i64" || arity < 0 || arity > 4
+    || visitor_tag(sx_head(args)) != "StringLiteral"
+  {
+    tool_fail(text_concat(sexpr_print(at), ": expected unsafe_i64, a C expression literal and 0..4 operands"));
+  }
+  let expr = sx_text(sexpr_nth(sx_head(args), 1));
+  let index = sexpr_size(declarations);
+  if text_len(expr) == 0 || text_len(expr) > 4096 || index >= 32
+  {
+    tool_fail(text_concat(sexpr_print(at), ": InlineC11 expression/site limit exceeded"));
+  }
+  let prefix = text_concat("on1x_inline_c11_", text_concat(sexpr_nat(index), "_"));
+  let(name, serial) = ppx_fresh_prefixed(root, prefix, 0);
+  let ty = ppx_node("I64Type", sx_nil());
+  var params = sx_nil();
+  buffer_append(code, text_concat("int64_t ", text_concat(name, "(")));
+  if arity == 0 { buffer_append(code, "void"); }
+  for i in 0 .. arity
+  {
+    if i > 0 { buffer_append(code, ", "); }
+    let arg = text_concat("a", sexpr_nat(i));
+    params = sx_cons(native_parameter(arg, ty, at), params);
+    buffer_append(code, text_concat("int64_t ", arg));
+  }
+  buffer_append(code, ") {\n");
+  for i in 0 .. arity
+  {
+    buffer_append(code, text_concat("(void)a", text_concat(sexpr_nat(i), ";\n")));
+  }
+  buffer_append(code, "return (\n");
+  inline_line(code, sexpr_nth(sx_head(args), 2));
+  buffer_append(code, expr);
+  buffer_append(code, "\n);\n}\n");
+  let decl = ppx_node("Extern", sx_cons(sx_string(name),
+    ppx_list4(sexpr_reverse(params), ty, sx_nil(), at)));
+  return (ppx_call(name, sx_tail(args), at), sx_cons(decl, declarations), used);
+}
+
+fn transform(tree: sexpr, label: string) -> sexpr
+{
+  if tool_env("ON1X_TRUSTED_INLINE_C11_OUTPUT") == ""
+  {
+    tool_fail("InlineC11 requires on1x-build --trust-inline-c11");
+  }
+  let code = buffer_new();
+  buffer_append(code, "#include <stdint.h>\n");
+  let(unit_tree, helpers, used) = inline_walk(tree, tree, label, sx_nil(), code, 0, 0);
+  if ! on1x_inline_c11_publish(buffer_text(code))
+  {
+    tool_fail("InlineC11: cannot publish private C companion");
+  }
+  return ppx_node("Unit", ppx_list2(sexpr_nth(unit_tree, 1),
+    native_append(sexpr_reverse(helpers), sexpr_nth(unit_tree, 2))));
+}
+
+fn main()
+{
+  native_serve(transform);
+}

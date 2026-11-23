@@ -24,6 +24,8 @@ It is **not a conforming implementation of the Standard ML Basis Library**.
   add persistent S-expression helpers and canonical MuLIB scalar adapters.
   [`_bridge/README.md`](_bridge/README.md) describes automatic linkage, recoverable
   status, bounds, binary sockets and the explicitly raw trust boundary.
+- [`std.cephyr`](cephyr/README.md) optionally checks trusted C11 source
+  and emits MIR or AMD64 assembly using the pinned Cephyr embedding API.
 
 ## Architectural differences
 
