@@ -127,7 +127,7 @@ See [`CMakeLists.txt`](CMakeLists.txt) for the complete target configuration.
 - **Virtio:** link `mulib_virtio_os` and/or `mulib_virtio_guest` for the backend
   and frontend; they depend on `mulib_virtio_protocol`. Follow the
   [Virtio integration manual](manual/mulib-virtio-os.md) and
-  [device protocol](MULIB_VMMPROTO.md) for implementation placement and device
+  [device registry](manual/mulib-virtio.md#registry) for implementation placement and device
   coverage.
 - **YANTLR standard library:** `mulib_yantlr_stdlib` is an opt-in interface
   target. Its implementation placement and provider registration are described

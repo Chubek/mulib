@@ -59,7 +59,7 @@ the runtime while holding a non-recursive lock. Lock callbacks return shared
 
 ## Guest call boundary
 
-See [the protocol runtime binding](../MULIB_VMMPROTO.md#9-vmm-runtime-and-native-binding).
+See also the [native guest ABI](mulib-vmm-kvm.md#native-guest-abi).
 
 `call()` takes request GPA/size and response GPA/capacity. Both packets must fit
 single CPU RAM regions. It validates all response storage **before dispatch**,

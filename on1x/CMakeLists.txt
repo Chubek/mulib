@@ -218,6 +218,10 @@ if(ON1X_WITH_CEPHYR)
     add_test(NAME on1x.cephyr.native COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_native.py" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.cephyr.native PROPERTIES TIMEOUT 300)
+    add_test(NAME on1x.cephyr.clamp_abi COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/cephyr_ffi_compat.py" "$<TARGET_FILE:Cephyr::Cephyr>"
+      --cc "${CMAKE_C_COMPILER}" --libstone-root "${ON1X_LIBSTONE_ROOT}")
+    set_tests_properties(on1x.cephyr.clamp_abi PROPERTIES TIMEOUT 180)
     add_test(NAME on1x.cephyr.options COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_options.py" "$<TARGET_FILE:on1xc>"
       "$<$<BOOL:${ON1X_WITH_SYREN}>:--syren>")

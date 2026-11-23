@@ -13,6 +13,6 @@ Link CMake target `mulib_virtio_os`, or define the implementation switches from
 [the manual](../../manual/mulib-virtio-os.md). Both compiled sides share
 `mulib_virtio_protocol`; `protocol.c` owns its implementation exactly once.
 
-See [`MULIB_VMMPROTO.md`](../../MULIB_VMMPROTO.md) for the wire contract and the
-26-profile/22-unimplemented support matrix. Providers supply real host operations.
+See the [Virtio manual](../../manual/mulib-virtio.md) for wire helpers and device
+support queries. Providers supply real host operations.
 In particular, NSM requires a real security provider, not simulated attestation.

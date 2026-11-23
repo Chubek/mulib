@@ -42,8 +42,8 @@ floating-point ABI and output publication failures. The full pinned Cephyr
 baseline (`ctest --test-dir build/A-cephyr --output-on-failure -j3`)
 passed 46/46 CTest entries, with none reported skipped. Cross-target and
 kernel-stage object emission are unsupported. The [FFI verification
-record](docs/cephyr-ffi-module-verification.md) documents the first
-reproduced incompatibility in a generated MuLIB adapter.
+record](docs/cephyr-ffi-module-verification.md) documents the executable
+clamp adapter and kernel probe and its original header incompatibility.
 
 **SDK dispatch:** the [built-in backend adapters](backends/README.md) give
 the existing direct C11 path and four MIR output modes distinct SDK

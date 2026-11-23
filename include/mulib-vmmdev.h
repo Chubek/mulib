@@ -2,7 +2,7 @@
  * @file mulib-vmmdev.h
  * @brief Bounded, little-endian device messages and guest-memory access for MuLIB VMM.
  * Define MULIB_IMPL_VMMDEV and MULIB_IMPL_ENDIAN in one translation unit.
- * See MULIB_VMMPROTO.md for the normative version-1 contract. No allocations.
+ * See manual/mulib-vmmdev.md for message layout and ownership. No allocations.
  */
 #ifndef MULIB_VMMDEV_H
 #define MULIB_VMMDEV_H

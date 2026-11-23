@@ -1,6 +1,32 @@
 # Cephyr FFI and module prerequisites — 2026-11-21
 
-**Milestone C is blocked for the generated clamp adapter.** With the bundled
+## Current result — 2026-11-23
+
+The generated clamp adapter now passes the executable boundary probe on
+native AMD64 Linux. At MuLIB baseline `49de89ac` and selected LibStone
+`b5c962721a32df18b2fb22de136c1f2ef8b6390d`, the old failure reproduced
+before editing. The scalar MuLIB header only uses `<stdint.h>`; removing
+its unrelated includes and having the adapter include `<limits.h>` for
+`CHAR_BIT` resolved the failure without changing Cephyr or its headers.
+The annotated contract identifies the new header digest and remains unreviewed.
+
+In a Cephyr-enabled On1x build, run:
+
+```sh
+ctest --test-dir build/resume-on1x --output-on-failure -R '^on1x.cephyr.clamp_abi$'
+```
+
+Result: **1/1 passed** with GCC 16.2.1. Running the same probe with
+`--cc clang` also passed. Each run executed the 2,670-comparison oracle
+three times: with host-compiled adapter and kernel, embedded adapter and
+host kernel, and independently embedded adapter and kernel objects. Each
+link includes exactly one implementation TU. The wrong-prototype control
+still rejects. This is scalar ABI evidence only; other targets and the
+Cephyr-backed trusted module loader are unverified.
+
+## Historical result — 2026-11-21
+
+**Milestone C was blocked for the generated clamp adapter.** With the bundled
 Cephyr standard library, the real MuLIB declaration header fails preprocessing
 before any adapter assertion runs. **Milestone D is unverified:** the host
 On1xRT tests pass, but no Cephyr-produced On1xRT module was loaded or invoked.

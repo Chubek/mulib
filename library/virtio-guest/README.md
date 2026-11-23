@@ -15,5 +15,5 @@ Link CMake target `mulib_virtio_guest`, or use the implementation switches from
 adapter and guest-addressed workspace. The executable
 [`virtio-guest` example](../../examples/modules/virtio-guest.c) connects both sides.
 
-The [protocol and support matrix](../../MULIB_VMMPROTO.md) are shared with the
+The [protocol and device registry](../../manual/mulib-virtio.md) are shared with the
 backend. This library does not yet provide a native kernel/hypercall binding.

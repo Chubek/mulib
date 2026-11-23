@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-This header implements the backend of the [MVMD contract](../MULIB_VMMPROTO.md).
+This header implements the backend for [MVMD messages](mulib-vmmdev.md).
 It contains lifecycle, feature negotiation, configuration, DMA validation and
 26 device-specific bounded profiles. Real host resources are supplied through
 an explicit service callback. Unimplemented registry entries return ENOTSUP.

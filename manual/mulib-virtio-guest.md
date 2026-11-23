@@ -4,7 +4,7 @@
 
 The frontend implements discovery, reset, feature/status negotiation,
 configuration snapshots and bounded queue submission over
-[`MULIB_VMMPROTO.md`](../MULIB_VMMPROTO.md). It is portable C11 and contains no
+[MVMD messages](mulib-vmmdev.md). It is portable C11 and contains no
 architecture-specific hypercall instruction.
 
 ## Integration
@@ -103,8 +103,8 @@ driver-writable fields; no arbitrary configuration mutation is implied.
 
 ## Limits and verification
 
-The client supports only profiles marked P in the
-[support matrix](../MULIB_VMMPROTO.md#6-device-support-matrix). The generic queue
+The client supports only entries marked `MULIB_VIRTIO_PROFILE` in the
+[device registry](mulib-virtio.md#registry). The generic queue
 API is a transport frontend, not a filesystem, socket, audio or renderer application
 API. There is no PCI/MMIO transport, ring memory, async completion API or kernel
 integration. Resource/feature limits and provider requirements are explicit.

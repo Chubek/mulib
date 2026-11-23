@@ -223,3 +223,36 @@ formats: build/publish-example
 	python3 tests/verify-formats.py build/fixtures
 clean:
 	rm -rf build
+
+PRETTY_DIR ?= build/prettyprint
+ON1XC ?= on1x/build/on1xc
+ON1X_BIND ?= on1x/build/on1x-bind
+EXOTRACT ?= on1x/build/libstone-moonstone/exotract/exotract
+CLANG ?= clang
+PYTHON ?= python3
+PRETTY_BRIDGE := on1x/stdlib/prettyprint/runtime
+.PHONY: prettyprint check-prettyprint check-prettyprint-on1x check-prettyprint-exotract check-prettyprint-contract check-prettyprint-kernel-discovery
+prettyprint: $(PRETTY_DIR)/ppfmt $(PRETTY_DIR)/prettyprint-demo
+$(PRETTY_DIR):
+	mkdir -p "$@"
+$(PRETTY_DIR)/ppfmt: tools/ppfmt.c
+$(PRETTY_DIR)/prettyprint-demo: examples/prettyprint-demo.c
+$(PRETTY_DIR)/test_prettydoc: tests/test_prettydoc.c tests/prettyprint-implementation.c
+$(PRETTY_DIR)/test_prettybridge: tests/test_prettybridge.c tests/prettyprint-implementation.c $(PRETTY_BRIDGE).c $(PRETTY_BRIDGE).h
+$(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge: private PRETTY_TEST_FLAGS := -UNDEBUG -DPRETTYPRINT_TEST_SEPARATE
+$(PRETTY_DIR)/ppfmt $(PRETTY_DIR)/prettyprint-demo $(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge: $(HEADERS) | $(PRETTY_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -std=c11 -Iinclude $(PRETTY_TEST_FLAGS) $(filter %.c,$^) $(LDFLAGS) $(LDLIBS) -lm -ldl -o "$@"
+check-prettyprint: prettyprint $(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge
+	"$(PRETTY_DIR)/test_prettydoc"
+	"$(PRETTY_DIR)/test_prettybridge"
+	"$(PRETTY_DIR)/prettyprint-demo" > "$(PRETTY_DIR)/demo.out"
+	$(PYTHON) tests/check_prettyprint.py cli "$(PRETTY_DIR)/ppfmt" examples/prettyprint-sample.ppdoc
+	$(PYTHON) tests/check_prettyprint.py ppg "$(PRETTY_DIR)/ppfmt"
+check-prettyprint-on1x: | $(PRETTY_DIR)
+	$(PYTHON) tests/check_prettyprint.py on1x "$(PRETTY_DIR)" "$(ON1XC)" "$(CC)"
+check-prettyprint-exotract: | $(PRETTY_DIR)
+	$(PYTHON) tests/check_prettyprint.py archive "$(PRETTY_DIR)" "$(ON1XC)" "$(CLANG)" "$(EXOTRACT)"
+check-prettyprint-contract: | $(PRETTY_DIR)
+	$(PYTHON) tests/check_prettyprint.py contract "$(PRETTY_DIR)" "$(ON1X_BIND)" "$(CLANG)"
+check-prettyprint-kernel-discovery: | $(PRETTY_DIR)
+	$(PYTHON) tests/check_prettyprint.py discovery "$(PRETTY_DIR)" "$(ON1XC)" "$(CLANG)" "$(EXOTRACT)"

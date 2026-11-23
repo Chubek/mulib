@@ -2,8 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Portable, allocation-free MVMD message and guest-memory primitives. The normative
-wire and execution contract is [`MULIB_VMMPROTO.md`](../MULIB_VMMPROTO.md).
+Portable, allocation-free MVMD message and guest-memory primitives.
 
 ## Integration
 

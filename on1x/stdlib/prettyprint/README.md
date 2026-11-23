@@ -54,10 +54,10 @@ python3 on1x/tools/on1x-build.py examples/prettyprint.on1x \
 build/pretty-example
 ```
 
-`make -f prettyprint.mk test-on1x` exercises this path; with Exotract installed,
-`make -f prettyprint.mk test-exotract` also runs the same tests using a locked
+`make check-prettyprint-on1x` exercises this path; with Exotract installed,
+`make check-prettyprint-exotract` also runs the same tests using a locked
 archive, without generating another implementation TU in the application.
-Override `ON1XC`, `EXOTRACT`, `ON1X_BIND`, and `BUILD_DIR` as needed.
+Override `ON1XC`, `EXOTRACT`, `ON1X_BIND`, and `PRETTY_DIR` as needed.
 
 The companion borrows the input only during the call, retains successful
 NUL-free results until process-exit cleanup (16 MiB pool budget, 2 MiB per
@@ -67,7 +67,7 @@ The companion is **single-threaded**, and its status must be read immediately
 after a render call. Status codes are in [`runtime.h`](runtime.h).
 
 [`prettyprint.exocontract.json`](../../contracts-exoml/prettyprint.exocontract.json)
-describes the string/scalar C ABI. `make -f prettyprint.mk test-contract`
+describes the string/scalar C ABI. `make check-prettyprint-contract`
 extracts the real C declaration, pins the unreviewed annotations to it and
 checks ExoML Gate B (declaration/contract consistency). This is **not** safe
 FFI admission: the contract does not independently prove ownership or effects,
@@ -84,7 +84,7 @@ It pins the SHA-256 of the entire `mulib-prettysexpr.h` header; discovery
 rejects header drift even when the two C declarations are unchanged. The
 addition of `(verbatim ...)` changed that pin, not the ABI or the sidecar's
 unreviewed status.
-`make -f prettyprint.mk test-kernel-discovery` exercises the native import syntax,
+`make check-prettyprint-kernel-discovery` exercises the native import syntax,
 real CDecl and ExoML validation, the single-TU plan, and rejection of unsafe or
 unadmitted imports during normal compilation.
 

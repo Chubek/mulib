@@ -38,7 +38,7 @@ native descriptors and the `kvm_run` mapping, never the guest RAM allocation.
   24/28. Registers are not used to return device status. On resumption execution
   continues after OUT. HLT returns a HALT exit to the host.
 
-See `MULIB_VMMPROTO.md` for frame bytes and packet ownership. Frame contents carry
+See the [guest call boundary](mulib-vmm.md#guest-call-boundary) for packet handling. Frame contents carry
 64-bit GPAs even though this native port binding passes a 32-bit frame address.
 Port accesses of other sizes, string/repeated I/O, other ports, MMIO and unknown
 exits fail explicitly. No emulated legacy devices, BIOS or interrupt controller

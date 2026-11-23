@@ -5,7 +5,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-clamp.h",
-    "revision": "sha256:c24b4c3dcbb132177d61a587a4d07c9f52f4bbca572f00ccd6e73cd40cf16efc",
+    "revision": "sha256:cf3d0cf6e27b0d2844e25ea1e5bf7637a34508d29c42411aa855dfe97a1205e0",
     "author": "On1x KernelBind contributors",
     "review_status": "unreviewed",
     "evidence_method": "Source annotation; independent approval must be supplied via KernelBind review policy."

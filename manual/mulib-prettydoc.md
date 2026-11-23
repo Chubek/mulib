@@ -128,8 +128,8 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
 /tmp/pretty-demo
 ```
 
-`make -f prettyprint.mk test` builds the `ppfmt` document renderer and runs
-the native kernel, CLI and cross-TU bridge tests. Use `BUILD_DIR=...` to keep
+`make check-prettyprint` builds the `ppfmt` document renderer and runs
+the native kernel, CLI and cross-TU bridge tests. Use `PRETTY_DIR=...` to keep
 artifacts separate. For planner-driven On1x and Exotract builds, see
 [`std.prettyprint`](../on1x/stdlib/prettyprint/README.md#linking).
 

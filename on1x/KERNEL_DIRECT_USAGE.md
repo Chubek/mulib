@@ -31,7 +31,7 @@
 > The [bounded numerical profiles](docs/kernel-numerics.md) execute native
 > Histprice EMA/Holt and PriceOpt optimize/candidates after the same review gate.
 > PrettyPrint is covered
-> by `make -f prettyprint.mk test-kernel-discovery`; its
+> by `make check-prettyprint-kernel-discovery`; its
 > [stdlib migration](stdlib/prettyprint/README.md#direct-kernel-import-status)
 > is blocked on callable lowering for the renderer's record borrow, enum,
 > null failure, and owned string result, as well as safe admission.

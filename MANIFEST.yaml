@@ -17001,8 +17001,6 @@ project_files:
   purpose: VMM memory isolation, lifecycle, guest calls and host service regression tests.
 - file: tests/test_vmm_kvm.c
   purpose: Native KVM guest negotiation, block I/O and pending-exit reset regression tests.
-- file: MULIB_VMMPROTO.md
-  purpose: Normative MuLIB VMM device protocol and explicit device support matrix.
 - file: library/virtio-os/virtio-os.h
   purpose: Backend library entry point.
 - file: library/virtio-os/virtio-os.c
@@ -20581,8 +20579,6 @@ project_files:
   purpose: Test source formatter idempotence, semantics, configuration, directives, and escaped markup.
 - file: on1x/contracts-exoml/prettyprint.exocontract.json
   purpose: Unreviewed CDecl-backed contract annotations for the raw PrettyPrint bridge.
-- file: prettyprint.mk
-  purpose: PrettyPrint native and optional On1x and SDK verification targets.
 - file: tests/check_prettyprint.py
   purpose: CLI, planned On1x builds and typed raw contract verification.
 - file: tools/ppfmt.c

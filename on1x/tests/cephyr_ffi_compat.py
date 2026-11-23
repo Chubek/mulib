@@ -44,11 +44,11 @@ int main(void) { return contract_add(40,2) != 42; }
     with TemporaryDirectory() as tmp:
         tmp = Path(tmp)
         config = tmp/"Cephyr.toml"
-        config.write_text("cache_enabled = false\n")
+        config.write_bytes((on1x/"src/backend/cephyr-baseline.toml").read_bytes())
 
         def embedded(source, headers):
             return compiler.compile(("--config", config, target, "--stdlib=cephyr",
-                                     "-I"+str(headers), "-x", "c", "-", "-c", "-o", "-"),
+                                     "--no-factir", "-I"+str(headers), "-x", "c", "-", "-c", "-o", "-"),
                                     source, resource_root=root, archon_root=root.parent/"Archon")
 
         def run_object(result, headers, *companions):
@@ -85,6 +85,14 @@ int main(void) { return contract_add(40,2) != 42; }
             return 1
         run_object(result, include, probe, implementation)
         print("PASS: embedded clamp adapter linked to host-compiled implementation")
+        kernel = embedded(implementation.read_text(), include)
+        if not kernel.ok:
+            sys.stderr.buffer.write(kernel.diagnostics)
+            return 1
+        kernel_object = tmp/"mulib.o"
+        kernel_object.write_bytes(kernel.output)
+        run_object(result, include, probe, kernel_object)
+        print("PASS: independent embedded adapter and kernel objects passed the clamp boundary")
     return 0
 
 

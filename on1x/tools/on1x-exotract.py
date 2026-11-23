@@ -929,7 +929,7 @@ def authorize_review(report, key, review, signature, stage):
 
 
 def clamp_adapter(interface):
-    output = ['#include <mulib-clamp.h>',
+    output = ['#include <limits.h>', '#include <mulib-clamp.h>',
               '#if !defined(__linux__) || !defined(__x86_64__) || !defined(__LP64__)',
               '#error "KernelBind scalar profile requires native Linux x86-64"', '#endif',
               '_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8'
