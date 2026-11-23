@@ -512,7 +512,7 @@ if(BUILD_TESTING)
     endif()
   endif()
   add_test(NAME on1x.addon_chatgpt COMMAND "${Python3_EXECUTABLE}" -B
-    "${CMAKE_CURRENT_SOURCE_DIR}/addons/chatgpt/test_chatgpt.py")
+    "${CMAKE_CURRENT_SOURCE_DIR}/addons/mcp/test_chatgpt.py")
   set_tests_properties(on1x.addon_chatgpt PROPERTIES TIMEOUT 60)
   # Editor tests are optional; none of these tools are build dependencies.
   add_test(NAME on1x.addon_bat COMMAND "${Python3_EXECUTABLE}"
@@ -896,6 +896,13 @@ if(BUILD_TESTING)
        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_stdlib_project.py"
        --on1xc "$<TARGET_FILE:on1xc>" --cc "${CMAKE_C_COMPILER}")
      set_tests_properties(on1x.stdlib_project PROPERTIES TIMEOUT 180)
+   endif()
+   if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING
+      AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_tls_integration.py")
+     add_test(NAME on1x.stdlib.http COMMAND "${Python3_EXECUTABLE}" -B
+       "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/http/tests/run.py"
+       "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+     set_tests_properties(on1x.stdlib.http PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
    endif()
   if(ON1X_BUILD_NATIVE_PPX)
     list(APPEND _meta_tests luaembed inline_c11)

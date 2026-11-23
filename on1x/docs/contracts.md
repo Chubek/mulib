@@ -11,6 +11,8 @@ profiles:
 | Parsec combinators | 18 | borrowed value descriptors, transitive referents, pure indirect predicates, capture ownership and failure cleanup |
 | ElviScrape | 6 | bounded caller-owned buffers, conditional status outputs, policy intersection, verified TLS peer callbacks and unknown transport effects |
 | Mune | 52 | legacy/state/chunk/result ownership, same-state GC roots, binary strings, retained coroutine-thread callbacks, AOT entry lifetimes and arbitrary Lua/OS effects |
+| QUIC | 12 | byte spans and returned views, ACK arrays, opaque client ownership, and host-authorized UDP and trust |
+| HTTP/3 | 8 | nested QPACK borrows, error latching, replacement binary bodies, and host-authorized HTTPS |
 
 The separate [Exotract static binding workflow](../contracts-exotract/README.md)
 uses this catalog's core implementation recipes and MANIFEST-backed profiles for
@@ -41,7 +43,9 @@ Lint checks the pinned canonical parent headers/manuals and annotation inventory
 it explicitly reports **`gate_b: false`**. The build plan consults `MANIFEST.yaml`
 for real module names, headers, macros and dependencies, and combines the
 manual-backed core recipes. Define each listed implementation switch in
-**one C11 translation unit**, not once per includer. Optional Parsec dependencies
+**one C11 translation unit**, not once per includer. Apply any
+`compile_definitions` before all system includes (the QUIC and HTTP/3 live
+profiles require `_POSIX_C_SOURCE=200809L`). Optional Parsec dependencies
 and its extra `PARSER` switch are recorded but never implicitly enabled;
 Mune's complete runtime recipe activates the switch explicitly.
 
@@ -215,7 +219,7 @@ bodies, provide signed attestations, or admit resources, pointers, buffers,
 aggregates, errors, callbacks or thread-affine APIs. General safe FFI remains
 open; `emit-raw` remains explicitly unsafe.
 
-All 103 shipped kernel functions are intentionally ineligible for this scalar
+All 123 functions in the shipped snapshot profiles are ineligible for this scalar
 emitter, because their true ABIs/contracts require richer lowering. In
 particular, Parsec's borrow-bearing structs are not guessed to be ordinary
 scalars, and its descriptor-retained callback is not assigned a fictitious

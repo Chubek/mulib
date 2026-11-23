@@ -67,6 +67,23 @@
         "mulib_elvi_scrape_https_transport"
       ]
     },
+    "quic": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_quic_varint_read", "mulib_quic_varint_write", "mulib_quic_ack_read", "mulib_quic_ack_write",
+        "mulib_quic_stream_read", "mulib_quic_packet_stream_read", "mulib_quic_stream_write",
+        "mulib_quic_client_connect", "mulib_quic_client_send", "mulib_quic_client_poll",
+        "mulib_quic_client_stream", "mulib_quic_client_close"
+      ]
+    },
+    "http3": {
+      "recipe": "exoml-core",
+      "required_symbols": [
+        "mulib_http3_frame_read", "mulib_http3_frame_write", "mulib_http3_stream_init",
+        "mulib_http3_stream_next", "mulib_http3_stream_finish",
+        "mulib_http3_qpack_literal_write", "mulib_http3_qpack_literal_read", "mulib_http3_get"
+      ]
+    },
     "prettydoc": {
       "recipe": "manifest",
       "link_libraries": ["dl", "m"],

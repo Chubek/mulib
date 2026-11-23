@@ -154,13 +154,19 @@ the seven optional `mulib_parser_*` functions are recorded as declaration-only.
 Always consult `symbols.json` when selecting archive entry points. Header-only
 inline functions may also be declaration-only in the archive symbol inventory.
 
-Mune, ElviScrape, JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
+Mune, ElviScrape, QUIC, HTTP/3, JSON, Vec and core Parsec reuse the source-pinned implementation recipes in
 [`../contracts-exoml/catalog.json`](../contracts-exoml/catalog.json). This avoids
 silently enabling Parsec's separate owned grammar API. Other module recipes
 follow MANIFEST dependency closure, recording cycles and rejecting unknown modules. Multiple
 selected modules share one deduplicated implementation TU. The generated header
 does not define implementation macros. **Do not combine this archive with a
 second TU defining the same MuLIB implementations.**
+
+`plan http3 quic` includes the opt-in native client switches and TLS/UDP
+closure; `build http3 quic` exports all 20 declarations in the raw archive.
+There is no external QUIC/TLS runtime dependency. For a separate C11 consumer,
+see [`examples/http3.c`](examples/http3.c). Source imports inspect the complete
+CDecl and unreviewed sidecars, but do not produce callable On1x bindings.
 
 Mune's full recipe explicitly enables `MULIB_IMPL_PARSER` and requires all 52
 public Mune symbols to be exported, with no declaration-only fallback. It pins

@@ -91,6 +91,39 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and not p.stdout, p
     assert not list(directory.glob('.kernel-discovery-*'))
 
+    transport = directory/'transport.on1x'
+    transport.write_text('import kernel mulib.quic as Q;\n'
+                         'import kernel[dynlib] mulib.http3 as H;\nfn main() {}')
+    transport_report = directory/'transport.json'
+    p = run([*cmd, transport, '-o', transport_report])
+    assert p.returncode == 0, p
+    evidence = json.loads(transport_report.read_bytes())
+    for name, count, symbol in [
+        ('quic', 12, 'mulib_quic_client_connect'), ('http3', 8, 'mulib_http3_get'),
+    ]:
+        module = evidence['modules']['mulib.'+name]
+        graph = module['metadata']['cdecl']
+        assert module['status'] == 'not_representable' and not module['callable'] and not module['safe_export']
+        assert len(module['symbols']) == count and not module['symbols'][symbol]['callable']
+        assert len(module['contract']['functions']) == count
+        assert module['contract']['bundle_provenance']['review_status'] == 'unreviewed'
+        assert module['contract']['bundle_provenance']['revision'] == graph['revision']
+        assert all(not m['defined'] for m in graph['preprocessing']['final_macros']
+                   if m['name'].startswith('MULIB_IMPL_'))
+        impl = module['exolib']['header_only']
+        switches = impl['implementation_defines']
+        assert impl['implementation_translation_units'] == 1 and len(switches) == len(set(switches))
+        assert {'MULIB_IMPL_TLS', 'MULIB_IMPL_QUIC_CLIENT', 'MULIB_IMPL_'+name.upper()} <= set(switches)
+    for spelling, expected in [('import kernel', 'NOT-ADMITTED'),
+                               ('unsafe import kernel[dynlib]', 'UNSAFE-UNSUPPORTED')]:
+        for name in ('quic', 'http3'):
+            transport.write_text(f'{spelling} mulib.{name};\nfn main() {{}}')
+            p = run([on1xc, '--emit-c', transport])
+            assert p.returncode == 1 and f'ON1X-KERNEL-{expected}' in p.stderr and not p.stdout, p
+            app = directory/'transport-denied'
+            p = run([cmd[0], cmd[1], '--kernel-bind', *cmd[3:], transport, '-o', app])
+            assert p.returncode != 0 and f'ON1X-KERNEL-{expected}' in p.stderr and not app.exists(), p
+
     # An isolated copy of the installed helper's inputs allows corruption
     # tests without editing any shipped sidecars or authorizing the fixture.
     corrupt = directory/'corrupt-tools'

@@ -75,6 +75,59 @@
       "inactive_optional_macros": [],
       "link_libraries": ["dl", "m", "pthread"]
     },
+    "quic": {
+      "contract": "quic.exocontract.json",
+      "header": "include/mulib-quic.h",
+      "header_sha256": "198a98470a3335ecf538d5ce2cdf46402f1095e295053b89a67582452053fdcd",
+      "manual": "manual/mulib-quic.md",
+      "manual_sha256": "c8f410bd24b240704b83e102a411a99c64b805a52b2ace4eebb5c714c8e33efa",
+      "evidence_sha256": {
+        "include/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
+        "include/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
+        "include/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
+        "tests/test_http3_client.c": "1543c34e13ce3980abbd521b49a11069e13292cdd619f6831ba94d4dee03e9d5",
+        "tests/test_quic_http3_stream.c": "7b973aab38715f95c28713bf457910ee57b83b5d3622b28ef0107639ac319d83"
+      },
+      "function_prefix": "mulib_quic_",
+      "function_count": 12,
+      "implementation_modules": [
+        "buffer", "strbuf", "parsec", "inet4", "inet6", "uri", "tsl", "socket",
+        "entropy", "sha", "hkdf", "x25519", "aes-gcm", "der", "signature", "base64",
+        "x509", "tls", "quic"
+      ],
+      "active_optional_macros": ["MULIB_IMPL_QUIC_CLIENT"],
+      "compile_definitions": ["_POSIX_C_SOURCE=200809L"],
+      "inactive_optional_macros": ["MULIB_IMPL_PARSER"],
+      "link_libraries": []
+    },
+    "http3": {
+      "contract": "http3.exocontract.json",
+      "header": "include/mulib-http3.h",
+      "header_sha256": "60f752c79df28aa94d8484091a37568c9597cf3f855532cc263e666886449bc1",
+      "manual": "manual/mulib-http3.md",
+      "manual_sha256": "d4cc9f1ceeef65eef85791d9439765955199945bf1b669d78b0e2b9bdd3cddb6",
+      "evidence_sha256": {
+        "include/mulib-quic.h": "198a98470a3335ecf538d5ce2cdf46402f1095e295053b89a67582452053fdcd",
+        "include/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
+        "include/detail/mulib-http3-client.h": "1b015b01c456311307c6e9012fb810d27a916265a244597fd9a10d89fab290e5",
+        "include/detail/mulib-qpack-tables.h": "abfa480d102643394e4cbfed8ddee1b99ee58ea4cfa8ab0a507e636f6e4bdef7",
+        "include/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
+        "include/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
+        "tests/test_http3_client.c": "1543c34e13ce3980abbd521b49a11069e13292cdd619f6831ba94d4dee03e9d5",
+        "tests/test_http3_integration.py": "2b2f88b12e5f3a5b69fa15c4467eee81566d72bbdbcc6ff40e9d97e82c4caca4"
+      },
+      "function_prefix": "mulib_http3_",
+      "function_count": 8,
+      "implementation_modules": [
+        "buffer", "strbuf", "parsec", "inet4", "inet6", "uri", "tsl", "socket",
+        "entropy", "sha", "hkdf", "x25519", "aes-gcm", "der", "signature", "base64",
+        "x509", "tls", "quic", "http3"
+      ],
+      "active_optional_macros": ["MULIB_IMPL_QUIC_CLIENT", "MULIB_IMPL_HTTP3_CLIENT"],
+      "compile_definitions": ["_POSIX_C_SOURCE=200809L"],
+      "inactive_optional_macros": ["MULIB_IMPL_PARSER"],
+      "link_libraries": []
+    },
     "elvi-scrape": {
       "contract": "elvi-scrape.exocontract.json",
       "header": "include/mulib-elvi-scrape.h",

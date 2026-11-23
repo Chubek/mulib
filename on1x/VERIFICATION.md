@@ -1,4 +1,4 @@
-# On1x verification — through 2026-11-23
+# On1x verification — through 2026-11-24
 
 Historical evidence below remains attached to its original revision and build
 profiles. A [cross-layer integration record](../manual/integration-verification.md)
@@ -6,6 +6,29 @@ preserves the baseline and integrated suite totals. Current requirements are des
 [representation contracts](../manual/representation-contracts.md).
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
+
+## QUIC and HTTP/3 registration — 2026-11-24
+
+Tested against MuLIB `bc75b00782fc34ff895aa559c1a9503ef367c960` plus
+the native QUIC/HTTP/3 and registration changes, with unchanged LibStone
+`3be5e9d7ffde4f97f333365e7080e316396a0e55`, GCC 16.2.1 and Clang 22.1.8
+on Linux x86-64. ExoML/libclang, Exotract and Lua discovery were enabled.
+
+```sh
+ctest --test-dir build/harness-on1x-make --output-on-failure -j 4 \
+  -R '^on1x\.(contracts(_sdk)?|exotract|kernel_imports(_sdk)?|static_kernel_registration|kernel_auto_discovery_sdk)$'
+python3 -B tests/test_extend_kernelbind.py
+python3 -B tests/test_header_registration_hook.py
+```
+
+All seven focused On1x tests passed, alongside 12 generator and 14 hook
+tests. Real CDecl extraction and Gate B validated all 20 unreviewed sidecar
+entries. The native plan and locked Exotract archive work with `std.mulib`
+metadata, and a separate C11 client linked against the single-object archive
+also passed under Clang ASan/UBSan. Static and shared KernelBind import
+inspection returned declaration graphs and contracts, not callable profiles.
+Both direct safe and unsafe call admission remained denied; no new network
+authorization or cross-target support was verified.
 
 ## Workspace harness registration — 2026-11-23
 

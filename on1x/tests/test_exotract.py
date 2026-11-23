@@ -45,6 +45,7 @@ for name,libraries,source,expected in [
     ('microjs',['microjs'],'microjs.c','42\n'),
     ('mune',['mune'],'mune.c','mune: archive OK\n'),
     ('elvi-scrape',['elvi-scrape'],'elvi-scrape.c','elvi-scrape: archive OK\n'),
+    ('http3',['http3','quic'],'http3.c','quic + http3: archive OK\n'),
 ]:
     dest=a.work/name
     if dest.exists():shutil.rmtree(dest)
@@ -78,6 +79,16 @@ for name,libraries,source,expected in [
         for path in ['include/mulib-mune.h','manual/mulib-mune.md','tests/test_mune_runtime.c',
                      'tests/test_mune_runtime_alloc.c','tools/check_mune_runtime.py']:
             assert lock['inputs'][str((a.root.parent/path).resolve())]==hashlib.sha256((a.root.parent/path).read_bytes()).hexdigest()
+    elif name=='http3':
+        assert len(symbols['http3']['archive_exports'])==8 and not symbols['http3']['declaration_only']
+        assert len(symbols['quic']['archive_exports'])==12 and not symbols['quic']['declaration_only']
+        recipe=json.loads((dest/'build-plan.json').read_text())
+        switches=recipe['implementation_macros']
+        assert all(switches.count(m)==1 for m in ['MULIB_IMPL_HTTP3_CLIENT', 'MULIB_IMPL_QUIC_CLIENT', 'MULIB_IMPL_TLS'])
+        assert 'MULIB_IMPL_PARSER' not in switches
+        for path in ['include/detail/mulib-quic-client.h','include/detail/mulib-http3-client.h',
+                     'include/detail/mulib-qpack-tables.h']:
+            assert lock['inputs'][str((a.root.parent/path).resolve())]==hashlib.sha256((a.root.parent/path).read_bytes()).hexdigest()
     else:assert len(symbols['microjs']['archive_exports'])==15
     client(a.root/'contracts-exotract/examples'/source,dest,expected,['-pthread','-ldl'] if name=='mune' else [])
     keep=(dest/'lock.json').read_bytes();p=build(libraries,dest)
@@ -97,6 +108,18 @@ assert not list(a.work.glob('.exotract-*'))
 
 # Locked archive consumption uses the same kernel/fixture plan as direct builds.
 helper=a.root/'tools/on1x-build.py'
+source=a.work/'http3-registry.on1x'
+source.write_text('''import std.mulib as M;
+fn main(){assert(M.has_kernel("quic")&&M.has_kernel("http3")&&M.has_kernel("tls"));
+println("HTTP/3 native plan OK");}''')
+for label, selection in [('direct', ['--mulib', 'http3']),
+                         ('archive', ['--mulib-archive', a.work/'http3'])]:
+    exe=a.work/('http3-registry-'+label)
+    report=a.work/('http3-registry-'+label+'.json')
+    p=run([sys.executable,helper,source,'--on1xc',a.on1xc,'--cc',a.cc,
+           *selection,'--mulib-plan',report,'-o',exe,*['--cflag='+f for f in a.cflag]])
+    assert p.returncode==0,p.stderr
+    p=run([exe]);assert p.returncode==0 and p.stdout=='HTTP/3 native plan OK\n',(p.stdout,p.stderr)
 exe=a.work/'archive_json'
 p=run([sys.executable,helper,a.root/'examples/json.on1x','--on1xc',a.on1xc,'--cc',a.cc,
        '--mulib-archive',a.work/'core','-o',exe,*['--cflag='+f for f in a.cflag]])

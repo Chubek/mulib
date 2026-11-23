@@ -8,6 +8,9 @@ Implemented source annotations and verification tooling:
 - `elvi-scrape.exocontract.json`: all 6 provider/extraction/HTTPS functions;
 - `mune.exocontract.json`: all 52 Lua runtime/frontend/C integration functions,
   including GC roots, retained coroutine-thread callbacks and AOT entry lifetimes;
+- `quic.exocontract.json` and `http3.exocontract.json`: all 20 codec and native
+  client functions, including input/client-borrowed views, output ownership,
+  and blocking network/trust obligations;
 - `catalog.json`: exact canonical header/manual pins and implementation recipes;
 - `obligations.json`: source evidence, branch/lifetime preconditions and missing
   field-sensitive/ownership/error/callback lowering.
@@ -21,6 +24,7 @@ reviewed metadata.
 python3 on1x/tools/on1x-contracts.py list
 python3 on1x/tools/on1x-contracts.py lint
 python3 on1x/tools/on1x-contracts.py build-plan json vec parsec elvi-scrape mune
+python3 on1x/tools/on1x-contracts.py build-plan quic http3
 ```
 
 `list` uses the same `MANIFEST.yaml`-backed kernel inventory as

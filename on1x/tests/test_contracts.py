@@ -17,7 +17,8 @@ tool = t.root/'tools/on1x-contracts.py'
 p = run([sys.executable, tool, 'lint'])
 assert p.returncode == 0, p.stderr
 lint = json.loads(p.stdout)
-assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':6, 'mune':52} and not lint['safe_export'] and not lint['gate_b']
+assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':6, 'mune':52,
+                            'quic':12, 'http3':8} and not lint['safe_export'] and not lint['gate_b']
 exo = t.root/'tools/on1x-exotract.py'
 p = run([sys.executable, tool, '--root', root, 'list'])
 assert p.returncode == 0, p.stderr
@@ -42,6 +43,11 @@ pretty_revision = 'sha256:'+hashlib.sha256((root/'include/mulib-prettysexpr.h').
 assert coverage['prettysexpr']['sidecar_header_matches'] is True
 assert pretty['bundle_provenance']['revision'] == pretty_revision
 assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
+for name in ['quic', 'http3']:
+    assert coverage[name] == dict(semantic_sidecar=name+'.exocontract.json',
+                                 sidecar_header_matches=True, snapshot_profile=True,
+                                 archive_recipe='exoml-core', discovery_only_reason=None)
+    assert modules[name]['extra_macros'] == ['MULIB_IMPL_'+name.upper()+'_CLIENT']
 assert coverage['ipc-framed']['semantic_sidecar'] == 'sandbox/ipc-framed.exocontract.json'
 assert coverage['b+tree']['semantic_sidecar'] is None
 assert inventory['non_kernel_sidecars'] == ['prettyprint.exocontract.json']
@@ -111,10 +117,49 @@ assert combined['implementation_macros'].count('MULIB_IMPL_PARSER') == 1 and not
 for name in ['unknown', '../json', 'json;false']:
     p = run([sys.executable, tool, 'build-plan', name])
     assert p.returncode != 0 and not p.stdout, p.stderr
+transport_plan = None
+for route in [[tool, 'build-plan'], [exo, 'plan'], [t.root/'tools/on1x-mulib.py', 'plan']]:
+    for requested in [['http3'], ['quic', 'http3']]:
+        p = run([sys.executable, *route, *requested])
+        assert p.returncode == 0, p.stderr
+        live = json.loads(p.stdout)
+        switches = live['implementation_macros']
+        assert live['implementation_translation_units'] == 1 and not live['safe_export']
+        assert live['compile_definitions'] == ['_POSIX_C_SOURCE=200809L']
+        assert len(switches) == len(set(switches))
+        assert {'MULIB_IMPL_QUIC', 'MULIB_IMPL_HTTP3', 'MULIB_IMPL_QUIC_CLIENT',
+                'MULIB_IMPL_HTTP3_CLIENT', 'MULIB_IMPL_TLS', 'MULIB_IMPL_AES_GCM',
+                'MULIB_IMPL_SOCKET'} <= set(switches)
+        assert 'MULIB_IMPL_PARSER' not in switches
+        assert not live.get('dependency_cycles') and not live.get('native_sources')
+        if route[0] == tool and requested == ['http3']:
+            transport_plan = live
+if sys.platform.startswith('linux'):
+    with tempfile.TemporaryDirectory(prefix='contract-http3-', dir=t.work) as tmp:
+        work = Path(tmp)
+        implementation = work/'impl.c'
+        implementation.write_text(
+            ''.join('#define '+d.replace('=', ' ', 1)+'\n' for d in transport_plan['compile_definitions'])+
+            ''.join('#define '+m+'\n' for m in transport_plan['implementation_macros'])+
+            ''.join('#include "'+str(root/m['header'])+'"\n' for m in transport_plan['modules']))
+        (work/'mulib.h').write_text('#include "mulib-http3.h"\n')
+        binary = work/'consumer'
+        p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *t.flags,
+                 '-I', work, '-I', root/'include', implementation,
+                 t.root/'contracts-exotract/examples/http3.c', '-o', binary])
+        assert p.returncode == 0, p.stderr
+        p = run([binary])
+        assert p.returncode == 0 and p.stdout == 'quic + http3: archive OK\n', p
+p = run([sys.executable, exo, 'list-kernels'])
+assert p.returncode == 0, p.stderr
+for name in ['quic', 'http3']:
+    entry = json.loads(p.stdout)['modules'][name]
+    assert entry['source_module'] == 'mulib.'+name and entry['source_status'] == 'eligible'
+    assert entry['static_compile'] == dict(unsafe='unsupported', safe='unsupported')
 with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
     fake = Path(tmp)
     (fake/'include').mkdir(); (fake/'manual').mkdir()
-    for n in ['json', 'vec', 'parsec', 'elvi-scrape', 'mune']:
+    for n in lint['profiles']:
         for directory, suffix in [('include', '.h'), ('manual', '.md')]:
             shutil.copyfile(root/directory/('mulib-'+n+suffix), fake/directory/('mulib-'+n+suffix))
     profiles = json.loads((t.root/'contracts-exoml/catalog.json').read_text())['profiles']

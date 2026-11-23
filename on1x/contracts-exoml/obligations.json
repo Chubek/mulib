@@ -115,6 +115,44 @@
       "All 52 functions remain raw/unreviewed metadata and are ineligible for the current signed-integer/void scalar emitter; passing Gate B is not safe export."
     ]
   },
+  "quic": {
+    "source_ranges": [
+      "include/mulib-quic.h (canonical declarations and wire codecs)",
+      "include/detail/mulib-quic-client.h and include/mulib-tls.h (optional native transport)",
+      "tests/test_quic_http3_stream.c and tests/test_http3_client.c (codec, RFC vector and reassembly evidence)"
+    ],
+    "preconditions": [
+      "Caller provides separate, aligned output slots and valid byte spans/arrays; nullable data is allowed only at zero extent where specified. Buffers are initialized and retain a single owner.",
+      "Live calls require a host-authorized destination and trust configuration. Certificate verification is neither egress policy nor authorization to read a CA path. DNS and trust loading are outside the monotonic I/O budget.",
+      "Serialize access to each opaque client. Never feed a borrowed client receive view back to client_send; synchronous ACK processing can reallocate the same owner's storage."
+    ],
+    "postconditions": [
+      "Wire readers publish only on 1. STREAM views borrow input; they never authenticate or allocate payload storage. ACK capacity counts the first range, and -2 can precede full packet validation.",
+      "Successful connect transfers exactly one opaque client owner through an initially NULL slot; always close it. Poll/send may invalidate views, mutate state, and produce irreversible network effects on later failure."
+    ],
+    "unlowered": [
+      "No admitted C-aggregate, borrowed buffer, client ownership, TLS trust, or egress capability lowering. No safe or unsafe direct KernelBind call profile."
+    ]
+  },
+  "http3": {
+    "source_ranges": [
+      "include/mulib-http3.h (canonical declarations and dependency-free codecs)",
+      "include/detail/mulib-http3-client.h and include/detail/mulib-qpack-tables.h (optional native HTTP/3 GET and static QPACK)",
+      "tests/test_http3_client.c and tests/test_http3_integration.py (loopback oracle and vector evidence)"
+    ],
+    "preconditions": [
+      "Supply valid arrays of QPACK field descriptors, their nested name/value spans, and distinct decoder output storage. Frame and field views must not outlive the original input.",
+      "The stream codec consumes ordered authenticated plaintext bytes; it is not a network authenticator. Initialize a separate state for each stream half.",
+      "GET requires a host-authorized HTTPS destination and trust configuration, writable status and an initialized body. No redirects, decompression or fallback; caller frees the replacement body."
+    ],
+    "postconditions": [
+      "Frame/field outputs stay unchanged unless the reader returns 1. A stream protocol error latches state even though frame and consumed outputs stay unchanged.",
+      "GET publishes status and owning binary body only on success; it frees the previous body. On failure the old body/status are preserved, not network effects."
+    ],
+    "unlowered": [
+      "No direct KernelBind call profile. Neither CDecl import metadata nor an archive authorizes network effects or supplies nested-borrow/ownership verification."
+    ]
+  },
   "elvi-scrape": {
     "source_ranges": [
       "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",

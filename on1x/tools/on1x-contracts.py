@@ -133,6 +133,8 @@ def kernel_auto_catalog(manifest):
         expected = {field: item[field] for field in ('header', 'status', 'implementation', 'optional_dependency')
                     if field in item}
         expected['dependencies'] = item['manifest_dependencies']
+        if item['extra_macros']:
+            expected['extra_macros'] = item['extra_macros']
         if item['macro'] is not None:
             expected['macro'] = item['macro']
         if modules[name] != expected:
@@ -148,7 +150,7 @@ def catalog(root, selected=None):
     for name, profile in data['profiles'].items():
         if selected is not None and name not in selected:
             continue
-        keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'evidence_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'active_optional_macros', 'inactive_optional_macros', 'link_libraries'])
+        keys(profile, ['contract', 'header', 'header_sha256', 'manual', 'manual_sha256', 'evidence_sha256', 'function_prefix', 'function_count', 'implementation_modules', 'active_optional_macros', 'inactive_optional_macros', 'link_libraries', 'compile_definitions'])
         if not re.fullmatch('[a-z][a-z0-9_-]*', name):
             reject('invalid profile name')
         for field in ['header', 'manual']:
@@ -173,6 +175,9 @@ def catalog(root, selected=None):
                 or len(active) != len(set(active))
                 or set(active) - optional or set(active) & set(profile['inactive_optional_macros'])):
             reject(f'{name}: invalid/conflicting explicit optional implementation macros')
+        definitions = profile.get('compile_definitions', [])
+        if definitions not in ([], ['_POSIX_C_SOURCE=200809L']):
+            reject(f'{name}: unsupported contract implementation feature definitions')
         bundle = load(CONTRACTS/profile['contract'], 2*1024*1024)
         if bundle['schema_version'] != 2 or bundle['state'] != 'annotated' or bundle['library'] != name:
             reject('seed must be an annotated ExoML v2 profile')
@@ -406,10 +411,12 @@ def plan(root, data, libraries):
         reject('duplicate implementation switch')
     links = sorted({link for n in libraries for link in data['profiles'][n]['link_libraries']})
     inactive = sorted({m for n in libraries for m in data['profiles'][n]['inactive_optional_macros']} - active)
+    definitions = sorted({d for n in libraries for d in data['profiles'][n].get('compile_definitions', [])})
     return {'schema': 'on1x.contract-build-plan/v1', 'safe_export': False,
             'libraries': libraries, 'modules': entries, 'implementation_macros': macros,
             'implementation_translation_units': 1, 'include_directory': str(root/'include'),
             'link_libraries': links, 'inactive_optional_macros': inactive,
+            **({'compile_definitions': definitions} if definitions else {}),
             'note': 'Explicit manual-backed profiles. Optional MANIFEST switches require active_optional_macros in the selected profile; core Parsec alone does not enable its owned PARSER API.'}
 
 

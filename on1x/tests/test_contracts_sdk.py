@@ -572,9 +572,12 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         assert p.returncode == 0 and json.loads(p.stdout)['safe_export'] is False, p.stderr
         second = work/'snapshot_two'; p = workflow('snapshot', second, *options); assert p.returncode == 0, p.stderr
         for file in snapshot.iterdir(): assert file.read_bytes() == (second/file.name).read_bytes(), file.name
-        for library in ['json', 'vec', 'parsec', 'elvi-scrape', 'mune']:
+        catalog = json.loads((t.root/'contracts-exoml/catalog.json').read_text())
+        for library in catalog['profiles']:
             cdecl_file = snapshot/(library+'.cdecl.json'); contracts = snapshot/(library+'.exocontract.json')
             assert json.loads(good('normalize-decl', cdecl_file)) == json.loads(cdecl_file.read_text())
+            report = json.loads((snapshot/(library+'.check.json')).read_text())
+            assert report['gate_b'] and report['safe_export'] is False
             bad('emit-safe', cdecl_file, contracts, diagnostic='safe export unavailable')
             bad('emit-raw', cdecl_file, contracts, work/('denied_'+library))
         p = workflow('snapshot', snapshot, *options)
@@ -584,10 +587,9 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         p = workflow('check', stale, '--bind', t.bind)
         assert p.returncode == 3 and 'artifact drift' in p.stderr, p.stderr
         fake = work/'canonical-copy'; (fake/'include').mkdir(parents=True); (fake/'manual').mkdir()
-        for library in ['json','vec','parsec','elvi-scrape','mune']:
+        for library in catalog['profiles']:
             for directory, suffix in [('include','.h'),('manual','.md')]:
                 shutil.copyfile(t.root.parent/directory/('mulib-'+library+suffix), fake/directory/('mulib-'+library+suffix))
-        catalog = json.loads((t.root/'contracts-exoml/catalog.json').read_text())
         for profile in catalog['profiles'].values():
             for path in profile.get('evidence_sha256',{}):
                 (fake/path).parent.mkdir(parents=True,exist_ok=True)

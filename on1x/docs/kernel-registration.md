@@ -32,6 +32,16 @@ denials and budgets and, when available, real isolated tool launch.
 
 ## Registration
 
+`mulib.quic` and `mulib.http3` support declaration inspection with both
+`import kernel` and `import kernel[dynlib]`. Inspection attaches their
+source-pinned, unreviewed ExoML contracts. The contract, Exotract archive, and
+MuLIB source planners use explicit live-client recipes: `quic` selects native
+TLS/UDP and `http3` adds the HTTP/3 GET client. Combined plans place each
+implementation switch once in a single C11 translation unit. Direct calls from
+On1x (including `unsafe import kernel`) remain unsupported: these APIs require
+buffer and client ownership, borrowed-view lifetimes, and separate host network
+authorization. The raw archive is for trusted C consumers, not an admission.
+
 `include/mulib-*.h` is the source inventory. `MANIFEST.yaml` records each
 kernel's header, implementation kind and dependencies. Contract, archive and
 source-bundle tools read that shared registry. The generated

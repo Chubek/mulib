@@ -38,6 +38,8 @@ IPC_IMPL = ['MULIB_IMPL_SANDBOX_PROFILE', 'MULIB_IMPL_IPC_FRAMED']
 CLAMP_MODULE = 'mulib.clamp'
 IPC_MODULE = 'mulib.ipc_framed'
 REVIEWED_KERNEL_MODULES = frozenset((CLAMP_MODULE, 'mulib.histprice', 'mulib.priceopt'))
+# Full C contracts for inspection and raw archives, not callable language profiles.
+TRANSPORT_CONTRACTS = frozenset(('quic', 'http3'))
 # Profile v1's known entry points are sanity checks, not binding allowlists.
 KERNEL_MODULES = {
     'clamp': (None, list(CLAMP_EXPORTS)),
@@ -46,6 +48,8 @@ KERNEL_MODULES = {
     'priceopt': (None, ['mulib_priceopt_optimize', 'mulib_priceopt_candidates']),
     'money': (None, ['mulib_money_make']),
     'json': ('json.exocontract.json', []),
+    'quic': ('quic.exocontract.json', []),
+    'http3': ('http3.exocontract.json', []),
     'prettysexpr': ('prettysexpr.exocontract.json', ['mulib_pretty_render_expr', 'mulib_pretty_parse_expr']),
     'ini': (None, ['mulib_ini_parse']),
     'cryptohash': (None, ['mulib_blake3', 'mulib_blake2s']),
@@ -239,7 +243,8 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
         raise ValueError('not a complete declaration-only CDecl macro snapshot')
     if sandbox and not {'_GNU_SOURCE', '_POSIX_C_SOURCE'} <= active.keys():
         raise ValueError('incomplete sandbox declaration feature macros')
-    if sidecar and (sandbox or name in ('clamp', 'histprice', 'priceopt')):
+    transport = name in TRANSPORT_CONTRACTS and sidecar is not None
+    if sidecar and (sandbox or transport or name in ('clamp', 'histprice', 'priceopt')):
         require_lossless_contract(original_contract, contract)
     if (sidecar is None and contract is not None) or (sidecar is not None and (
         not isinstance(contract, dict) or contract['schema_version'] != 2 or contract['library'] != name or
@@ -273,6 +278,22 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
         if (entry['safe'] is not False or entry['c_name'] not in functions or entry['c_type_id'] not in type_ids or
                 (automatic is not None and (entry['c_name'], entry['c_type_id']) not in function_types)):
             raise ValueError('unexpected Exotract import metadata')
+    if transport:
+        claimed = contract['functions']
+        if (profile['parser'] != 'exoml/libclang' or profile['externally_imported'] is not False or
+                set(functions) != set(required) or len(declarations) != len(required) or
+                len(claimed) != len(required) or {f['c_name'] for f in claimed} != set(required) or
+                contract['headers'] != [header.name] or contract['state'] != 'annotated' or
+                contract['bundle_provenance']['header'] != header.name or
+                contract['bundle_provenance']['review_status'] != 'unreviewed'):
+            raise ValueError('transport CDecl identity, ExoML coverage or unreviewed provenance mismatch')
+        for f in claimed:
+            d = functions[f['c_name']]
+            if (d['source']['file'] != str(header) or d['definition'] or d['linkage'] != '4' or
+                    f['provenance']['header'] != header.name or f['provenance']['review_status'] != 'unreviewed' or
+                    [(p['index'], p['name']) for p in f['parameters']] !=
+                    list(enumerate(p['name'] for p in d['parameters']))):
+                raise ValueError('transport ExoML declaration mismatch: '+f['c_name'])
     if sandbox:
         # The SDK validates structure but does not fully bind names or review
         # state. Require full coverage and exact parameter names; never admit
@@ -296,10 +317,11 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
                 [(p['index'], p['name']) for p in f.get('parameters', [])] !=
                 list(enumerate(p['name'] for p in d['parameters']))):
                 raise ValueError('sandbox ExoML declaration mismatch: '+f['c_name'])
-    status = 'not_representable' if sandbox or discovery_only or automatic is not None else 'missing_review'
+    status = 'not_representable' if sandbox or transport or discovery_only or automatic is not None else 'missing_review'
     reason = discovery_only or ('automatic declaration discovery only; no checked ABI adapter or independent review'
               if automatic is not None else
               'no checked sandbox ABI, ownership/effect lowering or independent review' if sandbox else
+              'no checked C buffer, borrow, client ownership or network capability lowering' if transport else
               'no independent KernelBind authorization' if sidecar else
               'no ExoML semantic sidecar or independent KernelBind authorization')
     return dict(exolib=profile, metadata=on1x, contract=contract, callable=False, status=status,
@@ -1424,7 +1446,7 @@ def build(args, root):
             common += discovery
             profile = contracts.load(CATALOG)['profiles'].get(name, {})
             if profile.get('recipe') == 'exoml-core':
-                core = contracts.catalog(root)['profiles'][name]
+                core = contracts.catalog(root, selected={name})['profiles'][name]
                 for path in core.get('evidence_sha256', {}):
                     common += ['--provenance', root/path]
             for symbol in recipe['required_symbols'].get(name,[]):common += ['--require-symbol', symbol]

@@ -1896,6 +1896,9 @@
       "dependencies": [
         "parsec"
       ],
+      "extra_macros": [
+        "MULIB_IMPL_PARSER"
+      ],
       "header": "include/mulib-confuse.h",
       "macro": "MULIB_IMPL_CONFUSE",
       "status": "implemented"
@@ -4615,6 +4618,9 @@
         "endian",
         "vec"
       ],
+      "extra_macros": [
+        "MULIB_IMPL_FST_SERIALIZE"
+      ],
       "header": "include/mulib-fst.h",
       "macro": "MULIB_IMPL_FST",
       "status": "implemented"
@@ -5974,6 +5980,9 @@
     "http3": {
       "dependencies": [
         "quic"
+      ],
+      "extra_macros": [
+        "MULIB_IMPL_HTTP3_CLIENT"
       ],
       "header": "include/mulib-http3.h",
       "macro": "MULIB_IMPL_HTTP3",
@@ -10394,6 +10403,9 @@
         "glob",
         "strbuf"
       ],
+      "extra_macros": [
+        "MULIB_IMPL_PARSER"
+      ],
       "header": "include/mulib-parsec.h",
       "macro": "MULIB_IMPL_PARSEC",
       "status": "implemented"
@@ -11351,6 +11363,9 @@
     "quic": {
       "dependencies": [
         "buffer"
+      ],
+      "extra_macros": [
+        "MULIB_IMPL_QUIC_CLIENT"
       ],
       "header": "include/mulib-quic.h",
       "macro": "MULIB_IMPL_QUIC",
