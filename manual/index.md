@@ -801,7 +801,7 @@ canonical entry points and compatibility behavior.
 | [http](mulib-http.md) | Length-aware HTTP/1.1 message parsing and serialization. | [header](../include/mulib-http.h) · [example](../examples/modules/http.c) |
 | [http1](mulib-http1.md) | Explicit HTTP/1.1 entry point reusing shared strict framing. | [header](../include/mulib-http1.h) · [example](../examples/modules/http1.c) |
 | [http2](mulib-http2.md) | Bounded HTTP/2 frames with payload, priority and SETTINGS validation. | [header](../include/mulib-http2.h) · [example](../examples/modules/http2.c) |
-| [http3](mulib-http3.md) | Bounded HTTP/3 frames with known-payload and SETTINGS validation. | [header](../include/mulib-http3.h) · [example](../examples/modules/http3.c) |
+| [http3](mulib-http3.md) | Bounded HTTP/3 frames, stream and QPACK helpers, and an opt-in native HTTP/3 GET client. | [header](../include/mulib-http3.h) · [example](../examples/modules/http3.c) |
 | [http_request](mulib-http_request.md) | Owned request construction through shared HTTP validation. | [header](../include/mulib-http_request.h) · [example](../examples/modules/http_request.c) |
 | [http_response](mulib-http_response.md) | Owned response construction through webframework. | [header](../include/mulib-http_response.h) · [example](../examples/modules/http_response.c) |
 | [https](mulib-https.md) | HTTPS transactions composing HTTP webclient with verified TLS. | [header](../include/mulib-https.h) · [example](../examples/modules/https.c) |
@@ -1502,7 +1502,7 @@ canonical entry points and compatibility behavior.
 | [queryexpr](mulib-queryexpr.md) | Typed equality and ordering of MuLIB datum scalar values | [header](../include/mulib-queryexpr.h) · [example](../examples/modules/queryexpr.c) |
 | [queryjoin](mulib-queryjoin.md) | Sorted equi-join pairs over uint64 keys and original row IDs | [header](../include/mulib-queryjoin.h) · [example](../examples/modules/queryjoin.c) |
 | [queue](mulib-queue.md) | A dynamically growing FIFO queue implemented with a circular buffer. | [header](../include/mulib-queue.h) · [example](../examples/modules/queue.c) |
-| [quic](mulib-quic.md) | RFC 9000 variable integers and length-bearing STREAM frames. | [header](../include/mulib-quic.h) · [example](../examples/modules/quic.c) |
+| [quic](mulib-quic.md) | QUIC v1 wire codecs and an opt-in bounded native UDP/TLS client. | [header](../include/mulib-quic.h) · [example](../examples/modules/quic.c) |
 | [qvm](mulib-qvm.md) | Resumable quota-limited bytecode engine with owned code and RAM. | [header](../include/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
 
 ## R

@@ -6,7 +6,7 @@ Define `MULIB_IMPL_HTTP3`, `MULIB_IMPL_QUIC` and `MULIB_IMPL_BUFFER`. The codec
 handles QUIC-varint type/length envelopes and validates frame-local HTTP/3 payload
 structure. It also provides an HTTP/3 control/request stream validator and a
 literal-only QPACK field-section codec. Supply ordered, authenticated QUIC
-stream bytes from a separate transport.
+stream bytes from a separate transport, or enable the live client below.
 
 `mulib_http3_frame_read(data, length, max_payload, &frame, &consumed)` returns
 1 OK, 0 MORE, -1 invalid, -2 limit, or **-3 allocation failure**. Both output
@@ -57,9 +57,42 @@ The QPACK codec writes and reads field sections with zero dynamic insert count,
 literal names, and non-Huffman strings. It preserves the never-index flag.
 Field views borrow the caller's input and require a separate output array.
 Callers validate HTTP field semantics and set frame/field budgets. Indexed field
-representations and Huffman strings return -4. Dynamic table instructions,
-response state (including informational responses), server push, connection-wide
-stream bookkeeping, and QUIC transport are outside this API.
+representations and Huffman strings return -4 in the *literal codec*.
+
+## Native HTTP/3 GET
+
+Define `MULIB_IMPL_HTTP3_CLIENT` alongside `MULIB_IMPL_HTTP3`, the
+[native QUIC client switches](mulib-quic.md#native-quic-v1-client), and their
+dependencies in one C11 implementation translation unit:
+
+```sh
+cc -std=c11 -Wall -Wextra -Werror -Iinclude examples/http3-get.c -o http3-get
+./http3-get 'https://host.example/path?q=1' [CA.pem]
+```
+
+`mulib_http3_get(url, options, &status, &body)` uses ALPN `h3`, verifies the
+server certificate, and sends one GET with no request body. The `https` URL
+may include a port, path and query; fragments are never sent. The call publishes
+the final status and replaces the caller's initialized body buffer only after
+a complete response and peer SETTINGS. Read the body as binary and release it
+with `mulib_buffer_free`. The `MULIB_QUIC_*` result codes distinguish timeouts,
+I/O, bounds, authentication and protocol failures. All HTTP statuses, including
+non-2xx, are returned as successful HTTP exchanges when the message is valid.
+
+The live client opens the HTTP/3 control and QPACK streams, validates SETTINGS
+and critical streams, accepts informational responses and trailers, and checks
+the response body against Content-Length if present. Its QPACK decoder accepts
+static indexes, literal names or static name references, and HPACK Huffman
+strings. Dynamic QPACK is disabled in SETTINGS; each decoded field section is
+bounded at 64 KiB. Response headers are validated but not exposed. There is no
+HTTP/3 server, persistent request pool, push, CONNECT, redirect follow-up,
+decompression, or fallback to TCP. The native QUIC profile's limits also apply.
+
+To run the independent loopback test, install Python `aioquic` and the
+`openssl` command, configure with `-DMULIB_BUILD_HTTP3_INTEROP_TESTS=ON`,
+build `mulib_test_http3_client`, and run
+`ctest --test-dir BUILD -R http3 --output-on-failure`. Neither dependency is
+used by the MuLIB client.
 
 [Example](../examples/modules/http3.c). Regression and allocation suites:
 `tests/test_http_hardening.c`, `tests/test_http_alloc.c`, and
@@ -75,7 +108,7 @@ also checks parse/write/read semantics and failure output preservation.
 | --- | --- |
 | Header | [`include/mulib-http3.h`](../include/mulib-http3.h) |
 | Implementation switch | `MULIB_IMPL_HTTP3` |
-| Repository-local includes | [mulib-quic](mulib-quic.md) |
+| Repository-local includes | [`include/detail/mulib-http3-client.h`](../include/detail/mulib-http3-client.h), [mulib-quic](mulib-quic.md) |
 | Complete example | [`examples/modules/http3.c`](../examples/modules/http3.c) |
 
 The include list includes conditional and implementation-only includes;

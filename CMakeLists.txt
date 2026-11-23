@@ -43,6 +43,7 @@ option(MULIB_BUILD_MINIMPEG_VIDEO_TESTS "Build tests for the optional MiniMPEG v
 option(MULIB_BUILD_SECRET_OPENSSL_TESTS "Test the optional secret EVP backend with OpenSSL" OFF)
 option(MULIB_BUILD_SSH_OPENSSL "Build the OpenSSL-backed SSH example and focused tests" OFF)
 option(MULIB_BUILD_SSH_OPENSSH_TESTS "Run the local OpenSSH client/server interoperability fixture" OFF)
+option(MULIB_BUILD_HTTP3_INTEROP_TESTS "Test native HTTP/3 against a local aioquic server" OFF)
 option(MULIB_BUILD_MODULE_EXAMPLES "Build standalone example for each module" OFF)
 option(MULIB_STRICT_WARNINGS "Treat warnings in MuLIB tests/examples as errors" ON)
 option(MULIB_SANITIZERS "Run MuLIB tests/examples with address and UB sanitizers" OFF)
@@ -116,6 +117,22 @@ endif()
 
 if(MULIB_BUILD_TESTS)
   enable_testing()
+  if(MULIB_BUILD_HTTP3_INTEROP_TESTS)
+    if(NOT UNIX OR CMAKE_CROSSCOMPILING)
+      message(FATAL_ERROR "HTTP/3 interoperability requires a native POSIX build")
+    endif()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    find_program(MULIB_HTTP3_OPENSSL_ORACLE openssl)
+    execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import aioquic"
+      RESULT_VARIABLE mulib_aioquic_import OUTPUT_QUIET ERROR_QUIET)
+    if(NOT MULIB_HTTP3_OPENSSL_ORACLE OR NOT mulib_aioquic_import STREQUAL "0")
+      message(FATAL_ERROR "The HTTP/3 oracle requires Python aioquic and the openssl command")
+    endif()
+    add_test(NAME mulib_http3_interoperability
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_http3_integration.py"
+        --client $<TARGET_FILE:mulib_test_http3_client>)
+    set_tests_properties(mulib_http3_interoperability PROPERTIES TIMEOUT 45)
+  endif()
   if(MULIB_BUILD_SSH_OPENSSL)
     mulib_register_test(mulib_example_ssh_kernels)
     mulib_register_test(mulib_example_ssh_connection)
@@ -466,6 +483,9 @@ if(MULIB_BUILD_TESTS)
     get_filename_component(test_name "${source_file}" NAME_WE)
     if(test_name MATCHES "^test_ssh_" AND NOT MULIB_BUILD_SSH_OPENSSL)
       continue() # OpenSSL-backed SSH kernels are opt-in.
+    endif()
+    if(test_name STREQUAL "test_http3_client" AND NOT UNIX)
+      continue() # The optional live transport uses POSIX sockets and time.
     endif()
     if(test_name MATCHES "^test-(notebook-headless|wl-headless-private|x11-nested-live)$")
       continue() # dedicated multi-source fixtures or optional live Xvfb

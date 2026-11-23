@@ -3,6 +3,7 @@
  * Define MULIB_IMPL_HTTP3, QUIC and BUFFER. Unknown frame types are preserved.
  * Includes a bounded request/control stream state machine and literal QPACK
  * field sections. The caller supplies ordered, authenticated stream bytes.
+ * Define MULIB_IMPL_HTTP3_CLIENT separately for the native HTTPS/3 GET API.
  * Parse returns 1 OK, 0 MORE, -1 invalid, -2 limit, -3 OOM; failure unchanged. */
 #ifndef MULIB_HTTP3_H
 #define MULIB_HTTP3_H
@@ -78,8 +79,16 @@ extern "C"
    * are unchanged on failure. Returns 1 on success, -1 for malformed data,
    * -2 for capacity exhaustion, -4 for unsupported QPACK representations. */
   int mulib_http3_qpack_literal_read (const void *data, size_t length,
-                                      mulib_http3_field_t *fields,
-                                      size_t capacity, size_t *count);
+                                       mulib_http3_field_t *fields,
+                                       size_t capacity, size_t *count);
+
+  /** GET an absolute https:// URL over QUIC v1 with ALPN "h3" (no fallback).
+   * The options supply trust, timeout, and stream cap; alpn is ignored.
+   * Return MULIB_QUIC_OK or a MULIB_QUIC_* error. On success replace an
+   * initialized body buffer and publish the final HTTP status; on failure
+   * neither changes. Does not follow redirects or decompress the body. */
+  int mulib_http3_get (const char *url, const mulib_quic_client_options_t *options,
+                       unsigned *status, mulib_buffer_t *body);
 #ifdef __cplusplus
 }
 #endif
@@ -259,7 +268,8 @@ mulib_http3_stream_next (mulib_http3_stream_state_t *s, const void *data,
         return mulib_http3_stream_error_ (s, MULIB_HTTP3_FRAME_UNEXPECTED);
       else if (frame.type == 7)
         {
-          (void)mulib_quic_varint_read (frame.data, frame.length, &id, &id_size);
+          if (mulib_quic_varint_read (frame.data, frame.length, &id, &id_size) != 1)
+            return mulib_http3_stream_error_ (s, MULIB_HTTP3_FRAME_ERROR);
           if ((s->peer_is_server && id % 4 != 0)
               || (s->has_goaway && id > s->goaway_id))
             return mulib_http3_stream_error_ (s, MULIB_HTTP3_ID_ERROR);
@@ -432,4 +442,7 @@ mulib_http3_qpack_literal_read (const void *data, size_t n,
     return rc;
   return mulib_http3_qpack_fields_ (p, n, at, fields, cap, count);
 }
+#endif
+#if defined(MULIB_IMPL_HTTP3_CLIENT) && !defined(MULIB_HTTP3_CLIENT_IMPLEMENTED)
+#include "detail/mulib-http3-client.h"
 #endif

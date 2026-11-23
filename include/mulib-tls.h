@@ -154,16 +154,22 @@ static int mulib_tls_keys_derive_ (mulib_tls_keys_ *k,const unsigned char secret
   ok=mulib_hkdf_tls13(secret,"key",NULL,0,key,16)&&mulib_hkdf_tls13(secret,"iv",NULL,0,k->iv,12)&&mulib_aes_gcm_init(&k->aes,key);
   mulib_secret_wipe(key,sizeof key);return ok;
 }
-static int mulib_tls_hello_ (mulib_tls_session_ *s)
+/* RFC 9001 uses TLS handshake messages directly, without records or a legacy
+ * session ID. Keep the shared ClientHello and transcript construction here. */
+static size_t mulib_tls_make_hello_ (mulib_tls_session_ *s, unsigned char hello[768],
+                                    const char *alpn, const unsigned char *params,
+                                    size_t params_length)
 {
-  unsigned char hello[512];size_t n=4,ext,hn=strlen(s->host);mulib_inet4_t ip4;mulib_inet6_t ip6;
+  size_t n=4,ext,hn=strlen(s->host),an=strlen(alpn),sid=params?0:32;
+  mulib_inet4_t ip4;mulib_inet6_t ip6;
   static const unsigned char fixed[]={0,43,0,3,2,3,4, 0,10,0,4,0,2,0,29,
     0,13,0,12,0,10,8,4,8,5,8,6,4,3,5,3,
-    0,50,0,18,0,16,4,1,5,1,6,1,8,4,8,5,8,6,4,3,5,3,
-    0,16,0,11,0,9,8,'h','t','t','p','/','1','.','1'};
-  if(!mulib_entropy(s->random,32)||!mulib_entropy(s->session_id,32)||!mulib_entropy(s->private_key,32)
+    0,50,0,18,0,16,4,1,5,1,6,1,8,4,8,5,8,6,4,3,5,3};
+  if(hn>253||!an||an>32||params_length>256
+      ||!mulib_entropy(s->random,32)||(sid&&!mulib_entropy(s->session_id,sid))||!mulib_entropy(s->private_key,32)
       ||!mulib_x25519_public(s->public_key,s->private_key))return 0;
-  hello[n++]=3;hello[n++]=3;memcpy(hello+n,s->random,32);n+=32;hello[n++]=32;memcpy(hello+n,s->session_id,32);n+=32;
+  hello[n++]=3;hello[n++]=3;memcpy(hello+n,s->random,32);n+=32;
+  hello[n++]=(unsigned char)sid;memcpy(hello+n,s->session_id,sid);n+=sid;
   hello[n++]=0;hello[n++]=2;hello[n++]=0x13;hello[n++]=1;hello[n++]=1;hello[n++]=0;
   ext=n;n+=2;
   s->sni=!mulib_inet4_parse(s->host,hn,&ip4)&&!mulib_inet6_parse(s->host,hn,&ip6);
@@ -171,17 +177,30 @@ static int mulib_tls_hello_ (mulib_tls_session_ *s)
     mulib_tls_put16_(hello+n,0);mulib_tls_put16_(hello+n+2,hn+5);mulib_tls_put16_(hello+n+4,hn+3);hello[n+6]=0;mulib_tls_put16_(hello+n+7,hn);n+=9;memcpy(hello+n,s->host,hn);n+=hn;
   }
   memcpy(hello+n,fixed,sizeof fixed);n+=sizeof fixed;
+  mulib_tls_put16_(hello+n,16);mulib_tls_put16_(hello+n+2,an+3);
+  mulib_tls_put16_(hello+n+4,an+1);hello[n+6]=(unsigned char)an;
+  memcpy(hello+n+7,alpn,an);n+=7+an;
   mulib_tls_put16_(hello+n,51);mulib_tls_put16_(hello+n+2,38);mulib_tls_put16_(hello+n+4,36);mulib_tls_put16_(hello+n+6,29);mulib_tls_put16_(hello+n+8,32);memcpy(hello+n+10,s->public_key,32);n+=42;
+  if(params) {
+    mulib_tls_put16_(hello+n,57);mulib_tls_put16_(hello+n+2,params_length);
+    memcpy(hello+n+4,params,params_length);n+=4+params_length;
+  }
   mulib_tls_put16_(hello+ext,n-ext-2);hello[0]=1;mulib_tls_put24_(hello+1,n-4);
   (void)mulib_sha_init(&s->transcript,MULIB_SHA256);(void)mulib_sha_update(&s->transcript,hello,n);
-  return mulib_tls_send_(s,22,hello,n,0);
+  return n;
 }
-static int mulib_tls_serverhello_ (mulib_tls_session_ *s,size_t n,unsigned char shared[32])
+static int mulib_tls_hello_ (mulib_tls_session_ *s)
+{
+  unsigned char hello[768];size_t n=mulib_tls_make_hello_(s,hello,"http/1.1",NULL,0);
+  return n&&mulib_tls_send_(s,22,hello,n,0);
+}
+static int mulib_tls_serverhello_ (mulib_tls_session_ *s,const unsigned char *message,
+                                  size_t n,unsigned char shared[32],size_t session_id_length)
 {
   static const unsigned char retry[32]={0xcf,0x21,0xad,0x74,0xe5,0x9a,0x61,0x11,0xbe,0x1d,0x8c,0x02,0x1e,0x65,0xb8,0x91,0xc2,0xa2,0x11,0x16,0x7a,0xbb,0x8c,0x5e,0x07,0x9e,0x09,0xe2,0xc8,0xa8,0x33,0x9c};
-  mulib_tls_cursor_ c={s->hand+4,n-4},sid,extensions,v;const unsigned char *p;unsigned seen=0;
-  if(s->hand[0]!=2||!mulib_tls_take_(&c,34,&p)||p[0]!=3||p[1]!=3||!memcmp(p+2,retry,32)
-      ||!mulib_tls_vec_(&c,1,&sid)||sid.n!=32||memcmp(sid.p,s->session_id,32)||!mulib_tls_take_(&c,3,&p)
+  mulib_tls_cursor_ c={message+4,n-4},sid,extensions,v;const unsigned char *p;unsigned seen=0;
+  if(message[0]!=2||!mulib_tls_take_(&c,34,&p)||p[0]!=3||p[1]!=3||!memcmp(p+2,retry,32)
+      ||!mulib_tls_vec_(&c,1,&sid)||sid.n!=session_id_length||memcmp(sid.p,s->session_id,sid.n)||!mulib_tls_take_(&c,3,&p)
       ||p[0]!=0x13||p[1]!=1||p[2]||!mulib_tls_vec_(&c,2,&extensions)||c.n)return 0;
   while(extensions.n) {
     unsigned id;if(!mulib_tls_take_(&extensions,2,&p)||!mulib_tls_vec_(&extensions,2,&v))return 0;id=mulib_tls_u16_(p);
@@ -232,10 +251,11 @@ static int mulib_tls_certificates_ (mulib_tls_session_ *s,const unsigned char *m
   if(now==(time_t)-1||!mulib_x509_verify(chain,count,s->trust,s->host,(int64_t)now))return 0;
   *leaf=chain[0].public_key;return 1;
 }
-static int mulib_tls_certverify_ (mulib_tls_session_ *s,size_t n,const mulib_public_key_t *key)
+static int mulib_tls_certverify_ (mulib_tls_session_ *s,const unsigned char *message,
+                                 size_t n,const mulib_public_key_t *key)
 {
-  unsigned char input[130];unsigned scheme;mulib_tls_cursor_ c={s->hand+4,n-4},sig;const unsigned char *p;
-  if(s->hand[0]!=15||!mulib_tls_take_(&c,2,&p)||!mulib_tls_vec_(&c,2,&sig)||c.n)return 0;
+  unsigned char input[130];unsigned scheme;mulib_tls_cursor_ c={message+4,n-4},sig;const unsigned char *p;
+  if(message[0]!=15||!mulib_tls_take_(&c,2,&p)||!mulib_tls_vec_(&c,2,&sig)||c.n)return 0;
   scheme=mulib_tls_u16_(p);
   if(!((scheme>=0x0804&&scheme<=0x0806&&key->kind==1)||(scheme==0x0403&&key->kind==23)||(scheme==0x0503&&key->kind==24)))return 0;
   memset(input,32,64);memcpy(input+64,"TLS 1.3, server CertificateVerify",33);input[97]=0;mulib_tls_hash_(s,input+98);
@@ -253,7 +273,7 @@ static int mulib_tls_handshake_ (void *context,int *verified)
   unsigned char *certificates=NULL;mulib_public_key_t leaf;
   struct {unsigned char zero[32],empty[32],shared[32],early[32],derived[32],handshake[32],master[32],hash[32],rx[32],tx[32],finished[36];} k;
   memset(&k,0,sizeof k);*verified=0;
-  if(!mulib_tls_hello_(s)||!mulib_tls_message_(s,0,&n)||!mulib_tls_serverhello_(s,n,k.shared)||s->hand_length!=n)goto done;
+  if(!mulib_tls_hello_(s)||!mulib_tls_message_(s,0,&n)||!mulib_tls_serverhello_(s,s->hand,n,k.shared,32)||s->hand_length!=n)goto done;
   mulib_tls_consume_(s,n,1);mulib_tls_hash_(s,k.hash);
   (void)mulib_sha(MULIB_SHA256,NULL,0,k.empty,32);
   if(!mulib_hkdf_extract(MULIB_SHA256,k.zero,32,k.zero,32,k.early,32)
@@ -273,7 +293,7 @@ static int mulib_tls_handshake_ (void *context,int *verified)
   memcpy(certificates,s->hand,n);
   if(!mulib_tls_certificates_(s,certificates,n,&leaf))goto done;
   mulib_tls_consume_(s,n,1);
-  if(!mulib_tls_message_(s,1,&n)||!mulib_tls_certverify_(s,n,&leaf))goto done;
+  if(!mulib_tls_message_(s,1,&n)||!mulib_tls_certverify_(s,s->hand,n,&leaf))goto done;
   mulib_tls_consume_(s,n,1);
   if(!mulib_tls_message_(s,1,&n)||n!=36||s->hand[0]!=20||s->hand_length!=n||!mulib_tls_finished_(s,k.rx,k.finished)
       ||!mulib_secret_equal(k.finished,s->hand+4,32))goto done;

@@ -29,7 +29,7 @@ MAX_MODULES = 4096
 NAME = r"[a-z0-9][a-z0-9_+-]*"  # Matches the shared MANIFEST reader.
 ROOT_KEY = re.compile(r"([a-zA-Z_][a-zA-Z0-9_-]*): *(.*)")
 FIELD = re.compile(r"  ([a-z][a-z0-9_]*):(?: +(.*))?")
-PROJECTED = {"header", "status", "implementation", "macro", "dependencies", "optional_dependency"}
+PROJECTED = {"header", "status", "implementation", "macro", "dependencies", "extra_macros", "optional_dependency"}
 
 
 def contract_tools():
@@ -98,7 +98,7 @@ def entries(text):
 def project_entry(contracts, name, lines):
     fields = {}
     previous = None
-    dependencies = []
+    lists = {"dependencies": [], "extra_macros": []}
     for number, line in lines:
         field = FIELD.fullmatch(line)
         if field:
@@ -106,14 +106,14 @@ def project_entry(contracts, name, lines):
             if previous in fields or previous == "name":
                 raise ValueError(f"line {number}: duplicate field: {previous}")
             fields[previous] = value
-            if previous == "dependencies":
-                dependencies.append("  dependencies:" + (" " + value if value else ""))
-        elif previous == "dependencies" and re.fullmatch(r"(?:  |    )- .+", line):
-            dependencies.append(uncomment(line))
+            if previous in lists:
+                lists[previous].append("  " + previous + ":" + (" " + value if value else ""))
+        elif previous in lists and re.fullmatch(r"(?:  |    )- .+", line):
+            lists[previous].append(uncomment(line))
         elif previous not in PROJECTED and previous and (
                 line.startswith("    ") or re.fullmatch(r"  - .+", line)):
             # Ignore continuation lines belonging to non-projected fields
-            # (for example, folded purpose prose or extra implementation switches).
+            # (for example, folded purpose prose).
             continue
         else:
             raise ValueError(f"line {number}: unsupported module field layout")
@@ -127,7 +127,7 @@ def project_entry(contracts, name, lines):
     item = {
         "header": header,
         "status": status,
-        "dependencies": contracts.manifest_list("\n".join(dependencies), "dependencies", NAME),
+        "dependencies": contracts.manifest_list("\n".join(lists["dependencies"]), "dependencies", NAME),
     }
     macro, implementation = fields.get("macro"), fields.get("implementation")
     if status == "implemented" and implementation is None and re.fullmatch(
@@ -139,6 +139,12 @@ def project_entry(contracts, name, lines):
         raise ValueError("implementation metadata does not match status")
     if status == "reserved" and item["dependencies"]:
         raise ValueError("reserved MANIFEST module cannot declare dependencies")
+    extra = contracts.manifest_list("\n".join(lists["extra_macros"]), "extra_macros",
+                                    r"MULIB_IMPL_[A-Z0-9_]+", optional=True)
+    if extra:
+        if "macro" not in item:
+            raise ValueError("non-external MANIFEST module cannot declare extra implementation switches")
+        item["extra_macros"] = extra
     if "optional_dependency" in fields:
         value = fields["optional_dependency"]
         if not re.fullmatch(r"[A-Za-z0-9][ -~]{0,511}", value) or re.search(r":(?:\s|$)", value):

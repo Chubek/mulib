@@ -148,7 +148,7 @@ static int mulib_sig_rsa_ (const mulib_public_key_t *k, unsigned scheme, mulib_s
 typedef struct mulib_sig_point_ { mulib_sig_num_ x,y,z; } mulib_sig_point_;
 static void mulib_sig_double_ (const mulib_sig_mod_ *m, mulib_sig_point_ *o, const mulib_sig_point_ *p)
 {
-  mulib_sig_num_ d,g,b,a,t,u; mulib_sig_point_ r;
+  mulib_sig_num_ d,g,b,a,t={{0}},u={{0}}; mulib_sig_point_ r;
   mulib_sig_mul_ (m,&d,&p->z,&p->z); mulib_sig_mul_ (m,&g,&p->y,&p->y); mulib_sig_mul_ (m,&b,&p->x,&g);
   mulib_sig_sub_ (m,&t,&p->x,&d); mulib_sig_add_ (m,&u,&p->x,&d); mulib_sig_mul_ (m,&a,&t,&u);
   mulib_sig_add_ (m,&t,&a,&a); mulib_sig_add_ (m,&a,&t,&a);

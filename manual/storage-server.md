@@ -79,14 +79,15 @@ not listener creation or timeout enforcement.
 priority dependency, promised-stream and SETTINGS value checks. HPACK,
 continuation sequencing, settings application and flow control remain connection
 responsibilities. `http3` validates varint envelopes, fixed identifier payloads,
-reserved types/settings and duplicate SETTINGS identifiers; it does not implement
-QPACK or stream roles. HTTP/3's temporary SETTINGS ID allocation can return -3.
-`quic` supplies RFC 9000 varints and length-bearing STREAM frames, not packets,
-TLS, authentication, loss recovery or congestion control. Unknown HTTP frame
-types are preserved except explicitly forbidden HTTP/2 types in HTTP/3.
+reserved types/settings and duplicate SETTINGS identifiers. Its temporary
+SETTINGS ID allocation can return -3. `quic` supplies RFC 9000 varint, STREAM
+and ACK codecs. Optional [QUIC](mulib-quic.md#native-quic-v1-client) and
+[HTTP/3](mulib-http3.md#native-http3-get) implementation switches add a bounded,
+authenticated native client, not a server. Unknown HTTP frame types are
+preserved except explicitly forbidden HTTP/2 types in HTTP/3.
 Protocol readers return 1 success, 0 truncated and negative
 errors, leaving outputs unchanged otherwise. Frame data borrows input.
-No module here provides TLS or claims to be an Internet-ready server.
+None of these modules claims to be an Internet-ready server.
 
 Policy building blocks are single-threaded and explicit:
 

@@ -67,7 +67,8 @@ class ExtendKernelBind(unittest.TestCase):
 
     def test_deterministic_write_and_nonwriting_check(self):
         implemented = entry("normal", dependencies="\n    - bounded",
-                            extra="  optional_dependency: OpenSSL Crypto 1.1.1 or newer\n")
+                            extra="  optional_dependency: OpenSSL Crypto 1.1.1 or newer\n"
+                                  "  extra_macros:\n    - MULIB_IMPL_NORMAL_CLIENT\n")
         bounded = entry("bounded", status="bounded")
         reserved = entry("reserved", status="reserved")
         self.set_manifest(implemented, bounded, reserved, headers=("normal", "bounded"))
@@ -83,7 +84,8 @@ class ExtendKernelBind(unittest.TestCase):
                 "bounded": {"header": "include/mulib-bounded.h", "status": "bounded",
                             "implementation": "static-inline", "dependencies": []},
                 "normal": {"header": "include/mulib-normal.h", "status": "implemented",
-                            "macro": "MULIB_IMPL_NORMAL", "dependencies": ["bounded"],
+                             "macro": "MULIB_IMPL_NORMAL", "dependencies": ["bounded"],
+                             "extra_macros": ["MULIB_IMPL_NORMAL_CLIENT"],
                            "optional_dependency": "OpenSSL Crypto 1.1.1 or newer"},
             },
         }

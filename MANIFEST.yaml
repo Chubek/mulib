@@ -3022,15 +3022,17 @@ modules:
   header: include/mulib-http3.h
   manual: manual/mulib-http3.md
   macro: MULIB_IMPL_HTTP3
-  purpose: Bounded HTTP/3 frames with known-payload and SETTINGS validation.
+  purpose: Bounded HTTP/3 frames, stream and QPACK helpers, and an opt-in native HTTP/3 GET client.
   dependencies: [quic]
+  extra_macros: [MULIB_IMPL_HTTP3_CLIENT]
   status: implemented
 - name: quic
   header: include/mulib-quic.h
   manual: manual/mulib-quic.md
   macro: MULIB_IMPL_QUIC
-  purpose: RFC 9000 variable integers and length-bearing STREAM frames.
+  purpose: QUIC v1 wire codecs and an opt-in bounded native UDP/TLS client.
   dependencies: [buffer]
+  extra_macros: [MULIB_IMPL_QUIC_CLIENT]
   status: implemented
 - name: virtio
   header: include/mulib-virtio.h
@@ -16363,6 +16365,24 @@ project_files:
   purpose: Complete native TLS implementation setup for examples.
 - file: examples/muw3-https.c
   purpose: Native verified HTTPS client with optional explicit trust bundle.
+- file: include/detail/mulib-quic-client.h
+  purpose: Optional native QUIC v1 packet protection, handshake, and UDP stream transport.
+- file: include/detail/mulib-http3-client.h
+  purpose: Optional native HTTP/3 request and response profile with zero-capacity dynamic QPACK.
+- file: include/detail/mulib-qpack-tables.h
+  purpose: QPACK static field table and HPACK Huffman decoding trie.
+- file: examples/http3-get.c
+  purpose: Native verified HTTP/3 GET with optional explicit trust bundle.
+- file: tests/test_http3_client.c
+  purpose: RFC packet protection, Retry, reassembly and QPACK vectors and HTTP/3 oracle client.
+- file: tests/test_http3_integration.py
+  purpose: Independent loopback HTTP/3 interoperability, authentication and packet loss tests.
+- file: on1x/contracts-exoml/quic.exocontract.json
+  purpose: Source-pinned unreviewed QUIC codec and client API contracts.
+- file: on1x/contracts-exoml/http3.exocontract.json
+  purpose: Source-pinned unreviewed HTTP/3 codec and GET API contracts.
+- file: on1x/contracts-exotract/examples/http3.c
+  purpose: Separate C11 consumer of the Exotract QUIC and HTTP/3 archive.
 - file: library/lmuw3/lmuw3.lua
   purpose: Lua request workflows, structured data, sessions and IPC channels.
 - file: library/lmuw3/runtime.c
