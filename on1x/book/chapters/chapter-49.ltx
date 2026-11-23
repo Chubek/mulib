@@ -7,7 +7,17 @@ These extensions embed different kinds of material. GrammarEmbed handles grammar
 \section{Choose the execution boundary first}
 For a grammar, test valid and invalid inputs to distinguish grammar compilation from parser behavior. For embedded Lua, test how an execution error is reported and where runtime state lives. In InlineC11, pair a minimal typed wrapper with a negative ABI or authorization case. Generated native code has a build-time provider and a linkage boundary that a Unit-v1 source rewrite alone cannot certify. Use each processor's fixture and build options when checking whether an installed toolchain actually supports the desired profile.
 
+\section{Find the producer of each result}
+The calculator grammar example has two kinds of input. At the marker function, a string describes a number token, skipped spaces, and productions for sums and parenthesized terms. GrammarEmbed compiles that description and gives the generated entry points names derived from the grammar name. Later the application passes character strings to the generated matcher. In \OnxCodeTerm{12 + (30 + 4)} the right operand is a parenthesized sum; in \OnxCodeTerm{12 + )} the closing parenthesis cannot start the required term. Expect the matcher to distinguish them without rebuilding the grammar. Breaking the marker's grammar description would instead prevent producing that matcher in the first place.
+
+The Lua expression example supplies a different kind of producer. The embedded code multiplies six by seven and asks the embedding library to emit an integer expression. Follow what crosses the boundary: it is the expression to insert at the annotation, whose value the surrounding On1x print will use. This differs from retaining a live Lua variable and allowing arbitrary On1x expressions to read it later.
+
+Finally the InlineC11 example supplies the integers 37 and 15 to a wrapper expression. The low four bits of 37 encode five; masking with 15 and multiplying by two therefore predicts 10. The argument named \OnxCodeTerm{a1} denotes the evaluated mask, not the location of its On1x binding. The arithmetic prediction checks the wrapper's result once built, but says nothing about whether that installation has the provider and authorization needed to build it.
+
 \section*{Repository sources}
+\OnxSource{on1x/stdppx/examples/grammarembed.on1x}\par
+\OnxSource{on1x/stdppx/examples/luaembed.on1x}\par
+\OnxSource{on1x/stdppx/examples/inline_c11.on1x}\par
 \OnxSource{on1x/stdppx/native/GrammarEmbed.on1x}\par
 \OnxSource{on1x/stdppx/native/LuaEmbed.on1x}\par
 \OnxSource{on1x/stdppx/native/InlineC11.on1x}\par

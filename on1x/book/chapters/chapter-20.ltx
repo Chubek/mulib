@@ -5,7 +5,30 @@
 The intrinsic regex profile compiles supported patterns through Firestone during compilation. A slash in an operand context can introduce a regex literal, while an infix slash can denote division. The scanner and parser preserve that distinction. The documented UTF-8 and capture subsets have fixed limits, so check the intended pattern against the implemented forms before choosing it for validation.
 
 \section{Whole matches and captured data}
-A Boolean match answers whether the selected profile finds a match. If you need matched text, exercise the capture API separately and test how the documented result encodes success and absence. An empty captured span and an unmatched capture can otherwise look identical when rendered. Include a multi-byte input to expose offset assumptions. A build without the Firestone headers reports regex as unavailable. Prepare a Firestone-enabled build for positive fixture checks and use the portable bootstrap build to test the availability diagnostic. A compiled regex and an external PPX regex expansion are different extension paths.
+A Boolean match tests the whole input string. If you need matched text, exercise the capture API separately and test how the documented result encodes success and absence. An empty successful match and a failed match should be distinguished before indexing. Include a multi-byte input to expose offset assumptions. A build without the Firestone regex SDK reports regex as unavailable. The bootstrap scanner can use that SDK too: scanner selection alone does not predict the availability diagnostic. A compiled regex and an external PPX regex expansion are different extension paths.
+
+\section{Read the count before the group}
+Try the literal \OnxCodeTerm{/ll([a-z])/} with three inputs. With
+\OnxCodeTerm{"llk"} there are two entries: index zero is the entire
+string and index one is the letter k. With \OnxCodeTerm{"kllk"} there
+are zero entries. Although the last three characters look promising,
+the pattern does not consume the first character. With
+\OnxCodeTerm{"ll"} there are also zero entries, because the class
+requires a letter. Indexing the failed result at zero does not yield
+an empty string; it is an out-of-range operation. Conversely, the
+empty pattern matched against the empty string gives one entry of
+length zero. It is the entry count that distinguishes the outcomes.
+
+Why can a valid match pattern be invalid in a capture expression?
+Consider a run of zero or more letters a followed by a parenthesized
+b. A finite-state recognizer can decide whether the entire input has
+that shape, but the b starts at a different position for every possible
+run length. The implemented capture descriptor needs a fixed starting
+offset and width in \emph{scalars} for each group. The checker therefore
+rejects that literal for capture, even though it works for a Boolean
+test. A fixed single-scalar group can occupy different numbers of UTF-8
+bytes on different inputs and still satisfy the descriptor; the runtime
+must locate its byte boundaries using the matched text.
 
 \section*{Repository sources}
 \OnxSource{on1x/docs/core-regex.md}\par

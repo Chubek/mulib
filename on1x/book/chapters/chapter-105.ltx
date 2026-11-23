@@ -7,7 +7,38 @@ The numerical inventory has families for scalar operations, data preparation, se
 \section{Verify a deterministic data path}
 Construct a tiny ordered history with an expected summary and a case that reaches an out-of-domain status. Run it through the exact reviewed fixture path. Check representation and error treatment at each boundary before using a larger data set. When comparing a prediction algorithm, keep time order, units, missing values and rounding explicit. For a data-search kernel, compare exact expected matches including duplicates and boundary positions. Measure generalization or performance separately from the correctness of the C11 ABI adapter.
 
+\section{Check the candidate decision by hand}
+The pricing program embeds amounts in minor units. Its conversion
+checks a nonnegative bound of $2^{53}$ before converting the integer
+and dividing by 100. The resulting five observations are 10, 12,
+14, 16 and 18. Only the first three go into the training slice.
+The helper compares the one-step forecasts against 16 by squared
+error; the program expects Holt to be selected. Its separate two-step
+forecast is compared against 18. If the training slice inadvertently
+included 16, these comparisons would no longer test forecasting from
+the same origin. Unavailable variance is carried as NaN: comparing a
+value to itself for inequality in the example detects this case rather
+than reporting a measured variance of zero.
+
+For the discrete decision, start at index one in the price array so
+that the leading 999 is excluded. Pair prices 10, 12 and 15 with
+demands 12, 9 and 4. With unit cost four and the profit objective,
+the candidate scores are $(10-4)12=72$, $(12-4)9=72$ and
+$(15-4)4=44$. Thus the best score is shared; checking only that
+the winner beats the last candidate is a weak oracle. On equal scores
+the kernel chooses the lower price. Expect price 10, expected demand
+12, score 72, and three evaluations. Reordering the paired observations
+should leave that decision unchanged.
+
+Shorten just the demand slice to two entries. Both slices still have
+individually valid bounds, but there is no third demand to pair with
+the third price. The example expects the Rejected arm, not a partial
+decision over the shorter list. This is a relationship between inputs
+that no single slice capacity check can express.
+
 \section*{Repository sources}
+\OnxSource{on1x/examples/kernel/pricing/forecasts.on1x}\par
+\OnxSource{include/mulib-priceopt.h}\par
 \OnxSource{on1x/docs/kernel-numerics.md}\par
 \OnxSource{manual/finpred.md}\par
 \OnxSource{manual/data-search.md}\par

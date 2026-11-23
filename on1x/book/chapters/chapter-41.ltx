@@ -7,6 +7,15 @@ On the Linux/glibc direct-C11 profile, a \OnxCodeTerm{taskgroup} lexically owns 
 \section{Reason about completion}
 For each launch, identify the owner group, the child result, and the parent path that consumes the handle. A conditional with a join on only one branch is useful as a rejection fixture. In a positive case, force one child to wait for another through a channel and assert the result after join. Distinguish a build failure that rejects an affine handle leak from a runtime deadlock between well-typed waits. Stackful fiber execution retains call stacks. Verified async/await frame lowering remains a separate missing capability.
 
+\section{Reconstruct the rendezvous}
+In the cooperative channels example the worker's result is 7, but the messages it sends are 1, 2 and 3. Keep two columns on paper, one for the handle and one for messages. Immediately after launch the handle column says ``owned by parent''. It stays that way throughout the receive loop. Receiving a value does not join the worker, even on the last iteration. The message column, by contrast, advances once for each paired send and receive. Zero capacity prevents the worker from depositing all three values and finishing without a receiver.
+
+The three received values account for the prints of 10, 20 and 30. After the final successful send the worker closes its sender and supplies the separate result 7. The parent's extra receive can now select the empty end-of-stream variant and print zero. Its join consumes the handle and obtains 7. Which prints can be explained without assuming a particular interleaving of the worker's announcements and the parent's? The receiver's three multiples preserve their order and its zero precedes its print of the join result; one need not predict each scheduler handoff to establish either fact.
+
+Move the join to immediately before the receive loop as a thought experiment. There is still only one consuming use of the handle, yet no receiver is available while the parent waits and the worker cannot finish its first send. The handle column alone would have missed that circular wait.
+
+Conversely, increasing the channel capacity could change whether a worker can finish before the first receive, but cannot turn an unconsumed worker handle into a legal group exit.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/concurrency.md}\par
 \OnxSource{on1x/examples/cooperative_channels.on1x}\par

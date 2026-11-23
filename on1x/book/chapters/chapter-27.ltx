@@ -26,6 +26,30 @@ fn main()
 \section{Read a loan conflict}
 Consider two aliases rooted at the same named local. Two shared loans can compose in the supported profile, while an overlapping exclusive loan changes the permitted accesses. Evaluate call arguments in their checked order when investigating a conflict. That order can establish a loan before another argument attempts an incompatible access. The C11 lowering may use private typed pointer parameters. This representation does not grant source first-class references, foreign pointer signatures, callbacks, or suspension across a live loan. Try the shared, exclusive, and conflicting versions as separate fixtures.
 
+\section{A copy that outlives the call}
+Follow the copy fixture in the reference tests. A helper takes an
+exclusive integer parameter, binds an immutable copy of its current
+value, stores zero through the parameter, and returns a closure reading
+the copy. Suppose the caller supplies a place containing nine. At entry
+there is one call-scoped loan; the local copy is an ordinary integer,
+not another alias for the caller's storage. The write therefore changes
+the place to zero and leaves the copy equal to nine. At return the loan
+ends. Reading the caller's place now yields zero; invoking the returned
+closure yields nine. Substituting the parameter itself for the copy in
+the closure would attempt to retain a loan past the call and is rejected.
+
+The distinction matters even within a single argument list. Suppose
+the first parameter expects an integer by value and the second expects
+an exclusive integer place. Passing the same local for both first reads
+the local and then starts the loan. The callee can use the first number
+as a before-image even after updating the second parameter. Reverse the
+parameter modes and the first argument would already have started the
+exclusive loan when the second argument tried to read the same local.
+One way to express the intended operation in that order is to make a
+separate immutable copy \emph{before} starting the call, then pass the
+copy at the by-value position. Distinct names help only if the second
+one denotes a snapshot rather than another alias of the first root.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/core-references.md}\par
 \OnxSource{on1x/tests/test_core_ref.py}\par

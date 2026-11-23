@@ -7,7 +7,35 @@ Checked HIR is the common high-level input for direct C11 and source-to-MIR lowe
 \section{Compare an identity rule}
 Use \OnxCodeTerm{--list-optimizations} to record the active rules. Compare default output with \OnxCodeTerm{--no-optimizations --enable-opt integer\_add\_zero\_right} on a fixture containing that expression. An effectful or trapping operand on the left still needs evaluation. Test a simple constant input, an effectful use within the admitted profile, and a boundary input. If a rule is unavailable, check the selected compiler configuration and profile. MIR block-level optimization runs later and uses a different verifier and work budget.
 
+\section{Compare two Boolean evaluation traces}
+Let two functions print their own names and return Boolean values. Consider
+negating both calls and comparing the results for equality. The authored
+canonicalization can compare the original operands directly: complementing
+both bits does not change whether they agree. If the left call prints L
+and returns false, and the right prints R and returns true, the trace is
+L, R, false in both versions. If the left call traps after printing L,
+there is no R. Equality is eager but ordered; replacing it with a lazy
+test on the left value would satisfy some truth-table rows while losing
+the second print.
+
+Why recheck the candidate when the Boolean identity is valid? The rewrite
+must move each captured operand with its original lexical reference,
+type and location. A duplicated left subtree in the right-hand position
+could still have Boolean type; a newly constructed reference could also
+name an out-of-scope local. The checker can reject malformed references,
+while the evaluation trace distinguishes two well-typed programs with
+different effects. These checks answer complementary questions.
+
+In a unit test, keep the checked input available, let one internal
+rewrite succeed, then exhaust the processor's rewrite budget before it
+finishes. Inspect the caller's tree, not just the reported limit. The
+caller must see the original checked unit, not a half-normalized expression
+with one negation removed. Only the private candidate was changed. This
+transaction boundary makes the failure test informative even without an
+emitted executable.
+
 \section*{Repository sources}
 \OnxSource{on1x/hir/README.md}\par
 \OnxSource{on1x/hir/optimize.cpp}\par
 \OnxSource{on1x/docs/optimization-profiles.md}\par
+\OnxSource{on1x/hir/processor/REWRITES.md}\par

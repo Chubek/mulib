@@ -17,6 +17,20 @@ fn main()
 
 Distinguish explicit exports and re-exports from internal helpers when designing a library. For a package example, have the initializer re-export a single function from a sibling and use that public name from a separate program. Then exercise an unavailable name and see where lookup fails. Inspect \OnxCodeTerm{--deps} if the right name resolves to the wrong file. The qualified spelling needs adjacent dots, as discussed in \cref{ch:6}.
 
+\section{Build a two-name facade}
+Suppose a package called \OnxCodeTerm{measure} has these two files. The comments identify files; the declarations below each comment belong in that file alone.
+\begin{OnxCodeBlock}[numbers=none]
+# measure/scale.on1x
+fn double(n: i64) -> i64 { return n * 2; }
+fn quadruple(n: i64) -> i64 { return double(double(n)); }
+
+# measure/__init__.on1x
+from .scale import double as widen;
+\end{OnxCodeBlock}
+In a sibling entry program write \OnxCodeTerm{import measure as M;} and evaluate \OnxCodeTerm{M.widen(9)}. Follow the lookup backwards: the entry file binds the name before the dot to the initializer; that file binds the name after the dot to a definition in its sibling. The argument reaches the multiply in \OnxCodeTerm{double}, so the result is 18. There is no forwarding function to call. A second client can selectively import the same definition under yet another spelling.
+
+Does the existence of the second function in the loaded graph make \OnxCodeTerm{M.quadruple(9)} available? No: the initializer never binds that name. Add a selective import of \OnxCodeTerm{quadruple} there to give clients that second entry point. Alternatively a client can import the child module directly; the small facade is a convenience, not a privacy barrier. Importing the child alone does not implicitly bring in its ancestor's initializer. This distinction explains how two clients can depend on the same arithmetic implementation but have different dependency reports. When testing the facade, keep the entry program free of direct imports of the implementation, so that a missing re-export cannot be masked by a second binding.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/modules.md}\par
 \OnxSource{on1x/examples/modules.on1x}\par

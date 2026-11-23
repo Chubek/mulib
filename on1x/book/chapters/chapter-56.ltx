@@ -7,7 +7,17 @@ Base provides focused functional helpers and common encodings. Batteries adds co
 \section{Traverse a graph reproducibly}
 The graph helpers validate edge shape and perform a bounded breadth-first traversal. Vertices are marked when enqueued, which prevents duplicate work from parallel edges or cycles. The order of adjacency data can determine the order among equally distant vertices. Construct a diamond graph with a return edge, then assert that the join vertex is visited once and at the expected level. Check malformed edge data and resource budgets in separate cases. Distinguish this source API from native MuLIB graph headers when planning a foreign binding.
 
+\section{Trace the two halves of the queue}
+Take the directed edges in this scan order: A to B, A to C, B to D, C to D, D to A. Start at A. The front queue initially holds A, the pending list is empty, and A is already visited. Removing A discovers B then C. Each discovery prepends to pending, so the list now reads C, B. This apparent reversal is deliberate: when the front becomes empty the implementation reverses pending into a new front, restoring B, C as the removal order.
+
+Removing B discovers D and marks it visited immediately. Removing C sees its edge to D, finds D in the visited list, and adds nothing, even though D has not yet been removed. When D is finally processed, its return edge finds the starting vertex already visited. Output is also assembled by prepending, so a final reversal yields A, B, C, D. Adding a second identical edge from A to B does not add another B. If constructing this exact test with \OnxCodeTerm{graph\_add}, remember that addition prepends an edge; build in reverse scan order to reproduce the expected sibling ordering.
+
+Where does the work budget go on a dense graph? For each removed vertex the function scans the edge list, including edges whose source does not match. For a matching edge it may also scan the visited list to check membership. A budget on the number of returned vertices alone would not bound either of those inner costs.
+
+An isolated start vertex gives a small boundary test. Even with an empty edge list the queue initially contains the start, so the result contains that vertex once. Reachability from a start includes the path of length zero.
+
 \section*{Repository sources}
+\OnxSource{on1x/stdlib/graph/graph.on1x}\par
 \OnxSource{on1x/stdlib/base/README.md}\par
 \OnxSource{on1x/stdlib/batteries/README.md}\par
 \OnxSource{on1x/stdlib/graph/traversal.on1x}\par

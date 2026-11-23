@@ -6,8 +6,52 @@
 
 A recursive declaration needs indirection to have a finite layout. The implemented C11 slice admits recursive edges through \OnxCodeTerm{own<Named>}. The \OnxCodeTerm{box} operation creates a unique owner. Transfer uses explicit \OnxCodeTerm{move}, and consuming \OnxCodeTerm{take} and \OnxCodeTerm{drop} have distinct lifecycle effects. A moved binding no longer holds a usable owner. The admitted set excludes unrestricted pointer graphs and shared cycles.
 
-\section{Build and destroy a finite chain}
-Use a base constructor and a link constructor whose next field is an owner. A consumer can use a checked consuming match to transfer the active fields. To stress destruction, grow a large finite chain and drop the root. The runtime queues iterative destruction instead of mirroring the chain on the host C stack. Add a negative case that attempts to use a moved binding twice. The source and independent HIR tests exercise different ingress paths. The same ownership transfers matter for a Result consumed by \OnxCodeTerm{?}, covered in \cref{ch:30}.
+\section{Build a two-element list}
+A \OnxCodeTerm{Cons} holds a number and owns the rest of the list.
+If its second field held another \OnxCodeTerm{List} by value, calculating
+the size of one node would require knowing the size of that node already.
+An owning field has a fixed representation regardless of how many nodes
+follow it. Even the empty tail has a box in this example: its payload
+is the \OnxCodeTerm{Nil} variant.
+
+\OnxInputCode[firstline=1,lastline=9]{examples/consume-list.on1x}
+
+Start with \OnxCodeTerm{empty()}, prepend 5, then prepend 8. There are
+now three boxes, but only one owner in the caller: the root of
+$8 \to 5 \to \mathrm{Nil}$. At each prepend the caller moves its old
+root into the parameter, and the callee moves that parameter into the
+new node. Neither move allocates or copies a tail. The call to
+\OnxCodeTerm{box} allocates just the new head.
+
+\section{Walk the list without keeping it}
+\OnxInputCode[firstline=11,lastline=24]{examples/consume-list.on1x}
+
+At the top of each iteration, \OnxCodeTerm{cursor} owns the entire
+unread suffix. Taking it frees one box and puts the payload in
+\OnxCodeTerm{node}. The consuming match now has two obligations. In
+the \OnxCodeTerm{Cons} arm, it gives the tail to the arm, which must
+restore the cursor before going around again. In the \OnxCodeTerm{Nil}
+arm there is nothing to restore: the loop returns its sum. For our list
+the successive totals at the top of the loop are 0, 8, and 13. On the
+last iteration \OnxCodeTerm{take} frees the empty tail's box too.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+python3 on1x/tools/on1x-build.py on1x/book/examples/consume-list.on1x \
+  --on1xc build/on1x/on1xc -o build/consume-list
+build/consume-list
+\end{OnxCodeBlock}
+
+The program checks the empty case and prints 13 for the two-element
+case. What if the caller wants to discard the list instead? It can
+call \OnxCodeTerm{drop(list)} in place of the final print. That consumes
+the same root without computing a sum; the runtime queues child boxes
+for destruction rather than recursing down the C stack. In either
+version the caller cannot use \OnxCodeTerm{list} afterward.
+
+Try changing the call to pass \OnxCodeTerm{list} without its move.
+The parameter owns its argument; merely naming the caller's root cannot
+give the callee a second copy of it. This change should fail during
+checking, before the first iteration of the traversal can run.
 
 \section*{Repository sources}
 \OnxSource{on1x/docs/recursive-owning-adts.md}\par

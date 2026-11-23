@@ -19,6 +19,29 @@ fn main()
 
 Use type inspection on the whole source and keep the first diagnostic. A later emitter failure after successful inference often belongs to a representation or backend restriction. The independent semantic checker still owns rules such as assignment permissions, scope exits, and resource use. You cannot remove them by annotating a type hole. Generalizing a binding to allow multiple concrete uses is a separate operation described in \cref{ch:15}.
 
+\section{Solve a higher-order signature by hand}
+In the inference example, start at the body of \OnxCodeTerm{apply}
+without looking at its callers. Call the type of the second parameter
+$A$. The first parameter is invoked with one argument of type $A$.
+If that invocation produces a value of type $B$, then the first
+parameter must have type $A\to B$ and the helper's result must be
+$B$. There is no constraint here requiring $A$ and $B$ to be equal.
+They turn out to be equal for the increment operation because of the
+operation supplied at that particular call. The public type dump uses
+normalized variable names for relationships like these; the names
+themselves have no significance.
+
+Compare two failures from the inference tests. In a function that only
+prints its parameter and is never called, more than one concrete type
+can be printed. Annotating the parameter can supply the missing choice.
+In a body that calls a parameter with itself as argument, the problem
+is different. Calling it requires a function type whose argument is
+the very same function type, so substituting the proposed solution keeps
+growing the type. The occurs check rejects that cycle. Providing a
+concrete scalar annotation cannot repair it: the body would then try
+to call a scalar. Separate a missing constraint from an impossible one
+before adding annotations at every use site.
+
 \section*{Repository sources}
 \OnxSource{on1x/examples/inference.on1x}\par
 \OnxSource{on1x/src/infer.cpp}\par

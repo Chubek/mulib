@@ -7,6 +7,35 @@ The single-file build helper runs \OnxCodeTerm{on1xc}, selects companion runtime
 \section{Triage C build failures}
 A generated C syntax or type error points at emission or a declaration mismatch. An undefined symbol at link time points at missing object placement, inaccessible static-inline linkage, or a signature/provider mismatch. A duplicate symbol can indicate the same implementation macro was defined in two translation units. Use emitted C, the helper's chosen plan, and a minimal C caller to isolate the layer. Supplying an Exotract archive is an alternate implementation source described in \cref{ch:94}. Consumer files should not reactivate the implementation macros from that archive.
 
+\section{Read a JSON bridge request backwards}
+Take a generated program with an extern declaration for
+\OnxCodeTerm{on1x\_mulib\_json\_array\_length}. Start at the unresolved
+reference in the program object. Its immediate provider is an On1x bridge,
+not a MuLIB routine with the same name. The helper recognizes this spelling
+in the generated externs, selects the JSON bridge group, and requests the
+JSON kernel. The bridge and the implementation unit have different jobs:
+one translates the call expected by the program; the other supplies the
+kernel that the translation calls. Adding the kernel alone cannot supply
+the missing bridge entry point.
+
+Now imagine the program also uses the language's runtime JSON operations.
+There are two reasons to request the same kernel, but there should still
+be only one definition of its implementation. Trace the requests into the
+planner before counting implementation objects. Counting JSON mentions in
+the source, or even the headers included by the bridge, answers a different
+question.
+
+Request \OnxCodeTerm{--mulib-plan} with a report path separate from the
+source and executable. In the resulting link report, compare the selected
+bridge groups with the native recipe, then distinguish the fingerprints
+of generated inputs from those of stable files. The executable digest
+identifies the linked result. If a rebuild uses a different native compiler
+but the same group names, check compiler identity and flags before attributing
+a changed executable to the planner. None of those fields is an independent
+review of the foreign function's behavior. For example, the report can
+identify exactly which bridge was linked without saying which error result
+the application is prepared to handle.
+
 \section*{Repository sources}
 \OnxSource{on1x/tools/on1x-build.py}\par
 \OnxSource{on1x/stdlib/mulib/housekeeping.py}\par

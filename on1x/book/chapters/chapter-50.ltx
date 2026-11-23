@@ -8,6 +8,13 @@ Use \OnxCodeTerm{on1xc fmt INPUT} for plain source output and \OnxCodeTerm{--che
 
 Compiler diagnostics have both a bounded catalog-backed path and legacy messages. The newer path supports policy such as \OnxCodeTerm{@scrutiny} and registered advisory delivery. In an eligible build, Wetstone supplies bounded static analysis and Syren emits supported JSON/SARIF output and repair proposals. A repair written to a separate path can be independently rechecked. Compare the edited source and run behavior tests even if the compiler accepts it. A range of unchecked or skipped HIR remains outside the advisory result. \cref{ch:89} follows the independent checkers.
 
+\section{Explain a formatting discrepancy}
+Suppose two source files in one project produce different brace layouts. Begin at each input file's own directory and walk up to the nearest \OnxCodeTerm{.on1xfmt}. The first file found wins as a whole. A nearer file specifying only the preferred width does not inherit a more distant choice of brace style. Running the formatter from the same shell directory for both files is therefore insufficient to establish that both used the same settings. Equally, a long string on a line wider than the preferred width is not by itself a formatting failure: changing the literal to meet the width could change the program.
+
+Test the discrepancy in two steps. Format to standard output and compare that output with the source. Then use the formatter's check mode on plain source. For valid input, a difference gives status one, while an unchanged file gives zero. Neither comparison requires importing the library named by a function call. Consequently a misspelled module name can survive a successful formatting check and still fail during ordinary compilation.
+
+For a deliberately aligned region, surround it with paired standalone formatter off and on comments. The intervening spelling is preserved, including the directive lines. This is a layout control, not conditional compilation: an unmatched delimiter cannot be hidden from the parser by putting it between the comments. When evaluating a proposed repair, ask both whether it is syntactically acceptable and whether it changes the intended code inside a carefully preserved region.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/formatter.md}\par
 \OnxSource{on1x/docs/diagnostics.md}\par

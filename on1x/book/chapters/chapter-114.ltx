@@ -8,7 +8,39 @@ On1xRT ABI 1 is a recoverable embedding API for native AOT modules. It is indepe
 \section{Close the engine in dependency order}
 Register a module, create an instance, look up a function, and invoke it with admitted scalar or byte values. Release returned owned handles using the matching operations. A borrowed view remains valid only under the documented handle and mutation conditions. Exercise engine destruction with outstanding handles to see the busy result, then release them and complete destruction. Errors retain allocator context requirements. Synchronous callbacks and loaded native code execute with host authority. Design host policy separately from artifact identity; a matching artifact identifies the code that will run.
 
+\section{Call an export without leaking the temporary function}
+Follow the C embedding fixture for the export named
+\OnxCodeTerm{choose}. Its name view has length six, not seven including
+the terminator. After registering the static module and creating an
+instance, set the scalar output slot to minus one. Call the i64
+convenience API with one argument when the export takes two. The
+fixture expects signature mismatch and the output slot remains minus
+one. A null argument array with a count of two instead gives invalid
+argument. These outcomes point to different repairs: changing the count
+does not make an absent array readable.
+
+For the successful call, use the smallest and largest signed 64-bit
+values in that order. The fixture gets the largest value back. The
+convenience operation has already looked up and released its temporary
+function handle. The caller still owns the instance and module; it
+releases the instance, unloads the module and then destroys the
+engine. Releasing a guessed function handle as an extra cleanup step
+would mistake an internal temporary for a returned owner.
+
+Try the fixture's other export, \OnxCodeTerm{fail}. Its callback fails
+and provides the structured error code 4321; the scalar output still
+has its sentinel value. Inspect the error and release it separately.
+This distinction matters in a host that retains errors for later
+reporting: ending the engine's lifetime does not extend the lifetime
+of a host allocator context. That context must remain usable until
+the last such error has been released.
+
+For repeated calls with the same signature, compare an explicit
+function lookup once followed by several calls. This time lookup
+returns an owned function, so release it before releasing the instance.
+
 \section*{Repository sources}
+\OnxSource{on1x/runtime-sdk/tests/embedding.c}\par
 \OnxSource{on1x/runtime-sdk/README.md}\par
 \OnxDirectory{on1x/runtime-sdk/include}\par
 \OnxDirectory{on1x/runtime-sdk/tests}\par

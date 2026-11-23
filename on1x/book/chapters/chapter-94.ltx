@@ -7,7 +7,39 @@ Exotract's catalog and discovery frontend select source headers and extract type
 \section{Distinguish two linkage cases}
 Compile a strict separate C consumer against a supported archive and check that symbol resolution succeeds without activating implementation macros in the caller. For a selected static-inline function, inspect the documented \OnxCodeTerm{wrap-inline} route and signature constraints before requesting a raw forwarding artifact. An archive can contain valid kernel code and still lack an externally visible symbol for an inline function. Passing an accepted archive to the On1x build helper changes how the implementation is supplied. It does not establish source safety or ownership admission for its API.
 
+\section{Trace a forwarder into a separate client}
+In the media timebase fixture the C caller includes
+\OnxCodeTerm{on1x-inline.h}. Look for the generated prefix
+\OnxCodeTerm{on1x\_inline\_v1\_} on the call to rescale. That name denotes
+a new external function, not a change of linkage on the original
+definition. The generated implementation can call the original because
+it includes the kernel header in its own translation unit. A client
+object built from the generated declaration can therefore be linked
+against the archive without recompiling the client's view of rescale
+as a global function.
+
+Follow one call across this seam. The source unit is $1001/30000$
+seconds per tick and the destination is $1/48000$. At 30000 source ticks
+the elapsed time is 1001 seconds, hence the client expects 48048000
+destination ticks. The integer travels back through a caller-supplied
+writable slot; the function result reports success. With one negative
+source tick the exact value is fractional and truncation toward zero
+gives $-1601$. This case would distinguish a forwarder that rounded
+down from one that actually preserved the kernel behavior.
+
+Set the output slot to a known value before requesting an invalid
+denominator. Check both the false result and the unchanged slot. This
+exercise tests a property of that particular function, not a promise
+made by all forwarding wrappers. The producer checks the selected
+prototype and record layout; it does not allocate output storage for a
+caller or certify how long an address remains writable.
+
+Inspect the symbol map when debugging this client: the external
+reference to resolve is the prefixed forwarding name, not the
+unprefixed internal definition reported by declaration discovery.
+
 \section*{Repository sources}
+\OnxSource{on1x/tests/fixtures/inline_wrappers_client.c}\par
 \OnxSource{on1x/contracts-exotract/README.md}\par
 \OnxSource{on1x/contracts-exotract/catalog.json}\par
 \OnxSource{on1x/tools/on1x-exotract.py}\par

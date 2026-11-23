@@ -8,7 +8,35 @@ The project driver has a Linux bubblewrap \OnxCodeTerm{--sandbox} profile. It ne
 \section{Test a failed build's effects}
 Start with a successful artifact and record its contents. Introduce a syntax error or an unavailable tool and rerun the same profile. Examine the reported cause and check the published output, distinguishing staging files from the prior good result. Repeat through the sandbox profile on a supported host. If bubblewrap or namespaces are unavailable, classify that as an unsupported configuration rather than a different result from the source program. The staging environment and mounted tools can still differ between hosts; for path reproducibility see \cref{ch:68}.
 
+\section{Use the generation as the unit of comparison}
+Suppose a complex project builds two targets, \OnxCodeTerm{sample} and
+\OnxCodeTerm{other}. Both ran yesterday. Today only the second source
+contains an unknown function. If the builder wrote directly into yesterday's
+directory as it progressed, a user could receive today's first executable
+and yesterday's second executable under one report. Staging gives a different
+observable outcome: either a complete generation takes the old directory's
+place or the old one remains available. Save the bytes of
+\OnxCodeTerm{.on1x-build.json} before introducing the error; after failure,
+compare them and run the previous targets. An unchanged file next to a
+failing build is meaningful here because its recorded digest can be checked
+against the surviving executable.
+
+To deliver just the repaired second target, select \OnxCodeTerm{--target other}
+and point \OnxCodeTerm{--output-dir} at a fresh location. Inspect that
+directory: the absence of the first target is correct for a successful
+single-target generation. It would have been the wrong result for the
+original two-target request. The output directory is a product of the
+selection, not a cache into which independent successful files accumulate.
+
+Draw a line between the process doing compilation and the one doing
+publication. In sandbox mode the former sees read-only staged sources
+and an isolated network namespace. The host driver validates inputs and
+publishes the output outside that namespace. Those two responsibilities
+explain how a build can change the host's output directory without giving
+the sandboxed compiler write access to the project.
+
 \section*{Repository sources}
 \OnxSource{on1x/stdlib/on1xfile/README.md}\par
 \OnxSource{on1x/tests/test_project_driver.py}\par
 \OnxSource{on1x/tools/on1x_project.py}\par
+\OnxSource{on1x/tests/test_on1x_project.py}\par

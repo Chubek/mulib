@@ -8,6 +8,28 @@ The implemented polymorphic profile generalizes eligible immutable values under 
 \OnxInputCode[firstline=1,lastline=9]{../../on1x/examples/destructuring_polymorphism.on1x}
 Here a tuple pattern introduces independent leaves. The function leaf can be instantiated for both an integer and a Boolean. The Boolean leaf is already concrete. Elaborated C11 has concrete functions and data layouts, so a value restriction or a specialization limit can reject source that would require a runtime universal representation. For an inference regression, test two concrete uses as well as a same-type repeat. Compare the generated symbols or inspected types to confirm the two uses were specialized without leaking a previous constraint.
 
+\section{Which parts of a specialization may change?}
+Follow the second tuple in the destructuring example. Its function
+returns a pair consisting of the captured number and its own argument.
+The number was 42 at the function's definition. Inside the later block
+another binding named number has value zero. Project the function from
+the earlier tuple and apply it first to text and then to false. The
+two result types differ in their second component, but the first
+component in \emph{both} results must still be 42. Specializing at the
+type required by a later use must not perform name lookup for the
+capture at that later location. The final assertion that the inner
+number remains zero checks a third, independent binding.
+
+For contrast, put an identity function into an inferred mutable local.
+Use it once with an integer and then try to use it with a Boolean.
+The first use fixes the parameter and result of this local to the
+integer type. The second use cannot demand a fresh instance; a mutable
+slot must be able to hold replacements of its chosen type. Making the
+lambda body perfectly general is therefore insufficient. Both the body
+and the way its value is bound matter. Even an immutable binding with
+a call as initializer does not get the same generalization as the
+nonexpansive lambda in the example.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/polymorphism.md}\par
 \OnxSource{on1x/examples/destructuring_polymorphism.on1x}\par

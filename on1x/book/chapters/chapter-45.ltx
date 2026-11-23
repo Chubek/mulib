@@ -6,6 +6,16 @@ The POSIX profile offers \OnxCodeTerm{launch exec} with an absolute executable a
 
 A join consumes and reaps the job. Normal exit yields a nonnegative code, while signal termination yields a negative signal number. Cancelling a live external job requests process-group termination and still reaps the tracked process. To check argument boundaries, use a deterministic executable that echoes one received argument and compare it with the intended bytes. Build on the target that supplies that executable path. For captured input and output, account separately for draining and EOF as in \cref{ch:46}.
 
+\section{Count words before interpreting a status}
+Assume the host provides the absolute echo path below. Decode the command literal into an argument vector on paper before predicting what the terminal displays:
+\begin{OnxCodeBlock}[numbers=none]
+let job = launch `/bin/echo "two words" "" last`;
+println(join job);
+\end{OnxCodeBlock}
+There are four entries including the executable. The first argument after the name contains a space, the next is a string of length zero, and the last contains four letters. The quote marks group bytes for the compiler and are not passed to echo. The empty word still occupies a slot and needs a terminating NUL when counting the decoded argument budget. Terminal output is a poor test of this decoding: an echo program may simply print separators, making a single argument containing a space look like two. A fixture that reports argument counts and lengths can distinguish the cases.
+
+Separate the child's output from the parent's last print. The former comes from the inherited standard output of the launched process; the latter is the status obtained by reaping it. In the repository example a join of the true executable supplies zero, and a join of the false executable supplies a failure code. Neither join returns the text the child wrote. Compare a nonexistent absolute executable: the spelling can denote an absolute path without there being a process to reap. A spawn failure belongs to the runtime diagnostic path rather than producing the ordinary failure code of a program that started and exited.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/concurrency.md}\par
 \OnxSource{on1x/examples/cooperative_external.on1x}\par

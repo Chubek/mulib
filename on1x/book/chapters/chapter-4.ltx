@@ -14,6 +14,28 @@ build/on1x-hello
 
 The first command checks the source. The helper runs emission, selects the required runtime sources and kernel groups, and invokes the host toolchain. Running the resulting binary prints 21. Change the argument from 8 to 7 and update the assertion to 13 to distinguish successful recompilation from accidentally running an older binary. Keep the assertion when experimenting with recursion.
 
+\section{Three results from the same run}
+Start with a call small enough to work out in the margin.
+For input 3, the left recursive call asks for the value at 2, which is
+the sum of the values at 1 and 0. Those calls return their arguments,
+so the left call returns 1. The right call for the original input asks
+for the value at 1 and returns 1 as well. The original call returns 2;
+none of these intermediate returns prints anything. Extending the same
+recurrence gives 3, 5, 8, 13 and 21 at indices 4 through 8.
+
+There are three separate observations here. The value returned by
+\OnxCodeTerm{fib} is bound inside the program. The line of output comes
+from passing that value to the console. The integer returned by
+\OnxCodeTerm{main} is the process result. A shell script testing for a
+successful exit should expect zero rather than 21. Conversely, a script
+testing the computation should check the printed value or leave the
+assertion in place; a zero exit alone need not describe that computation.
+
+Try changing just the expected value in the assertion. This remains a
+well-typed comparison, so checking the source should succeed. Running the
+new executable should fail the assertion. That contrast gives a quick way
+to tell a source diagnostic from an error reached by executing checked code.
+
 \section*{Repository sources}
 \OnxSource{on1x/examples/hello.on1x}\par
 \OnxSource{on1x/tools/on1x-build.py}\par

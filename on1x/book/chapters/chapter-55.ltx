@@ -7,7 +7,17 @@ The native authoring libraries use persistent S-expressions for schema data, tra
 \section{Walk and rebuild a tiny tree}
 Write a visitor that rewrites a named node and preserves unrelated nodes and source metadata. Use one leaf, one nested expression, and a malformed tag case as fixtures. If a visit preserves an untouched subtree, it can reuse immutable data rather than rebuild all descendants. Track depth, total node count, and bytes when a transformation can amplify input. For PPX diagnostics, the compiler independently validates registered IDs against its selected diagnostic catalog. A processor-supplied record can convey a location and structured facts within the protocol. It cannot define arbitrary compiler policy merely by using a familiar ID.
 
+\section{Locate a leaf in two traversal orders}
+Take the tree \OnxCodeTerm{(Pair (Leaf "red") (Leaf "blue"))}. In this illustration the node tags are symbols and the color names are text. Count child indices starting at zero, including the tag: the first Leaf list is child one of the root, and the text red is child one inside that list. Its path is therefore the two-index list one, one. The blue text has path two, one. The root's path is empty. Neither a path nor a tag alone establishes that a node has the arity the transformation expects.
+
+Use \OnxCodeTerm{visitor\_walk} to collect labels. The callback sees the Pair list before its children, so it can record the existence of the pair before recording either leaf. Switch to \OnxCodeTerm{visitor\_rewrite} to replace the red text with green. Here the implementation rewrites children, puts them back in their original order, and invokes the callback on the resulting parent. The first Leaf callback therefore sees green, not red, if the text callback made the replacement. An older reference to the input tree still denotes red; a persistent rewrite returns a value rather than changing that input in place.
+
+What if the first element of the root list were the text string Pair instead of the symbol Pair? The public tag helper checks that the head is a symbol and returns an empty tag otherwise. A transformer intended for tagged nodes should not silently interpret such a list as a Pair merely because its head has the expected printable characters.
+
+For a diagnostic about the second color, preserve the path while traversing and preserve any source location carried by the actual schema node. A child index locates an item in this particular tree, not a byte offset in the original file.
+
 \section*{Repository sources}
+\OnxSource{on1x/stdlib/visitor/visitor.on1x}\par
 \OnxSource{on1x/docs/selfhosting.md}\par
 \OnxSource{on1x/stdlib/sexpr/__init__.on1x}\par
 \OnxSource{on1x/stdlib/visitor/__init__.on1x}\par

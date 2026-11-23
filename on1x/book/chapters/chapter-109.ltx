@@ -7,7 +7,37 @@ MuLIB includes C tools and representations for scanning, parsing, intermediate c
 \section{Define an explicit bridge}
 Choose a scalar operation and write down its source type, overflow behavior, evaluation order and target representation. Make the receiver reject unknown opcodes and unrepresentable values. Test traps and result values across the boundary. Extend to control flow only after checking how both sides encode entry, arguments and terminators. A name or address resemblance does not establish compatibility. Use the existing verified Archon or VM adapters where their profiles fit. A new adapter needs checking of every accepted translation, plus a build recipe and a semantic comparison against the On1x reference.
 
+\section{Expand an atom and follow the IDs}
+The ANFIR example computes a parameter plus 42. Draw two bindings in
+order: binding zero names the parameter, binding one names the add.
+The first operand of the add names zero; the second is an immediate
+atom of type i64. Literal mask two selects that second position. Do
+not interpret the otherwise present operand ID in the masked position
+as a dependency. The terminator refers to binding one because the
+sum, not the parameter, is the result of the block.
+
+On conversion to GSSA the constant gets its own node immediately
+before its consumer. In this straight-line example the parameter is
+still zero, the constant becomes one and the add becomes two. Thus
+the terminator must now refer to two. A converter that copied the
+terminator unchanged would return 42 for every argument. Try zero and
+one as test arguments: zero alone conceals the mistake, whereas one
+distinguishes the intended 43 from a stale constant reference.
+A round trip back to ANFIR may retain the named constant and use zero
+literal masks. Requiring the original byte representation would test a
+stronger property than preserving this calculation.
+
+Change the mask so that an argument slice of a call is treated as a
+literal position. The profile rejects this: argument IDs belong to
+the graph structure, and a literal argument there needs an explicit
+constant binding. Also count expanded nodes against the conversion
+limit. A request may describe a valid function yet lack enough budget
+to expand it. Neither rejection licenses lowering checked On1x add
+to the wrapping arithmetic of native MuLIB MIR.
+
 \section*{Repository sources}
+\OnxSource{examples/modules/anfir.c}\par
+\OnxSource{tests/test_microcc.c}\par
 \OnxSource{manual/compiler-tools.md}\par
 \OnxSource{manual/representation-contracts.md}\par
 \OnxSource{manual/mulib-anfir.md}\par

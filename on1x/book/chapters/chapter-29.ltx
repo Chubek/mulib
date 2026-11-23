@@ -18,8 +18,46 @@ fn main()
 
 The ordinary call prints 3. The two saved calls print 2 and 1.
 
-\section{Observe registration and drain separately}
-Register a deferred call with the current integer counter, update the counter, then register a second call. The deferred observer should see the later registration first and the earlier snapshot second. Repeat the case with an early \OnxCodeTerm{?} error so both paths exercise the drain. Keep a value result independent of the deferred side effects and check it at the caller. When a result owns a managed payload, the emitter protects the pending return until it has run defers and lexical cleanup. The runtime test checks this boundary separately from source spelling.
+\section{Whose function is returning?}
+In \OnxFile{on1x/examples/defer_errors.on1x}, three functions have
+defers. The loop in \OnxCodeTerm{main} registers prints of 0, 1, and
+2. They stay pending while \OnxCodeTerm{main} calls
+\OnxCodeTerm{twice(21)}, which registers a print of 99 and calls
+\OnxCodeTerm{read(21)}. Read the output from the inside out:
+\begin{itemize}
+\item \OnxCodeTerm{read} returns \OnxCodeTerm{Ok(21)} and prints its
+saved argument, 21, on the way out. Then \OnxCodeTerm{twice} doubles
+the payload, saves its result, and prints 99. Only now can the caller
+match that result and print 42.
+\item With input $-1$, \OnxCodeTerm{read} returns \OnxCodeTerm{Err(7)}
+and prints $-1$. The \OnxCodeTerm{?} in \OnxCodeTerm{twice} skips
+the multiplication. It still exits the function, so 99 is printed
+before the caller prints 7.
+\item Finally \OnxCodeTerm{main} returns. Its loop has long since
+ended, but its three registrations print 2, 1, and 0, in that order.
+\end{itemize}
+For an experiment in which a deferred function observes an owner just
+before lexical cleanup, see \cref{app:ownership}.
+
+\section{Trace registration separately from invocation}
+Imagine a helper which prints its integer argument and returns that
+same integer. In the small counter example, put a call to the helper
+around the argument of the first deferred print. There should now be
+a line containing 1 before the ordinary print of 3: evaluating the
+argument runs the helper immediately. The saved print still runs last
+and produces another 1. Wrapping the second argument as well gives
+the complete sequence 1, 2, 3, 2, 1. This distinguishes saving a
+value from saving an expression to be evaluated when the stack drains.
+
+The distinction also determines what happens when a registration
+contains a result propagation. If an argument returns early through
+a question mark, the deferred call whose arguments were being assembled
+has not yet been registered. Earlier, completed registrations in that
+function do run on the error return. The partially assembled call
+does not run with a missing argument. On an ordinary return the result
+expression is likewise evaluated before draining starts. A deferred
+function may itself return a value, but that value is discarded rather
+than substituted for the result already saved by its caller.
 
 \section*{Repository sources}
 \OnxSource{on1x/docs/defer-errors.md}\par

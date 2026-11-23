@@ -7,7 +7,35 @@ MuLIB supplies native fibers and channels reused by the private On1x C11 coopera
 \section{Pick an ordering oracle}
 For a rendezvous, have the sender and receiver observe progress before and after transfer. For a bounded queue, make a producer wait on capacity and then unblock it after a receive. Verify cancellation while a wait is registered, and check close after the last sender. Make each test use deterministic coordination instead of sleeps where ordering is being asserted. A C test can verify the primitive's scheduling behavior. A source test should also exercise the On1x handle and endpoint lifetime rules. \cref{ch:41} through \cref{ch:46} cover the checked source profile.
 
+\section{Reconstruct the rendezvous without a stopwatch}
+In the cooperative channels example the descriptor has one sender,
+one receiver and capacity zero. After splitting it, the worker captures
+the sender; the parent still has the receiver. The worker sends one,
+two and three, printing each number on successful send. The parent
+receives three times and prints ten times the received value. Write
+two columns for the trace. In the worker column the successful values
+are $1,2,3$; in the parent column the received products are $10,20,30$.
+Each send needs a matching receive, since no unpaired value can occupy
+a buffer slot. That constraint alone does not say which participant's
+post-transfer print must run first. Do not derive a portable scheduling
+rule from the order of two adjacent print statements in a single run.
+
+After the third transfer the worker closes its sender and returns seven.
+The parent performs a fourth receive. No sender remains to deliver a
+fourth value, so this receive takes the None branch and prints zero.
+Joining the worker prints seven; it consumes the task handle, not a
+channel element. Those last two observations distinguish closing the
+channel from completing the task. An implementation that delivered the
+return value as a message would break both checks.
+
+For a debugging exercise move the join ahead of the first receive.
+The parent would wait for a worker whose first send needs the parent
+to receive. No amount of increasing the native thread's time slice
+supplies the missing communication partner. Restore the receive before
+waiting for task completion.
+
 \section*{Repository sources}
+\OnxSource{on1x/examples/cooperative_channels.on1x}\par
 \OnxSource{manual/mulib-fiber.md}\par
 \OnxSource{manual/mulib-ipc-framed.md}\par
 \OnxSource{on1x/runtime/on1x_concurrency.c}\par

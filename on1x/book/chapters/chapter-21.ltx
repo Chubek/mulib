@@ -7,6 +7,30 @@ Structural records name their fields, while structural sums name possible constr
 \section{Modeling an outcome}
 Represent a successful count and a failed input as distinct cases so downstream code handles them explicitly. A Boolean paired with a number leaves readers to remember when the number is meaningful. A sum expresses that rule in the shape and supports pattern matching on the active case. For a structural record, reorder the fields in a construction and compare the projection results. For a sum, cover both cases through \OnxCodeTerm{match} and inspect the emitted tag test. Named records and enums can additionally preserve declaration identity, as \cref{ch:23} explains.
 
+\section{Separate label order from evaluation order}
+In the data-model example the function called magnitude returns the sum
+of the squares, not the square root. Passing x equal to three and y
+equal to four gives 25. Exchanging the order of the labeled initializers
+does not exchange the coordinates. The type checker compares labeled
+shapes, and the compiler can arrange their fields in canonical order.
+In fact the sum of squares alone would make a poor test of this last
+point: actually swapping x and y would still give 25. To test projection,
+read x and y separately and expect three and four respectively.
+
+There is one more order to test. Replace the two constants with calls
+that print their argument before returning it as a coordinate. Write
+the initializer for y first. Its print should come first even if the
+generated layout puts x first. A backend must not sort the calls merely
+because it sorts the labels.
+
+Now wrap the point in the Point case and pass it to the classifier.
+The selected arm projects the record and gives the same 25. The None
+case instead carries an empty record and returns zero without reading
+coordinates. An origin with both coordinates zero would also score zero,
+but it would be a different sum value: a consumer wishing to distinguish
+``no measurement'' from ``measured zero'' should inspect the constructor
+before collapsing them to one number.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/data-model.md}\par
 \OnxSource{on1x/examples/data_model.on1x}\par

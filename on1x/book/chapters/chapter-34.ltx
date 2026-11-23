@@ -13,6 +13,23 @@ fn describe(n: i64) -> (string, bool);
 
 Declare the interface through \OnxCodeTerm{On1xfile.i} for a project, or inspect the CLI's \OnxCodeTerm{--check-interfaces} mode with \OnxCodeTerm{--interface} inputs. The implementation needs local definitions with explicit type headers. Inferred headers, re-exports, and raw externs do not satisfy it. The check also validates the ordinary program and runs without PPX or declaration-extension execution. For a project test, drift an implementation from a flat tuple to a nested tuple and check that the signature mismatch is located. Export policy and binary compatibility require their own checks.
 
+\section{Check an implementation change on paper}
+Consider the following member of a library interface:
+\begin{OnxCodeBlock}[numbers=none]
+fn make(label: string, count: i64) -> (string, (i64, bool));
+\end{OnxCodeBlock}
+Write the comparison as two columns. In the input column put string followed by integer. In the output column draw a pair whose right child is another pair. A definition taking \OnxCodeTerm{name} and \OnxCodeTerm{n} with those explicit input types and returning \OnxCodeTerm{(name, (n, true))} under the declared output type meets that signature. Changing the Boolean expression to a comparison against zero can change behavior without changing either column. This is why the interface check is useful alongside examples that assert results for particular inputs.
+
+Try three changes independently. First, exchange the two input parameters together with their types. Even a body adjusted to use the new order cannot satisfy the old ordered input column. Next, return a three-element tuple and update the implementation annotation accordingly. All three leaves still match when read from left to right, but the tree no longer does. Finally, leave the original definition intact in a different module and selectively import it under the required name. The columns now agree but the implementation owner does not.
+
+Run the direct comparison from the directory containing the pair:
+\begin{OnxCodeBlock}[numbers=none]
+on1xc --check-interfaces values.on1x --interface values.on1xi
+\end{OnxCodeBlock}
+Interpret success as evidence about this source pair and its checked bodies. An additional function in the implementation need not appear in the interface; this command does not hide it from importers.
+
+No entry function is needed for this command: the library itself can be the graph root. Ordinary executable compilation has a different entry-point requirement.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/interfaces.md}\par
 \OnxSource{on1x/tests/test_interfaces.py}\par

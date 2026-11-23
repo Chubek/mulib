@@ -14,7 +14,41 @@ build/stdlib-example
 
 Select one pure helper and one bridge-backed call. Trace each through its source library and compare the plan needed to execute it. Add a missing-field fixture to the format operation and check both its status and payload. Split this demonstration into a small project with directory-local declarations once it runs as a single source entry. The same analysis applies when replacing one native companion with a pinned archive.
 
+\section{Predict the transcript before building}
+The example asks for the value of workers in the app section of a
+short INI document. Success gives status zero and text containing
+the two digits 42. This is still text: the pure parser consumes it
+from position zero and reports three things, a Boolean, a signed
+integer and an ending position. The position is two. Comparing it
+with the text length matters because a successful prefix parse need
+not consume an entire configuration value. Only after both checks
+does the program print the number.
+
+It then passes deliberately invalid text to JSON normalization. The
+source wrapper takes the native result and pairs it with the bridge
+status. The example asserts status minus two and prints a line about
+the recoverable failure. Thus the expected stdout is:
+\begin{OnxCodeBlock}[numbers=none,language={}]
+42
+recoverable parse failure
+\end{OnxCodeBlock}
+This second line is evidence that control returned to the program
+after the format error. A process that simply exited on bad JSON
+could pass a test for the first line alone.
+
+Make two small edits in separate copies. With workers set to
+\OnxCodeTerm{+42!}, the parser recognizes the signed prefix and stops
+at position three, before the exclamation mark. The program prints
+``invalid worker count'' and returns without reaching JSON. With the
+requested key absent altogether, the INI wrapper reports missing and
+the program prints ``configuration unavailable'' without attempting
+integer parsing. Neither change requires a different native arithmetic
+kernel: the choice of branch follows the status from lookup and the
+cursor returned by the pure source parser.
+
 \section*{Repository sources}
+\OnxSource{on1x/stdlib/parsec/parsec.on1x}\par
+\OnxSource{on1x/stdlib/json/normalize.on1x}\par
 \OnxSource{on1x/examples/stdlib_extensions.on1x}\par
 \OnxSource{on1x/tests/test_stdlib_extensions.py}\par
 \OnxSource{on1x/tools/on1x-build.py}\par

@@ -1,5 +1,5 @@
 SHELL := /bin/sh
-export TEXINPUTS := $(CURDIR)/tex:$(TEXINPUTS)
+export TEXINPUTS := $(CURDIR):$(CURDIR)/tex:$(TEXINPUTS)
 .DEFAULT_GOAL := book
 .PHONY: book example check clean
 book:

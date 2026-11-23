@@ -9,6 +9,35 @@ MIR has verified control-flow blocks, SSA values, block arguments, local slots a
 \section{Trace a Boolean join}
 For an eligible short-circuit Boolean, the canonical decision lowering can use block arguments instead of a temporary slot. Draw the two predecessors and mark which value each passes. Verify that the inactive operand has no effects when the earlier decision short-circuits. Then emit MIR and CFG for a scalar fixture and match the drawn edges to the output. A parser accepting a managed record does not establish MIR ownership support. Use the direct C11 path when the program needs a feature outside the selected MIR capability.
 
+\section{Transfer two arguments around a loop}
+The independently constructed MIR loop in the verifier tests makes an
+edge's assignment rule visible. Think of a block with parameters $p$
+and $q$, initially 10 and 20. A backedge supplies the vector $(q,p)$.
+Read both outgoing arguments in the old block state: the pair is
+$(20,10)$. Only then bind the successor parameters. On the next visit,
+printing the new values in parameter order must print 20 and then 10.
+If an emitter instead writes the new $p$ first and reads that updated
+value when assigning $q$, it produces 20 twice. All values still have
+the correct integer type, which is why an execution test complements
+the edge-type verifier.
+
+Change the type of one destination parameter to Boolean while retaining
+the original incoming integer. This time the module must fail verification
+before execution: there is no implicit truth conversion on a block edge.
+Reordering the physical block list likewise cannot change which parameters
+are bound; targets and their arguments identify control transfers independently
+of the order in which a printer lists blocks.
+
+In the product variant each parameter carries an integer and a floating
+value. Put opposite signed zeros in the two products. Checking only the
+integers will detect a serial swap but miss an emitter that reconstructs
+both floats as positive zero. The evaluator fixture inspects the signs
+as well. Parallel transfer transports the original typed values, not just
+the numerical information a particular consumer happened to print first.
+The fixture round-trips the product module through serialization as well;
+the new module must describe that same transfer without relying on shared
+addresses in the test process.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/backend-mir.md}\par
 \OnxSource{on1x/src/backend/mir.cpp}\par

@@ -7,7 +7,35 @@ Start with an existing standard-library wrapper when it fits the application. Th
 \section{Walk one candidate forward}
 Choose a simple kernel such as clamp. Find its manifest entry and build recipe. Inspect the C declaration and compare it with the intended On1x signature. Verify that the compiler profile supports calls for that kernel and that the linked implementation provides the intended symbol. Then read the contract and admission results if the call is intended to be safe. A discovery-only media or sandbox declaration cannot be substituted into this workflow at the last step. \cref{ch:92} covers placement and \cref{ch:96} covers reviewed admission.
 
+\section{Work backwards from the caller}
+Suppose a configuration screen needs to keep a signed count between zero
+and ten. Give it three test inputs: minus one, four, and twenty. The
+expected results are zero, four, and ten. In an ordinary source library
+the portable \OnxCodeTerm{base\_clamp\_i64} already expresses the operation.
+Choosing it means the client can keep its ordinary build. Moving this
+one expression to a native import would change the build requirements of
+every client importing the module, including clients whose counts never
+leave the interval. This is why the source migration retains the Base
+implementation even though the kernel examples call clamp directly.
+
+Now change the requirement: the screen is to demonstrate the behavior of
+the \emph{native} saturating arithmetic provider. The three interval tests
+alone are weak evidence: they could all pass using the portable function.
+Use the kernel example's addition at the largest signed value. Adding one
+through its saturating member must produce that same largest value; do
+not replace the call with an ordinary checked source addition. Check the
+import alias in the request report and the implementation placement in
+the native build plan as well as the value printed by the executable.
+
+Finally suppose the deliverable is an editor completion list for that
+screen. Declaration inspection now answers the question without running
+the program at all. Report the names as declarations and the callable
+subset separately: otherwise an editor can suggest an operation which
+its own chosen build profile cannot lower.
+
 \section*{Repository sources}
+\OnxSource{on1x/docs/source-migration.md}\par
+\OnxSource{on1x/examples/kernel/clamp.on1x}\par
 \OnxSource{on1x/docs/kernel-registration.md}\par
 \OnxSource{on1x/docs/kernel-bind.md}\par
 \OnxSource{on1x/stdlib/mulib/README.md}\par

@@ -7,7 +7,37 @@ Release results are specific to compiler revision, source dependencies, configur
 \section{Construct a release matrix}
 Start with the generated and fallback scanners, direct C11 execution, and the supported MIR scalar subset. Add opt-in integrations only where their dependencies can be pinned and built. Label compiler checks, execution tests, sanitizers, and relocation tests distinctly. Include failure behavior for unsupported operations on each target. A recorded skip should say what capability was absent. When recording an unrelated inventory failure, identify its test and verify whether the same failure occurs on the base checkout. Avoid reusing past totals for a release assembled from different sources.
 
+\section{Interpret a native toolchain probe}
+For a native Linux x86-64/glibc row, the toolchain probe takes three
+separately named executables: the C driver, assembler and linker. Its
+first question is whether the driver reports the intended target.
+Its C translation unit then checks layout assumptions; a separate
+assembly routine supplies the other half of a calling-convention test.
+Inspecting ELF headers catches a wrong object class or machine before
+execution. Running the linked fixture then checks something the headers
+cannot: an integer and a double must actually arrive in the expected
+registers, and a double result must come back intact.
+
+Suppose the C compilation and assembly steps succeed but the final
+driver link cannot find compatible startup objects. The truthful row
+records the link-stage failure and no successful probe record. Marking
+it ``compiler works'' would conceal the very condition that prevents
+running the application. Conversely, on success the JSON identifies
+the three tools by path, version banner and digest. A repeated probe
+on unchanged inputs can be compared byte for byte because temporary
+paths and timestamps are excluded.
+
+What remains outside that comparison? The startup objects, headers,
+system libraries and dynamic loader participate in execution, but
+their contents are not all pinned by the three tool hashes. Nor did
+the probe produce a shared object, cross-run a foreign machine, or
+exercise a MuLIB callback. Put those questions in separate rows. The
+verification record's GCC repeatability result and its focused Clang
+run are useful exactly because they state this limited native profile.
+
 \section*{Repository sources}
+\OnxSource{on1x/toolchains/README.md}\par
+\OnxSource{on1x/toolchains/tests/test_toolchain_probe.py}\par
 \OnxSource{on1x/VERIFICATION.md}\par
 \OnxSource{on1x/docs/capability-matrix.md}\par
 \OnxSource{on1x/stdlib/VERIFICATION.md}\par

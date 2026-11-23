@@ -8,6 +8,30 @@ The shared-owner slice allows supported nonrecursive nominal fields and enum pay
 \section{Check the lifetime transition}
 Create an S-expression in a local scope, place it in an admitted record, and return the record through an ordinary function. Drop or leave the creating scope before reading the field. The caller's owning record must keep the object alive. A useful negative case substitutes a JSON view, whose validity depends on its owner and follows the different rules in \cref{ch:28}. For optimizer work, inspect which references are copied and released around a match. Reordering publication and cleanup can free a still-needed payload even when scalar evaluations agree.
 
+\section{Count objects, not copies of a record}
+In the owning-ADT test a function builds a choice holding a cell
+containing a string atom. It returns a closure that can select that atom
+later. When the enclosing function returns, the local choice goes out
+of scope. The closure's capture keeps the active payload alive. Calling
+the closure projects the item as an independently retained result. At
+this point there can be several references describing one atom; the
+live-node counter counts the atom, not the number of routes to it.
+
+The test registers a deferred call using that result, then leaves the
+block containing the closure. Predict the counter just after the block:
+it should be one. Zero would mean that losing the closure also destroyed
+an object still needed for the deferred call. A fresh atom for every
+projection would instead duplicate an immutable object unnecessarily.
+When the saved call eventually prints the text it should still read
+``payload''.
+
+The test also assigns a choice variable to itself. A sound assignment
+acquires the incoming references before releasing the old ones; otherwise
+the only atom could be destroyed between those operations. Assigning
+the empty constructor is different: its active payload contains no cell.
+Only the references formerly held by the variable should disappear.
+Another copy of the previous full choice must still project its cell.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/owning-adts.md}\par
 \OnxSource{on1x/tests/test_owning_adt.py}\par

@@ -7,6 +7,35 @@ CTest orchestrates compiler, runtime, standard-library, SDK and backend profiles
 \section{Build a minimal regression matrix}
 For a language feature, create a positive source example, a negative type case, an execution oracle and, when a checked representation is exposed, an invalid-IR fixture. Test generated and fallback scanners where tokenization is relevant. Cover an optional backend separately with its own target and runtime. Include a relocation test for packaging changes and a sanitizer configuration for lifetimes. Record failures from untouched kernel-inventory checks as their own results. Avoid aggregating past results over incompatible trees or provider revisions as if they were one green run.
 
+\section{Place a failing observation in the right test}
+Suppose a numeric example ought to print 42 followed by a newline and
+exit successfully. The native harness writes the program, invokes
+\OnxCodeTerm{--emit-c}, then compiles the result with the runtime and
+strict C11 warnings. Only after both commands return successfully does
+it run the executable and compare stdout. A missing final newline can
+therefore fail a test whose source passed semantic checking and whose
+generated C passed the native compiler. Preserve the captured stdout and
+status; rerunning the checker alone cannot settle a disagreement about
+the bytes written by a running program.
+
+Change the experiment to a JSON-owner cleanup regression. A counting fixture
+can make one extra release visible, but its result is about the generated
+sequence of calls against that fixture. The real JSON integration test
+links the canonical kernel; if its required parent headers are absent,
+status 77 is a CTest skip. Reporting both as successful JSON integration
+would turn a missing input into an apparent measurement. Conversely, a
+failure in the counting fixture can be useful even before a real kernel
+checkout is available.
+
+When reporting a sanitizer result, identify which executable was
+instrumented. A sanitizer-enabled compiler can diagnose its own allocation
+error while emitting perfectly ordinary C. To observe an invalid access
+in the emitted program, the native test compilation and link need the
+sanitizer flags too. The additional flags in the harness are separate
+argument values, so preserve their boundaries in the report. Reproducing
+the native link is especially important when a test includes an allocator
+fixture in addition to the normal runtime.
+
 \section*{Repository sources}
 \OnxSource{on1x/tests/README.md}\par
 \OnxSource{on1x/VERIFICATION.md}\par

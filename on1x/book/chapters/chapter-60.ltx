@@ -15,6 +15,15 @@ fn main()
 
 The extraction consumes the Box. Add a separate negative case that tries to extract from the same binding twice. For a dynamic guard, test that an incompatible borrow fails and that a later valid borrow can succeed after guard release. The bounded native operations on Arc do not grant arbitrary cross-thread closure or payload transfer. Verify each native container with the intended link and runtime profile.
 
+\section{Choose between independent storage and an alias}
+Suppose two pieces of code need to observe a change from 41 to 42. Copying a Cell with an admitted integer payload gives each binding its own storage. Replacing the value in the second copy returns 41 there and leaves the first copy at 41. This is useful when making a private working copy. It is the wrong model for two observers of one mutable object.
+
+Instead follow the shared-container example: create a RefCell holding 41 and clone the cell owner. Request a writer through the clone. While that guard is live, a reader request through the original owner returns \OnxCodeTerm{Busy}; the conflict belongs to the storage, not the spelling of the binding used to request it. Replacing through the writer returns the old 41. After the guard leaves scope, a reader acquired through the original owner sees 42. Dropping the cloned owner alone is not a substitute for releasing a live guard: the guard independently roots the cell.
+
+For an immutable payload that only needs shared lifetime, there is no need for the dynamic writer state. In the Rc example, cloning creates a separate strong claim, and dropping the original owner releases only its claim. Reading the supported payload through the clone still succeeds. Compare this with moving the sole Box in the opening example: there the former binding has no claim left at all. Counting owner bindings and asking which allocation each one refers to resolves both cases.
+
+There is a useful intermediate case in the Box API: an exclusive loan can replace the integer while returning its previous value. Ending the loan leaves the box allocated and owned by the caller. Moving the box into extraction, by contrast, frees that allocation and returns the payload.
+
 \section*{Repository sources}
 \OnxSource{on1x/stdlib/container/LOCAL.md}\par
 \OnxSource{on1x/stdlib/container/SHARED.md}\par

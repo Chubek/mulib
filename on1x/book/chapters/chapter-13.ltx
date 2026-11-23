@@ -7,6 +7,28 @@ A tuple is an ordered structural product. Its arity and each element's type are 
 \OnxInputCode[firstline=2,lastline=7]{../../on1x/examples/tuples.on1x}
 The C11 backend emits typed product records. A scalar tuple can be copied as a value. A tuple containing a closure needs retain/release operations for its environment, including nested tuple paths. Parameters borrow the incoming aggregate and managed results carry ownership. Ordinary tuple support does not introduce raw foreign aggregate ABI support. To see the difference between arity and element typing, try swapping a two-element tuple and then pass a three-element one. Then inspect a valid generated C declaration to see why the structurally different tuple needs a different layout.
 
+\section{Count the parameters, then count the leaves}
+Read the parameter-pattern version of \OnxCodeTerm{swap}. There is one
+incoming argument and there are two new names in the body. When the
+caller writes \OnxCodeTerm{swap((42, true))}, the inner parentheses
+construct the argument; the outer parentheses apply the function. The
+entry pattern gives the first leaf the integer and the second leaf the
+Boolean. Returning them in reverse order produces one result whose first
+leaf is now the Boolean. Thus the caller's assertion on the flag and
+print of 42 test both the entry projection and the result construction.
+Removing a pair of parentheses in the call produces a two-argument
+call, not a different way to spell the same projection.
+
+The factory in the same file extracts an operation and a value at entry,
+then returns a zero-argument function that uses them. When the caller
+supplies an adding closure and 40, the caller can invoke the result
+\emph{after} the factory returns and still get 42. A compiler that kept
+only a borrowed pointer to the incoming tuple would have no reason to
+expect that tuple to survive so long. The entry leaves and the escaping
+closure instead follow the ownership rules for their individual types.
+Copying the integer is sufficient for one leaf; preserving the callable
+requires preserving its captured increment as well.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/tuples.md}\par
 \OnxSource{on1x/examples/tuples.on1x}\par

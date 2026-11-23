@@ -7,7 +7,31 @@ The intrinsic JSON profile pairs a lexical owner from \OnxCodeTerm{json\_parse\_
 \OnxInputCode[firstline=2,lastline=13]{../../on1x/examples/memory.on1x}
 The local \OnxCodeTerm{nested} owner is created only on one path. The return value is an integer derived from a view of \OnxCodeTerm{root}; it survives cleanup because it is independent of both owners. In a test, exercise the early return and the fallthrough return. Convert the integer result to a view result in a separate negative case to check the boundary. For recoverable format handling through standard-library bridges, see \cref{ch:53}. Those adapters have separate status and ownership conventions.
 
+\section{Trace the document tree and the cleanup tree}
+Sketch the parsed document as a root object with one member, outer.
+That member is an object with one member, items; its value is an array
+with two elements. Looking up the two keys makes two views along a
+single path. It does not parse either subtree again. On the true path
+the separate parse of an empty object introduces another root, but the
+size operation still names the items array in the first document.
+Hence the first print is two. On the false path there is no second
+parse, and the return measures the root object's members, not all
+descendants. The next print is one. In the final loop each iteration
+parses an array of three and prints three before its own root leaves
+scope.
+
+There are two roots to destroy on the early path, not four. Destroying
+one of the views as if it owned its subtree would invalidate part of
+the first document while the root still owns it. Conversely, keeping
+the empty object alive would not prolong the life of the items view:
+it has the wrong root. As a separate experiment, change the second
+lookup key to one that is absent. The runtime reports a missing member
+and terminates; it does not manufacture an empty array whose size is
+zero. A test of the normal cleanup path should therefore use an actual
+empty array if zero is the expected answer.
+
 \section*{Repository sources}
 \OnxSource{on1x/examples/memory.on1x}\par
 \OnxSource{on1x/docs/memory-model.md}\par
 \OnxSource{on1x/runtime/on1x_json.c}\par
+\OnxSource{on1x/tests/test_json.py}\par

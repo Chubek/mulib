@@ -7,7 +7,39 @@ MuLIB's execution and container stack includes distinct bounded engines, native 
 \section{Cross a boundary deliberately}
 For a guest engine, test decoding an invalid artifact and exhausting a supported execution budget separately from a normal computation. For a typed composition plan, verify which component satisfied each capability and how a missing provider is reported. For a native worker, document startup, communication, deadline and cleanup outcomes. Do not reuse one positive test as evidence for another mechanism's isolation or type guarantees. Inspect the representation manual and concrete kernel contracts before exposing host resource authority to a guest.
 
+\section{Distinguish a time slice from a lifetime quota}
+The QVM core example supplies two instruction records: load immediate
+five into register zero, then halt using register zero. It requests 64
+bytes of guest RAM and a lifetime allowance of 100 steps. Running with
+a budget of one executes the load and returns AGAIN. The PC now points
+at halt and register zero still contains five. Running with one more
+step returns DONE and records exit code five. Another run after halt
+is already done. Nothing has to deserialize a new program or arrange
+a host thread between these calls.
+
+Keep the two instructions but set the lifetime step limit to one.
+The first single-step run can execute the load; a later run cannot buy
+the second instruction by offering a larger per-call budget. Lifetime
+exhaustion is a fault, not another yield. A reset clears the fault,
+registers, RAM and counters but preserves the configured program and
+limits, so rerunning does not magically make the two-step computation
+fit. In contrast, validation of a program with an out-of-range jump
+destination fails even if execution would halt before reaching that
+record. There is no first time slice for such a program.
+
+Compare this trace with checking a composition plan. Suppose component
+B requires a capability produced only by component A. With neither
+capability supplied externally, the step order B then A fails even
+if both entries are allowed and their combined cost is affordable.
+Checking A then B tests availability at each prefix; it does not run
+guest instructions or grant the chosen components a host callback.
+
+An externally supplied capability can change that prefix check even
+when the catalogue is unchanged. Record both the ordered component
+indices and the original problem when reporting a validated plan.
+
 \section*{Repository sources}
+\OnxSource{examples/modules/qvm-core.c}\par
 \OnxSource{manual/container-stack.md}\par
 \OnxSource{manual/mulib-container-core.md}\par
 \OnxSource{manual/mulib-qvm.md}\par

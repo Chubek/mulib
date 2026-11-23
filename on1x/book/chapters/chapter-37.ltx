@@ -8,6 +8,15 @@ The Category processor is activated as \OnxCodeTerm{Protocols}. It reads the bal
 \OnxInputCode[]{../../on1x/stdppx/examples/category/eq.on1x}
 Use \OnxCodeTerm{--emit-category-plan} in a native-PPX-enabled build to see the chosen members and evidence. In the equality example, the canonical and named witnesses deliberately disagree. Test both; changing one implementation should not affect the other. Missing members, duplicate keys, and unsupported protocol shapes reject. The processor does not establish implicit runtime witness search. Intrinsic cliches in \cref{ch:36} use a separate language mechanism for constrained calls.
 
+\section{Build a truth table for the selectors}
+Read the protocol line as a signature with a hole for the subject type. Substituting integer for that hole gives two integer parameters and one Boolean result. Both implementations in the listing meet that shape. The shape alone cannot tell whether the result will denote equality, inequality, or a constant. To see what the program chose, start at the call rather than searching the implementation bodies for something that looks like equality.
+
+For the first print the selector includes the protocol and concrete type in its name. Follow it to the canonical member, substitute 42 for both parameters, and evaluate the equality comparison: true. For the second, start at the alternate witness name. It leads to the inequality comparison with the very same arguments: false. Now replace the second argument at both calls with 41. The expected column of results becomes false, true. Together the two rows distinguish the intended forwarding from either selector being wired to a constant or both being wired to the same function.
+
+Suppose a reviewer asks whether the processor has proved that all values compare equal to themselves. The alternate witness provides a counterexample to that interpretation of the signature. The forwarding and type checks establish a callable with the right argument and result types, not an algebraic law about those results. A client requiring reflexivity has to specify which witness its tests exercise.
+
+Even argument order matters to the host's forwarding check. Swapping two integer arguments could leave an equality test unchanged while violating the declared forwarding; the truth table is behavioral evidence, not a substitute for that check.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/category.md}\par
 \OnxSource{on1x/stdppx/examples/category/eq.on1x}\par

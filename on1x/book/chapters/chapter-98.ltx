@@ -8,6 +8,37 @@ Raw bridges expose exact, narrow C signatures to source wrapper modules. The bui
 \section{Test a snapshot lifecycle}
 Choose a text or byte operation. Test an ordinary success, zero-length data, and failure. Verify the documented lifetime by issuing a later operation and checking what happens to the earlier result. Exercise allocation failure where the bridge supplies fault injection, and check that temporary resources are released. Look for NUL-free restrictions on text even where the paired byte API allows zeros. A bridge's trust comes from its concrete implementation and evidence; its source wrapper signature alone does not supply reviewed foreign admission.
 
+\section{Count live copies in the INI bridge}
+The allocation fixture replaces the bridge allocator, keeps the INI
+kernel separately compiled, and counts outstanding bridge allocations.
+Read its first loop as two different experiments. With zero allocations
+permitted, looking up the key in a valid assignment returns empty text
+and a memory status. With one allocation permitted, the lookup can
+start constructing its answer but must still return empty text and the
+same memory status. The count of live copies is zero at the end of
+each attempt. Checking only the string would miss both a leak after
+partial construction and a mistaken report of success.
+
+Next allow allocation and ask for a key whose assigned value is empty.
+The returned bytes look identical, but the status is now success and
+one allocation is retained. Follow it with a document containing a good
+assignment followed by an invalid line. Finding the desired key early
+does not make the whole document valid: the expected status is parse
+failure and the retained count does not increase. Sample the bridge's
+status immediately alongside its payload; the next operation supplies a
+new status.
+
+Finally the fixture uses a deliberately small pool. Successful lookups
+consume space until another snapshot will not fit. Repeating a lookup
+at that point must report the limit again without incrementing the live
+count. The exit check expects cleanup to return the count to zero.
+These observations distinguish per-call temporary copies from retained
+snapshots without exposing either allocation address to source code.
+
+For two successful reads, saving the first text is legitimate for
+this bridge, but saving only a reference to the current status is not
+a record of the first read. Save the status value with its text.
+
 \section*{Repository sources}
 \OnxSource{on1x/stdlib/_bridge/README.md}\par
 \OnxSource{on1x/stdlib/_bridge/mulib_bridge.c}\par

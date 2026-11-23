@@ -7,6 +7,29 @@ Two named records can share field names and field types yet retain different ide
 \OnxInputCode[firstline=1,lastline=19]{../../on1x/examples/nominal_adts.on1x}
 A declaration graph must support a finite layout. By-value declaration cycles are rejected. Copy-safe nominal layouts can use the direct C11 representation. Immutable shared data and recursive unique owning layouts extend it under their own restrictions in \cref{ch:25} and \cref{ch:26}. When debugging a mismatch, compare the resolved module and type arguments as well as the human-readable fields. Two aliases of the same module refer back to its declaration identity. Two independently declared but similarly spelled enums do not become interchangeable by having the same constructors.
 
+\section{Infer an argument when there is no payload}
+The fixture makes a point whose field initializers appear in the order
+y then x. The magnitude function in this example \emph{adds} the integer
+fields: two plus forty is 42. Constructing Some with that result gives
+the compiler evidence for the missing argument of Option: it must be an
+integer. The fallback supplied to the chooser must have that type as
+well, since either the payload or the fallback can be returned. Here
+Some wins, so the number printed is 42.
+
+In the next call the None constructor carries only the empty record.
+There is no Boolean stored in it for the checker to find. Instead
+the fallback is true. Since the chooser returns that fallback for None
+and the payload for Some, the fallback constrains the missing type
+argument to Boolean. That call prints true. Leaving a hole in a type
+argument thus asks for constraints from the entire use, not just from
+the fields present in the active constructor.
+
+Finally the error example uses two type arguments. The error arm
+extracts an unsigned byte, converts seven to a signed integer, and
+subtracts it from zero. It prints minus seven. The conversion is
+necessary for the arithmetic; matching an enum identifies its payload
+but does not implicitly widen it to the function's return type.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/nominal-adts.md}\par
 \OnxSource{on1x/examples/nominal_adts.on1x}\par

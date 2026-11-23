@@ -8,6 +8,37 @@ KernelBind has plain \OnxCodeTerm{import kernel} for static linkage and \OnxCode
 \section{Inspect before requesting a call}
 Resolve the intended alias and inspect declarations for the actual target. Check linkage type and supported argument/result shapes. Report admission, build or load failures separately. For a dynamic provider, confirm the selected library and exact symbol instead of assuming a manifest name implies an exported function. For an inline declaration, see the explicit C wrapper path in \cref{ch:94}. Link an approved example with the build helper so compiler call admission and native provider selection are being exercised together.
 
+\section{Predict the request list from two files}
+The import regression gives a useful paper exercise. The entry imports
+an ordinary child module; that child requests the historical-price
+kernel under the alias History. In the entry itself there is an unsafe
+JSON kernel request with no alias, followed by two historical-price
+requests with distinct aliases. Predict the number of records before
+looking at the regression. There are four: the child's request comes
+first, then the three entry requests in source order. The default alias
+of the JSON request is \OnxCodeTerm{json}. Neither the ordinary child
+import nor the body of a function call adds a record.
+
+Why keep both entry aliases for the same provider? Each occurrence has
+its own location and can be referenced under its local name. The
+inspector reports source identities and byte offsets; deduplicating by
+provider at this stage would discard information needed for a located
+diagnostic. Deduplicating implementation switches later in a build
+plan solves a different problem. By contrast, reusing the same alias
+twice in one module is a conflicting binding and the request test
+expects an error rather than two usable names.
+
+Try the spelling \OnxCodeTerm{import kernel as Kernel;} with an ordinary
+source module named kernel. The request list is empty; the ordinary
+module can still be called. Then replace a native import's linkage tag
+with \OnxCodeTerm{[dynamic]}. The parser expects \OnxCodeTerm{dynlib}
+and rejects that request before any shared library could be involved.
+
+The regression also installs a processor that would leave a marker if
+run. Inspecting the source request produces its record without the
+marker: this tests absence of processor execution, not merely a
+coincidentally unchanged request list.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/kernel-bind.md}\par
 \OnxSource{on1x/docs/kernel-registration.md}\par

@@ -7,6 +7,34 @@ SDK views are governed by documented schema, phase, lifetime and capability reco
 \section{Design a failure-atomic tool}
 Read the input phase and exact schema before walking blocks or types. Preserve the existing artifact while producing a complete candidate in the staging sink. Test a successful transformation and an error after a partial write to verify the publication rules. For transforms over MIR, verify the candidate and preserve effects, traps and control flow where required. Record unsupported phases as explicit results and surface provider ambiguity separately. The same rule applies when comparing an ABI-1 hook with an ABI-2 record. Each contract describes the data it admits.
 
+\section{Draw the cache and publication timeline}
+Fix the owner, representation, target and options. At revision seven
+let a manager observe a verified scalar function and answer a CFG
+query. The result is a borrowed view: copy the facts needed for a
+long-lived report before the next mutation. Now submit different
+bytes with the same key and revision. Revision conflict is the expected
+answer; the new bytes cannot silently redefine what the earlier report
+meant. A valid revision eight can replace the observation, invalidating
+its matching cached results. A query asking for the old revision is
+now stale. Changing the target would change the key rather than
+advancing revision seven for the original target.
+
+Next run a bounded built-in pass pipeline on revision eight. Think of
+the observed bytes, private working copy and returned candidate as three
+separate objects. Suppose constant folding succeeds on the working copy
+but verification exhausts its budget. The client gets no candidate,
+and repeating the analysis of the observed revision still refers to
+its original program. Conversely, successful verification can return
+candidate bytes without publishing revision nine. Only the host can
+perform the remaining checks and commit that revision.
+
+A useful final exercise is to compare one scalar invocation before and
+after the pass. Equal outputs earn the translation test's evidenced-equal
+result for that invocation. Choose an input on a different branch:
+the first result tells you nothing about the newly taken edge. Record
+the argument and observation with the report rather than labeling the
+candidate a proved equivalent program.
+
 \section*{Repository sources}
 \OnxSource{on1x/sdk/docs/analysis-transformation.md}\par
 \OnxSource{on1x/sdk/ARCHITECTURE.md}\par

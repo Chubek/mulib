@@ -19,6 +19,27 @@ fn main()
 
 Parser nesting budgets concern how much input structure the compiler accepts. Runtime recursion uses the execution environment's call stack and is a different limit. To bound stack usage, rewrite this accumulator as a range loop and separately account for integer overflow. For inferred functions, add a result annotation at the first ambiguous call boundary before attributing a failure to recursive control. \cref{ch:14} covers type holes and elaboration.
 
+\section{Keep track of unfinished additions}
+Trace the call with input 3 using two columns on paper: the current
+argument and the work waiting for a result. At 3 the waiting operation
+is addition of 3; at 2 it is addition of 2 with the earlier addition
+still pending. At 1 there are three additions pending. The call with
+zero returns immediately, so the results traveling back up the chain
+are 0, 1, 3 and finally 6. The recursive call occurs inside an addition;
+it would be incorrect to jump straight to the next invocation and forget
+all the waiting work.
+
+To replace those waiting operations with data, maintain a running total
+and the next positive integer to include. Before each iteration, their
+meaning should be that the total plus the sum of the remaining integers
+equals the original answer. Adding the next integer to the total and
+decreasing it by one preserves this statement. When no positive integer
+remains, return the total. Check input zero and a negative input as well
+as 3: the original helper returns zero immediately for both nonpositive
+cases. This check catches a rewrite that executes its loop body once
+before testing the condition. The argument for equal sums applies only
+while the arithmetic stays representable in the chosen integer type.
+
 \section*{Repository sources}
 \OnxSource{on1x/examples/hello.on1x}\par
 \OnxSource{on1x/docs/language.md}\par

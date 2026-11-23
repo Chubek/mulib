@@ -6,6 +6,31 @@ Editor packages provide On1x source and interface highlighting for the documente
 
 The knowledge addon under \OnxCodeTerm{on1x/addons/mcp} serves read-only repository evidence. It has a bounded evidence model including source references and distinctions among discovery, contracts, implementation and admission. A server response can help a reader find a supporting manual, but it does not compile code, perform a dependency build, or grant foreign admission. Deployment, service authorization, and the contents of the startup snapshot are separate choices. Test editor behavior and addon package behavior using their own fixtures.
 
+\section{Follow two versions of one buffer}
+Save a syntactically complete function with a wrong return type. The editor
+may show no diagnostic even when the build rejects the function. On save the
+server invokes dependency inspection with JSON diagnostics; the compiler
+scans, parses and resolves modules, without doing ordinary type checking.
+Now remove a required delimiter and save again. With JSON reporting enabled,
+a parser error in the saved entry can be published at the reported byte
+offset, converted to the client's position encoding. A dependency error is
+logged rather than attached to an arbitrary position in the entry.
+
+Restore the delimiter in memory without saving and request formatting.
+Formatting parses a private copy of this new text and returns an edit; it
+does not format the stale on-disk version. Conversely, save diagnostics
+for the older revision should not remain actionable after this edit. This
+explains why a formatting preview can succeed after a failed save, before
+the disk file has been repaired. Neither outcome establishes the return
+type; the ordinary compiler check is the appropriate next observation.
+
+For a repository question, imagine looking up a kernel header and then
+editing its documentation. The knowledge service answers from the allowed
+bytes loaded at startup. A subsequent query to that running service does
+not reread the edit. Refreshing a reviewed snapshot can change the answer
+without any change to the editor buffer or the compiler executable. Record
+the source reference returned with the answer when distinguishing these cases.
+
 \section*{Repository sources}
 \OnxSource{on1x/addons/README.md}\par
 \OnxDirectory{on1x/addons/lsp}\par

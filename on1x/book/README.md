@@ -6,6 +6,13 @@ foreign contracts, MuLIB kernels, and the compiler and runtime SDKs.
 `on1x-book.ltx` orders the individual files in `chapters/`. Each chapter
 links to the source, tests, or manuals that support its implementation claims.
 
+For a hands-on path through ownership, start with the
+[list example](examples/consume-list.on1x) in chapter 26, then read chapters
+29–30 on `defer` and `Result`. [Appendix A](chapters/appendix-ownership.ltx)
+uses a live-box counter to trace a returned owner, an early error, and an
+owned error. It includes a one-line experiment and a compiler rejection
+you can reproduce with the direct C11 compiler from chapter 3.
+
 ## Build the book
 
 From the MuLIB repository root, run:
@@ -24,7 +31,7 @@ contents, chapter cross-references, and a subject index.
 
 ```sh
 cd examples
-export TEXINPUTS="../tex:${TEXINPUTS:-}"
+export TEXINPUTS="..:../tex:${TEXINPUTS:-}"
 latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 ```
 

@@ -2,12 +2,34 @@
 \label{ch:24}
 \index{Enum connectives and case selection}
 
-The intrinsic \OnxCodeTerm{value \textasciitilde{} \{ ... \}} syntax provides concise constructor selection for its supported enum profile. The checker resolves the constructors against the operand's enum and admits only the case forms described in the connective manual. Use a structural \OnxCodeTerm{match} when you need the broader pattern or guard syntax. Neither spelling authorizes projecting a payload from an inactive case.
+The intrinsic \OnxCodeTerm{value \textasciitilde{} \{ ... \}} syntax provides concise constructor selection for a known closed sum. The checker resolves the constructors against that operand type. The arms support structural patterns and Boolean guards; use a structural \OnxCodeTerm{match} when the subject is, for example, a scalar rather than a sum. Neither spelling authorizes projecting a payload from an inactive case.
 
 \section{Compare a case table with a match}
 Start with a fixture from the connective test and rewrite the decision as an equivalent set of constructor match arms. Invoke both with every constructor. Include a payload-carrying branch so the test catches an invalid projection or incorrect binding. An operator followed by braces can look like an ordinary binary call in an AST dump, so trace the dedicated parser and canonical-value rules when adding syntax tests. \cref{ch:19} describes structural matching and \cref{ch:78} explains tag domination in the verifier.
 
+\section{Use the guard as an observation point}
+In the executable test fixture the subject function prints its integer
+before constructing a result. The first Ok arm calls a guard which
+prints that integer plus 100 and accepts positive values. A second Ok
+arm ignores the payload and yields 42. The Err arm subtracts two from
+its payload. Predict the lines produced by printing the classifier's
+answer, including those printed while it computes that answer.
+
+With a successful subject carrying 3 the lines are 3, 103, 3: subject,
+guard, selected value. With a successful subject carrying minus three
+they are minus three, 97, 42. Despite the failed guard the subject is
+not evaluated a second time. With an error carrying 9 they are just
+9 and 7: the guard belongs to an Ok pattern and must not run for Err.
+The absence of 109 is as useful as the final value for testing this
+ordering. Moving the unconditional Ok arm ahead of the guarded one
+would make the latter redundant, which is diagnosed rather than treated
+as a priority hint. Removing the unconditional arm altogether leaves
+successful subjects with nonpositive payloads uncovered. These errors
+are about the arms of a known sum; supplying constructor spellings does
+not by itself infer a sum for an otherwise unconstrained subject.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/core-enum-connective.md}\par
 \OnxSource{on1x/tests/test_enum_connective.py}\par
+\OnxSource{on1x/tests/fixtures/test_enum_connective.on1x}\par
 \OnxSource{on1x/src/canonical/values.cpp}\par

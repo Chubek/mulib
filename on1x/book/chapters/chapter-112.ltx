@@ -8,7 +8,37 @@ Explicit SDK analyzer or emitter modes can discover external providers through \
 \section{Select authority along with the hook}
 Check that the requested input schema and artifact kind match the provider. Exercise one valid selection and one ambiguous or mismatched selection. For a dynamic test, verify failure when the worker cannot establish isolation. For a trusted provider, treat the selected source and its dependencies as part of the host build. Give tests an observer outside the provider so a success message from the plugin is never the sole evidence of artifact publication.
 
+\section{Follow a linked analyzer's diagnostic}
+The linked analyzer fixture expects a function called main returning
+nineteen times three. On the documented fixture build, select
+\OnxCodeTerm{linked-v2:inspect} in SDK analysis mode. Its callback checks
+the snapshot has a nonzero revision and verified MIR identity, then
+walks instructions looking for exactly one multiply and a constant
+nineteen. This is an observation about the supplied representation:
+printing 57 from an independently compiled application would not
+establish what instructions the analyzer saw.
+
+The callback submits a note from a local character array and immediately
+overwrites that array. A correct published note still describes the
+multiply. If it contained the replacement characters, the sink would
+have retained a pointer to temporary plugin storage instead of copying
+the message. In another fixture mode the plugin submits a valid note
+followed by invalid UTF-8 and ignores the second submission's failure.
+The host discards the staged notes. Contrast an accepted diagnostic of
+error severity: it can be published and cause exit status one. A bad
+record and a well-formed report of a problem thus require different
+observations, even if both commands fail.
+
+Do not put the linked fixture on the dynamic plugin search path to
+repeat this experiment. The linked selector uses its configured
+provider and cannot be combined with the dynamic selection flag.
+The native worker's read-only, digest-checked snapshot mapping belongs
+to a different transport. Its documented System V profile does not
+provide kernel sealing; a successful digest check is not evidence of
+that extra mechanism.
+
 \section*{Repository sources}
+\OnxSource{on1x/sdk/tests/linked_extension_v2.c}\par
 \OnxSource{on1x/sdk/README.md}\par
 \OnxSource{on1x/sdk/SECURITY.md}\par
 \OnxSource{on1x/sdk/docs/core-plugins-abi2.md}\par

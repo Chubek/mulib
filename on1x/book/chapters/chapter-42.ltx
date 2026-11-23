@@ -9,6 +9,15 @@ Channels support rendezvous or bounded FIFO transfer for the fixed-size, pointer
 \section{Test a two-sender lifecycle}
 Send distinguishable nominal records. Close one sender while the other can still send and confirm the receiver has not reached EOF. After draining the final buffered message and closing the last sender, assert the EOF result. With capacity zero, a send needs a matching receive. With a bounded buffer, test full and empty separately from closure. A channel can carry an admitted record with scalar fields while still rejecting managed fields or foreign resources. Poll can combine actions without exposing a separate probe-and-commit race, as discussed in \cref{ch:43}.
 
+\section{Follow one queue through four endpoints}
+The typed channel example splits its pipe into two senders followed by two receivers. Draw one FIFO with two slots rather than drawing a mailbox for each receiver. Before anything is sent, a nonblocking receive finds no packet. It reports \OnxCodeTerm{Empty}, not \OnxCodeTerm{Closed}: two endpoints could still supply a value. The first sender enqueues a packet with sequence number 7 and its flag set. The second sends number 9 with its flag clear. At this point the queue is full, although neither receiver has yet taken an action.
+
+Close the first sender. Nothing about that close retracts its earlier packet. When the first receiver takes a packet it gets 7; the second receiver then gets 9, not another copy of 7. Taking through different endpoints consumes successive items from the same queue. If the order of receiver calls were reversed, it would be the second receiver that got 7. This is load sharing, not broadcast.
+
+After both receives the queue drawing looks just as empty as at creation, but only one sender remains open. A probe still returns \OnxCodeTerm{Empty}. Closing the last sender changes the next probe to \OnxCodeTerm{Closed}. The example also checks the Boolean returned by repeating the close: the first call changed the endpoint state and the second did not. Count open senders and pending packets separately when deciding whether a receiver can still obtain another value.
+
+Try the opposite order of events: close both senders immediately after filling the queue. The next two receives still deliver the stored packets. Only the third sees closure. That counterexample rules out implementing receive by testing the sender count before checking for buffered data.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/concurrency.md}\par
 \OnxSource{on1x/examples/cooperative_typed_channels.on1x}\par

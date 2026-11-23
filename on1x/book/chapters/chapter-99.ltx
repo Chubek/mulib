@@ -5,7 +5,37 @@
 The framed IPC profiles bridge bounded native message exchange to selected On1x use cases. The one-shot pair hides much of the lifecycle inside a checked adapter. Reusable sessions have an explicit scoped lifecycle and separate send/receive outcomes. Understand message-size limits and the lifetime of the session before choosing which example to follow. The underlying raw kernel has a larger C surface than the admitted wrapper.
 
 \section{Test state across messages}
-Run a one-shot fixture and compare the reply with its exact request. In a session fixture, send two different messages and ensure each result comes from its matching request. Add the documented negative cases for scope, stale state, or size. Keep transport failure, EOF or closure, and an empty valid payload distinct. Check the build/link selection and any explicit unsafe declaration. The frame decoder and kernel profile are different from language-level channels and from the SDK plugin transport, even if both use framed messages internally.
+Run the one-shot fixture and compare the byte observed by the callback with the byte sent. Then check the returned callback value. In a session fixture, send two different messages and ensure each result comes from its matching request. Add the documented negative cases for scope, stale state, or deadlines. Keep transport failure, EOF or closure, and a valid zero byte distinct. Check the build/link selection and any explicit unsafe declaration. The frame decoder and kernel profile are different from language-level channels and from the SDK plugin transport, even if both use framed messages internally.
+
+\section{Account for each poll in the session fixture}
+The helper registers a closure adding 42 and moves the owning session
+back to its caller. The helper's local offset goes out of scope, but the
+registered closure is retained by the owner. Poll before the first send:
+the result is \OnxCodeTerm{Err(1)}, meaning no frame is ready on the open
+session. Send byte zero and try a second send without polling. That
+second send also returns \OnxCodeTerm{Err(1)}, this time because the
+pending slot is occupied. Polling yields 42, not the result for the
+rejected byte. Sending 255 and polling yields 297; neither the NUL byte
+nor the high bit was interpreted as a text terminator or sign.
+
+Now send 99, revoke the callback, and register a different closure
+which negates its argument. Predict the pending poll: it reports
+canceled delivery, \OnxCodeTerm{Err(-4)}. It must not pass the old
+frame to the newly registered consumer. The next send of one belongs
+to the new registration. Finish the writer before polling it. A further
+send is disallowed but the pending poll succeeds with
+\OnxCodeTerm{Ok(-1)}. Testing the sign of the number in place of matching
+the result arm would incorrectly classify that success as a failure.
+
+One more poll observes EOF; the next observes an already closed session.
+Keep both observations in a trace: merely stopping at the first negative
+integer would lose the distinction between delivery, drain, and terminal
+state.
+
+In the one-shot example the deliberately invalid timeout is zero. The
+operation consumes the pair and returns an error without entering
+the callback. Consequently there is no callback print of 255 for that
+attempt, even though 255 itself is a valid payload.
 
 \section*{Repository sources}
 \OnxSource{on1x/docs/kernel-framed.md}\par

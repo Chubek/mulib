@@ -8,7 +8,40 @@ A C declaration describes ABI structure. The ExoML semantic sidecar can addition
 \section{Trace a two-outcome ownership contract}
 Consider a native call whose argument is retained on success but remains with the caller on failure. A type-correct C declaration alone does not specify which branch owns the argument. Record the two outcomes explicitly and test the exact provider behavior in both states. This documentation is necessary for designing adapters, and general conditional foreign ownership still requires appropriate compiler support. \OnxCodeTerm{on1x-bind} can inspect and validate supported contracts and emit bounded adapters where eligible. Read the review requirements before asking for a safe declaration.
 
+\section{Follow the three lifetimes in a JSON array}
+The C contract example creates an array root and a numeric child
+containing 42. Before insertion there are two independent obligations to
+destroy objects. If either allocation fails, the example takes its
+cleanup branch; if append fails, it takes the same branch because
+ownership has not been transferred. Count the obligations again after
+a successful append: there is now one root to destroy. Clearing the
+local child pointer documents the transfer but does not itself destroy
+anything. A binding that unconditionally released the child after the
+call would be wrong precisely on this successful branch.
+
+Next, indexing the root at zero returns a borrowed child. Reading its
+number while the root is alive gives 42. Stringifying the root creates
+another object with different rules: the serialized text has an
+independent allocation. After destroying the root, printing that
+successful serialization and freeing it is legitimate. Reading the
+indexed child is no longer legitimate. Both values came from queries
+on the same root; treating every query result as ``valid until root
+destruction'' would misclassify the text as well.
+
+As an annotation exercise, underline the facts a declaration extractor
+can recover: parameter and result types and their target layout. Circle
+the facts that require behavioral evidence: which result code commits
+the insertion, which query aliases the tree, and which deallocator
+releases the serialization. A complete declaration inventory can agree
+with every underlined fact while leaving every circled question open.
+
+One quick review question is whether destroying the root on the error
+branch also destroys the proposed child. Only successful insertion
+connects the two objects, so on this branch two cleanups are necessary
+when both allocations succeeded.
+
 \section*{Repository sources}
+\OnxSource{on1x/examples/contracts/contract_usage.c}\par
 \OnxSource{on1x/docs/contracts.md}\par
 \OnxSource{on1x/contracts-exoml/README.md}\par
 \OnxSource{on1x/contracts-exoml/obligations.json}\par

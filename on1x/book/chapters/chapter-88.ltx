@@ -7,8 +7,36 @@ Ordinary On1x checking controls source types and the resource uses admitted by t
 \section{Name the guarantee you need}
 For a JSON view, source and canonical checks address lexical lifetime. For a C pointer returned by a provider, ownership and invalidation need an explicit foreign contract and a compiler representation that enforces it. For a native extension, the loading arrangement determines authority. Check which layer rejects an invalid use before expecting another profile to enforce the same invariant. \cref{ch:95} covers semantic contract transport and \cref{ch:112} covers isolated versus trusted SDK invocation.
 
+\section{Follow a conditional transfer in the C provider}
+In the repository's C contract example, allocate an array root and a
+separate JSON number containing 42. Initially there are two independent
+owners. Ask the provider to append the child. If the append fails,
+ownership has not transferred: the caller still destroys the child and
+the root. If it succeeds, the root now owns that child. The example
+clears the caller's child pointer so that its cleanup cannot destroy
+the transferred object a second time. The C pointer's static type did
+not change when the call succeeded. Any wrapper modeling the transfer
+must therefore know the meaning of the return value.
+
+On the successful path take the first element with
+\OnxCodeTerm{mulib\_json\_at}. This is a view into the root, so reading
+its number is valid while the root still supplies the object. Serialize
+the root and then destroy it. Which of the two returned pointers may
+still be used? The child view has expired. A successful serialization
+produced an independent string, which the caller can print and free.
+Their common history as return values from the same library tells us
+nothing about their distinct lifetimes.
+
+This exercise explains why a declaration inventory alone cannot supply
+a safe On1x adapter. It must distinguish fresh ownership, a conditional
+transfer, and a borrowed result tied to a particular owner. The native
+example tests those provider semantics. The checked client facade has
+its own smaller set of operations and lifetime rules; compiling this C
+example does not add mutation or general pointer values to that facade.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/type-safety.md}\par
 \OnxSource{on1x/docs/memory-model.md}\par
 \OnxSource{on1x/docs/contracts.md}\par
 \OnxSource{on1x/src/safety.cpp}\par
+\OnxSource{on1x/examples/contracts/contract_usage.c}\par

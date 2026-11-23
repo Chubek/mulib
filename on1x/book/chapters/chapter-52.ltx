@@ -7,7 +7,17 @@ The source wrappers add conventions on top of the core types. \OnxCodeTerm{Int} 
 \section{Compose a small data transformation}
 Take a string, test a prefix, and return an optional byte position. Use \OnxCodeTerm{Functional.compose(f,g)} only when the intermediate result matches the parameter type of \OnxCodeTerm{f}; the call applies \OnxCodeTerm{g} first. For a list fold, use an order-sensitive test such as building a string of visited items. Test an empty list and an incorrectly shaped S-expression in addition to the ordinary path. Byte-level search, list traversal and persistent S-expression allocation have different cost models.
 
+\section{Pair each quotient with its own remainder}
+Take seven units of debt and divide them into groups of three. For arguments minus seven and three, truncation toward zero produces a quotient of minus two. Multiplying it back by three gives minus six, so the remainder needed to recover the dividend is minus one. These are the answers from \OnxCodeTerm{quot} and \OnxCodeTerm{rem}. Floor division chooses the next smaller integer, minus three. Its product is minus nine; the residual is therefore positive two. These are the components returned by \OnxCodeTerm{divmod}. A caller pairing the floor quotient with the truncating remainder would reconstruct minus ten rather than the input.
+
+Now reverse both signs. Seven divided by minus three still has floor quotient minus three, but multiplying back gives positive nine. This time the modulus is minus two: for a nonzero modulus the divisor determines its sign. With an exact multiple there is no adjustment. The source computes a truncating quotient first and adjusts it only for opposite signs and a nonzero remainder. It also treats a divisor of minus one specially in the remainder helper; obtaining a zero remainder need not require forming an unrepresentable positive quotient for the minimum integer.
+
+As an application, grouping positions into consecutive bins of width three should put minus one in bin minus one and zero in bin zero. Use floor division and keep the modulus as a nonnegative within-bin offset. Checking just the positive positions would not reveal a mistaken choice of division family.
+
+The within-bin offset for position minus one is two. Moving one position to the right resets that offset to zero and advances the bin, as it does at every other boundary.
+
 \section*{Repository sources}
+\OnxSource{on1x/stdlib/numeric/Int.on1x}\par
 \OnxSource{on1x/stdlib/Int.on1x}\par
 \OnxSource{on1x/stdlib/String.on1x}\par
 \OnxSource{on1x/stdlib/List.on1x}\par

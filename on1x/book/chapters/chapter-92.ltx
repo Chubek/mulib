@@ -9,7 +9,40 @@ Most MuLIB kernels expose interfaces in headers. ABI modules use a \OnxCodeTerm{
 \section{Build a two-file C client}
 Choose a documented ABI kernel and use its manual's exact switch and dependencies. Place the switch and include in one file. In the second, include the header without the switch and call a documented operation. Compile both as strict C11 and link them. Remove the implementation file to observe the missing definition, and compare with a static-inline kernel documented as usable directly from its header. Keep platform macros and integration profiles local to the documented implementation rather than exporting them as global compiler flags.
 
+\section{Read a link failure as a placement error}
+For a concrete experiment, make the entire contents of the provider file
+the following two lines. The switch has to be visible when the header
+is processed; putting it in a different source file cannot affect this
+translation unit.
+\begin{OnxCodeBlock}[numbers=none,language=C]
+#define MULIB_IMPL_VEC
+#include "mulib-vec.h"
+\end{OnxCodeBlock}
+Use the vector manual's example as the second file, removing only its
+implementation switch. The client knows how large the vector record is
+and can allocate one on the stack. Its calls to initialize, push, look
+up and free the vector still require definitions at link time. With
+the files named as below, try the two compile steps before the link:
+\begin{OnxCodeBlock}[numbers=none,language={}]
+cc -std=c11 -Iinclude -c provider.c -o provider.o
+cc -std=c11 -Iinclude -c client.c -o client.o
+cc client.o provider.o -o vec-client
+\end{OnxCodeBlock}
+Running the resulting client should reach the assertion on the stored
+integer and finish successfully. Now link just the client object. A
+missing definition here does not mean the compiler missed the include
+directory: a missing header would have failed the earlier compile step.
+Conversely, leaving the switch in the example while also linking the
+provider makes both objects supply the vector functions. Fix their
+placement rather than suppressing the linker's multiple-definition error.
+
+Contrast the QVM core example: its translation unit includes the header
+and directly calls inline helpers. No vector-like provider object is
+missing from that build. Copying an internal helper's prototype into a
+different client cannot make a global definition appear in an archive.
+
 \section*{Repository sources}
+\OnxSource{examples/modules/qvm-core.c}\par
 \OnxSource{manual/authoring.md}\par
 \OnxSource{manual/mulib-vec.md}\par
 \OnxSource{manual/mulib-bitset.md}\par

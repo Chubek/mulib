@@ -8,6 +8,34 @@ Canonicalization lowers high-level control and match constructs to typed regions
 \section{Verify a rejected candidate}
 For a sum projection, build an invalid test representation in which the projection is moved outside the tag-guarded branch. The corresponding source pattern can still look well formed, so test the bad data directly at verifier ingress. For ownership, attempt to use a consumed binding along only one predecessor and then read it after the join. These cases check path-sensitive obligations after source syntax is erased. Public PPX output cannot publish these private region or proof constructs on the compiler's behalf.
 
+\section{Why a join needs two initialization sets}
+Imagine a canonical region declaring a result slot before an if. The
+true arm initializes the slot with seven; the false arm reaches the join
+without writing it. At the join ask two questions. Has the slot
+\emph{definitely} been initialized? No: the false edge witnesses the
+contrary. Has it \emph{possibly} been initialized? Yes: the true edge
+witnesses that. The value verifier intersects definite-initialization sets
+but unions possible-initialization sets when combining path states.
+
+Try two tempting repairs after the join. Reading the slot fails because
+definite initialization is missing. Adding an unconditional initialization
+there also fails: on the true path it would initialize the same storage
+twice. Initializing it only in the false arm makes both paths arrive with
+one value and permits the read. Alternatively, if the false arm returns
+from the function, it no longer supplies an uninitialized path to the
+join. Count arriving edges, not just branches in the original text.
+
+The distinction matters on cycles as well. Enclosing storage first
+initialized on a repeatable loop backedge could be initialized again on
+the next iteration. A single traversal of a drawn loop that happens to
+exit after one trip would miss this violation. Use one verifier fixture
+with mutually exclusive initializing arms and another with the write on
+the backedge. They contain the same typed write operation, yet one makes
+a value available and the other fails the storage discipline. A type
+annotation on the slot does not change either conclusion. Slot identity
+matters too: a write to a nested declaration of the same name is no
+initialization of the enclosing result.
+
 \section*{Repository sources}
 \OnxSource{on1x/src/canonical/control.cpp}\par
 \OnxSource{on1x/src/canonical/values.cpp}\par

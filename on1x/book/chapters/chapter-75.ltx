@@ -8,8 +8,42 @@ On1xMETA describes checked transformations and semantic constraints. The build v
 \section{Select and inspect a rule}
 Use \OnxCodeTerm{--dump-processor} for the checked input and enabled rules. A neutral arithmetic form can simplify while preserving the traps and effects of its operand. Partial evaluation is a bounded optimization of admitted computation, with residual runtime code when the conditions are insufficient. To test a rule, use matching and nonmatching shapes and a boundary expression whose observable trap or side effect must survive. Report which rule fired, where it came from, and which effective optimization profile permitted it. Source-level PPX operates earlier over another schema.
 
+\section{Specialize a call without duplicating its argument}
+Use a scalar function that calculates a factor from a known parameter:
+\begin{OnxCodeBlock}[numbers=none]
+fn scale(k:i64, x:i64) -> i64 {
+  let factor = k * 2 + 1;
+  return x * factor;
+}
+\end{OnxCodeBlock}
+At \OnxCodeTerm{scale(4,5)} the interpreter of checked expressions can
+compute nine for the local binding and then 45 for the result. At
+\OnxCodeTerm{scale(4,mark(x))}, where the call to \OnxCodeTerm{mark}
+prints its input before returning it, the factor is still nine. The
+residual computation evaluates the original call once and multiplies its
+result by nine with the normal overflow check. Thus the print precedes
+even an overflowing multiplication. The compiler needed neither a value
+for the dynamic input nor permission to execute the printing function.
+
+Change the return expression to add the dynamic parameter to itself
+before multiplying. Textually substituting the call for each occurrence
+would print twice, whereas an ordinary function call evaluates the actual
+argument once before entering the body. The mixed-call specializer therefore
+declines this shape. Ignoring the parameter would present the opposite
+problem: discarding the call would print nothing. Counting one occurrence
+is also insufficient if it lies only on a conditionally selected path.
+
+Inspect the processor report for static and residual calls separately.
+A failed trial is not a committed residual call. If a small budget or
+an ineligible body leaves the call intact, the result is executable
+checked code; a zero count alone is not a complaint about the program's
+types or a promise that the argument was pure. Check the residual operator's
+source point as well: an overflowing multiplication still belongs to the
+callee's body even when the call instruction disappears.
+
 \section*{Repository sources}
 \OnxSource{on1x/hir/processor/README.md}\par
 \OnxSource{on1x/hir/processor/REWRITES.md}\par
 \OnxSource{on1x/hir/processor/PARTIAL_EVALUATION.md}\par
 \OnxSource{on1x/docs/processor-semantics.md}\par
+\OnxSource{on1x/tests/test_partial_eval.py}\par

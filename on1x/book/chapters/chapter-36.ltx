@@ -7,6 +7,19 @@ A cliche states obligations that constrained generic code can use. Implementatio
 \section{Test resolution by changing one head}
 Use a fixture with a blanket and a concrete head, then make the concrete case return a distinguishable result. Test both the specific type and another type satisfying the blanket conditions. Repeat with declarations reordered to check deterministic selection. Add an overlap or a nondecreasing prerequisite as a negative test. Elaborated calls become ordinary concrete functions. There is no need to inspect a runtime dictionary to diagnose the selected implementation. Associated types and general ownership constraints remain outside this slice. \cref{ch:37} compares the separately activated Category mechanism.
 
+\section{Discharge an obligation from the outside in}
+Use the documented \OnxCodeTerm{Show} cliche with a scalar implementation for integers and a generic implementation for boxes. To render a box holding a box holding 42, write down the outstanding request before following any member body:
+\begin{OnxCodeBlock}[numbers=none]
+Show<Box<Box<i64>>>
+     Show<Box<i64>>
+          Show<i64>
+\end{OnxCodeBlock}
+The first head matches by assigning the variable of the box implementation the type of the inner box. Its prerequisite asks for a way to show exactly that inner type. Repeat the match once; now the prerequisite reaches the scalar head, which formats the integer. Read back up the page: each box member projects its value field and forwards it to the selected inner member. Thus the last scalar result is the text returned through both calls. There is no runtime loop stripping type constructors. The descending sizes are a property of the compile-time obligations.
+
+What happens if only the scalar implementation is removed? Both box heads still match, but the proof has no base. An unsatisfied obligation is different from two applicable generic heads with no coherent choice. Conversely, replacing the box prerequisite with a request for the very same box would remove the structural descent; adding more runtime test values would do nothing to fix that declaration.
+
+For a second reading, follow the associated value \OnxCodeTerm{fallback} rather than the function. In the documented implementation the integer base supplies zero and each box constructs a box around the fallback of its element type. The obligation tree is the same; the computed result now has the nested box shape.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/core-cliche.md}\par
 \OnxSource{on1x/src/cliche.cpp}\par

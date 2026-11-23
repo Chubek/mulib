@@ -9,6 +9,30 @@ A scanner consumes a pointer and an explicit source length. The C++ entry point 
 
 Some syntax distinctions depend on adjacency. For example, an adjacent qualified name such as \OnxCodeTerm{pkg.call} is distinct from spaced dotted syntax used in structural macros. When an import or a macro parses unexpectedly, print the tokens and check the actual characters and offsets. Changing precedence rules to repair a scanner issue risks creating inconsistent generated and fallback behavior.
 
+\section{Reconstruct a diagnostic from bytes}
+Imagine a line beginning with a double quote, a lowercase e with an acute
+accent encoded as a single Unicode scalar in UTF-8, the closing quote, a
+space, and a semicolon. Number the bytes starting at zero. The opening
+quote is at zero, the accented letter occupies bytes one and two, the
+closing quote is at three, and the space is at four. Thus the semicolon
+is at offset five and column six on the first line. Counting visible
+characters instead would put it at column five. A diagnostic renderer may
+need a mapping to display cells, but changing the scanner's offset to a
+display coordinate would make it point at the wrong source byte.
+
+The scanner parity test lets you check this arithmetic independently of a
+parser. Its probes report token bytes as hex, so a quote or newline inside
+the input need not be inferred from how a terminal displays the token.
+For each reported spelling, take that many bytes at its offset in the
+original input. They must be exactly the bytes the probe reports. Gaps are
+allowed: layout and comments need not appear as tokens. The final entry
+has a different rule: its position equals the input length, even when the
+last line consists solely of a comment with no terminating newline.
+
+Try inserting a literal zero byte inside that trailing comment. Skipping
+ordinary comment text cannot make this file valid: the source-length scan
+must reject it at the zero's position before returning any token sequence.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/language.md}\par
 \OnxSource{on1x/grammar/On1x.g}\par

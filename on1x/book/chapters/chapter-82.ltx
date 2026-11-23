@@ -7,6 +7,33 @@ The \OnxCodeTerm{mir-c11} adapter consumes verified MIR and emits C11 using its 
 \section{Compare execution through two paths}
 Choose a scalar fixture that both direct C11 and MIR support. Build one native binary from each and compare outputs and failure behavior for the same edge inputs. If behavior differs, evaluate MIR independently to determine whether the problem appears before or during MIR C emission. Compare semantics before comparing formatting or symbol names. A built-in adapter gets private host-controlled representations. Discoverable external plugins use the separately versioned SDK channels described in \cref{ch:112}.
 
+\section{Distinguish wire errors from program errors}
+Consider two requests for C text from the same scalar MIR function.
+Inside the compiler the trusted adapter can synchronously borrow a module
+that has already been checked. In an ordinary SDK invocation it instead
+receives canonical bytes, deserializes the module, and verifies what was
+decoded. Both call the same MIR C emitter. For a small valid input, compare
+the entire C translation units: identical output here tests the adapter's
+transport and dispatch, rather than equivalence between two independently
+implemented code generators. Neither request has yet compiled the C.
+
+Now give the byte route an incomplete serialization. A syntax error points
+into the MIR buffer because the decoder could not reconstruct a module.
+Contrast a syntactically complete serialization carrying a bad operand
+and a valid recorded source location. A verifier diagnostic about that
+operand can refer to the decoded program's filename and coordinates.
+Looking up both errors at the same line in the original On1x source would
+confuse the carrier with the program it describes.
+
+Finally imagine that verification and emission succeed but the output sink
+has insufficient room. The adapter must propagate the limit and return
+no successful artifact; the host decides publication. Conversely, a
+large in-memory module can fit the private route while exceeding the
+wire reader's independent byte limit. Such a discrepancy calls for
+measuring the encoded request before investigating the semantics of the
+emitted C. The registry's declaration of a MIR input phase does not make
+every transport equally capacious.
+
 \section*{Repository sources}
 \OnxSource{on1x/backends/README.md}\par
 \OnxSource{on1x/backends/mir-c11/README.md}\par

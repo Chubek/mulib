@@ -8,6 +8,15 @@ The loader constructs a bounded graph of canonical source paths and caches each 
 \section{Diagnose an unexpected binding}
 First establish the referring file's scope. Check explicit imports and local bindings, locate any re-export, and only then check the pervasive declaration. A local Option-like name may intentionally shadow the short pervasive name. The actual type identity still matters when using helpers or propagating a Result. For cycles, reproduce the shortest closed dependency path and show the file that introduced each edge. A duplicate textual path to the same canonical module differs from a true cycle or two unrelated modules exporting a same-spelled symbol.
 
+\section{Draw a diamond before counting definitions}
+Draw four boxes labelled entry, left, right and units. The entry imports the two middle files; each of those imports the same units file, one under the alias \OnxCodeTerm{U} and the other under \OnxCodeTerm{Measure}. Imagine that units declares a nominal record. A constructor in left and a parameter annotation in right can name that record through their respective aliases. Trace each spelling to its declaring file: both paths end at the same box. There are four files in the drawing, four import edges, and just one declaration of the record. Copy units to another directory and bind right's import to the copy instead. The text of the record need not change for its nominal identity to change.
+
+Read \OnxCodeTerm{--deps} as a list of files rather than a list of edges. Expect units before the files depending on it. Seeing it only once is consistent with both edges being present. Seeing a pervasive source file is likewise consistent with using none of its definitions: the loader can record a source dependency without retaining an unused helper for inference. To isolate the diamond, use a program independent of pervasive names and try the dependency listing with \OnxCodeTerm{--no-prelude}.
+
+Now add an import from units back to left. This time traversal reaches a file still active on the way down, rather than a file whose dependencies have been completed. Read the reported chain to find the back edge. Renaming the alias in left cannot remove that edge.
+
+For a cache experiment, edit a value in units between two compiler invocations. The second invocation reads the new source; a canonical path deduplicates loads within one invocation, not across that edit.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/modules.md}\par
 \OnxSource{on1x/src/loader.cpp}\par

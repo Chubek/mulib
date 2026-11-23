@@ -11,6 +11,36 @@ To check interpolation, compare an interpolated string with a literal expected v
 
 The integer scanner recognizes explicit binary and octal forms as well as decimal spellings. A leading zero alone still means decimal. Keep spelling tests separate from range tests. The former exercise tokenization and decoding, and the latter exercise concrete representation checks. The numerical conversions and operations are covered in \cref{ch:8}.
 
+\section{One letter, two byte representations}
+Consider the pound sterling sign. Its code point in hexadecimal is A3.
+Encoding that scalar in UTF-8 takes two bytes, C2 followed by A3. A byte
+character literal, however, asks for the scalar's numeric value in eight
+bits. The result for pound is the single byte A3. Neither answer is more
+accurate than the other: one is an encoding of text and the other is a
+checked conversion of a number. For a scalar with code point hex 100 the
+encoding still exists, but the byte character conversion no longer fits.
+
+\begin{OnxCodeBlock}[numbers=none,language={}]
+let coin = #\pound;
+assert(char_codepoint(coin) == 163);
+let bytes = b!"\xc2\xa3";
+assert(buffer_len(bytes) == 2);
+assert(buffer_at(bytes, 1) == b!#\pound);
+\end{OnxCodeBlock}
+
+Place these statements inside a function. The last assertion compares two
+unsigned bytes; it does not say the second byte by itself is a UTF-8
+encoding of the sign. Now append zero with \OnxCodeTerm{buffer\_push}.
+The length becomes three and the new last byte can be read back as zero.
+Trying to obtain text with \OnxCodeTerm{buffer\_text} at that point must
+fail rather than silently drop the last byte. Even before appending the
+zero, success of that operation tests the absence of NUL, not the validity
+of the UTF-8 sequence. These are separate checks when your input is a
+packet of bytes rather than a text literal from your own program.
+For instance, a one-byte buffer containing only A3 contains no NUL.
+It still lacks the leading byte required to encode the pound sign as
+UTF-8.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/core-literals.md}\par
 \OnxSource{on1x/examples/numeric_literals.on1x}\par

@@ -7,7 +7,39 @@ The sandbox kernel family has documented declaration inspection and native build
 \section{Verify a scoped host configuration}
 Exercise an allowed regular-file read, an unapproved target, and an exhausted budget. For subprocess tests, use an approved deterministic tool and record whether the host supports the selected isolation mode. The documented Linux tool launcher requires its sandbox dependencies and an operator-selected filesystem image. An unavailable isolation profile fails closed. A header catalogue entry or a C archive does not show that a process is isolated. Keep native integration evidence, operator authorization, and the execution result separate in a verification report.
 
+\section{Trace a read grant after the directory is renamed}
+In the supervisor test the host grants the logical root named
+\OnxCodeTerm{source}. Its file named \OnxCodeTerm{data} contains four
+bytes: zero followed by the three ASCII letters abc. After constructing
+the supervisor, rename the directory and create a fresh directory at
+the old pathname with different file contents. What should a successful
+read return? The grant refers to the directory already opened by the
+host. A read of the relative name returns the original four bytes,
+including the zero, rather than the replacement contents. Reopening
+the configured directory by its old pathname on every request would
+give a different answer.
+
+There are two limits on the returned data in this test: four bytes
+per call and six bytes total. The first successful read fits both.
+A second copy of the same file would fit the per-call maximum but
+only two session bytes remain. The result is a limit error, not a
+short successful read of the first two bytes. Also count attempted
+dispatches: the rejected requests in the fixture consume calls even
+when they contribute no returned bytes. After the call budget is
+spent, a valid root name cannot revive the session.
+
+For comparison, the tool test names a fixed recipe rather than a
+workspace root. The host supplies its argument vector and environment.
+Supplying an extra argument field in the data request changes the shape
+of the request and is denied. A successful binary read therefore says
+nothing about whether any tool recipe has been granted.
+
+Closing the supervisor releases its pinned roots. Reusing the same
+logical root and path on the closed instance is denied rather than
+implicitly opening another session.
+
 \section*{Repository sources}
+\OnxSource{on1x/tests/test_harness_supervisor.py}\par
 \OnxSource{on1x/docs/kernel-sandbox.md}\par
 \OnxSource{on1x/docs/kernel-registration.md}\par
 \OnxSource{on1x/tools/on1x_harness.py}\par

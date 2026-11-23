@@ -7,7 +7,36 @@ Choose one supported vertical slice and state its source semantics, resource rul
 \section{Trace a value-returning construct}
 For a new expression with several exits, define a common result type, how ordinary returns interact with it, and where lexical cleanup belongs. Identify which canonical nodes can represent these requirements. Test source checking, malformed HIR, normal execution and early cleanup. Compare generated and fallback scanners for new tokens and add migration evidence for any changed interpretation of existing source. Use the wider core-syntax document to find design intent and the executable tests to assess which subset has actually shipped.
 
+\section{Use an evaluation-order witness}
+The value-loop regression contains a short expression that catches a
+plausible lowering error. Start with a mutable integer equal to one.
+Use it as the left operand of addition; the right operand is a loop
+that assigns four to the integer and exits with two. The enclosing
+addition must yield three, even though the variable now contains four.
+A lowering which evaluates the loop first and reads the left operand
+only after reaching the loop exit would yield six. Type checking the
+sum and observing the final state of the variable would miss the bug.
+The old left operand has to survive the control flow introduced by
+lowering the right operand.
+
+Try the companion call example. Its first argument reads the variable
+when it contains four. Its second argument is a loop setting it to
+eight and exiting with five. The callee prints four and five. Moving
+the first read into the callee, or rereading it after evaluating the
+second argument, changes an observable result. The same regression
+places printing loops on the unused sides of short-circuit Boolean
+operators: those prints must never appear.
+
+For scalar cases the test compares direct generated C, MIR-emitted C
+and the MIR evaluator, including the optimized path. Change the loop
+result to a record with a field holding one. Direct C can return the
+record to its consumer, while standard MIR rejects that aggregate.
+The negative test preloads the output file with a sentinel and checks
+that rejection leaves it intact. This tests both the representation
+boundary and the compiler's behavior on a failed lowering.
+
 \section*{Repository sources}
+\OnxSource{on1x/tests/test_value_loops.py}\par
 \OnxSource{on1x/docs/source-migration.md}\par
 \OnxSource{on1x/docs/architecture.md}\par
 \OnxSource{on1x/ON1X_CORE_SYNTAX_ADDITIONS.md}\par

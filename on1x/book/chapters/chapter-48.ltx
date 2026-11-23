@@ -7,6 +7,21 @@ The standard PPX catalogue covers implemented processor profiles and planned ent
 \section{Preserve the caller's semantics}
 A pipeline rewrite should evaluate its input once and preserve the ordering of effects in the expanded call. A control or tracing processor needs distinct cases for declarations and expressions and must preserve source origins for diagnostics. Test an identity pass, a supported rewrite, and a rejected or ill-typed output against the real compiler. Where composition is allowed, test the ordered chain because earlier passes can change the AST seen by later ones. Keep a budget and schema mismatch test alongside the success cases.
 
+\section{Take apart the pipe-and-checks example}
+Read the two annotations in the example as requests belonging to different processors:
+\begin{OnxCodeBlock}[numbers=none]
+let answer = @pipe("apply", -42, Int.abs);
+@checks("assert_eq", answer, 42);
+println(answer);
+\end{OnxCodeBlock}
+The pipe request supplies a starting value followed by a function. For this one-stage pipeline, write the ordinary application of the absolute value function to minus 42 in the margin. The answer binding receives 42. The checks request asks for an equality assertion between that binding and the literal; on the successful path control reaches the final print. Change only the expected value to 41 and the expansion can still be a well-typed program. It is running the assertion, not accepting the expansion, that detects the discrepancy.
+
+To check a longer pipe, choose functions whose order can be observed. Starting with 3, apply doubling followed by incrementing. Left-to-right application gives 7, whereas applying increment first would yield 8. A test with two additions of constants would fail to distinguish those orderings. If the initial expression prints a marker and returns 3, check for exactly one marker as well as the final value; the two assertions catch different transformation mistakes.
+
+When implementing a processor, keep unrelated requests intact for their owner. In particular the pipe pass has no reason to interpret the assertion's label as a pipe operation. Running the documented two-pass example checks this handoff in a way that testing either transformation on an isolated tree cannot.
+
+Use the example's activation order, pipe followed by checks, when comparing traces from two builds so that a difference in the selected processor chain is not mistaken for a difference in arithmetic.
+
 \section*{Repository sources}
 \OnxSource{on1x/stdppx/README.md}\par
 \OnxSource{on1x/stdppx/CATALOG.json}\par

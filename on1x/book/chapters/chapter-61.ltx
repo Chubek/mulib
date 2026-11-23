@@ -7,7 +7,41 @@
 \section{Grow a scaffold incrementally}
 Build the generated starting target, edit one function to make its result observable, and rebuild. Add a library directory that defines a helper, declare the file in its local manifest, and import it using its package identity. Try the build from a clean checkout without stale outputs or private search-path settings. A new source file that is present but undeclared can fail discovery even when the function checks in single-file mode. Separate project target resolution from the actual source type error before editing the helper.
 
+\section{Choose a product by its consumer}
+Suppose a greeting has two consumers: a command that prints it and a second
+project that imports it. Start with the command in a fresh directory:
+\begin{OnxCodeBlock}[numbers=none,language={}]
+on1xc init --bin hello
+cd hello
+on1xc exec build
+./target/dev/hello
+\end{OnxCodeBlock}
+The last line runs the published target, whereas the preceding line prints
+the path of its output directory. The starting command prints
+\OnxCodeTerm{Hello from On1x!}. Change the text in
+\OnxCodeTerm{src/main.on1x} and run only the last line again. The old
+greeting is the expected result: the launcher here is a built executable,
+not an interpreter reading the source at startup. Rebuild before testing
+the changed greeting.
+
+For the other consumer, initialize a sibling directory with
+\OnxCodeTerm{on1xc init --lib greetings}. Inspect its
+\OnxCodeTerm{src/\_\_init\_\_.on1x}. A small client of the generated
+library can import that file and call \OnxCodeTerm{greeting()}; a library
+build publishes checked source under the profile's library directory. Looking
+for an executable named after the library would test the wrong product. Use
+a complex project instead when the intended deliverables are several named
+commands, each with its own entry file.
+
+What if the destination already contains a hand-written entry? The driver
+test plants the prospective source file before initialization. It checks
+both that its contents survive and that no root manifest appears on failure.
+An unrelated existing file, on the other hand, can coexist with a new
+scaffold. Initialization therefore depends on collisions at planned paths,
+not simply on whether the destination directory is empty.
+
 \section*{Repository sources}
 \OnxSource{on1x/stdlib/on1xfile/README.md}\par
 \OnxSource{on1x/tools/on1x-project.py}\par
 \OnxSource{on1x/tests/test_on1x_project.py}\par
+\OnxSource{on1x/tests/test_project_driver.py}\par

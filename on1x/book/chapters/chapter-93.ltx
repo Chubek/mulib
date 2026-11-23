@@ -12,7 +12,38 @@ python3 on1x/tools/on1x-exotract.py list-kernels
 
 Compare the plan with the kernel's manifest record and check how inline or external definitions are recorded. A resolved source name can still lack extracted declarations, a native recipe or a callable profile. Capture the target and the qualified C declaration when reporting a mismatch. Check the generated catalogue freshness when changing registered headers. \cref{ch:119} gives a path to navigate the whole manifest.
 
+\section{Decode the bitset plan}
+Read the first command's JSON by asking who consumes each field. The C
+compiler needs the include directory and the definition selecting the
+implementation. The build coordinator needs the count of implementation
+translation units. The reproducibility check needs the identities of the
+inputs. For bitset, the module row names the canonical header and manual;
+the implementation list contains \OnxCodeTerm{MULIB\_IMPL\_BITSET} and the
+translation unit count is one. An empty native companion list means there
+is no separate companion source to compile for this plan. It does not
+mean the bitset implementation can be left out of the executable.
+
+Try reconstructing the plan from just the word ``bitset''. You would
+lose the digest of the particular header, the planner inputs, and the
+distinction between a requested library and an extra system link library.
+For example, blindly converting each name in the requested library list
+to a linker option asks the system for a preinstalled bitset library;
+that is not how this source plan supplies its definitions.
+
+As a comparison, follow the registration test's discovery plan for QVM.
+Its module set contains both QVM and container-core; both headers are
+inputs even though neither receives an implementation switch. The
+planner can account for a header in the closure without proposing a
+standalone archive export. In both examples read the separate safe-export
+field before reporting the result. Neither an empty switch list nor a
+nonempty one answers a source-language admission question.
+
+For a freshness check, compare the recorded input digest with the
+current header bytes. The filename can remain unchanged even when the
+old plan no longer identifies the sources you intend to compile.
+
 \section*{Repository sources}
+\OnxSource{on1x/tests/test_header_registration.py}\par
 \OnxSource{on1x/docs/kernel-registration.md}\par
 \OnxSource{on1x/stdlib/mulib/housekeeping.py}\par
 \OnxSource{on1x/tools/on1x-mulib.py}\par

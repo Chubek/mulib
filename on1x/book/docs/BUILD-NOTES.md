@@ -7,7 +7,8 @@ This kit was checked with the TeX Live tools available in the generation environ
   diagrams, tables, checklists, kernel cards, protocol panels and more.
 - `tests/light-smoke.tex`: pdfLaTeX **and** LuaLaTeX tested for the `light` profile.
 - Main example: 12-page PDF from `examples/main.tex`.
-- No On1x compiler programs were executed. The On1x code is illustrative.
+- The toolkit smoke tests typeset illustrative On1x. Execution evidence for
+  the manuscript's ownership lab is recorded in [SOURCE-EVIDENCE.md](SOURCE-EVIDENCE.md).
 - Full coverage of every public macro in every possible package combination
   is not claimed; the sources are editable and the tests are extensible.
 

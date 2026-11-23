@@ -7,6 +7,33 @@ The optional Novostone integration projects verified MIR to a versioned relation
 \section{Follow a changed edge}
 Start with a branch with two successors, and find its edge and live-value facts. Simplify the branch or replace the MIR snapshot in the supported API. Compare the changed facts and derived query results. Pay attention to block arguments: their value is passed on a specific edge, so a use on that edge need not imply a use everywhere in the source block. Bound the work and report whether the analysis completed. Different facts may use similar names to the operation-level MIR, but the latter is the execution authority.
 
+\section{Compute a call closure across revisions}
+Use the supplied analysis example: \OnxCodeTerm{even} calls
+\OnxCodeTerm{odd}, which in turn calls \OnxCodeTerm{even}. Draw one
+direct arrow for each callsite. Following one arrow establishes the two
+cross-function pairs in the derived \OnxCodeTerm{Calls} relation. Following
+two arrows establishes a pair from each function to itself. These self
+pairs come from nonempty paths around the cycle. A leaf with no calls
+does not acquire a self pair just because it is listed as a function.
+In the same way, an I/O effect in a callee can appear in a caller's
+conservative effect summary without there being a print instruction at
+the callsite.
+
+Take a query on this first snapshot. Replace the body of \OnxCodeTerm{odd}
+with a type-correct leaf returning a Boolean constant. After verification
+and publication, the direct arrow back to \OnxCodeTerm{even} disappears,
+so neither former self pair follows. The original query still owns a
+usable view of the old program; attempting to consume it as a result
+for the new snapshot must fail the current-identity check. Rerunning
+the query on the new snapshot answers the new question.
+
+As a control, change only a source location. The mapping records location
+facts, so this too can be a new program identity. The call relation itself
+has not changed and its cached computation may be reused. Equal answer
+rows therefore do not establish interchangeable snapshot identities.
+Look at the canonical MIR and rule identity in a report before explaining
+an apparent cache hit as reuse of executable code.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/backend-analysis.md}\par
 \OnxSource{on1x/src/backend/Analysis.dl}\par

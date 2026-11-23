@@ -5,8 +5,40 @@
 
 The pervasive environment supplies canonical \OnxCodeTerm{Option<T>} and \OnxCodeTerm{Result<T,E>} declarations and copy-safe helper functions. Use Option for optional presence and Result for success with a typed error. On the admitted nominal Result, postfix \OnxCodeTerm{?} evaluates once, yields the success payload, or returns the active error to a compatible enclosing function after cleanup. For local recovery, use a match with both cases.
 
-\OnxInputCode[firstline=3,lastline=15]{../../on1x/examples/pervasive_options.on1x}
-The error code for a negative input differs from the error code for an odd input. Call the example with a positive even number and both kinds of invalid number to confirm the paths. The finite unique-owner profile makes \OnxCodeTerm{?} an explicit consuming site on a move-only result. Generic convenience helpers stay copy-safe and have different admissibility from an explicit owner-bearing construction and consumption. Option does not acquire Result propagation semantics simply because it also has two constructors.
+\OnxInputCode[firstline=2,lastline=13]{../../on1x/examples/pervasive_options.on1x}
+Which error should $-3$ produce? It is both negative and odd, but
+the first return wins: the caller gets error 1. With 3 the first test
+passes over the return and the second gives error 2. With 82 neither
+return is taken and the success payload is 41.
+
+\OnxInputCode[firstline=15,lastline=23]{../../on1x/examples/pervasive_options.on1x}
+On the 82 path, \OnxCodeTerm{half} is an integer, not a Result.
+The mapping function adds one and \OnxCodeTerm{answer} returns
+\OnxCodeTerm{Ok(42)}. On either error path, execution never reaches
+the binding of \OnxCodeTerm{adjusted}. Propagation needs the same
+nominal Result declaration and the same error type in the caller;
+the caller can compute a different success type. An Option has no
+such error payload to forward.
+
+Now imagine that the success payload is the unique list from
+\cref{ch:26}. Extracting it twice would give two owners of one root.
+Here \OnxCodeTerm{pending?} consumes the whole result even though the
+spelling does not include \OnxCodeTerm{move}. Use an explicit variant
+constructor for an owner-bearing result; the generic pervasive helpers
+assume copy-safe payloads. \Cref{app:ownership} follows the active
+payload across two function returns and shows what the checker says
+about a second extraction.
+
+\section{Where would a fallback take effect?}
+Trace the zero in the call to \OnxCodeTerm{option\_unwrap\_or}. On the
+success path the code explicitly wraps the half in Some and mapping
+over it keeps it present. Thus zero is never selected there. Nor does
+it stand in for either error code: both errors leave the function before
+it constructs an Option. If the application needs a default answer for
+odd input but wants to report negative input, put that decision at a
+match on the Result. Inspect the error byte in the Err arm; choosing
+a fallback for an absent Option later in the pipeline cannot recover a
+path that has already returned.
 
 \section*{Repository sources}
 \OnxSource{on1x/docs/defer-errors.md}\par

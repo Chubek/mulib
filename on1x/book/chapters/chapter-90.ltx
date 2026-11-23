@@ -7,6 +7,36 @@ On1x-authored libraries cover S-expression data, traversal, source/diagnostic st
 \section{Add a native authoring operation}
 Try to express the operation using reusable On1x modules and existing checked primitives. Test round-tripping and malformed data at the authoring boundary. A new primitive additionally needs a checked declaration, lowering, runtime behavior and lifetime evidence. Retain/release or I/O changes need tests that observe failure and old outputs, not just a success example. Trace the bootstrap from the compiler executable to the built processor and the processor back through public transport. This identifies a dependency cycle before introducing a new one.
 
+\section{Bootstrap an identity processor and test its limits}
+Compile the native identity processor's On1x source without any PPX
+selected. Keep the generated C as a reference and build the executable.
+Now compile that same source through the newly built processor. The
+compiler sends a public syntax tree; the processor reads the selected
+schema, validates and returns the tree; the compiler admits the returned
+syntax and emits C again. The self-host test compares this second C text
+with the first. Byte equality is a useful fixed point for this identity
+transformation. It does not imply that the native processor parsed the
+original On1x source or compiled either version of itself.
+
+To see where a transformation would fit, feed the visitor the data tree
+\OnxCodeTerm{(a b)} and print the path at each rewrite callback. The
+paths appear as \OnxCodeTerm{(0)}, \OnxCodeTerm{(1)}, then
+\OnxCodeTerm{()}: first the two children, then the rebuilt parent.
+The components are natural-number symbols, not mutable cursor handles.
+Returning a newly constructed node does not start a new traversal of
+that node. A transformation that requires another round must account for
+that round explicitly rather than depending on accidental repeated visits.
+
+As a negative control, send an identity request with a private HIR
+constructor in place of a public type. Although the tree might be valid
+S-expression data, it is not a valid tree under the selected schema.
+The native processor test expects status 73 and empty standard output.
+Keeping diagnostics on the error stream lets the caller distinguish
+failure from a complete replacement tree; no partial syntax is an
+acceptable identity result. This control exercises the native schema reader
+and server protocol together, without needing to expose the compiler's private
+value representation to the processor.
+
 \section*{Repository sources}
 \OnxSource{on1x/docs/selfhosting.md}\par
 \OnxSource{on1x/docs/roadmap.md}\par

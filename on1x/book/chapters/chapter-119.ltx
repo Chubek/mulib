@@ -12,7 +12,42 @@ python3 on1x/tools/on1x-mulib.py plan ipc-framed
 
 Use the implementation kind to choose a compilation strategy, and follow dependency names recursively in the same manifest. Compare the build recipe with the header's required companion sources. Then check whether the On1x standard-library catalogue exposes a suitable wrapper and whether KernelBind lists a callable, discovery-only, or unsupported profile. This procedure covers kernels that have no dedicated chapter and continues to work as operators add or split families.
 
+\section{Answer a catalogue question about audio resampling}
+A reader asks whether ``audio-resample'' can convert two channels at
+once and retain phase between buffers. Search the manifest for the
+canonical hyphenated name. The row points to a static-inline header,
+its manual, an audio-core dependency and a shared media fixture. Read
+the purpose and limit together: the operation performs interleaved
+linear conversion, but does not maintain a streaming phase history.
+The shared fixture is a starting point for inspection, not evidence
+that every possible rate and boundary was tested.
+
+Check that interpretation against a tiny input. Use mono frames zero
+and ten, a phase of zero, an input/output rate ratio of one half and
+three requested output frames. The source positions are zero, one
+half and one, giving output samples zero, five and ten. The ratio
+is a step in \emph{source} frames per output frame. Reversing the ratio
+would skip straight past the interpolated sample. With interleaved
+stereo the position calculation is the same for both channels; the
+output allocation needs twice as many floats, not twice as many frame
+positions. The header requires disjoint, live input and output spans.
+
+Now answer the phase question from the signature. It accepts a starting
+phase by value and does not return a streaming state object. Calling
+again with the same input and phase starts the calculation again.
+Similarly the catalogue's normalized import alias makes the declaration
+discoverable but supplies no representation for those caller-owned
+output floats. A positive answer about channel count is compatible with
+negative answers about both streaming state and ordinary source calls.
+
+Request a fourth output frame in the mono exercise. Its source
+position is one and a half, past the last input frame. The documented
+endpoint rule repeats ten; it does not extrapolate a new sample of
+fifteen.
+
 \section*{Repository sources}
+\OnxSource{manual/mulib-audio-resample.md}\par
+\OnxSource{include/mulib-audio-resample.h}\par
 \OnxSource{MANIFEST.yaml}\par
 \OnxSource{manual/index.md}\par
 \OnxSource{manual/engineering-inventory.json}\par
