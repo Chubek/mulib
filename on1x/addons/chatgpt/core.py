@@ -30,7 +30,9 @@ WARNING = (
 FIXED = (
     "README.md", "MANIFEST.yaml", "on1x/README.md", "on1x/VERIFICATION.md",
     "on1x/COMPLETION.md", "on1x/BACKEND.md", "on1x/KERNEL_DIRECT_USAGE.md",
-    "on1x/ON1X_CORE_SYNTAX_ADDITIONS.md",
+    "on1x/ON1X_CORE_SYNTAX_ADDITIONS.md", "on1x/addons/CLI.md",
+    "on1x/stdlib/on1xfile/README.md", "on1x/stdppx/README.md",
+    "on1x/backends/mir-vm/README.md", "on1x/backends/mir-archon/DRIVER.md",
     "on1x/contracts-exoml/README.md", "on1x/contracts-exoml/catalog.json",
     "on1x/contracts-exoml/obligations.json", "on1x/contracts-exotract/README.md",
     "on1x/contracts-exotract/catalog.json", "on1x/stdlib/CATALOG.json",
@@ -323,7 +325,7 @@ class Index:
         for name, item in modules.items():
             if item.get("status") == "bounded":
                 valid_implementation = (
-                    item.get("implementation") == "static-inline"
+                    item.get("implementation") in ("static-inline", "static-data")
                     and "macro" not in item
                 )
             else:

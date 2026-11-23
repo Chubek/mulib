@@ -26,9 +26,11 @@ Normal Vim/Neovim syntax and filetype settings apply: >
 
 EDITING                                                      *on1x-editing*
 
-Both `.on1x` and `.on1xi` use filetype `on1x`. `On1xfile` and `On1xfile.i`
-are separate project formats and are not detected by this addon. The
-filetype plugin sets 'commentstring' to `# %s`, continues `#` line
+Both `.on1x` and `.on1xi` use filetype `on1x`. `On1xfile`, `On1xfile.m`,
+and `On1xfile.i` use filetype `on1xfile` for lexical highlighting and `#`
+comments. See on1x/addons/CLI.md for compiler flags and project policy.
+
+The source filetype plugin sets 'commentstring' to `# %s`, continues `#` line
 comments where enabled by 'formatoptions', and disables automatic wrapping
 of plain code. Indentation follows braces, parentheses and brackets using
 your 'shiftwidth'. With On1x syntax highlighting active, indentation ignores

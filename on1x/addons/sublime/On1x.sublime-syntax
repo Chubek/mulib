@@ -95,6 +95,13 @@ contexts:
         2: entity.name.function.preprocessor.on1x
 
   keywords:
+    - match: '\b(import)[ \t]+(kernel)[ \t]*(\[)[ \t]*(dynlib)[ \t]*(\])'
+      captures:
+        1: keyword.control.on1x
+        2: keyword.control.on1x
+        3: punctuation.section.group.begin.on1x
+        4: storage.modifier.on1x
+        5: punctuation.section.group.end.on1x
     - match: '\b(true|false)\b'
       scope: constant.language.boolean.on1x
     - match: '\b(if|else|while|return|import)\b'

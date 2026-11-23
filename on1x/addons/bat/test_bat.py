@@ -13,13 +13,14 @@ def main():
     if not bat:
         print("SKIP: neither bat nor batcat is installed")
         return 77
-    syntax_file = Path(__file__).resolve().parents[1] / "sublime/On1x.sublime-syntax"
+    syntax_root = Path(__file__).resolve().parents[1] / "sublime"
     with tempfile.TemporaryDirectory(prefix="on1x-bat-") as temp:
         work = Path(temp)
         config = work / "config"
         syntax_dir = config / "syntaxes"
         syntax_dir.mkdir(parents=True)
-        shutil.copyfile(syntax_file, syntax_dir / syntax_file.name)
+        for name in ("On1x.sublime-syntax", "On1xfile.sublime-syntax"):
+            shutil.copyfile(syntax_root / name, syntax_dir / name)
         # Avoid inheriting user options or touching the user's cache.
         env = {key: value for key, value in os.environ.items() if not key.startswith("BAT_")}
         env.update(BAT_CONFIG_DIR=str(config), BAT_CACHE_PATH=str(work / "cache"))
@@ -49,6 +50,18 @@ def main():
         colored = run(*options, str(source_file)).splitlines()
         assert sgr.findall(colored[2])[0] != sgr.findall(colored[4])[0]
         assert len(sgr.findall(colored[2])) == 2, "backtick contents were tokenized as source"
+
+        for name, directive in (
+            ("On1xfile", 'backend "debug" mir-vm'),
+            ("On1xfile.m", 'library "messages.on1x"'),
+            ("On1xfile.i", 'interface "messages.on1xi"'),
+        ):
+            fixture = work / name
+            fixture.write_text(f"on1xfile 1\n{directive} # comment\n", encoding="utf-8")
+            colored_manifest = run(*options, str(fixture))
+            assert colored_manifest == run(*options, "-l", "On1xfile", str(fixture)), name
+            assert colored_manifest != run(*options, "-l", "txt", str(fixture)), name
+            assert sgr.sub("", colored_manifest) == fixture.read_text(encoding="utf-8")
 
         source_file.write_text('  let bad = "unfinished\n  let cmd = `unfinished\n  return;\n', encoding="utf-8")
         recovered = run(*options, str(source_file)).splitlines()

@@ -91,6 +91,7 @@
     },
     "keywords": {
       "patterns": [
+        {"match": "\\b(import)[ \\t]+(kernel)[ \\t]*(\\[)[ \\t]*(dynlib)[ \\t]*(\\])", "captures": {"1": {"name": "keyword.control.on1x"}, "2": {"name": "keyword.control.on1x"}, "3": {"name": "punctuation.section.group.begin.on1x"}, "4": {"name": "storage.modifier.on1x"}, "5": {"name": "punctuation.section.group.end.on1x"}}},
         {"match": "\\b(true|false)\\b", "name": "constant.language.boolean.on1x"},
         {"match": "\\b(if|else|while|return|import)\\b", "name": "keyword.control.on1x"},
         {"match": "\\b(let|var|extern|fn)\\b", "name": "storage.type.on1x"},

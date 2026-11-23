@@ -1,7 +1,11 @@
 # On1x for VS Code
 
 Highlights `.on1x` source and `.on1xi` interfaces, with `#` line-comment
-toggling and ordinary bracket/quote pairing. Highlighting follows the compiler
+toggling and ordinary bracket/quote pairing. The separate On1xfile language
+recognizes `On1xfile`, `On1xfile.m`, and `On1xfile.i` by filename.
+See the [CLI and project policy reference](../CLI.md).
+
+Source highlighting follows the compiler
 lexer and uses local cues for contextual keywords; it does not validate code
 or parse PPX payloads or backtick command contents as another language.
 

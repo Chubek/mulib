@@ -16,8 +16,28 @@ try
   call assert_equal('on1x', &filetype)
   call s:CheckGroup(1, 'on1xi', 'on1xDirective')
   call s:CheckGroup(2, 'greet', 'on1xFunction')
+  call writefile(['on1xfile 1', 'backend "debug" mir-vm', 'optimization-profile default',
+        \ 'optimization "all" off', 'scrutiny-work 8192', 'name "foo#\u0042" # policy'], 'On1xfile')
+  edit On1xfile
+  call assert_equal('on1xfile', &filetype)
+  call assert_equal('# %s', &l:commentstring)
+  call s:CheckGroup(1, '1', 'on1xfileNumber')
+  call s:CheckGroup(2, 'backend', 'on1xfileDirective')
+  call s:CheckGroup(2, 'debug', 'on1xfileString')
+  call s:CheckGroup(2, 'mir-vm', 'on1xfileValue')
+  call s:CheckGroup(3, 'optimization-profile', 'on1xfileDirective')
+  call s:CheckGroup(4, 'off', 'on1xfileValue')
+  call s:CheckGroup(5, '8192', 'on1xfileNumber')
+  call s:CheckGroup(6, '#\u', 'on1xfileString')
+  call s:CheckGroup(6, '\u0042', 'on1xfileEscape')
+  call s:CheckGroup(6, '# policy', 'on1xfileComment')
+  call writefile(['on1xfile 1', 'library "messages.on1x"'], 'On1xfile.m')
+  edit On1xfile.m
+  call assert_equal('on1xfile', &filetype)
+  call s:CheckGroup(2, 'library', 'on1xfileDirective')
   edit On1xfile.i
-  call assert_notequal('on1x', &filetype)
+  call assert_equal('on1xfile', &filetype)
+  call assert_equal('on1xfile', b:current_syntax)
 
   " setfiletype must not override a previously chosen filetype.
   new
@@ -57,6 +77,8 @@ try
         \ '# async await switch // /*',
         \ 'async await switch // /*',
         \ 'match_count for_each breaker launcher',
+        \ 'unsafe import kernel [ dynlib ] mulib.clamp as Clamp;',
+        \ 'let dynlib = kernel[dynlib];',
         \ ])
   call s:CheckGroup(1, '@scrutiny', 'on1xDirective')
   call s:CheckGroup(2, 'macro', 'on1xMacroKeyword')
@@ -87,6 +109,10 @@ try
   for s:word in ['match_count', 'for_each', 'breaker', 'launcher']
     call s:CheckGroup(23, s:word, '')
   endfor
+
+  call s:CheckGroup(24, 'kernel', 'on1xKernelImport')
+  call s:CheckGroup(24, 'dynlib', 'on1xKernelModifier')
+  call s:CheckGroup(25, 'dynlib', '')
 
   " Match the file's code indentation but preserve raw command bytes.
   normal! gg=G

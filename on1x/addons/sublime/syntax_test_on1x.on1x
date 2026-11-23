@@ -43,3 +43,8 @@ fn main() {
 // /* */ 'word'
 # <- keyword.operator.on1x - comment
 #         ^^^^ - string
+unsafe import kernel [ dynlib ] mulib.clamp as Clamp;
+#             ^^^^^^ keyword.control.on1x
+#                      ^^^^^^ storage.modifier.on1x
+let dynlib = kernel[dynlib];
+#   ^^^^^^ - storage.modifier.on1x

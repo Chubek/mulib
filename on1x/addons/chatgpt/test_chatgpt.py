@@ -411,6 +411,12 @@ class RepositorySmoke(unittest.TestCase):
         self.assertTrue(index.search("ON1X-KERNEL-NOT-ADMITTED")["results"])
         self.assertTrue(index.search("async", "capability")["results"])
         self.assertTrue(index.search_kernels("clamp")["results"])
+        for path in ("on1x/addons/CLI.md", "on1x/stdlib/on1xfile/README.md"):
+            self.assertIn(path, index.sources)
+        data = index.inspect_kernel("lprowse")
+        self.assertEqual(data["manifest"]["implementation"], "static-data")
+        self.assertFalse(data["implementation"]["execution_verified_by_service"])
+        self.assertEqual(data["on1x_admission"]["status"], "NOT_ESTABLISHED")
         cdd = index.inspect_kernel("cdd-catalogue")
         self.assertEqual(cdd["on1x_admission"]["status"], "NOT_ESTABLISHED")
         self.assertEqual(cdd["contract"]["status"], "ABSENT_IN_INDEX")

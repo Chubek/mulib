@@ -50,7 +50,7 @@ esac
 src=$(CDPATH= cd -P "$(dirname "$0")" && pwd -P)
 
 # Deliberate manifest: do not overwrite unrelated editor config or copy tests.
-files='ftdetect/on1x.vim ftplugin/on1x.vim indent/on1x.vim syntax/on1x.vim doc/on1x.txt lua/on1x.lua'
+files='ftdetect/on1x.vim ftplugin/on1x.vim ftplugin/on1xfile.vim indent/on1x.vim syntax/on1x.vim syntax/on1xfile.vim doc/on1x.txt lua/on1x.lua'
 for file in $files; do
     dir=$dest/${file%/*}
     [ -f "$src/$file" ] && [ -r "$src/$file" ] || die "missing source file: $src/$file"

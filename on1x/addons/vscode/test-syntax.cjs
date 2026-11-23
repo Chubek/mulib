@@ -1,6 +1,9 @@
 const assert = require("node:assert/strict");
 const manifest = require("./package.json");
-const { languages: [language], grammars: [contribution] } = manifest.contributes;
+const { languages: [language, manifestLanguage], grammars: [contribution, manifestContribution] } =
+  manifest.contributes;
+const manifestConfig = require(manifestLanguage.configuration);
+const manifestGrammar = require(manifestContribution.path);
 const config = require(language.configuration);
 const grammar = require(contribution.path);
 assert.equal(language.id, "on1x");
@@ -8,6 +11,11 @@ assert.deepEqual(language.extensions, [".on1x", ".on1xi"]);
 assert.equal(contribution.language, language.id);
 assert.equal(contribution.scopeName, grammar.scopeName);
 assert.equal(grammar.scopeName, "source.on1x");
+assert.deepEqual(manifestLanguage.filenames, ["On1xfile", "On1xfile.m", "On1xfile.i"]);
+assert.equal(manifestContribution.language, manifestLanguage.id);
+assert.equal(manifestContribution.scopeName, manifestGrammar.scopeName);
+assert.equal(manifestGrammar.scopeName, "source.on1xfile");
+assert.deepEqual(manifestConfig.comments, { lineComment: "#" });
 for (const field of ["main", "browser", "activationEvents", "dependencies"]) {
   assert.equal(manifest[field], undefined, `${field} would change the syntax-only package`);
 }
@@ -27,6 +35,7 @@ function validate(rule) {
   for (const child of rule.patterns || []) validate(child);
 }
 validate(grammar);
+validate(manifestGrammar);
 for (const rule of Object.values(grammar.repository)) validate(rule);
 
 function matches(group, text) {
@@ -46,6 +55,29 @@ assert.deepEqual(matches("metaprogramming", "return !(flag);"), []);
 assert.deepEqual(matches("keywords", "let match = for(loop); close(value); await select"), ["let"]);
 assert.deepEqual(matches("keywords", "if close { return 1; }"), ["if", "return"]);
 assert.deepEqual(matches("keywords", "match sent with { Ok(n) => n }"), ["match", "with"]);
+
+const [dynamicImport] = grammar.repository.keywords.patterns;
+const dynlib = new RegExp(dynamicImport.match);
+assert.equal(dynlib.exec("unsafe import kernel [ dynlib ] mulib.clamp;")[4], "dynlib");
+assert.equal(dynamicImport.captures["4"].name, "storage.modifier.on1x");
+assert.equal(dynlib.test("let kernel = values[dynlib];"), false);
+assert.equal(dynlib.test("import kernel as K;"), false);
+assert.deepEqual(matches("metaprogramming", '@InlineC11("unsafe_i64", "a0", 4)'), ["@InlineC11"]);
+
+const [comment, jsonString, directive, value, number] = manifestGrammar.patterns;
+for (const name of ["on1xfile", "backend", "optimization-profile", "optimization", "scrutiny-work",
+                    "source", "library", "resource", "interface"]) {
+  assert.equal(new RegExp(directive.match).exec(`  ${name} field`)[1], name);
+}
+assert.equal(new RegExp(directive.match).test("optimization-profile-extra default"), false);
+assert.equal(new RegExp(value.match).exec("mir-vm")[0], "mir-vm");
+assert.equal(new RegExp(value.match).test("some-mir-vm"), false);
+assert.equal(new RegExp(number.match).exec("scrutiny-work 8192")[0], "8192");
+assert.equal(new RegExp(jsonString.begin).exec('name "foo#bar" # trailing').index, 5);
+assert.equal(new RegExp(comment.match).exec('name "foo#bar" # trailing').index, 9);
+assert.equal(new RegExp(comment.match).exec("# trailing")[0], "# trailing");
+assert.equal(new RegExp(jsonString.patterns[0].match).exec(String.raw`\u03bb`)[0], String.raw`\u03bb`);
+assert.equal(new RegExp(jsonString.patterns[0].match).test(String.raw`\0`), false);
 
 const [quoted, triple, single] = grammar.repository.strings.patterns;
 assert.equal(new RegExp(quoted.patterns[0].match).exec(String.raw`x\"y`)[0], String.raw`\"`);

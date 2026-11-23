@@ -1,0 +1,11 @@
+{
+  "name": "On1xfile",
+  "scopeName": "source.on1xfile",
+  "patterns": [
+    {"match": "#.*", "name": "comment.line.number-sign.on1xfile"},
+    {"name": "string.quoted.double.on1xfile", "begin": "\"", "end": "\"|(?=[\\r\\n]|$)", "patterns": [{"match": "\\\\(?:[\"\\\\/bfnrt]|u[0-9A-Fa-f]{4})", "name": "constant.character.escape.on1xfile"}, {"match": "\\\\(?:[^\\r\\n]|(?=[\\r\\n]|$))", "name": "invalid.illegal.escape.on1xfile"}]},
+    {"match": "^[ \\t]*(on1xfile|kind|name|directory|target|dependency|profile|command|define|kernel|scrutiny|scrutiny-work|backend|optimization-profile|optimization|source|library|resource|interface)(?=[ \\t\\r#]|$)", "captures": {"1": {"name": "keyword.control.directive.on1xfile"}}},
+    {"match": "(?<![A-Za-z0-9_-])(?:executable|complex|library|local|git|git-remote|commit|branch|tag|format|plain|latex|troff|shell|off|standard|strict|c11|mir-c11|mir-vm|mir-archon|default|debug|release|on)(?![A-Za-z0-9_-])", "name": "constant.language.on1xfile"},
+    {"match": "(?<![A-Za-z0-9_-])[0-9]+(?![A-Za-z0-9_-])", "name": "constant.numeric.integer.decimal.on1xfile"}
+  ]
+}

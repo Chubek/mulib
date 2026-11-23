@@ -1,13 +1,14 @@
 # On1x for Sublime Text
 
 In Sublime Text, choose **Preferences → Browse Packages…**. Create an `On1x`
-directory there and copy `On1x.sublime-syntax` and `Comments.tmPreferences`
-into it. Open an `.on1x` or `.on1xi` file and select **On1x** from the syntax
-menu if it is not selected automatically. Toggle Comment uses `#`.
+directory there and copy `On1x.sublime-syntax`, `On1xfile.sublime-syntax`,
+and `Comments.tmPreferences` into it. Open an `.on1x` or `.on1xi` file or a
+plain `On1xfile`, `On1xfile.m`, or `On1xfile.i`. The syntax menu lists
+**On1x** and **On1xfile**. Toggle Comment uses `#`.
 
 This is lexical highlighting, with local approximations for contextual
 keywords and opaque strings for both forms of backtick command literal. The
-same syntax file is used by [bat](../bat/README.md).
+same syntax files are used by [bat](../bat/README.md).
 
 ## Optional language server
 

@@ -12,14 +12,18 @@ syntax keyword on1xDeclaration extern let var forall
 syntax keyword on1xConditional if else
 syntax keyword on1xRepeat while
 syntax keyword on1xStatement return
-syntax keyword on1xImport import
+syntax keyword on1xImport import nextgroup=on1xKernelImport skipwhite skipnl
+syntax match on1xKernelImport /\<kernel\ze\s*\[\s*dynlib\s*\]/ contained nextgroup=on1xKernelLinkage skipwhite
+syntax match on1xKernelImport /\<kernel\ze\s\+\%(\%(as\>\)\@![A-Za-z_]\|[".]\)/ contained
+syntax region on1xKernelLinkage matchgroup=on1xDelimiter start=/\[/ end=/\]/ oneline contained contains=on1xKernelModifier
+syntax keyword on1xKernelModifier dynlib contained
 syntax keyword on1xMacroKeyword macro rule let_syntax letrec_syntax quote splice lift
 syntax keyword on1xBoolean true false
 syntax keyword on1xType i64 u8 u16 u32 u64 f32 f64 bool string void json json_view sexpr buffer xfiber
 
 " Contextual parser words: highlight common forms, not arbitrary uses as identifiers.
 syntax match on1xImport /^\s*\zsfrom\ze\s\+[.A-Za-z_]/
-syntax match on1xImport /\<unsafe\ze\s\+import\>\|\<kernel\ze\s\+[A-Za-z_]/
+syntax match on1xImport /\<unsafe\ze\s\+import\>/
 syntax match on1xDeclaration /^\s*\zs\%(record\|enum\)\ze\s\+[A-Za-z_]/
 syntax match on1xType /\<\%(code\|slice\|array\|ifiber\|channel\|sender\|receiver\)\ze\s*</
 syntax match on1xType /\<\%(record\|sum\)\ze\s*{/
@@ -63,6 +67,8 @@ highlight default link on1xConditional Conditional
 highlight default link on1xRepeat Repeat
 highlight default link on1xStatement Statement
 highlight default link on1xImport Include
+highlight default link on1xKernelImport Include
+highlight default link on1xKernelModifier Keyword
 highlight default link on1xMacroKeyword Keyword
 highlight default link on1xMacroCall Macro
 highlight default link on1xCapture Identifier

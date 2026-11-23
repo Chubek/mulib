@@ -16,6 +16,12 @@
         "aliases": ["On1x", "on1x"],
         "extensions": [".on1x", ".on1xi"],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "on1xfile",
+        "aliases": ["On1xfile"],
+        "filenames": ["On1xfile", "On1xfile.m", "On1xfile.i"],
+        "configuration": "./on1xfile-configuration.json"
       }
     ],
     "grammars": [
@@ -23,6 +29,11 @@
         "language": "on1x",
         "scopeName": "source.on1x",
         "path": "./syntaxes/on1x.tmLanguage.json"
+      },
+      {
+        "language": "on1xfile",
+        "scopeName": "source.on1xfile",
+        "path": "./syntaxes/on1xfile.tmLanguage.json"
       }
     ]
   }

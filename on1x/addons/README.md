@@ -1,8 +1,9 @@
 # On1x addons
 
 The editor addons recognize `*.on1x` source files and `*.on1xi` interface files.
-These integrations don't change the compiler or application runtime. Package manifests
-(`On1xfile`) use different syntax and aren't covered.
+Plain `On1xfile`, `On1xfile.m`, and `On1xfile.i` manifests have their own
+syntax mode. See the [syntax, CLI, and project policy reference](CLI.md) for
+dynamic kernel imports, compiler flags, and manifest directives.
 
 | Integration | Setup |
 | --- | --- |

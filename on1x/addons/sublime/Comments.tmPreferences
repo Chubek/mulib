@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>scope</key>
-    <string>source.on1x</string>
+    <string>source.on1x, source.on1xfile</string>
     <key>settings</key>
     <dict>
         <key>shellVariables</key>
