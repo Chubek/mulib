@@ -907,13 +907,15 @@ def stage_bytes(path, data):
         stream.write(data)
 
 
-# The build helper looks up these C companions via --stdlib-resource. Preserve
-# the existing standalone MuLIB discovery manifest as well. Other SDK inputs
-# are not part of the project-controlled package.
+# Registered native companions may be found via --stdlib-resource, including
+# the HTTP sources for explicit host linkage. Preserve the existing standalone
+# MuLIB discovery manifest as well. Other SDK inputs are not part of the
+# project-controlled package.
 STDLIB_RESOURCES = frozenset(map(Path, (
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
     'environ/runtime.c',
     'cephyr/runtime.c',
+    'http/runtime.c', 'http/runtime.h', 'http/kernels.c',
     'prettyprint/runtime.c', 'prettyprint/runtime.h', 'tty/runtime.c', 'tty/runtime.h',
     'container/runtime.c', 'container/runtime.h',
     'container/shared.c', 'container/on1x_container_shared.h',

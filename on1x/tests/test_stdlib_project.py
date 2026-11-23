@@ -17,6 +17,7 @@ RESOURCES = {
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
     'environ/runtime.c',
     'cephyr/runtime.c',
+    'http/runtime.c', 'http/runtime.h', 'http/kernels.c',
     'prettyprint/runtime.c', 'prettyprint/runtime.h',
     'tty/runtime.c', 'tty/runtime.h',
     'container/runtime.c', 'container/runtime.h',
@@ -57,6 +58,65 @@ class StdlibProjectTests(unittest.TestCase):
             self.assertEqual(Path(result.strip()), dest)
         return dest
 
+    def test_package_entry_points(self):
+        for roles in sorted(STDLIB.rglob('On1xfile.m')):
+            directory = roles.parent.relative_to(STDLIB)
+            declarations = roles.read_text(encoding='utf-8').splitlines()
+            if not directory.parts or not any(line.startswith('library "') for line in declarations):
+                continue
+            with self.subTest(package=directory):
+                self.assertIn('library "__init__.on1x"', declarations)
+                module = '.'.join(directory.parts)
+                source = self.write('entry.on1x', f'import std.{module} as Package;\nfn main() {{}}\n')
+                graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', STDLIB).splitlines()
+                self.assertIn(str(roles.parent / '__init__.on1x'), graph)
+                self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', STDLIB)
+
+    def test_package_exports(self):
+        source = self.write('exports.on1x', '''
+import std.base as Base;
+import std.numeric as Numeric;
+import std.parsec.parsec as Original;
+from std.parsec import basis_parsec_int;
+from std import sexpr;
+fn main() {
+    let (ok, value, end) = basis_parsec_int("-42!", 0);
+    assert(ok && value == -42 && end == 3);
+    let (bad, _, rollback) = Original.basis_parsec_int("!", 0);
+    assert(!bad && rollback == 0);
+    assert(Numeric.Int.basis_int_div(-7, 3) == -3);
+    assert(Base.option.base_is_some(Base.option.base_some(sx_string("ok"))));
+    assert(Base.base_identity_i64(42) == 42);
+    assert(sexpr.sexpr_size(sexpr.sexpr_parse("(one two)")) == 2);
+}
+''')
+        exe = self.work / 'exports'
+        self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
+                     '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', STDLIB, '-o', exe)
+        self.execute(exe)
+        child = self.write('child.on1x', 'import std.parsec.parsec as Parse;\nfn main() {}\n')
+        graph = self.execute(OPTIONS.on1xc, '--deps', child, '--stdlib', STDLIB).splitlines()
+        self.assertNotIn(str(STDLIB / 'parsec/__init__.on1x'), graph)
+        private = self.write('private.on1x', 'from std.ini import on1x_mulib_ini_get;\nfn main() {}\n')
+        self.execute(OPTIONS.on1xc, '--check', private, '--stdlib', STDLIB,
+                     negative="no export or submodule 'on1x_mulib_ini_get'")
+
+    def test_initializer_survives_packaging(self):
+        root = self.work / 'parsec-stdlib'
+        self.write('parsec-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n')
+        self.write('parsec-stdlib/On1xfile.m', 'on1xfile 1\nlibrary "pervasive.on1x"\n')
+        self.write('parsec-stdlib/pervasive.on1x', 'fn unused() {}\n')
+        shutil.copytree(STDLIB / 'parsec', root / 'parsec')
+        package = (self.build(root) / 'library').rename(self.work / 'relocated parsec stdlib')
+        source = self.write('consumer.on1x', '''
+import std.parsec as Parse;
+fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
+''')
+        graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', package).splitlines()
+        self.assertIn(str(package / 'parsec/__init__.on1x'), graph)
+        self.assertIn(str(package / 'parsec/parsec.on1x'), graph)
+        self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', package)
+
     def test_whole_stdlib_and_downstream(self):
         dest = self.build(STDLIB)
         package = (dest / 'library').rename(self.work / 'relocated stdlib')
@@ -64,7 +124,8 @@ class StdlibProjectTests(unittest.TestCase):
         # The restricted source package does not distribute the KernelBind
         # daemon, the separately hosted SDK source layer, or test fixtures.
         modules = {p.relative_to(STDLIB).as_posix() for p in STDLIB.rglob('*.on1x')
-                   if p.relative_to(STDLIB).parts[0] not in ('tests', 'daemon', 'sdk')}
+                   if p.relative_to(STDLIB).parts[0] not in ('daemon', 'sdk')
+                   and 'tests' not in p.relative_to(STDLIB).parts}
         self.assertEqual(modules, {p.relative_to(package).as_posix() for p in package.rglob('*.on1x')})
         self.assertEqual(RESOURCES, {p.relative_to(package).as_posix() for p in package.rglob('*')
                                      if p.suffix in ('.c', '.h')})
@@ -85,9 +146,11 @@ import std.List as L;
 import std.base.list as B;
 import std.numeric.Real as R;
 import std.prettyprint as P;
-import std.ini.ini as I;
+import std.ini as I;
+import std.http as Http;
 from std import mulib;
 fn main() {
+    assert(Http.success(200) && !Http.success(404));
     println(B.base_list_length(L.cons(sx_string("one"),L.nil())));
     println(R.basis_real_add("0.25","0.75"));
     let(status,formatted)=P.pp_format(P.pp_text("packaged prettyprint"),30);
@@ -106,6 +169,8 @@ fn main() {
         self.assertIn(package / 'collections/List.on1x', graph)
         self.assertIn(package / 'core/Pervasive.on1x', graph)
         self.assertIn(package / 'mulib/Native.on1x', graph)
+        self.assertIn(package / 'http/__init__.on1x', graph)
+        self.assertNotIn(package / 'http/client.on1x', graph)
         separate = self.write('standalone.on1x', 'import mulib as M;\nfn main(){assert(M.fits_size(42));}\n')
         self.assertIn(str(package / 'mulib/__init__.on1x'), self.execute(
             OPTIONS.on1xc, '--deps', separate, '--no-prelude', '--stdlib', self.work / 'absent',
