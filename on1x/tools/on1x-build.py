@@ -445,6 +445,7 @@ def main():
         has_csp = '#include <on1x_concurrency.h>' in code
         has_pretty = bool(re.search(r'^extern [^;\n]*\bon1x_pretty_(?:render|status)\(', code, re.M))
         has_tty = bool(re.search(r'^extern [^;\n]*\bon1x_tty_\w+\(', code, re.M))
+        has_environ = bool(re.search(r'^extern [^;\n]*\bon1x_environ_\w+\(', code, re.M))
         has_shared = '#include <on1x_container_shared.h>' in code
         container_externs = set(re.findall(r'^extern [^;\n]*\bon1x_container_(\w+)\(', code, re.M))
         container_groups = {
@@ -474,7 +475,7 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = (kernel_interface or has_json or has_csp or has_pretty or has_tty or has_mulib or
+        native = (kernel_interface or has_json or has_csp or has_pretty or has_tty or has_environ or has_mulib or
                   has_bridge or containers or has_shared or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
         recipe, fingerprints, native_links = None, {}, []
         if native:
@@ -631,6 +632,10 @@ def main():
             if has_tty:
                 bridge = Path(subprocess.check_output(
                     [args.on1xc, '--stdlib-resource', 'tty/runtime.c', *loader_flags], text=True).strip())
+                if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
+            if has_environ:
+                bridge = Path(subprocess.check_output(
+                    [args.on1xc, '--stdlib-resource', 'environ/runtime.c', *loader_flags], text=True).strip())
                 if bridge.resolve() not in {Path(p).resolve() for p in args.extra_c}:cmd.append(str(bridge))
             if containers or has_shared:
                 # Check handwritten extern declarations in the same translation

@@ -26,6 +26,8 @@ It is **not a conforming implementation of the Standard ML Basis Library**.
   status, bounds, binary sockets and the explicitly raw trust boundary.
 - [`std.cephyr`](cephyr/README.md) optionally checks trusted C11 source
   and emits MIR or AMD64 assembly using the pinned Cephyr embedding API.
+- [`std.environ`](environ/README.md) reads process arguments, environment
+  variables, and host information, and provides POSIX `exec` and `system`.
 
 ## Architectural differences
 
@@ -67,6 +69,7 @@ on1x/stdlib/
   text/              String, Char, Substring, StringCvt, Text, Byte
   io/                TextIO, BinIO and primitive facade
   os/                OS.Path, OS.FileSys, OS.Process, OS.IO, CommandLine
+  environ/           process arguments, environment, uname, exec, system
   time/              Time, Timer, Date
   extensions/        Result, Functional, Assert (NOT SML Basis)
   runtime/           C11 native bridge

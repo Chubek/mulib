@@ -51,6 +51,9 @@ configure `ON1X_STDLIB_CEPHYR_CONFIG` to the trusted installed
 `ON1X_CEPHYR_ARCHON_ROOT` to the deployed resources. Keep them available at
 runtime. With `ON1X_WITH_CEPHYR=OFF` no companion is built.
 
+The restricted standard-library source package includes `cephyr/runtime.c`,
+but packaging does not build or link the optional Cephyr companion.
+
 ## Foreign boundary
 
 `on1x_cephyr_analyze_v1` borrows its input synchronously, selects a fixed

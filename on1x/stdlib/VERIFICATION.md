@@ -1,5 +1,13 @@
 # Verification report
 
+## Restricted project package and process environment — 2026-11-23
+
+The restricted source package includes [`std.environ`](environ/README.md)
+and the optional Cephyr companion source. It does not include
+[`std.daemon`](daemon/README.md), which requires the separate KernelBind
+build path. The ordinary library tests check that the daemon is rejected
+without KernelBind and that it emits C under the intended profile.
+
 ## Restricted project package — 2026-11-18
 
 `tests/test_stdlib_project.py` (under `on1x/`) builds and relocates a package

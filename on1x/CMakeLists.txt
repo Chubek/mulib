@@ -890,6 +890,13 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_concurrency_hir_tests PRIVATE on1x_frontend)
     add_test(NAME on1x.concurrency_hir COMMAND on1x_concurrency_hir_tests)
    set(_meta_tests macros ppx staging selfhost local_syntax contracts mir passes modules prelude libraries stdppx install mulib stdlib_extensions tty container_package f64 unsigned_f32 numeric_limits)
+   if(UNIX AND NOT CMAKE_CROSSCOMPILING)
+     list(APPEND _meta_tests environ)
+     add_test(NAME on1x.stdlib_project COMMAND "${Python3_EXECUTABLE}"
+       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_stdlib_project.py"
+       --on1xc "$<TARGET_FILE:on1xc>" --cc "${CMAKE_C_COMPILER}")
+     set_tests_properties(on1x.stdlib_project PROPERTIES TIMEOUT 180)
+   endif()
   if(ON1X_BUILD_NATIVE_PPX)
     list(APPEND _meta_tests luaembed inline_c11)
     if(ON1X_BUILD_GRAMMAREMBED)

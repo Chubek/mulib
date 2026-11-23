@@ -15,7 +15,14 @@ ON1X = Path(__file__).resolve().parents[1]
 STDLIB = ON1X / 'stdlib'
 RESOURCES = {
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
+    'environ/runtime.c',
+    'cephyr/runtime.c',
     'prettyprint/runtime.c', 'prettyprint/runtime.h',
+    'tty/runtime.c', 'tty/runtime.h',
+    'container/runtime.c', 'container/runtime.h',
+    'container/shared.c', 'container/on1x_container_shared.h',
+    'container/pod_kernel.h', 'container/pod_runtime.c', 'container/pod_runtime.h',
+    'container/pod_worker.c',
 }
 
 
@@ -54,8 +61,10 @@ class StdlibProjectTests(unittest.TestCase):
         dest = self.build(STDLIB)
         package = (dest / 'library').rename(self.work / 'relocated stdlib')
         report = json.loads((dest / '.on1x-build.json').read_bytes())
+        # The restricted source package does not distribute the KernelBind
+        # daemon, the separately hosted SDK source layer, or test fixtures.
         modules = {p.relative_to(STDLIB).as_posix() for p in STDLIB.rglob('*.on1x')
-                   if 'tests' not in p.relative_to(STDLIB).parts}
+                   if p.relative_to(STDLIB).parts[0] not in ('tests', 'daemon', 'sdk')}
         self.assertEqual(modules, {p.relative_to(package).as_posix() for p in package.rglob('*.on1x')})
         self.assertEqual(RESOURCES, {p.relative_to(package).as_posix() for p in package.rglob('*')
                                      if p.suffix in ('.c', '.h')})
@@ -158,6 +167,23 @@ fn main() {
         (roles.parent / 'basis_native.c').symlink_to(STDLIB / 'runtime/basis_native.c')
         self.build(root, negative='symlinks are not allowed')
         self.assertFalse((self.work / 'output').exists())
+
+    def test_environ_resource_in_relocated_package(self):
+        root = self.work / 'process-stdlib'
+        self.write('process-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n')
+        self.write('process-stdlib/On1xfile.m', 'on1xfile 1\nlibrary "pervasive.on1x"\n')
+        self.write('process-stdlib/pervasive.on1x', 'fn unused() {}\n')
+        shutil.copytree(STDLIB / 'environ', root / 'environ')
+        package = (self.build(root) / 'library').rename(self.work / 'relocated process stdlib')
+        self.assertEqual((package / 'environ/runtime.c').read_bytes(),
+                         (STDLIB / 'environ/runtime.c').read_bytes())
+        self.write('process-client/On1xfile', 'on1xfile 1\nkind executable\nname "consumer"\n'
+                   'target "consumer" "consumer.on1x"\n')
+        self.write('process-client/On1xfile.m', 'on1xfile 1\nsource "consumer.on1x"\n')
+        client = self.write('process-client/consumer.on1x',
+                            'import std.environ as E;\nfn main(){println(E.argc());}\n')
+        executable = self.build(client.parent, 'bin', '--stdlib', package) / 'consumer'
+        self.assertEqual(self.execute(executable, 'argument'), '2\n')
 
     def test_dependency_relative_import_stays_in_own_package(self):
         root = self.work / 'project'

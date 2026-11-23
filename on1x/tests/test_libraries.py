@@ -7,11 +7,17 @@ t=NativeTests()
 stdlib=t.root/'stdlib'
 p=run(['python3',stdlib/'tests/check_package.py']);assert p.returncode == 0,p.stderr
 
-# Every implementation is admitted by the actual compiler, including unused definitions.
-modules=[p for p in sorted(stdlib.rglob('*.on1x')) if 'tests' not in p.relative_to(stdlib).parts]
+# Check every implementation, including unused definitions, in its supported
+# profile. The daemon's unsafe import must also fail in the ordinary profile.
+modules=[p for p in sorted(stdlib.rglob('*.on1x'))
+         if not {'tests', 'fixtures'}.intersection(p.relative_to(stdlib).parts)]
 for i,module in enumerate(modules):
     path=t.source('module_'+str(i),'import '+json.dumps(str(module.resolve()))+';fn main(){}')
-    p=run([t.compiler,'--check',path]);assert p.returncode == 0,(module,p.stderr)
+    p=run([t.compiler,'--check',path])
+    if module.is_relative_to(stdlib/'daemon'):
+        assert p.returncode != 0 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr,(module,p.stderr)
+        p=run([t.compiler,'--emit-c','--kernel-c11','--no-prelude',path])
+    assert p.returncode == 0,(module,p.stderr)
 
 adapters=[stdlib/'runtime/basis_native.c',stdlib/'runtime/basis_real.c','-lm']
 for name,expected in [('core','basis core OK\n'),('collections','basis collections OK\n'),

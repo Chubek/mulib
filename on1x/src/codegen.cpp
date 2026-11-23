@@ -1369,15 +1369,23 @@ class Generator {
    emit_ownership_helpers();
    emit_unique_destructors();
   const auto& main=*std::find_if(unit.functions.begin(),unit.functions.end(),[](const auto& f){return f.name=="main";});
+  // Only programs using the std.environ argv adapter need the host vector.
+  const bool passes_argv=externs.contains("on1x_environ_arg")||externs.contains("on1x_environ_argc");
+  if(passes_argv)prototypes<<"extern void on1x_environ_init(int, char **);\n";
+  const auto start_main=[&]{
+   definitions<<(passes_argv?"int main(int argc, char **argv) { on1x_environ_init(argc, argv); ":"int main(void) { ");
+  };
    if(uses_csp){
     auto entry=reserve("on1x_csp_entry");
     definitions<<"static int64_t "<<entry<<"(on1x_env *context) { (void)context; ";
     if(main.result==Type::Void)definitions<<functions.at("main")<<"(); return 0;";
     else definitions<<"return "<<functions.at("main")<<"();";
-    definitions<<" }\nint main(void) { return (int)on1x_csp_run_v5("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
+    definitions<<" }\n";
+    start_main();
+    definitions<<"return (int)on1x_csp_run_v5("<<entry<<", NULL, "<<location(main.where)<<"); }\n";
    }
    else {
-    definitions<<"int main(void) { ";
+    start_main();
     // Keep even unused private definitions warning-clean without exporting
     // an unverified C caller interface.
     for(const auto& [name,unused]:borrow_functions){(void)unused;definitions<<"(void)"<<functions.at(name)<<"; ";}

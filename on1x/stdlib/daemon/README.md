@@ -43,6 +43,10 @@ Use the static KernelBind build route below; this package requires neither
 dynamic kernel compilation nor an additional C shim. It exposes no reusable
 session, external peer, path, listener, or network connection.
 
+The CMake installation includes these sources. The restricted `on1x-project.py`
+standard-library source package does not: it does not support KernelBind
+admission or linking.
+
 MuLIB's [`daemon`](../../../manual/mulib-daemon.md) and
 [`process`](../../../manual/mulib-process.md) kernels exist in
 [`MANIFEST.yaml`](../../../MANIFEST.yaml), but On1x KernelBind has **no callable
