@@ -2,11 +2,24 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Define `MULIB_IMPL_QUIC` and `BUFFER`. RFC 9000 variable integers up to 2^62-1,
-plus length-bearing STREAM frames with optional offset/FIN. Read returns 1 OK,
-0 truncated, -1 invalid. Payload views borrow input; writes append atomically.
-No packet protection, TLS, ACKs, congestion or network transport. Do not send
-these frames as unauthenticated packets. [Example](../examples/modules/quic.c),
+Define `MULIB_IMPL_QUIC` and `MULIB_IMPL_BUFFER`. The codecs accept RFC 9000
+variable integers up to 2^62-1 and plaintext STREAM and ACK/ACK_ECN frames.
+Read returns 1 OK, 0 truncated, or -1 invalid. STREAM views borrow input.
+Writes append atomically to an initialized buffer.
+
+`mulib_quic_stream_read` requires an explicit length, as before.
+`mulib_quic_packet_stream_read` also accepts STREAM frames whose length
+is implicit in the remaining packet payload. Give it only the bytes left
+in the authenticated plaintext packet.
+
+ACK decoding writes inclusive, descending ranges into caller-provided storage.
+The capacity includes the first range. A declared range count above capacity
+returns -2 before parsing ranges. ECN counters and the encoded delay are
+returned unchanged in wire units. All outputs stay unchanged on failure.
+The encoder rejects reversed, overlapping, and adjacent ranges.
+
+Packet protection, TLS, loss recovery, and UDP transport are outside the
+codec. [Example](../examples/modules/quic.c),
 [limits](storage-server.md#http-and-policies).
 
 <!-- manual-interface -->
@@ -20,9 +33,9 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-quic.h
- * @brief RFC 9000 variable integers and length-bearing STREAM frame codecs.
- * Define MULIB_IMPL_QUIC and BUFFER. No packet protection, TLS, congestion,
- * ACK processing or transport; never send these as unauthenticated packets.
+ * @brief RFC 9000 variable integers, STREAM and ACK frame codecs.
+ * Define MULIB_IMPL_QUIC and BUFFER. These codecs operate on plaintext frame
+ * payloads. They provide no packet protection, TLS, recovery or transport.
  * Parse: 1 OK, 0 truncated, -1 invalid. Views borrow input; failure unchanged.
  */
 #ifndef MULIB_QUIC_H
@@ -36,6 +49,24 @@ extern "C"
   int mulib_quic_varint_read (const void *data, size_t length, uint64_t *value,
                               size_t *consumed);
   int mulib_quic_varint_write (mulib_buffer_t *out, uint64_t value);
+  typedef struct mulib_quic_ack_range
+  {
+    uint64_t smallest, largest;
+  } mulib_quic_ack_range_t;
+  typedef struct mulib_quic_ack
+  {
+    uint64_t delay, ect0, ect1, ce;
+    size_t range_count;
+    int ecn;
+  } mulib_quic_ack_t;
+  /** Parse ACK/ACK_ECN into descending inclusive ranges. Returns -2 when
+   * range_capacity is too small. All outputs are unchanged on failure. */
+  int mulib_quic_ack_read (const void *data, size_t length,
+                           mulib_quic_ack_t *out, mulib_quic_ack_range_t *ranges,
+                           size_t range_capacity, size_t *consumed);
+  /** Append ACK/ACK_ECN with descending, disjoint and nonadjacent ranges. */
+  int mulib_quic_ack_write (mulib_buffer_t *out, const mulib_quic_ack_t *ack,
+                            const mulib_quic_ack_range_t *ranges);
   typedef struct mulib_quic_stream
   {
     uint64_t stream_id, offset;
@@ -45,6 +76,10 @@ extern "C"
   } mulib_quic_stream_t;
   int mulib_quic_stream_read (const void *data, size_t length,
                               mulib_quic_stream_t *out, size_t *consumed);
+  /** Like stream_read, but also accepts implicit-length STREAM frames.
+   * Supply only the remaining plaintext packet payload as input. */
+  int mulib_quic_packet_stream_read (const void *data, size_t length,
+                                     mulib_quic_stream_t *out, size_t *consumed);
   int mulib_quic_stream_write (mulib_buffer_t *out,
                                const mulib_quic_stream_t *stream);
 #ifdef __cplusplus

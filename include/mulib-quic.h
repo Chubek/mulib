@@ -1,7 +1,7 @@
 /** @file mulib-quic.h
- * @brief RFC 9000 variable integers and length-bearing STREAM frame codecs.
- * Define MULIB_IMPL_QUIC and BUFFER. No packet protection, TLS, congestion,
- * ACK processing or transport; never send these as unauthenticated packets.
+ * @brief RFC 9000 variable integers, STREAM and ACK frame codecs.
+ * Define MULIB_IMPL_QUIC and BUFFER. These codecs operate on plaintext frame
+ * payloads. They provide no packet protection, TLS, recovery or transport.
  * Parse: 1 OK, 0 truncated, -1 invalid. Views borrow input; failure unchanged.
  */
 #ifndef MULIB_QUIC_H
@@ -15,6 +15,24 @@ extern "C"
   int mulib_quic_varint_read (const void *data, size_t length, uint64_t *value,
                               size_t *consumed);
   int mulib_quic_varint_write (mulib_buffer_t *out, uint64_t value);
+  typedef struct mulib_quic_ack_range
+  {
+    uint64_t smallest, largest;
+  } mulib_quic_ack_range_t;
+  typedef struct mulib_quic_ack
+  {
+    uint64_t delay, ect0, ect1, ce;
+    size_t range_count;
+    int ecn;
+  } mulib_quic_ack_t;
+  /** Parse ACK/ACK_ECN into descending inclusive ranges. Returns -2 when
+   * range_capacity is too small. All outputs are unchanged on failure. */
+  int mulib_quic_ack_read (const void *data, size_t length,
+                           mulib_quic_ack_t *out, mulib_quic_ack_range_t *ranges,
+                           size_t range_capacity, size_t *consumed);
+  /** Append ACK/ACK_ECN with descending, disjoint and nonadjacent ranges. */
+  int mulib_quic_ack_write (mulib_buffer_t *out, const mulib_quic_ack_t *ack,
+                            const mulib_quic_ack_range_t *ranges);
   typedef struct mulib_quic_stream
   {
     uint64_t stream_id, offset;
@@ -24,6 +42,10 @@ extern "C"
   } mulib_quic_stream_t;
   int mulib_quic_stream_read (const void *data, size_t length,
                               mulib_quic_stream_t *out, size_t *consumed);
+  /** Like stream_read, but also accepts implicit-length STREAM frames.
+   * Supply only the remaining plaintext packet payload as input. */
+  int mulib_quic_packet_stream_read (const void *data, size_t length,
+                                     mulib_quic_stream_t *out, size_t *consumed);
   int mulib_quic_stream_write (mulib_buffer_t *out,
                                const mulib_quic_stream_t *stream);
 #ifdef __cplusplus
@@ -67,9 +89,9 @@ mulib_quic_varint_write (mulib_buffer_t *out, uint64_t v)
   bytes[0] |= (unsigned char)(n == 1 ? 0 : n == 2 ? 64 : n == 4 ? 128 : 192);
   return mulib_buffer_append (out, bytes, n);
 }
-int
-mulib_quic_stream_read (const void *p, size_t n, mulib_quic_stream_t *out,
-                        size_t *used)
+static int
+mulib_quic_stream_read_ (const void *p, size_t n, mulib_quic_stream_t *out,
+                         size_t *used, int implicit_length)
 {
   const unsigned char *s = (const unsigned char *)p;
   mulib_quic_stream_t f;
@@ -81,7 +103,7 @@ mulib_quic_stream_read (const void *p, size_t n, mulib_quic_stream_t *out,
   rc = mulib_quic_varint_read (p, n, &type, &at);
   if (rc != 1)
     return rc;
-  if (type < 10 || type > 15 || !(type & 2))
+  if (type < 8 || type > 15 || (!(type & 2) && !implicit_length))
     return -1;
   rc = mulib_quic_varint_read (s + at, n - at, &f.stream_id, &k);
   if (rc != 1)
@@ -95,10 +117,14 @@ mulib_quic_stream_read (const void *p, size_t n, mulib_quic_stream_t *out,
         return rc;
       at += k;
     }
-  rc = mulib_quic_varint_read (s + at, n - at, &len, &k);
-  if (rc != 1)
-    return rc;
-  at += k;
+  len = n - at;
+  if (type & 2)
+    {
+      rc = mulib_quic_varint_read (s + at, n - at, &len, &k);
+      if (rc != 1)
+        return rc;
+      at += k;
+    }
   if (len > MULIB_QUIC_MAX_INTEGER - f.offset)
     return -1;
   if (len > n - at)
@@ -109,6 +135,18 @@ mulib_quic_stream_read (const void *p, size_t n, mulib_quic_stream_t *out,
   *out = f;
   *used = at + f.length;
   return 1;
+}
+int
+mulib_quic_stream_read (const void *p, size_t n, mulib_quic_stream_t *out,
+                        size_t *used)
+{
+  return mulib_quic_stream_read_ (p, n, out, used, 0);
+}
+int
+mulib_quic_packet_stream_read (const void *p, size_t n,
+                               mulib_quic_stream_t *out, size_t *used)
+{
+  return mulib_quic_stream_read_ (p, n, out, used, 1);
 }
 int
 mulib_quic_stream_write (mulib_buffer_t *out, const mulib_quic_stream_t *f)
@@ -126,6 +164,131 @@ mulib_quic_stream_write (mulib_buffer_t *out, const mulib_quic_stream_t *f)
        && mulib_quic_varint_write (&b, f->length)
        && mulib_buffer_append (&b, f->data, f->length)
        && mulib_buffer_append (out, b.data, b.length);
+  mulib_buffer_free (&b);
+  return ok;
+}
+static int
+mulib_quic_next_integer_ (const unsigned char *p, size_t n, size_t *at,
+                          uint64_t *out)
+{
+  size_t used;
+  int rc = mulib_quic_varint_read (p + *at, n - *at, out, &used);
+  if (rc == 1)
+    *at += used;
+  return rc;
+}
+
+static int
+mulib_quic_ack_ranges_ (const unsigned char *p, size_t n, size_t *at,
+                        size_t count, uint64_t largest,
+                        mulib_quic_ack_range_t *ranges)
+{
+  for (size_t i = 0; i < count; ++i)
+    {
+      uint64_t gap, span;
+      int rc;
+      if (i)
+        {
+          rc = mulib_quic_next_integer_ (p, n, at, &gap);
+          if (rc != 1)
+            return rc;
+          if (largest < 2 || gap > largest - 2)
+            return -1;
+          largest -= gap + 2;
+        }
+      rc = mulib_quic_next_integer_ (p, n, at, &span);
+      if (rc != 1)
+        return rc;
+      if (span > largest)
+        return -1;
+      if (ranges)
+        {
+          ranges[i].largest = largest;
+          ranges[i].smallest = largest - span;
+        }
+      largest -= span;
+    }
+  return 1;
+}
+
+int
+mulib_quic_ack_read (const void *data, size_t n, mulib_quic_ack_t *out,
+                     mulib_quic_ack_range_t *ranges, size_t capacity,
+                     size_t *used)
+{
+  const unsigned char *p = (const unsigned char *)data;
+  mulib_quic_ack_t ack = { 0, 0, 0, 0, 0, 0 };
+  uint64_t type, largest, count;
+  size_t at = 0, range_start;
+  int rc;
+  if ((!data && n) || !out || !used || (!ranges && capacity))
+    return -1;
+  if (!n)
+    return 0;
+  rc = mulib_quic_next_integer_ (p, n, &at, &type);
+  if (rc != 1)
+    return rc;
+  if (type != 2 && type != 3)
+    return -1;
+  ack.ecn = type == 3;
+  if ((rc = mulib_quic_next_integer_ (p, n, &at, &largest)) != 1
+      || (rc = mulib_quic_next_integer_ (p, n, &at, &ack.delay)) != 1
+      || (rc = mulib_quic_next_integer_ (p, n, &at, &count)) != 1)
+    return rc;
+  if (count >= capacity)
+    return -2;
+  ack.range_count = (size_t)count + 1;
+  range_start = at;
+  rc = mulib_quic_ack_ranges_ (p, n, &at, ack.range_count, largest, NULL);
+  if (rc != 1)
+    return rc;
+  if (ack.ecn
+      && ((rc = mulib_quic_next_integer_ (p, n, &at, &ack.ect0)) != 1
+          || (rc = mulib_quic_next_integer_ (p, n, &at, &ack.ect1)) != 1
+          || (rc = mulib_quic_next_integer_ (p, n, &at, &ack.ce)) != 1))
+    return rc;
+  (void)mulib_quic_ack_ranges_ (p, n, &range_start, ack.range_count,
+                               largest, ranges);
+  *out = ack;
+  *used = at;
+  return 1;
+}
+
+int
+mulib_quic_ack_write (mulib_buffer_t *out, const mulib_quic_ack_t *ack,
+                      const mulib_quic_ack_range_t *ranges)
+{
+  mulib_buffer_t b = { NULL, 0, 0 };
+  int ok;
+  if (!out || !ack || !ranges || !ack->range_count
+      || (ack->ecn != 0 && ack->ecn != 1))
+    return 0;
+  ok = mulib_quic_varint_write (&b, (uint64_t)(2 + ack->ecn))
+       && mulib_quic_varint_write (&b, ranges[0].largest)
+       && mulib_quic_varint_write (&b, ack->delay)
+       && mulib_quic_varint_write (&b, ack->range_count - 1);
+  for (size_t i = 0; ok && i < ack->range_count; ++i)
+    {
+      if (ranges[i].smallest > ranges[i].largest)
+        {
+          ok = 0;
+          break;
+        }
+      if (i)
+        {
+          uint64_t previous = ranges[i - 1].smallest;
+          ok = previous >= 2 && ranges[i].largest <= previous - 2
+               && mulib_quic_varint_write (&b, previous - ranges[i].largest - 2);
+        }
+      if (ok)
+        ok = mulib_quic_varint_write (&b, ranges[i].largest - ranges[i].smallest);
+    }
+  if (ok && ack->ecn)
+    ok = mulib_quic_varint_write (&b, ack->ect0)
+         && mulib_quic_varint_write (&b, ack->ect1)
+         && mulib_quic_varint_write (&b, ack->ce);
+  if (ok)
+    ok = mulib_buffer_append (out, b.data, b.length);
   mulib_buffer_free (&b);
   return ok;
 }

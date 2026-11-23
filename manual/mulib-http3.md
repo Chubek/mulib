@@ -1,10 +1,12 @@
-# HTTP/3 frames
+# HTTP/3 frames and streams
 
 [Manuals](README.md) · [Library index](index.md)
 
 Define `MULIB_IMPL_HTTP3`, `MULIB_IMPL_QUIC` and `MULIB_IMPL_BUFFER`. The codec
 handles QUIC-varint type/length envelopes and validates frame-local HTTP/3 payload
-structure. It does not implement QUIC transport, QPACK or connection state.
+structure. It also provides an HTTP/3 control/request stream validator and a
+literal-only QPACK field-section codec. Supply ordered, authenticated QUIC
+stream bytes from a separate transport.
 
 `mulib_http3_frame_read(data, length, max_payload, &frame, &consumed)` returns
 1 OK, 0 MORE, -1 invalid, -2 limit, or **-3 allocation failure**. Both output
@@ -40,13 +42,28 @@ per identifier, with overflow checks. Sorting detects duplicates in O(n log n)
 work rather than a quadratic scan. Allocation failure is reported as -3 by the
 reader and 0 by the writer, with no published output or leaked temporary array.
 
-These are stricter checks than the earlier envelope-only codec. Stream roles,
-the requirement that SETTINGS be first on the control stream, duplicate SETTINGS
-*frames*, role-dependent GOAWAY IDs, push-ID limits, extension negotiation and
-QPACK semantics still require the surrounding connection implementation.
+## Stream state and QPACK
+
+Initialize separate state for each control stream or request half. Consume the
+control stream type before feeding frames. `mulib_http3_stream_next` requires
+SETTINGS first on the control stream, rejects duplicate SETTINGS and misplaced
+frames, and checks the direction and monotonicity of GOAWAY. A request half
+admits initial HEADERS, DATA, then optional trailers. Protocol errors latch an
+HTTP/3 application error; incomplete input or a local payload/allocation limit
+leaves the state unchanged. Call `mulib_http3_stream_finish` on FIN and indicate
+whether trailing partial frame bytes remain.
+
+The QPACK codec writes and reads field sections with zero dynamic insert count,
+literal names, and non-Huffman strings. It preserves the never-index flag.
+Field views borrow the caller's input and require a separate output array.
+Callers validate HTTP field semantics and set frame/field budgets. Indexed field
+representations and Huffman strings return -4. Dynamic table instructions,
+response state (including informational responses), server push, connection-wide
+stream bookkeeping, and QUIC transport are outside this API.
 
 [Example](../examples/modules/http3.c). Regression and allocation suites:
-`tests/test_http_hardening.c`, `tests/test_http_alloc.c`. The shared fuzz target
+`tests/test_http_hardening.c`, `tests/test_http_alloc.c`, and
+`tests/test_quic_http3_stream.c`. The shared fuzz target
 also checks parse/write/read semantics and failure output preservation.
 
 <!-- manual-reference -->
