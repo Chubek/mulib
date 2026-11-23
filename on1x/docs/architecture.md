@@ -42,11 +42,11 @@ the existing HIR/MIR bridge, not another parser or execution IR.
 
 ## Phases
 
-The optional [Firestone and Novostone HIR passes](../hir/README.md) run inside
-the processor's checked-HIR transaction, before authored rewrites. They fold
-eligible scalar expressions; Firestone can also remove a checked divide by
-literal one without dropping its numerator. The processor and C11/MEMGraph
-emitter consume the rechecked On1x HIR, not either library's internal representation.
+The [HIR stage](../hir/README.md) owns On1xMETA, the optional Firestone and
+Novostone rewrites, MEMGraph, and lowering to MIR. Firestone and Novostone
+run before authored rewrites in the checked-HIR transaction. MEMGraph proves
+bounds checks redundant on the resulting HIR, for direct C11 and the VM
+product profile. Backends do not consume either library's internal IR.
 
 An opt-in backend-neutral [scalar MIR v1](backend-mir.md) now branches from checked
 HIR into verified blocks/SSA values, function-local scalar slots and effect
@@ -93,9 +93,11 @@ source snapshot, with cache invalidation through actual fact deltas.
           │
      static checker: types, scopes, immutable variables,
      resource escape restrictions, simple definite returns
-         │
-         ▼
-      C11 backend → generated program translation unit
+          │
+          ▼
+      checked and optimized HIR ──► verified MIR ──► backends/mir-*
+          │
+      direct C11 reference → generated program translation unit
          │                 ├─ on1x_runtime.c
          │                 ├─ optional on1x_json.c
          │                 └─ planned MuLIB implementation TU + native companions

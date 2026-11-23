@@ -1,9 +1,53 @@
-# Optimizing checked On1x HIR
+# On1x HIR
 
-On1x's HIR is the in-memory `on1x::Unit` and its typed expressions and
-statements, not a second source format. This directory contains optional
-Firestone and Novostone adapters. The existing MIR relational
-analysis is a [separate integration](../docs/backend-analysis.md).
+On1x lowers directly into `on1x::Unit` and its typed expressions and statements.
+Parsing and source transforms build the tree; inference, specialization,
+canonical control/value lowering, and the On1x verifiers establish *checked
+HIR*. There is no second source language or external HIR format. `Unit` is
+also used before admission: its C++ type alone does not establish that the
+invariants hold.
+
+```text
+On1x source -> parse / imports / macros / PPX / staging -> check and canonicalize
+   -> checked HIR -> Firestone -> Novostone -> On1xMETA / partial evaluation
+      -> final checked HIR (+ optional MEMGraph bounds proofs)
+         -> lower to verified On1x MIR -> backends/mir-*
+         -> direct C11 reference -> C toolchain / optional Cephyr
+```
+
+- [`optimize.cpp`](optimize.cpp) owns the checked-HIR rewrite transaction.
+  It orders Firestone, Novostone, authored canonicalization, optional partial
+  evaluation, and bottom-up desugaring/canonicalization. The semantic checker
+  supplies the recheck. Rewrites work on a private clone, and the original
+  HIR is replaced only after the candidate passes. Rule selection can
+  disable rewrites but cannot disable source admission.
+- [`processor/`](processor/) owns the On1xMETA grammar, rule tables, semantic
+  constraints, and typed partial evaluator.
+- [`MEMGraph/`](MEMGraph/) proves bounds checks redundant on demand from the
+  final verified HIR. Direct C11 and VM-product MIR lowering query it at
+  check sites in their emission order, without a separate tree walk. Proofs
+  are never serialized or supplied by PPX, plugins, or authored rules.
+- [`lower_mir.cpp`](lower_mir.cpp) owns HIR-to-MIR lowering and verifies the
+  result before dispatch. The VM path can also recheck a private
+  [closure conversion](vm_closures.cpp) before lowering finite products.
+  Standard MIR remains numeric/scalar and bounded tuples; it rejects unsupported
+  aggregates, ownership, loans, cleanup, suspension and foreign operations
+  rather than silently falling back. Direct C11 covers the existing richer
+  language and remains the default. The [MIR optimizer](../docs/backend-passes.md)
+  and [MIR relational analysis](../docs/backend-analysis.md) are separate
+  downstream stages.
+
+## Extending the MIR route
+
+Keep source-only syntax out of executable HIR. Add each missing MIR capability
+end to end: define explicit typed operations (for example places/loans and
+move/drop on each exit edge), extend the MIR verifier and versioned format when
+needed, and admit it only for backends that implement those operations. Compare
+operand order, traps, cleanup, and diagnostics against direct C11. A structural
+verification pass is not a proof that a transformation preserves behavior.
+Foreign effects, ABI identity, and suspension/cancellation require their own
+admission gates; neither a HIR rewrite nor a successful C compilation can
+supply them.
 
 ## Firestone
 
@@ -22,9 +66,9 @@ divide. It does not simplify `x % 1` or `x / -1` for a dynamic `x`.
 The pass visits at most 32,768 HIR nodes and has a bounded traversal depth.
 It runs on a private copy after mandatory verification, before Novostone
 (if selected) and authored On1xMETA rewrites. The processor rechecks the
-transformed HIR before continuing. MEMGraph sees the final rechecked HIR
-through C11 emission and still decides independently whether to omit a bounds
-helper. There is no unconditional memory, FFI, ownership, or float rewrite.
+transformed HIR before continuing. MEMGraph sees the final rechecked HIR and
+still decides independently whether to omit a bounds check. There is no
+unconditional memory, FFI, ownership, or float rewrite.
 See the [Firestone benchmark](../benchmark/FIRESTONE_HIR.md) for reproduction.
 
 ## Novostone
@@ -61,8 +105,8 @@ without removing or moving their enclosing operation.
 
 The processor rechecks the candidate, applies its normal authored rule stages,
 then rechecks and publishes the complete HIR. The normal C11 and MIR consumers
-take that HIR. When `memgraph-bounds` is enabled, MEMGraph consumes the same HIR
-through the C11 emitter. For example, a previously too-deep fixed-array index
+take that HIR. When `memgraph-bounds` is enabled, MEMGraph analyzes it before
+direct C11 or VM-product MIR emission. For example, a previously too-deep fixed-array index
 can become a literal, but MEMGraph still checks its own shape, exact type,
 extent and range before omitting the bounds call. The Novostone pass does not
 produce bounds, FFI, ownership or loan certificates.

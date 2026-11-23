@@ -199,6 +199,28 @@ def main():
     t.compare(FIXTURE, stdout='11\n33\n3\n0\n33\n1\n101\n22\n102\n1\n'
               '103\n104\n33\n105\n106\n107\n2\n33\n2\n22\n')
     check_report(t)
+    generic = t.source('generic_order', '''fn before() {
+    let a = array[11, 22, 33];
+    println(a[0]); # elide index
+}
+
+fn main() {
+    before();
+    let id = fn(x) -> _ {
+        let a = array[11, 22, 33];
+        println(a[1]); # elide index; elide index
+        return x;
+    };
+    println(id(42));
+    println(id(true));
+    let a = array[11, 22, 33];
+    println(a[2]); # elide index
+}
+''')
+    t.compare(generic, stdout='11\n22\n42\n22\ntrue\n33\n')
+    events = json.loads(t.report(generic))['events']
+    assert [(e['status'], e['line']) for e in events] == [
+        ('applied', 3), ('applied', 16), ('applied', 10), ('applied', 10)], events
     # Use a chain of subtractions with zeros (not folded by the default profile).
     nested = t.source('proof_depth', 'fn main() { let a = array[11,22,33];\n'
                       '    println(a[' + ' - '.join(['2'] + ['(1 - 1)'] * 20) + ']); # keep index\n'
@@ -263,7 +285,8 @@ fn main() {
     reported = t.reject('--dump-memgraph', ownership, (), 1, move_error)
     assert off == on == reported, (off, on, reported)
 
-    # No MIR/VM expansion merely because a C11 pass is available.
+    # The standard scalar MIR profile is unchanged. Only VM product lowering
+    # can consume the fixed-array proof, and only when starting from source.
     array = t.source('outside_c11', 'fn main() { let a = array[1,2,3]; println(a[0]); }\n')
     for mode in ('--emit-ir', '--emit-ir-c'):
         t.reject(mode, array, (), 1, 'MIR')
@@ -271,9 +294,37 @@ fn main() {
     image = t.work / 'outside_c11.o1vm'
     require_success(run(t.compiler, '--emit-vm', array, '-o', image))
     assert image.read_bytes().startswith(b'O1VM'), image
-    t.reject('--emit-vm', array, ON, 2, 'not applicable')
+    require_success(run(t.compiler, '--emit-vm', array, *ON, '-o', image))
+    assert image.read_bytes().startswith(b'O1VM'), image
+    t.reject('--emit-vm', array, (*ON, '--ir-input'), 2, 'not applicable')
 
-    print('MEMGraph C11: check elision, retained checks, diagnostics and executable parity passed')
+    vm = t.source('vm_bounds', mark + '''
+        fn make() -> array<i64,3> { println(8); return array[11,22,33]; }
+        fn main() {
+            println(make()[(1+2)-2]);
+            println(make()[1:3][]);
+        }
+    ''')
+    for flags in (OFF, ON):
+        assert require_success(run(t.compiler, '--run-vm', vm, *flags)).stdout == '8\n22\n8\n2\n'
+
+    for name, bounds, trace in [
+        ('dynamic_vm_bounds', 'mark(20,1):mark(21,4)', '22\n20\n21\n'),
+        ('trapping_vm_bound', 'mark(20,1)/0:mark(21,2)', '22\n20\n'),
+        ('slice_vm_bounds', '0:2][2:3', '22\n'),
+    ]:
+        source = t.source(name, mark + f'''
+            fn main() {{
+                let a = array[11,22,33];
+                println(a[1]);
+                println(a[{bounds}][]);
+            }}
+        ''')
+        off, on = (run(t.compiler, '--run-vm', source, *flags) for flags in (OFF, ON))
+        assert off.returncode != 0 and off.stdout == trace, (name, off)
+        assert (on.returncode, on.stdout, on.stderr) == (off.returncode, off.stdout, off.stderr), (off, on)
+
+    print('MEMGraph HIR: check elision, retained checks, diagnostics and C11/VM parity passed')
 
 
 if __name__ == '__main__':

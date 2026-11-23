@@ -15,7 +15,7 @@
 #include <stdexcept>
 
 namespace on1x::driver {
- enum class Stage { Processor, C11, Lowering, MIR };
+ enum class Stage { Processor, Bounds, Lowering, MIR };
 
 // Names come from the linked compiler, including alternate authored tables.
 // 'all' is a selector, never a pass. Keep the descriptor pipeline's order.
@@ -34,7 +34,7 @@ struct OptimizationPolicy {
   for(const auto& entry:entries){
    if(!first)out<<',';
    first=false;
-    const char* stage=entry.stage==Stage::Processor?"processor":entry.stage==Stage::C11?"c11":
+     const char* stage=entry.stage==Stage::Processor?"processor":entry.stage==Stage::Bounds?"hir":
         entry.stage==Stage::Lowering?"lowering":"mir";
    // Authored identifiers, descriptor names and profile values are closed alphabets.
    out<<"{\"name\":\""<<entry.name<<"\",\"stage\":\""<<stage<<"\",\"enabled\":"
@@ -94,7 +94,7 @@ struct OptimizationRequest {
 #endif
    if(memgraph::available()){
     policy.memgraph_bounds=enabled("memgraph-bounds",inspect_memgraph||policy.profile=="release");
-    policy.entries.push_back({"memgraph-bounds",Stage::C11,policy.memgraph_bounds});
+     policy.entries.push_back({"memgraph-bounds",Stage::Bounds,policy.memgraph_bounds});
    }
   policy.decision_ssa=enabled("decision-ssa",source_base);
   policy.entries.push_back({"decision-ssa",Stage::Lowering,policy.decision_ssa});
@@ -111,9 +111,9 @@ struct OptimizationRequest {
   }
   return policy;
  }
-  void check_stages(const OptimizationPolicy& policy,bool processor,bool c11,bool lowering,bool mir) const {
+   void check_stages(const OptimizationPolicy& policy,bool processor,bool bounds,bool lowering,bool mir) const {
    for(const auto& e:policy.entries){
-    if(selectors.contains(e.name)&&!(e.stage==Stage::Processor?processor:e.stage==Stage::C11?c11:
+     if(selectors.contains(e.name)&&!(e.stage==Stage::Processor?processor:e.stage==Stage::Bounds?bounds:
                                    e.stage==Stage::Lowering?lowering:mir))
     throw std::runtime_error("optimization "+std::string(e.name)+" is not applicable in this mode");
   }

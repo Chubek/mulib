@@ -13,10 +13,15 @@ integrations. Existing compatible checkouts can be selected with
 checkout. See the [representation contracts](../manual/representation-contracts.md) for the
 cross-subsystem integration boundaries.
 
-The optional [MEMGraph C11 profile](MEMGraph/README.md) uses LibStone LLSynth
-at build time. It lets `on1xc` omit fixed-array bounds checks only when the
-compiler proves they cannot trap; it does not add a runtime dependency or
-widen ownership or foreign-call admission.
+The compiler translates source directly to [checked HIR](hir/README.md),
+runs high-level optimizations there, then emits verified MIR for the
+[`mir-*` backends](backends/README.md). Direct HIR-to-C11 remains the default
+reference path for features not yet supported in MIR.
+
+The optional [MEMGraph bounds profile](hir/MEMGraph/README.md) uses LibStone
+LLSynth at build time. It lets direct C11 and VM-product MIR lowering omit
+only fixed-array bounds checks that cannot trap. It adds no runtime dependency
+and does not widen ownership or foreign-call admission.
 
 The optional [Novostone HIR pass](hir/README.md) folds a bounded subset of
 closed checked expressions before On1xMETA and C11/MEMGraph. Enable it with
@@ -312,7 +317,7 @@ The repository accessed through the GitHub connection exposed the prior PPX-v1 s
 ## On1xMETA processor
 
 The normal compiler pipeline applies authored
-[`processor/*.o1m` rewrites](processor/REWRITES.md) compiled by the
+[`processor/*.o1m` rewrites](hir/processor/REWRITES.md) compiled by the
 LLSynth-generated `processor/On1xMETA.llsynth` language tool. Typed desugaring
 and canonicalization follow original semantic and ownership verification;
 transformed candidates are checked again before publication.

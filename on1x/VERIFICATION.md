@@ -7,6 +7,55 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## Consolidated checked-HIR pipeline — 2026-11-23
+
+Base MuLIB `5040412bf7fcce0e1e925fe63c613ddcc9681ea0`, pinned and unchanged
+LibStone `4c35077601899944594737559534aafd9014f330`. Linux x86-64, GCC 16.2.1
+and Clang 22.1.8. The enabled build used the generated scanner, SDK, Cephyr
+embedding, Firestone, Novostone (SOURCE, no Satie), and MEMGraph; Archon and
+native PPX were off. The fallback-scanner build disabled SDK, Cephyr, Firestone
+HIR, Novostone and MEMGraph.
+
+```sh
+ctest --test-dir build/on1x-hir-check --output-on-failure -j 6 \
+  -R '^on1x[.](cephyr[.]|memgraph|processor|firestone_hir|novostone_hir|mir($|_)|vm_data|optimization_cli|control|project_helpers|project_driver)'
+ctest --test-dir build/on1x-hir-check --output-on-failure -j 3 \
+  -R '^on1x[.](compiler$|partial_eval$|relational($|_cli))'
+ctest --test-dir build/on1x-hir-portable --output-on-failure -j 4 \
+  -R '^on1x[.](mir$|vm_data|optimization_cli|project_build|project_fetch)'
+python3 -B on1x/tests/test_on1x_project.py \
+  --on1xc "$PWD/build/on1x-hir-check/on1xc" ProjectTests.test_c11_memgraph_policy
+python3 -B on1x/hir/MEMGraph/tests/test_integration.py \
+  build/on1x-hir-check/on1xc on1x build/on1x-hir-check/memgraph-clang-san clang \
+  --regex --cflag=-fsanitize=address,undefined --cflag=-fno-omit-frame-pointer
+```
+
+The CTest selections passed 29/29, 3/3 and 5/5, respectively. The focused
+project test passed for both C11 and VM. The Clang differential passed with
+ASan/UBSan on generated C and the runtime, not on the compiler. MEMGraph tests
+check that VM MIR removes exactly the proved assertions, preserves operand
+effects and dynamic traps, rejects corrupted HIR, and retains C11 report order
+for specialized lambda bodies. Standard MIR still rejects fixed-array programs.
+
+Two broader Cephyr-enabled project suites reproduced the baseline sandbox
+failure: bubblewrap could not load `libcephyr.so.1` from the local install
+prefix. The same project suites passed in the fallback build without Cephyr.
+The cached upstream Cephyr build passed three of the four selected
+`c-api|cpp-api|sdk|c11-sample` tests; `cephyr.c-api` already failed its native
+artifact assertion before this change. All four On1x Cephyr tests passed.
+
+The concurrent `on1x/benchmark` baseline run passed 80 stock configurations
+and all 96 full-factorial configurations (352 executions in the full matrix)
+with GCC and Clang. It confirmed that Firestone first can remove work for
+Novostone without eliminating its useful Boolean folds, and that MEMGraph
+proves exposed bounds independently. The same six fixtures and eight selections
+against the integrated compiler matched all 48 C emissions and 48 MEMGraph
+reports byte-for-byte with scrutiny disabled in both builds, and matched all
+96 candidate executions on GCC and Clang. The generic-lambda report also
+matched with MEMGraph on and off. With default scrutiny the candidate's
+enabled Wetstone additionally warned on the intentional zero-divisor fixture;
+artifacts and program behavior still matched. No candidate speedup was measured.
+
 ## Static kernel registry and pre-commit registration — 2026-11-23
 
 MuLIB baseline `f10609e5` with existing local changes; LibStone
@@ -196,7 +245,7 @@ Build from the preceding boolean-lowering configuration below, using a fresh
 B=/mnt/nvme/on1x-zero-build
 cmake --build "$B" --parallel 5
 ctest --test-dir "$B" -R 'on1x[.](processor|optimization_cli|mir_decision|passes)' --output-on-failure
-python3 -B on1x/processor/snapshot.py --check --work "$B/snapshot-check"
+python3 -B on1x/hir/processor/snapshot.py --check --work "$B/snapshot-check"
 ```
 
 See [compiler policy](docs/optimization-profiles.md) for the debug/default/

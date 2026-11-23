@@ -36,8 +36,8 @@ reject rules that drop either evaluated or skipped captures.
 
 ```sh
 ctest --test-dir BUILD --output-on-failure -R 'on1x\.processor'
-python3 on1x/processor/tests/test_generator.py \
-  --root on1x --work WORK/generator --cxx c++
+python3 on1x/hir/processor/tests/test_generator.py \
+  --root on1x/hir/processor --work WORK/generator --cxx c++
 python3 on1x/tests/test_processor.py \
   BUILD/on1xc "$PWD/on1x" WORK/processor cc
 python3 on1x/tests/test_processor.py \

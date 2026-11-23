@@ -17,7 +17,7 @@
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
 #include <on1x/sema.hpp>
-#include <on1x/clone.hpp>
+#include "../hir/optimize.hpp"
 #include <charconv>
 #include <climits>
 #include <map>
@@ -996,50 +996,11 @@ class Checker {
     // precede any compiled rewrite that could remove an invalid operand.
     evidence.typed_before=processor::validate(u,processor::SemanticStage::Typed);
     if(analysis_context&&analysis_context->diagnostics.has_errors())return;
-    if(!selection.firestone_hir&&!selection.novostone_hir&&!selection.partial_eval&&
-       !selection.default_enabled&&selection.overrides.empty()){
-     // Nothing may change the already verified unit. In particular, disabling
-     // rewrites never disables the structural or typed semantic contracts.
-     if(output){evidence.typed_after=processor::validate(u,processor::SemanticStage::Typed);
-                evidence.verified=true;*output=std::move(evidence);}
-     return;
-    }
-    std::size_t budget=262144;
-    auto candidate=clone_unit(u,budget);
-    auto verify_candidate=[&]{
-     // Validate annotations before Checker can recompute them. Never repeat
-     // inference, macro expansion or source lowering on this private HIR.
-     evidence.typed_after=recheck_candidate(candidate,interfaces);
-    };
-     // The cheap full-width fold runs first; Novostone can still operate on
-     // its supported Boolean projections when both passes are selected.
-     if(selection.firestone_hir){
-      evidence.firestone_hir=selection.firestone_hir(candidate);
-      verify_candidate();
-     }
-     if(selection.novostone_hir){
-      evidence.novostone_hir=selection.novostone_hir(candidate);
-      verify_candidate();
-     }
-    // Expose neutral operands before desugaring can turn them into decisions
-    // (e.g. `x && !false`). Desugaring may itself introduce canonical redexes.
-    evidence.canonicalize=processor::apply(candidate,processor::Phase::Canonicalize,{},selection);
-    if(evidence.canonicalize.rewrites)verify_candidate();
-    if(selection.partial_eval){
-     evidence.partial_eval=processor::partial_evaluate(candidate,u);
-     const auto& pe=evidence.partial_eval;
-     if(pe.folds||pe.static_calls||pe.residual_calls)verify_candidate();
-    }
-    auto normalized=processor::desugar_normalized(candidate,{},selection);
-    evidence.desugar=std::move(normalized.desugar);
-    auto& total=evidence.canonicalize;
-    total.visited+=normalized.canonicalize.visited;
-    total.rewrites+=normalized.canonicalize.rewrites;
-    // Both traversals enumerate the same immutable canonical rule table.
-    for(std::size_t i=0;i<total.rules.size();++i)
-     total.rules[i].second+=normalized.canonicalize.rules[i].second;
-    verify_candidate();
-    u=std::move(candidate);evidence.verified=true;
+     hir::optimize_checked(u,selection,[&](Unit& candidate){
+      // Validate annotations before Checker can recompute them. Never repeat
+      // inference, macro expansion or source lowering on this private HIR.
+      return recheck_candidate(candidate,interfaces);
+     },evidence);
     if(output)*output=std::move(evidence);
  }
 }

@@ -1,7 +1,7 @@
 # Compiled processor interface (schema v1)
 
 The engine and semantic validator include `<on1x/meta_schema.hpp>` and
-`<on1x_meta_rules.hpp>` (generated in build/processor/generated).
+`<on1x_meta_rules.hpp>` (generated in `BUILD/hir/processor/generated`).
 
 Namespace `on1x::meta`:
 
@@ -50,7 +50,7 @@ constraint binary_arity phase semantic
 match Binary require arity "2" message "binary expression needs two operands";
 ```
 
-Build integration: `add_subdirectory(processor)` after frontend declaration.
+Build integration: `hir/CMakeLists.txt` adds `processor/` after frontend declaration.
 The subdirectory adds frontend generation dependencies and private includes.
 The `on1x_meta_generated` interface target is also available for internal
 build-tree consumers; it is not an installed SDK dependency.

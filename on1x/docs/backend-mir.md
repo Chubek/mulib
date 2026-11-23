@@ -16,8 +16,9 @@ HIR→C11-only. MIR ingress explicitly rejects `own<Named>` and any containing
 type until the IR has typed move/drop/place operations and cleanup edges.
 
 This is the first executable **B1 subset** from `BACKEND.md`. The implementation
-is in `include/on1x/backend/mir.hpp` and `src/backend/`. It consumes the existing
-checked, specialized HIR after imports, macros, PPX and staging admission.
+is in `include/on1x/backend/mir.hpp` and `src/backend/`.
+[`hir/lower_mir.cpp`](../hir/lower_mir.cpp) lowers checked, specialized HIR after
+imports, macros, PPX and staging admission.
 The default `--emit-c` continues to use the established HIR emitter.
 
 Intrinsic [statement loops](core-syntax.md) now lower through explicit
@@ -49,7 +50,7 @@ remain unsupported MIR profiles; C11 matching does not widen those boundaries.
 
 ### Canonical boolean decision lowering
 
-After ordinary canonical verification, `src/backend/lower.cpp` recognizes this
+After ordinary canonical verification, `hir/lower_mir.cpp` recognizes this
 narrow, typed value-region shape:
 
 ```text

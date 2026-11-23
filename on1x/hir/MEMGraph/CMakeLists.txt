@@ -1,6 +1,6 @@
 # MEMGraph rules are compiled at build time; only immutable tables reach C++.
 # The host adapter also provides the disabled-build API.
-target_sources(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src/canonical/memgraph.cpp")
+target_sources(on1x_frontend PRIVATE memgraph.cpp)
 find_package(Perl QUIET)
 set(_mmg_driver "")
 foreach(_mmg_root IN ITEMS "${ON1X_LIBSTONE_ROOT}/cornerstone/LLSynth" "${ON1X_LIBSTONE_ROOT}/LLSynth")
@@ -75,7 +75,7 @@ if(BUILD_TESTING)
   add_test(NAME on1x.memgraph.mmgc
     COMMAND "${CMAKE_COMMAND}" -E env "ON1X_MEMGRAPH_TEST_PARSER=${_mmg_parser}"
       "PYTHONDONTWRITEBYTECODE=1" "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mmgc.py")
-  add_executable(on1x_memgraph_hir_tests ../tests/test_memgraph_hir.cpp)
+  add_executable(on1x_memgraph_hir_tests ../../tests/test_memgraph_hir.cpp)
   target_link_libraries(on1x_memgraph_hir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.memgraph.hir COMMAND on1x_memgraph_hir_tests)
   set_tests_properties(on1x.memgraph.mmgc on1x.memgraph.hir PROPERTIES TIMEOUT 60)
@@ -89,7 +89,7 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME on1x.memgraph.c11
       COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_integration.py"
-        "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}/.."
+        "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}/../.."
         "${CMAKE_CURRENT_BINARY_DIR}/tests/c11" "${CMAKE_C_COMPILER}" ${_mmg_test_flags})
     set_tests_properties(on1x.memgraph.c11 PROPERTIES TIMEOUT 120)
   endif()

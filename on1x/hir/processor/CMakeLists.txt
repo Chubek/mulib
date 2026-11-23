@@ -25,11 +25,18 @@ else()
       snapshot.py generate.py ${_meta_generator_sources}
     COMMENT "Verify the pinned LLSynth-generated On1xMETA bootstrap parser" VERBATIM)
 endif()
-set(ON1X_META_RULE_FILES
+set(_meta_default_rules
   "${CMAKE_CURRENT_SOURCE_DIR}/canonicalize.o1m"
   "${CMAKE_CURRENT_SOURCE_DIR}/desugar.o1m"
-  "${CMAKE_CURRENT_SOURCE_DIR}/semantic.o1m"
-  CACHE STRING "On1xMETA rule inputs compiled into the frontend")
+  "${CMAKE_CURRENT_SOURCE_DIR}/semantic.o1m")
+set(_meta_legacy "${CMAKE_CURRENT_SOURCE_DIR}/../../processor")
+get_filename_component(_meta_legacy "${_meta_legacy}" ABSOLUTE)
+if("${ON1X_META_RULE_FILES}" STREQUAL
+    "${_meta_legacy}/canonicalize.o1m;${_meta_legacy}/desugar.o1m;${_meta_legacy}/semantic.o1m")
+  # Upgrade only the exact former default, not any authored rule override.
+  set(ON1X_META_RULE_FILES "${_meta_default_rules}" CACHE STRING "On1xMETA rule inputs compiled into the frontend" FORCE)
+endif()
+set(ON1X_META_RULE_FILES "${_meta_default_rules}" CACHE STRING "On1xMETA rule inputs compiled into the frontend")
 set(_meta_header "${_meta_generated}/on1x_meta_rules.hpp")
 add_custom_command(
   OUTPUT "${_meta_header}" "${_meta_generated}/rules_manifest.json"
@@ -37,7 +44,7 @@ add_custom_command(
     --parser "${_meta_parser}" --output "${_meta_header}"
     --manifest "${_meta_generated}/rules_manifest.json" ${ON1X_META_RULE_FILES}
   DEPENDS "${_meta_parser}" generate.py ${ON1X_META_RULE_FILES}
-    "${CMAKE_CURRENT_SOURCE_DIR}/../include/on1x/meta_schema.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../include/on1x/meta_schema.hpp"
   COMMENT "Validate and compile On1xMETA rewrite payloads and semantic constraints" VERBATIM)
 add_custom_target(on1x_meta_tables DEPENDS "${_meta_header}" "${_meta_generated}/rules_manifest.json")
 add_library(on1x_meta_generated INTERFACE)
@@ -63,12 +70,12 @@ if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
         --parser "${_meta_parser}" --output "${_variant_header}"
         "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/${_variant}_zero.o1m"
       DEPENDS "${_meta_parser}" generate.py "tests/fixtures/${_variant}_zero.o1m"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../include/on1x/meta_schema.hpp"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../../include/on1x/meta_schema.hpp"
       VERBATIM)
     # Compile both table consumers against the same variant to avoid mixing
     # different inline generated definitions in one executable.
     add_executable(on1x_meta_rule_${_variant}
-      tests/rule_control.cpp ../src/processor.cpp ../src/processor_semantic.cpp
+      tests/rule_control.cpp processor.cpp processor_semantic.cpp
       "${_variant_header}")
     target_include_directories(on1x_meta_rule_${_variant} BEFORE PRIVATE "${_variant_dir}")
     target_link_libraries(on1x_meta_rule_${_variant} PRIVATE on1x_frontend)
@@ -87,7 +94,7 @@ add_custom_target(on1x_meta_check
 if(BUILD_TESTING AND PERL_FOUND AND EXISTS "${_meta_driver}")
   add_test(NAME on1x.processor.generator
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_generator.py"
-      --root "${CMAKE_CURRENT_SOURCE_DIR}/.." --work "${CMAKE_CURRENT_BINARY_DIR}/tests/generator"
+      --root "${CMAKE_CURRENT_SOURCE_DIR}" --work "${CMAKE_CURRENT_BINARY_DIR}/tests/generator"
       --cxx "${CMAKE_CXX_COMPILER}" --perl "${PERL_EXECUTABLE}" --llsynth "${_meta_driver}")
   set_tests_properties(on1x.processor.generator PROPERTIES TIMEOUT 180)
   add_test(NAME on1x.processor.snapshots

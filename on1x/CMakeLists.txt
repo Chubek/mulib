@@ -117,12 +117,10 @@ file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTE
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
 add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
-  src/backend/mir.cpp src/backend/lower.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp
-  src/processor.cpp src/processor_semantic.cpp processor/partial_eval.cpp src/backend/vm_closures.cpp)
+  src/backend/mir.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
-add_subdirectory(processor)
 target_sources(on1x_frontend PRIVATE src/regex.cpp)
 if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
    EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/UTF8Automaton.hpp")
@@ -133,7 +131,7 @@ if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
 else()
   message(STATUS "On1x core regex: unavailable without LibStone Firestone headers")
 endif()
-add_subdirectory(MEMGraph)
+add_subdirectory(hir)
 target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
 if(ON1X_WITH_WETSTONE)
   if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
@@ -165,15 +163,7 @@ if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
 add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
-if(ON1X_WITH_FIRESTONE_HIR)
-  if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/libsema/OverflowCheck.hpp" OR
-     NOT EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/librewrite/Term.hpp")
-    message(FATAL_ERROR "ON1X_WITH_FIRESTONE_HIR needs Firestone under ON1X_LIBSTONE_ROOT")
-  endif()
-  target_sources(on1xc PRIVATE hir/firestone.cpp)
-  target_include_directories(on1xc SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone")
-  target_compile_definitions(on1xc PRIVATE ON1X_WITH_FIRESTONE_HIR=1)
-endif()
+target_link_libraries(on1xc PRIVATE on1x_hir_adapters)
 if(ON1X_WITH_CEPHYR)
   if(CMAKE_CROSSCOMPILING OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
      NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -256,7 +246,7 @@ if(ON1X_WITH_CEPHYR)
     set_tests_properties(on1x.cephyr.options PROPERTIES TIMEOUT 180)
     if(ON1X_WITH_MEMGRAPH)
       add_test(NAME on1x.cephyr.optimization COMMAND "${Python3_EXECUTABLE}" -B
-        "${CMAKE_CURRENT_SOURCE_DIR}/MEMGraph/tests/test_reference_effects.py" "$<TARGET_FILE:on1xc>"
+        "${CMAKE_CURRENT_SOURCE_DIR}/hir/MEMGraph/tests/test_reference_effects.py" "$<TARGET_FILE:on1xc>"
         "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/cephyr-optimization"
         "${CMAKE_C_COMPILER}" --driver)
       set_tests_properties(on1x.cephyr.optimization PROPERTIES TIMEOUT 300)

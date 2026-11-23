@@ -8,6 +8,7 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/vm.hpp>
 #include <on1x/backend/passes.hpp>
+#include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #ifdef ON1X_WITH_CEPHYR
 #include "backend/cephyr.hpp"
@@ -835,13 +836,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          throw std::runtime_error("--list-optimizations cannot be combined with an input or compilation mode");
         write_all(out,policy.listing());return 0;
        }
-       const bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
-       const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
-          mode=="--run-ir"||mode=="--emit-vm"||mode=="--run-vm"||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
+        const bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
+        const bool vm_mode=mode=="--emit-vm"||mode=="--run-vm";
+        const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
+           mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
        const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
          mode!="--print-stdlib"&&mode!="--stdlib-resource";
-        requested_opts.check_stages(policy,checked_source,!mir_mode&&(mode=="--emit-c"||dump_memgraph),
+         requested_opts.check_stages(policy,checked_source,
+                                     checked_source&&(vm_mode||(!mir_mode&&(mode=="--emit-c"||dump_memgraph))),
                                     mir_mode&&!ir_input,mir_mode);
        optimization.pipeline=policy.pipeline;
        const bool optimize=mir_mode&&(!optimization.pipeline.empty()||mode=="--dump-passes");
@@ -1073,8 +1076,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
       if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
        if(mir_mode){
-          auto module=(mode=="--emit-vm"||mode=="--run-vm")
-            ?on1x::mir::lower_for_vm(unit,{.decision_ssa=policy.decision_ssa})
+           auto module=vm_mode
+             ?on1x::hir::lower_vm(unit,{.decision_ssa=policy.decision_ssa},policy.memgraph_bounds)
             :on1x::mir::lower(unit,{.decision_ssa=policy.decision_ssa});
 #ifdef ON1X_WITH_EXTENSION_SDK
         if(!sdk_mode.empty())return sdk_output(module);

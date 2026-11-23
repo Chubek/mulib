@@ -586,7 +586,7 @@ particular revision. Minimize changes and preserve existing APIs/tests.
 | `on1x/src/loader.cpp`, `discovery.cpp` | Resolve trusted logical names, manifests, imported namespaces and versioned interfaces. |
 | `on1x/src/infer.cpp`, `sema.cpp`, `type.cpp` | Foreign nominal types, exact scalar/array/record signatures, errors, unsafe context and effects. |
 | `on1x/src/safety.cpp`, Chisel integration | Borrow/move/drop/alias/invalidation/region checking at real callsites. |
-| `on1x/src/backend/lower.cpp`, `mir.cpp`, `emit_c.cpp`, `on1x/src/codegen.cpp` | Typed foreign-call nodes, checked C11 adapters, resource cleanup and unsupported-target diagnostics. |
+| `on1x/hir/lower_mir.cpp`, `on1x/src/backend/{mir,emit_c}.cpp`, `on1x/src/codegen.cpp` | Typed foreign-call nodes, checked C11 adapters, resource cleanup and unsupported-target diagnostics. |
 | `on1x/src/cli.cpp` | Import diagnostics, optional binding-plan/admission inspection and offline resolution flags. |
 | `on1x/tools/on1x-build.py` | Select, deduplicate and link canonical kernel closure and generated adapters. |
 | `on1x/tools/on1x-exotract.py`, `on1x-bind` | Validate metadata and generate executable admitted interfaces, not just JSON inventory. |

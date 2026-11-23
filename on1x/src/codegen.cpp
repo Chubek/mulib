@@ -14,7 +14,7 @@
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
 #include <on1x/c11.hpp>
-#include "canonical/memgraph.hpp"
+#include "../hir/MEMGraph/memgraph.hpp"
 #include <algorithm>
 #include <map>
 #include <set>
@@ -735,8 +735,8 @@ class Generator {
      if(t==Type::RegexCaptures){
       auto root=temp(t,expr(*e.children[0]));
       if(e.kind==Expr::Kind::Length)return temp(Type::I64,"on1x_regex_count_v1("+root+")");
-      auto index=temp(Type::I64,expr(*e.children[1]));
-      (void)bounds.omit_check(e);  // Retained: regex captures have a different representation.
+       auto index=temp(Type::I64,expr(*e.children[1]));
+       (void)bounds.omit_check(e);  // Retained: regex captures have a different representation.
       return temp(Type::String,"on1x_regex_index_v1("+root+", "+index+", "+location(e.where)+")");
     }
     // Fixed arrays are rvalue-safe value structs; only slices need a materialized
@@ -747,12 +747,12 @@ class Generator {
     auto lo=temp(Type::I64,expr(*e.children[1]));
      auto at=[&]{return c_string(meta::source_literal(e.where.file))+", "+std::to_string(e.where.line);};
      if(e.kind==Expr::Kind::Index){
-      if(!bounds.omit_check(e))
+       if(!bounds.omit_check(e))
        definitions<<pad()<<"on1x_bounds_index("<<lo<<", "<<length<<", "<<at()<<");\n";
       return temp(e.type,slice?root+".backing.elements["+root+".start + "+lo+"]":root+".elements["+lo+"]");
      }
      auto hi=temp(Type::I64,expr(*e.children[2]));
-     if(!bounds.omit_check(e))
+      if(!bounds.omit_check(e))
       definitions<<pad()<<"on1x_bounds_slice("<<lo<<", "<<hi<<", "<<length<<", "<<at()<<");\n";
     return temp(e.type,"("+ctype(e.type)+"){"+(slice?root+".backing":root)+", "+(slice?root+".start + ":"")+lo+", "+hi+" - "+lo+"}");
    }
@@ -1286,8 +1286,9 @@ class Generator {
   helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
  }
  public:
-    explicit Generator(const Unit& source,const C11Options& options)
-      :unit(source),catalog(source),bounds(options),origins(options.origins){
+     explicit Generator(const Unit& source,const C11Options& options)
+       :unit(source),catalog(source),
+        bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins){
    for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
      for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
@@ -1308,9 +1309,9 @@ class Generator {
       if(parameter.type.contains_unique())uses_unique=true;
      if(!f.prototype)collect(f.body);
     }
-    ownership_cleanup=uses_unique;
-  }
-    std::string bounds_report() const {return bounds.report();}
+     ownership_cleanup=uses_unique;
+   }
+     std::string bounds_report() const {return bounds.report();}
     std::string run(){
      std::string kernel_headers,ipc_header;
      for(const auto& f:unit.functions){
@@ -1424,9 +1425,9 @@ std::string emit_c(const Unit& unit,const std::string& source_name,const C11Opti
  extensions::verify_evidence(unit);inherent::verify_elaborated(unit);cliches::verify_elaborated(unit);
  canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);
  verify_nominals(unit);csp::verify(unit,true);
- Generator generator(unit,options);
+  Generator generator(unit,options);
  auto output=generator.run();
- if(options.memgraph_report)*options.memgraph_report=generator.bounds_report();
+  if(options.memgraph_report)*options.memgraph_report=generator.bounds_report();
  return output;
 }
 std::string emit_c(const Unit& unit,const std::string& source_name){

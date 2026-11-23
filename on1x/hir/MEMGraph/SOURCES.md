@@ -15,5 +15,5 @@ Read via the connected GitHub repository API on 2026-11-21.
 
 The initial design archive did not run LLSynth. The integrated build now runs
 the configured LibStone generator; no generator sources are copied. See
-[README.md](README.md) for regeneration and [verification](../VERIFICATION.md)
+[README.md](README.md) for regeneration and [verification](../../VERIFICATION.md)
 for the tested On1x and LibStone revisions.

@@ -105,4 +105,4 @@ parser:
 
 After the final focused gate, compiler/test workloads stopped for the
 benchmark worker's quiet measurement window. Timing conclusions are recorded
-separately in `../../benchmark/PROCESSOR_FEEDBACK.md`.
+separately in [`on1x/benchmark/PROCESSOR_FEEDBACK.md`](../../../benchmark/PROCESSOR_FEEDBACK.md).

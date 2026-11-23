@@ -229,10 +229,14 @@ class ProjectTests(unittest.TestCase):
         out = self.build()
         self.run_bin(out)
         policy = json.loads((out / '.on1x-build.json').read_text())['optimization']
-        self.assertEqual(policy['active_stages'], ['processor', 'c11'])
-        self.assertIn({'name': 'memgraph-bounds', 'stage': 'c11', 'enabled': True},
+        self.assertEqual(policy['active_stages'], ['processor', 'hir'])
+        self.assertIn({'name': 'memgraph-bounds', 'stage': 'hir', 'enabled': True},
                       policy['optimizations'])
-        self.build('--via-mir', negative='optimization memgraph-bounds requires the C11 backend')
+        self.build('--via-mir', negative='optimization memgraph-bounds requires the C11 or mir-vm backend')
+        out = self.build('--backend', 'mir-vm')
+        self.run_bin(out)
+        vm_policy = json.loads((out / '.on1x-build.json').read_text())['optimization']
+        self.assertEqual(vm_policy['active_stages'], ['processor', 'hir', 'lowering', 'mir'])
 
     def test_novostone_hir_manifest(self):
         listing = json.loads(subprocess.check_output(

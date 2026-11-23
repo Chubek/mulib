@@ -10,7 +10,7 @@ machine-code backend is added.
 
 ## Current feature matrix
 
-The [MEMGraph C11 profile](../MEMGraph/ADAPTER.md) compiles the authored
+The [MEMGraph HIR bounds profile](../hir/MEMGraph/ADAPTER.md) compiles the authored
 `.mmg` and `.mmgi` through LibStone LLSynth. Direct C11 can omit independently
 proved fixed-array bounds calls without changing checked HIR, operand
 evaluation, or the runtime ABI. Dynamic bounds and unsupported layouts keep
@@ -29,7 +29,7 @@ These results
 do not imply zero overhead for arbitrary functions, closures or aggregates.
 
 Initial On1xMETA continuation (2026-11-21): the normal semantic pipeline first consumed
-LLSynth-compiled [`processor/*.o1m`](../processor/README.md) programs: 6 typed
+LLSynth-compiled [`processor/*.o1m`](../hir/processor/README.md) programs: 6 typed
 desugaring rules, 13 canonicalization rules, and 45 structural/typed semantic
 constraints. Rewrites follow original ownership/control verification and are
 rechecked transactionally. `--dump-processor` exposes deterministic rule hits

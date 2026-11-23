@@ -1586,20 +1586,27 @@ def build(args):
             opt_flags.append('--optimize-ir')
         inventory = json.loads(executor.run([compiler, '--list-optimizations', *opt_flags], bound=MAX_MANIFEST))
         stages = {entry['name']: entry['stage'] for entry in inventory['optimizations']}
+        active_stages = ['processor']
+        if backend == 'c11' and 'c11' in stages.values():  # Older on1xc inventories.
+            active_stages.append('c11')
+        if backend in ('c11', 'mir-vm') and 'hir' in stages.values():
+            active_stages.append('hir')
+        if backend != 'c11':
+            active_stages.extend(['lowering', 'mir'])
         for key in sorted(declared_names(config)):
             if key not in stages:
                 fail(f'unknown optimization in On1xfile: {key}')
         for key in selections:
-            if key != 'all' and stages[key] not in ('processor', 'c11') and backend == 'c11':
+            if key != 'all' and stages[key] == 'hir' and 'hir' not in active_stages:
+                fail(f'optimization {key} requires the C11 or mir-vm backend')
+            if key != 'all' and stages[key] not in active_stages and backend == 'c11':
                 fail(f'optimization {key} requires a MIR backend')
             if key != 'all' and stages[key] == 'c11' and backend != 'c11':
                 fail(f'optimization {key} requires the C11 backend')
         check_flags = optimization.flags(opt_profile, {key: on for key, on in selections.items()
                                                        if key == 'all' or stages[key] == 'processor'})
-        c11_stages = ['processor', 'c11'] if 'c11' in stages.values() else ['processor']
         policy = dict(backend=backend, args=opt_flags, declared=declared_policy(config),
-                      active_stages=['processor', 'lowering', 'mir'] if backend != 'c11' else c11_stages,
-                      **inventory)
+                      active_stages=active_stages, **inventory)
         project_stage = work / 'input/project'
         deps_stage = work / 'input/deps'
         roles = layouts(disk, config, 'project', project_stage, snapshot, preprocess)

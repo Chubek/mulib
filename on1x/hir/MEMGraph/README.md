@@ -1,7 +1,8 @@
 # MEMGraph/v1 — typed memory-graph rewrite descriptions for On1x
 
 **Status:** `on1xc` uses the compiled `c11_fixed_array_v1` profile to omit
-provably redundant fixed-array index and slice checks in direct C11.
+provably redundant fixed-array index and slice checks in direct C11 and
+VM-product MIR. The existing rules and profile identifier are unchanged.
 It covers literal and small closed checked-`i64` bounds expressions; dynamic
 or potentially trapping bounds retain the reference checks.
 Type, ownership, loan, dynamic slice provenance and FFI rules remain design
@@ -19,14 +20,14 @@ Emitted programs do not need LLSynth, Perl or Python.
 ## Layout
 
 ```
-on1x/MEMGraph/
+on1x/hir/MEMGraph/
   MEMGraph.llsynth             LLSynth lexical/grammar specification
   00-types.mmg                 post-inference invariant checks
   10-memory.mmg                capacity, indexing, provenance checks
   20-ownership.mmg             move/drop/borrow checks
   30-ffi.mmg                   admission and raw-FFI separation
   40-canonical.mmg             guarded candidate optimizations
-  50-c11-fixed-array.mmg       executable direct-C11 fixed-array profile
+  50-c11-fixed-array.mmg       executable fixed-array profile
   types.mmgi, memory.mmgi, c11-fixed-array.mmgi, owners.mmgi, loans.mmgi, ffi.mmgi
   canonical-types.mmgi, canonical-memory.mmgi,
   canonical-owners.mmgi, canonical-ffi.mmgi
@@ -34,7 +35,7 @@ on1x/MEMGraph/
   tools/mmgc.py                deterministic contract/table compiler
   tools/preview.py            candidate-only (unverified) graph matcher
   tests/test_mmgc.py            parser, determinism and rejection tests
-  tests/test_integration.py     strict C11 differential tests
+  tests/test_integration.py     strict C11 and VM differential tests
   tests/fixed-array.on1x        executable array fixture
   tests/demo_graph.json        abstract sample input
   ADAPTER.md                   implemented profile and future proof contract
@@ -48,14 +49,16 @@ From the MuLIB repository root:
 cmake -S on1x -B build/on1x -DBUILD_TESTING=ON -DON1X_WITH_MEMGRAPH=ON
 cmake --build build/on1x --target on1xc on1x_memgraph_hir_tests
 ctest --test-dir build/on1x -R '^on1x\.memgraph\.' --output-on-failure
-build/on1x/on1xc --dump-memgraph on1x/MEMGraph/tests/fixed-array.on1x
+build/on1x/on1xc --dump-memgraph on1x/hir/MEMGraph/tests/fixed-array.on1x
 build/on1x/on1xc --emit-c --enable-opt memgraph-bounds program.on1x -o program.c
+build/on1x/on1xc --run-vm --enable-opt memgraph-bounds program.on1x
 ```
 
 The optimization is off in the normal and debug profiles and on in the release
-profile for direct C11. Use `--disable-opt memgraph-bounds` to produce the
+profile for direct C11 and source-to-VM. Use `--disable-opt memgraph-bounds` to produce the
 reference output, or to disable the analysis in `--dump-memgraph`. A named
-`memgraph-bounds` selector is not applicable to MIR/VM/native modes.
+`memgraph-bounds` selector is not applicable to standard MIR, MIR-native
+emission, or serialized `--ir-input`.
 With `ON1X_WITH_MEMGRAPH=OFF`, direct C11 emits its reference checks and
 `--dump-memgraph` reports that support is unavailable.
 
@@ -74,7 +77,7 @@ is a code-generation result, not a general speedup claim.
 To generate a manifest with the real parser independently of CMake:
 
 ```sh
-python3 on1x/MEMGraph/tools/mmgc.py --root on1x/MEMGraph \
+python3 on1x/hir/MEMGraph/tools/mmgc.py --root on1x/hir/MEMGraph \
   --llsynth on1x/third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl \
   --manifest /tmp/memgraph-plan.json
 ```
@@ -83,8 +86,8 @@ To preview the structure of candidate rewrites on an **abstract** JSON graph
 without evaluating proofs or changing the input:
 
 ```sh
-python3 on1x/MEMGraph/tools/preview.py \
-  on1x/MEMGraph/tests/demo_graph.json
+python3 on1x/hir/MEMGraph/tools/preview.py \
+  on1x/hir/MEMGraph/tests/demo_graph.json
 ```
 
 The preview output is prominently marked `UNVERIFIED_DO_NOT_PUBLISH`. It is
@@ -99,7 +102,7 @@ To check only grammar generation, LibStone also supports:
 
 ```sh
 perl on1x/third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl \
-  --check --mode=interpret on1x/MEMGraph/MEMGraph.llsynth
+  --check --mode=interpret on1x/hir/MEMGraph/MEMGraph.llsynth
 ```
 
 ## DSL
@@ -206,8 +209,8 @@ not the manifest or an arbitrary user-supplied package.
 
 ## Current status / what remains
 
-The C11 adapter admits only the constant fixed-array bounds profile. Dynamic
-slice provenance, ownership and loan traces, FFI review, and MIR memory/effect
+The HIR adapter admits only the constant fixed-array bounds profile. Dynamic
+slice provenance, ownership and loan traces, FFI review, and general MIR memory/effect
 descriptors still need separate executable profiles. The design-only rules now
 request explicit checks for slice lifetime and range order, current owner
 generation, generic type constraints, and foreign pointer ownership. See

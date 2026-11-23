@@ -7,7 +7,8 @@ from support import NativeTests, run
 
 
 t = NativeTests()
-fixtures = t.root / 'processor/tests/fixtures'
+processor = t.root / 'hir/processor'
+fixtures = processor / 'tests/fixtures'
 archon = t.compiler.parent / 'backends/mir-archon/on1x-archon-mir'
 scalar_abi = archon.parent / 'libon1x_archon_scalar_abi.a'
 native = archon.is_file() and scalar_abi.is_file()
@@ -244,11 +245,11 @@ assert first.stdout == second.stdout and not first.stderr and not second.stderr
 report = json.loads(first.stdout)
 assert report['format'] == 'on1x.processor' and report['version'] == 1
 assert report['verified'] is True
-manifest = json.loads((t.compiler.parent / 'processor/generated/rules_manifest.json').read_text())
+manifest = json.loads((t.compiler.parent / 'hir/processor/generated/rules_manifest.json').read_text())
 for identity in ['program_sha256', 'parser_sha256']:
     assert report[identity] == manifest[identity] and len(report[identity]) == 64
 for source in manifest['sources']:
-    authored = t.root / 'processor' / source['file']
+    authored = processor / source['file']
     assert hashlib.sha256(authored.read_bytes()).hexdigest() == source['sha256'], source
 for phase in ['structural', 'typed_before', 'typed_after', 'desugar', 'canonicalize']:
     evidence = report[phase]
@@ -256,7 +257,7 @@ for phase in ['structural', 'typed_before', 'typed_after', 'desugar', 'canonical
     names = [rule['name'] for rule in evidence['rules']]
     assert len(names) == len(set(names)), (phase, names)
     for rule in evidence['rules']:
-        authored = t.root / 'processor' / rule['file']
+        authored = processor / rule['file']
         line = authored.read_text().splitlines()[rule['line']-1]
         assert line.startswith(('rule ' + rule['name'] + ' ',
                                 'constraint ' + rule['name'] + ' ')), (phase, rule, line)

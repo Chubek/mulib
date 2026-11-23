@@ -44,7 +44,7 @@ def check_parser(libstone):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--libstone", type=Path, default=HERE.parent / "third_party/libstone")
+    ap.add_argument("--libstone", type=Path, default=HERE.parents[1] / "third_party/libstone")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--parser-only", action="store_true")

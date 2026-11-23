@@ -1,4 +1,5 @@
 #include "memgraph.hpp"
+#include <stdexcept>
 #include <sstream>
 
 #ifdef ON1X_WITH_MEMGRAPH
@@ -17,8 +18,7 @@ bool available() noexcept {
 #endif
 }
 
-Bounds::Bounds(const C11Options& options)
-    : enabled(options.memgraph_bounds), reporting(options.memgraph_report != nullptr) {
+Bounds::Bounds(bool enabled, bool reporting) : enabled(enabled), reporting(reporting) {
     if (enabled && !available())
         throw std::runtime_error("MEMGraph unavailable: configure with ON1X_WITH_MEMGRAPH=ON and LibStone LLSynth");
 #ifdef ON1X_WITH_MEMGRAPH
@@ -290,4 +290,5 @@ std::string Bounds::report() const {
     }
     return out.str() + "]}\n";
 }
+
 }

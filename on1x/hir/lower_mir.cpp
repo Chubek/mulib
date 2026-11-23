@@ -1,4 +1,5 @@
-#include <on1x/backend/mir.hpp>
+#include "lower_mir.hpp"
+#include "MEMGraph/memgraph.hpp"
 #include <on1x/backend/vm_closures.hpp>
 #include <on1x/sema.hpp>
 #include <on1x/extensions.hpp>
@@ -13,7 +14,7 @@
 #include <map>
 #include <limits>
 #include <algorithm>
-#include "numeric.hpp"
+#include "../src/backend/numeric.hpp"
 
 namespace on1x::mir {
 namespace {
@@ -35,6 +36,7 @@ class Lowering {
   // back to ordinary storage lowering, never bypasses HIR/MIR verification.
   std::size_t decision_work;
   bool vm_products;
+  memgraph::Bounds bounds;
   std::map<Type,Type> layouts;
   std::size_t layout_work;
   // Array extents are compact in HIR but multiplicative when represented as
@@ -357,10 +359,12 @@ class Lowering {
    auto lo=expression(*e.children.at(1));if(current==ended)return 0;
    Id hi=0;
    if(e.kind==E::Slice){hi=expression(*e.children.at(2));if(current==ended)return 0;}
-   bounds_check(constant(0,at),lo,Op::Le,at);
-   if(e.kind==E::Slice){
-    bounds_check(lo,hi,Op::Le,at);bounds_check(hi,length,Op::Le,at);
-   }else bounds_check(lo,length,Op::Lt,at);
+   if(!bounds.omit_check(e)){
+    bounds_check(constant(0,at),lo,Op::Le,at);
+    if(e.kind==E::Slice){
+     bounds_check(lo,hi,Op::Le,at);bounds_check(hi,length,Op::Le,at);
+    }else bounds_check(lo,length,Op::Lt,at);
+   }
    auto backing=slice?field(root,Type::data(Type::Array,{elem},{},extent),0,at):root;
    auto position=slice?emit(Op::Add,Type::I64,{field(root,Type::I64,1,at),lo},at):lo;
    if(e.kind==E::Slice)
@@ -516,8 +520,9 @@ class Lowering {
   if(scope)scopes.pop_back();
  }
 public:
-  Lowering(const Unit& u,Limits l,bool products=false):unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)),
-   vm_products(products),layout_work(l.work){}
+  Lowering(const Unit& u,Limits l,bool products=false,bool bounds_opt=false)
+   :unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)),
+    vm_products(products),bounds(bounds_opt,false),layout_work(l.work){}
    Module run(){
       inherent::verify_elaborated(unit);
       cliches::verify_elaborated(unit);
@@ -557,13 +562,20 @@ public:
 }
 Module lower(const Unit& unit,Limits limits){extensions::verify_evidence(unit);return Lowering(unit,limits).run();}
 Module lower_for_vm(const Unit& unit,Limits limits){
+ return hir::lower_vm(unit,limits,false);
+}
+}
+
+namespace on1x::hir {
+mir::Module lower_vm(const Unit& unit,mir::Limits limits,bool memgraph_bounds){
+ using namespace mir;
  extensions::verify_evidence(unit);canonical::verify_control(unit);canonical::verify_values(unit);
  cliches::verify_elaborated(unit);inherent::verify_elaborated(unit);csp::verify(unit,true);
  verify_nominals(unit);meta::require_core(unit);
  if(auto converted=vm_closures(unit,limits)){
   recheck_checked_hir(*converted);
-  return Lowering(*converted,limits,true).run();
+  return Lowering(*converted,limits,true,memgraph_bounds).run();
  }
- return Lowering(unit,limits,true).run();
+ return Lowering(unit,limits,true,memgraph_bounds).run();
 }
 }

@@ -12,10 +12,10 @@ and compiler rule execution require neither Python nor Perl.
 
 The optional [typed partial evaluator](PARTIAL_EVALUATION.md) is independent
 of the authored structural rule tables. Enable it with `--enable-opt partial-eval`.
-The [Novostone HIR pass](../hir/README.md) can also fold closed checked
+The [Novostone HIR pass](../README.md#novostone) can also fold closed checked
 expressions before the authored rules. Its report is available with
 `--enable-opt novostone-hir --dump-processor`.
-The [Firestone pass](../hir/README.md#firestone) can expose additional `i64`
+The [Firestone pass](../README.md#firestone) can expose additional `i64`
 rewrites before the authored rules, including full-width constant arithmetic.
 
 ## Authoring
@@ -90,17 +90,20 @@ ctest --test-dir BUILD -R '^on1x.processor.' --output-on-failure
 changes; `on1x_meta_check` independently regenerates and compares all artifacts.
 All generator module and `.o1m` dependencies are explicit CMake dependencies.
 `ON1X_META_RULE_FILES` can select alternate validated rule modules.
+Existing CMake caches using the former default module paths migrate automatically.
+Custom selections are not modified; update any paths that reference moved
+shipping modules.
 
 Standalone generation:
 
 ```sh
 perl on1x/third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl \
   --mode=interpret -T python3 -o BUILD/On1xMETA.py \
-  on1x/processor/On1xMETA.llsynth
-python3 -B on1x/processor/generate.py --parser BUILD/On1xMETA.py \
+  on1x/hir/processor/On1xMETA.llsynth
+python3 -B on1x/hir/processor/generate.py --parser BUILD/On1xMETA.py \
   --output BUILD/on1x_meta_rules.hpp --manifest BUILD/rules_manifest.json \
-  on1x/processor/canonicalize.o1m on1x/processor/desugar.o1m \
-  on1x/processor/semantic.o1m
+  on1x/hir/processor/canonicalize.o1m on1x/hir/processor/desugar.o1m \
+  on1x/hir/processor/semantic.o1m
 ```
 
 The generator tests regenerate with real LLSynth twice, compile and inspect

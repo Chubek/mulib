@@ -2,13 +2,15 @@
 
 ## Executable profile: `c11_fixed_array_v1`
 
-The direct C11 emitter calls the adapter after the canonical control, value,
-ownership/loan, nominal, kernel and concurrency verifiers. The SDK's built-in
-C11 backend uses the same emitter. This profile observes only emitted
-fixed-array index/slice sites; all other normalized operators are outside its
-projection. The existing emitter and runtime remain authoritative for them.
+After canonical verification, the adapter proves bounds facts on demand from
+the original HIR expressions. The C11 emitter (including the SDK built-in)
+queries it in emission order, so specialized lambda bodies keep their original
+order and budget behavior. Source-to-VM lowering uses the same proof after
+any rechecked closure conversion; it omits only the corresponding VM MIR
+assertions. Both consumers still evaluate the base and bounds exactly once,
+left to right. Standard MIR has no fixed-array layout and does not query it.
 
-When enabled, the [Firestone and Novostone HIR passes](../hir/README.md) run
+When enabled, the [Firestone and Novostone HIR passes](../README.md) run
 earlier in the processor. This adapter sees the final rechecked HIR, not
 their internal representations or proof records. A folded literal must pass MEMGraph's
 ordinary shape, layout and range checks.
@@ -22,13 +24,14 @@ from the checked HIR. Slice values, moves, loan nodes and regex captures are
 not eligible.
 
 For a matching `ProvedArrayIndex` or `ProvedArraySlice` replacement, the only
-permitted change is to omit a call to the bounds helper. The proof compares
+permitted change is to omit the C11 bounds helper or the equivalent VM MIR
+assertions. The proof compares
 against the original lowering:
 
 | Domain | Evidence |
 | --- | --- |
 | Value and exact type/module identity | The original expression, operand nodes, result type and access/layout code remain unchanged. |
-| Evaluation and effects | C11 emits the same operand evaluation and temporaries in order. The removed helper would return without doing anything. |
+| Evaluation and effects | The lowerer emits the same operand evaluations in order. The removed checks always succeed and have no other effect. |
 | Ownership and loans | No move, release, borrow, allocation or operand evaluation is removed or introduced. |
 | FFI identity | No foreign call, ABI adapter or admission metadata is matched or modified. |
 | Traps/errors | The compiler shares the C11 runtime's exact in-range conditions; every other check, including those in operands, is still emitted. |
@@ -50,9 +53,9 @@ The generated `preserves` names are
 validated when compiling the package; they are not proof results.
 
 There is no rewritten HIR to revalidate: the candidate is a bounded private
-lowering decision, and both outputs use the same verified HIR and C11 path.
-Inspect with `on1xc --dump-memgraph`; its bounded report includes applied and
-retained checks and whether the budget was exhausted or the events truncated.
+lowering decision. Inspect with `on1xc --dump-memgraph`; the bounded report lists
+applied and retained decisions in C11 emission order (not runtime order), with
+flags for budget exhaustion and event truncation.
 It is not an admission artifact or an application-runtime log.
 
 ## Contract for future profiles that change HIR
@@ -63,9 +66,9 @@ not source text. Core entry points to inspect in MuLIB are:
 - `src/sema.cpp`, `src/infer.cpp`: authoritatively checked type identity;
 - `src/canonical/verify_values.cpp`: independently reconstruct ownership,
   initialization, projected moves, borrowed places and lexical loan state;
-- `src/processor.cpp`: existing On1xMETA candidate transformation and recheck;
+- `hir/optimize.cpp` and `hir/processor/`: On1xMETA candidate transformation;
 - `src/codegen.cpp`: direct-C11 reference emitter;
-- `src/backend/mir.cpp`: current scalar/product verifier (not full ownership);
+- `hir/lower_mir.cpp` and `src/backend/mir.cpp`: HIR lowering and MIR verification;
 - `src/safety.cpp`, `include/on1x/safety.hpp`: Chisel-backed admitted extern profile;
 - `on1x/contracts-exoml/` and `docs/contracts.md`: claim-backed FFI evidence.
 

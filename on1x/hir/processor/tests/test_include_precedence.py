@@ -36,7 +36,7 @@ def main():
         "set(BUILD_TESTING OFF)\n"
         "add_executable(on1x_frontend probe.cpp)\n"
         'target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")\n'
-        f'target_include_directories(on1x_frontend PRIVATE "{processor.parent / "include"}")\n'
+        f'target_include_directories(on1x_frontend PRIVATE "{processor.parents[1] / "include"}")\n'
         f'add_subdirectory("{processor}" processor)\n')
     for command in [
         [args.cmake, "-S", str(source), "-B", str(build),

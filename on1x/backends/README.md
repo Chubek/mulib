@@ -1,5 +1,10 @@
 # On1x built-in backends
 
+In source builds, [On1x HIR](../hir/README.md) runs high-level optimizations
+and lowers to verified MIR before dispatch to a `mir-*` backend. Direct C11
+continues to consume checked HIR as the reference path. Serialized MIR starts
+at MIR verification and does not run HIR passes.
+
 In SDK-enabled builds, the compiler dispatches these existing modes through
 the extension SDK registry and artifact sink:
 

@@ -1,14 +1,15 @@
 # Compiled semantic contracts
 
-`processor/semantic.o1m` is compiled by the LLSynth-generated On1xMETA
+`hir/processor/semantic.o1m` is compiled by the LLSynth-generated On1xMETA
 frontend into the same immutable table used by the canonical processor.
-`src/processor_semantic.cpp` interprets its constraints directly over the
+`hir/processor/processor_semantic.cpp` interprets its constraints directly over the
 actual On1x HIR. It does not invoke another checker as a rule action.
 
 ## Admission and ordering
 
 The existing type, ownership, borrow, control, concurrency and extension
-checkers remain authoritative. The integrated order in `src/sema.cpp` is:
+checkers remain authoritative. `src/sema.cpp` handles admission and hands
+the checked HIR to `hir/optimize.cpp`:
 
 1. Existing macro/stage/inference preparation and elaboration checks.
 2. Compiled structural semantic contracts.
@@ -16,13 +17,15 @@ checkers remain authoritative. The integrated order in `src/sema.cpp` is:
 4. Existing value lowering/rechecking, concurrency lowering and mandatory
    control/value/ownership/concurrency/extension verification.
 5. Compiled typed semantic contracts on the original, verified HIR.
-6. A private candidate: canonicalize first so that a neutral operand such as
+6. A private candidate: run optional Firestone and Novostone, then canonicalize
+   so that a neutral operand such as
    `!false` is visible before `&&` expands. Then desugar bottom-up, trying
    canonical rules before desugar rules at each node and after each
    replacement. For example, in `x && (true != false)`, normalize the new
    negated equality to `true` before visiting `&&`. This avoids building a
    decision region that a later expression-only pass could no longer remove.
-   Both families share the second traversal's finite work/rewrite budget.
+   Optional partial evaluation runs between the two authored stages.
+   Both rule families share the second traversal's finite work/rewrite budget.
    Check typed contracts, types and all mandatory canonical invariants after
    the changing prepass and before publication.
 7. Commit the candidate and its report only after verification succeeds.

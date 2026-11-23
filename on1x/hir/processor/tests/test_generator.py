@@ -18,9 +18,10 @@ def main():
     cli.add_argument('--llsynth', type=Path)
     args = cli.parse_args()
     root, work = args.root.resolve(), args.work.resolve()
+    on1x = root.parents[1]
     work.mkdir(parents=True, exist_ok=True)
-    llsynth = args.llsynth or root / 'third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl'
-    spec, generator = root / 'processor/On1xMETA.llsynth', root / 'processor/generate.py'
+    llsynth = args.llsynth or on1x / 'third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl'
+    spec, generator = root / 'On1xMETA.llsynth', root / 'generate.py'
     parser = work / 'parser.py'
 
     def run(argv, success=True):
@@ -42,7 +43,7 @@ def main():
                     '--manifest', directory / 'manifest.json', *inputs], success)
 
     valid = work / 'identity.o1m'
-    shutil.copyfile(root / 'processor/tests/fixtures/identity.o1m', valid)
+    shutil.copyfile(root / 'tests/fixtures/identity.o1m', valid)
     one, two = work / 'one', work / 'two'
     generate([valid], one)
     relocated = work / 'relocated/identity.o1m'
@@ -58,7 +59,7 @@ def main():
     assert manifest['output_sha256'] == hashlib.sha256((one / 'on1x_meta_rules.hpp').read_bytes()).hexdigest()
     assert 'LLSynth' in manifest['parser']
     for field, path in [('parser_sha256', parser), ('generator_sha256', generator),
-                        ('schema_sha256', root / 'include/on1x/meta_schema.hpp')]:
+                        ('schema_sha256', on1x / 'include/on1x/meta_schema.hpp')]:
         assert manifest[field] == hashlib.sha256(path.read_bytes()).hexdigest(), field
     # Do not merely assert changed hashes: compile the table and inspect its
     # selected replacement and source provenance through its public C++ schema.
@@ -74,7 +75,7 @@ int main() {
 ''')
     binary = work / 'table'
     run([args.cxx, '-std=c++20', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-         '-I', one, '-I', root / 'include', driver, '-o', binary])
+         '-I', one, '-I', on1x / 'include', driver, '-o', binary])
     assert run([binary]).stdout == 'remove_double_not:value:identity.o1m:3\nlazy_and::identity.o1m:7\n'
 
     # Input order is irrelevant, including disjoint semantic-only modules.
@@ -180,7 +181,7 @@ int main() {
     assert result.returncode == 1 and 'identical budgets' in result.stderr
 
     # Validate all shipping rule modules, not just the standalone fixture.
-    shipping = sorted((root / 'processor').glob('*.o1m'))
+    shipping = sorted(root.glob('*.o1m'))
     assert len(shipping) >= 3, 'canonicalize/desugar/semantic modules must all ship'
     generate(shipping, work / 'shipping')
     generate(list(reversed(shipping)), work / 'shipping-again')

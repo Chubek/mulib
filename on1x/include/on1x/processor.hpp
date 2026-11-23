@@ -21,6 +21,7 @@ struct RuleSelection {
   bool partial_eval=false;
   // Trusted in-tree compiler hook; the SDK/source cannot register transforms
   // here. Keeping it driver-owned avoids extra dependencies in the SDK archive.
+  // Adapters must count every mutation; zero hits means the candidate is unchanged.
   NovostoneStats (*novostone_hir)(Unit&) = nullptr;
   FirestoneStats (*firestone_hir)(Unit&) = nullptr;
   bool enabled(std::string_view name) const {

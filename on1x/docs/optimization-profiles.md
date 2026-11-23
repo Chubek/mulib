@@ -5,7 +5,7 @@ a stable `name`, a `stage`, and an `enabled` boolean. Add profile or selection
 flags to see the resolved policy. Authored rule names come from the compiled
 `.o1m` tables; MIR pass names come from the pass descriptors.
 
-| `--opt-profile` | Authored processor rules | [`partial-eval`](../processor/PARTIAL_EVALUATION.md) | [`memgraph-bounds`](../MEMGraph/README.md) (C11 only, if built) | `decision-ssa` lowering | MIR pass pipeline |
+| `--opt-profile` | Authored processor rules | [`partial-eval`](../hir/processor/PARTIAL_EVALUATION.md) | [`memgraph-bounds`](../hir/MEMGraph/README.md) (C11 and source-to-VM, if built) | `decision-ssa` lowering | MIR pass pipeline |
 |---|---|---|---|---|---|
 | `default` (also when omitted) | on | off | off | on | off, except for `--optimize-ir` and `--dump-passes` |
 | `debug` | off | off | off | off | off |
@@ -36,8 +36,9 @@ uses. An individual selector must refer to an applicable stage:
 
 * Direct source C11, checking and `--dump-processor` accept authored rules
   and `partial-eval`.
-* Direct source C11 emission and `--dump-memgraph` accept the `c11` stage
-  selector `memgraph-bounds` when LLSynth-built MEMGraph is available.
+* Direct source C11, source-to-VM and `--dump-memgraph` accept the `hir` stage
+  selector `memgraph-bounds` when LLSynth-built MEMGraph is available. Older
+  compiler inventories report this selector as `c11` and allow it only there.
 * Source-to-MIR, including SDK MIR hooks and native emission, also accepts
   `decision-ssa` and the MIR passes `constant-fold`, `simplify-cfg`,
   `local-slots` and `dead-pure`.
@@ -45,8 +46,8 @@ uses. An individual selector must refer to an applicable stage:
   process or lower. Syntax and dependency inspection execute no optional passes.
 
 `--dump-processor` reports active rules and their actual hits.
-`--dump-memgraph` enables C11 bounds inspection unless explicitly disabled,
-and reports the decisions for that emission.
+`--dump-memgraph` enables HIR bounds inspection unless explicitly disabled,
+and reports the decisions in direct C11 emission order.
 `--dump-passes` reports the actual selected pipeline in its standard execution
 order. When all MIR passes are disabled it verifies the input and reports
 identical source and output MIR, zero work, and no events. `--optimize-ir`

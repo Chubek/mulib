@@ -91,7 +91,9 @@ The VM source route goes beyond ordinary scalar MIR:
 
 * The VM-specific `lower_for_vm` projects finite copyable record/sum/array/slice
   representations into typed products, under its documented layout bounds.
-* `src/backend/vm_closures.cpp` lifts immediate lambdas, including canonical
+  With `memgraph-bounds`, fixed-array accesses omit only proved redundant MIR
+  assertions, preserving operand order. Dynamic and slice-backed accesses stay checked.
+* `hir/vm_closures.cpp` lifts immediate lambdas, including canonical
   legacy match arms with product arguments, into named bytecode functions.
   First-order function **values** use finite tag-and-capture products and typed
   per-signature dispatchers. Named function alternatives, immutable captures,

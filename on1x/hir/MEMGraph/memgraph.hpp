@@ -1,10 +1,12 @@
 #pragma once
-#include <on1x/c11.hpp>
+#include <on1x/ast.hpp>
 #include <string_view>
 
 namespace on1x::memgraph {
-// Compiler-private, after canonical verification. This engine may change only
-// whether the existing C11 bounds call is emitted; HIR and operands are read-only.
+// Compiler-private, after canonical verification. The engine proves only that
+// a fixed-array index/slice check is redundant, not that any operand is dead.
+// Each lowering gets a fresh decision budget and queries in its emission order;
+// no evidence is attached to HIR or reused for a different unit.
 class Bounds {
     struct Event {
         Location where;
@@ -22,8 +24,9 @@ class Bounds {
                 std::size_t rule_line = 0, std::string_view diagnostic = {});
 
 public:
-    explicit Bounds(const C11Options&);
+    Bounds(bool enabled, bool reporting);
     bool omit_check(const Expr&);
     std::string report() const;
 };
+
 }

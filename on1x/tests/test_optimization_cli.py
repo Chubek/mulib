@@ -26,7 +26,7 @@ release = ['--profile', 'release']
 baseline = listing()
 explicit_hir = {'novostone-hir', 'firestone-hir'}
 assert baseline == listing('--opt-profile', 'default')
-assert all(on == (stage not in ('mir', 'c11') and name not in explicit_hir | {'partial-eval'})
+assert all(on == (stage not in ('mir', 'hir') and name not in explicit_hir | {'partial-eval'})
            for name, (stage, on) in baseline.items())
 assert {'decision-ssa', 'integer_add_zero_right', 'constant-fold', 'dead-pure'} <= baseline.keys()
 assert not any(on for _, on in listing(*debug).values())

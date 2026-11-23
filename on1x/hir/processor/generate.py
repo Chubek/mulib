@@ -429,7 +429,7 @@ def compile_inputs(parser, inputs):
     lines += ["}};", "}", ""]
     payload = "\n".join(lines)
     schema_sha256 = hashlib.sha256(
-        (Path(__file__).resolve().parent.parent / "include/on1x/meta_schema.hpp").read_bytes()).hexdigest()
+        (Path(__file__).resolve().parents[2] / "include/on1x/meta_schema.hpp").read_bytes()).hexdigest()
     generator_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     provenance = {"schema_sha256": schema_sha256, "generator_sha256": generator_sha256,
                   "parser_sha256": parser.on1x_parser_sha256, "sources": sources,
