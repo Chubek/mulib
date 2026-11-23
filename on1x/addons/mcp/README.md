@@ -49,11 +49,11 @@ workspace availability must be checked at deployment.
 From the MuLIB root:
 
 ```sh
-python3 -B on1x/addons/chatgpt/test_chatgpt.py
-python3 -B on1x/addons/chatgpt/server.py --root "$PWD" --check \
+python3 -B on1x/addons/mcp/test_chatgpt.py
+python3 -B on1x/addons/mcp/server.py --root "$PWD" --check \
   --revision "$(git rev-parse HEAD)" \
   --libstone-revision "$(git -C on1x/third_party/libstone rev-parse HEAD)"
-python3 -B on1x/addons/chatgpt/server.py --root "$PWD"
+python3 -B on1x/addons/mcp/server.py --root "$PWD"
 ```
 
 The **operator's shell**, not the service, invokes Git in the example.
@@ -62,8 +62,9 @@ arguments to report `unknown`, never a fabricated revision. `--check` prints a
 deterministic fingerprint/size report and exits. `--describe` prints the actual
 tool descriptors (also requires `--root` syntactically; it does not read it).
 
-The server binds **only `127.0.0.1:8787`**, accepting exact
-`Host: 127.0.0.1:8787` or `localhost:8787`. No CORS origins are allowed by default.
+By default the server binds **only `127.0.0.1:8787`**, accepting exact
+`Host: 127.0.0.1:8787` or `localhost:8787`. Setting `--allowed-host` replaces
+those defaults, not the loopback bind. No CORS origins are allowed by default.
 Its index is an in-memory startup snapshot; restart to observe source changes.
 Use an operator-controlled frozen/read-only checkout, not a concurrently edited
 tree, for deployment. Startup rejects missing required sources and malformed
@@ -90,14 +91,33 @@ endpoint or an explicitly configured Secure MCP Tunnel.
 
 1. Audit every allowlisted source for publication. Choose a frozen checkout.
    Run the tests and `--check`; preserve its hashes and actual revisions.
-2. Put a maintained HTTPS reverse proxy in front of the loopback service.
+2. To install the loopback service on a Linux systemd host with Python 3.11+,
+   run from the MuLIB checkout (with the server's SSH host key already trusted):
+
+   ```sh
+   bash on1x/addons/mcp/deploy.sh root@server.example.org knowledge.example.org
+   ```
+
+   The installer saves the **committed `HEAD`** archive under `${TMPDIR:-/tmp}`
+   and uses local Python 3 to check it before connecting over SSH. `deploy.sh`,
+   `deploy_probe.py`, `server.py`, and `core.py` must be present in that archive
+   and match the working-tree files. Staging changes in Git is not enough, and
+   local edits or untracked files are never shipped. Use an audited checkout
+   whose committed archive contains the deployment files before retrying.
+   Passing `knowledge.example.org` approves the allowlisted data for anonymous
+   publication and configures the exact Host accepted by the backend. Deploy
+   checks `initialize`, `notifications/initialized`, and `tools/list` over
+   loopback with that Host before keeping the new service. It does not install
+   DNS, a TLS certificate, an HTTPS proxy, or a tunnel. Without the public
+   hostname argument it installs a local-only backend.
+3. Put a maintained HTTPS reverse proxy in front of the loopback service.
    Enforce OpenAI-managed mTLS at that proxy to limit clients to ChatGPT
    (validate the documented chain, client-auth use and SAN; do not pin a leaf).
    Do not expose this stdlib HTTP backend to the public internet.
-3. For approved **public repository data**, use the anonymous MCP mode:
+4. To run the anonymous backend manually instead of using `deploy.sh`, use:
 
    ```sh
-   python3 -B on1x/addons/chatgpt/server.py --root /srv/mulib \
+   python3 -B on1x/addons/mcp/server.py --root /srv/mulib \
      --public-data --allowed-host knowledge.example.org
    ```
 
@@ -106,22 +126,23 @@ endpoint or an explicitly configured Secure MCP Tunnel.
    forwarded-host headers. Set proxy request/header size limits, connection/
    concurrency/rate limits, TLS, and slow-client deadlines. Block outbound
    connections from the backend process. No proxy response-body/query logging.
-4. **Private or unpublished sources are unsupported by the bundled anonymous
+5. **Private or unpublished sources are unsupported by the bundled anonymous
    configuration.** Before using them, supply an independently reviewed
    OAuth 2.1 resource-server gateway with protected-resource metadata, PKCE,
    issuer/audience/expiry/scope enforcement on **every** request and proper MCP
    challenges/tool security metadata. Keep this backend unreachable except
    through that gateway. Changing `mcp.json` alone does not implement OAuth.
    There is no builtin OAuth server, API-key hack, or token verification here.
-5. Test your HTTPS endpoint with MCP Inspector (optional external development
+6. Test your HTTPS endpoint with MCP Inspector (optional external development
    tool, not a runtime dependency). Select Streamable HTTP, inspect every
    schema, positive/negative case and both `content`/`structuredContent`.
-6. In current ChatGPT web: [Plugins](https://chatgpt.com/plugins) → plus →
-   **Add custom MCP server** → enter HTTPS `/mcp` URL, name and authentication.
+7. In current ChatGPT web: [Plugins](https://chatgpt.com/plugins) → plus →
+   **Add custom MCP server** → enter the public HTTPS `/mcp` URL, name, and
+   **No authentication** for this anonymous configuration.
    Review the risk warning; **Create as a plugin**, install, start a new chat,
    type `@`, and select it. Workspace permissions apply. Older UI deployments
    may expose this under Apps/Connectors settings and developer mode.
-7. Refresh the connection after schema/description changes. Re-run evaluation
+8. Refresh the connection after schema/description changes. Re-run evaluation
    prompts and inspect the actual tool arguments/results. Public directory
    submission additionally requires a stable public deployment, domain/publisher
    verification, support details and a published operator-specific privacy
@@ -135,7 +156,7 @@ can reach your machine.
 Optional portable distribution (does **not** deploy the service):
 
 ```sh
-sh on1x/addons/chatgpt/package.sh \
+sh on1x/addons/mcp/package.sh \
   --endpoint https://knowledge.example.org/mcp \
   --output /tmp/opencode/on1x-knowledge.zip
 ```
@@ -227,7 +248,12 @@ No results: use exact identifiers or fewer keywords. `RESULT_LIMIT`/
 knowledge. Startup `INVALID_MANIFEST`/`INVALID_JSON`/`INDEX_LIMIT`: repair canonical
 metadata or review budgets offline, never relax input handling through prompts.
 `UNSAFE_SOURCE`: replace symlinks with canonical regular files in the deployment
-checkout. 403: review exact Host and Origin; do not enable wildcard CORS.
+checkout. If ChatGPT refuses the connection, first check that the installer
+succeeded and that the public HTTPS URL answers MCP POSTs through the proxy (or
+tunnel). A loopback probe does not test public DNS, TLS/mTLS, proxy routing, or
+workspace permissions. 403: review exact Host and Origin; do not enable wildcard
+CORS. With the hostname above, add `-H 'Host: knowledge.example.org'` to the local
+curl probe.
 406: supply both MCP Accept types. GET 405 is intentional: no SSE listener.
 Unknown `/well-known` routes return 404 because this anonymous backend is not
 an OAuth provider. No external ChatGPT credentials or end-to-end web approval

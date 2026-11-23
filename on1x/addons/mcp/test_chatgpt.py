@@ -2,6 +2,7 @@
 """Offline core/HTTP/security/relocation tests plus a live-checkout smoke."""
 import hashlib
 import http.client
+import io
 import json
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tarfile
 import tempfile
 import threading
 import unittest
@@ -16,6 +18,7 @@ from unittest.mock import patch
 import zipfile
 
 import core
+import deploy_probe
 import package
 import server
 
@@ -327,6 +330,106 @@ class CoreTests(unittest.TestCase):
                 package.package(self.root / "bad.zip", endpoint)
 
 
+class DeployTests(unittest.TestCase):
+    addon = Path("on1x/addons/mcp")
+    probe = addon / "deploy_probe.py"
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory(prefix="on1x-mcp-deploy-test-")
+        self.addCleanup(temp.cleanup)
+        base = Path(temp.name)
+        self.repo = base / "checkout"
+        self.repo.mkdir()
+        self.git("init", "--quiet")
+        fixture(self.repo)
+        (self.repo / "README.md").write_text("# Committed docs\n")
+        (self.repo / self.addon).mkdir(parents=True)
+        for name in ("deploy.sh", "server.py", "core.py"):
+            shutil.copyfile(HOME / name, self.repo / self.addon / name)
+        self.commit()
+
+        bin_dir = base / "bin"
+        bin_dir.mkdir()
+        ssh = bin_dir / "ssh"
+        ssh.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$MOCK_SSH_ARGS"\ncat\n')
+        ssh.chmod(0o755)
+        self.ssh_args = base / "ssh-args"
+        self.staging = base / "staging"
+        self.staging.mkdir()
+        self.env = dict(os.environ, PATH=f"{bin_dir}:{os.environ['PATH']}",
+                        MOCK_SSH_ARGS=str(self.ssh_args), TMPDIR=str(self.staging))
+
+    def git(self, *args):
+        return subprocess.run(
+            ["git", "-C", str(self.repo), "-c", "user.name=Deploy Test",
+             "-c", "user.email=deploy-test@example.org", "-c", "commit.gpgsign=false",
+             "-c", "core.hooksPath=/dev/null", *args],
+            check=True, capture_output=True, text=True, timeout=15).stdout.strip()
+
+    def commit(self):
+        self.git("add", "--all")
+        self.git("commit", "--quiet", "-m", "Deployment fixture")
+
+    def copy_probe(self):
+        shutil.copyfile(HOME / self.probe.name, self.repo / self.probe)
+
+    def deploy(self):
+        result = subprocess.run(
+            ["bash", str(self.repo / self.addon / "deploy.sh"), "root@test.invalid",
+             "knowledge.example.org"],
+            cwd=self.repo, env=self.env, capture_output=True, timeout=15)
+        self.assertEqual(list(self.staging.iterdir()), [])
+        return result
+
+    def rejected(self, expected):
+        result = self.deploy()
+        stderr = result.stderr.decode()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"preflight failed for HEAD {self.git('rev-parse', 'HEAD')}", stderr)
+        self.assertIn(expected, stderr)
+        self.assertFalse(self.ssh_args.exists())
+
+    def test_deploy_rejects_probe_missing_from_head_before_ssh(self):
+        self.copy_probe()
+        for staged in (False, True):
+            with self.subTest(staged=staged):
+                if staged:
+                    self.git("add", str(self.probe))
+                self.rejected(f"{self.probe}: missing from the archive")
+
+    def test_deploy_rejects_working_tree_installer_mismatch_before_ssh(self):
+        self.copy_probe()
+        self.commit()
+        script = self.repo / self.addon / "deploy.sh"
+        with script.open("a") as file:
+            file.write("\n# Uncommitted installer edit.\n")
+        self.rejected(f"{self.addon}/deploy.sh: working-tree contents differ from the archive")
+
+    def test_deploy_rejects_probe_excluded_by_export_attributes_before_ssh(self):
+        self.copy_probe()
+        (self.repo / ".gitattributes").write_text(f"{self.probe} export-ignore\n")
+        self.commit()
+        self.rejected(f"{self.probe}: missing from the archive")
+
+    def test_deploy_sends_only_validated_head_archive(self):
+        self.copy_probe()
+        self.commit()
+        revision = self.git("rev-parse", "HEAD")
+        (self.repo / "README.md").write_text("Uncommitted docs\n")
+        local_only = self.addon / "local-only.txt"
+        (self.repo / local_only).write_text("Do not upload\n")
+        result = self.deploy()
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        args = self.ssh_args.read_text().splitlines()
+        self.assertIn("root@test.invalid", args)
+        self.assertTrue(args[-1].endswith(f"bash '{revision}' 'knowledge.example.org'"))
+        with tarfile.open(fileobj=io.BytesIO(result.stdout)) as archive:
+            self.assertEqual(archive.extractfile("README.md").read(), b"# Committed docs\n")
+            self.assertEqual(archive.extractfile(str(self.probe)).read(),
+                             (HOME / self.probe.name).read_bytes())
+            self.assertNotIn(str(local_only), archive.getnames())
+
+
 class HTTPTests(unittest.TestCase):
     def setUp(self):
         CoreTests.setUp(self)
@@ -364,6 +467,21 @@ class HTTPTests(unittest.TestCase):
             "params": {"name": "search", "arguments": {"query": "checked"}}}))
         self.assertEqual(status, 200)
         self.assertTrue(result["result"]["structuredContent"]["results"])
+
+    def test_deploy_probe_respects_exact_host(self):
+        deploy_probe.probe(self.http.server_port)
+        public_host = "knowledge.example.org"
+        self.http.allowed_hosts = frozenset((public_host,))
+        with self.assertRaisesRegex(ValueError, "initialize: HTTP 403"):
+            deploy_probe.probe(self.http.server_port)
+        deploy_probe.probe(self.http.server_port, public_host)
+        with self.assertRaisesRegex(ValueError, "initialize: HTTP 403"):
+            deploy_probe.probe(self.http.server_port, "other.example.org")
+
+    def test_deploy_probe_requires_tool_discovery(self):
+        with patch.object(server, "tools", return_value=[]):
+            with self.assertRaisesRegex(ValueError, "tools/list: missing search or fetch"):
+                deploy_probe.probe(self.http.server_port)
 
     def test_http_boundaries(self):
         for headers, expected in (

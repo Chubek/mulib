@@ -33,9 +33,9 @@ Allowlisted LibStone README/STATUS fingerprint:
 Changes to shared source documentation legitimately change those fingerprints.
 
 ```sh
-python3 -B on1x/addons/chatgpt/test_chatgpt.py
-python3 -B -X dev on1x/addons/chatgpt/test_chatgpt.py
-python3 -B on1x/addons/chatgpt/server.py --root "$PWD" --check
+python3 -B on1x/addons/mcp/test_chatgpt.py
+python3 -B -X dev on1x/addons/mcp/test_chatgpt.py
+python3 -B on1x/addons/mcp/server.py --root "$PWD" --check
 
 cmake -S on1x -B build/chatgpt-addon-tests -DBUILD_TESTING=ON \
   -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF \
@@ -89,3 +89,27 @@ full repository sanitizer suite. The final On1x suites establish coexistence,
 not hosted ChatGPT behavior. Python-only addon changes introduce no C/C++ ABI
 or compiler semantic changes. Passing source retrieval tests is not On1x
 feature verification.
+
+## Deployment regression — 2026-11-24
+
+Baseline `bc75b00782fc34ff895aa559c1a9503ef367c960`: the deployment archive
+contained `on1x/addons/mcp/server.py` but not the old `addons/chatgpt/server.py`
+path used by the installer. The public-host mode replaces default loopback Host
+values, so using the default Host for the readiness probe returned HTTP 403.
+
+Offline checks of the fix (Linux x86_64, Python 3.14.7): the addon suite and its
+CTest registration test discovery on loopback with default and explicit public
+Host values, rejection of mismatched hosts, and rejection when discovery
+doesn't list the core tools. A local deployment simulation used a committed
+fixture, `git archive`, mocked SSH/systemd and a real loopback Python process;
+it passed with and without the public hostname. Public HTTPS, actual systemd,
+the ChatGPT UI and workspace permissions were not exercised.
+
+The same baseline lacks `deploy_probe.py` in `HEAD`, even when the local
+installer calls it. The preflight regression suite uses a temporary Git
+repository and an SSH stub: an untracked or staged-only probe, an archive
+exclusion, and a modified installer all fail before SSH. The success case sends
+the verified archive with the pinned commit and omits dirty and untracked
+content. The current checkout also failed preflight with the expected missing
+probe diagnostic and did not invoke the SSH stub. The addon suite passed all
+34 tests; no real deployment was performed.

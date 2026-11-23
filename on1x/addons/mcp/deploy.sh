@@ -16,6 +16,48 @@ fi
 # Deploy committed sources so the service can cite their exact revision.
 repo=$(git -C "$(dirname -- "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 revision=$(git -C "$repo" rev-parse HEAD)
+staging=$(mktemp -d "${TMPDIR:-/tmp}/on1x-mcp-deploy.XXXXXXXX")
+trap 'rm -rf -- "$staging"' EXIT
+trap 'exit 1' HUP INT TERM
+archive=$staging/release.tar
+git -C "$repo" archive --format=tar "$revision" README.md MANIFEST.yaml include manual on1x >"$archive"
+
+# Check the actual archive, not just the tree: export attributes can omit or
+# rewrite files. Nothing from the working tree is added to the archive.
+python3 -I -B - "$archive" "$repo" "$revision" "${BASH_SOURCE[0]}" <<'PY'
+from pathlib import Path
+import sys
+import tarfile
+
+archive_path, repo, revision, installer = sys.argv[1:]
+errors = []
+with tarfile.open(archive_path, "r:") as archive:
+    for name in ("deploy_probe.py", "deploy.sh", "server.py", "core.py"):
+        path = f"on1x/addons/mcp/{name}"
+        try:
+            member = archive.getmember(path)
+        except KeyError:
+            errors.append(f"{path}: missing from the archive")
+            continue
+        if not member.isfile():
+            errors.append(f"{path}: not a regular file in the archive")
+            continue
+        local = Path(installer) if name == "deploy.sh" else Path(repo) / path
+        if local.is_symlink() or not local.is_file():
+            errors.append(f"{path}: not a regular file in the working tree")
+            continue
+        with archive.extractfile(member) as archived:
+            if archived.read() != local.read_bytes():
+                errors.append(f"{path}: working-tree contents differ from the archive")
+
+if errors:
+    sys.exit(
+        f"Deployment preflight failed for HEAD {revision} (no SSH attempted):\n"
+        + "\n".join(f"  {error}" for error in errors)
+        + "\nUse an audited checkout with matching committed deployment files included in git archive."
+    )
+PY
+
 remote=$(cat <<'REMOTE'
 set -euo pipefail
 umask 022
@@ -64,8 +106,8 @@ trap 'exit 1' HUP INT TERM
 
 tar -xf - -C "$release"
 chmod 0755 "$release"
-addon=$release/on1x/addons/chatgpt/server.py
-python3 -B "$addon" --root "$release" --revision "$revision" --check
+addon=$release/on1x/addons/mcp
+python3 -B "$addon/server.py" --root "$release" --revision "$revision" --check
 
 host_options=
 if [[ -n $public_host ]]; then
@@ -84,7 +126,7 @@ ProtectHome=yes
 PrivateTmp=yes
 IPAddressDeny=any
 IPAddressAllow=localhost
-ExecStart=/usr/bin/python3 -B $addon --root $release --revision $revision --port 8787 $host_options
+ExecStart=/usr/bin/python3 -B $addon/server.py --root $release --revision $revision --port 8787 $host_options
 Restart=on-failure
 
 [Install]
@@ -99,45 +141,24 @@ install -m 0644 "$work/$service" "$unit"
 systemctl daemon-reload
 systemctl restart "$service"
 
-python3 - <<'PY'
-import json
-import time
-from urllib.error import URLError
-from urllib.request import ProxyHandler, Request, build_opener
-
-request = Request(
-    "http://127.0.0.1:8787/mcp",
-    data=json.dumps({
-        "jsonrpc": "2.0", "id": 1, "method": "initialize",
-        "params": {"protocolVersion": "2025-11-25", "capabilities": {},
-                   "clientInfo": {"name": "deploy-check", "version": "1"}},
-    }).encode(),
-    headers={"Content-Type": "application/json",
-             "Accept": "application/json, text/event-stream"},
-)
-opener = build_opener(ProxyHandler({}))
-for attempt in range(20):
-    try:
-        with opener.open(request, timeout=2) as response:
-            result = json.load(response)["result"]
-        if result["serverInfo"]["name"] == "on1x-mulib-knowledge":
-            break
-    except (URLError, TimeoutError, ValueError, KeyError):
-        pass
-    time.sleep(1)
-else:
-    raise SystemExit("MCP initialize failed on port 8787")
-PY
+python3 -B "$addon/deploy_probe.py" --host "$public_host"
 
 systemctl is-active --quiet "$service"
 systemctl enable "$service"
 committed=1
-echo "Deployed $revision at http://127.0.0.1:8787/mcp on the server."
+echo "Deployed $revision; MCP discovery passed on the loopback backend."
+if [[ -n $public_host ]]; then
+    echo "After configuring the HTTPS reverse proxy to preserve Host: $public_host,"
+    echo "use https://$public_host/mcp in ChatGPT (No authentication for approved public data)."
+    echo "This deployment did not configure or verify public HTTPS."
+else
+    echo "Loopback only: http://127.0.0.1:8787/mcp is not reachable from ChatGPT."
+    echo "Configure a Secure MCP Tunnel or redeploy with PUBLIC_MCP_HOST and configure HTTPS."
+fi
 REMOTE
 )
 
 # SSH joins its arguments into one command. Quote the script for the remote shell.
 remote=${remote//\'/\'\\\'\'}
-git -C "$repo" archive "$revision" README.md MANIFEST.yaml include manual on1x |
-    ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes "$target" \
-        "bash -c '$remote' bash '$revision' '$public_host'"
+ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes "$target" \
+    "bash -c '$remote' bash '$revision' '$public_host'" <"$archive"

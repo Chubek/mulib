@@ -12,7 +12,7 @@ dynamic kernel imports, compiler flags, and manifest directives.
 | Sublime Text | [Syntax package](sublime/README.md) |
 | `bat` | [Syntax cache installation](bat/README.md) |
 | Other LSP clients | [Standalone stdio server](lsp/README.md) |
-| ChatGPT web | [Read-only remote MCP knowledge service](chatgpt/README.md) |
+| ChatGPT web | [Read-only remote MCP knowledge service](mcp/README.md) |
 
 The ChatGPT addon retrieves cited canonical documentation/kernel evidence. It
 does not compile, execute, or admit bindings; ChatGPT web requires a separately

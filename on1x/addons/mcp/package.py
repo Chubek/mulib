@@ -7,7 +7,7 @@ import re
 from urllib.parse import urlsplit
 import zipfile
 
-FILES = ("README.md", "SECURITY.md", "VERIFICATION.md", "core.py", "server.py",
+FILES = ("README.md", "SECURITY.md", "VERIFICATION.md", "core.py", "server.py", "deploy_probe.py",
          "test_chatgpt.py", "plugin.json", "mcp.json", "package.py", "package.sh")
 
 
