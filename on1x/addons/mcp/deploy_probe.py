@@ -1,8 +1,9 @@
-"""Check MCP discovery on the loopback backend without using a proxy."""
+"""Check MCP discovery on loopback or through a Cloudflare Quick Tunnel."""
 import argparse
 from contextlib import closing
 import http.client
 import json
+import re
 import time
 
 from core import MAX_RESPONSE
@@ -10,13 +11,26 @@ from core import MAX_RESPONSE
 VERSION = "2025-11-25"
 
 
-def probe(port, public_host=""):
+def probe(port, public_host="", *, quick_url=None):
+    if quick_url is not None:
+        match = re.fullmatch(
+            r"https://([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.trycloudflare\.com)/mcp",
+            quick_url,
+        )
+        if not match or public_host:
+            raise ValueError("expected a Quick Tunnel HTTPS /mcp URL without a Host override")
+        host = match[1]
+        # The default HTTPS context verifies the certificate and hostname.
+        connection = http.client.HTTPSConnection(host, timeout=5)
+    else:
+        host = public_host or f"127.0.0.1:{port}"
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=2)
     headers = {
-        "Host": public_host or f"127.0.0.1:{port}",
+        "Host": host,
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream",
     }
-    with closing(http.client.HTTPConnection("127.0.0.1", port, timeout=2)) as connection:
+    with closing(connection):
         def post(method, identifier=None, params=None):
             request = {"jsonrpc": "2.0", "method": method}
             if identifier is not None:
@@ -60,15 +74,18 @@ def probe(port, public_host=""):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--host", default="", help="Exact Host forwarded by the public proxy.")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--host", default="", help="Exact Host forwarded by the public proxy.")
+    mode.add_argument("--quick-url", help="Verify discovery at a Cloudflare Quick Tunnel HTTPS URL.")
     args = parser.parse_args()
     for attempt in range(20):
         try:
-            probe(8787, args.host)
+            probe(8787, args.host, quick_url=args.quick_url)
             return
         except (OSError, http.client.HTTPException, ValueError) as exc:
             if attempt == 19:
-                raise SystemExit(f"MCP discovery failed on loopback port 8787: {exc}") from None
+                endpoint = "the Quick Tunnel" if args.quick_url is not None else "loopback port 8787"
+                raise SystemExit(f"MCP discovery failed on {endpoint}: {exc}") from None
             time.sleep(1)
 
 

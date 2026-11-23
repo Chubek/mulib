@@ -72,6 +72,12 @@ be called by **anyone** who can reach it, not just ChatGPT. `--public-data`
 confirms publication intent; it is not authentication. Workspace installation
 controls do not secure your HTTP endpoint.
 
+`deploy.sh --cloudflared` explicitly creates an anonymous public Quick Tunnel
+for testing with audited public data. It provides HTTPS, not client
+authentication, a private URL, or the production proxy controls above. The
+backend remains loopback-only and accepts the exact Host set by cloudflared;
+that header is routing configuration, not an authorization token.
+
 The bundled tools explicitly advertise `noauth`, read-only, non-destructive,
 closed-world behavior. Private repository data must not be exposed with that
 configuration. OAuth 2.1 integration is a separate operator-owned gateway task,

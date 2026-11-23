@@ -113,3 +113,11 @@ the verified archive with the pinned commit and omits dirty and untracked
 content. The current checkout also failed preflight with the expected missing
 probe diagnostic and did not invoke the SSH stub. The addon suite passed all
 34 tests; no real deployment was performed.
+
+Cloudflare Quick Tunnel mode was checked against MuLIB `bc0214ef` plus the
+deployment changes, with LibStone unchanged. `bash -n on1x/addons/mcp/deploy.sh`
+and `python3 -B on1x/addons/mcp/test_chatgpt.py` passed (40 tests). Mocked SSH,
+systemd and cloudflared logs cover URL publication after HTTPS discovery,
+failure rollback, and retirement of an earlier tunnel. A loopback protocol
+test checks the probe's exact HTTPS hostname and rejects other URL forms.
+No live Cloudflare tunnel, remote deployment, or ChatGPT registration was tested.

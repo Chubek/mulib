@@ -107,9 +107,9 @@ endpoint or an explicitly configured Secure MCP Tunnel.
    Passing `knowledge.example.org` approves the allowlisted data for anonymous
    publication and configures the exact Host accepted by the backend. Deploy
    checks `initialize`, `notifications/initialized`, and `tools/list` over
-   loopback with that Host before keeping the new service. It does not install
-   DNS, a TLS certificate, an HTTPS proxy, or a tunnel. Without the public
-   hostname argument it installs a local-only backend.
+    loopback with that Host before keeping the new service. This mode does not
+    install DNS, a TLS certificate, or an HTTPS proxy. Without either a public
+    hostname or `--cloudflared`, it installs a local-only backend.
 3. Put a maintained HTTPS reverse proxy in front of the loopback service.
    Enforce OpenAI-managed mTLS at that proxy to limit clients to ChatGPT
    (validate the documented chain, client-auth use and SAN; do not pin a leaf).
@@ -152,6 +152,35 @@ Secure MCP Tunnel is another official connection method for eligible clients;
 its agent/authentication are not bundled or launched here. Local direct
 `localhost` URLs are for protocol testing, not an assertion that ChatGPT cloud
 can reach your machine.
+
+### Temporary Cloudflare Quick Tunnel
+
+For testing with **publication-audited public data only**, install a current
+`cloudflared` on the remote systemd host, then run:
+
+```sh
+bash on1x/addons/mcp/deploy.sh --cloudflared root@server.example.org
+```
+
+Do not pass `PUBLIC_MCP_HOST` in this mode. The flag explicitly approves
+anonymous publication: **anyone with the URL can call the tools**. The installer
+starts a separate, unprivileged `on1x-knowledge-tunnel.service` and keeps the
+backend bound to `127.0.0.1:8787` with an exact tunnel-origin Host. On success it
+prints `https://<assigned-name>.trycloudflare.com/mcp` after testing MCP discovery
+over certificate-verified HTTPS. Use the full URL in ChatGPT with **No
+authentication**. This test does not verify ChatGPT workspace registration.
+
+Stop the public endpoint with `sudo systemctl stop on1x-knowledge-tunnel.service`
+on the server. The tunnel does not restart automatically or start at boot; a
+redeploy stops the previous tunnel and produces a new URL if requested. If
+startup or HTTPS discovery fails, the installer stops the new tunnel and rolls
+back the backend deployment; it cannot restore a stopped temporary URL. For
+diagnostics, run `journalctl -u on1x-knowledge-tunnel.service` on the server.
+
+[Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/)
+are not a production proxy, do not support SSE, and are distinct from the
+Secure MCP Tunnel. The addon uses JSON response mode; for stable or
+authenticated access, use a separately configured production proxy or tunnel.
 
 Optional portable distribution (does **not** deploy the service):
 

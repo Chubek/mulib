@@ -350,6 +350,7 @@ class DeployTests(unittest.TestCase):
 
         bin_dir = base / "bin"
         bin_dir.mkdir()
+        self.bin_dir = bin_dir
         ssh = bin_dir / "ssh"
         ssh.write_text('#!/bin/sh\nprintf "%s\\n" "$@" > "$MOCK_SSH_ARGS"\ncat\n')
         ssh.chmod(0o755)
@@ -373,10 +374,11 @@ class DeployTests(unittest.TestCase):
     def copy_probe(self):
         shutil.copyfile(HOME / self.probe.name, self.repo / self.probe)
 
-    def deploy(self):
+    def deploy(self, *arguments):
+        if not arguments:
+            arguments = ("root@test.invalid", "knowledge.example.org")
         result = subprocess.run(
-            ["bash", str(self.repo / self.addon / "deploy.sh"), "root@test.invalid",
-             "knowledge.example.org"],
+            ["bash", str(self.repo / self.addon / "deploy.sh"), *arguments],
             cwd=self.repo, env=self.env, capture_output=True, timeout=15)
         self.assertEqual(list(self.staging.iterdir()), [])
         return result
@@ -422,12 +424,122 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode())
         args = self.ssh_args.read_text().splitlines()
         self.assertIn("root@test.invalid", args)
-        self.assertTrue(args[-1].endswith(f"bash '{revision}' 'knowledge.example.org'"))
+        self.assertTrue(args[-1].endswith(f"bash '{revision}' 'knowledge.example.org' '0'"))
         with tarfile.open(fileobj=io.BytesIO(result.stdout)) as archive:
             self.assertEqual(archive.extractfile("README.md").read(), b"# Committed docs\n")
             self.assertEqual(archive.extractfile(str(self.probe)).read(),
                              (HOME / self.probe.name).read_bytes())
             self.assertNotIn(str(local_only), archive.getnames())
+
+    def test_cloudflared_conflicting_or_unknown_options_reject_before_ssh(self):
+        for args in (("--cloudflared", "root@test.invalid", "knowledge.example.org"),
+                     ("--cloudflared", "root@test.invalid", "--cloudflared"),
+                     ("--not-an-option", "root@test.invalid")):
+            with self.subTest(args=args):
+                result = self.deploy(*args)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(b"Usage:", result.stderr)
+                self.assertFalse(self.ssh_args.exists())
+
+    def mock_remote(self, scenario):
+        base = self.bin_dir.parent / "remote"
+        base.mkdir()
+        units = base / "units"
+        units.mkdir()
+        old_unit = units / "on1x-knowledge.service"
+        old_unit.write_text("previous service\n")
+        self.env.update(MOCK_REMOTE=str(base), MOCK_SCENARIO=scenario)
+        ssh = self.bin_dir / "ssh"
+        ssh.write_text(f"""#!{sys.executable}
+import os, subprocess, sys
+base = os.environ["MOCK_REMOTE"]
+command = sys.argv[-1].replace("/etc/systemd/system/", base + "/units/").replace(
+    "/opt/on1x-knowledge", base + "/releases")
+os.environ["PATH"] = base + "/bin:" + os.environ["PATH"]
+sys.exit(subprocess.run(["bash", "-c", command]).returncode)
+""")
+        mock = self.bin_dir / "remote-mock"
+        mock.write_text("""#!/bin/bash
+set -eu
+tool=${0##*/}
+printf '%s %s\\n' "$tool" "$*" >> "$MOCK_REMOTE/calls"
+case "$tool" in
+    id) echo 0 ;;
+    cloudflared) exit 1 ;; # systemd-run, not the shell, owns this process
+    systemd-run) touch "$MOCK_REMOTE/active" ;;
+    systemctl)
+        case "$1 $*" in
+            "show "*InvocationID*) echo 1234567890abcdef1234567890abcdef ;;
+            "is-active "*-tunnel.service) test -e "$MOCK_REMOTE/active" ;;
+            "stop "*-tunnel.service) rm -f "$MOCK_REMOTE/active" ;;
+        esac ;;
+    journalctl)
+        echo 'https://bad.trycloudflare.com.attacker.invalid'
+        if [[ $MOCK_SCENARIO != no-url ]]; then
+            echo '| https://test-quick-tunnel.trycloudflare.com |'
+        fi ;;
+    timeout) shift; exec "$@" ;;
+    python3)
+        if [[ $MOCK_SCENARIO == bad-https && $* == *--quick-url* ]]; then
+            exit 1
+        fi ;;
+    sleep) : ;;
+esac
+""")
+        mock.chmod(0o755)
+        for name in ("id", "cloudflared", "systemd-run", "systemctl", "journalctl", "timeout", "sleep"):
+            (self.bin_dir / name).symlink_to(mock)
+        # The local archive preflight must still use real Python. Install its
+        # stand-in only in the PATH passed by the fake SSH connection.
+        remote_bin = base / "bin"
+        remote_bin.mkdir()
+        (remote_bin / "python3").symlink_to(mock)
+        self.copy_probe()
+        self.commit()
+        return base, old_unit
+
+    def test_cloudflared_prints_only_verified_url(self):
+        base, unit = self.mock_remote("success")
+        (base / "active").touch()  # A prior Quick Tunnel is replaced.
+        result = self.deploy("root@test.invalid", "--cloudflared")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        url = "https://test-quick-tunnel.trycloudflare.com/mcp"
+        self.assertIn(f"Cloudflare MCP URL: {url}\n".encode(), result.stdout)
+        self.assertNotIn(b"attacker.invalid", result.stdout)
+        calls = (base / "calls").read_text()
+        self.assertIn("systemctl stop on1x-knowledge-tunnel.service\n", calls)
+        self.assertIn("--url http://127.0.0.1:8787 --http-host-header on1x-mcp-tunnel.invalid:8787", calls)
+        self.assertIn("--host on1x-mcp-tunnel.invalid:8787", calls)
+        self.assertIn(f"--quick-url {url}\n", calls)
+        self.assertIn("--public-data --allowed-host on1x-mcp-tunnel.invalid:8787", unit.read_text())
+        self.assertTrue((base / "active").is_file())
+
+    def assert_tunnel_rollback(self, scenario, diagnostic):
+        base, unit = self.mock_remote(scenario)
+        result = self.deploy("--cloudflared", "root@test.invalid")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(diagnostic, result.stderr)
+        self.assertNotIn(b"Cloudflare MCP URL:", result.stdout)
+        self.assertFalse((base / "active").exists())
+        self.assertEqual(unit.read_text(), "previous service\n")
+        self.assertEqual(list((base / "releases").glob("*/")), [])
+
+    def test_cloudflared_rejects_non_tunnel_url_and_rolls_back(self):
+        self.assert_tunnel_rollback("no-url", b"did not report a Quick Tunnel URL")
+
+    def test_cloudflared_failed_https_discovery_stops_tunnel_and_rolls_back(self):
+        self.assert_tunnel_rollback("bad-https", b"MCP discovery failed through the Quick Tunnel")
+
+    def test_loopback_redeploy_retires_previous_quick_tunnel(self):
+        base, unit = self.mock_remote("success")
+        (base / "active").touch()
+        result = self.deploy("root@test.invalid")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertIn(b"Loopback only:", result.stdout)
+        self.assertNotIn(b"Cloudflare MCP URL:", result.stdout)
+        self.assertFalse((base / "active").exists())
+        self.assertNotIn("--public-data", unit.read_text())
+        self.assertNotIn("systemd-run ", (base / "calls").read_text())
 
 
 class HTTPTests(unittest.TestCase):
@@ -455,6 +567,23 @@ class HTTPTests(unittest.TestCase):
         status, result = response.status, response.read()
         connection.close()
         return status, json.loads(result) if result else None
+
+    def test_quick_tunnel_probe_uses_exact_https_host(self):
+        host = "quick-test.trycloudflare.com"
+        self.http.allowed_hosts = frozenset((host,))
+        # Exercise real MCP requests over loopback while observing the production
+        # probe's HTTPSConnection arguments. No external DNS or TLS is used.
+        with patch.object(deploy_probe.http.client, "HTTPSConnection",
+                          return_value=http.client.HTTPConnection("127.0.0.1", self.http.server_port)) as https:
+            deploy_probe.probe(self.http.server_port, quick_url=f"https://{host}/mcp")
+            https.assert_called_once_with(host, timeout=5)
+        with patch.object(deploy_probe.http.client, "HTTPSConnection") as https:
+            for url in (f"http://{host}/mcp", f"https://{host}.example.org/mcp",
+                        f"https://{host}/mcp?token=x", f"https://{host}:443/mcp",
+                        f"https://{host}@example.org/mcp"):
+                with self.subTest(url=url), self.assertRaises(ValueError):
+                    deploy_probe.probe(self.http.server_port, quick_url=url)
+            https.assert_not_called()
 
     def test_http_flow(self):
         status, result = self.request()
