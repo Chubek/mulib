@@ -301,6 +301,26 @@ class ExtendKernelBind(unittest.TestCase):
         self.run_tool("--check")
         self.assertEqual(list(json.loads(self.catalog.read_bytes())["modules"]), [name])
 
+    def test_bare_additions_preserve_upstream_sections(self):
+        self.manifest.write_text("name: Fixture\nmodule_count: 1\nimplemented_module_count: 1\nmodules:\n"
+                                 + entry("original") + "project_files:\n- file: existing.md\n")
+        for name in ("original", "new"):
+            (self.root / "include" / f"mulib-{name}.h").write_text(
+                f"#if defined(MULIB_IMPL_{name.upper()})\n#endif\n")
+            self.write_manual(name)
+        (self.root / "MANIFEST.yaml.additions").write_text(
+            "# Appended module entries, not a standalone manifest.\n\n"
+            + entry("new", dependencies="[original]"))
+        # Match the declared dependency to the actual include.
+        header = self.root / "include/mulib-new.h"
+        header.write_text('#include "mulib-original.h"\n' + header.read_text())
+        self.run_sync()
+        merged = self.manifest.read_text()
+        self.assertIn("module_count: 2\nimplemented_module_count: 2", merged)
+        self.assertIn("name: Fixture\n", merged)
+        self.assertIn("project_files:\n- file: existing.md\n", merged)
+        self.assertEqual(set(json.loads(self.catalog.read_bytes())["modules"]), {"original", "new"})
+
     def test_bounded_inputs_and_symlinked_catalog(self):
         self.manifest.write_bytes(b"#" * (8 * 1024 * 1024 + 1))
         self.assertIn("bounded input", self.run_tool(expected=1).stderr)

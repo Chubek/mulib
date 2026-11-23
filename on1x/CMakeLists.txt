@@ -940,7 +940,19 @@ if(BUILD_TESTING)
      endforeach()
    endif()
   add_test(NAME on1x.stdppx_protocol COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/tests" -v)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.harness_supervisor COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_harness_supervisor.py" "${CMAKE_C_COMPILER}")
+    set_tests_properties(on1x.harness_supervisor PROPERTIES TIMEOUT 45)
+  endif()
   if(ON1X_WITH_EXOTRACT)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+      add_test(NAME on1x.harness_kernel_inventory COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_harness_inventory.py"
+        "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1x-bind>" "$<TARGET_FILE:on1xc>"
+        "${CMAKE_C_COMPILER}" "$<BOOL:${ON1X_WITH_EXOTRACT_LUA}>")
+      set_tests_properties(on1x.harness_kernel_inventory PROPERTIES TIMEOUT 180 SKIP_RETURN_CODE 77)
+    endif()
     add_test(NAME on1x.exotract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_exotract.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/exotract" "${CMAKE_C_COMPILER}" ${_test_c_flags})

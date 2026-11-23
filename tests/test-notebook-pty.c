@@ -49,6 +49,9 @@ int main(void)
     assert(p.master >= 0 && p.slave >= 0 && p.master != p.slave);
     assert(fcntl(p.master, F_GETFD) == FD_CLOEXEC);
     assert(fcntl(p.slave, F_GETFD) == FD_CLOEXEC);
+    mulib_pty live = p;
+    assert(!mulib_pty_open(&p) && errno == EINVAL);
+    assert(p.master == live.master && p.slave == live.slave);
     assert(!mulib_pty_resize(p.master, 0, 88));
     assert(mulib_pty_resize(p.master, 29, 88));
 

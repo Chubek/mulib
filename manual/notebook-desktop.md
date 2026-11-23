@@ -40,6 +40,9 @@ two independently compiled translation units and passes an owned notebook across
 them. It also runs the [signed Jupyter envelope regression](../tests/test-jupyter-envelope.c)
 and the [PTY regression](../tests/test-notebook-pty.c), which skips when `devpts` is unavailable.
 `-Wmisleading-indentation` is enabled and treated as an error.
+
+Initialize a `mulib_pty` with `MULIB_PTY_INIT` before opening. Opening a live
+pair fails without modifying it; close it before reuse.
 Use `python3 tests/run-notebook-desktop-headers.py --cc gcc` for a single
 compiler (or repeat `--cc` for several). With the existing MuW3-enabled
 CMake install, the headers are copied by the public include-directory rule.

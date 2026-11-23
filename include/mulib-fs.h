@@ -3,16 +3,11 @@
  * @brief Whole-file read and write helpers with explicit byte length.
  * @defgroup mulib_fs MuLIB fs
  * @{
- * @details Reading allocates a NUL padding byte after the actual file contents
- * for convenience, but binary data may itself contain NULs. Writing truncates
- * existing destination files; writes are not atomic.
+ * @details Reads add a convenience NUL byte; writes truncate existing files
+ * and are not atomic. Paths are not confined.
  * @par Integration
- * In exactly one translation unit define MULIB_IMPL_FS before including this
- * file. Other translation units may include it without the implementation
- * switch.
- * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
+ * Define MULIB_IMPL_FS in exactly one translation unit. ISO C11, C++17
+ * declarations with C linkage.
  * @}
  */
 #ifndef MULIB_FS_H
@@ -34,18 +29,19 @@ extern "C"
 {
 #endif
 
-  /** @brief mulib fs read; see manual/mulib-fs.md for contracts and examples.
-   */
+  /** Caller frees result. On failure leaves *length unchanged. */
   unsigned char *mulib_fs_read (const char *path, size_t *length);
-  /** @brief mulib fs write; see manual/mulib-fs.md for contracts and examples.
-   */
+  /** Return NULL rather than truncate when the file exceeds limit. Caller frees
+   * the result. On failure sets *length to zero, if supplied. */
+  unsigned char *mulib_fs_read_bounded (const char *path, size_t limit,
+                                       size_t *length);
+  /** Writes with fopen("wb"): not atomic, path is not confined. */
   int mulib_fs_write (const char *path, const void *data, size_t length);
 
 #ifdef __cplusplus
 }
 #endif
 #endif /* MULIB_FS_H */
-
 #if defined(MULIB_IMPL_FS) && !defined(MULIB_FS_IMPLEMENTED)
 #define MULIB_FS_IMPLEMENTED
 #ifdef __cplusplus
@@ -53,62 +49,93 @@ extern "C"
 {
 #endif
   unsigned char *
-  mulib_fs_read (const char *path, size_t *length)
+  mulib_fs_read_bounded (const char *path, size_t limit, size_t *length)
   {
+    if (length)
+      *length = 0;
     if (!path)
-      return NULL;
+      {
+#ifdef EINVAL
+        errno = EINVAL;
+#endif
+        return NULL;
+      }
+    if (limit == SIZE_MAX)
+      limit = SIZE_MAX - 1; /* reserve space for the NUL */
     FILE *f = fopen (path, "rb");
     if (!f)
       return NULL;
-    size_t cap = 4096, n = 0;
+    size_t cap = limit < 4096 ? limit : 4096, n = 0;
     unsigned char *b = malloc (cap + 1);
     if (!b)
       {
         fclose (f);
         return NULL;
       }
+    int ok = 1;
     for (;;)
       {
         if (n == cap)
           {
-            if (cap > (SIZE_MAX - 1) / 2)
+            if (cap == limit)
               {
-                free (b);
-                fclose (f);
-                return NULL;
+                int ch = fgetc (f);
+                if (ch != EOF)
+                  {
+#ifdef EFBIG
+                    errno = EFBIG;
+#endif
+                    ok = 0;
+                  }
+                else if (ferror (f))
+                  ok = 0;
+                break;
               }
-            cap *= 2;
-            void *p = realloc (b, cap + 1);
+            size_t next = cap > limit / 2 ? limit : cap * 2;
+            unsigned char *p = realloc (b, next + 1);
             if (!p)
               {
-                free (b);
-                fclose (f);
-                return NULL;
+                ok = 0;
+                break;
               }
             b = p;
+            cap = next;
           }
         size_t got = fread (b + n, 1, cap - n, f);
         n += got;
-        if (got == 0)
+        if (ferror (f))
           {
-            if (ferror (f))
-              {
-                free (b);
-                fclose (f);
-                return NULL;
-              }
+            ok = 0;
             break;
           }
+        if (feof (f))
+          break;
       }
-    if (fclose (f) != 0)
+    int saved = errno;
+    if (fclose (f) != 0 && ok)
+      {
+        saved = errno;
+        ok = 0;
+      }
+    if (!ok)
       {
         free (b);
+        errno = saved;
         return NULL;
       }
     b[n] = 0;
     if (length)
       *length = n;
     return b;
+  }
+  unsigned char *
+  mulib_fs_read (const char *path, size_t *length)
+  {
+    size_t size;
+    unsigned char *data = mulib_fs_read_bounded (path, SIZE_MAX, &size);
+    if (data && length)
+      *length = size;
+    return data;
   }
   int
   mulib_fs_write (const char *path, const void *p, size_t n)
@@ -124,5 +151,5 @@ extern "C"
   }
 #ifdef __cplusplus
 }
-#endif
 #endif /* implementation */
+#endif

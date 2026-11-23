@@ -15,7 +15,7 @@ The binding source is `include/mulib-*.h`. Both this catalog and the
 [ExoML inventory](../contracts-exoml/README.md) use `MANIFEST.yaml` as the
 module registry. `list` reports each canonical header, manual, implementation
 switch and dependencies, plus its archive recipe and whether any semantic
-sidecar or core snapshot profile exists. All 2,049 public headers are registered,
+sidecar or core snapshot profile exists. All 2,053 public headers are registered,
 including the static-inline `container-core` and `qvm` helpers and the
 discovery-only static-data `lprowse` module. Registration
 does not mean a kernel builds on every platform or has a callable KernelBind
@@ -27,6 +27,12 @@ MANIFEST closure, labeled `discovery_only`; `build` refuses to generate a CDD
 archive. The [KernelBind inspector](../docs/kernel-bind.md#inspect-requests-and-discover-declarations)
 can extract declaration metadata for `mulib.cdd_*`. It neither attaches a
 semantic sidecar nor enables callable bindings.
+
+The `workspace-fs`, `unidiff`, `workspace-edit` and `process-stream` kernels
+can be planned and built together as a raw C11 archive on Linux. `pty` supplies
+the internal-linkage process dependency and has no implementation switch.
+None of the four kernels has a reviewed On1x callable profile; discovery and
+the raw archive do not authorize workspace access or process launch.
 
 Bounded static-inline entries, including the 193 media and compute kernels,
 are registered by the same MANIFEST inventory. Their source import aliases

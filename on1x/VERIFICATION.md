@@ -7,6 +7,53 @@ preserves the baseline and integrated suite totals. Current requirements are des
 Renamed reproduction commands use current repository paths; their spelling
 does not assert a fresh execution of the historical test runs.
 
+## Workspace harness registration — 2026-11-23
+
+Base MuLIB `ea23ce273486e6b8a80f4c9eed32803d74e47653`, pinned and unchanged
+LibStone `3be5e9d7ffde4f97f333365e7080e316396a0e55`. Verified on Linux
+x86-64 with GCC 16.2.1 and Clang 22.1.8. The reference compiler passed
+with Cephyr disabled. The enabled build used the pinned native-package
+Cephyr plus ExoML/libclang and Exotract with Lua declaration discovery.
+
+```sh
+CC=gcc CXX=g++ BUILD_DIR=build/harness-gcc ./tests/run.sh
+CC=clang CXX=clang++ BUILD_DIR=build/harness-clang ./tests/run.sh
+make CC=gcc CXX=g++ check-harness-kernels
+cmake -S . -B build/harness-san -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ -DMULIB_SANITIZERS=ON -DMULIB_BUILD_SHIRAZ=OFF
+cmake --build build/harness-san --target mulib_test_harness mulib_fuzz_unidiff \
+  mulib_test_rollback mulib_test_harness_cpp mulib_test_process_start mulib_test-notebook-pty
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
+  ctest --test-dir build/harness-san --output-on-failure \
+  -R '(test_harness|fuzz_unidiff|test_rollback|test_process_start|test-notebook-pty)'
+# Cephyr_DIR points to the installed package from the pinned LibStone checkout.
+cmake -S on1x -B build/harness-on1x-make -DCephyr_DIR="$Cephyr_DIR" \
+  -DON1X_WITH_CEPHYR=ON -DON1X_WITH_EXOML=ON -DON1X_WITH_EXOML_EXTRACT=ON \
+  -DON1X_WITH_EXOTRACT=ON -DON1X_WITH_EXOTRACT_LUA=ON -DBUILD_TESTING=ON
+cmake --build build/harness-on1x-make --target on1xc on1x-bind exotract on1x_stdlib_cephyr
+ctest --test-dir build/harness-on1x-make --output-on-failure \
+  -R '^on1x\.(harness_|cephyr\.|stdlib\.cephyr|compiler$|bounded_kernel_inventory$|exotract$)'
+```
+
+Six focused Clang ASan/UBSan tests passed, including C++17 linkage, seeded
+diff mutations, rename and directory-sync rollback, launch deadlines, and
+the notebook PTY. The legacy `fs` C11 usage fixture passed. The full GCC
+and Clang matrices each passed 796 of 797 tests. The one failure was unrelated:
+the Termscript fixture's hardcoded `/mnt/andromeda/tempdir/opencode`
+was out of space. The standalone Cephyr API/QML/FactIR selection passed
+9 of 10 tests; the failing
+cross-DSO fixture requires `aarch64-linux-gnu-ld`, which was not installed.
+No new cross-target capability was verified.
+
+All ten selected On1x tests passed. The harness regression extracts CDecl
+through both ExoML and the Exotract archive path, checks the lock and exported
+symbols, and runs a separate C consumer against the one-object archive. Safe and unsafe
+KernelBind imports remain denied. The host-only supervisor is verified with
+an actual isolated tool and descriptor-confined reads. It grants no guest
+network or workspace-edit operation and does not replace process or filesystem
+isolation. No durable multi-file recovery journal or persistent audit log is
+claimed.
+
 ## Consolidated checked-HIR pipeline — 2026-11-23
 
 Base MuLIB `5040412bf7fcce0e1e925fe63c613ddcc9681ea0`, pinned and unchanged

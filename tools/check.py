@@ -299,6 +299,13 @@ def main():
                             script.write_text('hello ${1}\n')
                             arguments = [str(script), 'world']
                             expected_output = 'hello world\n'
+                        elif sources == [root / 'examples/apply_unidiff.c']:
+                            target = Path(work) / 'hello.txt'
+                            target.write_bytes(b'old\n')
+                            patch = Path(work) / 'change.diff'
+                            patch.write_bytes(b'--- a/hello.txt\n+++ b/hello.txt\n'
+                                              b'@@ -1 +1 @@\n-old\n+new\n')
+                            arguments = [work, str(patch)]
                         if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
                             arguments = ['.']
                         test = subprocess.run([str(binary)] + arguments, cwd=work, capture_output=True,
@@ -306,6 +313,9 @@ def main():
                         if test.returncode:
                             failures.append((label, test.stderr or test.stdout or
                                               'exit status ' + str(test.returncode)))
+                            return False
+                        if sources == [root / 'examples/apply_unidiff.c'] and target.read_bytes() != b'new\n':
+                            failures.append((label, 'expected the example to replace the file'))
                             return False
                         if expected_output is not None and test.stdout != expected_output:
                             failures.append((label, 'unexpected CLI output: ' + repr(test.stdout)))
@@ -515,12 +525,13 @@ def main():
                         enabled.add(switches[dependency])
                         enabled.update(extra_switches.get(dependency, []))
                 defines = ''.join('#define ' + switch + '\n' for switch in sorted(enabled))
-                if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH',
-                              'MULIB_IMPL_SECRET_STORE'}:
+                if enabled & {'MULIB_IMPL_PARALLEL_SH', 'MULIB_IMPL_SHEBANG_SH', 'MULIB_IMPL_SECRET_STORE',
+                              'MULIB_IMPL_WORKSPACE_FS', 'MULIB_IMPL_WORKSPACE_EDIT'}:
                     defines = posix_source + defines
                 if enabled & {'MULIB_IMPL_CGROUP2', 'MULIB_IMPL_IPC_FRAMED',
                               'MULIB_IMPL_LANDLOCK', 'MULIB_IMPL_NAMESPACE',
-                              'MULIB_IMPL_SANDBOX_PROCESS', 'MULIB_IMPL_SECCOMP'}:
+                              'MULIB_IMPL_SANDBOX_PROCESS', 'MULIB_IMPL_SECCOMP',
+                              'MULIB_IMPL_PROCESS_STREAM'}:
                     defines = linux_source + posix_source + defines
                 cases.append(dict(label='isolated implementation: ' + name,
                                   source_text=defines + declaration, extra_flags=extra_flags))

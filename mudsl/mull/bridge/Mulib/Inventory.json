@@ -1383,6 +1383,7 @@
     "mulib-priceopt.h",
     "mulib-prime.h",
     "mulib-probability.h",
+    "mulib-process-stream.h",
     "mulib-process.h",
     "mulib-procfs.h",
     "mulib-project-history.h",
@@ -1869,6 +1870,7 @@
     "mulib-unicodenorm.h",
     "mulib-unicodeprops.h",
     "mulib-unicodescript.h",
+    "mulib-unidiff.h",
     "mulib-uniname.h",
     "mulib-uniproc.h",
     "mulib-unit.h",
@@ -2008,6 +2010,8 @@
     "mulib-wmfunc.h",
     "mulib-woff.h",
     "mulib-woff2.h",
+    "mulib-workspace-edit.h",
+    "mulib-workspace-fs.h",
     "mulib-wpa-ctrl.h",
     "mulib-x11-atoms.h",
     "mulib-x11-composite.h",
@@ -2051,9 +2055,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 2050,
+  "libraries": 2054,
   "functions": 5373,
-  "declared_functions": 7674,
+  "declared_functions": 7701,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -2073,7 +2077,7 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "36e7d3031a00f8b689197fc8bf1fba36efc949fb23f3a39e938443dbb4ec6275",
+  "fingerprint": "64a654f0d49303ab39996379781ca10584ecb7355c62438f14e8253f756296c2",
   "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
   "modules": {
     "2dgeom": {
@@ -10911,6 +10915,7 @@
       ],
       "declarations": [
         "mulib_fs_read",
+        "mulib_fs_read_bounded",
         "mulib_fs_write"
       ]
     },
@@ -21360,6 +21365,21 @@
         "mulib_process_wait"
       ]
     },
+    "process-stream": {
+      "header": "mulib-process-stream.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ps_cancel",
+        "mulib_ps_close_input",
+        "mulib_ps_destroy",
+        "mulib_ps_init",
+        "mulib_ps_pump",
+        "mulib_ps_start",
+        "mulib_ps_wait",
+        "mulib_ps_write"
+      ]
+    },
     "procfs": {
       "header": "mulib-procfs.h",
       "profile": "legacy-raw",
@@ -27799,6 +27819,18 @@
         "mulib_unicodescript_slice"
       ]
     },
+    "unidiff": {
+      "header": "mulib-unidiff.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_ud_apply",
+        "mulib_ud_blob_free",
+        "mulib_ud_free",
+        "mulib_ud_init",
+        "mulib_ud_parse"
+      ]
+    },
     "uniname": {
       "header": "mulib-uniname.h",
       "profile": "legacy-raw",
@@ -29900,6 +29932,33 @@
         "mulib_woff2_slice"
       ]
     },
+    "workspace-edit": {
+      "header": "mulib-workspace-edit.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_we_apply",
+        "mulib_we_apply_audited",
+        "mulib_we_apply_unidiff"
+      ]
+    },
+    "workspace-fs": {
+      "header": "mulib-workspace-fs.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_wfs_blob_free",
+        "mulib_wfs_close",
+        "mulib_wfs_open",
+        "mulib_wfs_parent",
+        "mulib_wfs_read",
+        "mulib_wfs_remove",
+        "mulib_wfs_stat",
+        "mulib_wfs_temporary",
+        "mulib_wfs_validate",
+        "mulib_wfs_write"
+      ]
+    },
     "wpa-ctrl": {
       "header": "mulib-wpa-ctrl.h",
       "profile": "legacy-raw",
@@ -30649,7 +30708,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "270d1a62ee10a42153711fa80fd966b3238bec4bd7f200230bae89c248ea3b4f",
+    "Generated.inc": "f2b6a423177428fbbaa45c56afbf392bd10549afaf5b9581c3e04d2d1f996b7d",
     "Implementation.c": "e8d42736b8b9c6ec9823eef57b1a916f5107ecfb13ff7a33e58863d1ab0425a7"
   }
 }

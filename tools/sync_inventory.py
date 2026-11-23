@@ -54,11 +54,13 @@ def merge_additions(root, manifest):
     for path in paths:
         text = path.read_text()
         boundary = re.search(r'^modules:[ \t]*\n', text, re.M)
-        if not boundary:
+        if boundary:
+            text = text[boundary.end():]
+        elif not re.match(r'(?:[ \t]*(?:#[^\n]*)?\n)*- name: ', text):
             raise ValueError('additions lack modules section: ' + path.name)
         # Stop at any subsequent root key, not only project_files. None of the
         # appendage's root metadata belongs in the upstream manifest.
-        entries = re.split(r'^(?=[A-Za-z_][A-Za-z0-9_]*:)', text[boundary.end():],
+        entries = re.split(r'^(?=[A-Za-z_][A-Za-z0-9_]*:)', text,
                            maxsplit=1, flags=re.M)[0]
         additions = re.findall(r'^- name: .*?(?=^- name: |\Z)', entries, re.M | re.S)
         if not additions:

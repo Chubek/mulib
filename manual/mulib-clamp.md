@@ -48,24 +48,12 @@ Include the header in application code; dependency types come from its includes.
  * this file. Other translation units may include it without the implementation
  * switch.
  * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
+ * ISO C11, C++17 compatible C linkage. Requires exact-width int64_t.
  * @}
  */
 #ifndef MULIB_CLAMP_H
 #define MULIB_CLAMP_H
-#include <ctype.h>
-#include <errno.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <math.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #ifdef __cplusplus
 extern "C"
 {

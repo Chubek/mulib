@@ -1,6 +1,6 @@
-/* MuLIB notebook desktop extension. C11, header-only.
+/* MuLIB PTY helpers (Linux/POSIX), C11 header-only.
  * SPDX-License-Identifier: MIT
- * See AGENTS.md for integration and coverage limits. */
+ * Requires POSIX XSI declarations (e.g. -D_XOPEN_SOURCE=700 on Linux). */
 #ifndef MULIB_PTY_H
 #define MULIB_PTY_H
 #include <stdlib.h>
@@ -10,15 +10,14 @@
 #include <sys/types.h>
 #include <termios.h>
 #include <errno.h>
-/* Requires POSIX XSI declarations e.g. -D_XOPEN_SOURCE=700. */
+
 typedef struct {
     int master, slave;
 } mulib_pty;
 #define MULIB_PTY_INIT { -1, -1 }
 
-/* Linux: obtain the paired slave directly from the master, even across
- * different devpts mount namespaces. Fall back only on missing ioctl support.
- * The last-resort POSIX ptsname() branch requires a single-threaded host. */
+/* Obtain the peer directly even across devpts mount namespaces. Fall back
+ * only if the ioctl is unsupported. */
 static inline int mulib_pty_open_peer_(int master)
 {
     const int flags = O_RDWR | O_NOCTTY | O_CLOEXEC;
@@ -38,21 +37,30 @@ static inline int mulib_pty_open_peer_(int master)
             errno = error;
         return -1;
     }
-    return open(path, flags);
 #else
+    /* POSIX ptsname is not thread-safe; only used when no reentrant helper. */
     const char *path = ptsname(master);
-    return path ? open(path, flags) : -1;
+    if (!path)
+        return -1;
 #endif
+    int opened;
+    do {
+        opened = open(path, flags);
+    } while (opened < 0 && errno == EINTR);
+    return opened;
 }
 
-/* Initialize an empty pair. On failure, leave p unchanged. */
+/* Initialize a pair set to MULIB_PTY_INIT. On failure leave it unchanged. */
 static inline int mulib_pty_open(mulib_pty *p)
 {
-    if (!p) {
+    if (!p || p->master != -1 || p->slave != -1) {
         errno = EINVAL;
         return 0;
     }
-    int master = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
+    int master;
+    do {
+        master = posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
+    } while (master < 0 && errno == EINTR);
     if (master < 0)
         return 0;
     int slave = -1;
@@ -84,19 +92,26 @@ static inline int mulib_pty_resize(int fd, unsigned rows, unsigned cols)
     return rc == 0;
 }
 
-/* In a freshly forked single-threaded child only; sets controlling tty and
- * stdio. On failure the child should exit, not continue with partial stdio. */
+/* Call only from a fresh single-threaded fork child, before exec. On failure
+ * exit rather than continuing with partially redirected stdio. */
 static inline int mulib_pty_child(mulib_pty *p)
 {
     if (!p || p->slave < 0 || p->slave == p->master || setsid() < 0)
         return 0;
-    if (ioctl(p->slave, TIOCSCTTY, 0) < 0)
+    int rc;
+    do {
+        rc = ioctl(p->slave, TIOCSCTTY, 0);
+    } while (rc < 0 && errno == EINTR);
+    if (rc < 0)
         return 0;
     if (p->master >= 0)
         close(p->master);
     p->master = -1;
     for (int i = 0; i < 3; ++i) {
-        if (dup2(p->slave, i) < 0)
+        do {
+            rc = dup2(p->slave, i);
+        } while (rc < 0 && errno == EINTR);
+        if (rc < 0)
             return 0;
         if (p->slave == i) {
             int flags = fcntl(i, F_GETFD);

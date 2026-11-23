@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 2049
-implemented_module_count: 1547
+module_count: 2053
+implemented_module_count: 1551
 bounded_module_count: 502
 modules:
 - name: container-core
@@ -15964,7 +15964,51 @@ modules:
   dependencies: [money]
   status: implemented
   example: examples/finpred_market.c
+- name: workspace-fs
+  header: include/mulib-workspace-fs.h
+  manual: manual/mulib-workspace-fs.md
+  macro: MULIB_IMPL_WORKSPACE_FS
+  purpose: Confined-by-descriptor symlink-rejecting relative POSIX file operations and single-file atomic replacement.
+  dependencies: []
+  status: implemented
+  example: examples/apply_unidiff.c
+  test: tests/harness-kernels/test_harness.c
+- name: unidiff
+  header: include/mulib-unidiff.h
+  manual: manual/mulib-unidiff.md
+  macro: MULIB_IMPL_UNIDIFF
+  purpose: Bounded unified-diff parsing with exact context and byte-preserving patch application.
+  dependencies: []
+  status: implemented
+  example: examples/apply_unidiff.c
+  test: tests/harness-kernels/test_harness.c
+- name: workspace-edit
+  header: include/mulib-workspace-edit.h
+  manual: manual/mulib-workspace-edit.md
+  macro: MULIB_IMPL_WORKSPACE_EDIT
+  purpose: Staged multi-file edits with exact preimages, cooperative lock, rollback and structured audit callbacks.
+  dependencies: [workspace-fs, unidiff]
+  status: implemented
+  example: examples/apply_unidiff.c
+  test: tests/harness-kernels/test_rollback.c
+- name: process-stream
+  header: include/mulib-process-stream.h
+  manual: manual/mulib-process-stream.md
+  macro: MULIB_IMPL_PROCESS_STREAM
+  purpose: Nonblocking subprocess pipes/PTY, cancellation, output limits and monotonic deadlines.
+  dependencies: [pty]
+  status: implemented
+  example: examples/process_stream.c
+  test: tests/harness-kernels/test_harness.c
 project_files:
+- file: tests/harness-kernels/implementation.c
+  purpose: Shared C11 implementation and dependency closure for the harness-kernel fixtures.
+- file: tests/harness-kernels/fuzz_unidiff.c
+  purpose: Deterministic malformed-input corpus for unified diff.
+- file: tests/harness-kernels/test_process_start.c
+  purpose: Injected pre-exec delay and closed standard descriptor regression.
+- file: tests/harness-kernels/consumer.cpp
+  purpose: C++17 declarations-only linkage to the C11 harness implementations.
 - file: manual/finpred.md
   purpose: "FinPRED API boundaries, verification matrix and remaining gate evidence."
 - file: examples/hospitality_demo.c

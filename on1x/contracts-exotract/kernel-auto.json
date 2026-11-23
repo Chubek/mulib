@@ -11197,6 +11197,14 @@
       "macro": "MULIB_IMPL_PROCESS",
       "status": "implemented"
     },
+    "process-stream": {
+      "dependencies": [
+        "pty"
+      ],
+      "header": "include/mulib-process-stream.h",
+      "macro": "MULIB_IMPL_PROCESS_STREAM",
+      "status": "implemented"
+    },
     "procfs": {
       "dependencies": [
         "vfs"
@@ -15206,6 +15214,12 @@
       "macro": "MULIB_IMPL_UNICODESCRIPT",
       "status": "implemented"
     },
+    "unidiff": {
+      "dependencies": [],
+      "header": "include/mulib-unidiff.h",
+      "macro": "MULIB_IMPL_UNIDIFF",
+      "status": "implemented"
+    },
     "uniname": {
       "dependencies": [
         "uniproc"
@@ -16329,6 +16343,21 @@
       ],
       "header": "include/mulib-woff2.h",
       "macro": "MULIB_IMPL_WOFF2",
+      "status": "implemented"
+    },
+    "workspace-edit": {
+      "dependencies": [
+        "workspace-fs",
+        "unidiff"
+      ],
+      "header": "include/mulib-workspace-edit.h",
+      "macro": "MULIB_IMPL_WORKSPACE_EDIT",
+      "status": "implemented"
+    },
+    "workspace-fs": {
+      "dependencies": [],
+      "header": "include/mulib-workspace-fs.h",
+      "macro": "MULIB_IMPL_WORKSPACE_FS",
       "status": "implemented"
     },
     "wpa-ctrl": {

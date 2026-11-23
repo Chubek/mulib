@@ -1,3 +1,7 @@
+#define MULIB_IMPL_PROCESS_STREAM
+#define MULIB_IMPL_UNIDIFF
+#define MULIB_IMPL_WORKSPACE_EDIT
+#define MULIB_IMPL_WORKSPACE_FS
 #define MULIB_IMPL_ASOF
 #define MULIB_IMPL_BACKTEST
 #define MULIB_IMPL_COMPSET
@@ -2588,3 +2592,7 @@
 #include "mulib-ruleeval.h"
 #include "mulib-staymatch.h"
 #include "mulib-timeseries.h"
+#include "mulib-process-stream.h"
+#include "mulib-unidiff.h"
+#include "mulib-workspace-edit.h"
+#include "mulib-workspace-fs.h"

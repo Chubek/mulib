@@ -1,5 +1,37 @@
 # MuLIB kernel registration and interoperability
 
+## Host-only workspace harness
+
+The four workspace/process kernels are included in the registry and raw archive
+planner. They have no callable On1x or MuLL profile: their C interfaces use
+owned buffers, pointers, mutable process or workspace state, and callbacks.
+
+Trusted Python hosts can use `on1x/tools/on1x_harness.py` to dispatch
+data-only requests from a harness client. Construct one `Supervisor` per
+session with host-selected workspace roots, optional named `Tool` recipes, and
+explicit call, byte and deadline budgets. Pass only bounded, decoded requests
+of the forms `{"op":"read","root":"name","path":"relative/file"}` or
+`{"op":"run","tool":"name"}`. Other operations, including networking and
+workspace edits, are denied. This helper is not installed into the language
+runtime and does not admit raw foreign calls.
+
+The Linux profile reads regular files from pinned descriptors without
+following symlinks. Roots and their backing filesystem must be host approved:
+this is not protection against external hardlinks, hostile mounts or stalled
+filesystem I/O. The optional tool launcher requires a trusted Bubblewrap
+installation and a dedicated immutable image, without secrets or host
+sockets. Caller-supplied paths, executable flags and environment overrides
+are not accepted. The named executable gets only its configured environment
+and a read-only image in private namespaces including network and PID; there
+is no unsandboxed fallback. Only use trusted tools and nonsecret environment
+values (setup values are launcher arguments). This profile provides call,
+output and wall-clock budgets, not cgroup CPU, memory or process quotas.
+
+Run `python3 -B on1x/tests/test_harness_supervisor.py cc` to exercise workspace
+denials and budgets and, when available, real isolated tool launch.
+
+## Registration
+
 `include/mulib-*.h` is the source inventory. `MANIFEST.yaml` records each
 kernel's header, implementation kind and dependencies. Contract, archive and
 source-bundle tools read that shared registry. The generated

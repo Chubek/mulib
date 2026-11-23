@@ -222,10 +222,11 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
         path=local(root,check);inputs[str(path)]=contracts.digest(path)
     for path,digest in inputs.items():
         if contracts.digest(path)!=digest:raise ValueError('planning input drift: '+path)
-    # Linux UAPI declarations used by the sandbox implementation (unshare,
-    # syscall, O_PATH, etc.) must be visible before the TU's first include.
+    # Linux declarations (unshare, O_PATH, pipe2, etc.) must be visible
+    # before the TU's first include.
     definitions = ['_POSIX_C_SOURCE=200809L']
-    if any(profiles['profiles'].get(name, {}).get('sandbox_contract') for name in ordered):
+    if 'process-stream' in ordered or any(
+            profiles['profiles'].get(name, {}).get('sandbox_contract') for name in ordered):
         definitions.append('_GNU_SOURCE=1')
     return dict(schema='on1x.mulib-plan/v1', libraries=list(libraries), requested_fixtures=list(fixtures),
                 modules=entries, implementation_macros=macros, implementation_translation_units=1,

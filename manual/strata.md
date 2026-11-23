@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 2049 headers, 2736 direct dependency edges.
+Inventory: 2053 headers, 2739 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -17,7 +17,7 @@ Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (418 modules)
+## Stratum 0 (420 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -406,6 +406,7 @@ Compatibility group: `parsec`, `peg`.
 | [uip-route](mulib-uip-route.md) | none |
 | [uip-tcp-state](mulib-uip-tcp-state.md) | none |
 | [uip-timer](mulib-uip-timer.md) | none |
+| [unidiff](mulib-unidiff.md) | none |
 | [upstream](mulib-upstream.md) | none |
 | [url](mulib-url.md) | none |
 | [urlcanon](mulib-urlcanon.md) | none |
@@ -431,6 +432,7 @@ Compatibility group: `parsec`, `peg`.
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
 | [wifi-rfkill](mulib-wifi-rfkill.md) | none |
 | [wifi-security](mulib-wifi-security.md) | none |
+| [workspace-fs](mulib-workspace-fs.md) | none |
 | [wpa-ctrl](mulib-wpa-ctrl.md) | none |
 | [xatomics](mulib-xatomics.md) | none |
 | [xmacir](mulib-xmacir.md) | none |
@@ -440,7 +442,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (519 modules)
+## Stratum 1 (521 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -800,6 +802,7 @@ Compatibility group: `parsec`, `peg`.
 | [portfolio](mulib-portfolio.md) | `money` |
 | [price-normalize](mulib-price-normalize.md) | `money` |
 | [price-observation](mulib-price-observation.md) | `money` |
+| [process-stream](mulib-process-stream.md) | `pty` |
 | [procfs](mulib-procfs.md) | `vfs` |
 | [protobuf](mulib-protobuf.md) | `buffer`, `varint` |
 | [pwdauth](mulib-pwdauth.md) | `authcrypto`, `seurity` |
@@ -959,6 +962,7 @@ Compatibility group: `parsec`, `peg`.
 | [wm-core](notebook-desktop.md) | `glx-core` |
 | [woff](mulib-woff.md) | `typecore` |
 | [woff2](mulib-woff2.md) | `typecore` |
+| [workspace-edit](mulib-workspace-edit.md) | `unidiff`, `workspace-fs` |
 | [x11-wire](mulib-gfx-wire.md) | `glx-core` |
 | [x25519](mulib-x25519.md) | `entropy` |
 | [xlib](mulib-xlib.md) | `dynload` |

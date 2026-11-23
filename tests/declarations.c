@@ -1290,4 +1290,8 @@
 #include "mulib-ruleeval.h"
 #include "mulib-staymatch.h"
 #include "mulib-timeseries.h"
+#include "mulib-process-stream.h"
+#include "mulib-unidiff.h"
+#include "mulib-workspace-edit.h"
+#include "mulib-workspace-fs.h"
 int main(void) { return 0; }

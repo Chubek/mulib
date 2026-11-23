@@ -136,7 +136,7 @@ def reference(record, by_header):
     source = record['example'].relative_to(ROOT).as_posix()
     command = shlex.join(['cc', '-std=c11', '-Wall', '-Wextra', '-Wpedantic',
                           '-Werror', '-UNDEBUG', '-Iinclude', source,
-                          '-pthread', '-lm', '-ldl', *record['example_ldlibs'],
+                          '-pthread', '-lm', '-ldl', *record.get('example_ldlibs', ()),
                           '-o', 'mulib-example'])
     return '\n'.join([
         '## Source and build reference', '',

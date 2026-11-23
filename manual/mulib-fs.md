@@ -11,10 +11,18 @@ free it with `free()`. The optional length excludes a convenience trailing NUL;
 embedded NUL bytes are preserved. NULL means argument, allocation, size, or I/O
 failure and leaves the length output unchanged. The entire file is buffered.
 
+`mulib_fs_read_bounded()` uses the same ownership and trailing-NUL convention,
+but returns NULL instead of truncating if the file exceeds the byte limit.
+It sets the optional length output to zero on failure. A zero limit accepts
+only an empty file.
+
 `write()` opens with `wb`, replacing/truncating an existing file. It returns 1
 only if writing, flushing, and closing succeed. Failure can leave a truncated
 or partial file; this is not atomic replacement or a durability/fsync guarantee.
 NULL data is accepted for a zero-byte write.
+
+Neither operation confines paths. For descriptor-relative workspace operations
+and single-file atomic replacement, see [workspace-fs](mulib-workspace-fs.md).
 
 ## Example
 
@@ -50,16 +58,11 @@ Include the header in application code; dependency types come from its includes.
  * @brief Whole-file read and write helpers with explicit byte length.
  * @defgroup mulib_fs MuLIB fs
  * @{
- * @details Reading allocates a NUL padding byte after the actual file contents
- * for convenience, but binary data may itself contain NULs. Writing truncates
- * existing destination files; writes are not atomic.
+ * @details Reads add a convenience NUL byte; writes truncate existing files
+ * and are not atomic. Paths are not confined.
  * @par Integration
- * In exactly one translation unit define MULIB_IMPL_FS before including this
- * file. Other translation units may include it without the implementation
- * switch.
- * @par Portability
- * ISO C11, C++17 compatible C linkage. All allocations use the C standard
- * library.
+ * Define MULIB_IMPL_FS in exactly one translation unit. ISO C11, C++17
+ * declarations with C linkage.
  * @}
  */
 #ifndef MULIB_FS_H
@@ -81,11 +84,13 @@ extern "C"
 {
 #endif
 
-  /** @brief mulib fs read; see manual/mulib-fs.md for contracts and examples.
-   */
+  /** Caller frees result. On failure leaves *length unchanged. */
   unsigned char *mulib_fs_read (const char *path, size_t *length);
-  /** @brief mulib fs write; see manual/mulib-fs.md for contracts and examples.
-   */
+  /** Return NULL rather than truncate when the file exceeds limit. Caller frees
+   * the result. On failure sets *length to zero, if supplied. */
+  unsigned char *mulib_fs_read_bounded (const char *path, size_t limit,
+                                       size_t *length);
+  /** Writes with fopen("wb"): not atomic, path is not confined. */
   int mulib_fs_write (const char *path, const void *data, size_t length);
 
 #ifdef __cplusplus

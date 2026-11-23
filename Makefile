@@ -22,6 +22,22 @@ EXAMPLES += build/kernel-substrates
 check-media:
 	python3 tools/media_inventory.py --check
 	python3 tools/check_media.py
+.PHONY: check-harness-kernels
+HARNESS_CPPFLAGS := -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L
+HARNESS_TESTS := build/harness-test_harness build/harness-test_rollback build/harness-fuzz_unidiff build/harness-test_process_start
+ifeq ($(shell uname -s),Linux)
+check: check-harness-kernels
+endif
+check-harness-kernels: $(HARNESS_TESTS) build/harness-consumer
+	@set -eu; for t in $^; do ./$$t; done
+build/harness-implementation.o: tests/harness-kernels/implementation.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(HARNESS_CPPFLAGS) $(CFLAGS) -c $< -o $@
+build/harness-test_rollback: LDFLAGS += -Wl,--wrap=renameat,--wrap=fsync
+build/harness-test_process_start: LDFLAGS += -Wl,--wrap=execvp
+$(HARNESS_TESTS): build/harness-%: tests/harness-kernels/%.c build/harness-implementation.o | build
+	$(CC) $(CPPFLAGS) $(HARNESS_CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS) -o $@
+build/harness-consumer: tests/harness-kernels/consumer.cpp build/harness-implementation.o $(HEADERS) | build
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -std=c++17 -Wall -Wextra -Wpedantic -Werror $(filter %.cpp %.o,$^) $(LDFLAGS) $(LDLIBS) -o $@
 .PHONY: check-capasm check-finpred check-imtui check-termscript check-termdb check-ssh check-ssh-openssh extend-kernelbind
 extend-kernelbind:
 	python3 tools/extend-kernelbind.py
