@@ -61,12 +61,11 @@ class Loader {
   bool unsafe_context=false;
   std::size_t kernel_requests=0;
   std::map<std::string,Function> kernel_calls;
-    static constexpr const char* kernel_symbols[]={"mulib_clamp_add_i64","mulib_clamp_sub_i64","mulib_clamp_i64",
-     "mulib_histprice_ema","mulib_histprice_holt","mulib_priceopt_optimize","mulib_priceopt_candidates",
+    static constexpr const char* kernel_symbols[]={"mulib_histprice_ema","mulib_histprice_holt","mulib_priceopt_optimize","mulib_priceopt_candidates",
       ipc_kernel_open,ipc_kernel_roundtrip,ipc_kernel_open_session,ipc_kernel_register,
       ipc_kernel_revoke,ipc_kernel_send,ipc_kernel_poll,ipc_kernel_finish};
   static bool kernel_name(std::string_view name){
-   return std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
+   return ffi::find_scalar(name)||std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
   }
   std::string kernel_type_prefix(bool history)const{return prefix+(history?"kernel_history_":"kernel_pricing_");}
   Type kernel_result(bool history)const {
@@ -84,9 +83,11 @@ class Loader {
    const bool history=found->second.module=="mulib.histprice";
    const bool pricing=found->second.module=="mulib.priceopt";
     const bool ipc=found->second.module=="mulib.ipc_framed";
-    const auto symbol=(history?"mulib_histprice_":pricing?"mulib_priceopt_":ipc?"on1x_kernel_ipc_v1_":"mulib_clamp_")+
-                      e.text.substr(dot+1);
-    if(!kernel_name(symbol)){
+    const auto member=e.text.substr(dot+1);
+    const auto* scalar=ffi::find_member(found->second.module,member);
+    const auto symbol=scalar?std::string(scalar->symbol):
+       (history?"mulib_histprice_":pricing?"mulib_priceopt_":ipc?"on1x_kernel_ipc_v1_":"")+member;
+    if((!scalar&&!history&&!pricing&&!ipc)||!kernel_name(symbol)){
      throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
     }
     const bool unsafe=found->second.is_unsafe;
@@ -99,7 +100,7 @@ class Loader {
      f.kernel_symbol=symbol;f.kernel_link_only=!unsafe;
      auto params=ipc?ipc_kernel_parameters(symbol):
         history?history_kernel_parameters(symbol):pricing?pricing_kernel_parameters(symbol,kernel_type_prefix(false)):
-       std::vector<Type>(clamp_kernel_arity(symbol),Type::I64);
+       std::vector<Type>(scalar->arity,Type::I64);
     for(std::size_t i=0;i<params.size();++i){Param param;param.name="arg"+std::to_string(i);param.type=params[i];param.where=e.where;f.params.push_back(std::move(param));}
     kernel_calls.emplace(name,std::move(f));
    }
@@ -679,9 +680,8 @@ public:
    }
     // In reviewed staging each clamp export can also have a distinct unsafe
     // spelling. Their call authorities are not interchangeable.
-    std::size_t generated=options.kernel_c11?std::size(kernel_symbols):0;
-    if(options.kernel_stage)
-     for(auto symbol:kernel_symbols)if(clamp_kernel_arity(symbol))++generated;
+    std::size_t generated=options.kernel_c11?std::size(kernel_symbols)+ffi::scalar_bindings().size():0;
+    if(options.kernel_stage)generated+=ffi::scalar_bindings().size();
    if(count>16384-generated)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count+generated);
    for(auto* m:order){

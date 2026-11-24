@@ -1,0 +1,42 @@
+# FFIHandler v1: grammar only; the validator restricts executable profiles.
+.language "FFIHandler"
+.skip /[ \t\r\n]+/
+.skip /#[^\n]*/
+.token NAME: String = /[A-Za-z_][A-Za-z_0-9]*/
+.token NUMBER: Int = /[0-9]+/
+.token STRING: String = /"([^"\\\r\n]|\\["\\nrt])*"/
+
+.rule Start
+'syntax: Header Modules EOF
+'semantics: return nil;
+.end
+.rule Header
+'syntax: "ffi" NUMBER ";"
+.end
+.rule Modules
+'syntax: Modules Module | Module
+.end
+.rule Module
+'syntax: "foreign" NAME "." NAME "{" "provider" NAME STRING ";" "header" STRING ";" Functions "}"
+.end
+.rule Functions
+'syntax: Functions Function | Function
+.end
+.rule Function
+'syntax: Inline "fn" NAME "(" Params ")" "->" NAME "=" "c" "::" NAME Guard ";"
+.end
+.rule Inline
+'syntax: "inline" |
+.end
+.rule Params
+'syntax: Param ParamTail |
+.end
+.rule Param
+'syntax: NAME ":" NAME
+.end
+.rule ParamTail
+'syntax: "," Param ParamTail |
+.end
+.rule Guard
+'syntax: "requires" NAME "<=" NAME |
+.end

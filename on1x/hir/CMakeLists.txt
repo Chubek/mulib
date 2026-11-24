@@ -3,6 +3,7 @@ target_sources(on1x_frontend PRIVATE
   processor/processor.cpp processor/processor_semantic.cpp processor/partial_eval.cpp)
 add_subdirectory(processor)
 add_subdirectory(MEMGraph)
+add_subdirectory(FFIHandler)
 
 # Only the driver selects the optional LibStone HIR passes. The canonical
 # frontend archive (including SDK consumers) needs neither provider to link.
