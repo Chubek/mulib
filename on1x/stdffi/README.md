@@ -26,6 +26,16 @@ declarations. A representable function is not necessarily callable. Actual
 unsafe and reviewed-safe admission depend on the compiler, native artifact and
 explicit policy, not on the index or a successful regeneration.
 
+The index separates registered and attempted modules, accepted projections,
+and explicit failure, discovery-only and unsupported outcomes. Its function
+counts separate all projected functions from the smaller candidate set, audited
+ownership and emitted scalar candidates. Included dependency functions and
+ambiguous exports do not become callable just because Cephyr saw them.
+Projection failures are also distinct from valid projections with no eligible
+exports. For example, the bundled Cephyr header profile cannot project
+`media-timebase` because it lacks `math.h`; generation does not replace it with
+host libc or a synthetic declaration.
+
 ## Regeneration and CI
 
 Use `on1x/hir/FFIHandler/tools/ffgen.py` with an explicit Cephyr binary, the
@@ -47,8 +57,10 @@ stone=/abs/path/to/libstone
 cephyr_build=/abs/path/to/cephyr-build
 work=/abs/path/to/ffi-work
 mkdir -p "$work/scratch"
-perl "$stone/cornerstone/LLSynth/scripts/llsynth.pl" \
-  --mode=interpret -T python3 -o "$work/FFIHandler.py" "$ffi/FFIHandler.llsynth"
+export TMPDIR="$work"
+PERL_HASH_SEED=0 PERL_PERTURB_KEYS=0 \
+  perl "$stone/cornerstone/LLSynth/scripts/llsynth.pl" \
+    --mode=interpret -T python3 -o "$work/FFIHandler.py" "$ffi/FFIHandler.llsynth"
 python3 -B on1x/hir/FFIHandler/tests/check_stdffi.py --mulib-root . -- \
   --cephyr "$cephyr_build/cephyr" --parser "$work/FFIHandler.py" \
   --libstone-revision "$(git -C "$stone" rev-parse HEAD)" \
