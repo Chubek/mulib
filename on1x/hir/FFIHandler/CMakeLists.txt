@@ -190,6 +190,9 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_test(NAME on1x.ffihandler.catalogue_inventory
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi_inventory.py")
   set_tests_properties(on1x.ffihandler.catalogue_inventory PROPERTIES TIMEOUT 90)
+  add_test(NAME on1x.ffihandler.cephyr_analysis
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_analysis.py")
+  set_tests_properties(on1x.ffihandler.cephyr_analysis PROPERTIES TIMEOUT 90)
   if(NOT ON1X_FFI_CROSS_C11)
     add_test(NAME on1x.ffihandler.catalogue_cmake
       COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_catalogue_cmake.py"
@@ -227,7 +230,7 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
       --parser "${_ffi_parser}")
   set_tests_properties(on1x.ffihandler.rich_plan_validation PROPERTIES TIMEOUT 90)
   if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu" AND
-     ON1X_FFI_CATALOG STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/../../stdffi/mulib")
+     _ffi_catalogue_real STREQUAL "${_ffi_catalogue_root_real}/${ON1X_FFI_TARGET}")
     add_test(NAME on1x.ffihandler.taint_policy
       COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_taint.py"
         --on1xc "$<TARGET_FILE:on1xc>" --mulib-root "${CMAKE_CURRENT_SOURCE_DIR}/../../.."

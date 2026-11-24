@@ -79,7 +79,8 @@ class EvidenceTests(unittest.TestCase):
             ("body", ["syntax_body"]), ("halt", ["declared_noreturn"]),
             ("inline_only", ["inline_only", "syntax_body"]),
         ):
-            self.assertEqual(rows[member]["reason"], "ambiguous_export")
+            self.assertEqual(rows[member]["reason"],
+                             "noreturn" if member == "halt" else "ambiguous_export")
             self.assertEqual(rows[member]["c11_evidence"],
                              {"source": "cephyr_c11_v1", "facts": facts})
         self.assertNotIn("c11_evidence", rows["plain"])

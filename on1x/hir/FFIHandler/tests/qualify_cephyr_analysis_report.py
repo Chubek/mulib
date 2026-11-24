@@ -74,7 +74,13 @@ class AnalysisTests(unittest.TestCase):
         report = self.compile(self.generation.document)
         self.assertEqual(report["bindings"], [])
         self.assertNotIn(b"include/mulib-x.h", self.generation.document)
-        self.assertTrue(all(row["reason"] == "ambiguous_export" for row in report["discovery"]))
+        reasons = {row["member"]: row["reason"] for row in report["discovery"]}
+        self.assertEqual(reasons, {
+            "access": "ambiguous_export", "bad_index": "ambiguous_export",
+            "legacy": "no_prototype", "lookup": "ambiguous_export",
+            "mask": "ambiguous_export", "opaque": "ambiguous_export",
+            "stop": "noreturn", "varargs": "variadic",
+        })
         analysis = report["modules"][0]["c11_analysis"]
         self.assertEqual(analysis, self.generation.metadata["c11_analysis"])
         self.assertEqual(analysis["target_properties"], dict(
