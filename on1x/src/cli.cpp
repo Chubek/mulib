@@ -58,6 +58,8 @@
 namespace {
  std::string terminal_text(std::string_view text){return on1x::diagnostic::terminal_text(text);}
  int project_command(int argc,char** argv){
+  const bool aux=std::string_view(argv[1])=="aux";
+  const char* driver=aux?"on1x-project.py":"on1x-build.py";
 #if defined(__unix__) || defined(__APPLE__)
   namespace fs=std::filesystem;
   std::error_code ec;
@@ -85,21 +87,22 @@ namespace {
    if(ec)throw std::runtime_error("cannot locate on1xc for the project driver");
   }
   auto installed=compiler.parent_path()/"../share/on1x";
-  auto helper=installed/"tools/on1x-build.py";
-  if(!fs::is_directory(installed))helper=fs::path(ON1X_DRIVER_SOURCE_TOOLS)/"on1x-build.py";
+  // Select the layout once; a broken installed driver is not retried from source.
+  const auto helper=fs::is_directory(installed)?installed/"tools"/driver:fs::path(ON1X_DRIVER_SOURCE_TOOLS)/driver;
   auto script=helper.string();
   auto binary=compiler.string();
   if(::setenv("ON1X_PROJECT_COMPILER",binary.c_str(),1)!=0)
    throw std::runtime_error("cannot set compiler path for the project driver");
   std::vector<char*> arguments{script.data()};
-  arguments.insert(arguments.end(),argv+1,argv+argc);
+  // The project engine owns aux's full command line, including help and errors.
+  arguments.insert(arguments.end(),argv+(aux?2:1),argv+argc);
   arguments.push_back(nullptr);
   ::execv(script.c_str(),arguments.data());
   auto error=errno;
   throw std::runtime_error("cannot start project driver "+script+": "+std::strerror(error));
 #else
-  (void)argc;(void)argv;
-  throw std::runtime_error("on1xc project commands require a POSIX host; try tools/on1x-build.py");
+  (void)argc;
+  throw std::runtime_error(std::string("on1xc project commands require a POSIX host; try tools/")+driver);
 #endif
  }
 #ifdef ON1X_WITH_EXTENSION_SDK
@@ -543,8 +546,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     "       [--scrutiny-work UNITS] [--no-analysis-repairs] (bounded Wetstone analysis)\n"
    "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
   "       on1xc --help\n"
-   "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
-   "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
+    "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
+    "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
+    "       on1xc aux COMMAND [ARGS ...] (project driver; see on1xc aux --help)\n"
     "       on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
    "       on1xc (--format | --emit-latex | --emit-troff) INPUT [-o OUTPUT]\n"
   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
@@ -568,8 +572,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     auto command_failure=[&](CommandFailure kind,std::string_view detail={}){
      return std::runtime_error(diagnostic_catalog->command_failure(kind,{.message=detail}));
     };
-   if(argc>1&&(std::string_view(argv[1])=="init"||std::string_view(argv[1])=="exec"))
-    return project_command(argc,argv);
+   if(argc>1){
+    std::string_view command=argv[1];
+    if(command=="init"||command=="exec"||command=="aux")
+     return project_command(argc,argv);
+   }
 #ifdef ON1X_WITH_EXTENSION_SDK
    if(argc>1&&std::string_view(argv[1])=="sdk")
     return sdk_command(argc,argv);

@@ -1,9 +1,13 @@
 # On1x syntax, compiler flags, and project manifests
 
 Run `on1xc --help` for the options enabled in the installed compiler.
-The checkout also provides `python3 on1x/tools/on1x-build.py --help` for
-single-file builds and `python3 on1x/tools/on1x-project.py ACTION --help` for
-project commands.
+On POSIX, `on1xc aux --help` lists the bundled project driver's commands.
+Use `on1xc aux COMMAND --help` for that command's options. `aux` passes the
+arguments, working directory, and result through unchanged; it does not
+look up named commands in an On1xfile as `on1xc exec` does. You can also
+invoke the project driver directly with
+`python3 on1x/tools/on1x-project.py COMMAND`, or use
+`python3 on1x/tools/on1x-build.py --help` for single-file builds.
 
 ## Source syntax
 
@@ -78,9 +82,12 @@ scrutiny-work 8192
   (`1` through `10000000`). CLI `--scrutiny-work N` overrides it for a
   project build. `--scrutiny LEVEL` overrides the analysis level. These policy
   declarations belong to the root project.
-- `on1x-project.py plan PROJECT` shows resolved settings. Use
-  `on1x-project.py backends --on1xc PATH` to probe installed backends and
-  `on1x-project.py format PATH --check` to check a plain manifest.
+- `on1xc aux plan PROJECT` shows resolved settings. Use
+  `on1xc aux backends` to probe installed backends and
+  `on1xc aux format PATH --check` to check a plain manifest. Use
+  `on1xc aux lock PROJECT` and `on1xc aux fetch DEPENDENCY PROJECT` to
+  manage locked dependencies, then `on1xc aux build PROJECT --frozen`
+  to build without acquiring dependencies.
   Backend or optimization declarations use the `on1x.lock/v2` lock format.
 
 See the [On1xfile reference](../stdlib/on1xfile/README.md) for file roles,
