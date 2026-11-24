@@ -311,3 +311,25 @@ passed **228 tests, 0 failed, 1 skipped** of 229 scheduled
 cgroup fixture. After the final startup cleanup ordering fix, both session
 suites passed four consecutive Clang fallback runs
 (`build/on1x-vmm-fallback-readiness-ctest.log`).
+
+### MCP session and project initialization continuation
+
+At baseline `68f5f143` and unchanged LibStone `21f886af`, `232f5488` and
+`70e516ea` add the private stdio MCP profile, managed ArchVirt lifecycle and
+MuLIB public-header inventory/inquiry. The default HTTP deployment stays
+read-only. The VM tests use real KVM and bubblewrap, with a temporary override
+of the production runtime directory because the test account does not own
+`/var/run`. `f42351a7` adds `aux init --with-gitignore`, preserving existing
+project files and writing the supplied template only on request.
+
+The independent Clang fallback selection passed 4/4
+(`build/on1x-mcp-fallback-ctest.log`). The 41-case knowledge suite passed,
+including all 2,053 public MuLIB headers in the live index and refusal to
+invoke a VM tool through HTTP. After 61 seconds of parameter idle time, a
+real MCP-owned guest resumed and correctly used its earlier state
+(`build/on1x-mcp-vmm-long-idle.log`). A busy guest still hits the active
+deadline. EOF, SIGTERM, isolated IDs, explicit delete/invalidate, and
+SIGKILL's kernel parent-death behavior are covered; SIGKILL can leave files
+for operator cleanup. The staged installation also passed the KVM MCP and
+source/installed init fixtures (`build/on1x-mcp-install.log`). No LibStone
+revision or SDK ABI changed.

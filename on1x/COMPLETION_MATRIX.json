@@ -7,6 +7,48 @@
   },
   "features": [
     {
+      "id": "M6-MCP-MULIB-HEADERS",
+      "contract": "Page canonical public MuLIB headers in the startup snapshot and resolve exact filename, keyword or line inquiries to bounded cited excerpts without opening query-selected files.",
+      "owner": "integration",
+      "prerequisites": ["M6-KNOWLEDGE-EVIDENCE", "bounded UTF-8 public-header snapshot"],
+      "source_paths": ["on1x/addons/mcp/core.py", "on1x/addons/mcp/test_chatgpt.py"],
+      "backends": ["read-only HTTP and local stdio"],
+      "positive_tests": ["on1x.addon_chatgpt (header inventory, inquiry, HTTP and packaging)"],
+      "negative_tests": ["noncanonical path or missing line", "symlink and disclosure controls"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "python3 -B on1x/addons/mcp/test_chatgpt.py", "result": "41 passing tests; live snapshot contains 2,053 public headers"}],
+      "revision": "70e516ea",
+      "limits": ["Source evidence only; no new ABI or native admission"]
+    },
+    {
+      "id": "M6-MCP-ARCHVIRT-SESSION",
+      "contract": "One opt-in local stdio process compiles sandboxed standalone source to a KVM guest, manages up to four session-owned VM IDs and sends bounded serial parameters. EOF, user invalidation or orderly termination cleans up.",
+      "owner": "integration",
+      "prerequisites": ["M5-ARCHVIRT-KVM-LAUNCH", "Linux x86-64 /dev/kvm", "bubblewrap, prlimit, private preprovisioned runtime directory"],
+      "source_paths": ["on1x/addons/mcp/vmm.py", "on1x/addons/mcp/server.py", "on1x/addons/mcp/test_vmm.py", "on1x/archvirt/run_main.c", "on1x/src/loader.cpp"],
+      "backends": ["private local MCP stdio, ArchVirt native KVM"],
+      "positive_tests": ["on1x.addon_mcp_vmm (compile, sends, list, kill, delete, invalidate, EOF and SIGTERM)", "managed idle wait beyond 60 seconds"],
+      "negative_tests": ["cross-session ID rejection", "HTTP cannot select VM tools", "standalone import/extern rejection", "active deadline and parent death"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-archvirt-fallback --output-on-failure -R '^on1x\\.(addon_mcp_vmm|addon_chatgpt|project_aux_init)$'", "result": "3/3 final focused Clang fallback gates"}, {"command": "python3 -B on1x/addons/mcp/test_vmm.py --on1xc build/on1x-archvirt-fallback/on1xc --runner build/on1x-archvirt-fallback/on1x-archvirt-run --exercise-idle", "result": "Actual KVM guest waits 61 seconds, then accepts the next parameter and retains earlier state"}],
+      "revision": "70e516ea",
+      "limits": ["No public HTTP execution or multi-tenant isolation claim", "Standalone guest-only i64 input ABI", "Forced server disconnection can leave files after SIGKILL, but not a live runner"]
+    },
+    {
+      "id": "M6-PROJECT-INIT-GITIGNORE",
+      "contract": "Explicit aux init --with-gitignore adds the supplied root file in the manifest transaction and rejects an existing file or symlink without overwriting any project files.",
+      "owner": "auxiliary worker",
+      "prerequisites": ["M6-PROJECT-AUX"],
+      "source_paths": ["on1x/tools/on1x_project_init.py", "on1x/tests/test_aux_init.py", "on1x/addons/CLI.md"],
+      "backends": ["build-tree and installed compiler"],
+      "positive_tests": ["on1x.project_aux_init", "worker git check-ignore (11 paths)"],
+      "negative_tests": ["no flag leaves .gitignore untouched", "existing contents/symlink, no partial files"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "python3 -B on1x/tests/test_aux_init.py --on1xc build/on1x-archvirt-enabled/on1xc", "result": "Integrated pass; worker also verified the installed compiler and ignore behavior"}],
+      "revision": "f42351a7",
+      "limits": ["Does not create a Git repository"]
+    },
+    {
       "id": "M5-ARCHVIRT-LIVE-SESSION",
       "contract": "A stable content ID addresses one live owner-only KVM session. A MuLIB REPL or repeated detached invocations queue bounded checked i64 inputs, preserving guest state and live console output across attachments. Explicit stop removes its endpoint.",
       "owner": "ArchVirt guest and VM session workers, integration lead",
