@@ -90,7 +90,7 @@ with tempfile.TemporaryDirectory(dir=a.work) as tmp:
         assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected, path
     for path, expected in lock['artifacts'].items():
         assert hashlib.sha256((bundle/path).read_bytes()).hexdigest() == expected, path
-    assert str(kernels/'mulib-fraction.h') in lock['inputs']
+    assert str(include/'mulib-fraction.h') in lock['inputs']
 
     # The separately compiled caller has unresolved references until the one
     # wrapper object is linked. Run it against manual timing/overflow oracles.

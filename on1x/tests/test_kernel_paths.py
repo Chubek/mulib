@@ -26,7 +26,7 @@ def run(args,check=True):
 
 with tempfile.TemporaryDirectory(dir=a.work,prefix='run-') as temporary:
     work=Path(temporary);include=work/'kernel headers';include.mkdir()
-    header=kernels/'mulib-bitset.h'
+    header=include/'mulib-bitset.h'
     header.write_bytes((a.root.parent/'kernels/mulib-bitset.h').read_bytes()+b'\n/* selected-header SDK fixture */\n')
     archive=work/'archive'
     resource=run(['clang','-print-resource-dir']).stdout.strip()

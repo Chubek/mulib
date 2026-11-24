@@ -113,7 +113,7 @@ convention, qualifiers, integer widths, pointer arguments and framing record
 layout. C11 assertions independently check the actual declarations and layout
 used by the native compiler. The planner compiles both implementation switches
 (`MULIB_IMPL_SANDBOX_PROFILE`, `MULIB_IMPL_IPC_FRAMED`) in one TU. Only the
-approved build flags and canonical include root are used. The optional link
+approved build flags and canonical `kernels/` directory are used. The optional link
 plan pins the application, tools, adapter, kernel inputs and executable
 and reports `safe_export:false`; its explicit session loan and callback
 descriptions are adapter policy, not reviewer evidence. `--inspect-kernels` still reports the

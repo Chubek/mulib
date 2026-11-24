@@ -128,7 +128,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(alpha["manifest_module"], "alpha")
         self.assertEqual(index.call("inspect_header", {"path": "kernels/mulib-alpha.h", "line": 2}), alpha)
         self.rejected("HEADER_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-missing.h"}))
-        self.rejected("INVALID_ARGUMENT", lambda: index.call("inspect_header", {"path": "../include/mulib-alpha.h"}))
+        self.rejected("INVALID_ARGUMENT", lambda: index.call("inspect_header", {"path": "../kernels/mulib-alpha.h"}))
         self.rejected("LINE_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-alpha.h", "line": 100}))
 
     def test_contract_drift_is_not_admission(self):
