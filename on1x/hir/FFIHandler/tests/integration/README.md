@@ -76,12 +76,16 @@ python3 -B on1x/hir/FFIHandler/tests/integration/generation.py \
   --tool-input "$LIBSTONE/cornerstone/Archon/stdspec"
 ```
 
-Generates actual clamp in two checkout locations, compares the exact bytes,
-checks that the audited interval rule survives, and verifies that prefix
-matching alone never grants ownership. Negative controls reject an unexpected
-generated file, a stale authored signature, and a transitive `stdint.h`
-change; known-good output is unchanged on rejection. This is a one-module
-test, not a substitute for the full-manifest `--all --check`.
+Generates actual clamp and container-core in two checkout locations, compares
+the exact generated files and index after incremental publication, checks
+that the audited interval rule survives, and verifies that prefix matching
+alone never grants ownership. Use `--other-parser` to test independently
+generated LLSynth parsers from both locations, with `PERL_HASH_SEED=0` and
+`PERL_PERTURB_KEYS=0` for both Perl invocations. The parser bytes may include
+absolute source paths; the published FFI bytes must still match. Negative
+controls reject an unexpected generated file, a stale authored signature,
+and a transitive `stdint.h` change without changing known-good output.
+This does not substitute for the full-manifest `--all --check`.
 
 ## Real On1x and installed tool
 
@@ -94,6 +98,11 @@ python3 -B on1x/hir/FFIHandler/tests/integration/on1x_clamp.py \
 This script builds real static and dynamic clamp applications, checks a
 left-to-right single-evaluation trace even on guard exit 70, checks lexical
 unsafe scope, and runs the published executables with no tools on `PATH`.
+A generated-path run also checks checked-stage C11 links by descriptor ID,
+rejects unsupported provider/backend choices, and executes five independent
+unsigned saturating static-inline comparisons without an implementation
+switch. `--embedded-cephyr` additionally exercises the three static provider
+combinations involving embedded Cephyr and asserts explicit DSO refusal.
 A generated candidate must not self-authorize. The script creates ephemeral
 Ed25519 test authorities and rejects a wrong key, modified signed bytes, a
 valid signature on the wrong target, and a valid signature with a stale DSO
@@ -104,9 +113,10 @@ incomplete migrated implementation; it is not a safe-DSO pass.
 
 For an installed run, install to a disposable prefix, then pass
 `--on1xc "$PREFIX/bin/on1xc"` and
-`--driver "$PREFIX/share/on1x/tools/on1x-build.py"`. Omit `--mulib-root` to
-test staged dependency discovery rather than silently referring to the
-source checkout. Record that separate result.
+`--driver "$PREFIX/share/on1x/tools/on1x-build.py"`. Use `--mulib-root` with
+an explicitly staged compatible MuLIB root for the supported separate SDK
+configuration. Omit it in a separate run to check that missing native inputs
+fail closed rather than silently referring to the source checkout.
 
 ## Gate interpretation
 
