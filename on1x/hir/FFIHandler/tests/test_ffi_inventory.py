@@ -76,6 +76,28 @@ class InventoryTest(unittest.TestCase):
         self.assertIn('MULIB_IMPL_YANTLR_STDLIB',
                       provider['native_plan']['implementation_macros'])
 
+    def test_prepared_planner_preserves_recipes_and_result_isolation(self):
+        planner = ffi_inventory._planner
+        prepared = planner.prepare_plan(ROOT)
+        for key, fixtures in [('clamp', []), ('process-stream', []), ('parsec', []),
+                              ('cdd-registry', []), ('yantlr', ['yantlr'])]:
+            with self.subTest(key=key):
+                expected = planner.plan(ROOT, [key], fixtures, discovery=True)
+                actual = planner.plan(ROOT, [key], fixtures, discovery=True, prepared=prepared)
+                self.assertEqual(actual, expected)
+                actual['modules'][0]['manifest_dependencies'].append('wrong')
+                self.assertEqual(planner.plan(ROOT, [key], fixtures, discovery=True,
+                                              prepared=prepared), expected)
+        with tempfile.TemporaryDirectory() as other:
+            with self.assertRaisesRegex(ValueError, 'planner root mismatch'):
+                planner.plan(Path(other), ['clamp'], discovery=True, prepared=prepared)
+        digest = planner.contracts.digest
+        with patch.object(planner.contracts, 'digest',
+                          side_effect=lambda path: '0' * 64 if Path(path).name == 'MANIFEST.yaml'
+                          else digest(path)):
+            with self.assertRaisesRegex(ValueError, 'planning input drift: .*MANIFEST.yaml'):
+                planner.plan(ROOT, ['clamp'], discovery=True, prepared=prepared)
+
     def test_transitive_hash_and_input_drift(self):
         self.inventory.verify_unchanged()
         archive, = self.inventory.index_metadata['relative_include_roots']
