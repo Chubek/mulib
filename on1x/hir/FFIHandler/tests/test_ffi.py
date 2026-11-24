@@ -4,6 +4,7 @@ from pathlib import Path
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -45,6 +46,9 @@ def main():
     spec=(a.catalogue/'clamp.ffi').resolve()
     print('TEST PARSER:', parser)
     with tempfile.TemporaryDirectory(dir=a.work) as tmp:
+        # Keep compiler temporaries on the same private build filesystem as
+        # fixtures, not on a possibly full shared /tmp.
+        os.environ['TMPDIR']=str(Path(tmp).resolve())
         w=Path(tmp); hdr=w/'on1x_ffi_rules.hpp'; manifest=w/'manifest.json'
         def gen(*src,ok=True,extra=()):
             return run([sys.executable,'-B',GEN,'--parser',parser,'--header',hdr,'--manifest',manifest,*extra,*src],ok)

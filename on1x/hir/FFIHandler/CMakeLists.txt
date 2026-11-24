@@ -38,7 +38,10 @@ if(_ffi_count LESS 1 OR _ffi_count GREATER 8192 OR NOT EXISTS "${_ffi_catalogue_
   message(FATAL_ERROR "FFIHandler requires an indexed generated catalogue at ${ON1X_FFI_CATALOG}")
 endif()
 add_custom_command(OUTPUT "${_ffi_parser}"
-  COMMAND "${PERL_EXECUTABLE}" "${_ffi_driver}" --mode=interpret -T python3 -o "${_ffi_parser}" "${CMAKE_CURRENT_SOURCE_DIR}/FFIHandler.llsynth"
+  # LLSynth emits some tables in Perl hash order. Stabilize this build tool's
+  # output so rebuilding the parser does not change descriptor provenance.
+  COMMAND "${CMAKE_COMMAND}" -E env PERL_HASH_SEED=0 PERL_PERTURB_KEYS=0
+    "${PERL_EXECUTABLE}" "${_ffi_driver}" --mode=interpret -T python3 -o "${_ffi_parser}" "${CMAKE_CURRENT_SOURCE_DIR}/FFIHandler.llsynth"
   DEPENDS FFIHandler.llsynth ${_ffi_generator_sources} "${PERL_EXECUTABLE}" VERBATIM)
 set(_ffi_unit_headers)
 set(_ffi_unit_manifests)
