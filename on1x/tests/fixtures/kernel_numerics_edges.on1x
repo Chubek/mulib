@@ -1,0 +1,100 @@
+import kernel mulib.histprice as History;
+import kernel mulib.priceopt as Pricing;
+
+fn history_rejected(r: History.Result<History.Forecast,History.Error>) {
+  match r with { Ok(_) => { assert(false); }, Err(Rejected()) => {} };
+}
+
+fn pricing_rejected(r: Pricing.Result<Pricing.Decision,Pricing.Error>) {
+  match r with { Ok(_) => { assert(false); }, Err(Rejected()) => {} };
+}
+
+fn mark(n: i64) -> i64 { println(n); return n; }
+fn marked_alpha() -> f64 { println(3); return 2.0; }
+fn marked_horizon() -> i64 { println(4); return 1; }
+
+fn main() {
+  let nan = f64_from_bits(9221120237041090560);
+  let inf = f64_from_bits(9218868437227405312);
+  let window = array[nan, -0.0, 2.0, 6.0, inf];
+  # Invalid slice construction traps before evaluating the remaining call arguments.
+  if io_stdin() == "trap" {
+    let r = History.ema(window[mark(1):mark(6)], marked_alpha(), marked_horizon());
+    history_rejected(r);
+    return;
+  }
+  # In contrast, rejection by the foreign adapter happens after all arguments.
+  history_rejected(History.ema(window[mark(1):mark(2)], marked_alpha(), marked_horizon()));
+
+  match History.ema(window[1:2], 0.0, 1000000) with {
+    Ok(f) => { assert(f["point"] == 0.0 && f64_signbit(f["point"]) && f64_is_nan(f["variance"])); },
+    Err(_) => { assert(false); }
+  };
+  match History.holt(window[1:4], 1.0, 1.0, 0.5, 2) with {
+    Ok(f) => { assert(f["point"] == 9.0 && f64_is_nan(f["variance"])); },
+    Err(_) => { assert(false); }
+  };
+  history_rejected(History.ema(window[1:1], 0.0, 1));
+  history_rejected(History.ema(window[1:2], 0.0, 1000001));
+  history_rejected(History.ema(window[1:2], 0.0, -1));
+  history_rejected(History.ema(window[1:2], 0.0, 9223372036854775807));
+  history_rejected(History.ema(window[1:2], nan, 1));
+  history_rejected(History.ema(window[1:5], 1.0, 1));
+  history_rejected(History.holt(window[1:2], 1.0, 1.0, 1.0, 2));
+  history_rejected(History.holt(window[1:4], 1.0, 1.0, 0.0, 2));
+  let falling = array[2.0, 1.0];
+  history_rejected(History.holt(falling[0:2], 1.0, 1.0, 1.0, 2));
+
+  let revenue = variant<Pricing.Objective>(Revenue, record{});
+  let profit = variant<Pricing.Objective>(Profit, record{});
+  let linear = record<Pricing.DemandModel>{
+    reference: 0.0, scale: 20.0, kind: variant<Pricing.DemandKind>(Linear, record{}), shape: 1.0
+  };
+  let iso = record<Pricing.DemandModel>{
+    kind: variant<Pricing.DemandKind>(Isoelastic, record{}), scale: 12.0, shape: 0.0, reference: 6.0
+  };
+  let sigmoid = record<Pricing.DemandModel>{
+    kind: variant<Pricing.DemandKind>(Logistic, record{}), scale: 12.0, shape: 1.0, reference: 10.0
+  };
+  let limits = record<Pricing.Constraints>{
+    tick: 1.0, previous_price: 0.0, unit_cost: 4.0, min_price: 6.0,
+    min_unit_margin: 0.0, max_price: 20.0, max_relative_change: 0.0
+  };
+  let fixed = record<Pricing.Constraints>{
+    min_price: 10.0, max_price: 10.0, unit_cost: 4.0, min_unit_margin: 0.0,
+    previous_price: 0.0, max_relative_change: 0.0, tick: 1.0
+  };
+  match Pricing.optimize(linear, limits, revenue) with {
+    Ok(d) => {
+      assert(d["price"] == 10.0 && d["score"] == 100.0 &&
+             d["expected_demand"] == 10.0 && d["evaluations"] == 15u64);
+    }, Err(_) => { assert(false); }
+  };
+  match Pricing.optimize(iso, fixed, profit) with {
+    Ok(d) => {
+      assert(d["price"] == 10.0 && d["score"] > 71.999999999999 && d["score"] < 72.000000000001 &&
+             d["expected_demand"] > 11.999999999999 && d["expected_demand"] < 12.000000000001 &&
+             d["evaluations"] == 1u64);
+    }, Err(_) => { assert(false); }
+  };
+  match Pricing.optimize(sigmoid, fixed, profit) with {
+    Ok(d) => {
+      assert(d["price"] == 10.0 && d["score"] == 36.0 &&
+             d["expected_demand"] == 6.0 && d["evaluations"] == 1u64);
+    }, Err(_) => { assert(false); }
+  };
+  let prices = array[nan, 12.0, 8.0, 9.5, 25.0, inf];
+  let units = array[nan, nan, 4.0, 8.0, 1000.0, 1000.0, nan];
+  match Pricing.candidates(prices[1:5], units[2:6], limits, profit) with {
+    Ok(d) => {
+      assert(d["price"] == 8.0 && d["score"] == 32.0 &&
+             d["expected_demand"] == 8.0 && d["evaluations"] == 2u64);
+    }, Err(_) => { assert(false); }
+  };
+  pricing_rejected(Pricing.candidates(prices[1:5], units[2:5], limits, profit));
+  pricing_rejected(Pricing.candidates(prices[1:1], units[2:2], limits, profit));
+  # An invalid prediction on an infeasible row must still reject the candidate call.
+  let invalid_units = array[4.0, 8.0, 1000.0, nan];
+  pricing_rejected(Pricing.candidates(prices[1:5], invalid_units[0:4], limits, profit));
+  println("numerical-edges");
+}
