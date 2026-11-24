@@ -2,6 +2,11 @@
 
 #include <stdio.h>
 
+static uint64_t observed_cleanup;
+void observe_cleanup(int64_t tag) {
+  observed_cleanup = observed_cleanup * UINT64_C(10) + (uint64_t)tag;
+}
+
 /* The private C11 ABI stays inside this fixture, not in the RT descriptor. */
 #define main on1x_fixture_program_main
 #include "ownership.inc"
@@ -112,9 +117,11 @@ int main(void) {
   args[0] = on1x_rt_value_i64(INT64_MIN);
   CHECK(on1x_unique_live_allocations() == 0);
   for (unsigned i = 0; i < 5; ++i) {
+    observed_cleanup = 0;
     CHECK(on1x_rt_function_call(engine, function, args, 2, &result, NULL) ==
           ON1X_RT_OK);
     CHECK(result.kind == ON1X_RT_VALUE_I64 && result.as.i64 == args[1].as.i64);
+    CHECK(observed_cleanup == 21 && on1x_data_live_nodes() == 0);
     CHECK(on1x_unique_live_allocations() == 0);
     const On1xRT_Value previous = args[0];
     args[0] = args[1];

@@ -171,9 +171,12 @@ ctest --test-dir build/embedding -R 'on1x.runtime.embedding_' --output-on-failur
 `on1x_rt_embed_ownership` is a separate fixture for a statically registered
 module. An exact `(i64, i64) -> i64` export calls a generated On1x function that
 boxes a `Cell`, takes shared and exclusive lexical borrows, replaces the payload
-through `ref`, and drops the owner before returning. The fixture checks zero
-live unique allocations after each call and rejects unknown value kinds and
-nonzero signature flags before provider initialization or invocation. ABI 1
+through `ref`, and transfers the box through both arms of an owning `Result`.
+A function-local recursive chain is dropped on normal and propagated-error
+returns. Two defers retain a `sexpr` after its block exits. The fixture checks
+their LIFO order and zero live unique and reference-counted allocations after
+each call. It rejects unknown value kinds and nonzero signature flags before
+provider initialization or invocation. ABI 1
 does not transport On1x `own<T>` values or lexical loans, including as pointers
 or as `On1xRT_Buffer` handles. The private C11 runtime retains its ordinary
 failure behavior (including fatal allocation failure); running through On1xRT

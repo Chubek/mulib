@@ -1,4 +1,8 @@
 record Cell { value: i64 }
+enum Chain { End, Next(own<Chain>) }
+enum Result<T,E> { Ok(T), Err(E) }
+
+extern fn observe_cleanup(tag: i64);
 
 fn read(cell: borrow Cell) -> i64 { return cell["value"]; }
 
@@ -6,7 +10,12 @@ fn replace(cell: ref Cell, value: i64) {
   cell := record<Cell>{value: value};
 }
 
-fn owned_value(before: i64, after: i64) -> i64 {
+fn observe_owned_text(text: sexpr, tag: i64) {
+  assert(sx_text(text) == "retained");
+  observe_cleanup(tag);
+}
+
+fn make_value(before: i64, after: i64) -> Result<own<Cell>,own<Cell>> {
   let owner = box(record<Cell>{value: before});
   {
     let edit = borrow mut owner;
@@ -16,9 +25,28 @@ fn owned_value(before: i64, after: i64) -> i64 {
     }
     replace(edit, after);
   }
-  let value = read(owner);
-  drop(owner);
-  return value;
+  if before < 0 {
+    return variant<Result<own<Cell>,own<Cell>>>(Err,move(owner));
+  }
+  return variant<Result<own<Cell>,own<Cell>>>(Ok,move(owner));
+}
+
+fn forward(before: i64, after: i64) -> Result<own<Cell>,own<Cell>> {
+  let chain = box(variant<Chain>(Next,box(variant<Chain>(End,record{}))));
+  {
+    let text = sx_string("retained");
+    defer observe_owned_text(text,1);
+    defer observe_owned_text(text,2);
+  }
+  let value=make_value(before,after)?;
+  return variant<Result<own<Cell>,own<Cell>>>(Ok,move(value));
+}
+
+fn owned_value(before: i64, after: i64) -> i64 {
+  return match forward(before,after) with {
+    Ok(owner)=>take(owner)["value"],
+    Err(owner)=>take(owner)["value"]
+  };
 }
 
 fn main() {}
