@@ -1925,6 +1925,12 @@ def format_manifest(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
+    init_spec = importlib.util.spec_from_file_location(
+        '_on1x_project_init', Path(__file__).resolve().with_name('on1x_project_init.py'))
+    project_init = importlib.util.module_from_spec(init_spec)
+    init_spec.loader.exec_module(project_init)
+    project_init.add_command(commands, root_manifest=root_manifest, local_roles=local_roles,
+                             local=local, max_manifest=MAX_MANIFEST, qmr_tag=QMR_TAG)
     command = argparse.ArgumentParser(add_help=False)
     command.add_argument('root', type=Path, nargs='?', default=Path('.'))
     command.add_argument('--on1xc')
@@ -1991,6 +1997,9 @@ def main():
                 fail('ArchVirt project run does not support guest arguments')
             argv = argv[:separator]
         arguments = parser.parse_args(argv)
+        if arguments.command == 'init':
+            arguments.init_project(arguments)
+            return 0
         status = {'build': build, 'plan': build, 'run': build, 'backends': backend_inventory,
                   'format': format_manifest, 'fetch': fetch_dependency,
                   'lock': lock_dependencies}[arguments.command](arguments)
