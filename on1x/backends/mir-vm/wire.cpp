@@ -108,7 +108,9 @@ struct Reader {
 };
 }
 std::string compile(const mir::Module& m){
- mir::verify(m);Writer w;w.raw(magic);w.byte(m.version);w.num(m.id);
+ mir::verify(m);
+ if(m.version==directive_format_version)bad("portable MIR must be specialized before VM encoding");
+ Writer w;w.raw(magic);w.byte(m.version);w.num(m.id);
  w.list(m.functions,[&](const mir::Function& f){
   w.num(f.id);w.text(f.name);w.type(f.result);w.loc(f.where);
   w.list(f.slots,[&](const auto& s){w.value(s);});w.list(f.blocks,[&](const auto& b){w.block(b);});
@@ -116,7 +118,10 @@ std::string compile(const mir::Module& m){
 }
 mir::Module decode(std::string_view bytes){
  if(bytes.size()>max_artifact_bytes||!bytes.starts_with(magic))bad("invalid magic/version or oversized artifact");
- Reader r{bytes,magic.size()};mir::Module m;m.version=r.byte();m.id=r.num();
+ Reader r{bytes,magic.size()};mir::Module m;m.version=r.byte();
+ if(m.version<legacy_format_version||m.version>numeric_format_version)
+  r.fail("unsupported executable MIR version");
+ m.id=r.num();
  m.functions=r.list([&]{return r.function();});if(r.off!=bytes.size())r.fail("trailing bytes");
  // Treat all persisted IDs, effects, calls, descriptor names, block arguments,
  // slot initialization and types as untrusted until the authoritative checker passes.

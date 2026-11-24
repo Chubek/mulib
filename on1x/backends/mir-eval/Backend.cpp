@@ -1,17 +1,11 @@
-#include "BuiltinContext.hpp"
-#include "On1xSDK-Backend.h"
-#include "ProgramInternal.hpp"
+#include "BuiltinMIR.hpp"
 #include "backend/BackendProviderInternal.hpp"
 
-#include <on1x/backend/mir.hpp>
 #include <on1x/diagnostic.hpp>
 
-#include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <new>
 #include <string>
-#include <string_view>
 
 namespace {
 
@@ -45,25 +39,18 @@ On1xSDK_Status evaluate(const on1x::mir::Module &module, on1x::backends::Context
 
 extern "C" {
 
-static On1xSDK_Status run_mir_eval(void *userdata, const On1xSDK_Program *program,
-                                   On1xSDK_OutputSink *artifact) noexcept {
+static On1xSDK_Status run_mir_eval_v2(void *userdata,
+                                     const On1xSDK_BackendInvocation *invocation,
+                                     On1xSDK_OutputSink *artifact) noexcept {
+    if (!invocation) return ON1X_SDK_INVALID_ARGUMENT;
     auto &context = *static_cast<on1x::backends::Context *>(userdata);
     context.error = {};
     context.exit_code = 0;
     context.diagnostic.clear();
 
     try {
-        if (const auto *module = on1x::sdk::builtin_mir(program))
-            return evaluate(*module, context, artifact);
-
-        const std::uint8_t *bytes = nullptr;
-        std::size_t size = 0;
-        if (const auto status = on1x_sdk_program_bytes(program, &bytes, &size);
-            status != ON1X_SDK_OK)
-            return status;
-        const auto wire = size ? std::string_view(reinterpret_cast<const char *>(bytes), size)
-                               : std::string_view{};
-        return evaluate(on1x::mir::deserialize(wire), context, artifact);
+        return on1x::backends::consume_specialized_mir(*invocation, context, "mir-eval",
+            [&](const auto &module) { return evaluate(module, context, artifact); });
     } catch (const std::bad_alloc &) {
         return ON1X_SDK_LIMIT;
     } catch (...) {
@@ -72,19 +59,12 @@ static On1xSDK_Status run_mir_eval(void *userdata, const On1xSDK_Program *progra
     }
 }
 
-static On1xSDK_Status run_mir_eval_v2(void *userdata,
-                                     const On1xSDK_BackendInvocation *invocation,
-                                     On1xSDK_OutputSink *artifact) noexcept {
-    return invocation ? run_mir_eval(userdata, invocation->program, artifact)
-                      : ON1X_SDK_INVALID_ARGUMENT;
-}
-
 On1xSDK_Status on1x_builtin_mir_eval_register(On1xSDK_Registry *registry,
                                               on1x::backends::Context *context) {
     if (!context) return ON1X_SDK_INVALID_ARGUMENT;
     const On1xSDK_BackendCapability capability{
         ON1X_SDK_BACKEND_PROVIDER_ABI_VERSION, sizeof(On1xSDK_BackendCapability),
-        ON1X_SDK_VERIFIED_MIR, 0, 3, ON1X_SDK_ARTIFACT_PROGRAM_OUTPUT,
+        ON1X_SDK_VERIFIED_MIR, 0, on1x::mir::directive_format_version, ON1X_SDK_ARTIFACT_PROGRAM_OUTPUT,
         ON1X_SDK_BACKEND_TARGET_INDEPENDENT | ON1X_SDK_BACKEND_DETERMINISTIC,
         nullptr, 0, nullptr, 0, nullptr, 0};
     const On1xSDK_BackendProvider provider{

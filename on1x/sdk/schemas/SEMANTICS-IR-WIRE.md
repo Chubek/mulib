@@ -44,5 +44,9 @@ the existing canonical `on1x.mir` S-expression. The payload decoder and
 canonical MIR verifier both run. Deserialization nevertheless returns
 `CANDIDATE`; structural validity is not publication or equivalence evidence.
 
+Canonical versions 1–3 have no directive list; canonical version 4 preserves
+its portable directives in this same envelope. The outer schema remains `1`
+and its canonical-version field must agree with the payload's version.
+
 Generation and revision in an envelope must exactly match decode options.
 Owner context is process-local and supplied separately by the host.

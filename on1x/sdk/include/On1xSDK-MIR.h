@@ -127,6 +127,21 @@ typedef struct {
     size_t argument_count;
 } On1xSDK_MIREdge;
 
+/* Portable metadata, not a backend selection, capability grant, or proof.
+ * Initialize abi_version to ON1X_SDK_SEMANTICS_IR_ABI_VERSION and struct_size
+ * to sizeof(On1xSDK_MIRDirectiveView). Strings are borrowed from the snapshot. */
+typedef struct {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    On1xSDK_IRStringView backend;
+    On1xSDK_IRStringView target;
+    On1xSDK_IRStringView kind;  /* "hint" or "rewrite" */
+    On1xSDK_IRStringView action;
+    uint64_t function;         /* Canonical MIR function ID, or 0 for module scope */
+    uint32_t speculative;      /* 0 or 1; does not enable speculation */
+    uint32_t reserved;
+} On1xSDK_MIRDirectiveView;
+
 void on1x_sdk_mir_snapshot_retain(On1xSDK_MIRSnapshot *snapshot);
 void on1x_sdk_mir_snapshot_release(On1xSDK_MIRSnapshot *snapshot);
 
@@ -142,6 +157,15 @@ On1xSDK_Status on1x_sdk_mir_snapshot_format_version(
 On1xSDK_Status on1x_sdk_mir_snapshot_module_id(
     const On1xSDK_MIRSnapshot *snapshot,
     uint64_t *out_id);
+/* Available for candidate and verified snapshots, in portable MIR order.
+ * Older canonical MIR versions have zero directives. */
+On1xSDK_Status on1x_sdk_mir_snapshot_directive_count(
+    const On1xSDK_MIRSnapshot *snapshot,
+    size_t *out_count);
+On1xSDK_Status on1x_sdk_mir_snapshot_directive(
+    const On1xSDK_MIRSnapshot *snapshot,
+    size_t index,
+    On1xSDK_MIRDirectiveView *out_directive);
 On1xSDK_Status on1x_sdk_mir_snapshot_function_count(
     const On1xSDK_MIRSnapshot *snapshot,
     size_t *out_count);

@@ -10,7 +10,7 @@
   ],
   "properties": {
     "schema": {"const": "on1x.sdk.mir-envelope/1"},
-    "canonical_mir_version": {"enum": [1, 2, 3]},
+    "canonical_mir_version": {"enum": [1, 2, 3, 4]},
     "generation": {"type": "integer", "minimum": 1},
     "revision": {"type": "integer", "minimum": 1},
     "provenance": {"type": "string", "maxLength": 4096},

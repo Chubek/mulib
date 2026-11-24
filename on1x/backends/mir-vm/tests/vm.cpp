@@ -85,6 +85,11 @@ void diamonds(){
  done.exit={24,Exit::Return,0,23,{},at};f.blocks.push_back(done);f.blocks.push_back(loop);
  require(differential(x.m).output=="20\n10\n","parallel edge copy");
  auto saved=vm::compile(x.m);
+ auto portable=x.m;portable.version=directive_format_version;
+ portable.directives={{"mir-vm","","hint","kernel-hot"}};
+ rejects([&]{vm::compile(portable);},"unspecialized portable MIR");
+ auto unsupported=saved;unsupported[std::string_view("O1VM\x01\r\n").size()]=directive_format_version;
+ rejects([&]{vm::verify(unsupported);},"portable MIR version in executable VM wire");
  // IDs here fit a single varint. Locate the branch record via independent
  // wire marker [branch,exitID,condition,effect,edge count,first block].
  std::string marker{43,15,13,10,2,9};auto pos=saved.find(marker);require(pos!=saved.npos,"branch marker");

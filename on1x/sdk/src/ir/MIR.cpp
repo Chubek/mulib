@@ -178,6 +178,35 @@ On1xSDK_Status on1x_sdk_mir_snapshot_module_id(
     return ON1X_SDK_OK;
 }
 
+On1xSDK_Status on1x_sdk_mir_snapshot_directive_count(
+    const On1xSDK_MIRSnapshot *snapshot,
+    size_t *out_count) {
+    if (!snapshot || !out_count) return ON1X_SDK_INVALID_ARGUMENT;
+    *out_count = snapshot->module.directives.size();
+    return ON1X_SDK_OK;
+}
+
+On1xSDK_Status on1x_sdk_mir_snapshot_directive(
+    const On1xSDK_MIRSnapshot *snapshot,
+    size_t index,
+    On1xSDK_MIRDirectiveView *out_directive) {
+    if (!snapshot || !out_directive || index >= snapshot->module.directives.size())
+        return ON1X_SDK_INVALID_ARGUMENT;
+    if (out_directive->abi_version != ON1X_SDK_SEMANTICS_IR_ABI_VERSION ||
+        out_directive->struct_size < sizeof(On1xSDK_MIRDirectiveView))
+        return ON1X_SDK_ABI_MISMATCH;
+    const auto &directive = snapshot->module.directives[index];
+    *out_directive = {
+        ON1X_SDK_SEMANTICS_IR_ABI_VERSION, sizeof(On1xSDK_MIRDirectiveView),
+        {directive.backend.data(), directive.backend.size()},
+        {directive.target.data(), directive.target.size()},
+        {directive.kind.data(), directive.kind.size()},
+        {directive.action.data(), directive.action.size()},
+        directive.function, directive.speculative ? 1u : 0u, 0u
+    };
+    return ON1X_SDK_OK;
+}
+
 On1xSDK_Status on1x_sdk_mir_snapshot_function_count(
     const On1xSDK_MIRSnapshot *snapshot,
     size_t *out_count) {

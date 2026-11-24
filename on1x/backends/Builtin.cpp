@@ -71,10 +71,14 @@ Product run_c11(const Unit &unit, std::string_view source, const C11Options &opt
                [&](auto out) { return sdk::make_checked_hir(unit, source, out); }, std::move(context));
 }
 
-Product run_mir(const mir::Module &module, const char *backend)
+Product run_mir(const mir::Module &module, const char *backend,
+                std::string_view target, bool speculate)
 {
+    Context context;
+    context.mir_target = target;
+    context.mir_speculate = speculate;
     return run(backend, registrar_for(backend),
-               [&](auto out) { return sdk::make_builtin_mir(module, out); });
+               [&](auto out) { return sdk::make_builtin_mir(module, out); }, std::move(context));
 }
 
 Product run_mir_native(const mir::Module &module, std::string_view triple,
@@ -108,6 +112,7 @@ Product run_mir_native(const mir::Module &module, std::string_view triple,
     Context context;
     context.native_pic = options.pic;
     context.native_emit_c_entrypoint = options.emit_c_entrypoint;
+    context.mir_speculate = options.speculate;
     On1xSDK_Registry *raw_registry = nullptr;
     check(on1x_sdk_registry_create(&raw_registry), "registry creation", name);
     const std::unique_ptr<On1xSDK_Registry, decltype(&on1x_sdk_registry_destroy)>

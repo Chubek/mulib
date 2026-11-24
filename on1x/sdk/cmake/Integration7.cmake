@@ -1,5 +1,19 @@
 # Late integration tests; Python and all canonical targets are available here.
 
+if(BUILD_TESTING)
+    add_executable(on1x_sdk_mir_directive_tests
+        "${CMAKE_CURRENT_LIST_DIR}/../tests/mir_directives.cpp")
+    target_include_directories(on1x_sdk_mir_directive_tests PRIVATE
+        "${CMAKE_CURRENT_LIST_DIR}/../src")
+    target_link_libraries(on1x_sdk_mir_directive_tests PRIVATE
+        on1x_builtin_backends On1x::SDKSemanticsIR)
+    if(TARGET on1x_backend_mir_archon AND
+       ON1X_ARCHON_TARGET_TRIPLE STREQUAL "x86_64-unknown-linux-gnu")
+        target_compile_definitions(on1x_sdk_mir_directive_tests PRIVATE ON1X_TEST_MIR_ARCHON=1)
+    endif()
+    add_test(NAME on1x.sdk.mir_directives COMMAND on1x_sdk_mir_directive_tests)
+endif()
+
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     add_test(NAME on1x.sdk.project_headers
         COMMAND "${Python3_EXECUTABLE}"

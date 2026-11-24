@@ -5,6 +5,8 @@
 #include "ProgramInternal.hpp"
 #include "backend/BackendProviderInternal.hpp"
 
+#include <on1x/backend/mir_directives.hpp>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
@@ -84,7 +86,10 @@ On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invo
             if (module.version != invocation->input_schema)
                 return ON1X_SDK_INVALID_ARGUMENT;
             if (cancelled_by_host(&cancel)) return cancel.status;
-            auto product = on1x::backends::archon::compile(module, opt);
+            const auto product = module.version != on1x::mir::directive_format_version
+                ? on1x::backends::archon::compile(module, opt)
+                : on1x::backends::archon::compile(
+                    on1x::mir::specialize(module, "mir-archon", expected, context.mir_speculate), opt);
             if (cancelled_by_host(&cancel)) return cancel.status;
             return on1x_sdk_output_write(sink, product.assembly.data(), product.assembly.size());
         };
@@ -130,7 +135,7 @@ extern "C" On1xSDK_Status on1x_builtin_mir_archon_register(
     static const On1xSDK_BackendTarget target{triple, sizeof(triple) - 1};
     const On1xSDK_BackendCapability capability{
         ON1X_SDK_BACKEND_PROVIDER_ABI_VERSION, sizeof(On1xSDK_BackendCapability),
-        ON1X_SDK_VERIFIED_MIR, 1, 3, ON1X_SDK_ARTIFACT_ASSEMBLY,
+        ON1X_SDK_VERIFIED_MIR, 1, on1x::mir::directive_format_version, ON1X_SDK_ARTIFACT_ASSEMBLY,
         ON1X_SDK_BACKEND_DETERMINISTIC, &target, 1, nullptr, 0, nullptr, 0
     };
     const On1xSDK_BackendProvider provider{

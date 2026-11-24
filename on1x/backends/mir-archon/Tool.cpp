@@ -1,5 +1,7 @@
 #include "Bridge.hpp"
 
+#include <on1x/backend/mir_directives.hpp>
+
 #include <cerrno>
 #include <charconv>
 #include <csignal>
@@ -186,8 +188,12 @@ int main(int argc, char **argv) try {
     check_target(target);
     const auto bytes = read_all(input);
     const auto result = [&] {
-        if (!timer_source)
-            return on1x::backends::archon::compile(on1x::mir::deserialize(bytes, input), options);
+        if (!timer_source) {
+            auto module = on1x::mir::deserialize(bytes, input);
+            if (module.version == on1x::mir::directive_format_version)
+                module = on1x::mir::specialize(module, "mir-archon", target);
+            return on1x::backends::archon::compile(module, options);
+        }
         auto unit = on1x::parse(on1x::scan(bytes, input));
         if (!unit.imports.empty() || !unit.module_imports.empty() || !unit.kernel_imports.empty() ||
             !unit.ppx.empty() || !unit.extensions.empty())

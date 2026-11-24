@@ -178,7 +178,9 @@ int main(int argc, char **argv) {
     request.target = selected_target.get();
     request.input_schema = 2;
     fails(ON1X_SDK_INVALID_ARGUMENT);
-    request.input_schema = 4;
+    request.input_schema = on1x::mir::directive_format_version;
+    fails(ON1X_SDK_INVALID_ARGUMENT); // In range, but the private module is still v1.
+    request.input_schema = on1x::mir::directive_format_version + 1;
     fails(ON1X_SDK_UNSUPPORTED);
     request.input_schema = module.version;
     request.artifact_kind = ON1X_SDK_ARTIFACT_OBJECT;

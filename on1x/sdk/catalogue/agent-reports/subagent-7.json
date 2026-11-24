@@ -195,6 +195,21 @@
       "result": "101/104 passed; three baseline/environment failures outside changed files: type_checker_hardening_hir requires unavailable Firestone regex SDK, contracts expects only three auxiliary MuLIB headers while the baseline inventory reports many new unregistered headers, and mulib has baseline fixture drift (muw3lib absent from inventory; immgtk-widgets stale)."
     }
   ],
+  "mir_directives_integration": {
+    "baseline_revision": "f5cb9d559fa4feb8e452bc866ac169dca7b86de3",
+    "libstone_revision": "a307d550936a10b6c58b752e56d7e475c794926e",
+    "status": "EXECUTABLE",
+    "public_header": "On1xSDK-MIR.h",
+    "subset": "Additive read-only portable MIR v4 directive views with unchanged SDK ABI and envelope v1; portable mir-text; exact backend/target specialization in compiler-linked products; no additions to provider trust, speculation grants, or the retired FFI descriptor ABI.",
+    "registration": "Integration7.cmake registers on1x.sdk.mir_directives. The AMD64 Archon-specific checks are compiled when its optional trusted SDK adapter is enabled.",
+    "documentation": "docs/mir-directives.md",
+    "verification": {
+      "compiler": "GCC 16.2.1, CMake 4.4.3",
+      "configuration": "Fallback scanner; SDK enabled; real target-pinned AMD64 SysV Archon SDK adapter enabled; BUILD_TESTING=ON",
+      "command": "TMPDIR=\"$PWD/build/mir-directives-sdk-tmp\" ctest --test-dir build/mir-directives-sdk-worker --output-on-failure -R '^on1x\\.(sdk\\.(mir_directives|builtin_providers_v2|semantics_ir|native_backend_v2|native_backend_artifact)|sdk6\\.ffi_descriptor_not_built|vm\\.opcodes|backends\\.mir_archon_tool_target)$'",
+      "result": "PASS; 8/8, including native SDK artifact link and execution. Also compiled the public directive view from C11 with -Wall -Wextra -Wpedantic -Werror."
+    }
+  },
   "cross_owner_api_requests": [
     {
       "owner": 1,
