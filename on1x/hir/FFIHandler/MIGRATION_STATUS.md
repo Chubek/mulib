@@ -130,3 +130,31 @@ Reproduction logs and exact selected flags are in the shared
 was integrated in `de287a25` and W02's provider in `6654a083`; neither
 changes an application build nor advances G1 on its own. W08 and W09
 remain on their worker branches pending the corresponding gates.
+
+## Scalar integration candidate and remaining gates
+
+- W02's sysroot and canonical-header checks were integrated in `37aa30d1`;
+  the coordinator reproduced **11/11** provider tests.
+- W03 `a59a55e5` reports **15/15** generator tests and byte-stable selected
+  regeneration from two checkout paths. W04 `52d38352` publishes the full
+  AMD64 catalogue on its worker branch and reports read-only regeneration
+  matching from a second checkout. The **2,053** attempted entries comprise
+  **1,302** Cephyr projection failures, **634** discovery-only modules,
+  **115** unsupported modules, and **2** modules providing **4** audited
+  scalar candidates. This is inventory evidence, not admission.
+- W06 `732844ee` and W07 `2f6cfc80` report checked-HIR and C11 scalar/inline
+  test passes in private overlays. W10 `fc77531c` reports installed GCC
+  **8/8** and Clang **5 passes, 3 intentional Cephyr skips**. The legacy
+  mixed reviewed-and-unsafe clamp program still needs parity; no removal
+  of the old policy or bindings has been authorized.
+- The coordinator assembled the scalar and SDK commits in the separate
+  `ffi/scalar-stage` worktree, with the SDK umbrella fix at `7f537b4c`.
+  The combined run uses newly generated clamp and `container-core`
+  bindings. It does not by itself qualify the published full catalogue.
+  The SDK worker's commit `6f802c3f` added canonical read-only descriptor
+  lookup and static/DSO embedding fixtures; production no-entry module
+  publication and independently reviewed safe embedding remain open.
+- W05 `df1a50e6` validates bounded numerical plan candidates but deliberately
+  does not register executable rich descriptors. Generic numerical/IPC HIR,
+  lowering and native policy, full signed/DSO parity, and retirement remain
+  open. Legacy regression successes do not qualify those replacements.
