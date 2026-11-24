@@ -1,14 +1,23 @@
-# FFIHandler v1: grammar only; the validator restricts executable profiles.
+# The same genuine LLSynth grammar handles declarations and semantic deltas.
 .language "FFIHandler"
 .skip /[ \t\r\n]+/
 .skip /#[^\n]*/
-.token NAME: String = /[A-Za-z_][A-Za-z_0-9]*/
-.token NUMBER: Int = /[0-9]+/
+.token NAME: String = /[A-Za-z_][A-Za-z_0-9-]*/
+.token NUMBER: String = /[0-9]+/
 .token STRING: String = /"([^"\\\r\n]|\\["\\nrt])*"/
 
 .rule Start
-'syntax: Header Modules EOF
+'syntax: Header Document EOF
 'semantics: return nil;
+.end
+.rule Document
+'syntax: Modules | Target TargetBody
+.end
+.rule Target
+'syntax: "target" STRING Word STRING Word ";"
+.end
+.rule TargetBody
+'syntax: TypedModule | Extension
 .end
 .rule Header
 'syntax: "ffi" NUMBER ";"
@@ -17,13 +26,13 @@
 'syntax: Modules Module | Module
 .end
 .rule Module
-'syntax: "foreign" NAME "." NAME "{" "provider" NAME STRING ";" "header" STRING ";" Functions "}"
+'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" Functions "}"
 .end
 .rule Functions
 'syntax: Functions Function | Function
 .end
 .rule Function
-'syntax: Inline "fn" NAME "(" Params ")" "->" NAME "=" "c" "::" NAME Guard ";"
+'syntax: Inline "fn" Word "(" Params ")" "->" Word "=" "c" "::" Word Guard ";"
 .end
 .rule Inline
 'syntax: "inline" |
@@ -32,11 +41,76 @@
 'syntax: Param ParamTail |
 .end
 .rule Param
-'syntax: NAME ":" NAME
+'syntax: Word ":" Word
 .end
 .rule ParamTail
 'syntax: "," Param ParamTail |
 .end
 .rule Guard
-'syntax: "requires" NAME "<=" NAME |
+'syntax: "requires" Word "<=" Word |
+.end
+.rule TypedModule
+'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody "}"
+.end
+.rule TypedBody
+'syntax: "unavailable" "reason" Word ";" | Entries
+.end
+.rule Entries
+'syntax: Entries Entry |
+.end
+.rule Entry
+'syntax: TypedFunction | Unsupported
+.end
+.rule TypedFunction
+'syntax: "fn" Word "(" Params ")" "->" Word "=" "c" "::" Word "native" Word Word "(" NativeTypes ")" "->" NativeType "profile" Word Effects Guards ";"
+.end
+.rule Unsupported
+'syntax: "unsupported" Word "=" "c" "::" Word "reason" Word ";"
+.end
+.rule NativeTypes
+'syntax: NativeType NativeTail |
+.end
+.rule NativeTail
+'syntax: "," NativeType NativeTail |
+.end
+.rule NativeType
+'syntax: Word NativeLayout
+.end
+.rule NativeLayout
+'syntax: "(" Word "," NativeFields ")" |
+.end
+.rule NativeFields
+'syntax: NUMBER "," NUMBER "," Word "," NUMBER "," NUMBER | Word "," NUMBER "," NUMBER "," NUMBER
+.end
+.rule Effects
+'syntax: "effects" Word |
+.end
+.rule Guards
+'syntax: Guards PositionGuard |
+.end
+.rule PositionGuard
+'syntax: "requires" NUMBER "<=" NUMBER
+.end
+.rule Extension
+'syntax: "extend" Word "." Word "{" Overrides "}"
+.end
+.rule Overrides
+'syntax: Overrides OverrideItem | OverrideItem
+.end
+.rule OverrideItem
+'syntax: Override | Selection | Obligation
+.end
+.rule Selection
+'syntax: "select" "c" "::" Word ";"
+.end
+.rule Obligation
+'syntax: "obligation" Word ";"
+.end
+.rule Override
+'syntax: "fn" "c" "::" Word "fingerprint" STRING Guards ";"
+.end
+# Contextual keywords: C parameter names and module aliases need not be renamed
+# merely because they share a spelling with a declaration keyword.
+.rule Word
+'syntax: NAME | "ffi" | "target" | "foreign" | "provider" | "header" | "fn" | "c" | "inline" | "requires" | "unavailable" | "reason" | "unsupported" | "native" | "profile" | "effects" | "extend" | "fingerprint" | "select" | "obligation"
 .end
