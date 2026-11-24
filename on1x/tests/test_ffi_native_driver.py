@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -139,6 +140,28 @@ uint64_t on1x_test_counter_add(uint64_t a, uint64_t b) { return mulib_ct_counter
         (self.work / 'review').write_text(ffi.c.dumps(dict(document, reviewer='tampered')))
         with self.assertRaisesRegex(ValueError, 'signature verification failed'):
             verify(subject, 'first')
+
+    def test_publish_checks_pinned_bytes(self):
+        build = ffi.Build.__new__(ffi.Build)
+        build.stage = self.work
+        build.inputs = ffi.Inputs()
+        artifact = self.work / 'object'
+        artifact.write_bytes(b'qualified')
+        build.inputs.add(artifact)
+        output = self.work / 'out'
+        copy2 = ffi.shutil.copy2
+
+        def changed_copy(source, destination):
+            source.write_bytes(b'changed during copy')
+            return copy2(source, destination)
+
+        with patch.object(ffi.shutil, 'copy2', changed_copy):
+            with self.assertRaisesRegex(ValueError, 'artifact drift during publication'):
+                build.publish(output, ['object'])
+        self.assertFalse(output.exists())
+        artifact.write_bytes(b'qualified')
+        build.publish(output, ['object'])
+        self.assertEqual(output.read_bytes(), b'qualified')
 
 
 if __name__ == '__main__':

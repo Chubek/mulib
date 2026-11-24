@@ -458,6 +458,10 @@ The application and probe caller use the selected host C compiler. An unavailabl
 provider or unsupported ABI is an error, not a reason to switch providers.
 An installed On1x compiler still needs a separately selected MuLIB SDK (its
 matching manifest, headers, manuals and native inputs) for this build.
+An embedded-Cephyr installation also needs the matching `libcephyr.so.1`
+and its native AMD64 provider package (including assembler and bank) in
+Cephyr's installed layout. Installing `on1xc` by itself does not provide
+those external toolchain inputs.
 
 Native safe imports require a new `--ffi-review-candidate` subject and
 `--ffi-review`, `--ffi-review-key` and `--ffi-review-signature`. The signed JSON

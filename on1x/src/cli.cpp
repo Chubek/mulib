@@ -839,7 +839,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-       if(arg=="--ffi-stage"){loader.kernel_stage=true;loader.ffi_stage=true;continue;}
+        if(arg=="--ffi-stage"){loader.ffi_stage=true;continue;}
        if(arg=="--ffi-id"){
         if(++i==argc||!ffi_id.empty())throw std::runtime_error("--ffi-id requires one descriptor ID");
         ffi_id=argv[i];continue;
@@ -1138,6 +1138,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       };
 #endif
        if(loader.kernel_stage&&!loader.kernel_c11)throw std::runtime_error("--kernel-stage requires --kernel-c11");
+       if(loader.ffi_stage&&(!loader.kernel_c11||loader.kernel_stage))
+        throw std::runtime_error("--ffi-stage requires --kernel-c11 and excludes --kernel-stage");
        if(loader.kernel_c11){
         if(mode!="--emit-c"||!sdk_mode.empty()||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
           ppx.allow_source||!loader.extensions.enabled.empty())

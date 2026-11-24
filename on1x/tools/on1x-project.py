@@ -1353,12 +1353,12 @@ def source_policy(executor, compiler, file, root, libraries):
 
 
 def verify_graph(executor, compiler, source, flags, permitted, trusted_roots, *, ffi=False):
-    data = executor.run([compiler, '--kernel-imports' if ffi else '--deps', source, *flags],
+    data = executor.run([compiler, '--ffi-imports' if ffi else '--deps', source, *flags],
                         bound=8 * MAX_MANIFEST)
     requests = []
     if ffi:
         graph = json.loads(data)
-        if graph['schema'] != 'on1x.kernel-requests/v1':
+        if graph['schema'] != 'on1x.ffi-imports/v1':
             fail(f'{source}: incompatible compiler import graph')
         paths = [os.fsdecode(bytes.fromhex(item['file_hex'])) for item in graph['sources']]
         requests = graph['requests']

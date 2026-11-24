@@ -343,6 +343,12 @@ class Build:
                 not re.fullmatch(r'x86_64-(?:[A-Za-z0-9_.]+-)?linux-gnu', self.host_target)):
             raise ValueError('FFI native execution requires AMD64 Linux GNU LP64')
         self.host_version = self.host('--version').decode(errors='replace')
+        if not args.inspect_ffi and self.providers['implementation'] == 'cephyr':
+            if self.dynamic:
+                raise ValueError('FFI embedded Cephyr DSO provider is not qualified; select host explicitly')
+            if any(recipe[key] for recipe in self.recipes.values()
+                   for key in ('native_sources', 'include_headers', 'link_libraries')):
+                raise ValueError('FFI embedded Cephyr has no qualified companion/external-library recipe')
         if 'cephyr' in self.providers.values():
             if args.cflag or self.definitions != ['-D_POSIX_C_SOURCE=200809L']:
                 raise ValueError('FFI embedded Cephyr does not support extra C flags or feature definitions')
@@ -445,14 +451,28 @@ class Build:
 
     def prepare(self):
         self.pin_host_tools()
+        self.loaded_libraries(self.on1xc)
         if self.cephyr:
             loaded = self.loaded_libraries(self.cephyr)
-            if not any(name.startswith('libcephyr.so') for name in loaded):
+            library = loaded.get('libcephyr.so.1')
+            if not library:
                 raise ValueError('FFI embedded Cephyr shared compiler identity is unavailable')
+            # Cephyr's embedded library selects native packages relative to
+            # the loaded .so, not to the explicit C include or Archon roots.
+            # Bind the installed AMD64 provider, its bank and assembler.
+            packages = library.parent.parent / 'share/cephyr/native-packages'
+            self.pin_tree(packages / 'AMD64')
+            for name in ('banks/amd64.symas', 'tools/sandstone-as'):
+                self.inputs.add(packages / name)
         flags = [*self.host_flags, *self.definitions]
         abi = self.stage / 'native-abi.c'
         abi.write_text(abi_source(self.descriptors), encoding='ascii')
         self.compile('host', abi.name, 'native-abi.o', *flags)
+        if self.cephyr:
+            # Check the projected C identity under the selected embedded
+            # environment as well. Keep the host witness in the final link
+            # for its external relocations; do not define them twice.
+            self.compile('cephyr', abi.name, 'native-abi-cephyr.o')
         links = ['native-abi.o']
         for index, d in enumerate(self.descriptors):
             adapter = self.stage / f'ffi-adapter-{index}.c'
@@ -462,11 +482,6 @@ class Build:
                                       *flags, '-I', str(self.runtime.parent), '-DON1X_KERNEL_ABI_V1=1'))
         for partition, recipe in sorted(self.recipes.items()):
             house.check_generated(self.root, recipe)
-            if partition == 'dynlib' and self.providers['implementation'] != 'host':
-                raise ValueError('FFI embedded Cephyr DSO provider is not qualified; select host explicitly')
-            if (self.providers['implementation'] == 'cephyr' and
-                    any(recipe[key] for key in ('native_sources', 'include_headers', 'link_libraries'))):
-                raise ValueError('FFI embedded Cephyr has no qualified companion/external-library recipe')
             if not any(recipe[key] for key in ('implementation_macros', 'include_headers', 'native_sources')):
                 continue  # static-inline definition is local to the adapter
             source = self.stage / ('mulib-' + partition + '.c')
@@ -532,19 +547,17 @@ class Build:
         self.inputs.verify()
 
     def publish(self, output, paths):
+        expected = {name: self.inputs.add(self.stage / name) for name in paths}
         output.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='.on1x-ffi-', dir=output.parent) as temp:
             bundle = Path(temp) / 'out'
-            if len(paths) == 1:
-                shutil.copy2(self.stage / paths[0], bundle)
-                if c.digest(bundle) != c.digest(self.stage / paths[0]):
-                    raise ValueError('FFI artifact drift during publication')
-            else:
+            if len(paths) != 1:
                 bundle.mkdir()
-                for name in paths:
-                    shutil.copy2(self.stage / name, bundle / name)
-                    if c.digest(bundle / name) != c.digest(self.stage / name):
-                        raise ValueError('FFI artifact drift during publication: ' + name)
+            for name, digest in expected.items():
+                dest = bundle if len(paths) == 1 else bundle / name
+                shutil.copy2(self.stage / name, dest)
+                if c.digest(dest) != digest:
+                    raise ValueError('FFI artifact drift during publication: ' + name)
             self.inputs.verify()
             c.publish_new(bundle, output)
 
@@ -604,12 +617,16 @@ class Build:
         self.deps(self.runtime, flags)
         self.host(*flags, source.name, self.runtime, *companions, *links, *libs, '-o', 'program')
         self.inputs.add(stage / 'program')
+        if self.dynamic and self.loaded_libraries(stage / 'program').get(DSO) != stage / DSO:
+            raise ValueError('FFI program did not resolve the exact staged DSO')
         self.check_sources()
         if not (review or self.dynamic):
             return self.publish(args.output, ['program'])
         outputs = ['program', DSO] if self.dynamic else ['program', 'review.ed25519.der', 'review.json', 'review.sig',
                     'ffi-probe.c', 'ffi-probe', 'native-abi.c', 'native-abi.o']
         if review:
+            if self.cephyr:
+                outputs.append('native-abi-cephyr.o')
             outputs += [p.name for p in sorted(stage.glob('ffi-adapter-*'))]
             outputs += [p.name for p in sorted(stage.glob('mulib-static.*'))]
             outputs += [p.name for p in sorted(stage.glob('companion-*.o'))]
