@@ -1,0 +1,9 @@
+# Existing scalar profile; this describes representation, not safety approval.
+ffi 1;
+foreign mulib.clamp {
+    provider mulib "clamp";
+    header "mulib-clamp.h";
+    fn add_i64(a: i64, b: i64) -> i64 = c::mulib_clamp_add_i64;
+    fn sub_i64(a: i64, b: i64) -> i64 = c::mulib_clamp_sub_i64;
+    fn i64(value: i64, low: i64, high: i64) -> i64 = c::mulib_clamp_i64 requires low <= high;
+}
