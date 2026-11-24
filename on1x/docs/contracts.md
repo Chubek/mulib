@@ -144,9 +144,13 @@ It rejects pointers, enums, `long double`/other floating formats, aggregates,
 callbacks, unknown effects, unsupported conventions and
 ownership/error/invalidation obligations. Inline scalar APIs can be included
 directly. Adapters use `_Generic` on the **actual function pointer**, C11 static
-size/alignment assertions, exact `_Bool`/`float`/`double` type checks, floating format
-checks, integer range/signedness checks and checked i64 narrowing. Unsigned
-adapters use exact `uint8_t/uint16_t/uint32_t/uint64_t` carriers, not signed i64;
+size/alignment assertions, exact primitive type checks, floating format
+checks, integer range/signedness checks and checked i64 narrowing. Integer
+typedefs must remain C-compatible with the recorded primitive: for example, `char`
+compiled as unsigned does not match `unsigned char` even when their layouts and
+ranges coincide. This is an ABI check, not a source hash or implementation
+identity check. Unsigned adapters use exact `uint8_t/uint16_t/uint32_t/uint64_t`
+carriers, not signed i64;
 binary32 adapters use actual C `float`, not double. Floating adapters
 match the runtime's Linux x86_64 GCC/Clang/SSE2, `FLT_EVAL_METHOD == 0` profile
 and reject exposed fast/finite-only/relaxed IEEE math modes. These checks do not

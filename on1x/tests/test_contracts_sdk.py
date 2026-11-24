@@ -266,6 +266,21 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         wrong = work/name; wrong.mkdir(); (wrong/header.name).write_text(header.read_text().replace(before, after))
         p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', wrong, '-c', work/'raw.c', '-o', wrong/'bad.o'])
         assert p.returncode != 0 and 'drift' in p.stderr, (name, p.stderr)
+    # In both versions the live typedef matches the live prototype. A nested
+    # alias to the same primitive is fine, but plain char is a distinct C type
+    # even when -funsigned-char gives it the exact same layout and range.
+    for name, replacement in [
+        ('same_primitive', 'typedef unsigned char byte_alias; typedef byte_alias fixture_u8;'),
+        ('distinct_primitive', 'typedef char fixture_u8;'),
+    ]:
+        headers = work/name; headers.mkdir()
+        (headers/header.name).write_text(header.read_text().replace('typedef unsigned char fixture_u8;', replacement))
+        p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-funsigned-char',
+                 '-I', headers, '-c', work/'raw.c', '-o', headers/'adapter.o'])
+        if name == 'same_primitive':
+            assert p.returncode == 0, p.stderr
+        else:
+            assert p.returncode != 0 and 'integer primitive type drift' in p.stderr, p.stderr
     for flag in ['-ffast-math', '-ffinite-math-only']:
         p = run([t.cc, '-std=c11', '-I', work, flag, '-c', work/'raw.c', '-o', work/'relaxed.o'])
         assert p.returncode != 0 and 'forbid relaxed IEEE math' in p.stderr, (flag, p.stderr)

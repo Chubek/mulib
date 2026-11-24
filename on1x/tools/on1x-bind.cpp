@@ -61,9 +61,23 @@ bool spelling(std::string_view value){
  for(std::size_t begin=0;begin<value.size();){auto end=value.find(' ',begin);if(end==std::string_view::npos)end=value.size();if(!identifier(value.substr(begin,end-begin)))return false;begin=end+1;if(begin==value.size())return false;}
  return true;
 }
+std::string_view integer_primitive(std::string_view spelling){
+ // Clang spells top-level qualifiers before the primitive. They are not part
+ // of the compatibility check for a by-value scalar.
+ for(unsigned i=0;i<2;++i){
+  if(spelling.starts_with("const "))spelling.remove_prefix(6);
+  else if(spelling.starts_with("volatile "))spelling.remove_prefix(9);
+  else break;
+ }
+ for(std::string_view primitive:{"char","signed char","unsigned char","short","unsigned short",
+                                "int","unsigned int","long","unsigned long","long long","unsigned long long"})
+  if(spelling==primitive)return primitive;
+ return {};
+}
 struct Scalar {
  enum Kind { SignedInteger, UnsignedInteger, Boolean, Binary32, Binary64, Void, CString } kind=Void;
  std::string spelling;unsigned bits=0;std::uint64_t alignment=0;
+ std::string_view integer_type{};
  std::string on1x()const{return kind==CString?"string":kind==SignedInteger?"i64":kind==UnsignedInteger?"u"+std::to_string(bits):kind==Boolean?"bool":kind==Binary32?"f32":kind==Binary64?"f64":"void";}
  std::string adapter()const{return kind==CString?"const char *":kind==SignedInteger?"int64_t":kind==UnsignedInteger?"uint"+std::to_string(bits)+"_t":kind==Boolean?"bool":kind==Binary32?"float":kind==Binary64?"double":"void";}
  std::string admission(bool result)const{return kind==CString?(result?"static_string":"borrowed_string"):on1x();}
@@ -84,7 +98,9 @@ std::optional<Scalar> scalar(const TranslationUnit& unit,const std::string& id){
  }
  if(base->kind!=TypeKind::Integer||!base->is_signed||
     (*base->size!=1&&*base->size!=2&&*base->size!=4&&*base->size!=8))return {};
- return Scalar{*base->is_signed?Scalar::SignedInteger:Scalar::UnsignedInteger,named->spelling,static_cast<unsigned>(*base->size*8),alignment};
+ auto integer_type=integer_primitive(base->canonical_spelling);
+ if(integer_type.empty()||integer_type!=integer_primitive(base->spelling))return {};
+ return Scalar{*base->is_signed?Scalar::SignedInteger:Scalar::UnsignedInteger,named->spelling,static_cast<unsigned>(*base->size*8),alignment,integer_type};
 }
 // The string profile deliberately admits only an extracted direct pointer to
 // const plain char. No void*, signed/unsigned char*, wide text or alias guessing.
@@ -226,6 +242,10 @@ Emission emit(const TranslationUnit& unit,const contract::ContractBundle& bundle
    if(scalar.kind==Scalar::Boolean)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, _Bool: 1, default: 0), \"boolean type drift\");\n";
    if(scalar.kind==Scalar::Binary32)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, float: 1, default: 0), \"binary32 type drift\");\n  _Static_assert(FLT_RADIX == 2 && FLT_MANT_DIG == 24 && FLT_MAX_EXP == 128 && FLT_MIN_EXP == -125, \"binary32 format drift\");\n";
    if(scalar.kind==Scalar::Binary64)return common+"  _Static_assert(_Generic(("+scalar.spelling+")0, double: 1, default: 0), \"binary64 type drift\");\n  _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 && DBL_MIN_EXP == -1021, \"binary64 format drift\");\n";
+   // The signature check uses the live typedef, so it cannot detect when that
+   // typedef now denotes a distinct integer type with the same layout.
+   common+="  _Static_assert(_Generic(("+scalar.spelling+")0, "+std::string(scalar.integer_type)+
+           ": 1, default: 0), \"integer primitive type drift\");\n";
    if(scalar.kind==Scalar::UnsignedInteger){auto name="UINT"+std::to_string(scalar.bits);return common+
     "  _Static_assert(("+scalar.spelling+")-1 > ("+scalar.spelling+")0 && ("+scalar.spelling+")-1 == "+name+"_MAX, \"unsigned range/signedness drift\");\n";}
    auto name="INT"+std::to_string(scalar.bits);return common+"  _Static_assert(("+scalar.spelling+")-1 < ("+scalar.spelling+")0, \"integer signedness drift\");\n  _Static_assert(("+scalar.spelling+")"+name+"_MIN == "+name+"_MIN && ("+scalar.spelling+")"+name+"_MAX == "+name+"_MAX, \"integer range drift\");\n";
