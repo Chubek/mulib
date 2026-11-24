@@ -271,7 +271,21 @@ class Parser {
    e->children.push_back(primary().node);
    return syntax_bounded(std::move(e));
   }
-  bool match_header()const{
+   bool legacy_match_arm_header(std::size_t i)const{
+    // A block after a call to a binding named `match` is not necessarily an
+    // arm list. Only the legacy `Tag(payload) =>` prefix distinguishes one.
+    while(templating&&peek(i).text=="$")++i;
+    if(!is_ident(peek(i).text)||peek(i+1).text!="(")return false;
+    std::size_t parens=1;
+    for(i+=2;pos+i<ts.size();++i){
+     const auto& text=peek(i).text;
+     if(text=="(")++parens;
+     else if(text==")"&&!--parens)return peek(i+1).text=="=>";
+     else if(text==";"||text=="<eof>")return false;
+    }
+    return false;
+   }
+   bool match_header()const{
    if(!at("match"))return false;
    if(peek(1).text=="let")return true;
     // `<-` is a receive prefix at the start of a discriminant, but a send
@@ -279,14 +293,21 @@ class Parser {
     if(precedence(peek(1).text)>=0&&peek(1).text!="-"&&peek(1).text!="<-")return false;
    // Existing keyword-spelled values remain ordinary operands/callees unless
    // a complete discriminant is followed by the match delimiter.
-   std::size_t parens=0,brackets=0,braces=0;
+    std::size_t parens=0,brackets=0,braces=0,initial_call_end=0;
    for(std::size_t i=1;pos+i<ts.size();++i){const auto& text=peek(i).text;
     if(!parens&&!brackets&&!braces){
      if(text=="with"&&i>1&&precedence(peek(i-1).text)<0&&peek(i-1).text!="!"&&peek(i-1).text!=".")return true;
-     if(text=="{"&&peek(1).text=="("&&i>1&&peek(i-1).text==")")return true;
+     if(text=="{"&&peek(1).text=="("&&i>1&&peek(i-1).text==")"){
+      if(legacy_match_arm_header(i+1))return true;
+      // Stop at the block boundary rather than finding a later `with`.
+      if(i==initial_call_end+1)return false;
+     }
      if(text==";"||text=="="||text==","||text==")"||text=="]"||text=="}"||text=="=>"||text=="<eof>")return false;
     }
-    if(text=="(")++parens;else if(text==")"){if(!parens)return false;--parens;}
+     if(text=="(")++parens;else if(text==")"){
+      if(!parens)return false;
+      if(!--parens&&!initial_call_end&&peek(1).text=="(")initial_call_end=i;
+     }
     if(text=="[")++brackets;else if(text=="]"){if(!brackets)return false;--brackets;}
     if(text=="{")++braces;else if(text=="}"){if(!braces)return false;--braces;}
    }

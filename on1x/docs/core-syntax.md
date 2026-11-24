@@ -161,6 +161,9 @@ match let snapshot = make_array() with {
   allocation failures keep their existing status and do not acquire unwinding.
 - Legacy `match(value){Tag(payload_pattern)=>expr,...}` retains its existing
   payload-lambda semantics, completeness rules and trivial-result restriction.
+  The first arm's `Tag(payload_pattern) =>` distinguishes the legacy form from
+  an ordinary call followed by a block, as in `if match(flag) { work(); }`
+  or `while match(flag) { work(); }` with a binding named `match`.
   Both spellings disappear before backend emission. `_` remains an ordinary
   binding name in old name/tuple parameter/let patterns; it is a wildcard only
   in the new match-pattern grammar. Contextual `match`, `with`, `as` and `rest`

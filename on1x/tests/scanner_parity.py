@@ -79,6 +79,7 @@ valid_cases = [
     b'0..10 0..=10 0...10 ... ..= .. ....= 1.0..2.0 1u64..=2u64',
     b'outer:for(var i=0;i<3;i=i+1){loop{continue outer;}} for x in -2..=2{break;}',
     b'match let x=f() with { (1|2) as n if n>0 => n, rest => 0 }; :: :::: ||| | record{x:_,..}',
+    b'if match(flag) { print_flag(flag); } if match(value) { Pair((_, yes)) => yes } { print_flag(true); }',
     b'fn p(k:ref i64){k := 2;} foo() ~ { Ok(-) => println(1), Err(x) => println(x) };',
     b'fn inspect(x:borrow Cell){let y=borrow x;} fn edit(x:ref Cell){let y=borrow mut x;y:=x;}',
     b'enum List<T>{Nil,Cons(T,own<List<T>>)} let x=box(v); let y=move(x); take(y); drop(y);',

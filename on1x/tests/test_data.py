@@ -21,6 +21,18 @@ fn main() {
   println(describe(variant<sum{None:record{},Some:i64,Pair:record{first:i64,second:i64}}>(Pair, record{first:1,second:5})));
 }
 ''')
+tests.valid('data_contextual_match', 'true\n42\nfalse\ntrue\n7\nfalse\n9\n', text='''
+fn match(flag:bool)->bool { println(flag); return flag; }
+fn main() {
+  if match(true) { println(42); }
+  if match(false) {} else {
+    var keep = true;
+    while match(keep) { println(7); keep = false; }
+  }
+  let value = variant<sum{Pair:(i64,bool)}>(Pair,(9,true));
+  if match(value) { Pair((_, yes)) => yes } { println(9); }
+}
+''')
 tests.valid('data_array_slice', '16\n3\n8\n2\n8\n', text='''
 fn total(a: array<i64,3>) -> i64 {
   var acc = 0; var slice = a[0:3]; var i = 0;
@@ -87,6 +99,12 @@ for name, source, expected in bounds:
 
 # Static rejections: exhaustiveness, unknown labels, managed fields, extern ABI.
 semantic_cases = [
+    ('malformed_legacy_arm', '''
+fn main() {
+  let s = variant<sum{Some:i64}>(Some, 1);
+  println(match(s){Some(n)=>});
+}
+''', "expected identifier"),
     ('non_exhaustive', '''
 fn main() {
   let s = variant<sum{None:record{},Some:i64}>(None, record{});
