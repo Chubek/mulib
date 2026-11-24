@@ -187,6 +187,35 @@ cmake --build build/embedding --target on1x_rt_embed_ownership
 ctest --test-dir build/embedding -R '^on1x\.runtime\.embedding_ownership$' --output-on-failure
 ```
 
+### Generated FFI boundary fixture
+
+On native AMD64 Linux builds with the generated clamp catalogue and typed
+native planner, `on1x.runtime.ffi_embedding_static` compiles a checked On1x
+caller with a lexical `unsafe` call to MuLIB clamp, a compiler-emitted adapter,
+the manifest-planned C implementation, and a small C provider shim. The build
+runs the planner's independent native ABI probe before the host invokes the
+module through On1xRT. Static embedding explicitly links those objects into
+the host; registration still requires its AOT descriptor policy.
+
+With a shared `On1x::RT` and the trusted loader enabled,
+`on1x.runtime.ffi_embedding_dynamic` uses a separate native image and the
+same runtime library as the host. The test pins the exact image digest and
+path in the host policy independently of descriptor identity. It denies
+digest drift and wrong paths before descriptor registration, and denies a
+descriptor identity mismatch after artifact approval. Both tests exercise
+callback failure, temporary buffer cleanup, and unload and handle lifecycle.
+
+```sh
+cmake --build build/embedding --target on1xc on1x_rt_sdk
+ctest --test-dir build/embedding --no-tests=error --output-on-failure \
+  -R '^on1x\.runtime\.ffi_embedding_'
+```
+
+This is a test build, not a general AOT module producer or reviewed safe
+import path. Its temporary native build invokes tools before test execution;
+the embedding host itself needs no compiler, extractor, planner, or generator
+at runtime.
+
 ## Trusted dynamic native module
 
 `on1x_rt_engine_load_authorized_dynamic` takes an absolute UTF-8 path and a
