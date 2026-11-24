@@ -1,8 +1,10 @@
 # On1x capability matrix
 
-See [verification](../VERIFICATION.md) and the
+See the [current completion ledger](../COMPLETION_MATRIX.md) and the
 [representation contracts](../../manual/representation-contracts.md).
 The historical test totals below describe their original configurations.
+References to `on1x/VERIFICATION.md` below identify the historical file
+removed by `f3bae016`; use `git show f3bae016^:on1x/VERIFICATION.md` to read it.
 
 | capability | source files | runtime/ABI support | syntax/type support | tests | status | remaining blocker |
 |---|---|---|---|---|---|---|

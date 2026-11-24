@@ -30,11 +30,20 @@ rejects schema, target, feature and output-kind mismatches before invoking a
 callback, stages complete bytes privately, and fails on equal best-ranked
 providers. The host remains the only artifact publication authority.
 
-These adapters produce C11, canonical MIR text, CFG DOT, or evaluator output.
-They are not native machine-code backends. MuLIB's native pipeline consumes a
-different IR and emits assembly for an external assembler; no verified bridge
-from On1x MIR exists, so SDK assembly/object/executable requests return
-`ON1X_SDK_UNSUPPORTED`.
+The baseline adapters above produce C11, canonical MIR text, CFG DOT, or
+evaluator output. Two additional executable products have narrower admission
+profiles:
+
+- [VMWeave](mir-vm/README.md) emits verified `.o1vm` bytecode for the
+  standalone `on1x-vm` runner or in-process guest execution.
+- [Archon](mir-archon/README.md) is opt-in and emits native assembly from its
+  admitted verified MIR subset. The tested Linux AMD64 SysV toolchain uses an
+  assembler and linker to produce an executable. The SDK adapter requires
+  explicit target configuration and trusted native artifact admission.
+
+[Cephyr](../docs/cephyr-ffi-module-verification.md) is a distinct opt-in route
+from checked HIR through emitted C11 to a Linux AMD64 object. None of these
+products silently falls back to a different backend on an unsupported request.
 
 `ON1X_BUILD_EXTENSION_SDK=OFF` retains direct dispatch to the same compiler
 routines. The MIR optimization and optional analysis/reporting options
