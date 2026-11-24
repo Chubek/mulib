@@ -79,6 +79,10 @@ def main():
         source.write_text("fn main() -> i64 { return true; }\n")
         run(base + [source, "-o", output], False)
         assert output.read_bytes() == marker
+        finite = root / "examples/finite_iteration.on1x"
+        unsupported = run(base + [finite, "-o", output], False)
+        assert b"ON1X-MIR-UNSUPPORTED: scalar MIR cannot lower array" in unsupported.stderr
+        assert output.read_bytes() == marker
         assembly.write_bytes(marker)
         run([tool, "--ir-input", mir, "--target", "aarch64-unknown-linux-gnu", "-o", assembly], False)
         assert assembly.read_bytes() == marker
