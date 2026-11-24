@@ -158,3 +158,25 @@ remain on their worker branches pending the corresponding gates.
   does not register executable rich descriptors. Generic numerical/IPC HIR,
   lowering and native policy, full signed/DSO parity, and retirement remain
   open. Legacy regression successes do not qualify those replacements.
+
+### Combined AMD64 staging results
+
+- GCC selected-catalogue suite: initially **17 passed, 2 failed** because
+  the SDK embedding fixtures omitted a native planner option. After
+  `c1783535`, the same suite passed **19/19**.
+- GCC full-catalogue build at `09704cf0` succeeded; full CTest ran **223**
+  cases: **219 passed, 2 failed, 2 skipped**. The failures were the outdated
+  assumption that `container-core` has no unsafe inline import and the
+  pre-existing stale On1xMETA parser snapshot. `748aa5fb` updated the
+  registration test while keeping safe and raw-archive refusal tests; its
+  focused rerun passed **7/7**. The full suite was not rerun after this change.
+  The skipped cases were `on1x.container_pod_cgroup` and `on1x.category`.
+- W11 independently passed full-catalogue read-only regeneration at its
+  selected snapshot `2e7b9da3`, all three focused FFI CTests, and **35/35**
+  expected installed-host harness command outcomes. W11 exercised unsafe
+  static, reviewed static, relocated unsafe DSO, and three embedded-Cephyr
+  static provider combinations on AMD64. AArch64 and RV64 are projection-only.
+- Evidence: `build/coordinator/scalar-stage/{coordinator,full-catalogue}.log`
+  and `evidence/WORKER-11.md`. Staging uses W04's catalogue with its matching
+  grammar and compiler hashes; W05's later v3 candidate checker is not
+  merged into this package without regeneration.
