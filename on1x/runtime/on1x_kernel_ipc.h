@@ -16,14 +16,15 @@ extern "C" {
  * exposed to On1x. Both calls publish outputs only on success. */
 typedef int64_t (*on1x_kernel_ipc_callback)(on1x_env *, int64_t);
 int64_t on1x_kernel_ipc_v1_open_pair(on1x_unique **out);
-/* Consumes *owner on every outcome before possibly calling callback. The
- * callback has one synchronous, same-thread invocation at most, after close;
- * neither its code pointer nor its borrowed context is retained. */
+/* Consumes a live pair belonging to the current thread on every outcome
+ * before possibly calling callback. A wrong-kind or wrong-thread owner is
+ * rejected without transfer. The callback has one synchronous, same-thread
+ * invocation at most, after close; neither code nor borrowed context is retained. */
 int64_t on1x_kernel_ipc_v1_roundtrip(on1x_unique **owner, uint8_t byte,
         int64_t timeout_ms, on1x_kernel_ipc_callback callback,
         on1x_env *context, int64_t *out);
 
-/* These accept a distinct session owner. All operations and the owner's
+/* These accept a distinct session owner. All operations and each owner's
  * destruction belong to the opening thread. Session calls borrow the box
  * exclusively for the call (including argument evaluation in generated code).
  * Do not consume the box via the generic C ABI from a callback. */

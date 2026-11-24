@@ -141,6 +141,9 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
            'I.poll(session, unsafe { drop(session); 1000 }); } }', 'during its exclusive borrow')
     denied('session_reentry_argument', prefix+'fn main(){ unsafe { '+session+
            'I.poll(session, unsafe { I.revoke(session); 1000 }); } }', 'overlapping exclusive borrow')
+    denied('session_move_during_loan', prefix+'fn main(){ unsafe { '+session+
+           'I.poll(session, unsafe { let moved=move(session); drop(moved); 1000 }); } }',
+           'during its exclusive borrow')
     denied('session_callback_capture', prefix+'fn main(){ unsafe { '+session+
            'I.register_callback(session,fn(x:i64)->i64 { unsafe { I.poll(session,1000); } return x; }); } }',
            'capture')
@@ -172,10 +175,22 @@ fn visit(n:i64) -> B.Result<i64,i64> {
   # Implicitly drop a still-registered closure and outstanding frame.
   return variant<B.Result<i64,i64>>(Ok,n);
 }
+fn fail_after_register(n:i64) -> B.Result<i64,i64> {
+  let registered=S.registered(n);
+  let resource:own<B.Session> = registered?;
+  let queued=unsafe { B.send(resource,0u8,1000) };
+  queued?;
+  # An invalid timeout leaves the pending frame and registration intact.
+  # The ? early return must drop both along with the session exactly once.
+  let failed=unsafe { B.poll(resource,0) };
+  let value=failed?;
+  return variant<B.Result<i64,i64>>(Ok,value);
+}
 fn main() {
   var i=0;
   while i<260 {
     assert(match visit(i) with { Ok(n)=>n==i, Err(code)=>false });
+    assert(match fail_after_register(i) with { Ok(n)=>false, Err(code)=>code == -1 });
     i=i+1;
   }
   println(i);
@@ -232,7 +247,7 @@ fn main() {
         objects.append(obj)
     native = tmp/'native'
     run(cxx, '-std=c++17', *warnings, *includes, *flags, tmp/'client.cpp', *objects,
-         *('-Wl,--wrap='+symbol for symbol in ('socketpair', 'shutdown', 'mulib_ipc_framed_init', 'mulib_ipc_send',
+         *('-Wl,--wrap='+symbol for symbol in ('socketpair', 'close', 'shutdown', 'mulib_ipc_framed_init', 'mulib_ipc_send',
                                               'on1x_unique_try_box', 'clock_gettime')),
          '-pthread', '-lm', '-o', native)
     run(native)
