@@ -4,6 +4,7 @@ import os
 import random
 import time
 from pathlib import Path
+from subprocess import DEVNULL
 from support import NativeTests, run
 
 t = NativeTests()
@@ -90,6 +91,17 @@ stream_child = t.work / 'process_stream_child'
 p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Werror',
          t.root / 'tests/fixtures/process_stream_child.c', '-o', stream_child])
 assert p.returncode == 0, p
+
+capture_descriptors = t.work / 'process_capture_descriptors'
+p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-pthread',
+         '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
+         t.root / 'tests/fixtures/process_capture_descriptors.c',
+         t.root / 'runtime/on1x_runtime.c', t.root / 'runtime/on1x_concurrency.c',
+         *t.flags, '-o', capture_descriptors])
+assert p.returncode == 0, p
+for mask in range(8):
+    p = run([capture_descriptors, mask, stream_child], stdin=DEVNULL)
+    assert p.returncode == 0 and not p.stdout, (mask, p)
 
 # The compiler parses a bounded command literal itself and emits direct argv;
 # no host shell sees quotes, escapes, comments or metacharacters. Captured

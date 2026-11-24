@@ -52,8 +52,11 @@ profile with running/blocked cancellation, monotonic `poll after`, and
   nominal `xfiber` must rename it; they receive an explicit diagnostic rather
   than silently being given a process capability.
 - ``let (job, input, output, error) = launch capture `/absolute/program ...`;``
-  uses the same command grammar but replaces the child's standard descriptors
-  with three checked pipes. Its affine result type is
+   uses the same command grammar but replaces the child's standard descriptors
+   with three checked pipes, even if some or all of the parent's standard
+   descriptors are closed. The parent's standard descriptors are unchanged
+   after spawn. Capture pipe ends are created close-on-exec, then explicitly
+   mapped to the child's standard descriptors. Its affine result type is
   `(xfiber, sender<u8>, receiver<u8>, receiver<u8>)`: stdin, stdout and stderr
   respectively. These stream endpoints use the same structural directional
   types as general `u8` channels but remain tied to the process-pipe adapter.

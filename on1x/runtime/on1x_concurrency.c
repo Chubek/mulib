@@ -1,4 +1,6 @@
-#define _POSIX_C_SOURCE 200809L
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "on1x_concurrency.h"
 #include <mulib-channel.h>
 #include <errno.h>
@@ -443,12 +445,21 @@ static int spawn_attributes(posix_spawnattr_t *attr){
  return rc;
 }
 static int capture_pipe(int fds[2],int parent){
- int flags;
- if(pipe(fds)!=0)return errno?errno:EIO;
- if(fds[0]<=STDERR_FILENO||fds[1]<=STDERR_FILENO){(void)close(fds[0]);(void)close(fds[1]);fds[0]=fds[1]=-1;return EINVAL;}
- if(fcntl(fds[0],F_SETFD,FD_CLOEXEC)<0||fcntl(fds[1],F_SETFD,FD_CLOEXEC)<0){int rc=errno;(void)close(fds[0]);(void)close(fds[1]);fds[0]=fds[1]=-1;return rc;}
+ int flags,i;
+ if(pipe2(fds,O_CLOEXEC)!=0)return errno;
+ /* The spawn actions dup onto 0..2 and then close every pipe descriptor.
+  * Move any pipe end allocated there out of that range, without opening
+  * previously closed parent stdio or losing close-on-exec on the duplicate.
+  * On failure the caller closes all recorded ends, including a partial move. */
+ for(i=0;i<2;++i){
+  if(fds[i]<=STDERR_FILENO){
+   int moved=fcntl(fds[i],F_DUPFD_CLOEXEC,STDERR_FILENO+1);
+   if(moved<0)return errno;
+   (void)close(fds[i]);fds[i]=moved;
+  }
+ }
  flags=fcntl(fds[parent],F_GETFL,0);
- if(flags<0||fcntl(fds[parent],F_SETFL,flags|O_NONBLOCK)<0){int rc=errno;(void)close(fds[0]);(void)close(fds[1]);fds[0]=fds[1]=-1;return rc;}
+ if(flags<0||fcntl(fds[parent],F_SETFL,flags|O_NONBLOCK)<0)return errno;
  return 0;
 }
 on1x_csp_process *on1x_csp_launch_exec(const char *const *argv,size_t count,const char *file,size_t line,size_t column){
