@@ -7,11 +7,18 @@
 #include <string_view>
 
 int main(int argc, char** argv) try {
-    const bool object = argc == 4 && std::string_view(argv[1]) == "--object";
+    const bool object = (argc == 4 || argc == 5) && std::string_view(argv[1]) == "--object";
     const bool info = argc == 2 && std::string_view(argv[1]) == "--toolchain-inputs";
     if ((!object && argc != 2) || cephyr_abi_version() != 1) {
-        std::cerr << "expected INCLUDE_DIR, --object INCLUDE_DIR RUNTIME_DIR or --toolchain-inputs, "
+        std::cerr << "expected INCLUDE_DIR, --object INCLUDE_DIR RUNTIME_DIR [TARGET] or --toolchain-inputs, "
                      "and Cephyr embedding ABI 1\n";
+        return 1;
+    }
+    const std::string_view target = argc == 5 ? argv[4] : "x86_64-linux-gnu";
+    unsigned machine = 62;
+    if (target == "aarch64-linux-gnu") machine = 183;
+    else if (target != "x86_64-linux-gnu") {
+        std::cerr << "unsupported Cephyr kernel object target\n";
         return 1;
     }
     namespace fs = std::filesystem;
@@ -36,7 +43,7 @@ int main(int argc, char** argv) try {
         }
         source += *it;
     }
-    auto arguments = std::vector<std::string>{"--config", config.string(), "--target=x86_64-linux-gnu",
+    auto arguments = std::vector<std::string>{"--config", config.string(), "--target=" + std::string(target),
         "--stdlib=cephyr", "--no-factir", "--no-sandslab"};
     if (object) arguments.insert(arguments.end(), {"-c", "-DON1X_KERNEL_ABI_V1=1",
         "-D_POSIX_C_SOURCE=200809L", "-I", argv[3]});
@@ -46,11 +53,10 @@ int main(int argc, char** argv) try {
     std::cerr << result.diagnostics();
     if (!result) return 1;
     auto output = result.output();
-    const std::string_view type = object ? std::string_view("\1\0\76\0", 4)
-                                         : std::string_view("\3\0\76\0", 4);
     if (output.size() < 64 || output.size() > 64 * 1024 * 1024 ||
-        output.substr(0, 6) != "\177ELF\2\1" || output.substr(16, 4) != type) {
-        std::cerr << "Cephyr did not return a bounded AMD64 ELF "
+        output.substr(0, 7) != "\177ELF\2\1\1" || output[16] != (object ? 1 : 3) ||
+        output[17] != 0 || static_cast<unsigned char>(output[18]) != machine || output[19] != 0) {
+        std::cerr << "Cephyr did not return a bounded " << target << " ELF "
                   << (object ? "object" : "shared library") << '\n';
         return 1;
     }

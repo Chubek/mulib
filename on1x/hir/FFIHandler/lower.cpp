@@ -19,10 +19,12 @@ bool identifier(std::string_view s) {
     return true;
 }
 
-void require_target(const Target& target) {
-    if(target.triple!="x86_64-linux-gnu"||target.data_model!="LP64"||
-       target.abi!="SysVAMD64"||target.calling_convention!="sysv")
-        invalid("FFIHandler C11 lowering requires Linux x86-64 SysV LP64");
+std::string_view require_target(const Target& target) {
+    if(target==Target{"x86_64-linux-gnu","LP64","SysVAMD64","sysv"})
+        return "!defined(__x86_64__) || defined(__ILP32__)";
+    if(target==Target{"aarch64-linux-gnu","LP64","AAPCS64","aapcs64"})
+        return "!defined(__aarch64__) || !defined(__AARCH64EL__) || !defined(__LP64__)";
+    invalid("FFIHandler C11 lowering requires a supported Linux LP64 target ABI");
 }
 
 std::string_view surface_type(SurfaceKind kind) {
@@ -189,11 +191,12 @@ std::string range_guard(const Parameter& p,const std::string& arg) {
 }
 
 std::string target_requirements(const Target& target) {
-    require_target(target);
+    const auto condition=require_target(target);
+    const auto profile=target.triple=="x86_64-linux-gnu"?"x86-64":"AArch64";
     return "#include <float.h>\n#include <limits.h>\n#include <stdint.h>\n"
            "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || "
-           "!defined(__linux__) || !defined(__x86_64__) || defined(__ILP32__)\n"
-           "#error \"FFIHandler requires the verified native Linux x86-64 build profile\"\n#endif\n"
+           "!defined(__linux__) || "+std::string(condition)+"\n"
+           "#error \"FFIHandler requires the verified native Linux "+profile+" build profile\"\n#endif\n"
            "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && "
            "sizeof(long) == 8 && sizeof(void *) == 8, \"FFIHandler target ABI drift\");\n";
 }
@@ -269,6 +272,8 @@ std::string linked_scalar_tu(std::span<const Descriptor* const> descriptors) {
     for(const auto* desc:descriptors){
         if(!desc) invalid("FFIHandler C11 lowering: missing descriptor");
         require_descriptor(*desc);
+        if(desc->target!=descriptors.front()->target)
+            invalid("FFIHandler C11 lowering: mixed adapter targets");
         sorted.push_back(desc);
     }
     std::sort(sorted.begin(),sorted.end(),[](const Descriptor* lhs,const Descriptor* rhs){

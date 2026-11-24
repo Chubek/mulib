@@ -1367,7 +1367,7 @@ class Generator {
           source_prefixes(options.source_prefixes){
     for(const auto& f:unit.functions){
      verify_kernel_shape(f);
-     if(const auto* binding=ffi::verify_foreign_declaration(f,"x86_64-linux-gnu")){
+      if(const auto* binding=ffi::verify_foreign_declaration(f,ffi::configured_target())){
       if(options.foreign_driver_staging&&!linked_foreign(f))
        throw Error(f.where,"native driver staging requires a checked link-only descriptor","ON1X-KERNEL-ABI");
       foreign_bindings.emplace(f.name,binding);

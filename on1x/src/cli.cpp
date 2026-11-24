@@ -1168,7 +1168,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      const auto inspected=on1x::inspect_kernel_imports(source,loader);
      if(mode=="--ffi-adapter"){
       for(const auto* d:selected_ffi(inspected)){
-       if(d->id.sha256==ffi_id&&d->target.triple=="x86_64-linux-gnu"){
+        if(d->id.sha256==ffi_id&&d->target.triple==loader.foreign_target){
         write_all(out,on1x::ffi::c11::linked_scalar_tu(std::span(&d,1)));return 0;
        }
       }

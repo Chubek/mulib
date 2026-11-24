@@ -8,7 +8,7 @@
 namespace on1x::ffi::c11 {
 enum class Linkage { Local, External };
 
-// Currently only native Linux AMD64/SysV is qualified by this emitter.
+// Exact target preconditions are emitted in both caller and adapter.
 std::string target_requirements(const Target&);
 std::string scalar_header(const Descriptor&);
 std::string linked_name(const Descriptor&);

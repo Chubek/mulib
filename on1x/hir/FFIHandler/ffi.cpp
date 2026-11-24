@@ -72,6 +72,7 @@ void identifier(std::string_view s) {
 }
 
 std::span<const Descriptor> foreign_descriptors() noexcept { return generated::bindings; }
+std::string_view configured_target() noexcept { return ON1X_FFI_CONFIGURED_TARGET; }
 const Descriptor* find_descriptor(std::string_view module, std::string_view member) noexcept {
     return lookup(std::pair{module, member}, generated::by_member,
                   [](const Descriptor& d) { return std::pair{d.module, d.member}; });

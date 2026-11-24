@@ -20,11 +20,16 @@ elseif(_ffi_cpu STREQUAL "arm64")
 endif()
 set(ON1X_FFI_TARGET "${_ffi_cpu}-linux-gnu" CACHE STRING
     "Target identity required in the generated FFI catalogue")
+option(ON1X_FFI_CROSS_C11 "Build an AMD64 frontend with the AArch64 checked-C11 FFI catalogue" OFF)
 if(NOT ON1X_FFI_TARGET MATCHES "^(x86_64|aarch64|riscv64)-linux-gnu$")
   message(FATAL_ERROR "Unsupported FFI target: ${ON1X_FFI_TARGET}")
 endif()
+if(ON1X_FFI_CROSS_C11 AND NOT (_ffi_cpu STREQUAL "x86_64" AND
+   ON1X_FFI_TARGET STREQUAL "aarch64-linux-gnu"))
+  message(FATAL_ERROR "ON1X_FFI_CROSS_C11 requires an AMD64 frontend and an AArch64 catalogue")
+endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR
-   NOT ON1X_FFI_TARGET STREQUAL "${_ffi_cpu}-linux-gnu")
+   (NOT ON1X_FFI_CROSS_C11 AND NOT ON1X_FFI_TARGET STREQUAL "${_ffi_cpu}-linux-gnu"))
   message(FATAL_ERROR "FFI catalogue target ${ON1X_FFI_TARGET} must match the Linux LP64 compiler target")
 endif()
 
@@ -137,6 +142,8 @@ add_custom_command(OUTPUT "${_ffi_header}" "${_ffi_manifest}"
 add_custom_target(on1x_ffi_tables DEPENDS "${_ffi_header}" "${_ffi_manifest}")
 add_dependencies(on1x_frontend on1x_ffi_tables)
 target_sources(on1x_frontend PRIVATE ffi.cpp)
+set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/ffi.cpp" TARGET_DIRECTORY on1x_frontend
+  PROPERTIES COMPILE_DEFINITIONS ON1X_FFI_CONFIGURED_TARGET="${ON1X_FFI_TARGET}")
 # Merge dependencies: W06 owns the checked-HIR ingress, W07 the C11 emitter.
 # A descriptor-only checkout has neither interface; a checkout exposing an
 # interface must compile its implementation rather than fall back to legacy.
@@ -154,6 +161,7 @@ install(FILES "${_ffi_manifest}" DESTINATION "share/on1x/stdffi/${ON1X_FFI_TARGE
 set(_ffi_tools "${CMAKE_CURRENT_SOURCE_DIR}/../../tools")
 if(EXISTS "${_ffi_tools}/on1x_ffi_native.py" OR EXISTS "${_ffi_tools}/on1x_ffi_trust.py")
   install(FILES "${_ffi_tools}/on1x_ffi_native.py" "${_ffi_tools}/on1x_ffi_trust.py"
+    "${_ffi_tools}/on1x_ffi_aarch64.py"
     DESTINATION share/on1x/tools)
 endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
@@ -167,13 +175,34 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_test(NAME on1x.ffihandler.catalogue_inventory
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi_inventory.py")
   set_tests_properties(on1x.ffihandler.catalogue_inventory PROPERTIES TIMEOUT 90)
-  add_test(NAME on1x.ffihandler.catalogue_cmake
-    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_catalogue_cmake.py"
-      --work "${CMAKE_CURRENT_BINARY_DIR}" --cmake "${CMAKE_COMMAND}"
-      --libstone-root "${ON1X_LIBSTONE_ROOT}"
-      --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}"
-      "--cflags=${CMAKE_C_FLAGS}" "--cxxflags=${CMAKE_CXX_FLAGS}" --target "${ON1X_FFI_TARGET}")
-  set_tests_properties(on1x.ffihandler.catalogue_cmake PROPERTIES TIMEOUT 180)
+  if(NOT ON1X_FFI_CROSS_C11)
+    add_test(NAME on1x.ffihandler.catalogue_cmake
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_catalogue_cmake.py"
+        --work "${CMAKE_CURRENT_BINARY_DIR}" --cmake "${CMAKE_COMMAND}"
+        --libstone-root "${ON1X_LIBSTONE_ROOT}"
+        --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}"
+        "--cflags=${CMAKE_C_FLAGS}" "--cxxflags=${CMAKE_CXX_FLAGS}" --target "${ON1X_FFI_TARGET}")
+    set_tests_properties(on1x.ffihandler.catalogue_cmake PROPERTIES TIMEOUT 180)
+  endif()
+  if(ON1X_FFI_CROSS_C11 AND ON1X_FFI_TARGET STREQUAL "aarch64-linux-gnu")
+    set(ON1X_FFI_AARCH64_TEST_CC "" CACHE FILEPATH "AArch64 test C driver with static Linux GNU libc")
+    set(ON1X_FFI_AARCH64_TEST_QEMU "" CACHE FILEPATH "Explicit trusted AArch64 user-mode QEMU for testing")
+    if(ON1X_FFI_AARCH64_TEST_CC OR ON1X_FFI_AARCH64_TEST_QEMU)
+      if(NOT IS_ABSOLUTE "${ON1X_FFI_AARCH64_TEST_CC}" OR NOT IS_ABSOLUTE "${ON1X_FFI_AARCH64_TEST_QEMU}")
+        message(FATAL_ERROR "AAPCS64 qualification test requires absolute CC and QEMU paths")
+      endif()
+      set(_ffi_aarch64_provider_args)
+      if(ON1X_WITH_CEPHYR)
+        list(APPEND _ffi_aarch64_provider_args --embedded-cephyr)
+      endif()
+      add_test(NAME on1x.ffihandler.aarch64_c11
+        COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/ffi_aarch64_toolchain.py"
+          --on1xc "$<TARGET_FILE:on1xc>" --cc "${ON1X_FFI_AARCH64_TEST_CC}"
+          --qemu "${ON1X_FFI_AARCH64_TEST_QEMU}" --host-cc "${CMAKE_C_COMPILER}"
+          --work "${CMAKE_CURRENT_BINARY_DIR}" ${_ffi_aarch64_provider_args})
+      set_tests_properties(on1x.ffihandler.aarch64_c11 PROPERTIES TIMEOUT 300)
+    endif()
+  endif()
   add_test(NAME on1x.ffihandler.rich_discovery
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_rich.py"
       --parser "${_ffi_parser}" --work "${CMAKE_CURRENT_BINARY_DIR}")

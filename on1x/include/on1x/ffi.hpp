@@ -59,6 +59,8 @@ struct Descriptor {
 // All returned views point to immutable compiler-owned storage. A descriptor
 // only proves representation eligibility; these lookups never authorize calls.
 std::span<const Descriptor> foreign_descriptors() noexcept;
+// Selected at build time, even if the immutable registry has no exports.
+std::string_view configured_target() noexcept;
 const Descriptor* find_descriptor(std::string_view module, std::string_view member) noexcept;
 const Descriptor* find_descriptor(ForeignId id) noexcept;
 const Descriptor* find_descriptor_by_symbol(std::string_view symbol) noexcept;
