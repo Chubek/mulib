@@ -5,7 +5,8 @@
 #include <span>
 
 namespace on1x::ffi {
-// Compiler-owned immutable tables describe representation only, not admission.
+// Transitional compatibility view derived from <on1x/ffi.hpp>; never grants
+// admission. Only types expressible by the old exact-int64_t ABI appear here.
 struct ScalarBinding {
     std::string_view module, provider, header, member, symbol;
     std::size_t arity;
