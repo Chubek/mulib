@@ -1,7 +1,7 @@
 target_sources(on1x_frontend PRIVATE
   optimize.cpp lower_mir.cpp vm_closures.cpp
-  processor/processor.cpp processor/processor_semantic.cpp processor/partial_eval.cpp)
-add_subdirectory(processor)
+  On1xMETA/processor.cpp On1xMETA/processor_semantic.cpp On1xMETA/partial_eval.cpp)
+add_subdirectory(On1xMETA)
 add_subdirectory(MEMGraph)
 add_subdirectory(FFIHandler)
 

@@ -29,7 +29,7 @@ These results
 do not imply zero overhead for arbitrary functions, closures or aggregates.
 
 Initial On1xMETA continuation (2026-11-21): the normal semantic pipeline first consumed
-LLSynth-compiled [`processor/*.o1m`](../hir/processor/README.md) programs: 6 typed
+LLSynth-compiled [`On1xMETA/*.o1m`](../hir/On1xMETA/README.md) programs: 6 typed
 desugaring rules, 13 canonicalization rules, and 45 structural/typed semantic
 constraints. Rewrites follow original ownership/control verification and are
 rechecked transactionally. `--dump-processor` exposes deterministic rule hits

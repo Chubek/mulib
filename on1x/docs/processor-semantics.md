@@ -1,8 +1,8 @@
 # Compiled semantic contracts
 
-`hir/processor/semantic.o1m` is compiled by the LLSynth-generated On1xMETA
+`hir/On1xMETA/semantic.o1m` is compiled by the LLSynth-generated On1xMETA
 frontend into the same immutable table used by the canonical processor.
-`hir/processor/processor_semantic.cpp` interprets its constraints directly over the
+`hir/On1xMETA/processor_semantic.cpp` interprets its constraints directly over the
 actual On1x HIR. It does not invoke another checker as a rule action.
 
 ## Admission and ordering

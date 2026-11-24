@@ -7,7 +7,7 @@ from support import NativeTests, run
 
 
 t = NativeTests()
-processor = t.root / 'hir/processor'
+processor = t.root / 'hir/On1xMETA'
 fixtures = processor / 'tests/fixtures'
 archon = t.compiler.parent / 'backends/mir-archon/on1x-archon-mir'
 scalar_abi = archon.parent / 'libon1x_archon_scalar_abi.a'
@@ -245,7 +245,7 @@ assert first.stdout == second.stdout and not first.stderr and not second.stderr
 report = json.loads(first.stdout)
 assert report['format'] == 'on1x.processor' and report['version'] == 1
 assert report['verified'] is True
-manifest = json.loads((t.compiler.parent / 'hir/processor/generated/rules_manifest.json').read_text())
+manifest = json.loads((t.compiler.parent / 'hir/On1xMETA/generated/rules_manifest.json').read_text())
 for identity in ['program_sha256', 'parser_sha256']:
     assert report[identity] == manifest[identity] and len(report[identity]) == 64
 for source in manifest['sources']:

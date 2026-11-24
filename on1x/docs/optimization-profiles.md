@@ -5,7 +5,7 @@ a stable `name`, a `stage`, and an `enabled` boolean. Add profile or selection
 flags to see the resolved policy. Authored rule names come from the compiled
 `.o1m` tables; MIR pass names come from the pass descriptors.
 
-| `--opt-profile` | Authored processor rules | [`partial-eval`](../hir/processor/PARTIAL_EVALUATION.md) | [`memgraph-bounds`](../hir/MEMGraph/README.md) (C11 and source-to-VM, if built) | `decision-ssa` lowering | MIR pass pipeline |
+| `--opt-profile` | Authored processor rules | [`partial-eval`](../hir/On1xMETA/PARTIAL_EVALUATION.md) | [`memgraph-bounds`](../hir/MEMGraph/README.md) (C11 and source-to-VM, if built) | `decision-ssa` lowering | MIR pass pipeline |
 |---|---|---|---|---|---|
 | `default` (also when omitted) | on | off | off | on | off, except for `--optimize-ir` and `--dump-passes` |
 | `debug` | off | off | off | off | off |

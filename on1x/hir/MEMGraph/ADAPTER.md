@@ -112,7 +112,7 @@ not source text. Core entry points to inspect in MuLIB are:
 - `src/sema.cpp`, `src/infer.cpp`: authoritatively checked type identity;
 - `src/canonical/verify_values.cpp`: independently reconstruct ownership,
   initialization, projected moves, borrowed places and lexical loan state;
-- `hir/optimize.cpp` and `hir/processor/`: On1xMETA candidate transformation;
+- `hir/optimize.cpp` and `hir/On1xMETA/`: On1xMETA candidate transformation;
 - `src/codegen.cpp`: direct-C11 reference emitter;
 - `hir/lower_mir.cpp` and `src/backend/mir.cpp`: HIR lowering and MIR verification;
 - `src/safety.cpp`, `include/on1x/safety.hpp`: Chisel-backed admitted extern profile;

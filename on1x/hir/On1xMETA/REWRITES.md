@@ -2,7 +2,7 @@
 
 `canonicalize.o1m` and `desugar.o1m` are executable compiler inputs. The
 LLSynth-generated On1xMETA parser and `generate.py` compile their structural
-match/replacement trees into `on1x_meta_rules.hpp`. `hir/processor/processor.cpp` interprets
+match/replacement trees into `on1x_meta_rules.hpp`. `hir/On1xMETA/processor.cpp` interprets
 those immutable trees against the existing `Unit`, `Expr` and `Stmt`; rule names
 are reporting labels, never C++ pass selectors.
 

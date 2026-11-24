@@ -21,7 +21,7 @@ On1x source -> parse / imports / macros / PPX / staging -> check and canonicaliz
   supplies the recheck. Rewrites work on a private clone, and the original
   HIR is replaced only after the candidate passes. Rule selection can
   disable rewrites but cannot disable source admission.
-- [`processor/`](processor/) owns the On1xMETA grammar, rule tables, semantic
+- [`On1xMETA/`](On1xMETA/) owns the On1xMETA grammar, rule tables, semantic
   constraints, and typed partial evaluator.
 - [`MEMGraph/`](MEMGraph/) projects lexical copy-scalar loan roots from the
   canonical verifier. Its separate bounds optimization proves redundant

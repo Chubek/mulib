@@ -97,7 +97,7 @@ because LLSynth embeds checkout-specific absolute paths in the generated
 parser's `file` and `dependencies[].path` metadata even when the grammar
 hash agrees. Reproduce with `ctest -R '^on1x\.processor\.snapshots$'` from a
 build in another checkout. A follow-up must canonicalize those fields in LLSynth
-or in `hir/processor/snapshot.py` before `provenance()` hashes the generated
+or in `hir/On1xMETA/snapshot.py` before `provenance()` hashes the generated
 source, and add a two-root generation comparison;
 do not ignore semantic differences or replace the generated parser.
 Clang also reports an existing missing `Borrow` case in the SDK frontend

@@ -7,8 +7,8 @@ Read via the connected GitHub repository API on 2026-11-21.
   `cornerstone/LLSynth/docs/types.md`, `cornerstone/LLSynth/tests/cli.py`,
   and `cornerstone/LLSynth/scripts/llsynth.pl`.
 - MuLIB/On1x: `Chubek/mulib` at `fea826281236555e6e4996438c4a7487e95c2723`.
-  See `on1x/processor/On1xMETA.llsynth`, `on1x/processor/README.md`,
-  `on1x/processor/INTERFACE.md`, `on1x/include/on1x/ast.hpp`,
+  See `on1x/hir/On1xMETA/On1xMETA.llsynth`, `on1x/hir/On1xMETA/README.md`,
+  `on1x/hir/On1xMETA/INTERFACE.md`, `on1x/include/on1x/ast.hpp`,
   `on1x/src/canonical/verify_values.cpp`, `on1x/docs/core-references.md`,
   `on1x/include/on1x/safety.hpp`, `on1x/docs/contracts.md`,
   `on1x/docs/recursive-owning-adts.md`.

@@ -31,7 +31,10 @@ set(_meta_default_rules
   "${CMAKE_CURRENT_SOURCE_DIR}/semantic.o1m")
 set(_meta_legacy "${CMAKE_CURRENT_SOURCE_DIR}/../../processor")
 get_filename_component(_meta_legacy "${_meta_legacy}" ABSOLUTE)
+get_filename_component(_meta_previous "${CMAKE_CURRENT_SOURCE_DIR}/../processor" ABSOLUTE)
 if("${ON1X_META_RULE_FILES}" STREQUAL
+    "${_meta_previous}/canonicalize.o1m;${_meta_previous}/desugar.o1m;${_meta_previous}/semantic.o1m" OR
+    "${ON1X_META_RULE_FILES}" STREQUAL
     "${_meta_legacy}/canonicalize.o1m;${_meta_legacy}/desugar.o1m;${_meta_legacy}/semantic.o1m")
   # Upgrade only the exact former default, not any authored rule override.
   set(ON1X_META_RULE_FILES "${_meta_default_rules}" CACHE STRING "On1xMETA rule inputs compiled into the frontend" FORCE)
