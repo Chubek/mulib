@@ -36,6 +36,29 @@ distinguishes REQUIRED and OPTIONAL components. Both categories appear in
 | SOCKET/NET_* | Metadata entries | Network address, descriptors, errors, DNS and safe resource model |
 | Functors | Metadata entries | Parameterized SML module/functor semantics |
 
+### ListPair mapping
+
+`std.collections.ListPair` adapts the SML Basis
+[`map` and `mapEq`](https://smlfamily.github.io/Basis/list-pair.html) operations
+to proper `sexpr` lists. Both functions take `(left, right, f)`, where
+`f: fn(sexpr, sexpr) -> sexpr`. They call `f` once per corresponding pair,
+left to right, and return a list of its results in the same order.
+
+- `basis_listpair_map` ignores any unmatched suffix. If either list is empty,
+  it returns the empty list without calling `f`.
+- `basis_listpair_map_eq` returns the empty list for two empty inputs. For
+  unequal lengths it calls `f` on the shared prefix, then terminates with
+  `ListPair.map_eq unequal lengths`; earlier callback effects are not undone.
+  This is a fatal diagnostic, not a catchable SML `UnequalLengths` exception.
+- An atom in either root position is rejected before any callback, even if
+  the other input is empty. An empty list used *as an element* is valid.
+
+Both functions take linear time and temporary cons storage in the number of
+matched pairs (excluding callback costs), subject to the runtime data limits.
+The existing `basis_listpair_zip` remains strict for compatibility, unlike
+SML `zip`; neither the new mapping operations nor that existing behavior
+constitute `LIST_PAIR` signature conformance.
+
 ## Design gates for future work
 
 1. Implement ADTs, exhaustive match, modules and signatures before declaring

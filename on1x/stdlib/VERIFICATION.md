@@ -1,5 +1,27 @@
 # Verification report
 
+## ListPair mapping — 2026-11-24
+
+`on1x.libraries` compiles and executes the `basis_listpair_map` fixture through
+the direct C11 backend. It checks the shortest-input rule in both directions,
+equal-length mapping, empty inputs, an empty-list element, callback/result
+order, and repeated mapping with a capturing callback under a 128-live-node
+limit. Five subprocess fixtures check fatal length and root-type errors,
+including the observable callback prefix before each failure. `on1x.install`
+exercises `basis_listpair_map_eq` through the relocated standard library.
+
+On Linux x86-64 with GCC 16.2.1, the generated scanner, and pinned LibStone
+`3be5e9d7`, `on1x.libraries`, `on1x.modules` and `on1x.stdlib_project` passed.
+`on1x.install` passed after running the Makefiles `preinstall` target.
+All six emitted ListPair C11 fixtures also passed with Clang 22.1.8 ASan/UBSan;
+leak detection was enabled on success and disabled on intentional fatal exits.
+
+Run with `ctest --test-dir BUILD -R '^on1x\.(libraries|install)$'
+--output-on-failure`. For Unix Makefiles, run `cmake --build BUILD --target
+preinstall` first to produce the SDK shared library's install-time relink
+artifact. This checks the On1x adaptation, not the whole SML `LIST_PAIR`
+signature or SML exception semantics.
+
 ## Restricted project package and process environment — 2026-11-23
 
 The restricted source package includes [`std.environ`](environ/README.md)

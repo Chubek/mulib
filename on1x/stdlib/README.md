@@ -114,6 +114,10 @@ the selected declarative catalog.
 - `List.tabulate` calls its function in ascending index order. `app`, `foldr`
   and stable `partition` complement the existing map/filter/foldl operations.
   Lists contain `sexpr` elements; malformed root atoms are rejected.
+- `std.collections.ListPair` provides `basis_listpair_map` (stop at the
+  shorter input) and `basis_listpair_map_eq` (require equal lengths). Both
+  call the mapper left to right and return results in the same order. See
+  [ListPair compatibility](COMPATIBILITY.md#listpair-mapping) for error behavior.
 - The automatic pervasive environment provides bounded nominal `Option<T>` and
   `Result<T,E>` plus `option_*`/`result_*` constructors, predicates, transforms,
   fallbacks, conversions and focused iteration helpers. The helpers retain their

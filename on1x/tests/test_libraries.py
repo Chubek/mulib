@@ -27,6 +27,70 @@ for name,expected in [('core','basis core OK\n'),('collections','basis collectio
     assert p.stdout == expected,(name,p.stdout)
 
 t.valid('modules','41\n-3\nOn1x, modules\n42\n')
+t.valid('basis_listpair_map','a1\nb2\na1\nb2\n',extra=['-DON1X_DATA_MAX_NODES=128'],text='''
+import std.collections.ListPair as P;
+import std.collections.List as L;
+fn pair_text(a:sexpr,b:sexpr)->sexpr {
+ let label=text_concat(sx_text(a),sx_text(b));
+ println(label);
+ return sx_string(label);
+}
+fn main(){
+ let nil=sx_nil();
+ let left=sx_cons(sx_symbol("a"),sx_cons(sx_symbol("b"),nil));
+ let right=sx_cons(sx_string("1"),sx_cons(sx_string("2"),nil));
+ let extra=sx_cons(sx_string("1"),sx_cons(sx_string("2"),sx_cons(sx_string("3"),nil)));
+ let mapped=P.basis_listpair_map(left,extra,pair_text);
+ assert(L.basis_list_length(mapped)==2);
+ assert(sx_text(L.basis_list_nth(mapped,0))=="a1");
+ assert(sx_text(L.basis_list_nth(mapped,1))=="b2");
+ let exact=P.basis_listpair_map_eq(left,right,pair_text);
+ assert(L.basis_list_length(exact)==2);
+ assert(sx_text(L.basis_list_nth(exact,0))=="a1");
+ assert(sx_text(L.basis_list_nth(exact,1))=="b2");
+ let singleton=sx_cons(nil,nil);
+ let nil_item=P.basis_listpair_map(left,singleton,fn(a:sexpr,b:sexpr)->sexpr {
+  assert(sx_text(a)=="a" && sx_kind(b)==0);
+  return b;
+ });
+ assert(L.basis_list_length(nil_item)==1 && sx_kind(sx_head(nil_item))==0);
+ assert(sx_kind(P.basis_listpair_map(nil,right,pair_text))==0);
+ assert(sx_kind(P.basis_listpair_map(left,nil,pair_text))==0);
+ assert(sx_kind(P.basis_listpair_map_eq(nil,nil,pair_text))==0);
+ # Repeatedly exceed the live-node budget in total allocations, not live nodes.
+ for _ in 0 .. 256 {
+  let kept=sx_symbol("kept");
+  let results=P.basis_listpair_map(left,right,fn(a:sexpr,b:sexpr)->sexpr{return kept;});
+  assert(sx_text(L.basis_list_nth(results,1))=="kept");
+ }
+}''')
+
+for name, call, effects, message in [
+    ('exact_short_left', 'P.basis_listpair_map_eq(one,two,trace)', 'x\n',
+     'ListPair.map_eq unequal lengths'),
+    ('exact_short_right', 'P.basis_listpair_map_eq(two,one,trace)', 'x\n',
+     'ListPair.map_eq unequal lengths'),
+    ('exact_empty', 'P.basis_listpair_map_eq(nil,one,trace)', '',
+     'ListPair.map_eq unequal lengths'),
+    ('atom_left', 'P.basis_listpair_map(atom,nil,trace)', '',
+     'ListPair.map requires proper lists'),
+    ('atom_right', 'P.basis_listpair_map_eq(nil,atom,trace)', '',
+     'ListPair.map requires proper lists'),
+]:
+    exe=t.build('listpair_'+name,text='''
+import std.collections.ListPair as P;
+fn trace(a:sexpr,b:sexpr)->sexpr {io_stdout("x\\n");return a;}
+fn main(){
+ let nil=sx_nil();
+ let atom=sx_symbol("bad");
+ let one=sx_cons(nil,nil);
+ let two=sx_cons(nil,one);
+ '''+call+''';
+}''')
+    p=run([exe],env={**os.environ,'LSAN_OPTIONS':'detect_leaks=0'})
+    assert p.returncode == 73 and p.stdout == effects and message in p.stderr,(
+        name,p.returncode,p.stdout,p.stderr)
+
 t.valid('basis_edges','0123\n20\n',text='''
 import std.Int as I; import std.String as S; import std.List as L;
 import std.Option as O; import std.Functional as F;

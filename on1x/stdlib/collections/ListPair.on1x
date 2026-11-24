@@ -56,3 +56,39 @@ fn basis_listpair_all(a: sexpr, b: sexpr, p: fn(sexpr, sexpr) -> bool) -> bool
   }
   return true;
 }
+
+fn basis_listpair_map_impl(a: sexpr, b: sexpr, f: fn(sexpr, sexpr) -> sexpr, exact: bool) -> sexpr
+{
+  let a_kind = sx_kind(a);
+  let b_kind = sx_kind(b);
+  # sx_cons already enforces proper tails; only root atoms need rejection.
+  if (a_kind != 0 && a_kind != 3) || (b_kind != 0 && b_kind != 3)
+  {
+    tool_fail("ListPair.map requires proper lists");
+  }
+  var x = a;
+  var y = b;
+  var out = sx_nil();
+  while sx_kind(x) == 3 && sx_kind(y) == 3
+  {
+    let value = f(sx_head(x), sx_head(y));
+    out = sx_cons(value, out);
+    x = sx_tail(x);
+    y = sx_tail(y);
+  }
+  if exact && (sx_kind(x) != 0 || sx_kind(y) != 0)
+  {
+    tool_fail("ListPair.map_eq unequal lengths");
+  }
+  return basis_list_rev(out);
+}
+
+fn basis_listpair_map(a: sexpr, b: sexpr, f: fn(sexpr, sexpr) -> sexpr) -> sexpr
+{
+  return basis_listpair_map_impl(a, b, f, false);
+}
+
+fn basis_listpair_map_eq(a: sexpr, b: sexpr, f: fn(sexpr, sexpr) -> sexpr) -> sexpr
+{
+  return basis_listpair_map_impl(a, b, f, true);
+}

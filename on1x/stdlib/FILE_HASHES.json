@@ -8,8 +8,8 @@
     },
     {
       "path": "CATALOG.json",
-      "bytes": 85342,
-      "sha256": "431752092143135c7cb6f226f99223c20fb3f9309ea8a40cafb9c5184431e364"
+      "bytes": 85436,
+      "sha256": "426518d6b638d07d92aac89cae6fcd3d0c98373cb1c85fa3ff636cffcb03007d"
     },
     {
       "path": "CATALOG_SUMMARY.json",
@@ -23,8 +23,8 @@
     },
     {
       "path": "COMPATIBILITY.md",
-      "bytes": 3403,
-      "sha256": "eb8bb06604207501bb82149b061db48b1fdd57c666c5eb2079a5dd9f33990e4c"
+      "bytes": 4698,
+      "sha256": "52152e2f8617cfb6882c51fcea64574efa9726234936459a428fa0e4f7a9f3bc"
     },
     {
       "path": "COVERAGE.md",
@@ -73,8 +73,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 10665,
-      "sha256": "395c5269cd046e96d1a8758de38e3a5fdd6fa6c521af62316bc569064ca0c179"
+      "bytes": 10968,
+      "sha256": "2f13c3eb473d657fc61584a52456f45cbf6d224190b618375462de4933e29acd"
     },
     {
       "path": "String.on1x",
@@ -83,8 +83,8 @@
     },
     {
       "path": "VERIFICATION.md",
-      "bytes": 6753,
-      "sha256": "3bae51f95992b5f241d6bfe5f0369c36e76dc4efd55e6b0ad6626cf2b33e3fc3"
+      "bytes": 8037,
+      "sha256": "b7513232f728a86301cb9a5f6f550a28179ccfa608b976bd60ef43068441c4ce"
     },
     {
       "path": "_bridge/On1xfile.m",
@@ -1923,8 +1923,8 @@
     },
     {
       "path": "catalog/structures/ListPair.json",
-      "bytes": 455,
-      "sha256": "ea133a584ca81fbfbd6462bf1bb819d6be0cd08fa5bf13a946c1b5beb888800d"
+      "bytes": 549,
+      "sha256": "e99debe6bbe6a774aa7e44f95c0e40cb228a6e43e150c598b292d956a0898f90"
     },
     {
       "path": "catalog/structures/Math.json",
@@ -2423,8 +2423,8 @@
     },
     {
       "path": "collections/ListPair.on1x",
-      "bytes": 1231,
-      "sha256": "25c935a93cb89fd9dc21901388ef3d2bdd327f48c831ef0e137e5c67b2df0b49"
+      "bytes": 2217,
+      "sha256": "14b898c844c97958be8c1d469ff18df6bf3e521c65abbbd46a3345a4ffca4527"
     },
     {
       "path": "collections/On1xfile.m",

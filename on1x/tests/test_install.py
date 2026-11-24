@@ -14,7 +14,14 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
     prefix.rename(relocated)
     compiler=relocated/'bin/on1xc';library=relocated/'share/on1x'
     source=base/'client.on1x'
-    source.write_text('import std.Int as I;fn main(){println(@pipe("apply",identity(-7),I.abs));}')
+    source.write_text('''import std.Int as I;
+import std.collections.ListPair as P;
+fn main(){
+ let items=sx_cons(sx_string("installed"),sx_nil());
+ let mapped=P.basis_listpair_map_eq(items,items,fn(a:sexpr,b:sexpr)->sexpr{return b;});
+ assert(sx_text(sx_head(mapped))=="installed");
+ println(@pipe("apply",identity(-7),I.abs));
+}''')
     env={k:v for k,v in os.environ.items() if k not in (
         'ON1X_STDLIB','ON1X_PATH','ON1X_PPX_SCHEMA','ON1X_LIB_PATH','ON1X_STDLIB_PATH',
         'ON1X_PPX_PATH','ON1X_STDPPX_PATH','ON1X_MULIB_PATH','ON1X_MULIB_ROOT')}
@@ -49,6 +56,7 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='install-') as temporary:
         assert p.returncode!=0 and fmt_output.read_text()==expected,p
     p=run([compiler,'--deps',source],cwd=base,env=env);assert p.returncode == 0,p.stderr
     assert str(library/'stdlib/Int.on1x') in p.stdout and str(t.root/'stdlib') not in p.stdout,p.stdout
+    assert str(library/'stdlib/collections/ListPair.on1x') in p.stdout,p.stdout
     exe=base/'client'
     p=run([sys.executable,library/'tools/on1x-build.py',source,'--on1xc',compiler,
            '--cc',t.cc,'--stdppx','pipe','-o',exe,*[f'--cflag={flag}' for flag in t.flags]],env=env,cwd=base)

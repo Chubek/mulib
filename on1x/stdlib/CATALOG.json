@@ -985,7 +985,7 @@
       "sml_signature": "LIST_PAIR",
       "status": "partial_executable_adapter",
       "on1x_module": "on1x/stdlib/collections/ListPair.on1x",
-      "support": "experimental On1x subset, not SML Basis conformance",
+      "support": "Proper sexpr list adapter with zip (strict), unzip, all (legacy), map (shortest) and map_eq (fatal on unequal lengths); not LIST_PAIR conformance",
       "prerequisites": [
         "parameterized algebraic data types",
         "language-level modules"
