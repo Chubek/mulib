@@ -45,6 +45,30 @@ authorizes C from the entire source graph, including macro and PPX expansions.
 
 ## On1xfile build policy
 
+### Initialize a project
+
+`on1xc aux init [DIRECTORY]` creates a root `On1xfile` for a library named
+after the directory. The directory defaults to the current directory. The
+command does not generate source code, guess a `main`, or scan for files
+unless you add `--recursive`.
+
+With `--recursive`, it writes an `On1xfile.m` in each directory containing
+regular `.on1x` files and an `On1xfile.i` for `.on1xi` files with a matching
+same-directory implementation. Hidden entries, symlinks, `build` and `target`
+subdirectories, declared dependency stores, and nested projects are skipped.
+Existing output files cause an error before any manifests are written.
+
+Use `--template NAME` to copy a plain root manifest named `NAME.On1xfile`.
+`--templates-path PATH_LIST` replaces `$ON1XFILE_TEMPLATES_PATH`; on POSIX,
+separate directories with `:`. The first matching file wins. Empty path
+entries, symlinks, and QMR templates are rejected. Setting the environment
+variable alone does not select a template. Templates are validated and
+copied as text, not executed or interpolated. When recursing, the template's
+`directory` controls where scanning starts and its `target` declarations
+select the implementations to mark `source` rather than `library`.
+
+### Manifest directives
+
 The root `On1xfile` declares targets and compiler policy. `On1xfile.m`
 declares directory roles (`source`, `library`, and restricted `resource`),
 and `On1xfile.i` declares `interface` files. Each plain manifest starts with
