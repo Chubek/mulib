@@ -10,7 +10,7 @@ invariants hold.
 ```text
 On1x source -> parse / imports / macros / PPX / staging -> check and canonicalize
    -> checked HIR -> Firestone -> Novostone -> On1xMETA / partial evaluation
-      -> final checked HIR (+ optional MEMGraph bounds proofs)
+      -> final checked HIR (+ MEMGraph lexical slot plan / optional bounds proofs)
          -> lower to verified On1x MIR -> backends/mir-*
          -> direct C11 reference -> C toolchain / optional Cephyr
 ```
@@ -23,16 +23,19 @@ On1x source -> parse / imports / macros / PPX / staging -> check and canonicaliz
   disable rewrites but cannot disable source admission.
 - [`processor/`](processor/) owns the On1xMETA grammar, rule tables, semantic
   constraints, and typed partial evaluator.
-- [`MEMGraph/`](MEMGraph/) proves bounds checks redundant on demand from the
-  final verified HIR. Direct C11 and VM-product MIR lowering query it at
-  check sites in their emission order, without a separate tree walk. Proofs
-  are never serialized or supplied by PPX, plugins, or authored rules.
+- [`MEMGraph/`](MEMGraph/) projects lexical copy-scalar loan roots from the
+  canonical verifier. Its separate bounds optimization proves redundant
+  checks on demand from final verified HIR. Direct C11 and VM-product MIR
+  lowering query the bounds proofs in their emission order. Neither plan
+  is supplied by PPX, plugins, serialized artifacts, or authored rules.
 - [`lower_mir.cpp`](lower_mir.cpp) owns HIR-to-MIR lowering and verifies the
   result before dispatch. The VM path can also recheck a private
   [closure conversion](vm_closures.cpp) before lowering finite products.
-  Standard MIR remains numeric/scalar and bounded tuples; it rejects unsupported
-  aggregates, ownership, loans, cleanup, suspension and foreign operations
-  rather than silently falling back. Direct C11 covers the existing richer
+  Standard MIR remains numeric/scalar and bounded tuples. Checked scalar
+  lexical aliases are resolved to typed slots before MIR; unsupported
+  aggregates, owner payloads, parameter loans, cleanup, suspension and
+  foreign operations reject rather than silently falling back. Direct C11
+  covers the existing richer
   language and remains the default. The [MIR optimizer](../docs/backend-passes.md)
   and [MIR relational analysis](../docs/backend-analysis.md) are separate
   downstream stages.

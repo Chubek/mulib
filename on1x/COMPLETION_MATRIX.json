@@ -131,6 +131,20 @@
       "limits": ["Coverage only; no change to ownership admission or compiler sanitizer instrumentation"]
     },
     {
+      "id": "M1-MEMGRAPH-SCALAR-LOAN-PLAN",
+      "contract": "Project exact checked HIR root declarations, parent loans, reads, exclusive stores and scalar ref_replace exchanges for named copy-scalar lexical places.",
+      "owner": "ownership-1",
+      "prerequisites": ["Canonical checked HIR verifier", "Live unchanged Unit"],
+      "source_paths": ["on1x/hir/MEMGraph/lexical_slots.cpp", "on1x/src/canonical/verify_values.cpp", "on1x/hir/MEMGraph/tests/test_lexical_slots.cpp"],
+      "backends": ["Compiler-private HIR projection"],
+      "positive_tests": ["on1x.memgraph.lexical_slots"],
+      "negative_tests": ["on1x.memgraph.lexical_slots (unadmitted shapes and canonical verifier rejection)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-baseline --output-on-failure -R '^on1x\\.memgraph\\.lexical_slots$'", "result": "Integrated GCC/generated passed; worker Clang/fallback with ON1X_WITH_MEMGRAPH=OFF passed"}],
+      "revision": "22a751d7",
+      "limits": ["No managed, aggregate or incoming-parameter loan plan", "No serialized loan authority"]
+    },
+    {
       "id": "M2-CDECL-INTEGER-TYPE",
       "contract": "Generated C11 scalar adapters reject integer typedef drift to a distinct C primitive, including same-size and same-signedness substitutions.",
       "owner": "04",
@@ -159,6 +173,20 @@
       "limits": ["Linux/glibc only in the executed profile", "No typed spawn recovery, async frames or effectful MIR"]
     },
     {
+      "id": "M3-STACKLESS-FRAME-RUNTIME",
+      "contract": "The private taskgroup-owned C11 frame adapter executes finite typed resume steps, yields or waits on the monotonic clock without a per-frame fiber stack, and drops initialized frame state before publishing result or cancellation.",
+      "owner": "async worker",
+      "prerequisites": ["Linux/glibc x86_64 CSP supervisor", "Trusted C11 frame callbacks"],
+      "source_paths": ["on1x/runtime/on1x_async_frame.h", "on1x/runtime/on1x_concurrency.c", "on1x/tests/fixtures/async_frame.c", "on1x/tests/test_async_frame.py", "on1x/docs/async-frames.md"],
+      "backends": ["private C11 runtime only"],
+      "positive_tests": ["on1x.concurrency (stackless frame resume, monotonic timer, join and cleanup)"],
+      "negative_tests": ["on1x.concurrency (bad frame actions, bad joins, rejected source async/await)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "python3 -B on1x/tests/test_async_frame.py \"$PWD/build/on1x-baseline/on1xc\" \"$PWD/on1x\" \"$PWD/build/on1x-async-frame-final\" clang --cflag=-fsanitize=address,undefined", "result": "Integrated pass; 16 runtime cases and four source rejection cases"}, {"command": "ctest --test-dir build/on1x-baseline --output-on-failure --parallel 3 -R '^on1x\\.(concurrency(_hir)?|stream_poll|cancellation_deadlines|taskgroup_within|install)$'", "result": "6/6 integrated tests passed"}],
+      "revision": "bff4cf89",
+      "limits": ["No source async/await or checked HIR frame lowering", "No task/channel wait protocol, public SDK ABI or MIR product admission"]
+    },
+    {
       "id": "M4-HIR-SHORT-CIRCUIT",
       "contract": "A decisive Boolean LHS prevents evaluation of the RHS during partial evaluation, but strict call operands must still be evaluated exactly once.",
       "owner": "06",
@@ -185,6 +213,20 @@
       "evidence": [{"command": "ctest --test-dir build/on1x-baseline --output-on-failure -R '^on1x\\.mir_hir$'", "result": "Final integrated test passed; worker focused 6 passed; budget case fails on baseline"}],
       "revision": "ad800327",
       "limits": ["No ownership-bearing MIR or schema change"]
+    },
+    {
+      "id": "M4-MIR-SCALAR-LEXICAL-SLOTS",
+      "contract": "Resolve verified lexical bool/numeric loans to a single typed MIR slot per root, with ordered reads, stores and ref_replace on completing edges.",
+      "owner": "ownership-2",
+      "prerequisites": ["M1-MEMGRAPH-SCALAR-LOAN-PLAN", "Canonical MIR verification"],
+      "source_paths": ["on1x/hir/lower_mir.cpp", "on1x/tests/test_mir_borrow.cpp", "on1x/tests/test_ownership_backends.py", "on1x/docs/ownership-backends.md"],
+      "backends": ["direct C11 parity", "MIR-C11", "MIR evaluator", "VMWeave", "Archon AMD64", "Cephyr AMD64"],
+      "positive_tests": ["on1x.ownership_backends", "on1x.mir_borrow_hir"],
+      "negative_tests": ["on1x.mir_borrow_hir (malformed HIR borrow and exchange)", "on1x.ownership_backends (conflict and unsupported ABI/layout)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-optional-681ceacf --output-on-failure -R '^on1x\\.(ownership_backends|mir_borrow_hir)$'", "result": "2/2, including real Archon and Cephyr artifacts and saved VM/MIR"}, {"command": "ctest --test-dir build/on1x-loans-fallback --output-on-failure -R '^on1x\\.(ownership_backends|mir_borrow_hir|memgraph.lexical_slots|runtime.embedding_ownership)$'", "result": "4/4 in Clang forced fallback with authored bounds disabled; integrated Clang ASan/UBSan differential also passed"}],
+      "revision": "b8c3ab17",
+      "limits": ["No borrowed parameter calls, managed/aggregate loans or dynamic defer", "No MIR wire schema change or runtime loan authority"]
     },
     {
       "id": "M5-VM-CALLEE-BUDGET",
@@ -241,6 +283,34 @@
       "evidence": [{"command": "ctest --test-dir build/on1x-baseline --output-on-failure -R '^on1x\\.(project_build|stdlib_project)$'", "result": "Both integrated tests passed; worker 27 project and 8 stdlib cases"}],
       "revision": "7d4b26a8",
       "limits": ["No file metadata/cross-toolchain reproducibility claim", "No new report schema"]
+    },
+    {
+      "id": "M6-SDK-LOAN-INSPECTION",
+      "contract": "Compiler SDK AST/HIR inspection preserves borrow modes on the referent type; HIR wire round-trips remain candidate-only and validate the mode and operand shape.",
+      "owner": "ownership-3",
+      "prerequisites": ["On1x compiler SDK 2"],
+      "source_paths": ["on1x/sdk/src/frontend/Frontend.cpp", "on1x/sdk/src/ir/HIR.cpp", "on1x/sdk/tests/semantics_ir.cpp"],
+      "backends": ["Compiler SDK AST/HIR inspection"],
+      "positive_tests": ["on1x.sdk.frontend", "on1x.sdk.semantics_ir"],
+      "negative_tests": ["on1x.sdk.semantics_ir (malformed borrow mode and operand)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-baseline --output-on-failure -R '^on1x\\.sdk\\.(frontend|semantics_ir)$'", "result": "Integrated GCC/generated passed; worker Clang/fallback passed"}],
+      "revision": "a299b859",
+      "limits": ["Older readers may reject tags and flags they do not understand", "No runtime pointer or loan authority in the inspection wire"]
+    },
+    {
+      "id": "M6-RT-INTERNAL-OWNERS",
+      "contract": "An ABI-1 scalar export executes recursive owners, lexical borrows, owner-bearing Result propagation and LIFO deferred sexpr cleanup internally without exporting those values.",
+      "owner": "ownership-3 + lead",
+      "prerequisites": ["On1xRT ABI 1", "Statically registered generated C11 module"],
+      "source_paths": ["on1x/runtime-sdk/tests/ownership.on1x", "on1x/runtime-sdk/tests/ownership.c", "on1x/runtime-sdk/cmake/Embedding.cmake"],
+      "backends": ["direct C11 through On1xRT scalar invocation"],
+      "positive_tests": ["on1x.runtime.embedding_ownership (success/error and zero live allocations)"],
+      "negative_tests": ["on1x.runtime.embedding_ownership (unknown signature tags, modifiers and argument tag)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-baseline --output-on-failure -R '^on1x\\.runtime\\.embedding_ownership$'", "result": "Passed; fixture, runtime and On1xRT also passed strict Clang ASan/UBSan with leak detection"}],
+      "revision": "f44a00fc",
+      "limits": ["Native host authority", "No host/guest owner or loan transport"]
     },
     {
       "id": "M7-SLICE-ACCEPTANCE",

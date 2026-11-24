@@ -122,24 +122,33 @@ accessor. The static checker supplies temporal validity; the accessor also
 fails closed for null/taken handles and size drift, but is not a raw-C temporal
 safety mechanism.
 
-This profile is deliberately synchronous and direct-C11:
+The full profile is deliberately synchronous. Direct C11 supports the full
+lexical and borrowed-parameter forms described above. The
+[MEMGraph lexical slot profile](ownership-backends.md) also supports
+`borrow`/`borrow mut`, `:=`, and `ref_replace` on named local scalar places
+through MIR. It does not admit borrowed function parameters or borrowed
+aggregate or owner payloads in MIR.
 
 - any unit that combines lexical or parameter borrows with cooperative
   task/suspension constructs rejects;
-- scalar MIR, MIR serialization/evaluation/passes, PPX Unit v1/`--emit-ast`,
-  `.on1xi`, Chisel, Nerotypical, and structural adapters reject rather than
-  erase or approximate loan metadata; advisory Wetstone translation declines
-  functions it cannot model and grants no admission;
-- public/external SDK providers receive neither checked HIR nor loan
-  descriptors and remain closed; the private built-in C11 bridge is the same
-  canonical emitter described above, not a separate admission;
+- the MIR subset resolves admitted aliases before serialization/evaluation;
+  no loan nodes enter MIR. PPX Unit v1/`--emit-ast`, `.on1xi`, Chisel,
+  Nerotypical, and structural adapters still reject rather than erase or
+  approximate unsupported loan metadata; advisory Wetstone translation
+  declines functions it cannot model and grants no admission;
+- compiler SDK AST and checked-HIR inspection preserve the mode and referent
+  type. Serialized inspection trees carry no loan authority or runtime
+  address, and external backend providers cannot obtain the private verified
+  ownership state. The built-in C11 bridge uses the canonical emitter;
+- On1xRT ABI 1 can call scalar exports of a module that uses loans and owners
+  internally, but cannot transport these values to or from the host;
 - raw FFI, callbacks, closure capture, staged retention, field/index loan
   origins, separate compilation, and cross-thread/coroutine transfer remain
   unsupported.
 
-Terminal runtime failures retain the existing non-unwinding behavior. The
-borrow profile proves only the admitted On1x/HIR-to-C11 slice; it is not a
-general foreign-effect, pointer-provenance, or concurrent ownership proof.
+Terminal runtime failures retain the existing non-unwinding behavior. These
+checked profiles are not a general foreign-effect, pointer-provenance, or
+concurrent ownership proof.
 
 ## Tests
 

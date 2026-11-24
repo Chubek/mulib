@@ -151,3 +151,33 @@ The unqualified features listed in the [completion matrix](COMPLETION_MATRIX.md)
 remain open. In particular, this does not implement general safe FFI, effectful
 ownership MIR, stackless async, broad target equivalence or full SML Basis
 conformance, and does not complete the release milestones.
+
+## Ownership and stackless frame continuation
+
+This continuation starts at `825f6585` with the same pinned LibStone,
+GCC 16.2.1 and Clang 22.1.8. It adds the [checked MEMGraph and MIR
+scalar lexical-slot profile](docs/ownership-backends.md), SDK mode
+inspection and an unchanged-ABI On1xRT ownership integration fixture.
+It also adds a [private C11 stackless frame runtime](docs/async-frames.md)
+on the existing taskgroup scheduler. It does not admit source `async` or
+`await`. No LibStone sources or submodule revisions changed.
+
+- Optional generated build: **2/2** `ownership_backends` and
+  `mir_borrow_hir`, including real AMD64 Archon and Cephyr products
+  (`build/on1x-ownership-optional-ctest.log`).
+- Clang forced fallback and `ON1X_WITH_MEMGRAPH=OFF`: **4/4** ownership
+  projection, backend, HIR and embedding tests
+  (`build/on1x-loans-fallback-final-ctest.log`).
+- Direct differential passed with Clang ASan/UBSan on generated C11 and
+  runtime; the emitted VM and native code were not sanitizer-instrumented.
+  The On1xRT ownership fixture and private async-frame C runtime separately
+  passed strict Clang ASan/UBSan with leak detection.
+- **6/6** integrated concurrency and installation tests
+  (`build/on1x-async-csp-integration.log`). The runtime fixture checks that
+  each frame suspends without allocating a per-frame fiber stack.
+
+The scoped-loan profile uses existing MIR wire versions and ordinary
+slot initialization checks. SDK borrow flags are additive inspection
+metadata; older HIR readers can reject unfamiliar flags. General managed
+MIR operations, public runtime ownership transport, and checked HIR
+suspension/frame lowering remain open.
