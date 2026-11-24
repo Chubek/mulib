@@ -13,6 +13,8 @@ struct LoaderOptions {
   bool prelude=true;
   bool kernel_c11=false; // Explicit unsafe-only C11 compilation profile.
    bool kernel_stage=false; // Emit unresolved reviewed-profile callers, not an admission decision.
+   bool ffi_stage=false; // Emit unresolved descriptor-v2 callers, including unsafe imports.
+   std::string foreign_target="x86_64-linux-gnu"; // Exact descriptor target selected by the native driver.
    bool standalone_guest=false; // Untrusted source: no imports or host-side extensions.
  std::vector<std::filesystem::path> preludes;
  std::size_t max_modules=1024,max_depth=64,max_bytes=16*1024*1024;

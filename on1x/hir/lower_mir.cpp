@@ -25,6 +25,8 @@ namespace {
  unsupported(at,"lexical borrow requires a verified named scalar bool or numeric root");
 }
 void function_profile(const on1x::Function& f){
+ if(f.foreign||!f.kernel_symbol.empty())
+  unsupported(f.where,"checked foreign calls require typed foreign MIR descriptors (direct C11 only)");
  if(takes_borrows(f))
   unsupported(f.where,"borrowed parameters require addressable-place and loan MIR descriptors (C11 HIR backend only)");
 }
@@ -37,6 +39,7 @@ memgraph::LexicalSlots verified_places(const Unit& unit){
  meta::require_core(unit);
  auto plan=memgraph::plan_lexical_slots(unit);
  verify_nominals(unit);
+ for(const auto& f:unit.functions)if(f.foreign||!f.kernel_symbol.empty())function_profile(f);
  return plan;
 }
 

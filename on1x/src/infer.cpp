@@ -1,5 +1,6 @@
 #include <on1x/infer.hpp>
 #include <on1x/clone.hpp>
+#include <on1x/ffi_hir.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/primitives.hpp>
@@ -1305,20 +1306,18 @@ class Inference {
 
    std::vector<Term> args;
    auto target=intrinsic?Term{0}:head(callable,e.where);
-   const Function* borrowed_function=nullptr;
+   const Function* direct_function=nullptr;
    if(!callable_override&&callee.kind==Expr::Kind::Variable&&
       !local(callee.text)){
     auto found=globals.find(callee.text);
-    if(found!=globals.end()&&takes_borrows(*found->second.definition))
-     borrowed_function=found->second.definition;
+    if(found!=globals.end())direct_function=found->second.definition;
    }
-   const auto kernel=callee.kind==Expr::Kind::Variable&&
-                     callee.text.starts_with(kernel_reviewed_prefix)?
-     std::string_view(callee.text).substr(kernel_reviewed_prefix.size()):
-     std::string_view{};
+   auto policy=[&](std::size_t i){
+    return direct_function?ffi::argument_policy(*direct_function,i):ffi::ArgumentPolicy{};
+   };
     for(std::size_t i=0;i<e.children.size();++i){
-     const auto borrow=borrowed_function&&i<borrowed_function->params.size()?
-      borrowed_function->params[i].borrow:BorrowMode::Value;
+     const auto borrow=direct_function&&i<direct_function->params.size()?
+      direct_function->params[i].borrow:BorrowMode::Value;
      if(i==0&&first_argument){
       args.push_back(*first_argument);
       if(!intrinsic&&nodes[target].kind==Type::Function&&
@@ -1333,7 +1332,7 @@ class Inference {
       if(nodes[target].kind==Type::Function&&
          i<nodes[target].parameters.size())
        unify(referent,nodes[target].parameters[i],e.children[i]->where);
-     }else if(kernel_span_argument(kernel,i))
+     }else if(policy(i).mode==ffi::ArgumentPolicy::Mode::BoundedSlice)
      args.push_back(expression(*e.children[i]));
     else if(!intrinsic&&nodes[target].kind==Type::Function&&
             i<nodes[target].parameters.size())
@@ -1350,11 +1349,14 @@ class Inference {
     fail(e.where,"wrong number of arguments to function value");
    for(std::size_t i=0;i<args.size();++i){
     const auto& where=e.children[i]->where;
-    if(kernel_span_argument(kernel,i)){
+    const auto argument=policy(i);
+    if(argument.mode==ffi::ArgumentPolicy::Mode::BoundedSlice){
      auto actual=head(args[i],where);
-     if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>256)
+     if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>argument.max_extent)
       fail(where,"KernelBind requires a bounded slice<f64,N>");
-     auto shape=nodes[root].parameters[i];
+     auto shape=head(nodes[root].parameters[i],where);
+     if(nodes[shape].kind!=Type::Slice||nodes[shape].parameters.size()!=1)
+      fail(where,"invalid foreign slice descriptor");
      unify(nodes[actual].parameters[0],nodes[shape].parameters[0],where);
     }else unify(args[i],nodes[root].parameters[i],where);
    }

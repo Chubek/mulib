@@ -5,6 +5,7 @@
 
 namespace on1x {
 // Transitional compatibility for clients of this internal header.
+inline constexpr std::string_view legacy_scalar_module="mulib.clamp";
 inline bool clamp_interval_symbol(std::string_view symbol) {
  const auto* b=ffi::find_scalar(symbol);
  return b && b->arity==3 && b->guard_lhs==1 && b->guard_rhs==2;
@@ -27,6 +28,29 @@ inline constexpr char ipc_kernel_revoke[]="on1x_kernel_ipc_v1_revoke";
 inline constexpr char ipc_kernel_send[]="on1x_kernel_ipc_v1_send";
 inline constexpr char ipc_kernel_poll[]="on1x_kernel_ipc_v1_poll";
 inline constexpr char ipc_kernel_finish[]="on1x_kernel_ipc_v1_finish_send";
+// Compatibility-only rich profiles; remove after the corresponding FFI
+// descriptors and native admission gates are qualified. Match pairs exactly
+// instead of manufacturing a C symbol from a surface member spelling.
+struct LegacyKernelMember { std::string_view module, member, symbol; };
+inline constexpr LegacyKernelMember legacy_kernel_members[]={
+ {"mulib.histprice","ema","mulib_histprice_ema"},
+ {"mulib.histprice","holt","mulib_histprice_holt"},
+ {"mulib.priceopt","optimize","mulib_priceopt_optimize"},
+ {"mulib.priceopt","candidates","mulib_priceopt_candidates"},
+ {"mulib.ipc_framed","open_pair",ipc_kernel_open},
+ {"mulib.ipc_framed","roundtrip",ipc_kernel_roundtrip},
+ {"mulib.ipc_framed","open_session",ipc_kernel_open_session},
+ {"mulib.ipc_framed","register_callback",ipc_kernel_register},
+ {"mulib.ipc_framed","revoke",ipc_kernel_revoke},
+ {"mulib.ipc_framed","send",ipc_kernel_send},
+ {"mulib.ipc_framed","poll",ipc_kernel_poll},
+ {"mulib.ipc_framed","finish_send",ipc_kernel_finish},
+};
+inline std::string_view legacy_kernel_member(std::string_view module,std::string_view member){
+ for(const auto& entry:legacy_kernel_members)
+  if(entry.module==module&&entry.member==member)return entry.symbol;
+ return {};
+}
 // These identities cannot be spelled by the source parser. The explicit
 // import alias can name Result and the session's opaque nominal identity.
 inline constexpr char ipc_kernel_payload[]="@kernel_ipc_v1_Pair";
@@ -88,7 +112,6 @@ inline bool kernel_span_argument(std::string_view symbol,std::size_t i) {
 inline bool kernel_span_type(const Type& type) {
  return type.kind()==Type::Slice&&type.elements()==std::vector<Type>{Type::F64}&&type.extent()<=256;
 }
-inline constexpr std::string_view kernel_reviewed_prefix="@kernel_scalar_";
 inline std::vector<Type> pricing_kernel_parameters(std::string_view symbol,const std::string& prefix) {
  std::vector<Type> types;
  if(symbol=="mulib_priceopt_candidates")types.assign(2,Type::data(Type::Slice,{Type::F64}));
