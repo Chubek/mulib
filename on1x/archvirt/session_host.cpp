@@ -551,6 +551,7 @@ void remove_socket(int dir, const string& id) {
   Session session(Fd{});
   bool ready = false;
   int result = 0;
+  string startup_error;
   try {
     close_except({dir.get(), listener.get(), setup.get(), guest_fd});
     Fd null(::open("/dev/null", O_RDWR | O_CLOEXEC | O_NOFOLLOW));
@@ -576,7 +577,7 @@ void remove_socket(int dir, const string& id) {
       session.run(runner);
     }
   } catch (const std::exception& e) {
-    if (!ready) send_packet(setup.get(), "E" + string(e.what()));
+    if (!ready) startup_error = "E" + string(e.what());
     result = 125;
   }
   runner.stop();
@@ -590,6 +591,7 @@ void remove_socket(int dir, const string& id) {
       dir.reset();
     } catch (const std::exception&) { result = 125; }
   }
+  if (!startup_error.empty()) send_packet(setup.get(), startup_error);
   if (ready) session.finish(result == 0);
   ::_exit(result);
 }
