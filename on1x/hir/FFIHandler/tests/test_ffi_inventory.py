@@ -77,6 +77,11 @@ class InventoryTest(unittest.TestCase):
 
     def test_transitive_hash_and_input_drift(self):
         self.inventory.verify_unchanged()
+        archive, = self.inventory.index_metadata['relative_include_roots']
+        archived = ROOT / '.deprecated/mulib-ociimage.h'
+        self.assertEqual(archive['path'], '.deprecated')
+        self.assertEqual(archive['files'][archived.name], hashlib.sha256(archived.read_bytes()).hexdigest())
+        self.assertEqual(self.inventory.plan('ociimage').include_dirs, (ROOT / 'include',))
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             nested = root / 'detail'
