@@ -28,15 +28,18 @@ This works without running MIR passes or an external optimizer.
   known value. The interpreter reads the original checked definitions; it does
   not evaluate closures, foreign calls, mutations, I/O, borrows, loops, or
   arbitrary statements. Nested eligible calls can be evaluated on static
-  arguments.
+  arguments. A known `false && rhs` or `true || rhs` inside a trial produces
+  the left Boolean without visiting `rhs`: a side effect or trap there cannot
+  execute. A reachable RHS still has to satisfy the ordinary trial rules.
 * A mixed call needs a static argument and exactly one dynamic argument.
   Specialization constructs a proposed residual tree with a hole, then checks
   that this argument will execute exactly once on every path. A parameter used
-  twice, omitted, or hidden behind a short-circuit condition prevents
-  specialization. Other subexpressions must have folded successfully, so none
-  can trap before the original argument is evaluated. The accepted residual
-  moves the original checked operand; its effects and source location stay
-  intact. Remaining operators keep their callee locations for trap reporting.
+  twice, omitted (including use only in a skipped RHS), or hidden behind a
+  dynamic short-circuit condition prevents specialization. Other reachable
+  subexpressions must have folded successfully, so none can trap before the
+  original argument is evaluated. The accepted residual moves the original
+  checked operand; its effects and source location stay intact. Remaining
+  operators keep their callee locations for trap reporting.
 * No functions are generated. Work is capped at 262,144 units per translation
   unit. One trial admits at most 16 arguments, 16 statements, eight active
   calls, 256 expression visits and depth 32. Cycles, operations outside the

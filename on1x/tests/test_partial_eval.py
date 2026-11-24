@@ -94,6 +94,36 @@ def execute(label, source, expected, trap=None):
 execute('success', source, '5\n45\n40\ntrue\n')
 execute('strict', strict, '1\n4\n2\n7\n3\nfalse\n4\ntrue\n5\n6\n3\n99\n7\n')
 
+# Specialization may skip an unreachable RHS inside the callee, but must not
+# skip a strict argument at the call site or a RHS selected by the left operand.
+short_circuit = t.source('short_circuit', '''
+fn mark(n:i64)->bool{println(n);return false;}
+fn both(k:bool)->bool{return k&&(1/0==0);}
+fn either(k:bool)->bool{return k||mark(99);}
+fn combine(k:bool,x:bool)->bool{return (k||mark(98))==x;}
+fn known_and()->bool{return both(false);}
+fn known_or()->bool{return either(true);}
+fn selected()->bool{return either(false);}
+fn mixed()->bool{return combine(true,mark(7));}
+fn main(){println(known_and());println(known_or());println(selected());println(mixed());}
+''')
+for name, value in [('known_and', '0'), ('known_or', '1')]:
+    before = operations(short_circuit, name, off)
+    after = operations(short_circuit, name, on)
+    assert any(i[2] == 'call' for i in before), before
+    assert len(after) == 1 and after[0][2] == 'const' and after[0][5] == value, after
+assert sum(i[2] == 'call' for i in operations(short_circuit, 'selected', on)) == 1
+assert sum(i[2] == 'call' for i in operations(short_circuit, 'mixed', off)) == 2
+assert sum(i[2] == 'call' for i in operations(short_circuit, 'mixed', on)) == 1
+execute('short_circuit', short_circuit, 'false\ntrue\n99\nfalse\n7\nfalse\n')
+
+selected_trap = t.source('selected_short_circuit_trap', '''
+fn both(k:bool)->bool{return k&&(1/0==0);}
+fn main(){println(42);println(both(true));}
+''')
+assert any(i[2] == 'call' for i in operations(selected_trap, 'main', on))
+execute('selected_short_circuit_trap', selected_trap, '42\n', 'invalid division')
+
 # Independent integer oracle: truncating division, signed remainder and
 # near-limit arithmetic. Floating arithmetic and unsigned types stay residual.
 lo, hi = -(1 << 63), (1 << 63)-1

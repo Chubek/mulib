@@ -139,14 +139,16 @@ struct Evaluator {
    if(!a.tree)return {};
    Term b;
    if(binary){
+    const bool logical=e.text=="&&"||e.text=="||";
+    const auto lhs=logical?literal(*a.tree):Value{};
+    // A decisive left operand skips the RHS and any hole it may contain.
+    // specialize() still requires the dynamic argument to survive exactly
+    // once, since calls evaluate their arguments strictly.
+    if(lhs&&(e.text=="&&"?!*lhs:bool(*lhs)))return {constant(e,*lhs),0,1};
     b=interpret(*e.children[1],env,depth+1);
     if(!b.tree||a.holes+b.holes>1)return {};
-    // Function arguments are strict even when parameters are used lazily.
-    // Never move an argument underneath a potentially unselected operand.
-    if(b.holes&&(e.text=="&&"||e.text=="||")){
-     auto lhs=literal(*a.tree);
-     if(!lhs||(e.text=="&&"?!*lhs:bool(*lhs)))return {};
-    }
+    // Never move a strict argument underneath a potentially skipped RHS.
+    if(b.holes&&logical&&!lhs)return {};
    }
    if(!a.holes&&!b.holes){
     const auto n=compute(e,*literal(*a.tree),binary?*literal(*b.tree):0);
