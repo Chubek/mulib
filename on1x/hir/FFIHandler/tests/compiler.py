@@ -27,6 +27,7 @@ for old, new in (
     ("(lt x lo)", "(arbitrary x lo)"),
     ("(lt x lo)", "(lt x lo hi)"),
     ("(hint private-code", "(hint private-code (speculative false)"),
+    ("(hint private-code", "(hint private-code (target -bad)"),
 ):
     try:
         generated_parser.parse(replace(source, old, new))
@@ -73,7 +74,7 @@ with tempfile.TemporaryDirectory(prefix="recipe-test-", dir=work) as temp:
         ("(params x lo hi)", "(params x lo lo)", "invalid parameters"),
         ("(params x lo hi)", "(params x lo hi) (params x lo hi)", "duplicate field"),
         ("(hint kernel-hot", "(hint external-code", "invalid standard FFI recipe"),
-        ("(hint kernel-hot", "(hint kernel-hot (backend -bad)", "invalid backend selector"),
+        ("(hint kernel-hot", "(hint kernel-hot (backend -bad)", "invalid standard FFI recipe"),
         ("(hint private-code", "(hint private-code (speculative false)", "invalid standard FFI recipe"),
         ("(hint private-code", "(hint private-code (speculative) (speculative)", "duplicate field"),
         ("(guard true)", '(guard "injected")', "invalid standard FFI recipe"),

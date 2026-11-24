@@ -1,7 +1,8 @@
 .language "FFIHandler"
 .skip /[ \t\r\n]+/
 .skip /[;#][^\r\n]*/
-.token ATOM: String = /[A-Za-z0-9_*.-]+/
+.token WORD: String = /[A-Za-z0-9_][A-Za-z0-9_.-]*/
+.token NEGATIVE: String = /-[0-9]+/
 
 .rule Start
 'syntax: Document EOF
@@ -47,10 +48,13 @@
 'syntax: "(" "body" Expression ")"
 .end
 .rule Backend
-'syntax: "(" "backend" Atom ")"
+'syntax: "(" "backend" Selector ")"
 .end
 .rule Target
-'syntax: "(" "target" Atom ")"
+'syntax: "(" "target" Selector ")"
+.end
+.rule Selector
+'syntax: Word | "*"
 .end
 .rule Directive
 'syntax: "(" "hint" HintAction DirectiveOptions ")" | "(" "rewrite" RewriteAction DirectiveOptions ")"
@@ -77,5 +81,8 @@
 'syntax: "lt" | "le" | "gt" | "ge" | "eq" | "and" | "or" | "add" | "sub"
 .end
 .rule Atom
-'syntax: ATOM | "ffispec" | "kernel" | "header" | "sha256" | "export" | "params" | "guard" | "body" | "backend" | "target" | "hint" | "rewrite" | HintAction | RewriteAction | "speculative" | Binary | "if"
+'syntax: Word | NEGATIVE
+.end
+.rule Word
+'syntax: WORD | "ffispec" | "kernel" | "header" | "sha256" | "export" | "params" | "guard" | "body" | "backend" | "target" | "hint" | "rewrite" | HintAction | RewriteAction | "speculative" | Binary | "if"
 .end
