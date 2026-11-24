@@ -7,6 +7,14 @@
 #define ON1X_AV_ESCAPE 0xffu
 #define ON1X_AV_STDERR 0x01u
 #define ON1X_AV_EXIT 0x02u
+#define ON1X_AV_READ_I64 0x03u
+
+/* An IN transaction after READ_I64 receives one validated-size decimal line,
+ * or one of these non-ASCII-decimal control bytes. */
+#define ON1X_AV_INPUT_EOF 0x00u
+#define ON1X_AV_INPUT_INVALID 0x01u
+#define ON1X_AV_INPUT_UNAVAILABLE 0x02u
+#define ON1X_AV_INPUT_MAX 21u /* optional sign + 19 digits + LF */
 
 #define ON1X_AV_BOOT_ADDRESS 0x10000u
 #define ON1X_AV_KERNEL_BASE 0x200000u

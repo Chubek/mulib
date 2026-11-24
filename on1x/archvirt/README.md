@@ -47,6 +47,40 @@ ELF is safe, arbitrary Linux-guest support, or an independent review of KVM,
 ArchVirt, the host kernel, the compiler, or their dependencies. Only launch
 trusted build artifacts using this core.
 
+## Interactive scalar parameters
+
+An On1x source file must explicitly declare the exact guest-only ABI:
+
+```text
+extern fn on1x_archvirt_read_i64() -> i64;
+fn main() {
+  let first = on1x_archvirt_read_i64();
+  println(first + on1x_archvirt_read_i64());
+}
+```
+
+`on1x-archvirt-run --interactive GUEST_ELF` takes an open pipe on stdin. Each
+call accepts one ASCII `[+-]?[0-9]{1,19}` followed by LF, with signed-64 range
+checked in the guest. Empty lines, partial lines at EOF, non-decimal input
+and overflow trap with status 70. Clean EOF at the next read halts with status
+0. Successive reads resume the same VM; the caller decides how to retain and
+use earlier values. The guest build checks the declaration against its exact
+ABI; there is no corresponding symbol in the ordinary host runtime. Batch and
+linked launchers still cannot receive host input; attempting the call there
+exits with 125.
+
+Guest stdout/stderr are forwarded live without interpreting their contents.
+Supply pipes or terminals for those descriptors (`/dev/null` also works), not
+blocking regular files. Keep the stdin pipe open across sends, and drain
+stdout/stderr to avoid backpressure. Control is limited to scalar parameter
+records, EOF and host-side stop; the guest cannot ask to read host files, run
+commands, or access the host environment. Closing the input pipe ends the
+guest on its next read. SIGINT/SIGTERM stop it even during a blocked read or
+output write, returning 130/143. A run is bounded by 5 seconds of active
+execution between read waits, 60 seconds waiting for a complete line, 300
+seconds of wall time, and 1 MiB of output. The active/idle/wall budgets are
+monotonic wall-clock deadlines, not CPU or instruction measurements.
+
 To exercise the core against a built compiler and the pinned ArchVirt install:
 
 ```sh
@@ -54,3 +88,5 @@ python3 on1x/archvirt/test_core.py --compiler "$ON1XC" --runner "$RUNNER" \
   --clang /usr/bin/clang --runtime-include on1x/runtime \
   --archvirt-include "$ARCHVIRT_PREFIX/include"
 ```
+
+Pass `--exercise-idle` to wait for the real 60-second KVM serial-read timeout.

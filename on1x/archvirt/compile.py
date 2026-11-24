@@ -73,7 +73,8 @@ def compile_guest(clang, runtime_include, archvirt_include, generated, output, *
         env["TMPDIR"] = str(work)
         objects = (["--whole-archive", runtime_archive.resolve(), "--no-whole-archive"]
                    if runtime_archive else compile_runtime(root, work, env, cc, cflags))
-        invoke([*cc, *cflags, generated.resolve(), "-o", program], env)
+        invoke([*cc, *cflags, "-include", "on1x_archvirt_guest.h",
+                generated.resolve(), "-o", program], env)
         invoke([lld, "-m", "elf_x86_64", "-static", "--build-id=none", "--no-undefined",
                 "--fatal-warnings", "-z", "max-page-size=4096", "-T", root / "guest.ld",
                 *objects, program, "-o", result], env)

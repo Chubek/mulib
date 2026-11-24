@@ -4,10 +4,14 @@ import argparse
 import fcntl
 import os
 from pathlib import Path
+import selectors
+import signal
 import struct
 import subprocess
 import sys
 import tempfile
+import termios
+import time
 
 
 def main():
@@ -19,6 +23,7 @@ def main():
     cli.add_argument("--runtime-include", required=True, type=Path)
     cli.add_argument("--archvirt-include", required=True, type=Path)
     cli.add_argument("--work-dir", type=Path, default=Path.cwd())
+    cli.add_argument("--exercise-idle", action="store_true", help="also wait for the real 60-second idle watchdog")
     args = cli.parse_args()
     stage = Path(__file__).with_name("compile.py")
 
@@ -123,7 +128,110 @@ int main(void) {
         status, out, err = launch(raw)
         assert status == 125 and not out and b"exceeded the 5-second KVM deadline" in err, (status, out, err)
 
-    print("ArchVirt guest ELF, native KVM, traps, serial, profile/link rejection and watchdog passed")
+        stateful = build("stateful", """
+extern fn on1x_archvirt_read_i64() -> i64;
+fn main() {
+  println("ready");
+  let first = on1x_archvirt_read_i64();
+  println(first);
+  let second = on1x_archvirt_read_i64();
+  println(first + second);
+  println(on1x_archvirt_read_i64());
+}
+""")
+        assert build("wrong_parameter_abi", """
+extern fn on1x_archvirt_read_i64(dummy: i64) -> i64;
+fn main() { println(on1x_archvirt_read_i64(4)); }
+""", expected_error=b"conflicting types for 'on1x_archvirt_read_i64'") is None
+
+        assert launch(stateful, input=b"99\n") == (
+            125, b"ready\n", b"On1x ArchVirt: parameter input requires interactive launch\n")
+        interactive = (args.runner.resolve(), "--interactive", stateful)
+        assert call(*interactive, input=b"") == (0, b"ready\n", b"")
+        assert call(*interactive, input=b"-9223372036854775808\n+9223372036854775807\n41\n") == (
+            0, b"ready\n-9223372036854775808\n-1\n41\n", b"")
+        for invalid in (b"\n", b"+\n", b"hello\n", b"99", b"2\r\n", b"3\x00\n",
+                        b"9223372036854775808\n", b"-9223372036854775809\n", b"0" * 22 + b"\n"):
+            assert call(*interactive, input=invalid) == (
+                70, b"ready\n", b"On1x ArchVirt: invalid i64 parameter\n"), invalid
+
+        def live_line(proc, expected):
+            line = bytearray()
+            with selectors.DefaultSelector() as sel:
+                sel.register(proc.stdout, selectors.EVENT_READ)
+                while not line.endswith(b"\n"):
+                    assert sel.select(4), (expected, line, proc.poll())
+                    byte = os.read(proc.stdout.fileno(), 1)
+                    assert byte and len(line) < 256, (expected, line, proc.poll())
+                    line += byte
+            assert line == expected, (line, expected)
+
+        with subprocess.Popen(interactive, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE) as proc:
+            try:
+                live_line(proc, b"ready\n")
+                proc.stdin.write(b"40\n")
+                proc.stdin.flush()
+                live_line(proc, b"40\n")
+                proc.stdin.write(b"2\n")
+                proc.stdin.flush()
+                live_line(proc, b"42\n")
+                proc.stdin.close()
+                assert proc.wait(timeout=4) == 0 and proc.stderr.read() == b""
+            finally:
+                if proc.poll() is None:
+                    proc.kill()
+
+        for stop in (signal.SIGTERM, signal.SIGINT):
+            with subprocess.Popen(interactive, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as proc:
+                try:
+                    live_line(proc, b"ready\n")
+                    proc.stdin.write(b"1")
+                    proc.stdin.flush()
+                    proc.send_signal(stop)
+                    assert proc.wait(timeout=4) == 128 + stop
+                finally:
+                    if proc.poll() is None:
+                        proc.kill()
+
+        flood = build("backpressure", """
+#include <on1x_runtime.h>
+int main(void) {
+    for (;;) on1x_print_string("serial output must not block cancellation");
+}
+""", raw=True)
+        with subprocess.Popen((args.runner.resolve(), "--interactive", flood),
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            try:
+                capacity = fcntl.fcntl(proc.stdout, fcntl.F_GETPIPE_SZ)
+                deadline = time.monotonic() + 4
+                while True:
+                    queued, = struct.unpack("i", fcntl.ioctl(proc.stdout, termios.FIONREAD, struct.pack("i", 0)))
+                    if queued == capacity:
+                        break
+                    assert time.monotonic() < deadline and proc.poll() is None, (queued, capacity, proc.poll())
+                    time.sleep(0.02)
+                proc.terminate()
+                assert proc.wait(timeout=4) == 143
+            finally:
+                if proc.poll() is None:
+                    proc.kill()
+
+        status, out, err = call(args.runner.resolve(), "--interactive", raw, input=b"")
+        assert status == 125 and not out and b"5-second active deadline" in err, (status, out, err)
+        if args.exercise_idle:
+            with subprocess.Popen(interactive, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE) as proc:
+                try:
+                    live_line(proc, b"ready\n")
+                    assert proc.wait(timeout=65) == 125
+                    assert b"60-second parameter idle deadline" in proc.stderr.read()
+                finally:
+                    if proc.poll() is None:
+                        proc.kill()
+
+    print("ArchVirt KVM batch and interactive guests, live serial/state, traps, rejection and watchdog passed")
 
 
 if __name__ == "__main__":

@@ -61,7 +61,7 @@ add_custom_command(OUTPUT "${_archvirt_runtime}"
     --runtime-include "${CMAKE_CURRENT_SOURCE_DIR}/runtime"
     --archvirt-include "${_archvirt_include}" -o "${_archvirt_runtime}"
   DEPENDS archvirt/compile.py archvirt/guest.c archvirt/guest.ld archvirt/start.S
-    archvirt/protocol.h archvirt/include/string.h runtime/on1x_runtime.h
+    archvirt/protocol.h archvirt/include/string.h archvirt/include/on1x_archvirt_guest.h runtime/on1x_runtime.h
     "${_archvirt_include}/archvirt_boot.h" "${ON1X_ARCHVIRT_CLANG}" "${CMAKE_AR}"
   VERBATIM)
 add_custom_target(on1x_archvirt_runtime DEPENDS "${_archvirt_runtime}")

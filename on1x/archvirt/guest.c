@@ -1,4 +1,5 @@
 #include <archvirt_boot.h>
+#include <on1x_archvirt_guest.h>
 #include <on1x_runtime.h>
 #include <string.h>
 
@@ -49,6 +50,46 @@ static void select_stderr(void)
 {
     serial(ON1X_AV_ESCAPE);
     serial(ON1X_AV_STDERR);
+}
+
+static uint8_t serial_in(void)
+{
+    uint8_t byte;
+    __asm__ volatile("inb %w1, %0" : "=a"(byte) : "d"(ON1X_AV_SERIAL_PORT));
+    return byte;
+}
+
+static _Noreturn void invalid_parameter(void)
+{
+    select_stderr();
+    text("On1x ArchVirt: invalid i64 parameter\n");
+    finish(70);
+}
+
+int64_t on1x_archvirt_read_i64(void)
+{
+    serial(ON1X_AV_ESCAPE);
+    serial(ON1X_AV_READ_I64);
+    uint8_t c = serial_in();
+    if (c == ON1X_AV_INPUT_EOF) finish(0);
+    if (c == ON1X_AV_INPUT_UNAVAILABLE) {
+        select_stderr();
+        text("On1x ArchVirt: parameter input requires interactive launch\n");
+        finish(125);
+    }
+    bool negative = c == '-';
+    if (negative || c == '+') c = serial_in();
+    uint64_t n = 0, limit = (uint64_t)INT64_MAX + negative;
+    unsigned count = 0;
+    while (c != '\n') {
+        if (c < '0' || c > '9' || ++count > 19 || n > (limit - (c - '0')) / 10)
+            invalid_parameter();
+        n = n * 10 + (c - '0');
+        c = serial_in();
+    }
+    if (!count) invalid_parameter();
+    if (!negative) return (int64_t)n;
+    return n == (uint64_t)INT64_MAX + 1 ? INT64_MIN : -(int64_t)n;
 }
 
 static _Noreturn void reject_environment(void)
