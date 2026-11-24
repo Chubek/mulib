@@ -242,6 +242,14 @@ def main():
                              else ["aarch64-linux-gnu", "LP64", "AAPCS64", "aapcs64"])
         sign("target-drift", changed)
         build("signed-stale-target", safe, extra=params(), status=None, diagnostic=b"does not match")
+        if not legacy:
+            changed = copy.deepcopy(candidate)
+            name = "native-abi.o"
+            digest = changed["artifacts"][name]
+            changed["artifacts"][name] = ("1" if digest[0] == "0" else "0") + digest[1:]
+            sign("native-object-drift", changed)
+            build("signed-stale-native-object", safe, extra=params(), status=None,
+                  diagnostic=b"does not match")
         safe_dyn = source("safe-dso", body, safe=True, dynamic=True)
         if a.expect_safe_dso_unsupported:
             build("candidate-safe-dso", safe_dyn, candidate=True, dynamic=True, status=None,
