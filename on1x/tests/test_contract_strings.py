@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -115,7 +116,11 @@ with tempfile.TemporaryDirectory(prefix='strings-', dir=t.work) as tmp:
     corpus = ['', 'é', 'hello\nworld', '"quoted"', '\\']
     corpus += [''.join(rng.choice(' abCD09') for _ in range(rng.randrange(100))) for _ in range(20)]
     body = ''.join('println(on1x_safe_contract_text_size('+json.dumps(s, ensure_ascii=False)+'));' for s in corpus)
-    consumer.write_text(consumer.read_text().replace('fn main(){', 'fn main(){'+body))
+    instrumented, entries = re.subn(r'(?m)^fn main\(\)\s*\{',
+                                    lambda match: match[0] + '\n' + body + '\n',
+                                    consumer.read_text())
+    assert entries == 1, 'expected exactly one fixture entry point for the byte-length corpus'
+    consumer.write_text(instrumented)
     expected = ''.join(str(len(s.encode('utf-8')))+'\n' for s in corpus)+expected
     good([t.compiler, '--emit-c', '--memory-check', '--admitted-extern', admitted, consumer, '-o', generated])
     strict = [t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', work,
