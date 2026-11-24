@@ -227,8 +227,15 @@ class FetchTests(unittest.TestCase):
                            negative=negative)
 
     def test_fetch_validate_and_build_offline(self):
-        pin = self.library()
+        def wrap_library(root):
+            (root / 'On1xfile').write_text('on1xfile 1\nkind library\nname\n "toolkit"\ndirectory\n "lib"\n')
+            (root / 'lib/On1xfile.m').write_text('on1xfile 1\nlibrary\n "value.on1x"\n')
+
+        pin = self.library(extra=wrap_library)
         dest = self.manifest(pin)
+        manifest = self.project / 'On1xfile'
+        manifest.write_text(manifest.read_text().replace('git-remote ', 'git-remote\n  ')
+                            .replace(f' "{pin}"', f'\n  "{pin}"'))
         env, marker = self.poison()
         self.build(negative='run on1x-project.py fetch toolkit explicitly')
         bwrap = shutil.which('bwrap')
@@ -240,6 +247,13 @@ class FetchTests(unittest.TestCase):
         else:
             sandbox = False
         self.assertFalse(self.server.requests)
+        valid = manifest.read_text()
+        manifest.write_text(valid + 'misspelt-head "not ignored"\n')
+        self.fetch(negative='On1xfile:6-9:', env=env)
+        self.driver('lock', negative='On1xfile:6-9:')
+        self.assertFalse(self.server.requests)
+        self.assertFalse((self.project / 'On1xfile.lock').exists())
+        manifest.write_text(valid)
         self.assertEqual(self.fetch(env=env), str(dest))
         self.assertFalse(marker.exists())
         self.assertEqual({p.name for p in dest.iterdir()}, {'objects'})
@@ -250,6 +264,7 @@ class FetchTests(unittest.TestCase):
         self.server.shutdown()
         self.server.server_close()
         self.assertEqual(self.fetch(ca=False), str(dest))  # Cached validation needs no endpoint.
+        self.driver('lock', '--frozen')
         for flags in ((), ('--sandbox',)) if sandbox else ((),):
             output = Path(self.build(*flags))
             self.assertEqual(subprocess.check_output([output / 'sample'], text=True, timeout=5), '42\n')

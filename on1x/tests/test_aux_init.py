@@ -128,9 +128,9 @@ def exercise(compiler, work):
     aux('init', 'redirected-root/escape', error='real directory')
     assert not (external.parent / 'escape').exists()
 
-    executable = ('on1xfile 1\nkind executable\nname "from-env"\ndirectory "app"\n'
-                  'target "run" "app/main.on1x"\ndefine marker shell "touch template-ran"\n'
-                  'dependency "dep" local "app/vendors/dep"\n')
+    executable = ('on1xfile 1\nkind executable\nname\n "from-env"\ndirectory "app"\n'
+                  'target "run"\n "app/main.on1x"\ndefine \\\n name shell "touch template-ran"\n'
+                  'dependency "dep" local\n "app/vendors/dep"\n')
     preferred = 'on1xfile 1\nkind library\nname "from-flag"\ndirectory "."\n'
     write('env templates/demo.On1xfile', executable)
     write('flag templates/demo.On1xfile', preferred)

@@ -12,7 +12,7 @@ CHOICES = {'compiler': ('cephyr', 'host'), 'assembler': ('sandas', 'host'),
            'linker': ('yellowstone', 'host')}
 ARGUMENTS = ('assembler-arg', 'linker-arg')
 DIRECTIVES = frozenset((*CHOICES, *ARGUMENTS))
-ROOT_ONLY = re.compile(rb'(?m)^[ \t\r]*(?:compiler|assembler|linker|assembler-arg|linker-arg)(?=[ \t\r\n#]|$)')
+ROOT_ONLY = re.compile(rb'^[ \t\r]*(?:compiler|assembler|linker|assembler-arg|linker-arg)(?=[ \t\r#]|\\[ \t\r]*$|$)')
 HOST = dict.fromkeys(CHOICES, 'host')
 DEFAULT = {stage: choices[0] for stage, choices in CHOICES.items()}
 AMD64 = 'x86_64-linux-gnu'

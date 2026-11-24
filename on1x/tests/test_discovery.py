@@ -65,11 +65,17 @@ execute('direct_package','import arithmetic.number as N;fn main(){println(N.answ
         ['--lib-path',package])
 modern=roots[0]/'new_arithmetic'
 write(modern/'On1xfile','''# Modern project metadata is declarative for discovery.
-on1xfile 1
+on1xfile
+  1
 kind library
-name "new_arithmetic"
-directory "source files"
-profile "preview" "must-not-run.lua"
+name
+  "new_arithmetic" # comment ending in a backslash \\
+directory
+  "source files"
+profile "preview"
+  "must-not-run.lua"
+define \\
+  vm "not an actual VM policy"
 ''')
 write(modern/'source files/number.on1x','fn answer()->i64{return 42;}')
 execute('modern_library','import new_arithmetic.number as N;fn main(){println(N.answer());}','42\n',
@@ -89,7 +95,7 @@ for flag in ['--lib-path','--stdlib-path']:
     p=run([t.compiler,'--print-stdlib',flag,custom],env=env)
     assert p.returncode==0 and Path(p.stdout.strip())==custom.resolve(),p
 modern_stdlib=t.work/'modern ecosystem'/'stdlib'
-write(modern_stdlib/'On1xfile','on1xfile 1\nkind library\nname "std"\ndirectory "lib"\n')
+write(modern_stdlib/'On1xfile','on1xfile 1\r\nkind\\ \t\r\n  library\r\nname\r\n "std"\r\ndirectory\r\n "lib"\r\n')
 write(modern_stdlib/'lib/pervasive.on1x','fn identity(x:i64)->i64{return x+1;}')
 write(modern_stdlib/'lib/Answer.on1x','fn value()->i64{return 41;}')
 execute('modern_stdlib',client,'42\n41\n',['--stdlib-path',modern_stdlib])
@@ -188,9 +194,16 @@ for i,text in enumerate([
     'on1xfile 2\nkind library\nname "std"\n',
     'on1xfile 1\nkind library\nkind complex\nname "std"\n',
     'on1xfile 1\nkind library\nname "std"\ndirectory ".."\n',
+    'on1xfile 1\nkind\nlibrary\nname "std"\n',
 ]):
     write(bad/'On1xfile',text)
     reject('bad_manifest_'+str(i),'fn main(){}','manifest',['--stdlib-path',bad])
+for i,(suffix,message) in enumerate([
+    (' \\ # not a continuation\n','a continuation backslash must be followed only by whitespace'),
+    (' \\ \t\r\n# still dangling\n','dangling continuation backslash'),
+]):
+    write(bad/'On1xfile','on1xfile 1\nkind library\nname "std"\ndirectory\n "lib"'+suffix)
+    reject('bad_continuation_'+str(i),'fn main(){}',message+' (lines 4-5)',['--stdlib-path',bad])
 write(bad/'On1xfile',' '*65537)
 reject('manifest_limit','fn main(){}','manifest byte limit',['--stdlib-path',bad])
 reject('path_limit','fn main(){}','path count',['--lib-path',':'.join('x'+str(i) for i in range(257))])

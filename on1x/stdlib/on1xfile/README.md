@@ -33,9 +33,54 @@ on1xi 1;
 fn greet(name: string) -> string;
 ```
 
-The header is mandatory. `#` starts a line or inline comment outside quoted
-strings. Quoted fields use JSON string escaping. Project paths are normalized
-relative paths with no parent traversal or symlinks in declared inputs.
+The `on1xfile 1` header is mandatory. A known, unquoted directive at the
+start of a physical line (after optional indentation) starts a new statement.
+Other fields continue the previous statement. Quoted directive names are
+fields, not heads. Blank lines and comments do not end a statement. `#`
+starts a line or inline comment outside quoted strings; JSON string escapes
+work as before, and a quoted field cannot cross a physical line.
+
+For example, the following two directives select a local Git repository
+with a full commit pin and the `mir-c11` backend:
+
+```text
+dependency "mathlib" git
+  "vendor/mathlib.git"
+  "0123456789abcdef0123456789abcdef01234567"
+backend mir-c11
+```
+
+A trailing `\` outside a quoted string or comment explicitly continues the
+statement onto the next line containing fields, even if its first word looks
+like a head. Only spaces, tabs, or the CR in CRLF may follow the backslash;
+`\ # comment` is an error, and a backslash inside a comment does nothing.
+The marker must follow a field on the same line and cannot dangle at EOF,
+even with blank or comment-only lines after it. For example, write
+`kind library` on one line or:
+
+```text
+kind \
+  library
+```
+
+Without the marker, `library` at the start of a line is a known file-role
+head; it is not a field of `kind`. Heads are recognized even where they are
+not allowed, such as root-only directives in a dependency. The parser does
+not guess a second grouping or prompt. If a statement fails, diagnostics
+show `path:line` or an inclusive `path:start-end` from its head through its
+last field line (or the physical line with the lexical error). Put an
+intended directive first on its own line; quote a string field, or move a
+directive-looking bare field up or use an explicit continuation. Build,
+fetch, and lock fail without waiting for input.
+
+The same rules apply to `On1xfile.m`, `On1xfile.i`, plain `init` templates,
+and the text produced by an authorized QMR template. `format` preserves
+wrapping, comments, and explicit continuation markers, normalizes line
+endings and spacing (two spaces before continuation fields), and removes
+trailing blank lines.
+
+Project paths are normalized relative paths with no parent traversal or
+symlinks in declared inputs.
 `directory` defaults to `"."`; discovery walks it for local manifests, pruning
 hidden directories, `build`, `target`, and registered dependency stores.
 `executable` has exactly one target; `complex` has one or more; all `source`

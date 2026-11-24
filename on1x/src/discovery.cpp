@@ -66,50 +66,105 @@ std::string_view trim(std::string_view text){
 Manifest parse_package(std::string_view text,const std::string& file){
  auto fail=[&](std::string message)->void{throw Error({file},"invalid On1xfile manifest: "+message);};
  Manifest result;
- std::set<std::string_view> fields;
- bool header=false,vm_policy=false;
+ std::set<std::string> fields;
+ bool header=false,forced=false;
+ std::string row;
+ std::size_t start=0,end=0,vm_start=0,vm_end=0;
+ auto row_error=[&](std::string message,std::size_t first,std::size_t last)->void{
+  throw Error({file,0,first},"invalid On1xfile manifest: "+message+
+              (first==last?"":" (lines "+std::to_string(first)+"-"+std::to_string(last)+")"));
+ };
+ // Match the build driver's head words, including directives not evaluated
+ // by discovery. An explicit physical continuation can mask one head.
+ constexpr std::string_view heads[]={
+  "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work","ffi-taint",
+  "optimization-profile","optimization","backend","target","dependency","profile",
+  "profile-arg","command","define","kernel","source","library","resource","interface",
+  "compiler","assembler","linker","assembler-arg","linker-arg"
+ };
+ auto finish=[&](){
+  if(row.empty())return;
+  const auto line=std::string_view(row);
+  const auto word_end=line.find_first_of(" \t\r");
+  const auto key=line.substr(0,word_end);
+  auto value=word_end==std::string_view::npos?std::string_view{}:trim(line.substr(word_end));
+  auto invalid=[&](std::string message){row_error(std::move(message),start,end);};
+  if(!header){
+   if(key!="on1xfile"||value!="1")invalid("expected on1xfile 1");
+   header=true;
+   return;
+  }
+  if(key=="on1xfile")invalid("duplicate on1xfile header");
+  if(key=="vm"&&!vm_start){vm_start=start;vm_end=end;}
+  if(key!="kind"&&key!="name"&&key!="directory")return;
+  if(!fields.insert(std::string(key)).second)invalid("duplicate "+std::string(key));
+  if(key!="kind"){
+   if(value.empty()||value.front()!='"')invalid("expected quoted "+std::string(key));
+   const auto quote_end=value.find('"',1);
+   if(quote_end==std::string_view::npos)invalid("unterminated "+std::string(key));
+   if(!trim(value.substr(quote_end+1)).empty())invalid("invalid value for "+std::string(key));
+   value=value.substr(1,quote_end-1);
+   if(value.empty()||value.size()>1024||value.find('\\')!=std::string_view::npos)
+    invalid("invalid literal "+std::string(key));
+  }
+  if(key=="kind"){
+   if(value!="library"&&value!="executable"&&value!="complex")invalid("invalid project kind");
+   result.kind=value;
+  }else if(key=="name"){
+   constexpr std::string_view initial="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+   if(value.size()>64||initial.find(value.front())==std::string_view::npos||
+      value.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789-")!=std::string_view::npos)
+    invalid("invalid package name");
+   result.name=value;
+  }
+  else result.root=value;
+ };
  if(text.find('\0')!=std::string_view::npos)fail("contains NUL");
- for(;!text.empty();){
+ for(std::size_t number=1;!text.empty();++number){
   const auto newline=text.find('\n');
   auto line=trim(text.substr(0,newline));
   text=newline==std::string_view::npos?std::string_view{}:text.substr(newline+1);
   if(line.empty()||line.front()=='#')continue;
-  const auto word_end=line.find_first_of(" \t#");
+  const auto word_end=line.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-");
   const auto key=line.substr(0,word_end);
-  auto value=word_end==std::string_view::npos?std::string_view{}:trim(line.substr(word_end));
-  if(!header){
-   if(key!="on1xfile"||trim(value.substr(0,value.find('#')))!="1")fail("expected on1xfile 1");
-   header=true;
-   continue;
+  const bool head=!forced&&std::find(std::begin(heads),std::end(heads),key)!=std::end(heads);
+  if(head){finish();row.clear();}
+  if(row.empty())start=number;
+  end=number;
+  if(head&&word_end!=std::string_view::npos&&std::string_view(" \t\r#\\").find(line[word_end])==std::string_view::npos)
+   row_error("manifest fields must be separated",start,end);
+  bool quoted=false,continued=false;
+  for(std::size_t i=0;i<line.size();++i){
+   if(line[i]=='"')quoted=!quoted;
+   else if(line[i]=='\\'){
+    if(quoted){if(i+1<line.size())++i;}
+    else{
+     if(i+1!=line.size())row_error("a continuation backslash must be followed only by whitespace",start,end);
+     if(i==0)row_error("a continuation backslash must follow a field on the same line",start,end);
+     line=trim(line.substr(0,i));
+     continued=true;
+     break;
+    }
+   }else if(line[i]=='#'&&!quoted){
+    line=trim(line.substr(0,i));
+    break;
+   }
   }
-   if(key=="vm")vm_policy=true;
-   if(key!="kind"&&key!="name"&&key!="directory")continue;
-  if(!fields.insert(key).second)fail("duplicate "+std::string(key));
-  if(key=="kind")value=trim(value.substr(0,value.find('#')));
-  else{
-   if(value.empty()||value.front()!='"')fail("expected quoted "+std::string(key));
-   const auto end=value.find('"',1);
-   if(end==std::string_view::npos)fail("unterminated "+std::string(key));
-   const auto suffix=trim(value.substr(end+1));
-   if(!suffix.empty()&&suffix.front()!='#')fail("invalid value for "+std::string(key));
-   value=value.substr(1,end-1);
-   if(value.empty()||value.size()>1024||value.find('\\')!=std::string_view::npos)
-    fail("invalid literal "+std::string(key));
-  }
-  if(key=="kind")result.kind=value;
-  else if(key=="name")result.name=value;
-  else result.root=value;
+  if(quoted)row_error("unterminated quoted string",start,end);
+  if(!row.empty())row+=' ';
+  row+=line;
+  forced=continued;
  }
- constexpr std::string_view initial="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
- if(result.name.empty()||result.name.size()>64||initial.find(result.name.front())==std::string_view::npos||
-    result.name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789-")!=std::string::npos)
-  fail("invalid package name");
-  if(result.kind!="library"&&result.kind!="executable"&&result.kind!="complex")fail("invalid project kind");
-  // An executable's root may also be on an import search path, but only the
-  // project driver can interpret its launch policy. Libraries cannot declare it.
-  if(vm_policy&&result.kind=="library")
-   fail("vm policy is only allowed in the root On1xfile of an executable or complex project");
-  return result;
+ if(forced)row_error("dangling continuation backslash",start,end);
+ finish();
+ if(!header)fail("expected on1xfile 1");
+ if(result.name.empty())fail("invalid package name");
+ if(result.kind.empty())fail("invalid project kind");
+ // An executable's root may also be on an import search path, but only the
+ // project driver can interpret its launch policy. Libraries cannot declare it.
+ if(vm_start&&result.kind=="library")
+  row_error("vm policy is only allowed in the root On1xfile of an executable or complex project",vm_start,vm_end);
+ return result;
 }
 fs::path local(const fs::path& base,const std::string& value,bool file){
  auto path=fs::path(value);

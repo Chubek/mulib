@@ -46,8 +46,8 @@ with tempfile.TemporaryDirectory(prefix='on1x-native-tools-') as temporary:
            error='native toolchain unavailable')
     assert not output.exists()
 
-    for name, text in (('src/On1xfile', 'on1xfile 1\nassembler host\n'),
-                       ('src/On1xfile.i', 'on1xfile 1\nlinker host\n')):
+    for name, text in (('src/On1xfile', 'on1xfile 1\nassembler\\ \t\n host\n'),
+                       ('src/On1xfile.i', 'on1xfile 1\nlinker\n host\n')):
         nested = root / name
         nested.write_text(text)
         invoke('aux', 'plan', '--cc', args.cc, error='only allowed in the root project On1xfile')

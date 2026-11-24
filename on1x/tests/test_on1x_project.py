@@ -334,7 +334,7 @@ class ProjectTests(unittest.TestCase):
         for path in ('src/On1xfile.m', 'src/On1xfile.i', 'src/nested/On1xfile'):
             original = self.project / path
             text = original.read_text() if original.is_file() else 'on1xfile 1\n'
-            self.write(path, text + '  vm always # must not apply\n')
+            self.write(path, text + '  vm\\ \n always # must not apply\n')
             for action in ('plan', 'build'):
                 with self.subTest(path=path, action=action):
                     result = self.project_command(action)
@@ -346,7 +346,7 @@ class ProjectTests(unittest.TestCase):
         self.app(extra='dependency "toolkit" local "vendor/toolkit"\n')
         dependency = self.library('vendor/toolkit', 'toolkit')
         manifest = dependency / 'On1xfile'
-        manifest.write_text(manifest.read_text() + 'vm opt-in\n')
+        manifest.write_text(manifest.read_text() + 'vm\n opt-in\n')
         self.build(negative=rejected)
         self.build(root=dependency, negative=rejected)
         # Even direct compiler package discovery rejects the directive and has
@@ -813,7 +813,7 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
         subprocess.run([*args, 'commit', '-qm', 'library'], check=True, env=env)
         commit = subprocess.check_output([*args, 'rev-parse', 'HEAD'], text=True, env=env).strip()
         subprocess.run([*args, 'gc', '--quiet'], check=True, env=env)
-        self.app(extra=f'dependency "toolkit" git "vendor/repository" "{commit}"\n',
+        self.app(extra=f'dependency "toolkit" git\n "vendor/repository"\n "{commit}"\n',
                  implementation='import toolkit.value as V;\nfn main() -> i64 { println(V.number()); return 0; }\n')
         self.write('vendor/repository/lib/value.on1x', 'not in the pinned revision\n')
         self.write('vendor/repository/lib/value.on1xi', 'not in the pinned revision\n')
@@ -851,7 +851,7 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
         bare.parent.mkdir()
         subprocess.run(['git', 'clone', '--bare', '--quiet', author, bare], check=True,
                        env=environment, capture_output=True, timeout=20)
-        self.app(extra='dependency "toolkit" git "vendor/toolkit.git" branch "main"\n',
+        self.app(extra='dependency "toolkit"\n git "vendor/toolkit.git"\n branch "main"\n',
                  implementation='import toolkit.value as V;\n'
                                 'fn main() -> i64 { println(V.number()); return 0; }\n')
         self.build('--frozen', negative='lockfile is required')
@@ -968,9 +968,9 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
                    'return on1xfile.profile { optimize = 1, debug = true }\n')
         self.write('src/On1xfile.m', 'on1xfile 1\n'
                    '{% if data.profile == "small" and data.private == nil and on1xfile == nil then %}'
-                   'source {{ data.entry }}\n{% end %}')
+                   'source\n{{ data.entry }}\n{% end %}')
         self.write('src/On1xfile.i', 'on1xfile 1\n{# compiled by real QMR, evaluated by Mune #}\n'
-                   'interface {{ "main.on1xi" }}\n')
+                   'interface\n{{ "main.on1xi" }}\n')
         self.write('src/main.on1xi', 'on1xi 1;\nfn main() -> i64;\n')
         output = self.build('--profile', 'small')
         self.run_bin(output)
@@ -1147,6 +1147,83 @@ return on1xfile.profile {
         path.write_text('on1xfile 1\n{% error("not executed") %}\n')
         self.assertIn('no template code was executed',
                       subprocess.run(cli, capture_output=True, text=True).stderr)
+
+    def test_multiline_manifest_format(self):
+        path = self.project / 'On1xfile'
+        path.write_bytes(
+            b' on1xfile\r\n\t1\r\n kind executable\r\n name\r\n "sample"\r\n'
+            b' target "sample" # target comment \\\r\n "main.on1x"\r\n'
+            b' dependency "mathlib" git\r\n "vendor/mathlib.git" # local repository\r\n'
+            b' "0123456789abcdef0123456789abcdef01234567"\r\n'
+            b' backend mir-c11\r\n define\\ \t\r\n # blank and comment lines do not consume it\r\n'
+            b'\r\n name "literal # ends in a backslash: \\\\"\r\n define other\r\n "backend"\r\n')
+        cli = [sys.executable, OPTIONS.driver, 'format', path]
+        expected = (
+            'on1xfile\n  1\nkind executable\nname\n  "sample"\n'
+            'target "sample" # target comment \\\n  "main.on1x"\n'
+            'dependency "mathlib" git\n  "vendor/mathlib.git" # local repository\n'
+            '  "0123456789abcdef0123456789abcdef01234567"\n'
+            'backend mir-c11\ndefine \\\n# blank and comment lines do not consume it\n'
+            '\n  name "literal # ends in a backslash: \\\\"\ndefine other\n  "backend"\n')
+        self.assertIn('not canonically formatted',
+                      subprocess.run([*cli, '--check'], capture_output=True, text=True).stderr)
+        self.assertEqual(subprocess.check_output(cli, text=True), expected)
+        path.write_text(expected)
+        self.assertEqual(subprocess.check_output(cli, text=True), expected)
+        subprocess.run([*cli, '--check'], check=True)
+
+        # 'library' is also a role head. A marker can keep this bare argument
+        # attached to kind without treating it as a directory-local directive.
+        path.write_text('on1xfile 1\nkind \\\nlibrary\nname "sample"\n')
+        self.assertIn('kind \\\n  library\n', subprocess.check_output(cli, text=True))
+
+    def test_multiline_manifest_diagnostics(self):
+        path = self.write('On1xfile', '')
+        cli = [sys.executable, OPTIONS.driver, 'format', path]
+        base = 'on1xfile 1\nkind library\nname "sample"\n'
+        for text, span, message in (
+                ('directory\n # inside row\n "src"\n typo "other"\n # outside span\n',
+                 '4-7', 'known unquoted head'),
+                ('directory\n "src" name "other"\n', '4-5', 'known unquoted head'),
+                ('define\n name "value"\n', '4', 'directive-looking bare field'),
+                ('directory\n "src" \\ # not a marker\n', '4-5', 'followed only by whitespace'),
+                ('directory\n "unclosed\\\nname "sample"\n', '4-5', 'unterminated quoted string'),
+                ('directory "src" \\', '4', 'dangling continuation'),
+                ('directory\n "src"\\ \t\r\n\n# still dangling\n', '4-5', 'dangling continuation'),
+                ('directory \\\n name "sample"\n', '4-5', 'incorrectly quoted fields'),
+                ('\\\n', '3-4', 'must follow a field')):
+            with self.subTest(text=text):
+                path.write_bytes((base + text).encode())
+                result = subprocess.run(cli, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=5)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(result.stdout)
+                self.assertIn(f'{path}:{span}:', result.stderr)
+                self.assertIn(message, result.stderr)
+
+    def test_multiline_manifest_build_and_lock(self):
+        self.app()
+        manifest = self.write('On1xfile', 'on1xfile 1\nkind\n executable\nname\n "sample"\n'
+                              'directory\n "src"\n target\n "sample"\n "src/main.on1x"\nbackend\n c11\n')
+        self.write('src/On1xfile.m', 'on1xfile 1\nsource\n "main.on1x"\n')
+        interface = self.write('src/On1xfile.i', 'on1xfile 1\ninterface\n "main.on1xi"\n')
+        self.write('src/main.on1xi', 'on1xi 1;\nfn main() -> i64;\n')
+        self.write('src/inert/On1xfile', 'on1xfile 1\nkind library\nname "inert"\n'
+                   'define \\\n vm "not a VM policy"\ndefine \\\n compiler "not a native tool directive"\n')
+        lock = self.lock()
+        lock_data = lock.read_bytes()
+        self.build('--frozen')
+        self.run_bin()
+        report = self.output / '.on1x-build.json'
+        published = report.read_bytes()
+        manifest.write_text(manifest.read_text() + 'define\n # not part of the span end\n vm always\n')
+        self.lock(negative='On1xfile:13: missing, extra or incorrectly quoted fields')
+        self.build(negative='On1xfile:13: missing, extra or incorrectly quoted fields')
+        self.assertEqual(lock.read_bytes(), lock_data)
+        self.assertEqual(report.read_bytes(), published)
+        manifest.write_text(manifest.read_text().split('define\n')[0])
+        interface.write_text('on1xfile 1\ninterface\n "wrong.on1xi"\n')
+        self.write('src/wrong.on1xi', 'on1xi 1;\nfn main() -> i64;\n')
+        self.build(negative='project/src/On1xfile.i:2-3: interface')
 
 
 if __name__ == '__main__':

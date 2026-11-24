@@ -95,8 +95,9 @@ any of these environment variables or flags.
 
 ## Project `On1xfile` version 1
 
-New project manifests are line-oriented declarations. The compiler reads only
-the literal package identity (`kind`, `name` and optional `directory`) for
+New project manifests use [directive heads and continuation
+lines](../stdlib/on1xfile/README.md). The compiler reads only the literal
+package identity (`kind`, `name` and optional `directory`) for
 search-path discovery. It does not execute Mune, expand a template, select a
 build profile, or look inside `On1xfile.m`/`On1xfile.i` to resolve an import.
 Project commands, dependency declarations and local directory roles are handled

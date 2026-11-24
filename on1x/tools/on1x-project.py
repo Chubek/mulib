@@ -40,7 +40,7 @@ POLICY = ROOT / 'stdlib/on1xfile'
 MAX_MANIFEST = 64 * 1024
 BACKENDS = ('c11', 'mir-c11', 'mir-vm', 'mir-archon')
 VM_POLICIES = ('opt-in', 'always')
-VM_DIRECTIVE = re.compile(rb'(?m)^[ \t\r]*vm(?=[ \t\r\n#]|$)')
+VM_DIRECTIVE = re.compile(rb'^[ \t\r]*vm(?=[ \t\r#]|\\[ \t\r]*$|$)')
 VM_COMMANDS = ('run', 'vm-rerun', 'vm-cache-clear')
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
@@ -59,6 +59,16 @@ NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_-]{0,63}\Z')
 IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]{0,63}\Z')
 PART = re.compile(r'[A-Za-z_0-9][A-Za-z_0-9. -]{0,127}\Z')
 TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
+# Reserve heads even where the directive is forbidden; validation decides
+# authority, not the lexer. Keep compiler package discovery in sync.
+HEADS = frozenset((
+    'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work', 'ffi-taint',
+    'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
+    'profile-arg', 'command', 'define', 'kernel', 'source', 'library', 'resource', 'interface',
+)) | toolchain.DIRECTIVES
+ROW_HINT = ('start each intended directive with a known unquoted head on its own line; '
+            'quote string fields, or move a directive-looking bare field to the preceding line '
+            'or use a trailing backslash on that line')
 QMR_TAG = re.compile(rb'\{[{%#]')
 ENV = {'PATH': '/usr/bin:/bin', 'LC_ALL': 'C', 'TZ': 'UTC',
        'HOME': '/nonexistent', 'SOURCE_DATE_EPOCH': '0', 'PYTHONDONTWRITEBYTECODE': '1'}
@@ -150,53 +160,119 @@ def contained(root, relative):
     return path
 
 
-def rows(payload, origin):
+def manifest_span(origin, start, end):
+    return f'{origin}:{start}' if start == end else f'{origin}:{start}-{end}'
+
+
+def manifest_line(line):
+    words, pos = [], 0
+    while pos < len(line):
+        if line[pos] in ' \t\r':
+            pos += 1
+            continue
+        if line[pos] == '#':
+            return words, line[pos:].rstrip(), False
+        if line[pos] == '\\':
+            if line[pos + 1:].strip(' \t\r'):
+                fail('a continuation backslash must be followed only by whitespace')
+            if not words:
+                fail('a continuation backslash must follow a field on the same line')
+            return words, '', True
+        match = TOKEN.match(line, pos)
+        if not match:
+            if line[pos] == '"':
+                fail('unterminated quoted string; a quoted field must stay on one physical line')
+            fail('expected a word or quoted string')
+        word = match[0]
+        quoted = word.startswith('"')
+        try:
+            value = json.loads(word) if quoted else word
+            value.encode('utf-8')
+        except (UnicodeError, ValueError) as error:
+            fail(f'invalid string: {error}')
+        if '\x00' in value or len(value) > 4096:
+            fail('invalid or overlong field')
+        words.append((value, quoted))
+        pos = match.end()
+        if pos != len(line) and line[pos] not in ' \t\r#\\':
+            fail('fields must be separated')
+    return words, '', False
+
+
+def manifest_lines(payload, origin):
     if len(payload) > MAX_MANIFEST or b'\x00' in payload:
         fail(f'{origin}: manifest byte budget exceeded or contains NUL')
-    text = payload.decode('utf-8')
-    first = True
+    try:
+        text = payload.decode('utf-8')
+    except UnicodeDecodeError as error:
+        number = 1 + payload.count(b'\n', 0, error.start)
+        fail(f'{origin}:{number}: invalid manifest UTF-8')
+    start = end = 0
+    forced = False
     for number, line in enumerate(text.split('\n'), 1):
-        words, pos = [], 0
-        at = f'{origin}:{number}'
-        while pos < len(line):
-            if line[pos] in ' \t\r':
-                pos += 1
-                continue
-            if line[pos] == '#':
-                break
-            match = TOKEN.match(line, pos)
-            if not match:
-                fail(f'{at}: expected a word or quoted string')
-            word = match[0]
-            quoted = word.startswith('"')
-            try:
-                value = json.loads(word) if quoted else word
-                value.encode('utf-8')
-            except (UnicodeError, ValueError) as error:
-                fail(f'{at}: invalid string: {error}')
-            if '\x00' in value or len(value) > 4096:
-                fail(f'{at}: invalid or overlong field')
-            words.append((value, quoted))
-            pos = match.end()
-            if pos != len(line) and line[pos] not in ' \t\r#':
-                fail(f'{at}: fields must be separated')
-        if not words:
+        line = line.lstrip(' \t\r')
+        leading = TOKEN.match(line)
+        # Decide the boundary before lexing the rest of the line so even a
+        # malformed field can be attributed to its statement.
+        head = not forced and leading is not None and leading[0] in HEADS
+        try:
+            words, comment, continued = manifest_line(line)
+        except ValueError as error:
+            at = manifest_span(origin, number if head else start or number, number)
+            fail(f'{at}: {error}')
+        if words:
+            if head or not start:
+                start = number
+            end = number
+            forced = continued
+        yield number, words, head, comment, continued
+    if forced:
+        fail(f'{manifest_span(origin, start, end)}: dangling continuation backslash; '
+             'add a field on the next nonblank, noncomment line or remove the backslash')
+
+
+def manifest_statements(payload, origin):
+    words = []
+    for number, line_words, head, _, _ in manifest_lines(payload, origin):
+        if not line_words:
             continue
-        if first:
-            if words != [('on1xfile', False), ('1', False)]:
-                fail(f'{at}: expected on1xfile 1')
-            first = False
-        elif words[0][1]:
-            fail(f'{at}: expected a directive word')
-        else:
-            yield at, words[0][0], words[1:]
-    if first:
+        if head and words:
+            yield start, end, words
+            words = []
+        if not words:
+            start = number
+        words.extend(line_words)
+        end = number
+    if words:
+        yield start, end, words
+
+
+def rows(payload, origin):
+    statements = manifest_statements(payload, origin)
+    header = next(statements, None)
+    if header is None:
         fail(f'{origin}: missing on1xfile 1')
+    start, end, words = header
+    if words != [('on1xfile', False), ('1', False)]:
+        fail(f'{manifest_span(origin, start, end)}: expected on1xfile 1; {ROW_HINT}')
+    for start, end, words in statements:
+        if words[0][0] == 'on1xfile':
+            fail(f'{manifest_span(origin, start, end)}: duplicate on1xfile header')
+        yield start, end, words[0][0], words[1:]
+
+
+class ManifestFieldsError(ValueError):
+    pass
+
+
+def row_error(at, start, end, error):
+    hint = f'; {ROW_HINT}' if start != end or isinstance(error, ManifestFieldsError) else ''
+    fail(f'{at}: {error}{hint}')
 
 
 def fields(args, signature):
     if len(args) != len(signature) or any(q != (kind == '"') for (_, q), kind in zip(args, signature)):
-        fail('missing, extra or incorrectly quoted fields')
+        raise ManifestFieldsError('missing, extra or incorrectly quoted fields')
     return [value for value, _ in args]
 
 
@@ -209,6 +285,27 @@ def unique(items, key, value):
 def root_only_vm(origin=None):
     at = f'{origin}: ' if origin is not None else ''
     fail(f'{at}vm policy is only allowed in the root On1xfile of an executable or complex project')
+
+
+def check_nested_authority(payload, origin):
+    # Nested manifests are inert and may be templates. Look only for literal
+    # root-only heads, honoring explicit continuations we can lex as plain text.
+    forced = False
+    for number, line in enumerate(payload.split(b'\n'), 1):
+        code = line.strip(b' \t\r')
+        if not code or code.startswith(b'#'):
+            continue
+        if not forced:
+            if VM_DIRECTIVE.match(line):
+                root_only_vm(f'{origin}:{number}')
+            if toolchain.ROOT_ONLY.match(line):
+                fail(f'{origin}:{number}: native toolchain directives are only allowed in the root project On1xfile')
+        forced = False
+        if code.endswith(b'\\'):
+            try:
+                _, _, forced = manifest_line(code.decode('utf-8'))
+            except ValueError:
+                pass  # Do not suppress a potential head after malformed text.
 
 
 def remote_url(value):
@@ -254,7 +351,7 @@ def git_selector(kind, value):
 
 def profile_argument(args):
     if len(args) != 4:
-        fail('expected profile-arg "profile" key string|integer|boolean value')
+        raise ManifestFieldsError('expected profile-arg "profile" key string|integer|boolean value')
     kind = args[2][0]
     scope, key, kind, value = fields(args, '"ww"' if kind == 'string' else '"www')
     if kind == 'integer':
@@ -273,7 +370,8 @@ def profile_argument(args):
 def root_manifest(payload, origin, dependency=False):
     options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
     selections, scoped, backend_scopes, profile_args = {}, {}, {}, {}
-    for at, verb, args in rows(payload, origin):
+    for start, end, verb, args in rows(payload, origin):
+        at = manifest_span(origin, start, end)
         try:
             if verb == 'kind':
                 value, = fields(args, 'w')
@@ -358,7 +456,7 @@ def root_manifest(payload, origin, dependency=False):
                     elif len(args) == 5:
                         key, transport, path, selector_kind, revision = fields(args, '"w"w"')
                     else:
-                        fail('expected a Git source and commit, branch or tag selector')
+                        raise ManifestFieldsError('expected a Git source and commit, branch or tag selector')
                     key = name(key, IDENT)
                     revision = git_selector(selector_kind, revision)
                     if transport == 'git-remote':
@@ -367,7 +465,7 @@ def root_manifest(payload, origin, dependency=False):
                         source = local(path)
                     unique(deps, key, Dependency(transport, source, selector_kind, revision))
                 else:
-                    fail('dependency kind must be local, git or git-remote')
+                    raise ManifestFieldsError('dependency kind must be local, git or git-remote')
             elif verb == 'profile' and not dependency:
                 key, path = fields(args, '""')
                 if key in ('dev', 'release', *VM_COMMANDS) or not path.endswith('.lua'):
@@ -402,7 +500,7 @@ def root_manifest(payload, origin, dependency=False):
             else:
                 fail(f'unsupported {verb!r} in {"dependency" if dependency else "root"} On1xfile')
         except ValueError as error:
-            fail(f'{at}: {error}')
+            row_error(at, start, end, error)
     kind = options.get('kind')
     if not options.get('name') or not kind:
         fail(f'{origin}: name and kind are required')
@@ -1072,7 +1170,8 @@ STDLIB_RESOURCES = frozenset(map(Path, (
 def local_roles(data, origin, manifest, kind):
     allowed = ('interface',) if manifest.name == 'On1xfile.i' else ('source', 'library', 'resource')
     declared = {}
-    for at, role, args in rows(data, origin):
+    for start, end, role, args in rows(data, origin):
+        at = manifest_span(origin, start, end)
         try:
             if role == 'vm':
                 root_only_vm()
@@ -1088,7 +1187,7 @@ def local_roles(data, origin, manifest, kind):
                 fail(f'invalid extension for {role}')
             unique(declared, source, (role, at))
         except ValueError as error:
-            fail(f'{at}: {error}')
+            row_error(at, start, end, error)
     return declared
 
 
@@ -1102,11 +1201,7 @@ def layouts(provider, config, label, staged, snapshot, preprocess=None, dependen
         if path.name == 'On1xfile':
             # Nested package manifests are inert here, including templates:
             # the driver never evaluates one as a second project root.
-            nested = provider.get(path, MAX_MANIFEST)
-            if VM_DIRECTIVE.search(nested):
-                root_only_vm(origin)
-            if toolchain.ROOT_ONLY.search(nested):
-                fail(f'{origin}: native toolchain directives are only allowed in the root project On1xfile')
+            check_nested_authority(provider.get(path, MAX_MANIFEST), origin)
             continue
         data = snapshot.record(origin, provider.get(path, MAX_MANIFEST))
         if QMR_TAG.search(data):
@@ -2142,20 +2237,15 @@ def format_manifest(args):
     else:
         fail(f'{path}: expected On1xfile, On1xfile.m, or On1xfile.i')
     lines = []
-    for line in data.decode('utf-8').split('\n'):
-        words, pos = [], 0
-        while pos < len(line):
-            if line[pos] in ' \t\r':
-                pos += 1
-            elif line[pos] == '#':
-                words.append(line[pos:].rstrip())
-                break
-            else:
-                match = TOKEN.match(line, pos)
-                word = match[0]  # Full syntax has been validated above.
-                words.append(json.dumps(json.loads(word), ensure_ascii=False) if word.startswith('"') else word)
-                pos = match.end()
-        lines.append(' '.join(words))
+    for _, fields_on_line, head, comment, continued in manifest_lines(data, path):
+        words = [json.dumps(value, ensure_ascii=False) if quoted else value
+                 for value, quoted in fields_on_line]
+        if continued:
+            words.append('\\')
+        if comment:
+            words.append(comment)
+        indent = '  ' if fields_on_line and not head else ''
+        lines.append(indent + ' '.join(words))
     while lines and not lines[-1]:
         lines.pop()
     formatted = ('\n'.join(lines) + '\n').encode('utf-8')
