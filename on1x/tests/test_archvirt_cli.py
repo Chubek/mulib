@@ -60,7 +60,9 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
     assert struct.unpack_from("<H", image, 18)[0] == {
         "x86_64": 62, "aarch64": 183, "riscv64": 243,
     }[platform.machine()]
-    on1xc("--vm-run-elf", "/bin/echo", status=125, stdout=b"", error=b"not an On1x DomIOS")
+    hosted = root / "hosted.elf"
+    hosted.write_bytes(Path("/bin/echo").read_bytes())
+    on1xc("--vm-run-elf", hosted, status=125, stdout=b"", error=b"not an On1x DomIOS")
     older = root / "older.elf"
     older.write_bytes(image[:-1] + b"z")
     on1xc("--vm-run-elf", older, status=2, stdout=b"", error=b"does not match")

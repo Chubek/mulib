@@ -41,7 +41,9 @@ where the prefix is an installed ArchVirt build from pinned LibStone
 The `on1x_stdlib_vmm` CMake target links `On1xArchVirt::Library`; installation
 adds `lib/libon1x_stdlib_vmm.a` and `include/on1x/vmm.h`. Consumers must explicitly
 link the companion, the pinned `libdomvirt.so`, and the C++ runtime; keep the
-matching ArchVirt shared dependencies and boot assets available. For example:
+matching ArchVirt shared dependencies and boot assets available. On1xfile
+source-library builds package only the pure On1x module; the companion is a
+separately installed native component. For example:
 
 ```c
 #include <on1x/vmm.h>

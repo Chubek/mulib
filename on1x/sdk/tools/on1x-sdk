@@ -307,7 +307,9 @@ def validate_project(family, path, data):
         engine.root_manifest(data, path)
         return "on1xfile/1"
     if family == "lock":
-        _, policy = engine.parse_lock(data, path)
+        _, policy, vm = engine.parse_lock(data, path)
+        if vm is not None:
+            return "on1x.lock/v3"
         return "on1x.lock/v2" if policy else "on1x.lock/v1"
     raise AssertionError(family)
 

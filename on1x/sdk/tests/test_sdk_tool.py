@@ -141,6 +141,17 @@ class Tool(unittest.TestCase):
         })
         report, _ = self.run_tool("validate", "lock", lock)
         self.assertEqual(report["input_schema"], "on1x.lock/v2")
+        for vm in ("always", "opt-in"):
+            lock = self.write_json("On1xfile.lock", {
+                "schema": "on1x.lock/v3", "dependencies": {}, "vm": vm,
+            })
+            report, _ = self.run_tool("validate", "lock", lock)
+            self.assertEqual(report["input_schema"], "on1x.lock/v3")
+        lock = self.write_json("On1xfile.lock", {
+            "schema": "on1x.lock/v3", "dependencies": {}, "vm": "fallback",
+        })
+        report, _ = self.run_tool("validate", "lock", lock, expected=2)
+        self.assertIn("invalid locked vm policy", report["message"])
 
     def test_malformed_oversized_duplicate_and_symlink_inputs(self):
         duplicate = self.work / "duplicate.json"

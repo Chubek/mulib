@@ -507,6 +507,8 @@ else:
             self.assertNotEqual(refused.returncode, 0, refused.stdout)
             self.assertIn('invalid regular file in ArchVirt build toolchain', refused.stderr)
             self.assertEqual((self.output / '.on1x-build.json').read_bytes(), before)
+            alias.rmdir()
+            alias.symlink_to(tool.name)
 
         self.app(extra='vm always\n', implementation='fn FAIL_GUEST_BUILD()->i64{return 0;}\n'
                                                     'fn main()->i64{return FAIL_GUEST_BUILD();}\n')
