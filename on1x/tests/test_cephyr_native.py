@@ -75,6 +75,9 @@ def main():
         bad = emit(root / "examples/f64.on1x", obj, check=False)
         assert bad.returncode and b"unsupported On1x f64 target or runtime ABI" in bad.stderr, bad.stderr
         assert b"f64.on1x.c:" in bad.stderr and obj.read_bytes() == sentinel, bad.stderr
+        bad = emit(root / "examples/async_timer.on1x", obj, check=False)
+        assert bad.returncode and b"stackless timer frames require the direct C11 runtime profile" in bad.stderr, bad.stderr
+        assert obj.read_bytes() == sentinel
         output_dir = work / "nonempty"
         output_dir.mkdir()
         retained = output_dir / "file"
