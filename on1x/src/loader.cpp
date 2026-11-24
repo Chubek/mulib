@@ -98,9 +98,10 @@ class Loader {
     auto* descriptor=ffi::find_descriptor(request.module,member);
     if(descriptor&&descriptor->schema_version!=2)descriptor=nullptr;
     // Keep the old reviewed driver/stub subject unchanged. The direct unsafe
-    // C11 route prefers a real v2 descriptor even for an existing export.
+    // Calls through an unsafe alias keep their checked descriptor and lexical
+    // unsafe requirement even in a mixed legacy reviewed build.
     const auto* scalar=!options.ffi_stage&&request.module==legacy_scalar_module&&
-     (!descriptor||options.kernel_stage)?ffi::find_member(request.module,member):nullptr;
+     (!descriptor||(options.kernel_stage&&!request.is_unsafe))?ffi::find_member(request.module,member):nullptr;
     if(scalar)descriptor=nullptr;
     const auto symbol=scalar?scalar->symbol:
      (options.ffi_stage?std::string_view{}:legacy_kernel_member(request.module,member));
