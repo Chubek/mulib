@@ -118,6 +118,18 @@ class NativeGraph:
         return result
 
 
+def reachable_native_graph(function, tags) -> tuple[list, list]:
+    """The symbol-local graph for the proposed rich schema, not a v2 identity.
+
+    Start with a fresh ordinal map so unrelated declarations cannot shift tag
+    IDs. The root visits its result before its arguments; definitions are
+    then visited in first-reference order, including through recursive pointers.
+    """
+    graph = NativeGraph(tags)
+    root = graph.type(function.type)
+    return root, graph.tags()
+
+
 def _surface(typ, *, result: bool) -> tuple[str | None, str | None]:
     if isinstance(typ, VoidType):
         return ("void", None) if result else (None, "void_parameter")

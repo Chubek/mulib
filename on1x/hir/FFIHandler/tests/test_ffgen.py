@@ -1,5 +1,7 @@
 """W03 generation policy tests; optional real-tool captures are explicit inputs."""
+import base64
 from dataclasses import replace
+import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -10,8 +12,11 @@ from cephyr_interface import (
     PointerType, QualifiedType, RealType, Tag, TagRef, VoidType, decode_interface,
 )
 import ffic
-from ffgen import GenerationError, GuardDelta, Override, failed_module, generate_module
-from ffi_types import target_identity
+from ffgen import (
+    GenerationError, GuardDelta, Override, _check_public_header, _parser_identity, failed_module,
+    generate_module,
+)
+from ffi_types import reachable_native_graph, target_identity
 
 
 TARGET = target_identity("x86_64-linux-gnu")
@@ -81,6 +86,39 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(rows["mulib_x_multi_origin"]["reason"], "ambiguous_export")
         self.assertEqual(rows["mulib_x_dep_competing"]["reason"], "reserved_other_module")
         self.assertEqual(rows["mulib_x_foreign_only"]["reason"], "foreign_origin")
+
+    def test_public_header_must_resolve_to_manifest_path(self):
+        root = Path("/fixture")
+        canonical = root / RECIPE.header_path
+        seen = []
+
+        def selected(path):
+            def check(header):
+                seen.append(header)
+                return path
+            return SimpleNamespace(check_public_header=check)
+
+        _check_public_header(root, RECIPE, selected(canonical))
+        with self.assertRaisesRegex(GenerationError, "not the canonical manifest header"):
+            _check_public_header(root, RECIPE, selected(root / "sysroot" / RECIPE.header))
+        self.assertEqual(seen, [RECIPE.header, RECIPE.header])
+
+    def test_parser_provenance_elides_paths_but_binds_grammar_and_parser(self):
+        grammar = "a" * 64
+
+        def artifact(path, *, value="token", code=b"MODE = 'interpret'\n"):
+            payload = base64.b64encode(json.dumps({
+                "file": path, "dependencies": [{"path": path, "sha256": grammar}],
+                "tokens": [value],
+            }).encode("ascii"))
+            return b'SPEC = json.loads(base64.b64decode("' + payload + b'"))\n' + code
+
+        first = _parser_identity(artifact("/a/grammar"), grammar)
+        self.assertEqual(first, _parser_identity(artifact("/b/grammar"), grammar))
+        for changed in (artifact("/a/grammar", value="other"), artifact("/a/grammar", code=b"")):
+            self.assertNotEqual(first, _parser_identity(changed, grammar))
+        with self.assertRaisesRegex(GenerationError, "does not bind"):
+            _parser_identity(artifact("/a/grammar"), "0" * 64)
 
     def test_multiple_owned_headers_must_be_explicit(self):
         fn = function("mulib_x_custom")
@@ -174,6 +212,9 @@ class GenerationTests(unittest.TestCase):
             generate(fn, origins={fn.name: ("include/dependency.h",)},
                      override=Override(TARGET, RECIPE.module, (fn.name,)))
         with self.assertRaisesRegex(GenerationError, "stale or unowned selection"):
+            generate(fn, origins={fn.name: (RECIPE.header_path, "include/dependency.h")},
+                     override=Override(TARGET, RECIPE.module, (fn.name,)))
+        with self.assertRaisesRegex(GenerationError, "stale or unowned selection"):
             generate(fn, override=Override(TARGET, RECIPE.module, ("puts",)))
         with self.assertRaisesRegex(GenerationError, "target/module mismatch"):
             generate(fn, override=Override(OTHER_TARGET, RECIPE.module))
@@ -202,6 +243,25 @@ class GenerationTests(unittest.TestCase):
         self.assertEqual(tags[0]["fields"][0]["type"][-1], ["tag-ref", 0])
         self.assertIsNone(tags[1]["layout"])
         self.assertNotIn(b"profile scalar", first.document)
+
+    def test_rich_graph_ordinals_are_symbol_local_and_result_first(self):
+        def capture(result_id, arg_id, unrelated_id, unrelated_name):
+            result = PointerType(64, 8, 8, TagRef(result_id))
+            arg = PointerType(64, 8, 8, TagRef(arg_id))
+            fn = function("mulib_x_graph", (arg,), result)
+            return reachable_native_graph(fn, (
+                Tag(unrelated_id, "struct", unrelated_name, False, None, (), None, ()),
+                Tag(arg_id, "struct", "Node", False, None, (), None, ()),
+                Tag(result_id, "struct", "Node", True, Layout(8, 8),
+                    (Field("next", 0, result, None, False),), None, ()),
+            ))
+
+        root, tags = capture(30, 10, 0, "First")
+        self.assertEqual((root, tags), capture(2, 99, 1, "Renamed"))
+        self.assertEqual(root[3][-1], ["tag-ref", 0])
+        self.assertEqual(root[4][0][-1], ["tag-ref", 1])
+        self.assertEqual([(tag["id"], tag["complete"]) for tag in tags], [(0, True), (1, False)])
+        self.assertEqual(tags[0]["fields"][0]["type"][-1], ["tag-ref", 0])
 
     def test_failed_module_preserves_discovery_obligations_but_not_stale_selection(self):
         obligations = Override(TARGET, RECIPE.module, obligations=("retention_unknown",))

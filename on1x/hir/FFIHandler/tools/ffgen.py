@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from collections import Counter
 from dataclasses import dataclass, field
 import hashlib
@@ -59,6 +60,30 @@ class Generation:
 
 def _sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
+
+
+def _parser_identity(raw: bytes, grammar_sha: str) -> str:
+    """Hash genuine LLSynth Python output without its diagnostic source paths."""
+    pattern = rb'^SPEC = json\.loads\(base64\.b64decode\("([A-Za-z0-9+/=]+)"\)\)$'
+    matches = list(re.finditer(pattern, raw, re.MULTILINE))
+    if len(matches) != 1:
+        raise GenerationError("expected an LLSynth generated Python parser")
+    match = matches[0]
+    try:
+        spec = json.loads(base64.b64decode(match[1], validate=True))
+        dependencies = spec["dependencies"]
+        # FFIHandler is a single self-contained grammar. If that changes,
+        # bind all additional grammar inputs explicitly before using them.
+        (grammar,) = dependencies
+        if (not isinstance(spec["file"], str) or set(grammar) != {"path", "sha256"}
+                or not isinstance(grammar["path"], str) or grammar["sha256"] != grammar_sha):
+            raise ValueError
+        spec["file"] = "FFIHandler.llsynth"
+        grammar["path"] = "FFIHandler.llsynth"
+    except (KeyError, TypeError, ValueError) as exc:
+        raise GenerationError("LLSynth parser does not bind the selected FFIHandler grammar") from exc
+    payload = json.dumps(spec, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("ascii")
+    return _sha(raw[:match.start(1)] + base64.b64encode(payload) + raw[match.end(1):])
 
 
 def _member(module: str) -> str:
@@ -163,6 +188,8 @@ def _ownership(symbol, entry, selections, origins, owned_headers, reserved_prefi
     known = frozenset(origins.get(symbol, ()))
     if known and known.isdisjoint(owned_headers):
         return "excluded", "foreign_origin"
+    if known - owned_headers:
+        return "discovery_only", "ambiguous_export"
     if symbol in selections:
         return "owned", "audited_selection"
     if known and known <= owned_headers:
@@ -383,6 +410,14 @@ def _counts(records, unattempted) -> dict:
         raise GenerationError("prior generation metadata is malformed; run --all") from exc
 
 
+def _check_public_header(root, entry, provider):
+    # Keep the planner's raw TU/feature profile, but do not let its include
+    # resolve to an alternate file (even if it is the only search result).
+    header = provider.check_public_header(entry.header)
+    if header != root / entry.header_path:
+        raise GenerationError(f"{entry.key}: projected header is not the canonical manifest header")
+
+
 def _run(args) -> None:
     from cephyr_interface import InterfaceError, decode_interface
     import ffi_inventory
@@ -405,10 +440,11 @@ def _run(args) -> None:
         tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
     )
     snapshots = {path: _sha(path.read_bytes()) for path in toolchain}
-    snapshots[args.parser] = _sha(args.parser.read_bytes())
+    parser_source = ffic.read(args.parser, 4 * 1024 * 1024)
+    snapshots[args.parser] = _sha(parser_source)
     generation = {
         "tools": {path.name: snapshots[path] for path in toolchain},
-        "parser_sha256": snapshots[args.parser],
+        "parser_identity_sha256": _parser_identity(parser_source, snapshots[toolchain[-1]]),
     }
     protected_paths = (root, root / "include", root / "MANIFEST.yaml", override_dir.resolve(),
                        *snapshots, args.cephyr.resolve(), args.scratch_root.resolve(),
@@ -453,14 +489,15 @@ def _run(args) -> None:
                     args.cephyr, args.target, libstone_revision=args.libstone_revision,
                     scratch_root=args.scratch_root, include_dirs=plan.include_dirs,
                     system_include_dirs=tuple(args.system_include_dir),
-                    tool_inputs=(*args.tool_input, *((args.sysroot,) if args.sysroot else ())),
+                    tool_inputs=tuple(args.tool_input),
                     defines=plan.defines,
                     sysroot=args.sysroot, freestanding=args.freestanding,
                 )
                 providers[key] = provider
             return providers[key], key
 
-    def project(plan, provider, key):
+    def project(entry, plan, provider, key):
+        _check_public_header(root, entry, provider)
         try:
             projection = provider.project(plan.source)
             provenance = projection.provenance
@@ -491,7 +528,7 @@ def _run(args) -> None:
         plan = inventory.plan(entry.key)
         provider, key = provider_for(plan)
         override = selected_overrides.get(entry.key)
-        output, reason, projection_input, profile_sha = project(plan, provider, key)
+        output, reason, projection_input, profile_sha = project(entry, plan, provider, key)
         projection_sha = None
         if output is None:
             outcome = failed_module(entry, target, reason, override=override)
@@ -506,6 +543,7 @@ def _run(args) -> None:
                                         override=override)
             else:
                 outcome = generate_module(entry, interface, target, override=override,
+                                          owned_headers=plan.metadata["owned_headers"],
                                           reserved_prefixes=prefixes)
         row = {
             "key": entry.key, "module": entry.module, "header": entry.header_path,
@@ -572,7 +610,9 @@ def _run(args) -> None:
                 # Reuse a sibling only for the same *observed* complete input
                 # profile; a different planner profile requires one real probe.
                 if profile_key not in observed_profiles:
-                    project(plan, provider, profile_key)
+                    project(entry, plan, provider, profile_key)
+                else:
+                    _check_public_header(root, entry, provider)
                 if (digest(prior.get("plan")) != digest(plan.metadata) or
                         prior.get("projection_profile_sha256") !=
                         observed_profiles[profile_key]):
