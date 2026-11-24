@@ -30,8 +30,10 @@ yields back to the scheduler. `await timer(...)` never returns a value and is
 not allowed outside the body or in an expression. Joining the completed frame
 is done by its stackful owner; the frame itself never uses that join path.
 There is no async function syntax, await of another task/channel, or
-suspension-aware borrowing. MIR and its backends reject timer frames, and
-the Cephyr object route opts out of the frame ABI.
+suspension-aware borrowing. Public MIR and its consumers reject timer
+frames, and the Cephyr object route opts out of the frame ABI. The standalone
+[Archon checked-source timer route](../backends/mir-archon/TIMERS.md) supports
+a narrower flat taskgroup on Linux AMD64 without serializing suspension in MIR.
 
 ## Checked HIR and C11 emission
 

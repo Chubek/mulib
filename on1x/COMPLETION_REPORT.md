@@ -210,3 +210,79 @@ tests, 0 failed, 1 skipped** of 220 scheduled, including the new ownership,
 iterator and stackless timer tests. The skip is the delegated cgroup fixture.
 Logs: `build/on1x-integrated-ownership-iter-async-build.log` and
 `build/on1x-integrated-ownership-iter-async-ctest.log`.
+
+## ArchVirt and On1xfile auxiliary continuation
+
+Started at MuLIB `f724fed93f425ad525709b3651bf0a85b3490c7b` with LibStone
+`21f886afe61ce27ef5684acde8f1ed7c064e4e6a`. The pin and its sources were
+unchanged. The top-level gitlink matched; recursive submodule audit still
+encounters LibStone's unmapped `.decomissioned/lapislazuli/.info/binutils`.
+Test host: Linux x86-64, KVM API 12, GCC 16.2.1, Clang/LLD 22.1.8, CMake
+4.4.3 and Python 3.14.7.
+
+- `99dd9c3b`, `08237fb1`, `661d9aa8`, `4491083a`: checked source-to-DomIOS
+  ELF, native KVM launch, runtime-archive fingerprint, exact-image replay
+  and linked activation policies. `readelf -d` confirmed `libdomvirt.so` is
+  a dependency of the emitted launcher. A separate device-namespace probe
+  with no `/dev/kvm` returned 125 with a KVM diagnostic and no guest output.
+- `0ae44245`, `404cea53`, `4491083a`: root-only project policy, frozen
+  linked build, separate build sandbox and VM launch, exact cache commands,
+  and logical source paths across staging directories.
+- `aa1af7e5`: `std.vmm` config and bounded trusted C companion. The two
+  profiles do not admit direct safe On1x VM management. `59e0a969` kept the
+  companion out of the pure source package and added SDK tool validation
+  for the root-policy lockfile while retaining v1 and v2.
+- `9ce6ec67`–`12d9b247`, `4491083a`: `on1xc aux` and explicit recursive and
+  template-aware `aux init`, including the installed project tool.
+
+Configuration and verification:
+
+```sh
+cmake -S on1x/third_party/libstone/cornerstone/ArchVirt \
+  -B build/on1x-archvirt-upstream -DCMAKE_BUILD_TYPE=Release \
+  -DDOMVIRT_BUILD_TESTS=OFF -DCMAKE_INSTALL_PREFIX="$PWD/build/on1x-archvirt-prefix"
+cmake --build build/on1x-archvirt-upstream --parallel 6
+cmake --install build/on1x-archvirt-upstream
+cmake -S on1x -B build/on1x-archvirt-enabled -DBUILD_TESTING=ON \
+  -DON1X_WITH_ARCHVIRT=ON -DON1X_ARCHVIRT_ROOT="$PWD/build/on1x-archvirt-prefix"
+cmake --build build/on1x-archvirt-enabled --parallel 5
+ctest --test-dir build/on1x-archvirt-enabled --output-on-failure --parallel 4
+```
+
+The pinned upstream C API smoke booted its bundled software guest on all
+three machines. GCC/generated focused integration passed 11/11 during
+integration (`build/on1x-archvirt-project-matrix.log`); Clang forced fallback
+with MEMGraph, SDK, Syren and Wetstone disabled passed 7/7
+(`build/on1x-archvirt-fallback-ctest.log`). The unchanged upstream library was
+not instrumented; the strict Clang ASan/UBSan host runner passed the real
+KVM suite, including arithmetic traps, bounded serial, wrong ELF and a
+watchdog. The staged installation passed ArchVirt CLI, `aux`, and `aux init`
+fixtures.
+
+The enabled full run after the packaging/SDK fixes scheduled 227 CTests:
+225 passed, the delegated-cgroup fixture skipped, and the existing
+cancellation/deadline fixture failed once when the Python C11 build driver
+exited with `-11` after reporting a `manifest_dependencies` error. Its
+isolated rerun passed. Both outcomes are recorded in
+`build/on1x-archvirt-enabled-verified-ctest.log` and
+`build/on1x-archvirt-cancellation-rerun.log`.
+
+Existing C11, VMWeave and enabled native commands are separate from the
+[ArchVirt guest profile](docs/archvirt.md). Existing v1/v2 locks still work
+unless the root project opts in; a VM project must re-lock after changing
+its root VM policy. Native host architectures other than x86-64, general
+host-runtime features in the guest, and safe On1x VMM lifecycle admission
+remain open. See [VMM admission requirements](stdlib/vmm/README.md#admission-and-remaining-work)
+for the precise missing ownership, buffer, and native-effect contracts.
+
+### Native Archon timer continuation
+
+`1d70ce4f` adds the standalone `on1x-archon-mir --timer-source` path
+documented in [TIMERS.md](backends/mir-archon/TIMERS.md). It uses checked
+timer HIR, verified scalar MIR, real generated AMD64 code and the same CSP
+supervisor as the C11 path. Lead integration **11/11** passed against the
+generated backend from the same LibStone pin
+(`build/on1x-archon-timer-integrated-ctest.log`). Worker runs with the SDK
+adapter and fallback scanner passed independently; only the runtime and
+ABI shim, not the emitted native assembly, were sanitizer-instrumented.
+No public MIR suspension or SDK execution contract is added.
