@@ -1,8 +1,9 @@
 # On1x FFI migration status
 
 **Release state: in progress.** No migration gate, native target, or safe-call
-approval is established by this initial record. The reference native path and
-its independent review policy remain in place.
+approval beyond the explicitly recorded test scope is established by this
+record. The reference native path and its independent review policy remain
+in place.
 
 ## Baseline (G0)
 
@@ -180,3 +181,22 @@ remain on their worker branches pending the corresponding gates.
   and `evidence/WORKER-11.md`. Staging uses W04's catalogue with its matching
   grammar and compiler hashes; W05's later v3 candidate checker is not
   merged into this package without regeneration.
+
+### Local master consolidation
+
+All sixteen `ffi/*` branch tips were merged into local `master` and the
+branch refs were deleted after an ancestry check. No remote was changed.
+The older migration history was retained without restoring its superseded
+seed files. `5c285248` regenerated the complete AMD64 package against the
+merged grammar and rich-plan validator; a second full read-only `--check`
+and the 2,053-module inventory check passed. The tracked seed's original
+bytes remain in `d890abb6`, not in the live catalogue.
+
+A fresh GCC Release build of `5c285248` passed **22/22** selected CTests
+(FFI, SDK 2, static and sealed-DSO On1xRT, header registration and legacy
+IPC HIR). The standalone legacy reviewed scalar test passed with real
+Exotract and ephemeral Ed25519 test keys, including the mixed reviewed and
+explicitly unsafe clamp case fixed by `7da9b111`. These are not production
+reviews. Logs: `build/coordinator/master-merge/{regenerate,master-tests}.log`.
+This is not a release qualification: rich calls, generated reviewed DSO and
+Cephyr DSO parity, and legacy retirement remain open.
