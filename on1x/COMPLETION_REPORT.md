@@ -175,6 +175,12 @@ on the existing taskgroup scheduler. It does not admit source `async` or
 - **6/6** integrated concurrency and installation tests
   (`build/on1x-async-csp-integration.log`). The runtime fixture checks that
   each frame suspends without allocating a per-frame fiber stack.
+- Generated-scanner GCC integration scheduled 220 tests:
+  **218 passed, 1 failed, 1 skipped** (`build/on1x-ownership-verified-ctest.log`).
+  The sole failure was an indentation error in the new PPX loan-boundary
+  assertion. Commit `a0686063` corrected the test and its full PPX suite
+  passed on rerun (`build/on1x-ownership-ppx.log`). The cgroup test still
+  requires a delegated parent.
 
 The scoped-loan profile uses existing MIR wire versions and ordinary
 slot initialization checks. SDK borrow flags are additive inspection
