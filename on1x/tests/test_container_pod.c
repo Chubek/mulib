@@ -213,6 +213,17 @@ static void baseline(void)
     CHECK(on1x_container_pod_echo_byte(37, 2000, 0, 0) == ON1X_POD_STATE);
     CHECK(!sigaction(SIGCHLD, &old, NULL));
 
+    delegated = open(".", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    CHECK(delegated >= 0);
+    CHECK(on1x_container_pod_echo_byte(73, 2000, 0, 1) == ON1X_POD_INVALID);
+    close(delegated);
+    delegated = -1;
+    no_children();
+    CHECK(on1x_container_pod_echo_byte(73, 2000, 0, 0) == 73);
+    no_children();
+
+    /* Keep the live-thread rejection last: pthread_join can return before
+     * Linux stops exposing the exited thread under /proc/self/task. */
     int pipefd[2];
     pthread_t thread;
     CHECK(!pipe(pipefd));
@@ -224,13 +235,6 @@ static void baseline(void)
     close(pipefd[0]);
     close(pipefd[1]);
 
-    delegated = open(".", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-    CHECK(delegated >= 0);
-    CHECK(on1x_container_pod_echo_byte(73, 2000, 0, 1) == ON1X_POD_INVALID);
-    close(delegated);
-    delegated = -1;
-    no_children();
-    CHECK(on1x_container_pod_echo_byte(73, 2000, 0, 0) == 73);
     no_children();
     CHECK(count_entries(opendir("/proc/self/fd")) == fds);
     puts("Pod: bounded relay, authorization, denied namespace, deadline and cleanup retry, reaper and thread rejection");
