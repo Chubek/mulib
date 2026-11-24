@@ -26,7 +26,7 @@ def check(mode, build, cc, on1xc, rt):
         stage = Path(work).resolve()
         staged_c = stage / "fixture.c"
         options = SimpleNamespace(cc=cc, ffi_provider="host", ffi_adapter_provider=None,
-                                  cflag=["-O2"])
+                                  inspect_ffi=False, cflag=["-O2"])
         command = [on1xc, "--emit-c", source, "-o", staged_c, "--no-prelude"]
         plan = Build(options, command, ON1X.parent, stage)
         if plan.safe or plan.dynamic:
