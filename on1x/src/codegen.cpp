@@ -938,13 +938,7 @@ class Generator {
        definitions<<guard;
        if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=enclosing;
       }
-     }else if(callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign){
-     // Operands were evaluated once, in source order; guard references only temporaries.
-     if(const auto* binding=ffi::find_scalar(externs.at(callee.text)->kernel_symbol)){
-      const auto guard=ffi::scalar_guard(*binding,args);
-      if(!guard.empty())definitions<<pad()<<guard;
      }
-    }
     if(callee.reference==Expr::Reference::ScalarForeign&&pricing_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
      const bool candidates=externs.at(callee.text)->kernel_symbol=="mulib_priceopt_candidates";
      std::vector<std::string> wire;
@@ -1426,7 +1420,7 @@ class Generator {
    }
      std::string bounds_report() const {return bounds.report();}
     std::string run(){
-      std::string kernel_headers,ipc_header,foreign_headers;
+       std::string ipc_header,foreign_headers;
       std::set<std::string_view> foreign_includes,linked_foreign_prototypes;
       for(const auto& f:unit.functions){
        if(f.prototype)continue;
@@ -1467,25 +1461,11 @@ class Generator {
         prototypes<<"const double *, int64_t, int64_t, int64_t, const double *, int64_t, int64_t, int64_t, ";
        else prototypes<<"int64_t, double, double, double, ";
        prototypes<<"double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);\n";
-      }else {
-       const auto* binding=ffi::find_scalar(f.kernel_symbol);
-       if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
-       prototypes<<ffi::scalar_prototype(*binding,functions.at(f.name));
+       }else throw Error(f.where,"scalar foreign lowering requires a checked descriptor ID","ON1X-KERNEL-ABI");
+       continue;
       }
-      continue;
-     }
-     if(!f.kernel_symbol.empty()){
-     if(kernel_headers.empty())kernel_headers="#include <limits.h>\n#include <stdint.h>\n"
-      "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
-      "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
-      "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";
-      const auto* binding=ffi::find_scalar(f.kernel_symbol);
-      if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
-      const auto include=ffi::scalar_header(*binding);
-      if(kernel_headers.find(include)==std::string::npos)kernel_headers+=include;
-      prototypes<<ffi::scalar_wrapper(*binding,functions.at(f.name));
-     continue;
-    }
+     if(!f.kernel_symbol.empty())
+      throw Error(f.where,"scalar foreign lowering requires a checked descriptor ID","ON1X-KERNEL-ABI");
     if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=&f.where;
     prototypes<<(f.external?"extern ":takes_borrows(f)?"static ":"")
               <<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
@@ -1544,7 +1524,7 @@ class Generator {
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
           +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
-         +kernel_headers+foreign_headers+ipc_header+float_guard+types.str()+"\n";
+         +foreign_headers+ipc_header+float_guard+types.str()+"\n";
    const auto proto_begin=output.size();
    output+=prototypes.str()+"\n"+value_helpers.str()+helpers.str();
    const auto body_begin=output.size();

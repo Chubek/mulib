@@ -21,6 +21,11 @@ std::string scalar_wrapper(const Descriptor&, std::string_view emitted_name, Lin
 // This emits code, not authority to publish the object.
 std::string linked_scalar_tu(std::span<const Descriptor* const>,
                              LinkName = LinkName::DescriptorId);
+inline std::string linked_scalar_tu(const Descriptor& descriptor,
+                                    LinkName names = LinkName::DescriptorId) {
+    const Descriptor* const selected = &descriptor;
+    return linked_scalar_tu(std::span{&selected, 1},names);
+}
 
 // At the checked application call site, after argument evaluation and
 // before native conversion or the call. Values must be plain C temporaries
