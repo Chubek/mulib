@@ -64,6 +64,25 @@ fails at load time. This is not a test of trusted DSO admission.
 `--sanitizers` instruments the test caller, C wrapper, implementation, and
 host inline and DSO paths, not the On1x compiler or LibStone.
 
+## Generation and input drift
+
+With the integrated generator and a genuine built LLSynth parser:
+
+```sh
+python3 -B on1x/hir/FFIHandler/tests/integration/generation.py \
+  "$LOGS/generation" --mulib-root "$PWD" --other-mulib-root "$SAME_REV_OTHER_ROOT" \
+  --cephyr "$CEPHYR" --libstone-root "$LIBSTONE" --parser "$GENERATED_PARSER" \
+  --tool-input "$LIBCEPHYR" --tool-input "$LIBSTONE/cornerstone/Cephyr/triples" \
+  --tool-input "$LIBSTONE/cornerstone/Archon/stdspec"
+```
+
+Generates actual clamp in two checkout locations, compares the exact bytes,
+checks that the audited interval rule survives, and verifies that prefix
+matching alone never grants ownership. Negative controls reject an unexpected
+generated file, a stale authored signature, and a transitive `stdint.h`
+change; known-good output is unchanged on rejection. This is a one-module
+test, not a substitute for the full-manifest `--all --check`.
+
 ## Real On1x and installed tool
 
 ```sh

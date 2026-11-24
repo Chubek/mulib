@@ -110,6 +110,14 @@ def main():
             raise RuntimeError(f"{tag}: independent On1x oracle mismatch")
 
     static = source("unsafe", f"unsafe {{ {body} }}")
+    if not legacy:
+        inspection = build("inspection", static, extra=("--inspect-ffi",))
+        report = json.loads(inspection.read_bytes())
+        if (report.get("schema") != "on1x.ffi-plan/v1" or report.get("safe_export") is not False
+                or report.get("admission") != "not_qualified"):
+            raise RuntimeError("inspection is not the expected non-authoritative plan")
+        build("unknown-provider", static, status=None, diagnostic=b"invalid choice",
+              extra=("--ffi-provider", "qualification-unknown-provider"))
     compare("run-unsafe", build("unsafe", static))
     bad = source("bad-guard", "unsafe { println(C.i64(tap(0), tap(2), tap(1))); }")
     trapped = build("bad-guard", bad)
@@ -168,6 +176,8 @@ def main():
         check_reviewed("run-reviewed", build("reviewed", safe, extra=params()))
         build("wrong-authority", safe, extra=params(other_key), status=None,
               diagnostic=b"signature verification failed")
+        build("compiler-flags-drift", safe, extra=(*params(), "--cflag=-O1"), status=None,
+              diagnostic=b"does not match")
         # Valid JSON with a just one-byte change to the signed message.
         review.write_bytes(review.read_bytes() + b" ")
         build("mutated-review-bytes", safe, extra=params(), status=None,
