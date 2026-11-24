@@ -1,13 +1,13 @@
-"""Decode Cephyr C11Interface v1 as bounded, description-only data.
+"""Decode Cephyr C11Interface v1 and its additive analysis model 1.
 
-Based on LibStone e10ac69e, Cephyr/docs/C11Interface.md and the corresponding
-v1 serializer. This is neither a C resolver nor evidence of callable ABI,
-source origin, or safe admission. Numeric ``unknown`` and name ``none`` are
-represented by None in their respective typed slots.
+Based on LibStone e10ac69e and 6a7d52e8, Cephyr/docs/C11Interface.md and the
+corresponding serializers. This describes a projection; it does not verify a
+body, source origin, callable ABI, or safe admission. Unknown numeric fields
+and absent names are None; status atoms such as ``unknown`` remain explicit.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import json
 import re
 
@@ -29,6 +29,14 @@ MAX_REDECLARATIONS = 4096
 _U64_MAX = (1 << 64) - 1
 _I64_MIN = -(1 << 63)
 _U32_MAX = (1 << 32) - 1
+_PROOF_PARAMETER_LIMIT = 8
+_PROOF_ACCESS_LIMIT = 24  # At most this many expression nodes were modeled.
+_PROOF_DEFINITION_LIMIT = 128
+_PROOF_WIDTHS = (8, 16, 31)
+_PROOF_MODEL = "closed-unsigned-expression-v2"
+_PROOF_SCOPE = "this-definition"
+_PROOF_STATUS = ("proved", "disproved", "unknown")
+_QUALIFIERS = ("const", "volatile", "restrict")
 
 
 class InterfaceError(ValueError):
@@ -46,6 +54,133 @@ class Layout:
 
 
 @dataclass(frozen=True, slots=True)
+class AnalysisModel:
+    version: int
+    scope: tuple[str, ...]
+    facts: str
+    unknown: str
+
+
+@dataclass(frozen=True, slots=True)
+class TargetProperties:
+    byte_bits: int
+    byte_order: str
+    pointer_bits: int
+    integer_representation: str
+    hosted: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ValueRange:
+    minimum: int
+    maximum: int
+
+
+@dataclass(frozen=True, slots=True)
+class RecordTraits:
+    const_member: bool
+    volatile_member: bool
+    contains_anonymous_member: bool
+    contains_flexible_array: bool
+    contains_bit_field: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ArrayAccess:
+    """Caller obligation from one array parameter declaration, not a buffer fact."""
+
+    minimum_elements: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class SiteParameter:
+    index: int
+    adjusted_from: str | None
+    storage: str | None
+    variable_bound: bool
+    requires_array_access: ArrayAccess | None
+    adjusted_pointer_qualifiers: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class DeclarationSite:
+    """Presumed file/line labels; these are not verified source paths."""
+
+    file: str | None
+    line: int | None
+    definition: bool
+    parameters: tuple[SiteParameter, ...]
+
+    def portable_data(self) -> dict:
+        """Describe the site structurally without its presumed location."""
+        return {
+            "definition": self.definition,
+            "parameters": [
+                {**asdict(parameter),
+                 "adjusted_pointer_qualifiers": list(parameter.adjusted_pointer_qualifiers)}
+                for parameter in self.parameters
+            ],
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class CallContract:
+    normal_return: str
+    fixed_parameters: int | None
+    variadic_tail: bool | None
+
+
+@dataclass(frozen=True, slots=True)
+class Behavior:
+    general_body_analysis: str
+    memory_read: str
+    memory_write: str
+    allocation: str
+    deallocation: str
+    throws_or_traps: str
+    synchronization: str
+    termination: str
+    return_alias: str
+    return_nullability: str
+    taint_inputs: str
+    taint_outputs: str
+    taint_transfer: str
+
+
+@dataclass(frozen=True, slots=True)
+class MemorySafety:
+    status: str
+    model: str | None = None
+    scope: str | None = None
+    checked_accesses: int | None = None
+    solver: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ReturnDependency:
+    index: int
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
+class ReturnPolicy:
+    width: int
+    status: str
+
+
+@dataclass(frozen=True, slots=True)
+class BodyProof:
+    """Bounded claims about this translation unit's definition only."""
+
+    model: str
+    scope: str
+    memory_effects: str
+    return_dependencies: tuple[ReturnDependency, ...]
+    return_policies: tuple[ReturnPolicy, ...]
+    solver: str
+
+
+@dataclass(frozen=True, slots=True)
 class VoidType:
     pass
 
@@ -58,6 +193,7 @@ class IntegerType:
     signed: bool
     size: int
     align: int
+    value_range: ValueRange | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +211,7 @@ class PointerType:
     size: int
     align: int
     pointee: CType
+    category: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +257,32 @@ class Function:
     calling_convention: str
     parameter_names: tuple[str | None, ...]
     specifiers: tuple[str, ...]
+    declaration_sites: tuple[DeclarationSite, ...] = ()
+    call_contract: CallContract | None = None
+    behavior: Behavior | None = None
+    memory_safety: MemorySafety | None = None
+    body_proof: BodyProof | None = None
+
+    def portable_analysis_data(self) -> dict | None:
+        """JSON-recursive analysis data; callers bind the symbol, target and domain.
+
+        This is separate from native representation identity and carries no
+        presumed file/line labels, provenance, or authority.
+        """
+        if self.call_contract is None:
+            return None
+        proof = self.body_proof
+        return {
+            "declaration_sites": [site.portable_data() for site in self.declaration_sites],
+            "call_contract": asdict(self.call_contract),
+            "behavior": asdict(self.behavior),
+            "memory_safety": asdict(self.memory_safety),
+            "body_proof": None if proof is None else {
+                **asdict(proof),
+                "return_dependencies": [asdict(dep) for dep in proof.return_dependencies],
+                "return_policies": [asdict(policy) for policy in proof.return_policies],
+            },
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,12 +293,15 @@ class Object:
     storage: tuple[str, ...]
     definition: str
     layout: Layout
+    declaration_sites: tuple[DeclarationSite, ...] = ()
+    storage_duration: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class Typedef:
     name: str
     type: CType
+    declaration_sites: tuple[DeclarationSite, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +309,7 @@ class BitField:
     width: int
     shift: int
     container_offset: int
+    value_range: ValueRange | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +337,7 @@ class Tag:
     fields: tuple[Field, ...]
     underlying: IntegerType | None
     enumerators: tuple[Enumerator, ...]
+    traits: RecordTraits | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +348,8 @@ class Interface:
     abi: str
     declarations: tuple[Function | Object | Typedef, ...]
     tags: tuple[Tag, ...]
+    analysis_model: AnalysisModel | None = None
+    target_properties: TargetProperties | None = None
 
     @property
     def functions(self) -> tuple[Function, ...]:
@@ -310,14 +480,15 @@ def _head(node: _Node) -> str:
     return node[0]
 
 
-def _clauses(nodes, required, optional=(), *, repeat=None):
+def _clauses(nodes, required, optional=(), *, repeat=None, repeat_limit=None,
+             repeat_subject="tag member"):
     """Split a closed set of singleton clauses and one optional repeated kind."""
     found, repeated = {}, []
     for node in nodes:
         key = _head(node)
         if key == repeat:
-            if len(repeated) >= MAX_MEMBERS:
-                raise _limit("tag member count limit exceeded")
+            if len(repeated) >= (MAX_MEMBERS if repeat_limit is None else repeat_limit):
+                raise _limit(f"{repeat_subject} count limit exceeded")
             repeated.append(node)
             continue
         _require(key in required or key in optional, "unknown clause")
@@ -364,6 +535,53 @@ def _known(node, high=_U64_MAX) -> int | None:
     return None if _is_atom(node, "unknown") else _number(node, 1, high)
 
 
+def _analysis_model(node) -> AnalysisModel:
+    if len(node) < 2 or type(node[1]) is not int or node[1] != 1:
+        raise InterfaceError("version", "unsupported C11Interface analysis-model version")
+    clauses, _ = _clauses(node[2:], ("scope", "facts", "unknown"))
+    scope = clauses["scope"]
+    _require(len(scope) == 3 and _is_atom(scope[1], "declarations")
+             and _is_atom(scope[2], "bounded-return-proof"), "unsupported analysis-model scope")
+    return AnalysisModel(node[1], (str(scope[1]), str(scope[2])),
+                         _atom(_single(clauses, "facts"), ("c11-frontend",), "fact model"),
+                         _atom(_single(clauses, "unknown"), ("not-a-guarantee",), "unknown policy"))
+
+
+def _target_properties(node) -> TargetProperties:
+    clauses, _ = _clauses(node[1:], ("byte-bits", "byte-order", "pointer-bits",
+                                    "integer-representation", "hosted"))
+    byte_bits = _single(clauses, "byte-bits")
+    pointer_bits = _single(clauses, "pointer-bits")
+    byte_order = _single(clauses, "byte-order")
+    representation = _single(clauses, "integer-representation")
+    if (type(byte_bits) is not int or byte_bits != 8
+            or type(pointer_bits) is not int or pointer_bits != 64
+            or not _is_atom(byte_order, "little") or not _is_atom(representation, "twos-complement")):
+        raise InterfaceError("target", "target properties do not match the interface target")
+    return TargetProperties(byte_bits, str(byte_order), pointer_bits, str(representation),
+                            _bool(_single(clauses, "hosted")))
+
+
+def _value_range(node, bits: int, signed: bool) -> ValueRange | None:
+    if bits == 0:
+        _require(len(node) == 2 and _is_atom(node[1], "unknown"),
+                 "zero-width bit-field range must be unknown")
+        return None
+    _require(len(node) == 3, "invalid value-range arity")
+    minimum, maximum = _number(node[1], _I64_MIN), _number(node[2])
+    magnitude = 1 << (bits - signed)
+    _require((minimum, maximum) == (-magnitude if signed else 0, magnitude - 1),
+             "value range does not match integer representation")
+    return ValueRange(minimum, maximum)
+
+
+def _qualifiers(node) -> tuple[str, ...]:
+    _require(2 <= len(node) <= 4, "invalid qualifier count")
+    qualifiers = tuple(_atom(n, _QUALIFIERS, "qualifier") for n in node[1:])
+    _require(len(set(qualifiers)) == len(qualifiers), "duplicate qualifier")
+    return qualifiers
+
+
 def _layout_values(clauses) -> Layout:
     size = _known(_single(clauses, "size"))
     align = _known(_single(clauses, "align"), _U32_MAX)
@@ -395,7 +613,7 @@ _INTEGERS = {
 }
 
 
-def _type(node, target: str) -> CType:
+def _type(node, target: str, analysis: bool) -> CType:
     # This recursion only follows syntactic children, at most MAX_DEPTH;
     # layout and tag-graph validation below never recursively follow IDs.
     if _is_atom(node, "void"):
@@ -404,7 +622,8 @@ def _type(node, target: str) -> CType:
     if kind == "integer":
         _require(len(node) >= 2, "integer type lacks a name")
         name = _atom(node[1], _INTEGERS, "integer type name")
-        clauses, _ = _clauses(node[2:], ("rank", "bits", "signed", "size", "align"))
+        clauses, _ = _clauses(node[2:], ("rank", "bits", "signed", "size", "align")
+                              + (("value-range",) if analysis else ()))
         rank = _number(_single(clauses, "rank"), high=5)
         bits = _number(_single(clauses, "bits"), 1, 64)
         signed = _bool(_single(clauses, "signed"))
@@ -415,7 +634,8 @@ def _type(node, target: str) -> CType:
         size = (bits + 7) // 8
         _require((rank, bits, signed) == (native_rank, native_bits, native_signed)
                  and layout == Layout(size, size), "invalid integer representation for target")
-        return IntegerType(name, rank, bits, signed, layout.size, layout.align)
+        range_ = _value_range(clauses["value-range"], bits, signed) if analysis else None
+        return IntegerType(name, rank, bits, signed, layout.size, layout.align, range_)
     if kind == "real":
         _require(len(node) >= 2, "real type lacks a name")
         name = _atom(node[1], ("float", "double", "long-double"), "real type name")
@@ -433,16 +653,23 @@ def _type(node, target: str) -> CType:
         _require((fmt, bits, layout) == expected, "invalid real representation for target")
         return RealType(name, fmt, bits, layout.size, layout.align)
     if kind == "pointer":
-        clauses, _ = _clauses(node[1:], ("bits", "size", "align", "pointee"))
+        clauses, _ = _clauses(node[1:], ("bits", "size", "align", "pointee")
+                              + (("category",) if analysis else ()))
         bits = _number(_single(clauses, "bits"))
         layout = _layout_values(clauses)
         _require(bits == 64 and layout == Layout(8, 8), "invalid LP64 pointer representation")
-        return PointerType(bits, layout.size, layout.align, _type(_single(clauses, "pointee"), target))
+        pointee = _type(_single(clauses, "pointee"), target, analysis)
+        category = None
+        if analysis:
+            expected = "function" if isinstance(pointee, FunctionType) else "object"
+            category = _atom(_single(clauses, "category"), (expected,), "pointer category")
+        return PointerType(bits, layout.size, layout.align, pointee, category)
     if kind == "array":
         clauses, _ = _clauses(node[1:], ("count", "size", "align", "element"))
         count = _known(_single(clauses, "count"))
         layout = _layout_values(clauses)
-        return ArrayType(count, layout.size, layout.align, _type(_single(clauses, "element"), target))
+        return ArrayType(count, layout.size, layout.align,
+                         _type(_single(clauses, "element"), target, analysis))
     if kind == "function-type":
         clauses, _ = _clauses(node[1:], ("prototype", "variadic", "result", "parameters"))
         prototype = _bool(_single(clauses, "prototype"))
@@ -452,21 +679,17 @@ def _type(node, target: str) -> CType:
             raise _limit("function parameter count limit exceeded")
         _require(prototype or len(params) == 1, "unprototyped function has a parameter list")
         _require(not variadic or (prototype and len(params) > 1), "invalid variadic function type")
-        result = _type(_single(clauses, "result"), target)
+        result = _type(_single(clauses, "result"), target, analysis)
         _require(not isinstance(result, (ArrayType, FunctionType, QualifiedType)),
                  "invalid function result shape")
-        parameters = tuple(_type(param, target) for param in params[1:])
+        parameters = tuple(_type(param, target, analysis) for param in params[1:])
         _require(all(not isinstance(param, (VoidType, ArrayType, FunctionType, QualifiedType))
                      for param in parameters), "invalid adjusted parameter shape")
         return FunctionType(prototype, variadic, result, parameters)
     if kind == "qualified":
         _require(len(node) == 3 and _head(node[1]) == "qualifiers", "invalid qualified type shape")
-        names = node[1]
-        _require(2 <= len(names) <= 4, "invalid qualifier count")
-        qualifiers = tuple(_atom(n, ("const", "volatile", "restrict"), "qualifier")
-                           for n in names[1:])
-        _require(len(set(qualifiers)) == len(qualifiers), "duplicate qualifier")
-        child = _type(node[2], target)
+        qualifiers = _qualifiers(node[1])
+        child = _type(node[2], target, analysis)
         _require(not isinstance(child, (QualifiedType, FunctionType)), "invalid qualified type shape")
         if "restrict" in qualifiers:
             _require(isinstance(child, PointerType) and not isinstance(_base(child.pointee), FunctionType),
@@ -478,24 +701,35 @@ def _type(node, target: str) -> CType:
     raise InterfaceError("schema", "unknown type form")
 
 
-def _field(node, target: str) -> Field:
+def _field(node, target: str, analysis: bool) -> Field:
     _require(len(node) >= 2, "field lacks a name slot")
     name = _name(node[1])
     clauses, _ = _clauses(node[2:], ("offset", "type"), ("bit-field", "flexible-array"))
     offset = _number(_single(clauses, "offset"))
+    type_ = _type(_single(clauses, "type"), target, analysis)
     bits = None
     if "bit-field" in clauses:
-        bit, _ = _clauses(clauses["bit-field"][1:], ("width", "shift", "container-offset"))
-        bits = BitField(_number(_single(bit, "width"), high=64),
-                        _number(_single(bit, "shift"), high=7),
-                        _number(_single(bit, "container-offset")))
+        bit, _ = _clauses(clauses["bit-field"][1:], ("width", "shift", "container-offset")
+                          + (("value-range",) if analysis else ()))
+        width = _number(_single(bit, "width"), high=64)
+        range_ = None
+        if analysis:
+            base = _base(type_)
+            _require(isinstance(base, IntegerType), "bit-field value range requires an integer type")
+            range_ = _value_range(bit["value-range"], width, base.signed)
+        bits = BitField(width, _number(_single(bit, "shift"), high=7),
+                        _number(_single(bit, "container-offset")), range_)
     flexible = "flexible-array" in clauses
     if flexible:
         _require(_bool(_single(clauses, "flexible-array")), "flexible-array marker must be true")
-    return Field(name, offset, _type(_single(clauses, "type"), target), bits, flexible)
+    return Field(name, offset, type_, bits, flexible)
 
 
-def _tag(node, target: str) -> Tag:
+_TRAITS = ("const-member", "volatile-member", "contains-anonymous-member",
+           "contains-flexible-array", "contains-bit-field")
+
+
+def _tag(node, target: str, analysis: bool) -> Tag:
     _require(len(node) >= 4, "tag lacks ID, kind or name slot")
     tag_id = _number(node[1])
     kind = _atom(node[2], ("struct", "union", "enum"), "tag kind")
@@ -503,7 +737,9 @@ def _tag(node, target: str) -> Tag:
     if kind == "enum":
         clauses, raw_members = _clauses(node[4:], ("complete",), ("underlying",), repeat="enumerator")
     else:
-        clauses, raw_members = _clauses(node[4:], ("complete",), ("layout",), repeat="field")
+        clauses, raw_members = _clauses(node[4:], ("complete",),
+                                        ("layout", "traits") if analysis else ("layout",),
+                                        repeat="field")
     if not _bool(_single(clauses, "complete")):
         _require(len(clauses) == 1 and not raw_members and name is not None,
                  "incomplete tag has body data or no name")
@@ -511,7 +747,7 @@ def _tag(node, target: str) -> Tag:
     _require(bool(raw_members), "complete tag lacks members")
     if kind == "enum":
         _require("underlying" in clauses, "complete enum lacks an underlying type")
-        underlying = _type(_single(clauses, "underlying"), target)
+        underlying = _type(_single(clauses, "underlying"), target, analysis)
         _require(isinstance(underlying, IntegerType), "enum underlying type must be integer")
         members = []
         names = set()
@@ -532,25 +768,184 @@ def _tag(node, target: str) -> Tag:
     layout = _layout(clauses["layout"])
     _require(layout.size is not None and layout.align is not None and layout.size % layout.align == 0,
              "invalid complete record layout")
+    traits = None
+    if analysis:
+        _require("traits" in clauses, "complete record lacks traits")
+        raw_traits, _ = _clauses(clauses["traits"][1:], _TRAITS)
+        traits = RecordTraits(*(_bool(_single(raw_traits, key)) for key in _TRAITS))
     return Tag(tag_id, kind, name, True, layout,
-               tuple(_field(field, target) for field in raw_members), None, ())
+               tuple(_field(field, target, analysis) for field in raw_members), None, (), traits)
 
 
-def _declaration(node, target: str) -> Function | Object | Typedef:
+def _site_parameter(node, parameters: tuple[CType, ...]) -> SiteParameter:
+    _require(len(node) >= 3, "site parameter lacks index or facts")
+    index = _number(node[1], high=len(parameters) - 1)
+    clauses, _ = _clauses(node[2:], (), ("adjusted-from", "storage", "variable-bound",
+                                        "requires-array-access", "adjusted-pointer-qualifiers"))
+    adjusted, storage, bound, access, qualifiers = None, None, False, None, ()
+    if "storage" in clauses:
+        storage = _atom(_single(clauses, "storage"), ("register",), "parameter storage")
+    if "adjusted-from" in clauses:
+        adjusted = _atom(_single(clauses, "adjusted-from"), ("array",), "parameter adjustment")
+        subject = parameters[index]
+        _require(isinstance(subject, PointerType) and subject.category == "object"
+                 and not isinstance(_base(subject.pointee), VoidType),
+                 "array adjustment requires a pointer to an object type")
+        if "variable-bound" in clauses:
+            bound = _bool(_single(clauses, "variable-bound"))
+            _require(bound, "variable-bound marker must be true")
+        if "requires-array-access" in clauses:
+            _require(not bound, "a star array bound cannot impose a static array minimum")
+            access = ArrayAccess(_known(_single(clauses, "requires-array-access")))
+        if "adjusted-pointer-qualifiers" in clauses:
+            qualifiers = _qualifiers(clauses["adjusted-pointer-qualifiers"])
+    else:
+        _require(len(clauses) == 1 and storage is not None, "array facts lack array adjustment")
+    return SiteParameter(index, adjusted, storage, bound, access, qualifiers)
+
+
+def _declaration_sites(node, parameters: tuple[CType, ...] = (), *,
+                       redeclarations: int | None = None, defined: bool = False
+                       ) -> tuple[DeclarationSite, ...]:
+    count = len(node) - 1
+    if count > MAX_REDECLARATIONS:
+        raise _limit("declaration site count limit exceeded")
+    _require(count > 0 and (redeclarations is None or count == redeclarations),
+             "declaration site count does not match declaration history")
+    sites = []
+    for raw_site in node[1:]:
+        _require(_head(raw_site) == "site", "invalid declaration site")
+        clauses, raw_params = _clauses(raw_site[1:], ("file", "line"), ("definition",),
+                                       repeat="parameter", repeat_limit=MAX_PARAMETERS,
+                                       repeat_subject="site parameter")
+        raw_file = _single(clauses, "file")
+        file = None if _is_atom(raw_file, "unknown") else raw_file
+        line = _known(_single(clauses, "line"), _U32_MAX)
+        _require((file is None and line is None) or (type(file) is str and line is not None),
+                 "invalid presumed file and line pair")
+        definition = "definition" in clauses
+        if definition:
+            _require(_bool(_single(clauses, "definition")), "site definition marker must be true")
+        _require(len(raw_params) <= len(parameters), "too many site parameter facts for declaration")
+        facts = tuple(_site_parameter(raw, parameters) for raw in raw_params)
+        _require(all(a.index < b.index for a, b in zip(facts, facts[1:])),
+                 "site parameter indices must be unique and in declaration order")
+        sites.append(DeclarationSite(file, line, definition, facts))
+    _require(sum(site.definition for site in sites) == int(defined),
+             "definition sites do not match declaration definition")
+    return tuple(sites)
+
+
+def _call_contract(node, type_: FunctionType, noreturn: bool) -> CallContract:
+    clauses, _ = _clauses(node[1:], ("normal-return", "fixed-parameters", "variadic-tail"))
+    normal_return = _atom(_single(clauses, "normal-return"),
+                          ("forbidden-by-declaration" if noreturn else "unknown",), "normal return")
+    raw_count = _single(clauses, "fixed-parameters")
+    raw_tail = _single(clauses, "variadic-tail")
+    if type_.prototype:
+        count = _number(raw_count, high=MAX_PARAMETERS)
+        tail = _bool(raw_tail)
+        _require(count == len(type_.parameters) and tail == type_.variadic,
+                 "call contract does not match prototype")
+    else:
+        _require(_is_atom(raw_count, "unknown") and _is_atom(raw_tail, "unknown"),
+                 "unprototyped call contract must leave count and variadic tail unknown")
+        count = tail = None
+    return CallContract(normal_return, count, tail)
+
+
+_BEHAVIOR_FIELDS = ("memory-read", "memory-write", "allocation", "deallocation",
+                    "throws-or-traps", "synchronization", "termination", "return-alias",
+                    "return-nullability", "taint-inputs", "taint-outputs", "taint-transfer")
+
+
+def _behavior(node) -> Behavior:
+    clauses, _ = _clauses(node[1:], ("general-body-analysis", *_BEHAVIOR_FIELDS))
+    general = _atom(_single(clauses, "general-body-analysis"), ("not-performed",), "body analysis")
+    return Behavior(general, *(_atom(_single(clauses, key), ("unknown",), key)
+                                for key in _BEHAVIOR_FIELDS))
+
+
+def _proof_subject(clauses) -> tuple[str, str, str]:
+    return (_atom(_single(clauses, "model"), (_PROOF_MODEL,), "bounded proof model"),
+            _atom(_single(clauses, "scope"), (_PROOF_SCOPE,), "bounded proof scope"),
+            _atom(_single(clauses, "solver"), ("satie",), "bounded proof solver"))
+
+
+def _proof_type(type_: CType) -> bool:
+    return isinstance(type_, IntegerType) and type_.name == "unsigned-int"
+
+
+def _memory_safety(node, type_: FunctionType, can_model: bool,
+                   names: tuple[str | None, ...]) -> MemorySafety:
+    subject = ("model", "scope", "solver")
+    clauses, _ = _clauses(node[1:], ("status",), (*subject, "checked-accesses"))
+    status = _atom(_single(clauses, "status"), _PROOF_STATUS, "memory safety status")
+    if len(clauses) == 1:
+        _require(status == "unknown", "unmodeled memory safety must be unknown")
+        return MemorySafety(status)
+    _require(all(key in clauses for key in (*subject, "checked-accesses")),
+             "incomplete modeled memory safety")
+    model, scope, solver = _proof_subject(clauses)
+    _require(can_model and type_.prototype and not type_.variadic
+             and len(type_.parameters) <= _PROOF_PARAMETER_LIMIT and _proof_type(type_.result)
+             and all(_proof_type(param) for param in type_.parameters)
+             and None not in names and len(set(names)) == len(names),
+             "invalid function subject for modeled memory safety")
+    accesses = _number(_single(clauses, "checked-accesses"), high=_PROOF_ACCESS_LIMIT)
+    _require(accesses != 0 or status == "proved",
+             "modeled expression with no accesses must report proved memory safety")
+    return MemorySafety(status, model, scope, accesses, solver)
+
+
+def _body_proof(node, type_: FunctionType, memory: MemorySafety) -> BodyProof:
+    _require(memory.status == "proved" and memory.model is not None,
+             "body proof requires proved modeled memory safety")
+    clauses, _ = _clauses(node[1:], ("model", "scope", "solver", "memory-effects",
+                                    "return-dependencies", "return-policies"))
+    model, scope, solver = _proof_subject(clauses)
+    effects = _atom(_single(clauses, "memory-effects"), ("none-by-construction",), "proof memory effects")
+    raw_dependencies = clauses["return-dependencies"]
+    _require(len(raw_dependencies) == len(type_.parameters) + 1, "wrong return dependency count")
+    dependencies = []
+    for index, raw in enumerate(raw_dependencies[1:]):
+        _require(_head(raw) == "parameter" and len(raw) == 3 and type(raw[1]) is int and raw[1] == index,
+                 "wrong return dependency parameter index")
+        status = _atom(raw[2], ("independent", "may-influence", "unknown"), "return dependency status")
+        dependencies.append(ReturnDependency(index, status))
+    raw_policies = clauses["return-policies"]
+    _require(len(raw_policies) == len(_PROOF_WIDTHS) + 1, "wrong return policy count")
+    policies = []
+    proved_narrower = False
+    for width, raw in zip(_PROOF_WIDTHS, raw_policies[1:]):
+        _require(_head(raw) == "unsigned-width" and len(raw) == 3
+                 and type(raw[1]) is int and raw[1] == width, "wrong return policy width")
+        status = _atom(raw[2], _PROOF_STATUS, "return policy status")
+        _require(not (proved_narrower and status == "disproved"), "contradictory return policy statuses")
+        proved_narrower |= status == "proved"
+        policies.append(ReturnPolicy(width, status))
+    return BodyProof(model, scope, effects, tuple(dependencies), tuple(policies), solver)
+
+
+def _declaration(node, target: str, analysis: bool, proof_budget: int) -> Function | Object | Typedef:
     kind = _head(node)
     _require(len(node) >= 2, "declaration lacks a name")
     name = _string(node[1])
+    sites_clause = ("declarations",) if analysis else ()
     if kind == "typedef":
-        clauses, _ = _clauses(node[2:], ("type",))
-        return Typedef(name, _type(_single(clauses, "type"), target))
-    symbol = ("type", "linkage", "storage", "definition")
+        clauses, _ = _clauses(node[2:], ("type", *sites_clause))
+        sites = _declaration_sites(clauses["declarations"]) if analysis else ()
+        return Typedef(name, _type(_single(clauses, "type"), target, analysis), sites)
+    symbol = ("type", "linkage", "storage", "definition", *sites_clause)
     if kind == "object":
-        clauses, _ = _clauses(node[2:], (*symbol, "layout"))
+        clauses, _ = _clauses(node[2:], (*symbol, "layout") + (("storage-duration",) if analysis else ()))
         definitions = ("declaration", "tentative", "defined")
     else:
-        clauses, _ = _clauses(node[2:], (*symbol, "calling-convention", "parameter-names", "specifiers"))
+        required = (*symbol, "calling-convention", "parameter-names", "specifiers")
+        clauses, _ = _clauses(node[2:], required + (("call-contract", "behavior", "memory-safety") if analysis else ()),
+                              ("body-proof",) if analysis else ())
         definitions = ("declaration", "defined", "inline-only")
-    type_ = _type(_single(clauses, "type"), target)
+    type_ = _type(_single(clauses, "type"), target, analysis)
     linkage = _atom(_single(clauses, "linkage"), ("internal", "external"), "linkage")
     definition = _atom(_single(clauses, "definition"), definitions, "definition")
     storage_node = clauses["storage"]
@@ -561,7 +956,12 @@ def _declaration(node, target: str) -> Function | Object | Typedef:
     _require(("static" in storage) == (linkage == "internal"), "storage/linkage mismatch")
     if kind == "object":
         _require(not isinstance(_base(type_), (VoidType, FunctionType)), "invalid object type shape")
-        return Object(name, type_, linkage, storage, definition, _layout(clauses["layout"]))
+        sites, duration = (), None
+        if analysis:
+            sites = _declaration_sites(clauses["declarations"], redeclarations=len(storage),
+                                       defined=definition == "defined")
+            duration = _atom(_single(clauses, "storage-duration"), ("static",), "object storage duration")
+        return Object(name, type_, linkage, storage, definition, _layout(clauses["layout"]), sites, duration)
     _require(isinstance(type_, FunctionType), "function declaration lacks a function type")
     convention = _single(clauses, "calling-convention")
     if not _is_atom(convention, _TARGETS[target][1]):
@@ -578,8 +978,23 @@ def _declaration(node, target: str) -> Function | Object | Typedef:
              "invalid inline-only definition")
     # Parameter names are presentation metadata. Preserve collisions as well
     # as unnamed slots; the generator must choose unique display names.
+    parameter_names = tuple(_name(n) for n in names[1:])
+    sites, contract, behavior, memory, proof = (), None, None, None, None
+    if analysis:
+        defined = definition != "declaration"
+        noreturn = "noreturn" in specifiers
+        sites = _declaration_sites(clauses["declarations"], type_.parameters,
+                                   redeclarations=len(storage), defined=defined)
+        contract = _call_contract(clauses["call-contract"], type_, noreturn)
+        behavior = _behavior(clauses["behavior"])
+        memory = _memory_safety(clauses["memory-safety"], type_,
+                                defined and not noreturn and proof_budget > 0, parameter_names)
+        if memory.status == "proved":
+            _require("body-proof" in clauses, "proved modeled memory safety lacks body proof")
+        if "body-proof" in clauses:
+            proof = _body_proof(clauses["body-proof"], type_, memory)
     return Function(name, type_, linkage, storage, definition, str(convention),
-                    tuple(_name(n) for n in names[1:]), specifiers)
+                    parameter_names, specifiers, sites, contract, behavior, memory, proof)
 
 
 def _base(type_: CType) -> CType:
@@ -695,6 +1110,36 @@ def _validate_record(tag: Tag, tags: dict[int, Tag], has_flexible: set[int], tar
     _require(visible_member, "record lacks a named member")
 
 
+def _validate_record_traits(tag: Tag, tags: dict[int, Tag], has_flexible: set[int]) -> None:
+    if tag.traits is None:
+        return
+    const = volatile = anonymous = bit = False
+    for field in tag.fields:
+        kind = field.type
+        if field.bit_field is not None:
+            bit = True
+            if field.name is None:
+                continue  # Unnamed bit-fields contribute no const/volatile member.
+        elif field.name is None:
+            anonymous = True
+        while True:
+            if isinstance(kind, QualifiedType):
+                const |= "const" in kind.qualifiers
+                volatile |= "volatile" in kind.qualifiers
+                kind = kind.type
+            elif isinstance(kind, ArrayType):
+                kind = kind.element
+            else:
+                break
+        if isinstance(kind, TagRef) and (child := tags[kind.id].traits) is not None:
+            const |= child.const_member
+            volatile |= child.volatile_member
+            anonymous |= child.contains_anonymous_member
+            bit |= child.contains_bit_field
+    _require(tag.traits == RecordTraits(const, volatile, anonymous, tag.id in has_flexible, bit),
+             "record traits do not match members")
+
+
 def _validate_graph(declarations, tags: dict[int, Tag], target: str) -> None:
     # Visit syntax-tree types once without expanding nominal references.
     pending = [decl.type for decl in declarations]
@@ -720,6 +1165,7 @@ def _validate_graph(declarations, tags: dict[int, Tag], target: str) -> None:
     has_flexible: set[int] = set()
     for tag in _record_order(tags):
         _validate_record(tag, tags, has_flexible, target)
+        _validate_record_traits(tag, tags, has_flexible)
 
     for type_ in arrays:
         element = _base(type_.element)
@@ -752,7 +1198,8 @@ def decode_interface(data: bytes, *, expected_target: str | None = None) -> Inte
 
     If supplied, ``expected_target`` is the caller's independently selected
     target. Omitting it still validates the document's built-in target, ABI
-    and data model against one another.
+    and data model against one another. This validates the analysis wire
+    grammar and its subjects, not the underlying proof or C source.
     """
     root = parse_sexp(data, max_bytes=MAX_BYTES, max_tokens=MAX_TOKENS,
                       max_nodes=MAX_NODES, max_depth=MAX_DEPTH,
@@ -773,23 +1220,33 @@ def decode_interface(data: bytes, *, expected_target: str | None = None) -> Inte
             raw_declarations.append(item)
         else:
             envelope.append(item)
-    clauses, _ = _clauses(envelope, ("target", "data-model", "abi"))
+    clauses, _ = _clauses(envelope, ("target", "data-model", "abi"),
+                          ("analysis-model", "target-properties"))
     target = _string(_single(clauses, "target"))
     abi = _string(_single(clauses, "abi"))
     if (target not in _TARGETS or (expected_target is not None and target != expected_target)
             or abi != _TARGETS[target][0] or not _is_atom(_single(clauses, "data-model"), "LP64")):
         raise InterfaceError("target", "interface target, data model or ABI mismatch")
 
+    analysis = "analysis-model" in clauses
+    model = _analysis_model(clauses["analysis-model"]) if analysis else None
+    _require(analysis == ("target-properties" in clauses),
+             "analysis-model and target-properties must occur together")
+    properties = _target_properties(clauses["target-properties"]) if analysis else None
     tags = {}
     for raw in raw_tags:
-        tag = _tag(raw, target)
+        tag = _tag(raw, target, analysis)
         _require(tag.id not in tags, "duplicate tag ID")
         tags[tag.id] = tag
     declarations, names = [], set()
+    proof_budget = _PROOF_DEFINITION_LIMIT
     for raw in raw_declarations:
-        decl = _declaration(raw, target)
+        decl = _declaration(raw, target, analysis, proof_budget)
         _require(decl.name not in names, "duplicate ordinary declaration")
         names.add(decl.name)
         declarations.append(decl)
+        if (analysis and isinstance(decl, Function) and decl.definition != "declaration"
+                and "noreturn" not in decl.specifiers):
+            proof_budget -= 1
     _validate_graph(declarations, tags, target)
-    return Interface(1, target, "LP64", abi, tuple(declarations), tuple(tags.values()))
+    return Interface(1, target, "LP64", abi, tuple(declarations), tuple(tags.values()), model, properties)
