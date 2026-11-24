@@ -154,14 +154,14 @@ for example in sorted((root/'examples').glob('*.on1x')):
     if example.name in ('ppx.on1x', 'core_impl.on1x'):
         continue
     selected=['--stdppx','pipe','--stdppx','checks'] if example.name=='standard_ppx.on1x' else []
-     plain=run([t.compiler,'--emit-c',example,*selected])
-     echoed=run([t.compiler,'--emit-c',example,*selected,'--ppx','identity',root/'stdppx/identity.py'])
-     if example.name=='scoped_loans.on1x':
-         assert plain.returncode==0 and plain.stdout,(example,plain.stderr)
-         assert echoed.returncode==1 and not echoed.stdout and \
-             'lexical borrows are not PPX Unit v1 wire data' in echoed.stderr,echoed.stderr
-         continue
-     assert plain.returncode==echoed.returncode and plain.stdout==echoed.stdout,(example,plain.stderr,echoed.stderr)
+    plain=run([t.compiler,'--emit-c',example,*selected])
+    echoed=run([t.compiler,'--emit-c',example,*selected,'--ppx','identity',root/'stdppx/identity.py'])
+    if example.name=='scoped_loans.on1x':
+        assert plain.returncode==0 and plain.stdout,(example,plain.stderr)
+        assert echoed.returncode==1 and not echoed.stdout and \
+            'lexical borrows are not PPX Unit v1 wire data' in echoed.stderr,echoed.stderr
+        continue
+    assert plain.returncode==echoed.returncode and plain.stdout==echoed.stdout,(example,plain.stderr,echoed.stderr)
     if plain.returncode:
         assert plain.returncode==1 and 'missing main function' in plain.stderr and 'missing main function' in echoed.stderr,(example,plain.stderr,echoed.stderr)
     ast=run([t.compiler,'--emit-ast',example])
