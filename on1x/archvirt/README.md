@@ -81,6 +81,12 @@ execution between read waits, 60 seconds waiting for a complete line, 300
 seconds of wall time, and 1 MiB of output. The active/idle/wall budgets are
 monotonic wall-clock deadlines, not CPU or instruction measurements.
 
+The [private MCP stdio service](../addons/mcp/README.md#private-local-vm-sessions)
+uses a separate parent-owned runner mode. It retains the active-execution
+and output limits but allows a guest to wait for parameters until its
+supervisor stops it. The helper validates its parent PID, signals readiness
+through an inherited pipe, and fails closed on supervisor death.
+
 To exercise the core against a built compiler and the pinned ArchVirt install:
 
 ```sh

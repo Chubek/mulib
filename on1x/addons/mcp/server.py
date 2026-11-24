@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tool-only, stateless MCP Streamable HTTP (JSON response mode).
+"""Read-only MCP Streamable HTTP, or private MCP stdio with optional VMs.
 
 The deliberately small transport supports MCP 2025-06-18 / 2025-11-25.
 It does not claim the new MCP 2.0 discovery protocol or SSE compatibility.
@@ -10,12 +10,14 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from pathlib import Path
 import re
+import signal
 import sys
 
 from core import (EvidenceError, Index, MAX_RESPONSE, WARNING, decode_json,
                   encode, tools)
 
 MAX_BODY = 8192
+MAX_STDIO = 65536
 MAX_HEADERS = 16384
 VERSIONS = ("2025-06-18", "2025-11-25")
 INSTRUCTIONS = (
@@ -31,7 +33,7 @@ def rpc_error(identifier, code, message):
     return {"jsonrpc": "2.0", "id": identifier, "error": {"code": code, "message": message}}
 
 
-def dispatch(index, request):
+def dispatch(index, request, sessions=None, initialized=True):
     if not isinstance(request, dict):
         return rpc_error(None, -32600, "Expected one JSON-RPC object; batching is unsupported.")
     identifier = request.get("id")
@@ -60,7 +62,10 @@ def dispatch(index, request):
             "protocolVersion": version if version in VERSIONS else VERSIONS[-1],
             "capabilities": {"tools": {"listChanged": False}},
             "serverInfo": {"name": "on1x-mulib-knowledge", "version": "1.0.0"},
-            "instructions": INSTRUCTIONS,
+            "instructions": INSTRUCTIONS + (
+                " This private stdio connection can also compile standalone On1x to ArchVirt. "
+                "Only start, send to, or delete VMs when requested by the user."
+                if sessions is not None else ""),
         }
     elif method == "ping":
         if set(params) - {"_meta"}:
@@ -70,18 +75,34 @@ def dispatch(index, request):
         if set(params) - {"_meta"}:
             return rpc_error(identifier, -32602, "Pagination is unsupported; tools fit one response.")
         result = {"tools": tools()}
+        if sessions is not None:
+            from vmm import tools as vm_tools
+            result["tools"] += vm_tools()
     elif method == "tools/call":
-        if (set(params) - {"name", "arguments", "_meta"}
-                or not isinstance(params.get("name"), str)
-                or params["name"] not in {t["name"] for t in tools()}):
+        name = params.get("name")
+        vm_names = set()
+        if sessions is not None:
+            from vmm import tools as vm_tools
+            vm_names = {tool["name"] for tool in vm_tools()}
+        if (set(params) - {"name", "arguments", "_meta"} or not isinstance(name, str)
+                or name not in vm_names | {t["name"] for t in tools()}):
             return rpc_error(identifier, -32602, "Unknown tool or invalid call parameters.")
+        if name in vm_names and not initialized:
+            return rpc_error(identifier, -32002, "Initialize the private stdio session first.")
         try:
-            data = index.call(params["name"], params.get("arguments", {}))
+            handler = sessions if name in vm_names else index
+            data = handler.call(name, params.get("arguments", {}))
             result = {"content": [{"type": "text", "text": encode(data).decode()}],
                       "structuredContent": data, "isError": False}
         except EvidenceError as exc:
             result = {"content": [{"type": "text", "text": encode({
                 "error": exc.code, "message": str(exc), "warning": WARNING,
+                      }).decode()}], "isError": True}
+        except OSError:
+            if name not in vm_names:
+                raise
+            result = {"content": [{"type": "text", "text": encode({
+                "error": "VM_IO", "message": "VM operation failed at the local process or filesystem boundary.",
             }).decode()}], "isError": True}
     else:
         return rpc_error(identifier, -32601, "Method not supported.")
@@ -90,6 +111,26 @@ def dispatch(index, request):
     if len(encode(response)) > MAX_RESPONSE:
         return rpc_error(identifier, -32001, "RESULT_LIMIT: narrow the request.")
     return response
+
+
+def stdio(index, sessions):
+    initialized = False
+    while raw := sys.stdin.buffer.readline(MAX_STDIO + 1):
+        if len(raw) > MAX_STDIO or not raw.endswith(b"\n"):
+            print("MCP stdio framing limit exceeded; closing session.", file=sys.stderr)
+            return 2
+        try:
+            request = decode_json(raw)
+            response = dispatch(index, request, sessions, initialized)
+            if (isinstance(request, dict) and request.get("method") == "initialize"
+                    and response is not None and "result" in response):
+                initialized = True
+        except EvidenceError:
+            response = rpc_error(None, -32700, "Invalid or over-nested JSON.")
+        if response is not None:
+            sys.stdout.buffer.write(encode(response) + b"\n")
+            sys.stdout.buffer.flush()
+    return 0
 
 
 class Server(HTTPServer):
@@ -231,9 +272,22 @@ def main():
                         help="Confirm every indexed file is approved for anonymous publication.")
     parser.add_argument("--check", action="store_true", help="Build index, print fingerprints, exit.")
     parser.add_argument("--describe", action="store_true", help="Print actual MCP tools descriptor, exit.")
+    parser.add_argument("--stdio", action="store_true", help="Use a private local newline-delimited MCP session.")
+    parser.add_argument("--on1xc", type=Path, help="Opt in to VMs using this absolute trusted compiler path (stdio only).")
+    parser.add_argument("--archvirt-runner", type=Path, help="Absolute trusted on1x-archvirt-run path.")
+    parser.add_argument("--vmm-root", type=Path, help="Provisioned VM directory (default: /var/run/on1x-mcp-vmm).")
     args = parser.parse_args()
+    vm_enabled = args.on1xc is not None or args.archvirt_runner is not None or args.vmm_root is not None
+    if vm_enabled and not (sys.platform == "linux" and args.stdio and args.on1xc
+                           and args.archvirt_runner and not args.public_data and not args.allowed_host
+                           and not args.origin and not args.check):
+        parser.error("VM tools require private Linux --stdio with --on1xc and --archvirt-runner; no public mode.")
     if args.describe:
-        print(json.dumps({"tools": tools()}, indent=2))
+        described = tools()
+        if vm_enabled:
+            from vmm import tools as vm_tools
+            described += vm_tools()
+        print(json.dumps({"tools": described}, indent=2))
         return 0
     if not 0 <= args.port <= 65535:
         parser.error("Invalid port.")
@@ -250,6 +304,25 @@ def main():
         if args.check:
             print(json.dumps(index.meta, indent=2))
             return 0
+        if args.stdio:
+            def stop(_signal, _frame):
+                raise KeyboardInterrupt
+            for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+                signal.signal(sig, stop)
+            sessions = None
+            try:
+                if vm_enabled:
+                    from vmm import Sessions
+                    sessions = Sessions(args.vmm_root or Path("/var/run/on1x-mcp-vmm"),
+                                        args.on1xc, args.archvirt_runner)
+                return stdio(index, sessions)
+            except BrokenPipeError:
+                return 0
+            finally:
+                for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+                    signal.signal(sig, signal.SIG_IGN)
+                if sessions is not None:
+                    sessions.close()
         with Server(("127.0.0.1", args.port), index,
                     args.allowed_host, args.origin) as server:
             print(f"Loopback MCP backend: http://127.0.0.1:{server.server_port}/mcp", flush=True)

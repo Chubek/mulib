@@ -2,7 +2,7 @@
 
 ## Threat model
 
-Untrusted queries, tool arguments, HTTP requests, source text and manifest
+For the knowledge-only profile, untrusted queries, tool arguments, HTTP requests, source text and manifest
 metadata cannot select executable code, open arbitrary files, request network
 destinations, or change the checkout. This addon is **not an OS sandbox** or an
 independent safety verifier. The Python interpreter/addon code, operator-selected
@@ -14,7 +14,8 @@ Only explicitly allowlisted source data is loaded at startup:
 - Fixed repository/On1x README, verification/completion/backend/spec documents;
   `MANIFEST.yaml` and the explicit grammar/ASDL files in `core.FIXED`.
 - Exactly the canonical `include/mulib-NAME.h` and
-  `manual/mulib-NAME.md` paths validated from each manifest entry.
+  `manual/mulib-NAME.md` paths validated from each manifest entry, plus
+  nonrecursive `include/mulib-*.h` matching the canonical name grammar.
 - Nonrecursive `on1x/docs/*.md`, `on1x/examples/*.on1x` and
   `on1x/examples/kernel/*.on1x`, with conservative filename character policies.
 - The fixed standard-library/Exotract/ExoML catalogs, obligations and README
@@ -40,11 +41,37 @@ trusted selection, not client input. Use a read-only mount to prevent mixed
 versions across different files; a multi-file filesystem snapshot is not made.
 This implementation targets POSIX systems supporting these flags.
 
-After startup, all tools use only memory. No request-time filesystem access,
+After startup, all knowledge tools use only memory. No request-time filesystem access,
 shell/compiler/PPX invocation, source mutation, kernel execution, dynamic imports,
 arbitrary implementation-name lookup, outbound HTTP/DNS, background sync or
 telemetry exists. Fixed regexes tokenize bounded inputs; clients cannot supply
 regex patterns. Work exhaustion reports errors independently of semantic truth.
+
+## Private stdio VM execution
+
+This opt-in profile must not be bridged to an anonymous or multi-user
+endpoint. The process's stdin/stdout connection is the authority; keep
+the client and operators trusted. The enabled tools cannot select paths,
+compiler flags, host commands, or native libraries. The pinned compiler
+builds standalone source without host-side activation inside a
+fail-closed bubblewrap namespace with an isolated network namespace, fixed
+read-only toolchain inputs, and no KVM device. Compiler wall time,
+per-process CPU/address space and output-file size are bounded.
+
+Guest execution uses the separate operator-selected ArchVirt helper and the
+fixed DomIOS/KVM guest profile. The runner receives only the compiled ELF
+and bounded serial records; there are no guest host filesystem mounts,
+networks, argv, or environment. Neither the VM nor compile envelope is a
+proof against defects in ArchVirt, KVM, the compiler, or host dependencies.
+Run under a dedicated unprivileged account, and consider external cgroups
+for host-wide process, memory and concurrent-session limits. Tool output
+is untrusted, even when its terminal controls are escaped.
+
+IDs authorize nothing outside the owning stdio process, and inputs/results
+are not logged. A mode-0700 preprovisioned directory stores ELF artifacts
+until explicit deletion or normal connection cleanup. Forced termination
+can leave ELF files for operator cleanup but kills the runner via a Linux
+parent-death signal.
 
 ## HTTP / deployment
 
@@ -78,7 +105,7 @@ authentication, a private URL, or the production proxy controls above. The
 backend remains loopback-only and accepts the exact Host set by cloudflared;
 that header is routing configuration, not an authorization token.
 
-The bundled tools explicitly advertise `noauth`, read-only, non-destructive,
+The bundled HTTP tools explicitly advertise `noauth`, read-only, non-destructive,
 closed-world behavior. Private repository data must not be exposed with that
 configuration. OAuth 2.1 integration is a separate operator-owned gateway task,
 not implemented or certified here. Tokens must never be put in URLs, package
@@ -91,7 +118,8 @@ Only explicitly requested tool responses are sent over the incoming client
 connection. The service has no outbound data path. Search inputs are processed
 in memory and not persisted. Default HTTP logging is disabled; no query, IP,
 credential, source content, request history, session or user profile database
-is retained by this application. Startup emits only the local listening address
+is retained by the knowledge profile. Private VM sessions retain only their
+bounded live state, output and ELF files as described above. HTTP startup emits only the local listening address
 or, with `--check`, fingerprints/size metadata. Reverse proxies, tunnel operators,
 hosting providers and ChatGPT have their own data handling policies: configure
 minimal redacted security logs, retention/deletion controls and publish those

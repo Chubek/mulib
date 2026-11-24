@@ -1,7 +1,8 @@
 # On1x / MuLIB knowledge for ChatGPT
 
-A read-only **remote MCP server**, not a compiler, safe-binding generator,
-browser extension, or an OpenAI-endorsed product. Python 3.11+ standard library;
+A **read-only remote MCP server** with an optional, private local stdio VM
+mode. The remote endpoint is not a compiler or safe-binding generator.
+Python 3.11+ standard library;
 no API key, pip package, vector store, telemetry, or outbound network access.
 The startup index is built from current canonical repository sources, never a
 checked-in hand-maintained kernel inventory.
@@ -57,7 +58,7 @@ python3 -B on1x/addons/mcp/server.py --root "$PWD"
 ```
 
 The **operator's shell**, not the service, invokes Git in the example.
-The service never reads Git internals or invokes any subprocess. Omit revision
+The knowledge service never reads Git internals or invokes any subprocess. Omit revision
 arguments to report `unknown`, never a fabricated revision. `--check` prints a
 deterministic fingerprint/size report and exits. `--describe` prints the actual
 tool descriptors (also requires `--root` syntactically; it does not read it).
@@ -82,6 +83,61 @@ curl http://127.0.0.1:8787/mcp \
 Subsequent POSTs use `MCP-Protocol-Version: 2025-11-25`. A
 `notifications/initialized` notification gets HTTP 202 with no body;
 `tools/list` lists all tools. There are no sessions or session cookies.
+
+## Private local VM sessions
+
+An MCP client that launches a local stdio server can opt in to real ArchVirt
+VMs. The public HTTP server **never advertises or accepts VM tools**.
+Provision the runtime directory for the dedicated unprivileged service user:
+
+```sh
+sudo install -d -m 0700 -o "$USER" /var/run/on1x-mcp-vmm
+```
+
+Use an ArchVirt-enabled On1x build (see [build instructions](../../docs/archvirt.md))
+and the installed `libexec/on1x/on1x-archvirt-run` or its build-tree counterpart.
+For a local MCP client, configure the equivalent of this child process:
+
+```sh
+python3 -B /absolute/mulib/on1x/addons/mcp/server.py --stdio \
+  --root /absolute/mulib \
+  --on1xc /absolute/bin/on1xc \
+  --archvirt-runner /absolute/libexec/on1x/on1x-archvirt-run
+```
+
+This requires Linux x86-64, accessible `/dev/kvm`, `bubblewrap`, and
+`prlimit` from util-linux. `--vmm-root` overrides the default for development.
+The directory must already exist, be mode `0700`, and belong to the user.
+Use a [`tmpfiles.d`](https://www.freedesktop.org/software/systemd/man/latest/tmpfiles.d.html)
+entry or equivalent to provision it again after reboot if necessary.
+
+| Tool | Arguments | Result |
+|---|---|---|
+| `vm_compile` | `source`: standalone On1x text | Compile inside bubblewrap, start the guest, return its session-scoped ID |
+| `vm_send` | `id`, `parameters`: array of decimal i64 strings | Queue up to 64 parameters on the same VM; not a guest-processing acknowledgment |
+| `vm_read` | `id` | Drain pending stdout/stderr and report exit status and truncation |
+| `vm_list` | none | List this stdio session's VMs, including stopped or completed VMs |
+| `vm_kill` | `id` | Stop a VM and retain its output and image |
+| `vm_delete` | `id` | Stop a VM, delete its output and image, release the slot |
+| `vm_invalidate` | none | Stop and delete all VMs in this session; the connection may compile new VMs |
+
+An interactive source declares `extern fn on1x_archvirt_read_i64() -> i64;`
+and calls it once per parameter. Source is limited to 8 KiB UTF-8 and may
+not import libraries, use PPX or declaration extensions, or call host
+externs. Parameters are JSON **strings** so clients can transmit the exact
+signed 64-bit range. Session IDs are not interchangeable with the compiler's
+replay-cache IDs. Nothing is registered in that cache.
+
+A waiting guest stays alive across calls and has no idle or total deadline
+while its stdio connection is open. It may still return, trap, exceed the
+five-second active interval, or hit the 1 MiB total output cap. Each session
+owns up to four VMs and retains the latest 2 KiB per output stream between
+reads. Each keeps a non-executable ELF in
+`/var/run/on1x-mcp-vmm/session-*/ID/guest.elf`. EOF, SIGTERM and normal server
+shutdown kill and reap its VMs and remove its directory. A server killed
+with SIGKILL cannot delete its files, but the kernel kills its runners on
+parent death. Only remove such leftover directories after confirming their
+server processes are gone. For scope and limitations, see [SECURITY.md](SECURITY.md).
 
 ## Deploy and connect in ChatGPT web
 
@@ -209,6 +265,8 @@ The checkout, including allowlisted docs/catalogs, must remain available.
 | `explain_feature` | `query`, optional `limit` | Evidence for an explanation, not generated prose |
 | `search_kernels` | `query`, optional `limit` | Canonical manifest names/purposes |
 | `inspect_kernel` | exact `name` | Manifest entry, switch, dependencies, header/manual/contract excerpts, independent status fields |
+| `list_headers` | optional `query`, `offset`, `limit` | Paginated `include/mulib-*.h` paths, file hashes and optional manifest names |
+| `inspect_header` | exact `path`, optional `query` or `line` | Cited source excerpts restricted to that header |
 | `inspect_capability` | `query`, optional `limit` | Scoped status/verification/blocker records |
 
 Capability lookup searches the On1x completion ledger, capability matrix,

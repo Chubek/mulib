@@ -117,4 +117,8 @@ if(BUILD_TESTING)
   add_test(NAME on1x.archvirt.session_kvm COMMAND "${Python3_EXECUTABLE}" -IB
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vmm_sessions.py" "$<TARGET_FILE:on1xc>")
   set_tests_properties(on1x.archvirt.session_host on1x.archvirt.session_kvm PROPERTIES TIMEOUT 90)
+  add_test(NAME on1x.addon_mcp_vmm COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/addons/mcp/test_vmm.py"
+    --on1xc "$<TARGET_FILE:on1xc>" --runner "$<TARGET_FILE:on1x-archvirt-run>")
+  set_tests_properties(on1x.addon_mcp_vmm PROPERTIES TIMEOUT 120)
 endif()

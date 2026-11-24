@@ -112,6 +112,25 @@ class CoreTests(unittest.TestCase):
         self.assertFalse(result["contract"]["certificate"])
         self.assertEqual(result["manifest_citation"]["path"], "MANIFEST.yaml")
 
+    def test_header_inventory_and_inquiry(self):
+        (self.root / "include/mulib-unregistered.h").write_text("int not_in_manifest(void);\n")
+        index = core.Index(self.root)
+        first = index.call("list_headers", {"limit": 2})
+        self.assertEqual(first["matches"], 3)
+        self.assertEqual(first["next_offset"], 2)
+        tail = index.call("list_headers", {"offset": first["next_offset"]})
+        self.assertIsNone(tail["next_offset"])
+        self.assertIsNone(tail["headers"][0]["manifest_module"])
+        self.assertEqual(index.call("list_headers", {"query": "alpha"})["matches"], 2)
+        alpha = index.call("inspect_header", {"path": "mulib-alpha.h", "query": "mulib_alpha_read"})
+        self.assertIn("int mulib_alpha_read", alpha["excerpts"][0]["text"])
+        self.assertEqual(alpha["excerpts"][0], index.fetch(alpha["excerpt_ids"][0]))
+        self.assertEqual(alpha["manifest_module"], "alpha")
+        self.assertEqual(index.call("inspect_header", {"path": "include/mulib-alpha.h", "line": 2}), alpha)
+        self.rejected("HEADER_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-missing.h"}))
+        self.rejected("INVALID_ARGUMENT", lambda: index.call("inspect_header", {"path": "../include/mulib-alpha.h"}))
+        self.rejected("LINE_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-alpha.h", "line": 100}))
+
     def test_contract_drift_is_not_admission(self):
         (self.root / "include/mulib-alpha.h").write_text("drift")
         result = core.Index(self.root).inspect_kernel("alpha")
@@ -246,8 +265,8 @@ class CoreTests(unittest.TestCase):
 
     def test_schema_and_protocol(self):
         descriptors = core.tools()
-        self.assertEqual(len(descriptors), 7)
-        self.assertEqual(len({d["name"] for d in descriptors}), 7)
+        self.assertEqual(len(descriptors), 9)
+        self.assertEqual(len({d["name"] for d in descriptors}), 9)
         for desc in descriptors:
             self.assertFalse(desc["inputSchema"]["additionalProperties"])
             self.assertTrue(desc["annotations"]["readOnlyHint"])
@@ -262,6 +281,8 @@ class CoreTests(unittest.TestCase):
                 arguments = {"id": self.index.search("checked")["results"][0]["id"]}
             elif desc["name"] == "search_kernels":
                 arguments = {"query": "alpha"}
+            elif desc["name"] == "inspect_header":
+                arguments = {"path": "mulib-alpha.h"}
             data = self.index.call(desc["name"], arguments)
             schema = desc["outputSchema"]
             self.assertTrue(set(schema["required"]) <= data.keys())
@@ -592,7 +613,7 @@ class HTTPTests(unittest.TestCase):
     def test_http_flow(self):
         status, result = self.request()
         self.assertEqual(status, 200)
-        self.assertEqual(len(result["result"]["tools"]), 7)
+        self.assertEqual(len(result["result"]["tools"]), 9)
         self.assertEqual(self.request(core.encode({
             "jsonrpc": "2.0", "method": "notifications/initialized"}))[0], 202)
         status, result = self.request(core.encode({
@@ -600,6 +621,17 @@ class HTTPTests(unittest.TestCase):
             "params": {"name": "search", "arguments": {"query": "checked"}}}))
         self.assertEqual(status, 200)
         self.assertTrue(result["result"]["structuredContent"]["results"])
+        for name, arguments in (("list_headers", {"limit": 1}),
+                                ("inspect_header", {"path": "mulib-alpha.h", "line": 2})):
+            status, result = self.request(core.encode({
+                "jsonrpc": "2.0", "id": 5, "method": "tools/call",
+                "params": {"name": name, "arguments": arguments}}))
+            self.assertEqual(status, 200)
+            self.assertFalse(result["result"]["isError"])
+        status, result = self.request(core.encode({
+            "jsonrpc": "2.0", "id": 6, "method": "tools/call",
+            "params": {"name": "vm_compile", "arguments": {"source": "fn main() {}"}}}))
+        self.assertEqual((status, result["error"]["code"]), (200, -32602))
 
     def test_deploy_probe_respects_exact_host(self):
         deploy_probe.probe(self.http.server_port)
