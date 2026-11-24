@@ -45,6 +45,28 @@ def stage(provider, operation, source):
     return provider._run((*provider._options, operation, "-x", "c", "-"), source)
 
 
+def check_sysroot(args, local, tool_inputs, upstream):
+    sysroot = local / "sysroot"
+    includes = sysroot / "usr/include"
+    includes.mkdir(parents=True)
+    name = "on1x_sysroot_probe.h"
+    (includes / name).write_bytes(b"int on1x_sysroot_probe(void);\n")
+    source = f"#include <{name}>\n".encode("ascii")
+    common = dict(libstone_revision=args.revision, scratch_root=local, tool_inputs=tool_inputs,
+                  sysroot=sysroot)
+    no_search = CephyrProvider(args.cephyr, "x86_64-linux-gnu", **common)
+    negative(args.output, "sysroot-not-implicit", lambda: no_search.project(source),
+             b"file 'on1x_sysroot_probe.h' not found")
+    no_search.verify_inputs()
+
+    explicit = CephyrProvider(args.cephyr, "x86_64-linux-gnu", system_include_dirs=(includes,), **common)
+    result = explicit.project(source)
+    upstream.named(upstream.parse(result.output), "function", "on1x_sysroot_probe")
+    save(args.output, "sysroot-explicit-include", result)
+    explicit.verify_inputs()
+    print("x86_64-linux-gnu: sysroot header requires an explicit include directory")
+
+
 def qualify(args, local):
     upstream = load_upstream_tests(args.source)
     sys.path.insert(0, str(args.source / "python"))
@@ -52,6 +74,7 @@ def qualify(args, local):
 
     library = args.cephyr.parent / "libcephyr.so.0.1.0"
     tool_inputs = (library, args.source / "triples", args.source.parent / "Archon/stdspec")
+    check_sysroot(args, local, tool_inputs, upstream)
     synthetic = local / "headers"
     synthetic.mkdir()
     (synthetic / "counts.h").write_bytes(b"#define COUNT 3\n#define FLAG_WIDTH 3\n")

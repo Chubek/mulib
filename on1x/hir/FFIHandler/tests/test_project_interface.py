@@ -173,6 +173,43 @@ class ProviderTests(unittest.TestCase):
         (self.headers / "new.h").touch()
         self.reject("input_changed", provider.verify_inputs)
 
+    def test_explicit_sysroot_is_hashed_without_adding_a_search_root(self):
+        sysroot = self.local / "sysroot"
+        includes = sysroot / "usr/include"
+        includes.mkdir(parents=True)
+        header = includes / "sysroot-only.h"
+        header.write_bytes(b"int hidden(void);\n")
+        # Legacy callers may also supply the sysroot as a tool input.
+        provider = self.provider(sysroot=sysroot, tool_inputs=(sysroot,))
+        first = provider.project(b"").provenance
+        self.assertIn(f"--sysroot={sysroot}", first["invocation"]["argv"])
+        self.assertEqual(first["invocation"]["selected_input_paths"]["sysroot"], str(sysroot))
+        self.assertTrue(first["identity"]["preprocessor"]["sysroot_selected"])
+        self.assertNotIn(str(sysroot), json.dumps(first["identity"]))
+        self.assertEqual([r["role"] for r in first["identity"]["roots"]],
+                         ["cephyr", "prlimit", "include:0", "sysroot"])
+        self.reject("missing_header", lambda: provider.project_header("sysroot-only.h"))
+        provider.verify_inputs()
+        header.write_bytes(b"int edited(void);\n")
+        self.reject("input_changed", provider.verify_inputs)
+        second = self.provider(sysroot=sysroot).project(b"").provenance
+        self.assertNotEqual(first["identity"]["roots"][-1]["sha256"],
+                            second["identity"]["roots"][-1]["sha256"])
+        self.reject("inventory_limit", lambda: self.provider(
+            sysroot=sysroot, limits=replace(Limits(), inventory_entries=8)))
+
+    def test_rejects_public_header_collision_between_distinct_selected_roots(self):
+        alternate = self.local / "alternate"
+        alternate.mkdir()
+        primary = self.headers / "public.h"
+        (alternate / primary.name).write_bytes(primary.read_bytes())
+        provider = self.provider(system_include_dirs=(alternate,))
+        self.reject("ambiguous_header", lambda: provider.check_public_header(primary.name))
+        self.reject("ambiguous_header", lambda: provider.project_header(primary.name))
+        # Repeating the same resolved root is not an independent competitor.
+        provider = self.provider(system_include_dirs=(self.headers,))
+        self.assertEqual(provider.check_public_header(primary.name), primary)
+
     def test_relocatable_identity_and_change_isolation(self):
         first = self.provider().project_header("public.h")
         alternate = self.local / "alternate"

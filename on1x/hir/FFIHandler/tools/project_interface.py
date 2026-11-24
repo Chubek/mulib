@@ -229,6 +229,10 @@ class CephyrProvider:
     bank for reproducibility (``tool_inputs``). Call ``verify_inputs`` after all
     TUs and before publishing. Use provenance["identity"] for relocatable
     records; provenance["invocation"] is local evidence with absolute paths.
+
+    ``--stdlib=none -nostdinc`` suppresses all Cephyr default include roots.
+    An explicit sysroot is inventoried but not searched automatically. Add
+    any intended sysroot include directories to the explicit search profile.
     """
 
     def __init__(self, cephyr, target, *, libstone_revision, scratch_root,
@@ -259,10 +263,15 @@ class CephyrProvider:
         self.sysroot = _absolute(sysroot) if sysroot is not None else None
         if any(not p.is_dir() for p in paths) or (self.sysroot is not None and not self.sysroot.is_dir()):
             raise ProjectionError("invalid_profile", "include roots and sysroot must be directories")
+        # Older callers also list the sysroot under tool_inputs. Inventory it
+        # once under its own role so it cannot consume the budget twice.
+        tools = tuple(path for path in tools if path != self.sysroot)
         groups = (("include", self.include_dirs), ("system", self.system_include_dirs), ("tool", tools))
         self._roots = (("cephyr", self.cephyr), ("prlimit", self.prlimit), *(
             (f"{kind}:{i}", path) for kind, group in groups for i, path in enumerate(group)
         ))
+        if self.sysroot is not None:
+            self._roots += (("sysroot", self.sysroot),)
         # Scratch must not alter a snapshotted header or resource inventory.
         if any(self.scratch_root.is_relative_to(path) for _, path in self._roots if path.is_dir()):
             raise ProjectionError("invalid_profile", "scratch directory is inside an input root")
@@ -345,14 +354,22 @@ class CephyrProvider:
                 pass
             raise ProjectionError("input_changed", f"selected tool input changed: {path}")
 
-    def project_header(self, header):
-        """Construct an include-only TU for a manifest header, without implementation switches."""
+    def check_public_header(self, header):
+        """Require a unique explicit include root for a relative manifest header."""
         if not isinstance(header, str) or len(header) > 2048 or not _HEADER.fullmatch(header):
             raise ProjectionError("invalid_header", "expected a relative manifest include name")
-        for root in (*self.include_dirs, *self.system_include_dirs):
-            if (root / header).is_file():
-                return self._project(f'#include "{header}"\n'.encode("ascii"), "c", header)
-        raise ProjectionError("missing_header", f"header {header!r} is absent from the selected roots")
+        roots = dict.fromkeys((*self.include_dirs, *self.system_include_dirs))
+        matches = [root / header for root in roots if (root / header).is_file()]
+        if not matches:
+            raise ProjectionError("missing_header", f"header {header!r} is absent from the selected roots")
+        if len(matches) != 1:
+            raise ProjectionError("ambiguous_header", f"header {header!r} is present in multiple selected roots")
+        return matches[0]
+
+    def project_header(self, header):
+        """Construct an include-only TU for a manifest header, without implementation switches."""
+        self.check_public_header(header)
+        return self._project(f'#include "{header}"\n'.encode("ascii"), "c", header)
 
     def project(self, source, *, language="c"):
         """Project one raw C TU, preprocessed C TU, or serialized C11Syntax input."""
