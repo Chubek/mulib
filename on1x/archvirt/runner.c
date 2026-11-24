@@ -100,11 +100,6 @@ static int snapshot(const char *path)
         fcntl(image, F_ADD_SEALS, F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_SEAL) < 0)
         goto io_failure;
     close(input);
-    if (!is_guest(image, (uint64_t)st.st_size)) {
-        fputs("On1x ArchVirt: input is not an On1x DomIOS x86-64 guest ELF\n", stderr);
-        close(image);
-        return -1;
-    }
     return image;
 
 io_failure:
@@ -251,14 +246,23 @@ cleanup:
     return result;
 }
 
-int on1x_archvirt_run_path(const char *guest_elf)
+int on1x_archvirt_check_sealed(int image)
 {
-    if (!guest_elf || !*guest_elf) {
-        fputs("On1x ArchVirt: a guest ELF path is required\n", stderr);
+    const int all = F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_SEAL;
+    const int seals = fcntl(image, F_GET_SEALS);
+    struct stat st;
+    if (seals < 0 || (seals & all) != all || fstat(image, &st) ||
+        !S_ISREG(st.st_mode) || st.st_size <= 0 || st.st_size > max_elf ||
+        !is_guest(image, (uint64_t)st.st_size)) {
+        fputs("On1x ArchVirt: input is not an On1x DomIOS x86-64 guest ELF\n", stderr);
         return launch_failure;
     }
-    int image = snapshot(guest_elf);
-    if (image < 0) return launch_failure;
+    return 0;
+}
+
+int on1x_archvirt_run_sealed(int image)
+{
+    if (on1x_archvirt_check_sealed(image)) return launch_failure;
     char path[64];
     snprintf(path, sizeof(path), "/proc/self/fd/%d", image);
     struct console *c = calloc(1, sizeof(*c));
@@ -271,6 +275,21 @@ int on1x_archvirt_run_path(const char *guest_elf)
         fputs("On1x ArchVirt: cannot create guest runtime\n", stderr);
     }
     free(c);
+    return result;
+}
+
+static int from_path(const char *guest_elf, bool execute)
+{
+    if (!guest_elf || !*guest_elf) {
+        fputs("On1x ArchVirt: a guest ELF path is required\n", stderr);
+        return launch_failure;
+    }
+    int image = snapshot(guest_elf);
+    if (image < 0) return launch_failure;
+    const int result = execute ? on1x_archvirt_run_sealed(image) : on1x_archvirt_check_sealed(image);
     close(image);
     return result;
 }
+
+int on1x_archvirt_run_path(const char *guest_elf) { return from_path(guest_elf, true); }
+int on1x_archvirt_check_path(const char *guest_elf) { return from_path(guest_elf, false); }

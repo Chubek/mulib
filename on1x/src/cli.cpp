@@ -10,6 +10,9 @@
 #include <on1x/backend/passes.hpp>
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
+#ifdef ON1X_WITH_ARCHVIRT
+#include "archvirt_driver.hpp"
+#endif
 #ifdef ON1X_WITH_CEPHYR
 #include "backend/cephyr.hpp"
 #include "backend/cephyr_sarif.hpp"
@@ -143,8 +146,10 @@ namespace {
 #endif
  }
 #endif
+ enum class OutputPermission { preserve, private_data, private_executable };
  void publish_regular_file(const std::string& destination,const std::string& text,
-                           const std::string& action,const std::string& temporary_name){
+                           const std::string& action,const std::string& temporary_name,
+                           OutputPermission permission=OutputPermission::preserve){
 #if defined(__unix__) || defined(__APPLE__)
   namespace fs=std::filesystem;
   const fs::path path=destination;
@@ -163,12 +168,15 @@ namespace {
    if(count<=0){ok=false;break;}
    written+=static_cast<std::size_t>(count);
   }
-  if(ok&&exists&&::fchmod(fd,prior.st_mode&0777)<0)ok=false;
+  if(ok&&permission!=OutputPermission::preserve&&
+     ::fchmod(fd,S_IRUSR|S_IWUSR|(permission==OutputPermission::private_executable?S_IXUSR:0))<0)ok=false;
+  if(ok&&permission==OutputPermission::preserve&&exists&&::fchmod(fd,prior.st_mode&0777)<0)ok=false;
   if(::close(fd)<0)ok=false;
   if(ok&&std::rename(temporary.c_str(),destination.c_str())==0)return;
   ::unlink(temporary.c_str());
    throw std::runtime_error("cannot publish "+action+" output: "+destination);
 #else
+   (void)permission;
    throw std::runtime_error("atomic "+action+" file output requires a POSIX host; use stdout");
 #endif
  }
@@ -505,6 +513,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
    "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
    "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in emitted bytecode\n"
+   "       on1xc --vm-build INPUT -o GUEST_ELF | --vm-run INPUT [-o GUEST_ELF] (ArchVirt)\n"
+   "       on1xc --vm-run-elf GUEST_ELF | --vm-rerun KEY | --vm-cache-clear (ArchVirt)\n"
+   "       on1xc --vm-launcher=always|opt-in INPUT -o EXECUTABLE (linked ArchVirt)\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
     "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
@@ -567,8 +578,23 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     std::string_view command=argv[1];
     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
      return format_command(argc,argv,command);
+    if(command=="--vm-cache-clear"||command=="--vm-rerun"||command=="--vm-run-elf"||
+       command=="--print-archvirt-build-inputs"){
+     const bool no_input=command=="--vm-cache-clear"||command=="--print-archvirt-build-inputs";
+     if(argc!=(no_input?2:3))
+      throw std::runtime_error(std::string(command)+(no_input?" takes no arguments":" requires exactly one argument"));
+#ifdef ON1X_WITH_ARCHVIRT
+     if(command=="--print-archvirt-build-inputs"){on1x::archvirt_driver::print_build_inputs();return 0;}
+     if(command=="--vm-cache-clear"){on1x::archvirt_driver::clear_cache();return 0;}
+     if(command=="--vm-run-elf")return on1x::archvirt_driver::run_elf(argv[2]);
+     return on1x::archvirt_driver::rerun(argv[2]);
+#else
+     throw std::runtime_error("ArchVirt unavailable: configure with ON1X_WITH_ARCHVIRT=ON");
+#endif
+    }
    }
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
+          std::string archvirt_mode;
           std::string sdk_mode,sdk_name,sdk_target;
           bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
@@ -599,6 +625,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     std::vector<std::string> admission_files;
     for(int i=1;i<argc;++i){std::string arg=argv[i];
          if(arg=="--help"||arg=="-h"){usage();return 0;}
+         if(arg=="--vm-build"||arg=="--vm-run"||arg=="--vm-launcher=always"||arg=="--vm-launcher=opt-in"){
+          if(!archvirt_mode.empty())throw std::runtime_error("specify one ArchVirt build or launch mode");
+          archvirt_mode=arg;continue;
+         }
          if(arg=="--vm-source-prefix"){
           if(i+2>=argc||vm_prefixes.size()>=16)
            throw std::runtime_error("--vm-source-prefix needs two absolute paths (maximum 16 maps)");
@@ -794,6 +824,16 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(arg=="-o"){if(++i>=argc)throw std::runtime_error("-o needs a file");out=argv[i];}
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
+   }
+   if(!archvirt_mode.empty()){
+    if(mode!="--emit-c"||explicit_c||ir_input||!sdk_mode.empty()||list_opts||cephyr_object||
+       loader.kernel_c11||loader.kernel_stage||!vm_prefixes.empty())
+     throw std::runtime_error("ArchVirt modes require checked source and cannot be combined with another output mode");
+    if(out=="-"||(out.empty()&&archvirt_mode!="--vm-run"))
+     throw std::runtime_error("ArchVirt build and launcher modes require -o FILE; binary output to stdout is not supported");
+#ifndef ON1X_WITH_ARCHVIRT
+    throw std::runtime_error("ArchVirt unavailable: configure with ON1X_WITH_ARCHVIRT=ON");
+#endif
    }
    if(!cephyr_target.empty()&&!cephyr_object)
     throw std::runtime_error("--cephyr-target requires --emit-cephyr-object");
@@ -1013,6 +1053,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    write_all(out,listing.str());return 0;
   }
       auto loaded=on1x::load_unit(source,loader);
+      if(!archvirt_mode.empty()&&!out.empty()){
+       const auto target=std::filesystem::weakly_canonical(std::filesystem::absolute(out));
+       for(const auto& input:loaded.dependencies)
+        if(target==std::filesystem::weakly_canonical(input))
+         throw std::runtime_error("ArchVirt output would overwrite a loaded input file");
+      }
 #ifdef ON1X_WITH_CEPHYR
       if(!cephyr_sarif.empty()){
        const auto dest=std::filesystem::weakly_canonical(std::filesystem::absolute(cephyr_sarif));
@@ -1134,7 +1180,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      std::string bounds_report;
      on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
-     c11_options.allow_stackless_timers=!cephyr_object;
+     c11_options.allow_stackless_timers=!cephyr_object&&archvirt_mode.empty();
 #ifdef ON1X_WITH_CEPHYR
      std::map<std::size_t,on1x::Location> c11_origins;
      if(cephyr_options.sarif)c11_options.origins=&c11_origins;
@@ -1144,6 +1190,20 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
  #else
      auto generated=on1x::emit_c(unit,source,c11_options);
  #endif
+#ifdef ON1X_WITH_ARCHVIRT
+      if(!archvirt_mode.empty()){
+       using namespace on1x::archvirt_driver;
+       publish_diagnostics();
+       auto guest=compile_guest(generated);
+       if(archvirt_mode.starts_with("--vm-launcher=")){
+        auto executable=linked_program(guest.image,archvirt_mode=="--vm-launcher=always");
+        publish_regular_file(out,executable,"ArchVirt launcher",".on1x-launcher-XXXXXX",OutputPermission::private_executable);
+       }else if(!out.empty()){
+        publish_regular_file(out,guest.image,"ArchVirt guest",".on1x-guest-XXXXXX",OutputPermission::private_data);
+       }
+       return archvirt_mode=="--vm-run"?cache_and_run(guest):0;
+      }
+#endif
      if(dump_memgraph){
       publish_diagnostics();
       if(out.empty()||out=="-")write_all(out,bounds_report);
@@ -1191,6 +1251,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      }
 #endif
      publish_diagnostics();write_all(out,generated);return 0;
+#ifdef ON1X_WITH_ARCHVIRT
+   }catch(const on1x::archvirt_driver::GuestBuildError& e){
+    std::cerr<<"on1xc: "<<terminal_text(e.what())<<"\n";return 1;
+#endif
 #ifdef ON1X_WITH_NOVOSTONE
  }catch(const on1x::mir::relational::BudgetExceeded& e){
    std::cerr<<terminal_text(e.where.file)<<":"<<e.where.line<<":"<<e.where.column<<": error: "<<terminal_text(e.what())<<"\n";return 75;

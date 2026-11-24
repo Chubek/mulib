@@ -18,6 +18,7 @@ if(DEFINED ENV{ON1X_LIBSTONE_ROOT} AND NOT "$ENV{ON1X_LIBSTONE_ROOT}" STREQUAL "
 endif()
 
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
+option(ON1X_WITH_ARCHVIRT "Build native-host ArchVirt program launch support" OFF)
 option(ON1X_WITH_CEPHYR "Enable in-process Cephyr compilation of checked-HIR C11 to an AMD64 Linux object" OFF)
 option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
 option(ON1X_USE_FALLBACK_SCANNER "Use the bootstrap scanner even when LibStone is present" OFF)
@@ -164,6 +165,15 @@ if(UNIX)
 endif()
 add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
 target_link_libraries(on1xc PRIVATE on1x_hir_adapters)
+if(ON1X_WITH_ARCHVIRT)
+  include(archvirt/Integration.cmake)
+endif()
+if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
+  add_test(NAME on1x.archvirt.cli COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_archvirt_cli.py"
+    "$<TARGET_FILE:on1xc>" "$<BOOL:${ON1X_WITH_ARCHVIRT}>")
+  set_tests_properties(on1x.archvirt.cli PROPERTIES TIMEOUT 180)
+endif()
 if(ON1X_WITH_CEPHYR)
   if(CMAKE_CROSSCOMPILING OR NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
      NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -778,6 +788,9 @@ if(BUILD_TESTING)
     set(_project_test_tools --mune-runner "$<TARGET_FILE:on1x-mune-runner>")
     if(TARGET on1x-qmr-compile)
       list(APPEND _project_test_tools --qmr-compiler "$<TARGET_FILE:on1x-qmr-compile>")
+    endif()
+    if(ON1X_WITH_ARCHVIRT)
+      list(APPEND _project_test_tools --archvirt-enabled)
     endif()
     add_test(NAME on1x.project_build COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_on1x_project.py" --on1xc "$<TARGET_FILE:on1xc>"

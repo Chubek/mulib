@@ -9,6 +9,10 @@ extern "C" {
  * guest's exit status, or 125 on launch, timeout, or protocol failure. This is
  * launcher support, not a general embedding or security-certification API. */
 int on1x_archvirt_run_path(const char *guest_elf);
+int on1x_archvirt_check_path(const char *guest_elf);
+/* Private descriptor routes. The caller owns the fd and holds it open. */
+int on1x_archvirt_check_sealed(int fd);
+int on1x_archvirt_run_sealed(int fd);
 
 #ifdef __cplusplus
 }
