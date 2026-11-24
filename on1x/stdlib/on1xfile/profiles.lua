@@ -14,7 +14,8 @@ local function context()
     return {
         project = project, kind = kind, profile = selected_profile,
         backend = fields.backend, directory = fields.directory,
-        target = fields.target, targets = targets
+        target = fields.target, targets = targets,
+        compiler = fields.compiler, assembler = fields.assembler, linker = fields.linker
     }
 end
 

@@ -1794,6 +1794,8 @@ def build(args):
                     records = [('data', key, value) for key, value in sorted(model.items())]
                     records.extend((('context', 'backend', backend),
                                     ('context', 'directory', directory.as_posix())))
+                    if selected is not None:
+                        records.extend(('context', stage, selected[stage]) for stage in toolchain.CHOICES)
                     if args.target:
                         records.append(('context', 'target', args.target))
                     records.extend(('target', key, path.as_posix()) for key, path in sorted(targets.items()))

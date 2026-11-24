@@ -1006,6 +1006,7 @@ define mode "legacy"
 local c = on1xfile.context()
 assert(c.profile == "tuned" and c.project == "sample" and c.kind == "complex")
 assert(c.directory == "src" and c.backend == "mir-c11")
+assert(c.compiler == "host" and c.assembler == "host" and c.linker == "host")
 assert(c.targets.sample == "src/main.on1x")
 if c.target == nil then
     assert(c.targets.second == "src/second.on1x")
@@ -1027,7 +1028,8 @@ return on1xfile.profile {
 ''')
         self.lock('--on1xc', OPTIONS.on1xc)
         plan = [sys.executable, OPTIONS.driver, 'plan', str(self.project),
-                '--on1xc', OPTIONS.on1xc, '--mune-runner', OPTIONS.mune_runner, '--frozen']
+                '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc,
+                '--mune-runner', OPTIONS.mune_runner, '--frozen']
         default = json.loads(subprocess.check_output(plan, timeout=30))
         self.assertNotIn('project/profile.lua', default['inputs'])
         selected = [*plan, '--profile', 'tuned', '--target', 'sample']

@@ -391,6 +391,7 @@ command-line or environment overrides. These arguments are separate from
 | --- | --- |
 | `profile`, `project`, `kind` | Selected profile name, manifest project name, and project kind |
 | `backend` | Effective project backend after profile and CLI selection |
+| `compiler`, `assembler`, `linker` | Selected stage names for hosted C11 toolchains, or `nil` when no stage is selected |
 | `directory` | Project-relative source directory, or `"."` |
 | `target` | Name explicitly selected by `--target`, or `nil` |
 | `targets` | Map from selected target names to project-relative entry paths; empty for a library |
