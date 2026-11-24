@@ -67,7 +67,9 @@ grammar Name :lexer<dfa> :parser<lalr1> :start<TOP> {
   Rule whitespace is formatting; skipping input requires an explicit skip token.
 - Tokens use byte regular expressions: adjacency, `|`, `()`, `?`, `*`, `+`,
   `.`, `[abc]`, `[a-z]`, `[^a-z]`, and Raku-style `<[a-z]>` classes. Quoted
-  literals are escaped automatically. `\d`, `\w`, `\s` expand to ASCII
+  literals are escaped automatically. A postfix quantifier applies to the
+  whole quoted literal: `'ab'+` matches `ab`, `abab`, and so on, not `abb`.
+  Write `'a' 'b'+` to repeat only `b`. `\d`, `\w`, `\s` expand to ASCII
   digit/word/whitespace classes. Liblr byte escapes `\n`, `\r`, `\t`, `\xHH`
   and escaped regex punctuation are supported. Formatting whitespace outside
   a class/quoted literal is ignored.

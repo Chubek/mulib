@@ -104,6 +104,22 @@ for lexer in ('dfa', 'nfa'):
     execute('priority_' + lexer, marker(grammar) +
             'fn main(){println(Words_matches("if"));println(Words_matches("if abc"));'
             'println(Words_matches("iffy"));println(Words_matches("if a"));}', 'true\ntrue\nfalse\ntrue\n')
+    execute('quoted_quantifiers_' + lexer, marker(
+        '''grammar Quoted :lexer<LEXER> {
+             token REPEAT { 'ab' # repeat the whole literal
+                            + }
+             token OPTIONAL { "cd"? '!' }
+             token STAR { 'ef'* '?' }
+             rule TOP { <REPEAT> | <OPTIONAL> | <STAR> }
+           }'''.replace('LEXER', lexer)) +
+        '''fn main(){
+             println(Quoted_matches("ab"));println(Quoted_matches("abab"));
+             println(Quoted_matches("abb"));
+             println(Quoted_matches("!"));println(Quoted_matches("cd!"));
+             println(Quoted_matches("c!"));
+             println(Quoted_matches("?"));println(Quoted_matches("efef?"));
+             println(Quoted_matches("eff?"));
+           }''', 'true\ntrue\nfalse\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\n')
 
 for parser in ('lr1', 'lalr1', 'll1'):
     execute('epsilon_' + parser, marker(f"grammar Empty :parser<{parser}> {{ rule TOP {{ 'a'? }} }}") +
@@ -147,6 +163,7 @@ execute('lua_chain', '@LuaEmbed("program",' + json.dumps(lua) + ') fn lua_marker
 for name, grammar, message in [
     ('unknown', "grammar X {rule TOP {<missing>}}", 'reference'),
     ('nullable', "grammar X {token A {'a'*} rule TOP {<A>}}", 'consume'),
+    ('nullable_quoted', "grammar X {token A {'ab'*} rule TOP {<A>}}", 'consume'),
     ('cycle', "grammar X {token A {<A>} rule TOP {<A>}}", 'recursive token'),
     ('duplicate', "grammar X {rule TOP {'a'} rule TOP {'b'}}", 'duplicate'),
     ('ambiguous', "grammar X {rule TOP {<TOP> <TOP> | 'a'}}", 'conflicting'),

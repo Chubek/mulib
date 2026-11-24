@@ -157,8 +157,16 @@ struct Construct {
         if (!active.insert(d.name).second) reject(messages_recursive_token, d.offset);
         Reader r{d.body, 0, d.offset}; std::string out;
         while (char c = r.peek()) {
-            if (c == '\'' || c == '"') out += regex_literal(r.literal());
-            else if (r.take('<')) {
+            if (c == '\'' || c == '"') {
+                const auto literal = r.literal();
+                const auto next = r.peek();
+                // Liblr sees a sequence of byte escapes, but a postfix operator
+                // in the DSL binds to the whole quoted atom, not its last byte.
+                const bool group = literal.size() > 1 && (next == '?' || next == '*' || next == '+');
+                if (group) out += '(';
+                out += regex_literal(literal);
+                if (group) out += ')';
+            } else if (r.take('<')) {
                 if (r.take('[')) {
                     out += '[';
                     bool closed = false;
