@@ -1,6 +1,6 @@
 /* Example: trusted bootstrap, bounded worker request, supervisor-side reap.
  * Compile from repository root:
- * cc -D_GNU_SOURCE -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+ * cc -D_GNU_SOURCE -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
  *     examples/modules/sandbox-process.c -o /tmp/mulib-worker-demo
  * /tmp/mulib-worker-demo
  */

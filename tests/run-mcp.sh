@@ -7,32 +7,32 @@ CXXFLAGS=${CXXFLAGS-${CFLAGS:-}}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 warnings='-Wall -Wextra -Wpedantic -Werror -UNDEBUG'
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp.c ${LDFLAGS:-} -lm -o "$work/test"
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels tests/test_mcp.c ${LDFLAGS:-} -lm -o "$work/test"
 "$work/test"
 for role in server client; do
-    $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude "tests/test_mcp_${role}_api.c" \
+    $CC -std=c11 $warnings ${CFLAGS:-} -Ikernels "tests/test_mcp_${role}_api.c" \
         ${LDFLAGS:-} -lm -o "$work/test-${role}-api"
     "$work/test-${role}-api"
 done
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp_http.c ${LDFLAGS:-} -lm -o "$work/test-http"
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels tests/test_mcp_http.c ${LDFLAGS:-} -lm -o "$work/test-http"
 "$work/test-http"
 python3 tests/test_mcp_http.py --fixture "$work/test-http"
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude tests/test_mcp_broadcast.c ${LDFLAGS:-} -lm -o "$work/test-broadcast"
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels tests/test_mcp_broadcast.c ${LDFLAGS:-} -lm -o "$work/test-broadcast"
 "$work/test-broadcast"
 for role in client server http; do
-    $CC -std=c11 $warnings ${CFLAGS:-} -Iinclude "examples/modules/mcp-$role.c" \
+    $CC -std=c11 $warnings ${CFLAGS:-} -Ikernels "examples/modules/mcp-$role.c" \
         ${LDFLAGS:-} -lm -o "$work/$role"
     macro=$(printf '%s' "$role" | tr '[:lower:]' '[:upper:]')
     printf '#include "mulib-mcp-%s.h"\n#define MULIB_IMPL_CDD_MCP_%s\n#include "mulib-mcp-%s.h"\n#include "mulib-mcp-%s.h"\n' \
         "$role" "$macro" "$role" "$role" > "$work/$role.cpp"
-    $CXX -std=c++17 $warnings $CXXFLAGS -Iinclude -c "$work/$role.cpp" -o "$work/$role.o"
+    $CXX -std=c++17 $warnings $CXXFLAGS -Ikernels -c "$work/$role.cpp" -o "$work/$role.o"
 done
 "$work/http"
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude examples/modules/mcp-broadcast.c \
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels examples/modules/mcp-broadcast.c \
     ${LDFLAGS:-} -lm -o "$work/broadcast"
 "$work/broadcast"
 printf '#include "mulib-mcp-broadcast.h"\n#define MULIB_IMPL_MCP_BROADCAST\n#include "mulib-mcp-broadcast.h"\n#include "mulib-mcp-broadcast.h"\n' > "$work/broadcast.cpp"
-$CXX -std=c++17 $warnings $CXXFLAGS -Iinclude -c "$work/broadcast.cpp" -o "$work/broadcast.o"
+$CXX -std=c++17 $warnings $CXXFLAGS -Ikernels -c "$work/broadcast.cpp" -o "$work/broadcast.o"
 python3 tests/test_mcp_stdio.py --server "$work/server" --client "$work/client"
 cat > "$work/deps.c" <<'EOF'
 #define MULIB_IMPL_JSON
@@ -81,8 +81,8 @@ int main(void)
     return 0;
 }
 EOF
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude -c "$work/deps.c" -o "$work/deps.o"
-$CC -std=c11 $warnings ${CFLAGS:-} -Iinclude -c "$work/consumer.c" -o "$work/consumer.o"
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels -c "$work/deps.c" -o "$work/deps.o"
+$CC -std=c11 $warnings ${CFLAGS:-} -Ikernels -c "$work/consumer.c" -o "$work/consumer.o"
 $CXX $CXXFLAGS "$work/consumer.o" "$work/client.o" "$work/server.o" "$work/http.o" "$work/broadcast.o" "$work/deps.o" \
     ${LDFLAGS:-} -lm -o "$work/mixed"
 "$work/mixed"

@@ -12,7 +12,7 @@ import sys
 
 
 def verify(root):
-    snapshot = (root / 'include/mulib-dsymspec-data.inc').read_text()
+    snapshot = (root / 'kernels/mulib-dsymspec-data.inc').read_text()
     directory = root / 'library/dsymspec'
     schema = (directory / 'schema/dsymspec.schema.json').read_bytes()
     schema_hash = hashlib.sha256(schema).hexdigest()

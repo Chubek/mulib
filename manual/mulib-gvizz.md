@@ -56,7 +56,7 @@ including graph embedding and [allocation failure checks](../tests/test_hardenin
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gvizz.h`](../include/mulib-gvizz.h) |
+| Header | [`kernels/mulib-gvizz.h`](../kernels/mulib-gvizz.h) |
 | Implementation switch | `MULIB_IMPL_GVIZZ` |
 | Repository-local includes | [mulib-dsdom](mulib-dsdom.md) |
 | Complete example | [`examples/modules/gvizz.c`](../examples/modules/gvizz.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gvizz.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gvizz.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

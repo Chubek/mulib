@@ -60,7 +60,7 @@ allocation failures in [test_notation.c](../tests/test_notation.c) and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-symbol.h`](../include/mulib-symbol.h) |
+| Header | [`kernels/mulib-symbol.h`](../kernels/mulib-symbol.h) |
 | Implementation switch | `MULIB_IMPL_SYMBOL` |
 | Repository-local includes | [mulib-mathml](mulib-mathml.md) |
 | Complete example | [`examples/modules/symbol.c`](../examples/modules/symbol.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/symbol.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/symbol.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

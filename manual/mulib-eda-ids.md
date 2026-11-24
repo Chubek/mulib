@@ -1,7 +1,7 @@
 # mulib-eda-ids
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-ids.h`  
+**Header:** `kernels/mulib-eda-ids.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_IDS`  
 **Dependencies:** C11 standard library only.
 
@@ -66,7 +66,7 @@ benchmark sixteen million cycles. The runnable example connects IDs to scalar
 DB transactions and demonstrates that pool validation must precede DB lookup.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_ids.c -lm -o /tmp/test_eda_ids
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_ids.c -lm -o /tmp/test_eda_ids
 /tmp/test_eda_ids
 ```
 
@@ -77,7 +77,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-ids.h`](../include/mulib-eda-ids.h).
+Verbatim declaration section from [`kernels/mulib-eda-ids.h`](../kernels/mulib-eda-ids.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -153,7 +153,7 @@ uint32_t mulib_eda_id_index(mulib_eda_id_t id);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-ids.h`](../include/mulib-eda-ids.h) |
+| Header | [`kernels/mulib-eda-ids.h`](../kernels/mulib-eda-ids.h) |
 | Implementation switch | `MULIB_IMPL_EDA_IDS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-ids.c`](../examples/modules/eda-ids.c) |
@@ -166,6 +166,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-ids.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-ids.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

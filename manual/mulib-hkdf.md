@@ -1,6 +1,6 @@
 # hkdf — HMAC, HKDF and TLS 1.3 labels
 
-**Header:** `include/mulib-hkdf.h` · **Switch:** `MULIB_IMPL_HKDF`
+**Header:** `kernels/mulib-hkdf.h` · **Switch:** `MULIB_IMPL_HKDF`
 
 Define the `SHA` and `ENTROPY` implementation switches as well. Supported hash
 algorithms are `MULIB_SHA256`, `MULIB_SHA384`, and `MULIB_SHA512`.
@@ -36,7 +36,7 @@ exercise the complete TLS 1.3 key schedule.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hkdf.h`](../include/mulib-hkdf.h) |
+| Header | [`kernels/mulib-hkdf.h`](../kernels/mulib-hkdf.h) |
 | Implementation switch | `MULIB_IMPL_HKDF` |
 | Repository-local includes | [mulib-entropy](mulib-entropy.md), [mulib-sha](mulib-sha.md) |
 | Complete example | [`examples/modules/hkdf.c`](../examples/modules/hkdf.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hkdf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hkdf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

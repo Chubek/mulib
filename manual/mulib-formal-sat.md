@@ -1,7 +1,7 @@
 # mulib-formal-sat
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-formal-sat.h`  
+**Header:** `kernels/mulib-formal-sat.h`  
 **Implementation switch:** `MULIB_IMPL_FORMAL_SAT`  
 **Dependencies:** `formal-cnf`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FORMAL_SAT` defined before 
 `tests/test_formal_sat.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_formal_sat.c -lm -o /tmp/test_formal_sat
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_formal_sat.c -lm -o /tmp/test_formal_sat
 /tmp/test_formal_sat
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-formal-sat.h`](../include/mulib-formal-sat.h).
+Verbatim declaration section from [`kernels/mulib-formal-sat.h`](../kernels/mulib-formal-sat.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ mulib_formal_sat_result_t mulib_formal_sat_solve(const mulib_formal_cnf_t *cnf,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-formal-sat.h`](../include/mulib-formal-sat.h) |
+| Header | [`kernels/mulib-formal-sat.h`](../kernels/mulib-formal-sat.h) |
 | Implementation switch | `MULIB_IMPL_FORMAL_SAT` |
 | Repository-local includes | [mulib-formal-cnf](mulib-formal-cnf.md) |
 | Complete example | [`examples/modules/formal-sat.c`](../examples/modules/formal-sat.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/formal-sat.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/formal-sat.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

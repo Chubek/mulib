@@ -20,7 +20,7 @@ Callbacks must not modify the pipeline during execution. Zero-initialize and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-passmanager.h`](../include/mulib-passmanager.h) |
+| Header | [`kernels/mulib-passmanager.h`](../kernels/mulib-passmanager.h) |
 | Implementation switch | `MULIB_IMPL_PASSMANAGER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/passmanager.c`](../examples/modules/passmanager.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/passmanager.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/passmanager.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

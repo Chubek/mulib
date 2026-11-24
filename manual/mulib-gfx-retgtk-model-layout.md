@@ -151,14 +151,14 @@ Scene replacement publishes the new root before releasing the old tree.
 Run from the repository root:
 
 ```sh
-cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Werror -Wpedantic -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Werror -Wpedantic -Ikernels \
   tests/test-gfx-retgtk-model-layout.c tests/gfx-retgtk-model-layout-peer.c \
   -lm -ldl -o /tmp/opencode/gfx-retgtk-model-layout
 /tmp/opencode/gfx-retgtk-model-layout
 
 cc -std=c11 -D_GNU_SOURCE -O1 -Wall -Wextra -Werror -Wpedantic \
   -g -fsanitize=address,undefined \
-  -fno-omit-frame-pointer -Iinclude \
+  -fno-omit-frame-pointer -Ikernels \
   tests/test-gfx-retgtk-model-layout.c tests/gfx-retgtk-model-layout-peer.c \
   -lm -ldl -o /tmp/opencode/gfx-retgtk-model-layout-asan
 ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \

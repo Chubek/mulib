@@ -23,7 +23,7 @@ Example: `examples/modules/lsmtree.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-lsmtree.h`](../include/mulib-lsmtree.h).
+Verbatim declaration section from [`kernels/mulib-lsmtree.h`](../kernels/mulib-lsmtree.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -92,7 +92,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lsmtree.h`](../include/mulib-lsmtree.h) |
+| Header | [`kernels/mulib-lsmtree.h`](../kernels/mulib-lsmtree.h) |
 | Implementation switch | `MULIB_IMPL_LSMTREE` |
 | Repository-local includes | [mulib-sstfile](mulib-sstfile.md), [mulib-wal](mulib-wal.md) |
 | Complete example | [`examples/modules/lsmtree.c`](../examples/modules/lsmtree.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lsmtree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lsmtree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

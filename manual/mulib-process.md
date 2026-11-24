@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-process.h` / `MULIB_IMPL_PROCESS`  
+**Header/switch:** `kernels/mulib-process.h` / `MULIB_IMPL_PROCESS`  
 **Dependencies:** POSIX `posix_spawnp`, pipes/fcntl, signals and waitpid; no MuLIB
 dependencies and no shell. C11 implementation, C++17 declaration inclusion.
 
@@ -94,7 +94,7 @@ return `UNSUPPORTED` for OS operations; initialization is still usable. There is
 no fake success, shell fallback or Windows emulation.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/process.c -o /tmp/process
 /tmp/process
 ```
@@ -112,7 +112,7 @@ teardown leaves no waitable child. Examples assume `/bin/echo`, `/bin/cat`,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-process.h`](../include/mulib-process.h) |
+| Header | [`kernels/mulib-process.h`](../kernels/mulib-process.h) |
 | Implementation switch | `MULIB_IMPL_PROCESS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/process.c`](../examples/modules/process.c) |
@@ -125,6 +125,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

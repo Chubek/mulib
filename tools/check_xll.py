@@ -37,13 +37,13 @@ def main():
             assert '#include "mulib-xll.h"' not in source and 'mulib_xll_parse(' not in source
             binary = work / 'driver'
             command = shlex.split(args.compiler) + flags + ['-D' + d for d in defines]
-            command += ['-I' + str(root / 'include'), '-I' + str(work),
+            command += ['-I' + str(root / 'kernels'), '-I' + str(work),
                         str(root / 'tests/fixtures/xll_driver.c')] + links + ['-o', str(binary)]
             subprocess.run(command, check=True, timeout=120)
             subprocess.run([str(binary)], check=True, timeout=60)
             if cxx and shutil.which(cxx[0]):
                 subprocess.run(cxx + ['-x', 'c++', '-std=c++17', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                                     '-I' + str(root / 'include'), '-c', str(work / 'xll-generated.c'),
+                                     '-I' + str(root / 'kernels'), '-c', str(work / 'xll-generated.c'),
                                      '-o', str(work / 'generated.o')], check=True, timeout=60)
     print('XLL generated C: metadata, native layout parity, standalone, empty and long text passed')
 

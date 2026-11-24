@@ -57,7 +57,7 @@ this module deliberately never decodes URI syntax during parsing.
 See [`examples/modules/uri.c`](../examples/modules/uri.c):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/uri.c -o ./uri
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/uri.c -o ./uri
 ./uri
 ```
 
@@ -70,7 +70,7 @@ It resolves `../c?new#part` against `https://example.org/a/b?old`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uri.h`](../include/mulib-uri.h) |
+| Header | [`kernels/mulib-uri.h`](../kernels/mulib-uri.h) |
 | Implementation switch | `MULIB_IMPL_URI` |
 | Repository-local includes | [mulib-inte6](mulib-inte6.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/uri.c`](../examples/modules/uri.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uri.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uri.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

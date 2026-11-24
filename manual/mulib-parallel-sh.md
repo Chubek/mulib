@@ -38,7 +38,7 @@ in its manual. [examples/parallel.c](../examples/parallel.c) supplies the comple
 implementation switches and CLI entry point:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/parallel.c -pthread -lm -ldl -o parallel-sh
 ```
 
@@ -225,7 +225,7 @@ tests and CLI regressions are also registered with CMake/CTest.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-parallel-sh.h`](../include/mulib-parallel-sh.h) |
+| Header | [`kernels/mulib-parallel-sh.h`](../kernels/mulib-parallel-sh.h) |
 | Implementation switch | `MULIB_IMPL_PARALLEL_SH` |
 | Repository-local includes | [mulib-mune](mulib-mune.md) |
 | Complete example | [`examples/parallel.c`](../examples/parallel.c) |
@@ -238,6 +238,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/parallel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/parallel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

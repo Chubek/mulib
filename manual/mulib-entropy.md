@@ -1,6 +1,6 @@
 # entropy — OS cryptographic random bytes and secret buffers
 
-**Header:** `include/mulib-entropy.h` · **Switch:** `MULIB_IMPL_ENTROPY`
+**Header:** `kernels/mulib-entropy.h` · **Switch:** `MULIB_IMPL_ENTROPY`
 
 `mulib_entropy(output,length)` fills the complete buffer and returns 1. Linux
 uses blocking `getrandom`, retrying interrupted calls; other POSIX platforms read
@@ -21,7 +21,7 @@ See [`examples/modules/entropy.c`](../examples/modules/entropy.c) and the
 [TLS client](mulib-tls.md), which gets new entropy for every handshake.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude examples/modules/entropy.c -o entropy
+cc -std=c11 -Wall -Wextra -Werror -Ikernels examples/modules/entropy.c -o entropy
 ./entropy
 ```
 
@@ -32,7 +32,7 @@ cc -std=c11 -Wall -Wextra -Werror -Iinclude examples/modules/entropy.c -o entrop
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-entropy.h`](../include/mulib-entropy.h) |
+| Header | [`kernels/mulib-entropy.h`](../kernels/mulib-entropy.h) |
 | Implementation switch | `MULIB_IMPL_ENTROPY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/entropy.c`](../examples/modules/entropy.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/entropy.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/entropy.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

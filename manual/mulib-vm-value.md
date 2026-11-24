@@ -20,7 +20,7 @@ scalar operations O(1); no numeric coercion or string parsing is performed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vm-value.h`](../include/mulib-vm-value.h) |
+| Header | [`kernels/mulib-vm-value.h`](../kernels/mulib-vm-value.h) |
 | Implementation switch | `MULIB_IMPL_VM_VALUE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vm-value.c`](../examples/modules/vm-value.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vm-value.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vm-value.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

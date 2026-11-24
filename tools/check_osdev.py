@@ -24,7 +24,7 @@ def main():
     cc = shlex.split(os.environ.get('CC', 'cc'))
     cxx = shlex.split(os.environ.get('CXX', 'c++'))
     flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-             '-I' + str(ROOT / 'include')]
+             '-I' + str(ROOT / 'kernels')]
     host_flags = (['-g', '-fsanitize=address,undefined',
                    '-fno-sanitize-recover=all'] if args.sanitizers else [])
     bare_flags = ['-ffreestanding', '-fno-builtin', '-fno-stack-protector']

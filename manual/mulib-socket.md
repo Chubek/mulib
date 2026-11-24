@@ -48,7 +48,7 @@ MicroChan's multiclient/fragmentation tests.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-socket.h`](../include/mulib-socket.h).
+Verbatim declaration section from [`kernels/mulib-socket.h`](../kernels/mulib-socket.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -137,7 +137,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-socket.h`](../include/mulib-socket.h) |
+| Header | [`kernels/mulib-socket.h`](../kernels/mulib-socket.h) |
 | Implementation switch | `MULIB_IMPL_SOCKET` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/socket.c`](../examples/modules/socket.c) |
@@ -150,6 +150,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/socket.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/socket.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

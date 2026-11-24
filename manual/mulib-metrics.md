@@ -23,7 +23,7 @@ synchronization. Reset by zeroing the structure while it is not being updated.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-metrics.h`](../include/mulib-metrics.h).
+Verbatim declaration section from [`kernels/mulib-metrics.h`](../kernels/mulib-metrics.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-metrics.h`](../include/mulib-metrics.h) |
+| Header | [`kernels/mulib-metrics.h`](../kernels/mulib-metrics.h) |
 | Implementation switch | `MULIB_IMPL_METRICS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/metrics.c`](../examples/modules/metrics.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/metrics.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/metrics.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

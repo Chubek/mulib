@@ -46,7 +46,7 @@ must also reject duplicate Authorization headers before calling these helpers.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-auth.h`](../include/mulib-auth.h) |
+| Header | [`kernels/mulib-auth.h`](../kernels/mulib-auth.h) |
 | Implementation switch | `MULIB_IMPL_AUTH` |
 | Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-seurity](mulib-seurity.md) |
 | Complete example | [`examples/modules/auth.c`](../examples/modules/auth.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/auth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/auth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-xtbb.h` · **Switches:** `MULIB_IMPL_XTBB`,
+**Header:** `kernels/mulib-xtbb.h` · **Switches:** `MULIB_IMPL_XTBB`,
 `MULIB_IMPL_PARALLEL`, `MULIB_IMPL_TASKPOOL` · **Link:** `-pthread` on POSIX.
 
 xtbb provides a C11, OneTBB-inspired task arena and fork/join algorithms using
@@ -51,7 +51,7 @@ bounded ranges and grain. Return codes are TASK_*; error receives original
 nonzero body/join codes.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/xtbb.c -pthread -o /tmp/opencode/xtbb
+cc -std=c11 -Ikernels examples/modules/xtbb.c -pthread -o /tmp/opencode/xtbb
 /tmp/opencode/xtbb
 ```
 
@@ -65,7 +65,7 @@ and overflow; PARALLEL/TASKPOOL tests cover queueing, map ownership and cancella
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xtbb.h`](../include/mulib-xtbb.h) |
+| Header | [`kernels/mulib-xtbb.h`](../kernels/mulib-xtbb.h) |
 | Implementation switch | `MULIB_IMPL_XTBB` |
 | Repository-local includes | [mulib-parallel](mulib-parallel.md) |
 | Complete example | [`examples/modules/xtbb.c`](../examples/modules/xtbb.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xtbb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xtbb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

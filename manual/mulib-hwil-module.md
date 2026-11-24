@@ -1,7 +1,7 @@
 # mulib-hwil-module
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-hwil-module.h`  
+**Header:** `kernels/mulib-hwil-module.h`  
 **Implementation switch:** `MULIB_IMPL_HWIL_MODULE`  
 **Dependencies:** `dsim-logic4`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_HWIL_MODULE` defined before
 `tests/test_hwil_module.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_hwil_module.c -lm -o /tmp/test_hwil_module
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_hwil_module.c -lm -o /tmp/test_hwil_module
 /tmp/test_hwil_module
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hwil-module.h`](../include/mulib-hwil-module.h).
+Verbatim declaration section from [`kernels/mulib-hwil-module.h`](../kernels/mulib-hwil-module.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -103,7 +103,7 @@ int mulib_hwil_module_valid(const mulib_hwil_module_t *m);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hwil-module.h`](../include/mulib-hwil-module.h) |
+| Header | [`kernels/mulib-hwil-module.h`](../kernels/mulib-hwil-module.h) |
 | Implementation switch | `MULIB_IMPL_HWIL_MODULE` |
 | Repository-local includes | [mulib-dsim-logic4](mulib-dsim-logic4.md) |
 | Complete example | [`examples/modules/hwil-module.c`](../examples/modules/hwil-module.c) |
@@ -116,6 +116,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hwil-module.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hwil-module.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

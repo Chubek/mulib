@@ -28,7 +28,7 @@ Other translation units include declarations without switches. No mandatory
 external dependencies. See [the runnable example](../examples/modules/fst.c):
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/fst.c -o fst
+cc -std=c11 -Ikernels examples/modules/fst.c -o fst
 ./fst
 ```
 
@@ -122,7 +122,7 @@ numeric transition semantics in Node when available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fst.h`](../include/mulib-fst.h) |
+| Header | [`kernels/mulib-fst.h`](../kernels/mulib-fst.h) |
 | Implementation switch | `MULIB_IMPL_FST` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-crc32](mulib-crc32.md), [mulib-endian](mulib-endian.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/fst.c`](../examples/modules/fst.c) |
@@ -135,6 +135,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fst.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fst.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

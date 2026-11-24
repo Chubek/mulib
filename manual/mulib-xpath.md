@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-xpath.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-xpath.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
 
@@ -95,7 +95,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/xpath.c -o ./mulib-xpath
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/xpath.c -o ./mulib-xpath
 ./mulib-xpath
 ```
 
@@ -109,7 +109,7 @@ CDATA matching, parent/self paths, document order, malformed queries and OOM.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xpath.h`](../include/mulib-xpath.h) |
+| Header | [`kernels/mulib-xpath.h`](../kernels/mulib-xpath.h) |
 | Implementation switch | `MULIB_IMPL_XPATH` |
 | Repository-local includes | [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/xpath.c`](../examples/modules/xpath.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xpath.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xpath.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

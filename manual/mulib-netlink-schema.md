@@ -38,7 +38,7 @@ See `../tests/test_netlink-schema.c` for its compile/link verification. Selected
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netlink-schema.h`](../include/mulib-netlink-schema.h) |
+| Header | [`kernels/mulib-netlink-schema.h`](../kernels/mulib-netlink-schema.h) |
 | Implementation switch | `MULIB_IMPL_NETLINK_SCHEMA` |
 | Repository-local includes | [mulib-netlink-attr](mulib-netlink-attr.md) |
 | Complete example | [`examples/modules/netlink-schema.c`](../examples/modules/netlink-schema.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netlink-schema.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netlink-schema.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

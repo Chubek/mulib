@@ -14,7 +14,7 @@ target_sources(on1x_sdk PRIVATE
 )
 
 target_include_directories(on1x_sdk PRIVATE
-    "${CMAKE_CURRENT_LIST_DIR}/../../../include"
+    "${CMAKE_CURRENT_LIST_DIR}/../../../kernels"
 )
 target_compile_features(on1x_sdk PRIVATE c_std_11 cxx_std_20)
 

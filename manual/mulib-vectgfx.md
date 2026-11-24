@@ -84,7 +84,7 @@ holes, round strokes, parser errors and alpha-union checks.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vectgfx.h`](../include/mulib-vectgfx.h) |
+| Header | [`kernels/mulib-vectgfx.h`](../kernels/mulib-vectgfx.h) |
 | Implementation switch | `MULIB_IMPL_VECTGFX` |
 | Repository-local includes | [mulib-glx](mulib-glx.md), [mulib-parsec](mulib-parsec.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/vectgfx.c`](../examples/modules/vectgfx.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vectgfx.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vectgfx.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -14,7 +14,7 @@ Switch: `MULIB_IMPL_BYCUTILS`. Example: `examples/modules/bycutils.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bycutils.h`](../include/mulib-bycutils.h).
+Verbatim declaration section from [`kernels/mulib-bycutils.h`](../kernels/mulib-bycutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bycutils.h`](../include/mulib-bycutils.h) |
+| Header | [`kernels/mulib-bycutils.h`](../kernels/mulib-bycutils.h) |
 | Implementation switch | `MULIB_IMPL_BYCUTILS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bycutils.c`](../examples/modules/bycutils.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bycutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bycutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

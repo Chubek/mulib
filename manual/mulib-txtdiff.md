@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-- **Header:** `include/mulib-txtdiff.h`
+- **Header:** `kernels/mulib-txtdiff.h`
 - **Implementation switches:** `MULIB_IMPL_TXTDIFF`, **`MULIB_IMPL_VEC`**,
   **`MULIB_IMPL_BUFFER`**
 - **Dependencies:** MuLIB vec and binary buffer; ISO C11, C++17 declarations.
@@ -126,7 +126,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/txtdiff.c -o ./txtdiff
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/txtdiff.c -o ./txtdiff
 ./txtdiff
 ```
 
@@ -143,7 +143,7 @@ allocation-failure preservation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-txtdiff.h`](../include/mulib-txtdiff.h) |
+| Header | [`kernels/mulib-txtdiff.h`](../kernels/mulib-txtdiff.h) |
 | Implementation switch | `MULIB_IMPL_TXTDIFF` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/txtdiff.c`](../examples/modules/txtdiff.c) |
@@ -156,6 +156,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/txtdiff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/txtdiff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

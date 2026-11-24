@@ -16,7 +16,7 @@ you trust. Ordinary `typeout` replaces control characters.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript-host.h`](../include/mulib-termscript-host.h) |
+| Header | [`kernels/mulib-termscript-host.h`](../kernels/mulib-termscript-host.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_HOST` |
 | Repository-local includes | [mulib-termdb](mulib-termdb.md), [mulib-termscript-library](mulib-termscript-library.md), [mulib-termscript-runtime](mulib-termscript-runtime.md), [mulib-termscript-state](mulib-termscript-state.md), [mulib-termscript-terminal](mulib-termscript-terminal.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
@@ -29,6 +29,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

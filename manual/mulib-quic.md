@@ -62,7 +62,7 @@ are acceptable.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-quic.h`](../include/mulib-quic.h).
+Verbatim declaration section from [`kernels/mulib-quic.h`](../kernels/mulib-quic.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -172,9 +172,9 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-quic.h`](../include/mulib-quic.h) |
+| Header | [`kernels/mulib-quic.h`](../kernels/mulib-quic.h) |
 | Implementation switch | `MULIB_IMPL_QUIC` |
-| Repository-local includes | [`include/detail/mulib-quic-client.h`](../include/detail/mulib-quic-client.h), [mulib-buffer](mulib-buffer.md) |
+| Repository-local includes | [`kernels/detail/mulib-quic-client.h`](../kernels/detail/mulib-quic-client.h), [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/quic.c`](../examples/modules/quic.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -185,6 +185,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/quic.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/quic.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

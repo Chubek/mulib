@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-A widget-free immediate-mode GUI host. `include/mulib-immgtk.h` supplies only
+A widget-free immediate-mode GUI host. `kernels/mulib-immgtk.h` supplies only
 drawing, input and lifecycle primitives; it contains no widget source or theme,
 and does not load files. The optional **30 Mune Lua widgets** are separate modules
 under [`library/immgtk`](../library/immgtk/README.md). It renders into borrowed
@@ -126,7 +126,7 @@ duplicate IDs, the interaction limit and frame lifecycle.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-immgtk.h`](../include/mulib-immgtk.h) |
+| Header | [`kernels/mulib-immgtk.h`](../kernels/mulib-immgtk.h) |
 | Implementation switch | `MULIB_IMPL_IMMGTK` |
 | Repository-local includes | [mulib-glx](mulib-glx.md), [mulib-mune](mulib-mune.md) |
 | Complete example | [`examples/modules/immgtk.c`](../examples/modules/immgtk.c) |
@@ -139,6 +139,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/immgtk.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/immgtk.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

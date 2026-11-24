@@ -15,7 +15,7 @@ implementations are never silently enabled. C++ declaration inclusion has C
 linkage.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/revproxy.c -o /tmp/opencode/revproxy
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/revproxy.c -o /tmp/opencode/revproxy
 /tmp/opencode/revproxy
 ```
 
@@ -103,7 +103,7 @@ composition.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-revproxy.h`](../include/mulib-revproxy.h) |
+| Header | [`kernels/mulib-revproxy.h`](../kernels/mulib-revproxy.h) |
 | Implementation switch | `MULIB_IMPL_REVPROXY` |
 | Repository-local includes | [mulib-webclient](mulib-webclient.md) |
 | Complete example | [`examples/modules/revproxy.c`](../examples/modules/revproxy.c) |
@@ -116,6 +116,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/revproxy.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/revproxy.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

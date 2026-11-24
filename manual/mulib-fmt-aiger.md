@@ -1,7 +1,7 @@
 # mulib-fmt-aiger
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-fmt-aiger.h`  
+**Header:** `kernels/mulib-fmt-aiger.h`  
 **Implementation switch:** `MULIB_IMPL_FMT_AIGER`  
 **Dependencies:** `synth-aig`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FMT_AIGER` defined before i
 `tests/test_fmt_aiger.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_fmt_aiger.c -lm -o /tmp/test_fmt_aiger
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_fmt_aiger.c -lm -o /tmp/test_fmt_aiger
 /tmp/test_fmt_aiger
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fmt-aiger.h`](../include/mulib-fmt-aiger.h).
+Verbatim declaration section from [`kernels/mulib-fmt-aiger.h`](../kernels/mulib-fmt-aiger.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_fmt_aiger_write_ascii(FILE *fp, const mulib_synth_aig_t *g, mulib_synt
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fmt-aiger.h`](../include/mulib-fmt-aiger.h) |
+| Header | [`kernels/mulib-fmt-aiger.h`](../kernels/mulib-fmt-aiger.h) |
 | Implementation switch | `MULIB_IMPL_FMT_AIGER` |
 | Repository-local includes | [mulib-synth-aig](mulib-synth-aig.md) |
 | Complete example | [`examples/modules/fmt-aiger.c`](../examples/modules/fmt-aiger.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fmt-aiger.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fmt-aiger.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -61,7 +61,7 @@ the compatibility spelling is not a separate protocol implementation.
 
 ## Example and verification
 
-`cc -std=c11 -Iinclude examples/modules/dnsnmeserver.c -o dnsnmeserver` builds an
+`cc -std=c11 -Ikernels examples/modules/dnsnmeserver.c -o dnsnmeserver` builds an
 assert-based example using only the facade to initialize and answer NXDOMAIN.
 `tests/test_dns_stack.c` exercises both forwarding functions alongside the
 canonical nameserver and callback resolver. Declaration-only C++ compilation
@@ -74,7 +74,7 @@ does not require native networking headers.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dnsnmeserver.h`](../include/mulib-dnsnmeserver.h) |
+| Header | [`kernels/mulib-dnsnmeserver.h`](../kernels/mulib-dnsnmeserver.h) |
 | Implementation switch | `MULIB_IMPL_DNSNMESERVER` |
 | Repository-local includes | [mulib-nameserver](mulib-nameserver.md) |
 | Complete example | [`examples/modules/dnsnmeserver.c`](../examples/modules/dnsnmeserver.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsnmeserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dnsnmeserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

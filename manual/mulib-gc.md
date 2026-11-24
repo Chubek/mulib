@@ -23,7 +23,7 @@ R roots, S slots. Collection is explicit and stop-the-world, with no finalizers.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gc.h`](../include/mulib-gc.h) |
+| Header | [`kernels/mulib-gc.h`](../kernels/mulib-gc.h) |
 | Implementation switch | `MULIB_IMPL_GC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/gc.c`](../examples/modules/gc.c) |
@@ -36,6 +36,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

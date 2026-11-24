@@ -19,7 +19,7 @@ Append is amortized O(1), lookup O(log entries), storage O(entries).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-stackmap.h`](../include/mulib-stackmap.h) |
+| Header | [`kernels/mulib-stackmap.h`](../kernels/mulib-stackmap.h) |
 | Implementation switch | `MULIB_IMPL_STACKMAP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/stackmap.c`](../examples/modules/stackmap.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/stackmap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/stackmap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -46,7 +46,7 @@ explicitly rejected. Tests: `tests/test_vmmdev.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmmdev.h`](../include/mulib-vmmdev.h) |
+| Header | [`kernels/mulib-vmmdev.h`](../kernels/mulib-vmmdev.h) |
 | Implementation switch | `MULIB_IMPL_VMMDEV` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/vmmdev.c`](../examples/modules/vmmdev.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmmdev.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmmdev.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

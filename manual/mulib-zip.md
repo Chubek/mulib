@@ -89,7 +89,7 @@ this header does not claim ZIP64 or encrypted-archive support.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-zip.h`](../include/mulib-zip.h) |
+| Header | [`kernels/mulib-zip.h`](../kernels/mulib-zip.h) |
 | Implementation switch | `MULIB_IMPL_ZIP` |
 | Repository-local includes | [mulib-crc32](mulib-crc32.md), [mulib-deflate](mulib-deflate.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/zip.c`](../examples/modules/zip.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/zip.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/zip.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

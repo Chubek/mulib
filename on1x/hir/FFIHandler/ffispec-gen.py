@@ -638,7 +638,7 @@ def main():
 
     try:
         profiles = json.loads((HERE / "reviewed.json").read_text(encoding="utf-8"))
-        include = (ROOT / "include").resolve()
+        include = (ROOT / "kernels").resolve()
         if options.batch:
             report, status = batch(open_compiler, options.config, include, profiles, target=options.target,
                                    project_headers=options.project, selected=options.select)

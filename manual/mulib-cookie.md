@@ -13,9 +13,9 @@ Define `MULIB_IMPL_COOKIE` in exactly one C11 translation unit. Use `#include "m
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-cookie.c -o /tmp/test-cookie
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-cookie.c -o /tmp/test-cookie
 /tmp/test-cookie
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/cookie.c -o /tmp/example-cookie
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/cookie.c -o /tmp/example-cookie
 ```
 
 ## API
@@ -40,7 +40,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cookie.h`](../include/mulib-cookie.h) |
+| Header | [`kernels/mulib-cookie.h`](../kernels/mulib-cookie.h) |
 | Implementation switch | `MULIB_IMPL_COOKIE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cookie.c`](../examples/modules/cookie.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cookie.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cookie.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

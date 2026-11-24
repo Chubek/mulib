@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-taskpool.h`  
+**Header:** `kernels/mulib-taskpool.h`  
 **Implementation:** `MULIB_IMPL_TASKPOOL`, in exactly one C11 translation unit  
 **Dependencies:** C library, C11 atomics, POSIX pthreads; link **`-pthread`**.
 
@@ -14,7 +14,7 @@ additional callbacks can be running. Workers sleep on a condition variable when
 idle. Creation starts every requested worker or cleans up and reports failure.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Ikernels \
   examples/modules/taskpool.c -o /tmp/taskpool
 /tmp/taskpool
 ```
@@ -97,7 +97,7 @@ creation failure joins already-started workers before returning.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-taskpool.h`](../include/mulib-taskpool.h) |
+| Header | [`kernels/mulib-taskpool.h`](../kernels/mulib-taskpool.h) |
 | Implementation switch | `MULIB_IMPL_TASKPOOL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/taskpool.c`](../examples/modules/taskpool.c) |
@@ -110,6 +110,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/taskpool.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/taskpool.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

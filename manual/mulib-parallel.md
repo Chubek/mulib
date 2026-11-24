@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-parallel.h` / `MULIB_IMPL_PARALLEL`  
+**Header/switch:** `kernels/mulib-parallel.h` / `MULIB_IMPL_PARALLEL`  
 **Required implementation:** `MULIB_IMPL_TASKPOOL` (not auto-defined)  
 **Build:** C11 implementation, C++17 declarations, POSIX pthread pool and `-pthread`.
 
@@ -68,7 +68,7 @@ adapter, not a container owner. Each callback exclusively owns its output slot.
 ## Example and validation
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Ikernels \
   examples/modules/parallel.c -o /tmp/parallel
 /tmp/parallel
 ```
@@ -85,7 +85,7 @@ requested from inside a callback.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-parallel.h`](../include/mulib-parallel.h) |
+| Header | [`kernels/mulib-parallel.h`](../kernels/mulib-parallel.h) |
 | Implementation switch | `MULIB_IMPL_PARALLEL` |
 | Repository-local includes | [mulib-taskpool](mulib-taskpool.md) |
 | Complete example | [`examples/modules/parallel.c`](../examples/modules/parallel.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/parallel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/parallel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

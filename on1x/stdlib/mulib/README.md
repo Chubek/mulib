@@ -1,6 +1,6 @@
 # `std.mulib`: native interoperability housekeeping
 
-This package connects On1x programs, canonical `include/mulib-*.h` kernels,
+This package connects On1x programs, canonical `kernels/mulib-*.h` kernels,
 and companion files under `library/`. It supplies a native build planner,
 fixture registry, immutable runtime metadata, binary-safe fixture access and
 host-size checks. Import it with `import std.mulib as M;` or

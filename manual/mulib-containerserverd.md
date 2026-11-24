@@ -23,7 +23,7 @@ Switches: `MULIB_IMPL_CONTAINERSERVERD`, `MULIB_IMPL_OCICONTAINERRUNTIME`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-containerserverd.h`](../include/mulib-containerserverd.h).
+Verbatim declaration section from [`kernels/mulib-containerserverd.h`](../kernels/mulib-containerserverd.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerserverd.h`](../include/mulib-containerserverd.h) |
+| Header | [`kernels/mulib-containerserverd.h`](../kernels/mulib-containerserverd.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERSERVERD` |
 | Repository-local includes | [mulib-container2daemonproto](mulib-container2daemonproto.md), [mulib-ocicontainermetadata](mulib-ocicontainermetadata.md), [mulib-ocicontainerruntime](mulib-ocicontainerruntime.md) |
 | Complete example | [`examples/modules/containerserverd.c`](../examples/modules/containerserverd.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerserverd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerserverd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -45,7 +45,7 @@ fn main() { println(clamp.i64(mark(1), mark(3), mark(2))); }
     # different C body with the same prototype cannot be embedded or replace
     # the previous successful output, even if on1xc was never built.
     sdk = Path(__file__).resolve().parents[1]
-    original = (sdk.parent.parent / 'include/mulib-clamp.h').read_bytes()
+    original = (sdk.parent.parent / 'kernels/mulib-clamp.h').read_bytes()
     header, output = root / 'mulib-clamp.h', root / 'embedded.inc'
     header.write_bytes(original)
     command = ['cmake', f'-Dclamp={header}', f'-Dreview={sdk.parent}/hir/FFIHandler/reviewed.json',

@@ -23,7 +23,7 @@ Missing language facilities include function values, lexical closures, lists/map
 Compile:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-texruntime.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-texruntime.c -lm -o demo
 ./demo
 ```
 
@@ -36,7 +36,7 @@ Hardening: create token/AST IR so expressions are parsed once, implement a real 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-texruntime.h`](../include/mulib-texruntime.h) |
+| Header | [`kernels/mulib-texruntime.h`](../kernels/mulib-texruntime.h) |
 | Implementation switch | `MULIB_IMPL_TEXRUNTIME` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-texruntime.c`](../examples/mulib-texruntime.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-texruntime.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-texruntime.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

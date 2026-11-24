@@ -7,8 +7,8 @@ the synchronous optimization call. The default options use the identical static
 catalogue without opening files.
 
 All implementation code, including the rule patterns, lives in
-[`include/mulib-peephole.h`](../../include/mulib-peephole.h) and
-[`include/mulib-optml.h`](../../include/mulib-optml.h). These are 75 transformations
+[`kernels/mulib-peephole.h`](../../kernels/mulib-peephole.h) and
+[`kernels/mulib-optml.h`](../../kernels/mulib-optml.h). These are 75 transformations
 executed by one shallow-tree matcher, plus a conservative dead-write pass.
 
 ## Rule families

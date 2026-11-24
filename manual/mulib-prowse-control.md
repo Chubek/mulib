@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-prowse-control.h` combines [browser protocols](mulib-prowse-protocol.md),
+`kernels/mulib-prowse-control.h` combines [browser protocols](mulib-prowse-protocol.md),
 [Mune Lua](mulib-mune.md), and [MuLIB Readline](mulib-readline.md). It provides C
 automation functions, a persistent Lua environment with `require('lprowse')`, and
 a syntax-highlighted, completing REPL. Source for the Lua library is in
@@ -11,7 +11,7 @@ a syntax-highlighted, completing REPL. Source for the Lua library is in
 ## Build and quick start
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o prowse
+cc -std=c11 -Ikernels examples/modules/prowse-control.c -pthread -lm -ldl -o prowse
 ./prowse --repl
 ```
 
@@ -206,7 +206,7 @@ also diagnose unrelated legacy-header inventory problems.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-prowse-control.h`](../include/mulib-prowse-control.h) |
+| Header | [`kernels/mulib-prowse-control.h`](../kernels/mulib-prowse-control.h) |
 | Implementation switch | `MULIB_IMPL_PROWSE_CONTROL` |
 | Repository-local includes | [mulib-lprowse](mulib-lprowse.md), [mulib-mune](mulib-mune.md), [mulib-prowse-protocol](mulib-prowse-protocol.md), [mulib-readline](mulib-readline.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/prowse-control.c`](../examples/modules/prowse-control.c) |
@@ -219,6 +219,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prowse-control.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/prowse-control.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

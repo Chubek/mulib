@@ -252,12 +252,12 @@ fn main(){
 }
 ''','51\n',extra=extra)
 
-if (t.root.parent/'include/mulib-json.h').exists():
+if (t.root.parent/'kernels/mulib-json.h').exists():
     json_source='''fn main(){outer:for i in 0..=2{
       let root=json_parse_or_die("{\\"items\\":[1,2]}");let view=json_get_or_die(root,"items");
       if i==0{continue;}loop{let nested=json_parse_or_die("{}");println(json_size(view));break outer;}
     }}'''
-    json_path=execute('json_exits',json_source,'2\n',extra=['-I',t.root.parent/'include',
+    json_path=execute('json_exits',json_source,'2\n',extra=['-I',t.root.parent/'kernels',
                       t.root/'runtime/on1x_json.c',t.root/'runtime/on1x_mulib_impl.c','-lm'])
     p=run([t.compiler,'--check-memory',json_path])
     assert p.returncode==0 or (p.returncode==2 and 'unavailable' in p.stderr),p.stderr

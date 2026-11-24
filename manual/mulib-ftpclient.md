@@ -16,7 +16,7 @@ defines `MULIB_IMPL_FTPSERVER` explicitly. C11 implementation, C++ declarations,
 no allocations or third-party dependencies.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/ftpclient.c -o /tmp/opencode/ftpclient
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/ftpclient.c -o /tmp/opencode/ftpclient
 /tmp/opencode/ftpclient
 ```
 
@@ -98,7 +98,7 @@ share its scratch buffer.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ftpclient.h`](../include/mulib-ftpclient.h) |
+| Header | [`kernels/mulib-ftpclient.h`](../kernels/mulib-ftpclient.h) |
 | Implementation switch | `MULIB_IMPL_FTPCLIENT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ftpclient.c`](../examples/modules/ftpclient.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ftpclient.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ftpclient.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

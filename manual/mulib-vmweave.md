@@ -63,7 +63,7 @@ applies. There is no retained global or borrowed scratch state.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/vmweave.c -lm -o /tmp/vmweave
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/vmweave.c -lm -o /tmp/vmweave
 /tmp/vmweave
 ```
 
@@ -123,7 +123,7 @@ matching/extraction work. Graph allocation failures propagate as NO_MEMORY.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmweave.h`](../include/mulib-vmweave.h) |
+| Header | [`kernels/mulib-vmweave.h`](../kernels/mulib-vmweave.h) |
 | Implementation switch | `MULIB_IMPL_VMWEAVE` |
 | Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-rewrite](mulib-rewrite.md) |
 | Complete example | [`examples/modules/vmweave.c`](../examples/modules/vmweave.c) |
@@ -136,6 +136,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmweave.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmweave.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

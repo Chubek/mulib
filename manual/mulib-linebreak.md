@@ -171,7 +171,7 @@ and `tests/test_linebreak_alloc.c` (allocation-failure preservation/leak checks)
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-linebreak.h`](../include/mulib-linebreak.h) |
+| Header | [`kernels/mulib-linebreak.h`](../kernels/mulib-linebreak.h) |
 | Implementation switch | `MULIB_IMPL_LINEBREAK` |
 | Repository-local includes | [mulib-unibreak](mulib-unibreak.md) |
 | Complete example | [`examples/modules/linebreak.c`](../examples/modules/linebreak.c) |
@@ -184,6 +184,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/linebreak.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/linebreak.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

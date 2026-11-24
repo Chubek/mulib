@@ -92,9 +92,9 @@ with `python3 tools/embed_notation.py --check`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-chart.h`](../include/mulib-chart.h) |
+| Header | [`kernels/mulib-chart.h`](../kernels/mulib-chart.h) |
 | Implementation switch | `MULIB_IMPL_CHART` |
-| Repository-local includes | [`include/mulib-chart-data.inc`](../include/mulib-chart-data.inc), [mulib-json](mulib-json.md), [`include/mulib-mune-markup.inc`](../include/mulib-mune-markup.inc), [mulib-mune](mulib-mune.md), [mulib-xml](mulib-xml.md) |
+| Repository-local includes | [`kernels/mulib-chart-data.inc`](../kernels/mulib-chart-data.inc), [mulib-json](mulib-json.md), [`kernels/mulib-mune-markup.inc`](../kernels/mulib-mune-markup.inc), [mulib-mune](mulib-mune.md), [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/chart.c`](../examples/modules/chart.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/chart.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/chart.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

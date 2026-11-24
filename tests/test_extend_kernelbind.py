@@ -17,7 +17,7 @@ CATALOG = Path("on1x/contracts-exotract/kernel-auto.json")
 
 
 def entry(name, *, status="implemented", dependencies="[]", extra=""):
-    text = f"- name: {name}\n  header: include/mulib-{name}.h\n"
+    text = f"- name: {name}\n  header: kernels/mulib-{name}.h\n"
     if status != "reserved":
         text += f"  manual: manual/mulib-{name}.md\n"
     if status == "implemented":
@@ -36,7 +36,7 @@ class ExtendKernelBind(unittest.TestCase):
         self.manifest = self.root / "MANIFEST.yaml"
         self.catalog = self.root / CATALOG
         self.catalog.parent.mkdir(parents=True)
-        (self.root / "include").mkdir()
+        (self.root / "kernels").mkdir()
         (self.root / "manual").mkdir()
 
     def run_tool(self, *flags, expected=0, root=None):
@@ -47,7 +47,7 @@ class ExtendKernelBind(unittest.TestCase):
 
     def set_manifest(self, *entries, headers=()):
         for name in headers:
-            (self.root / "include" / f"mulib-{name}.h").write_text(
+            (self.root / "kernels" / f"mulib-{name}.h").write_text(
                 "#error not a declaration or build test\n", encoding="utf-8")
             self.write_manual(name)
         self.manifest.write_text(
@@ -73,7 +73,7 @@ class ExtendKernelBind(unittest.TestCase):
         reserved = entry("reserved", status="reserved")
         self.set_manifest(implemented, bounded, reserved, headers=("normal", "bounded"))
         original_manifest = self.manifest.read_bytes()
-        original_headers = {p: p.read_bytes() for p in (self.root / "include").iterdir()}
+        original_headers = {p: p.read_bytes() for p in (self.root / "kernels").iterdir()}
         self.assertIn("missing or stale catalog", self.run_tool("--check", expected=1).stderr)
         self.assertFalse(self.catalog.exists())
         self.run_tool()
@@ -81,9 +81,9 @@ class ExtendKernelBind(unittest.TestCase):
             "schema": "on1x.kernel-auto/v1",
             "safe_export": False,
             "modules": {
-                "bounded": {"header": "include/mulib-bounded.h", "status": "bounded",
+                "bounded": {"header": "kernels/mulib-bounded.h", "status": "bounded",
                             "implementation": "static-inline", "dependencies": []},
-                "normal": {"header": "include/mulib-normal.h", "status": "implemented",
+                "normal": {"header": "kernels/mulib-normal.h", "status": "implemented",
                              "macro": "MULIB_IMPL_NORMAL", "dependencies": ["bounded"],
                              "extra_macros": ["MULIB_IMPL_NORMAL_CLIENT"],
                            "optional_dependency": "OpenSSL Crypto 1.1.1 or newer"},
@@ -144,13 +144,13 @@ class ExtendKernelBind(unittest.TestCase):
                 self.assertIn(collision, result.stderr)
                 self.assertEqual(self.catalog.read_bytes(), original)
                 for extra in (name, collision):
-                    (self.root / "include" / f"mulib-{extra}.h").unlink()
+                    (self.root / "kernels" / f"mulib-{extra}.h").unlink()
 
     def test_unregistered_header_and_static_data(self):
         self.set_manifest(entry("normal"), headers=("normal",))
         self.run_tool()
         original = self.catalog.read_bytes()
-        header = self.root / "include/mulib-embedded.h"
+        header = self.root / "kernels/mulib-embedded.h"
         header.write_text('static const char source[] = "embedded data";\n')
         for flags in ((), ("--check",)):
             self.assertIn("unregistered kernel header", self.run_tool(*flags, expected=1).stderr)
@@ -163,7 +163,7 @@ class ExtendKernelBind(unittest.TestCase):
         catalog = json.loads(self.catalog.read_bytes())
         self.assertFalse(catalog["safe_export"])
         self.assertEqual(catalog["modules"]["embedded"], {
-            "header": "include/mulib-embedded.h", "status": "bounded",
+            "header": "kernels/mulib-embedded.h", "status": "bounded",
             "implementation": "static-data", "dependencies": [],
         })
         self.assertEqual(header.read_text(), 'static const char source[] = "embedded data";\n')
@@ -175,7 +175,7 @@ class ExtendKernelBind(unittest.TestCase):
         original = self.catalog.read_bytes()
         self.assertEqual(set(json.loads(original)["modules"]), {"normal"})
         self.run_tool("--check")
-        (self.root/"include/mulib-reserved.h").unlink()
+        (self.root/"kernels/mulib-reserved.h").unlink()
         self.run_tool("--check")
         self.run_tool()
         self.assertEqual(self.catalog.read_bytes(), original)
@@ -205,7 +205,7 @@ class ExtendKernelBind(unittest.TestCase):
             (base + "  status: implemented\n", "duplicate field"),
             (base.replace("status: implemented", "status: unknown"), "unsupported status"),
             (base.replace("MULIB_IMPL_VALID", "$FORGED"), "implementation metadata"),
-            (base.replace("include/mulib-valid.h", "../mulib-valid.h"), "noncanonical module header"),
+            (base.replace("kernels/mulib-valid.h", "../mulib-valid.h"), "noncanonical module header"),
             (base.replace("dependencies: []", "dependencies: [missing]"), "unknown dependency"),
             (base.replace("dependencies: []", "dependencies: [valid, valid]"), "dependencies layout"),
             (base.replace("manual/mulib-valid.md", "manual/mulib-absent.md"), "missing/escaping MuLIB input"),
@@ -237,7 +237,7 @@ class ExtendKernelBind(unittest.TestCase):
             "future-reserved": "/* intentionally reserved */\n",
         }
         for name, source in headers.items():
-            (self.root / "include" / f"mulib-{name}.h").write_text(source)
+            (self.root / "kernels" / f"mulib-{name}.h").write_text(source)
             if name not in ("fixture+kernel", "future-reserved"):
                 self.write_manual(name)
         self.assertFalse((self.root / "tests").exists())
@@ -281,7 +281,7 @@ class ExtendKernelBind(unittest.TestCase):
         self.assertEqual(declarations.read_bytes(), b"\xff")
         self.assertFalse((self.root / "tests/implementation.c").exists())
 
-        with (self.root / "include/mulib-fixture+kernel.h").open("a") as header:
+        with (self.root / "kernels/mulib-fixture+kernel.h").open("a") as header:
             header.write('#if defined(WITH_RESERVED)\n#include "mulib-future-reserved.h"\n#endif\n')
         self.assertIn("reserved MANIFEST dependency", self.run_sync(expected=1).stderr)
         self.assertEqual((self.manifest.read_bytes(), self.catalog.read_bytes()), before)
@@ -289,7 +289,7 @@ class ExtendKernelBind(unittest.TestCase):
     def test_publishing_additions_follow_canonical_header_names(self):
         self.manifest.write_text("name: Fixture\nmodules:\nproject_files:\n")
         name = "2d+data"
-        (self.root / "include" / f"mulib-{name}.h").write_text("static const int data[] = {1};\n")
+        (self.root / "kernels" / f"mulib-{name}.h").write_text("static const int data[] = {1};\n")
         additions = self.root / "MANIFEST.yaml.additions"
         additions.write_text("modules:\n" + entry(name, status="bounded").replace("static-inline", "static-data"))
         before = self.manifest.read_bytes()
@@ -307,14 +307,14 @@ class ExtendKernelBind(unittest.TestCase):
         self.manifest.write_text("name: Fixture\nmodule_count: 1\nimplemented_module_count: 1\nmodules:\n"
                                  + entry("original") + "project_files:\n- file: existing.md\n")
         for name in ("original", "new"):
-            (self.root / "include" / f"mulib-{name}.h").write_text(
+            (self.root / "kernels" / f"mulib-{name}.h").write_text(
                 f"#if defined(MULIB_IMPL_{name.upper()})\n#endif\n")
             self.write_manual(name)
         (self.root / "MANIFEST.yaml.additions").write_text(
             "# Appended module entries, not a standalone manifest.\n\n"
             + entry("new", dependencies="[original]"))
         # Match the declared dependency to the actual include.
-        header = self.root / "include/mulib-new.h"
+        header = self.root / "kernels/mulib-new.h"
         header.write_text('#include "mulib-original.h"\n' + header.read_text())
         self.run_sync()
         merged = self.manifest.read_text()
@@ -355,7 +355,7 @@ class ExtendKernelBind(unittest.TestCase):
                 self.assertIn(name, catalog["modules"])
         self.assertEqual(catalog["modules"]["sshcrypto"]["optional_dependency"],
                          "OpenSSL Crypto 1.1.1 or newer")
-        self.assertEqual({p.relative_to(ROOT).as_posix() for p in (ROOT/"include").glob("mulib-*.h")},
+        self.assertEqual({p.relative_to(ROOT).as_posix() for p in (ROOT/"kernels").glob("mulib-*.h")},
                          {item["header"] for item in catalog["modules"].values()})
         self.assertEqual(catalog["modules"]["container-core"]["implementation"], "static-inline")
         self.assertEqual(catalog["modules"]["qvm"]["implementation"], "static-inline")
@@ -369,7 +369,7 @@ class ExtendKernelBind(unittest.TestCase):
         spec.loader.exec_module(manuals)
         records = manuals.inventory()
         self.assertEqual({record["header"] for record in records},
-                         set((ROOT/"include").glob("mulib-*.h")))
+                         set((ROOT/"kernels").glob("mulib-*.h")))
         for name in ("container-core", "qvm", "lprowse"):
             record = next(r for r in records if r["header"].name == f"mulib-{name}.h")
             self.assertIsNone(record["switch"])

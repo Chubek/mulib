@@ -15,7 +15,7 @@ switch. Both switches can coexist without duplicate definitions.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-machobuidler.h`](../include/mulib-machobuidler.h).
+Verbatim declaration section from [`kernels/mulib-machobuidler.h`](../kernels/mulib-machobuidler.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-machobuidler.h`](../include/mulib-machobuidler.h) |
+| Header | [`kernels/mulib-machobuidler.h`](../kernels/mulib-machobuidler.h) |
 | Implementation switch | `MULIB_IMPL_MACHOBUIDLER` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md) |
 | Complete example | [`examples/modules/machobuidler.c`](../examples/modules/machobuidler.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machobuidler.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/machobuidler.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

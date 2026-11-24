@@ -40,7 +40,7 @@ for unknown users, audit logging and secure recovery externally.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pwdauth.h`](../include/mulib-pwdauth.h) |
+| Header | [`kernels/mulib-pwdauth.h`](../kernels/mulib-pwdauth.h) |
 | Implementation switch | `MULIB_IMPL_PWDAUTH` |
 | Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md), [mulib-seurity](mulib-seurity.md) |
 | Complete example | [`examples/modules/pwdauth.c`](../examples/modules/pwdauth.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pwdauth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pwdauth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

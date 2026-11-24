@@ -14,7 +14,7 @@ not overlap the input concept array.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-latticequery.h`](../include/mulib-latticequery.h).
+Verbatim declaration section from [`kernels/mulib-latticequery.h`](../kernels/mulib-latticequery.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -52,7 +52,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-latticequery.h`](../include/mulib-latticequery.h) |
+| Header | [`kernels/mulib-latticequery.h`](../kernels/mulib-latticequery.h) |
 | Implementation switch | `MULIB_IMPL_LATTICEQUERY` |
 | Repository-local includes | [mulib-conceptlattice](mulib-conceptlattice.md) |
 | Complete example | [`examples/modules/latticequery.c`](../examples/modules/latticequery.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/latticequery.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/latticequery.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

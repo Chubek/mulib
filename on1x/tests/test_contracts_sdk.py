@@ -576,7 +576,7 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         value = copy.deepcopy(unit); mutate(value)
         bad('check', dump(work/('bad_decl_'+name+'.json'), value), pinned)
 
-    if t.extract and (t.root.parent/'include/mulib-json.h').is_file() and sys.platform.startswith('linux'):
+    if t.extract and (t.root.parent/'kernels/mulib-json.h').is_file() and sys.platform.startswith('linux'):
         tool = t.root/'tools/on1x-contracts.py'
         def workflow(*args): return run([sys.executable, tool, *args])
         options = ['--bind', t.bind]
@@ -601,9 +601,9 @@ with tempfile.TemporaryDirectory(prefix='sdk-', dir=t.work) as tmp:
         with (stale/'vec.exocontract.json').open('a') as stream: stream.write('\n')
         p = workflow('check', stale, '--bind', t.bind)
         assert p.returncode == 3 and 'artifact drift' in p.stderr, p.stderr
-        fake = work/'canonical-copy'; (fake/'include').mkdir(parents=True); (fake/'manual').mkdir()
+        fake = work/'canonical-copy'; (fake/'kernels').mkdir(parents=True); (fake/'manual').mkdir()
         for library in catalog['profiles']:
-            for directory, suffix in [('include','.h'),('manual','.md')]:
+            for directory, suffix in [('kernels','.h'),('manual','.md')]:
                 shutil.copyfile(t.root.parent/directory/('mulib-'+library+suffix), fake/directory/('mulib-'+library+suffix))
         for profile in catalog['profiles'].values():
             for path in profile.get('evidence_sha256',{}):

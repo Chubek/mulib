@@ -86,7 +86,7 @@ machine composition, even-weight inhibition and morphology.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hyphen.h`](../include/mulib-hyphen.h) |
+| Header | [`kernels/mulib-hyphen.h`](../kernels/mulib-hyphen.h) |
 | Implementation switch | `MULIB_IMPL_HYPHEN` |
 | Repository-local includes | [mulib-cache](mulib-cache.md), [mulib-dfa](mulib-dfa.md), [mulib-orhoconv](mulib-orhoconv.md) |
 | Complete example | [`examples/modules/hyphen.c`](../examples/modules/hyphen.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hyphen.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hyphen.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

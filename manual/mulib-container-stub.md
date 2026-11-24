@@ -55,7 +55,7 @@ The underlying protocol and server replay policy are documented in
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-stub.h`](../include/mulib-container-stub.h) |
+| Header | [`kernels/mulib-container-stub.h`](../kernels/mulib-container-stub.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_STUB` |
 | Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md) |
 | Complete example | [`examples/modules/container-stub.c`](../examples/modules/container-stub.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-stub.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-stub.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

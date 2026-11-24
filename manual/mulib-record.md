@@ -15,7 +15,7 @@ releases values and names. Embedded NUL names are not supported.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-record.h`](../include/mulib-record.h).
+Verbatim declaration section from [`kernels/mulib-record.h`](../kernels/mulib-record.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -64,7 +64,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-record.h`](../include/mulib-record.h) |
+| Header | [`kernels/mulib-record.h`](../kernels/mulib-record.h) |
 | Implementation switch | `MULIB_IMPL_RECORD` |
 | Repository-local includes | [mulib-datum](mulib-datum.md) |
 | Complete example | [`examples/modules/record.c`](../examples/modules/record.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/record.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/record.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

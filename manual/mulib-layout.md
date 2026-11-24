@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-layout.h` provides an owned, renderer-neutral text layout in C11
+`kernels/mulib-layout.h` provides an owned, renderer-neutral text layout in C11
 with C linkage for C++. It composes ICU bidi/Unicode boundaries, HarfBuzz
 OpenType shaping, font fallback, and `mulib-glyph`. The original weighted
 rectangle API remains available.
@@ -146,7 +146,7 @@ ordinary floating-point rounding, without integer pixel snapping.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-layout.h`](../include/mulib-layout.h) |
+| Header | [`kernels/mulib-layout.h`](../kernels/mulib-layout.h) |
 | Implementation switch | `MULIB_IMPL_LAYOUT` |
 | Repository-local includes | [mulib-glyph](mulib-glyph.md) |
 | Complete example | [`examples/modules/layout.c`](../examples/modules/layout.c) |
@@ -159,6 +159,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/layout.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/layout.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

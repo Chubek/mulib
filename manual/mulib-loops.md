@@ -20,7 +20,7 @@ worst-case work is O(backedges × V × E).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-loops.h`](../include/mulib-loops.h) |
+| Header | [`kernels/mulib-loops.h`](../kernels/mulib-loops.h) |
 | Implementation switch | `MULIB_IMPL_LOOPS` |
 | Repository-local includes | [mulib-dominance](mulib-dominance.md) |
 | Complete example | [`examples/modules/loops.c`](../examples/modules/loops.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/loops.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/loops.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

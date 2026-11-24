@@ -4,9 +4,9 @@ import sys
 from support import NativeTests, run
 
 tests = NativeTests()
-include = tests.root.parent / 'include'
+include = tests.root.parent / 'kernels'
 if not (include / 'mulib-json.h').is_file():
-    print('MuLIB JSON integration: SKIP (canonical ../include/mulib-json.h absent)')
+    print('MuLIB JSON integration: SKIP (canonical ../kernels/mulib-json.h absent)')
     sys.exit(77)
 extra = ['-I', include, tests.root / 'runtime/on1x_json.c',
          tests.root / 'runtime/on1x_mulib_impl.c', '-lm']

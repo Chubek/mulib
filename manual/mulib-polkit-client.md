@@ -31,7 +31,7 @@ See `../tests/test_polkit-client.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-polkit-client.h`](../include/mulib-polkit-client.h) |
+| Header | [`kernels/mulib-polkit-client.h`](../kernels/mulib-polkit-client.h) |
 | Implementation switch | `MULIB_IMPL_POLKIT_CLIENT` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/polkit-client.c`](../examples/modules/polkit-client.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/polkit-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/polkit-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

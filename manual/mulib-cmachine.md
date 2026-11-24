@@ -72,7 +72,7 @@ No rollback is needed because this subset has no external side effects.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/cmachine.c -o /tmp/cmachine
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/cmachine.c -o /tmp/cmachine
 /tmp/cmachine
 ```
 
@@ -87,7 +87,7 @@ IR suite also checks optimized/unoptimized equivalence and runtime faults.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cmachine.h`](../include/mulib-cmachine.h) |
+| Header | [`kernels/mulib-cmachine.h`](../kernels/mulib-cmachine.h) |
 | Implementation switch | `MULIB_IMPL_CMACHINE` |
 | Repository-local includes | [mulib-minivm](mulib-minivm.md), [mulib-mir](mulib-mir.md) |
 | Complete example | [`examples/modules/cmachine.c`](../examples/modules/cmachine.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cmachine.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cmachine.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

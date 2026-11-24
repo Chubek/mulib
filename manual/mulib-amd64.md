@@ -55,7 +55,7 @@ MPU path, diagnostics and transactional failures.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-amd64.h`](../include/mulib-amd64.h).
+Verbatim declaration section from [`kernels/mulib-amd64.h`](../kernels/mulib-amd64.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -122,7 +122,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-amd64.h`](../include/mulib-amd64.h) |
+| Header | [`kernels/mulib-amd64.h`](../kernels/mulib-amd64.h) |
 | Implementation switch | `MULIB_IMPL_AMD64` |
 | Repository-local includes | [mulib-assembler](mulib-assembler.md), [mulib-mpu](mulib-mpu.md) |
 | Complete example | [`examples/modules/amd64.c`](../examples/modules/amd64.c) |
@@ -135,6 +135,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/amd64.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/amd64.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 # lcharts
 
-Auto-loaded Mune Lua chart library for [`mulib-chart.h`](../../include/mulib-chart.h).
+Auto-loaded Mune Lua chart library for [`mulib-chart.h`](../../kernels/mulib-chart.h).
 No `require` or external Lua runtime is needed. `require('lcharts')` also returns
 the installed module. Constructors return bounded SVG trees, not HTML strings.
 

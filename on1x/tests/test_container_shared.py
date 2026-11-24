@@ -12,7 +12,7 @@ fixtures = t.root / 'tests/fixtures'
 shared = fixtures / 'container_shared'
 container = t.root / 'stdlib/container'
 flags = ('-D_POSIX_C_SOURCE=200809L', '-pthread', '-I', container,
-         '-I', t.root.parent / 'include')
+         '-I', t.root.parent / 'kernels')
 extra = (*flags, container / 'shared.c', shared / 'kernels.c')
 alloc = ('-include', fixtures / 'unique_allocator.h', fixtures / 'unique_allocator.c',
          '-DON1X_SHARED_MALLOC=on1x_test_unique_malloc',

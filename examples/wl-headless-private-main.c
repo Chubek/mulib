@@ -1,5 +1,5 @@
 /* Linux, no external display or development libraries required:
- * cc -std=c11 -D_GNU_SOURCE -Iinclude examples/wl-headless-private{,-main}.c \
+ * cc -std=c11 -D_GNU_SOURCE -Ikernels examples/wl-headless-private{,-main}.c \
  *    -lm -o wl-headless-private
  * ./wl-headless-private [output.ppm|-] [seconds]
  * The program prints its private socket path, runs for 15 seconds by default,

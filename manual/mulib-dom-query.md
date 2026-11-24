@@ -17,7 +17,7 @@ not a distinct error. `first` returns a borrowed node or NULL.
 
 ## Integration and ownership
 
-Include `include/mulib-dom-query.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-dom-query.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -41,7 +41,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dom-query.h`](../include/mulib-dom-query.h).
+Verbatim declaration section from [`kernels/mulib-dom-query.h`](../kernels/mulib-dom-query.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -93,7 +93,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dom-query.h`](../include/mulib-dom-query.h) |
+| Header | [`kernels/mulib-dom-query.h`](../kernels/mulib-dom-query.h) |
 | Implementation switch | `MULIB_IMPL_DOM_QUERY` |
 | Repository-local includes | [mulib-html-treebuilder](mulib-html-treebuilder.md) |
 | Complete example | [`examples/modules/dom-query.c`](../examples/modules/dom-query.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dom-query.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dom-query.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

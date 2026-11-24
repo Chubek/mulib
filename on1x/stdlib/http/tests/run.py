@@ -80,7 +80,7 @@ def main(compiler, cc, *flags):
     runtime = ON1X / "runtime"
     sources = [HERE.parent / "runtime.c", HERE.parent / "kernels.c", HERE / "host.c"]
     cflags = ["-std=c11", "-D_POSIX_C_SOURCE=200809L", "-Wall", "-Wextra",
-              "-Werror", "-I", ROOT / "include", "-I", runtime,
+              "-Werror", "-I", ROOT / "kernels", "-I", runtime,
               *(f.removeprefix("--cflag=") for f in flags)]
     fields = b"X-Mixed: Value:yes\r\nx-mixed: ignored\r\nX-Empty:\r\n"
     chunked = (b"HTTP/1.1 404 Not Found\r\n" + fields +

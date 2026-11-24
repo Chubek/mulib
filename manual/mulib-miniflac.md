@@ -44,7 +44,7 @@ reference-encoded predictor streams; tools are test oracles, not dependencies.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-miniflac.h`](../include/mulib-miniflac.h) |
+| Header | [`kernels/mulib-miniflac.h`](../kernels/mulib-miniflac.h) |
 | Implementation switch | `MULIB_IMPL_MINIFLAC` |
 | Repository-local includes | [mulib-audio](mulib-audio.md) |
 | Complete example | [`examples/modules/miniflac.c`](../examples/modules/miniflac.c) |
@@ -57,6 +57,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/miniflac.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/miniflac.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

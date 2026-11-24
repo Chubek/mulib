@@ -31,7 +31,7 @@ See `../tests/test_wifi-scan.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-scan.h`](../include/mulib-wifi-scan.h) |
+| Header | [`kernels/mulib-wifi-scan.h`](../kernels/mulib-wifi-scan.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_SCAN` |
 | Repository-local includes | [mulib-nl80211](mulib-nl80211.md) |
 | Complete example | [`examples/modules/wifi-scan.c`](../examples/modules/wifi-scan.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-scan.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-scan.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

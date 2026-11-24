@@ -13,7 +13,7 @@ storage O(rules). Free releases rules and clears the configured attribute count.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-lattice.h`](../include/mulib-lattice.h).
+Verbatim declaration section from [`kernels/mulib-lattice.h`](../kernels/mulib-lattice.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lattice.h`](../include/mulib-lattice.h) |
+| Header | [`kernels/mulib-lattice.h`](../kernels/mulib-lattice.h) |
 | Implementation switch | `MULIB_IMPL_LATTICE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lattice.c`](../examples/modules/lattice.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lattice.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lattice.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -20,14 +20,14 @@ def dependencies(name):
         if header in seen:
             return
         seen.add(header)
-        text = (ROOT / 'include' / header).read_text()
+        text = (ROOT / 'kernels' / header).read_text()
         for child in re.findall(r'#\s*include\s*"(mulib-[^"]+\.h)"', text):
             visit(child)
 
     visit(f'mulib-{name}.h')
     macros = {'MULIB_IMPL_PARSER'}
     for header in seen:
-        text = (ROOT / 'include' / header).read_text()
+        text = (ROOT / 'kernels' / header).read_text()
         macros.add(re.search(r'#if defined\((MULIB_IMPL_\w+)\)', text).group(1))
     return sorted(seen), sorted(macros)
 
@@ -39,7 +39,7 @@ def main():
     args = parser.parse_args()
     cc = shlex.split(os.environ.get('CC', 'cc'))
     cxx = shlex.split(os.environ.get('CXX', 'c++'))
-    flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include'), '-pthread']
+    flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'kernels'), '-pthread']
     if args.sanitizers:
         flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer']
     links = ['-lm'] + (['-ldl'] if os.name == 'posix' and os.uname().sysname != 'Darwin' else [])

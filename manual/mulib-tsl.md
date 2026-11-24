@@ -30,7 +30,7 @@ unverified fake backend to demonstrate refusal of unauthenticated sessions.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tsl.h`](../include/mulib-tsl.h).
+Verbatim declaration section from [`kernels/mulib-tsl.h`](../kernels/mulib-tsl.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -110,7 +110,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tsl.h`](../include/mulib-tsl.h) |
+| Header | [`kernels/mulib-tsl.h`](../kernels/mulib-tsl.h) |
 | Implementation switch | `MULIB_IMPL_TSL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/tsl.c`](../examples/modules/tsl.c) |
@@ -123,6 +123,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tsl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tsl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

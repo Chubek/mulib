@@ -29,7 +29,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-clamp.h`](../include/mulib-clamp.h).
+Verbatim declaration section from [`kernels/mulib-clamp.h`](../kernels/mulib-clamp.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-clamp.h`](../include/mulib-clamp.h) |
+| Header | [`kernels/mulib-clamp.h`](../kernels/mulib-clamp.h) |
 | Implementation switch | `MULIB_IMPL_CLAMP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/clamp.c`](../examples/modules/clamp.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/clamp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/clamp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

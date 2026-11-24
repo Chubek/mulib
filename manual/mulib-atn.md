@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-atn.h` implements a finite nondeterministic automaton over
+`kernels/mulib-atn.h` implements a finite nondeterministic automaton over
 `uint32_t` tokens. Edges either consume no input (epsilon) or one token in an
 inclusive `[lower, upper]` range. Multiple accepting states, nondeterministic
 branches, parallel edges, and epsilon cycles are supported. Matching is always
@@ -123,7 +123,7 @@ The standalone [`examples/modules/atn.c`](../examples/modules/atn.c) includes
 positive, negative, and empty-input checks. From the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/atn.c -o ./atn
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/atn.c -o ./atn
 ./atn
 ```
 
@@ -134,7 +134,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/atn.c -o 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-atn.h`](../include/mulib-atn.h) |
+| Header | [`kernels/mulib-atn.h`](../kernels/mulib-atn.h) |
 | Implementation switch | `MULIB_IMPL_ATN` |
 | Repository-local includes | [mulib-bitset](mulib-bitset.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/atn.c`](../examples/modules/atn.c) |
@@ -147,6 +147,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/atn.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/atn.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

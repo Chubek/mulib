@@ -22,7 +22,7 @@ byte lexer, not Unicode identifier processing. Total scan time O(source length).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lexer.h`](../include/mulib-lexer.h) |
+| Header | [`kernels/mulib-lexer.h`](../kernels/mulib-lexer.h) |
 | Implementation switch | `MULIB_IMPL_LEXER` |
 | Repository-local includes | [mulib-lexical-token](mulib-lexical-token.md) |
 | Complete example | [`examples/modules/lexer.c`](../examples/modules/lexer.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lexer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lexer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

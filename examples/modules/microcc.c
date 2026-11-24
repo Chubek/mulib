@@ -1,4 +1,4 @@
-/* cc -std=c11 -Iinclude examples/modules/microcc.c -lm -o microcc
+/* cc -std=c11 -Ikernels examples/modules/microcc.c -lm -o microcc
  * ./microcc > add42.s; cc -c add42.s
  * ./microcc rv64 > add42-rv64.s (assemble with a RISC-V toolchain). */
 #define MULIB_IMPL_MIR

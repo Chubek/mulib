@@ -36,7 +36,7 @@ child. Failure after no_new_privs is not a rollback. Abort rather than proceed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-landlock.h`](../include/mulib-landlock.h) |
+| Header | [`kernels/mulib-landlock.h`](../kernels/mulib-landlock.h) |
 | Implementation switch | `MULIB_IMPL_LANDLOCK` |
 | Repository-local includes | [mulib-sandbox-profile](mulib-sandbox-profile.md) |
 | Complete example | [`examples/modules/sandbox-process.c`](../examples/modules/sandbox-process.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,7 +1,7 @@
 # mulib-spice-ac
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-ac.h`  
+**Header:** `kernels/mulib-spice-ac.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_AC`  
 **Dependencies:** `spice-netlist`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_AC` defined before in
 `tests/test_spice_ac.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_ac.c -lm -o /tmp/test_spice_ac
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_ac.c -lm -o /tmp/test_spice_ac
 /tmp/test_spice_ac
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-ac.h`](../include/mulib-spice-ac.h).
+Verbatim declaration section from [`kernels/mulib-spice-ac.h`](../kernels/mulib-spice-ac.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_spice_ac_solve(const mulib_spice_netlist_t *net, double frequency_hz,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-ac.h`](../include/mulib-spice-ac.h) |
+| Header | [`kernels/mulib-spice-ac.h`](../kernels/mulib-spice-ac.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_AC` |
 | Repository-local includes | [mulib-spice-netlist](mulib-spice-netlist.md) |
 | Complete example | [`examples/modules/spice-ac.c`](../examples/modules/spice-ac.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-ac.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-ac.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

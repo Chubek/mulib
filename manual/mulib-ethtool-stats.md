@@ -31,7 +31,7 @@ See `../tests/test_ethtool-stats.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ethtool-stats.h`](../include/mulib-ethtool-stats.h) |
+| Header | [`kernels/mulib-ethtool-stats.h`](../kernels/mulib-ethtool-stats.h) |
 | Implementation switch | `MULIB_IMPL_ETHTOOL_STATS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ethtool-stats.c`](../examples/modules/ethtool-stats.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ethtool-stats.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ethtool-stats.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

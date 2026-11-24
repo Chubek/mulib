@@ -7,13 +7,13 @@ target_sources(on1x_sdk PRIVATE
 target_compile_features(on1x_sdk PRIVATE c_std_11)
 target_include_directories(on1x_sdk PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../contracts-exotract/include>"
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>"
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../kernels>"
 )
 install(
     FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/../contracts-exotract/include/mulib-cdd-accessors.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../include/mulib-cdd-catalogue.h"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../include/mulib-cdd-plan.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../kernels/mulib-cdd-catalogue.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../kernels/mulib-cdd-plan.h"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/on1x-sdk"
     COMPONENT On1xSDK
 )
@@ -107,7 +107,7 @@ if(BUILD_TESTING)
     target_link_libraries(on1x_sdk6_test_cdd PRIVATE On1x::SDK)
     target_include_directories(on1x_sdk6_test_cdd PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/../contracts-exotract/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../../include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../kernels"
     )
     add_test(NAME on1x.sdk6.cdd_accessors
         COMMAND on1x_sdk6_test_cdd)

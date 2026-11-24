@@ -1,7 +1,7 @@
 # mulib-dsim-scheduler
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-dsim-scheduler.h`  
+**Header:** `kernels/mulib-dsim-scheduler.h`  
 **Implementation switch:** `MULIB_IMPL_DSIM_SCHEDULER`  
 **Dependencies:** `dsim-logic4`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_DSIM_SCHEDULER` defined bef
 `tests/test_dsim_scheduler.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_dsim_scheduler.c -lm -o /tmp/test_dsim_scheduler
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_dsim_scheduler.c -lm -o /tmp/test_dsim_scheduler
 /tmp/test_dsim_scheduler
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dsim-scheduler.h`](../include/mulib-dsim-scheduler.h).
+Verbatim declaration section from [`kernels/mulib-dsim-scheduler.h`](../kernels/mulib-dsim-scheduler.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ size_t mulib_dsim_scheduler_cancel(mulib_dsim_scheduler_t *s, uint32_t signal);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dsim-scheduler.h`](../include/mulib-dsim-scheduler.h) |
+| Header | [`kernels/mulib-dsim-scheduler.h`](../kernels/mulib-dsim-scheduler.h) |
 | Implementation switch | `MULIB_IMPL_DSIM_SCHEDULER` |
 | Repository-local includes | [mulib-dsim-logic4](mulib-dsim-logic4.md) |
 | Complete example | [`examples/modules/dsim-scheduler.c`](../examples/modules/dsim-scheduler.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dsim-scheduler.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dsim-scheduler.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

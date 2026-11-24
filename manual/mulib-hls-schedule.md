@@ -1,7 +1,7 @@
 # mulib-hls-schedule
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-hls-schedule.h`  
+**Header:** `kernels/mulib-hls-schedule.h`  
 **Implementation switch:** `MULIB_IMPL_HLS_SCHEDULE`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_HLS_SCHEDULE` defined befor
 `tests/test_hls_schedule.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_hls_schedule.c -lm -o /tmp/test_hls_schedule
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_hls_schedule.c -lm -o /tmp/test_hls_schedule
 /tmp/test_hls_schedule
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hls-schedule.h`](../include/mulib-hls-schedule.h).
+Verbatim declaration section from [`kernels/mulib-hls-schedule.h`](../kernels/mulib-hls-schedule.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ int mulib_hls_schedule_asap(mulib_hls_operation_t *ops, size_t count, uint32_t *
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hls-schedule.h`](../include/mulib-hls-schedule.h) |
+| Header | [`kernels/mulib-hls-schedule.h`](../kernels/mulib-hls-schedule.h) |
 | Implementation switch | `MULIB_IMPL_HLS_SCHEDULE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hls-schedule.c`](../examples/modules/hls-schedule.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hls-schedule.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hls-schedule.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

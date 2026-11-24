@@ -1,7 +1,7 @@
 # mulib-eda-design-db
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-design-db.h`  
+**Header:** `kernels/mulib-eda-design-db.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_DESIGN_DB`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_DESIGN_DB` defined befo
 `tests/test_eda_design_db.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_design_db.c -lm -o /tmp/test_eda_design_db
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_design_db.c -lm -o /tmp/test_eda_design_db
 /tmp/test_eda_design_db
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-design-db.h`](../include/mulib-eda-design-db.h).
+Verbatim declaration section from [`kernels/mulib-eda-design-db.h`](../kernels/mulib-eda-design-db.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -98,7 +98,7 @@ Constructors and conversions require an empty destination; release existing owne
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-design-db.h`](../include/mulib-eda-design-db.h) |
+| Header | [`kernels/mulib-eda-design-db.h`](../kernels/mulib-eda-design-db.h) |
 | Implementation switch | `MULIB_IMPL_EDA_DESIGN_DB` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-design-db.c`](../examples/modules/eda-design-db.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-design-db.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-design-db.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

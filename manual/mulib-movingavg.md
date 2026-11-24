@@ -34,7 +34,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-movingavg.h`](../include/mulib-movingavg.h).
+Verbatim declaration section from [`kernels/mulib-movingavg.h`](../kernels/mulib-movingavg.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -109,7 +109,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-movingavg.h`](../include/mulib-movingavg.h) |
+| Header | [`kernels/mulib-movingavg.h`](../kernels/mulib-movingavg.h) |
 | Implementation switch | `MULIB_IMPL_MOVINGAVG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/movingavg.c`](../examples/modules/movingavg.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/movingavg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/movingavg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

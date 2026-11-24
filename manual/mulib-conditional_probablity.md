@@ -17,7 +17,7 @@ No allocations, ownership, event storage, or independence assumptions are involv
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-conditional_probablity.h`](../include/mulib-conditional_probablity.h).
+Verbatim declaration section from [`kernels/mulib-conditional_probablity.h`](../kernels/mulib-conditional_probablity.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -53,7 +53,7 @@ double mulib_conditional_bayes(double likelihood, double prior, double evidence)
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-conditional_probablity.h`](../include/mulib-conditional_probablity.h) |
+| Header | [`kernels/mulib-conditional_probablity.h`](../kernels/mulib-conditional_probablity.h) |
 | Implementation switch | `MULIB_IMPL_CONDITIONAL_PROBABLITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/conditional_probablity.c`](../examples/modules/conditional_probablity.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/conditional_probablity.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/conditional_probablity.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

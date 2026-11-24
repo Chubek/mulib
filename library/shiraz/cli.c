@@ -3,7 +3,7 @@
 #include "mulib-shiraz.h"
 #include <unistd.h>
 #ifndef SHIRAZ_INCLUDE_DIR
-#define SHIRAZ_INCLUDE_DIR "../../include"
+#define SHIRAZ_INCLUDE_DIR "../../kernels"
 #endif
 #ifndef SHIRAZ_LIBRARY_DIR
 #define SHIRAZ_LIBRARY_DIR "."

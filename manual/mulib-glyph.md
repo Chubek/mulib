@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-glyph.h` bridges `fontshape`, `fontdraw`, `sysfonts`, `ligature`,
+`kernels/mulib-glyph.h` bridges `fontshape`, `fontdraw`, `sysfonts`, `ligature`,
 and the existing `pglayout` Unicode itemizer. It has C11 implementation and C++
 declarations, without compile-time third-party dependencies.
 
@@ -15,7 +15,7 @@ Define `MULIB_IMPL_GLYPH`, `MULIB_IMPL_LIGATURE`, `MULIB_IMPL_FONTDRAW`,
 `MULIB_IMPL_XML`, `MULIB_IMPL_YAML`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`,
 `MULIB_IMPL_STRBUF`, and `MULIB_IMPL_UTF8` in exactly one TU before inclusion.
 The complete runnable `examples/modules/glyph.c` shows all switches.
-Linux build: `cc -std=c11 -Iinclude examples/modules/glyph.c -lm -ldl -pthread`.
+Linux build: `cc -std=c11 -Ikernels examples/modules/glyph.c -lm -ldl -pthread`.
 
 `mulib_glyph_font_open(path,index,pixels)` owns paired HarfBuzz/FreeType contexts
 for the same file and face. Positive integer pixels are limited to INT_MAX/64;
@@ -63,7 +63,7 @@ mapping, and existing `tests/test_font_stack.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-glyph.h`](../include/mulib-glyph.h) |
+| Header | [`kernels/mulib-glyph.h`](../kernels/mulib-glyph.h) |
 | Implementation switch | `MULIB_IMPL_GLYPH` |
 | Repository-local includes | [mulib-fontdraw](mulib-fontdraw.md), [mulib-ligature](mulib-ligature.md), [mulib-pglayout](mulib-pglayout.md), [mulib-sysfonts](mulib-sysfonts.md) |
 | Complete example | [`examples/modules/glyph.c`](../examples/modules/glyph.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glyph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/glyph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

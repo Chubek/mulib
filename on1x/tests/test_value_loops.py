@@ -170,12 +170,12 @@ for limit in range(3):
     p = run([t.work / 'closure_cleanup'], env={**os.environ, 'ON1X_TEST_ENV_FAIL_AFTER': str(limit)})
     assert p.returncode == 72 and 'allocation' in p.stderr, (limit, p.returncode, p.stderr)
 
-if (t.root.parent / 'include/mulib-json.h').exists():
+if (t.root.parent / 'kernels/mulib-json.h').exists():
     path = execute('json_cleanup', '''
 fn main(){var n=0;println(loop{
  let root=json_parse_or_die("{\\"n\\":42}");let view=json_get_or_die(root,"n");
  n=n+1;if n<3{continue;}break with json_number(view);
-});}''', '42\n', extra=['-I', t.root.parent / 'include', t.root / 'runtime/on1x_json.c',
+});}''', '42\n', extra=['-I', t.root.parent / 'kernels', t.root / 'runtime/on1x_json.c',
                           t.root / 'runtime/on1x_mulib_impl.c', '-lm'])
     sdk(path)
 

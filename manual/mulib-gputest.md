@@ -53,7 +53,7 @@ and shader compiler are still required for real device execution.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gputest.h`](../include/mulib-gputest.h) |
+| Header | [`kernels/mulib-gputest.h`](../kernels/mulib-gputest.h) |
 | Implementation switch | `MULIB_IMPL_GPUTEST` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/gputest.c`](../examples/modules/gputest.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gputest.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gputest.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

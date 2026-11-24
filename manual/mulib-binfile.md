@@ -14,7 +14,7 @@ Switch: `MULIB_IMPL_BINFILE`. Example: `examples/modules/binfile.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-binfile.h`](../include/mulib-binfile.h).
+Verbatim declaration section from [`kernels/mulib-binfile.h`](../kernels/mulib-binfile.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-binfile.h`](../include/mulib-binfile.h) |
+| Header | [`kernels/mulib-binfile.h`](../kernels/mulib-binfile.h) |
 | Implementation switch | `MULIB_IMPL_BINFILE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/binfile.c`](../examples/modules/binfile.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/binfile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/binfile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

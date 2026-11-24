@@ -32,7 +32,7 @@ roundtrip composition in [test_docstring.c](../tests/test_docstring.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xtas.h`](../include/mulib-xtas.h) |
+| Header | [`kernels/mulib-xtas.h`](../kernels/mulib-xtas.h) |
 | Implementation switch | `MULIB_IMPL_XTAS` |
 | Repository-local includes | [mulib-dsdom](mulib-dsdom.md) |
 | Complete example | [`examples/modules/xtas.c`](../examples/modules/xtas.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xtas.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xtas.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ Switches: `MULIB_IMPL_OBJFILESYMLOC`, `MULIB_IMPL_ELFUTILS`, `MULIB_IMPL_ELF`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilesymloc.h`](../include/mulib-objfilesymloc.h).
+Verbatim declaration section from [`kernels/mulib-objfilesymloc.h`](../kernels/mulib-objfilesymloc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilesymloc.h`](../include/mulib-objfilesymloc.h) |
+| Header | [`kernels/mulib-objfilesymloc.h`](../kernels/mulib-objfilesymloc.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILESYMLOC` |
 | Repository-local includes | [mulib-binfile](mulib-binfile.md), [mulib-elfutils](mulib-elfutils.md) |
 | Complete example | [`examples/modules/objfilesymloc.c`](../examples/modules/objfilesymloc.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilesymloc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilesymloc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

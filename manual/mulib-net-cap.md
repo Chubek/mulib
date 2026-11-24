@@ -32,7 +32,7 @@ See `../tests/test_net-cap.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-cap.h`](../include/mulib-net-cap.h) |
+| Header | [`kernels/mulib-net-cap.h`](../kernels/mulib-net-cap.h) |
 | Implementation switch | `MULIB_IMPL_NET_CAP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/net-cap.c`](../examples/modules/net-cap.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-cap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-cap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

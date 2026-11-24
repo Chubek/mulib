@@ -144,7 +144,7 @@ typed instruction operands and lacks memory/text parsing, so this pipeline uses
 an external assembler/linker rather than pretending its output fits that API.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/microcc.c -lm -o microcc
+cc -std=c11 -Ikernels examples/modules/microcc.c -lm -o microcc
 ./microcc > add42.s
 cc -c add42.s -o add42.o
 # Link with a C caller declaring uint64_t mulib_generated_add42(uint64_t).
@@ -170,7 +170,7 @@ RV64IM with Clang when available. CTest and `tools/check.py` run these checks.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-microcc.h`](../include/mulib-microcc.h) |
+| Header | [`kernels/mulib-microcc.h`](../kernels/mulib-microcc.h) |
 | Implementation switch | `MULIB_IMPL_MICROCC` |
 | Repository-local includes | [mulib-depir](mulib-depir.md), [mulib-isched](mulib-isched.md), [mulib-lowopt](mulib-lowopt.md), [mulib-machine](mulib-machine.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/microcc.c`](../examples/modules/microcc.c) |
@@ -183,6 +183,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microcc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/microcc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

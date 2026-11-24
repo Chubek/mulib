@@ -12,7 +12,7 @@ Define `MULIB_IMPL_MICROAUDIO` in one C11 unit. Other units include declarations
 normally; C++ consumers have C linkage. Math functions may require `-lm`:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/microaudio.c -lm -o microaudio
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/microaudio.c -lm -o microaudio
 ./microaudio
 ```
 
@@ -122,7 +122,7 @@ budgets, and allocation failure.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-microaudio.h`](../include/mulib-microaudio.h) |
+| Header | [`kernels/mulib-microaudio.h`](../kernels/mulib-microaudio.h) |
 | Implementation switch | `MULIB_IMPL_MICROAUDIO` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/microaudio.c`](../examples/modules/microaudio.c) |
@@ -135,6 +135,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microaudio.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/microaudio.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

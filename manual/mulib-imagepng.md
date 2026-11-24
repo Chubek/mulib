@@ -62,14 +62,14 @@ documented in [GLX fonts and images](mulib-gfx-font-image.md#enabling-native-png
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-imagepng.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-imagepng.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-imagepng.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-imagepng.c -lm -o test
 ./test
 ```
 
@@ -92,7 +92,7 @@ truncation, chunk ordering, exact resource limits and allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imagepng.h`](../include/mulib-imagepng.h) |
+| Header | [`kernels/mulib-imagepng.h`](../kernels/mulib-imagepng.h) |
 | Implementation switch | `MULIB_IMPL_IMAGEPNG` |
 | Repository-local includes | [mulib-deflate](mulib-deflate.md), [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-imagepng.c`](../examples/mulib-imagepng.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-imagepng.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-imagepng.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

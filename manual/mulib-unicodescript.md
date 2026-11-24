@@ -32,14 +32,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-unicodescript.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-unicodescript.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-unicodescript.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-unicodescript.c -lm -o test
 ./test
 ```
 
@@ -58,7 +58,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-unicodescript.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-unicodescript.h`](../include/mulib-unicodescript.h) |
+| Header | [`kernels/mulib-unicodescript.h`](../kernels/mulib-unicodescript.h) |
 | Implementation switch | `MULIB_IMPL_UNICODESCRIPT` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-unicodescript.c`](../examples/mulib-unicodescript.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-unicodescript.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-unicodescript.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

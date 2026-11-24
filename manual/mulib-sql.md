@@ -24,7 +24,7 @@ Switches: `MULIB_IMPL_SQL`, `MULIB_IMPL_MEMTABLE`, `MULIB_IMPL_STRBUF`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-sql.h`](../include/mulib-sql.h).
+Verbatim declaration section from [`kernels/mulib-sql.h`](../kernels/mulib-sql.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sql.h`](../include/mulib-sql.h) |
+| Header | [`kernels/mulib-sql.h`](../kernels/mulib-sql.h) |
 | Implementation switch | `MULIB_IMPL_SQL` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-memtable](mulib-memtable.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/sql.c`](../examples/modules/sql.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sql.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sql.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

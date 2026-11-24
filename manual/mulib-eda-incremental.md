@@ -1,7 +1,7 @@
 # mulib-eda-incremental
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-incremental.h`  
+**Header:** `kernels/mulib-eda-incremental.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_INCREMENTAL`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_INCREMENTAL` defined be
 `tests/test_eda_incremental.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_incremental.c -lm -o /tmp/test_eda_incremental
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_incremental.c -lm -o /tmp/test_eda_incremental
 /tmp/test_eda_incremental
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-incremental.h`](../include/mulib-eda-incremental.h).
+Verbatim declaration section from [`kernels/mulib-eda-incremental.h`](../kernels/mulib-eda-incremental.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ void mulib_eda_incremental_free(mulib_eda_incremental_t *g);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-incremental.h`](../include/mulib-eda-incremental.h) |
+| Header | [`kernels/mulib-eda-incremental.h`](../kernels/mulib-eda-incremental.h) |
 | Implementation switch | `MULIB_IMPL_EDA_INCREMENTAL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-incremental.c`](../examples/modules/eda-incremental.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-incremental.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-incremental.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -20,7 +20,7 @@ edges use O(E) storage; analysis costs follow [dominance](mulib-dominance.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-postdominance.h`](../include/mulib-postdominance.h) |
+| Header | [`kernels/mulib-postdominance.h`](../kernels/mulib-postdominance.h) |
 | Implementation switch | `MULIB_IMPL_POSTDOMINANCE` |
 | Repository-local includes | [mulib-dominance](mulib-dominance.md) |
 | Complete example | [`examples/modules/postdominance.c`](../examples/modules/postdominance.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/postdominance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/postdominance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

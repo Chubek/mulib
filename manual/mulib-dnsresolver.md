@@ -82,7 +82,7 @@ For operating-system name-service behavior, use `mulib-getaddr` instead.
 `examples/modules/dnsresolver.c` wires the resolver to a local static
 `mulib-nameserver` callback and verifies that its second call is a TTL-cache hit.
 That example also explicitly defines `MULIB_IMPL_NAMESERVER`.
-Build with `cc -std=c11 -Iinclude examples/modules/dnsresolver.c -o dnsresolver`.
+Build with `cc -std=c11 -Ikernels examples/modules/dnsresolver.c -o dnsresolver`.
 `tests/test_dns_stack.c` checks actual end-to-end answer values, cache expiry,
 AAAA, alias rejection, NXDOMAIN/REFUSED, callback failure and ID wraparound.
 
@@ -93,7 +93,7 @@ AAAA, alias rejection, NXDOMAIN/REFUSED, callback failure and ID wraparound.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dnsresolver.h`](../include/mulib-dnsresolver.h) |
+| Header | [`kernels/mulib-dnsresolver.h`](../kernels/mulib-dnsresolver.h) |
 | Implementation switch | `MULIB_IMPL_DNSRESOLVER` |
 | Repository-local includes | [mulib-dnscache](mulib-dnscache.md), [mulib-dnsclient](mulib-dnsclient.md) |
 | Complete example | [`examples/modules/dnsresolver.c`](../examples/modules/dnsresolver.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsresolver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dnsresolver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

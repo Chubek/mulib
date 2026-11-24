@@ -45,8 +45,8 @@ def kernel_root(explicit, default, paths):
 
 def include_paths(root, paths):
     result = []
-    for path in [*paths, root/'include']:
-        directory = path/'include' if (path/'include').is_dir() else path
+    for path in [*paths, root/'kernels']:
+        directory = path/'kernels' if (path/'kernels').is_dir() else path
         if directory not in result:result.append(directory)
     return result
 

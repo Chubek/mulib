@@ -1,4 +1,4 @@
-/* cc -std=c11 -Iinclude library/yantlr/example.c -lm -o yantlr-demo */
+/* cc -std=c11 -Ikernels library/yantlr/example.c -lm -o yantlr-demo */
 #define MULIB_IMPL_ARENA
 #define MULIB_IMPL_JSON
 #define MULIB_IMPL_PARSEC

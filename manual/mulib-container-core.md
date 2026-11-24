@@ -4,7 +4,7 @@
 
 ## NAME
 
-`include/mulib-container-core.h` — checked storage, wire integers and
+`kernels/mulib-container-core.h` — checked storage, wire integers and
 shared result codes for the container stack.
 
 ## SYNOPSIS
@@ -62,7 +62,7 @@ See [container-stack](container-stack.md) for cross-module ownership and error f
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-core.h`](../include/mulib-container-core.h) |
+| Header | [`kernels/mulib-container-core.h`](../kernels/mulib-container-core.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/container-core.c`](../examples/modules/container-core.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-core.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-core.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -28,7 +28,7 @@ Status values: `OK=0`, `INVALID`, `DUPLICATE`, `NOT_FOUND`, `CONFLICT`, `UNSAT`,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-catalogue.h`](../include/mulib-cdd-catalogue.h) |
+| Header | [`kernels/mulib-cdd-catalogue.h`](../kernels/mulib-cdd-catalogue.h) |
 | Implementation switch | `MULIB_IMPL_CDD_CATALOGUE` |
 | Repository-local includes | None |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -41,6 +41,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

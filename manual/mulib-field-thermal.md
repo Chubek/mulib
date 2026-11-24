@@ -1,7 +1,7 @@
 # mulib-field-thermal
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-field-thermal.h`  
+**Header:** `kernels/mulib-field-thermal.h`  
 **Implementation switch:** `MULIB_IMPL_FIELD_THERMAL`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FIELD_THERMAL` defined befo
 `tests/test_field_thermal.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_field_thermal.c -lm -o /tmp/test_field_thermal
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_field_thermal.c -lm -o /tmp/test_field_thermal
 /tmp/test_field_thermal
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-field-thermal.h`](../include/mulib-field-thermal.h).
+Verbatim declaration section from [`kernels/mulib-field-thermal.h`](../kernels/mulib-field-thermal.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -84,7 +84,7 @@ int mulib_field_thermal_flux_1d(double length, double conductivity, double heat,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-field-thermal.h`](../include/mulib-field-thermal.h) |
+| Header | [`kernels/mulib-field-thermal.h`](../kernels/mulib-field-thermal.h) |
 | Implementation switch | `MULIB_IMPL_FIELD_THERMAL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/field-thermal.c`](../examples/modules/field-thermal.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/field-thermal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/field-thermal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

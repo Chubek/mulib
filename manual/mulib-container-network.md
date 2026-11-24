@@ -54,7 +54,7 @@ Ethernet wrapping, receive pressure, route matching and default-drop policy.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-network.h`](../include/mulib-container-network.h) |
+| Header | [`kernels/mulib-container-network.h`](../kernels/mulib-container-network.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_NETWORK` |
 | Repository-local includes | [mulib-container-netdev](mulib-container-netdev.md), [mulib-packetrules](mulib-packetrules.md) |
 | Complete example | [`examples/modules/container-network.c`](../examples/modules/container-network.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-network.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-network.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

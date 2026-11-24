@@ -1,7 +1,7 @@
 # mulib-asic-floorplan
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-asic-floorplan.h`  
+**Header:** `kernels/mulib-asic-floorplan.h`  
 **Implementation switch:** `MULIB_IMPL_ASIC_FLOORPLAN`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ASIC_FLOORPLAN` defined bef
 `tests/test_asic_floorplan.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_asic_floorplan.c -lm -o /tmp/test_asic_floorplan
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_asic_floorplan.c -lm -o /tmp/test_asic_floorplan
 /tmp/test_asic_floorplan
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-asic-floorplan.h`](../include/mulib-asic-floorplan.h).
+Verbatim declaration section from [`kernels/mulib-asic-floorplan.h`](../kernels/mulib-asic-floorplan.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_asic_floorplan_place_row(mulib_asic_rect_t *cells, size_t count, doubl
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-asic-floorplan.h`](../include/mulib-asic-floorplan.h) |
+| Header | [`kernels/mulib-asic-floorplan.h`](../kernels/mulib-asic-floorplan.h) |
 | Implementation switch | `MULIB_IMPL_ASIC_FLOORPLAN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/asic-floorplan.c`](../examples/modules/asic-floorplan.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asic-floorplan.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/asic-floorplan.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

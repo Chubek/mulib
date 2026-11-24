@@ -33,7 +33,7 @@ See `../tests/test_uip-tcp-state.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-tcp-state.h`](../include/mulib-uip-tcp-state.h) |
+| Header | [`kernels/mulib-uip-tcp-state.h`](../kernels/mulib-uip-tcp-state.h) |
 | Implementation switch | `MULIB_IMPL_UIP_TCP_STATE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-tcp-state.c`](../examples/modules/uip-tcp-state.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-tcp-state.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-tcp-state.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-shiraz.h` provides an owned AMD64 image loader, a resumable
+`kernels/mulib-shiraz.h` provides an owned AMD64 image loader, a resumable
 interpreter and helper-based C ahead-of-time translation. The separately compiled
 [`library/shiraz`](../library/shiraz/) sources provide Windows imports, handles,
 files, heap services and a persistent registry. Both execution modes use the same
@@ -24,7 +24,7 @@ library/shiraz/build/shiraz compile program.exe program.elf
 library/shiraz/build/shiraz compile program.exe program-static --static
 library/shiraz/build/shiraz compile program.exe program-shared --shared-runtime
 library/shiraz/build/shiraz emit-c program.exe program.c
-cc -std=c11 -O2 -Iinclude program.c \
+cc -std=c11 -O2 -Ikernels program.c \
   library/shiraz/build/libshiraz-win32.a library/shiraz/build/libshiraz.a -o program
 ```
 
@@ -55,7 +55,7 @@ For header-only CPU/loader use, define all switches before including dependencie
 ```
 
 The [runnable example](../examples/modules/shiraz.c) also enables PE-builder
-dependencies. Build with `cc -std=c11 -Iinclude examples/modules/shiraz.c -o demo`.
+dependencies. Build with `cc -std=c11 -Ikernels examples/modules/shiraz.c -o demo`.
 Applications linking `libshiraz.a` include declarations without switches.
 The runtime/registry declarations are implemented separately by
 `libshiraz-win32.a`; static archive order is Win32 followed by core.
@@ -204,7 +204,7 @@ argv handling. No Windows SDK or Wine installation is needed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-shiraz.h`](../include/mulib-shiraz.h) |
+| Header | [`kernels/mulib-shiraz.h`](../kernels/mulib-shiraz.h) |
 | Implementation switch | `MULIB_IMPL_SHIRAZ` |
 | Repository-local includes | [mulib-pe](mulib-pe.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/shiraz.c`](../examples/modules/shiraz.c) |
@@ -217,6 +217,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shiraz.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/shiraz.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

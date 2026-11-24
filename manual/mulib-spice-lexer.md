@@ -1,7 +1,7 @@
 # mulib-spice-lexer
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-lexer.h`  
+**Header:** `kernels/mulib-spice-lexer.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_LEXER`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_LEXER` defined before
 `tests/test_spice_lexer.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_lexer.c -lm -o /tmp/test_spice_lexer
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_lexer.c -lm -o /tmp/test_spice_lexer
 /tmp/test_spice_lexer
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-lexer.h`](../include/mulib-spice-lexer.h).
+Verbatim declaration section from [`kernels/mulib-spice-lexer.h`](../kernels/mulib-spice-lexer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -82,7 +82,7 @@ int mulib_spice_split_line(const char *line, char fields[][64], size_t max_field
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-lexer.h`](../include/mulib-spice-lexer.h) |
+| Header | [`kernels/mulib-spice-lexer.h`](../kernels/mulib-spice-lexer.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_LEXER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/spice-lexer.c`](../examples/modules/spice-lexer.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-lexer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-lexer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

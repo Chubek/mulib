@@ -1,7 +1,7 @@
 # mulib-pcb-gerber
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-pcb-gerber.h`  
+**Header:** `kernels/mulib-pcb-gerber.h`  
 **Implementation switch:** `MULIB_IMPL_PCB_GERBER`  
 **Dependencies:** `pcb-geometry`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_PCB_GERBER` defined before 
 `tests/test_pcb_gerber.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_pcb_gerber.c -lm -o /tmp/test_pcb_gerber
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_pcb_gerber.c -lm -o /tmp/test_pcb_gerber
 /tmp/test_pcb_gerber
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pcb-gerber.h`](../include/mulib-pcb-gerber.h).
+Verbatim declaration section from [`kernels/mulib-pcb-gerber.h`](../kernels/mulib-pcb-gerber.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_pcb_gerber_write(FILE *fp, const mulib_pcb_segment_t *traces, size_t c
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pcb-gerber.h`](../include/mulib-pcb-gerber.h) |
+| Header | [`kernels/mulib-pcb-gerber.h`](../kernels/mulib-pcb-gerber.h) |
 | Implementation switch | `MULIB_IMPL_PCB_GERBER` |
 | Repository-local includes | [mulib-pcb-geometry](mulib-pcb-geometry.md) |
 | Complete example | [`examples/modules/pcb-gerber.c`](../examples/modules/pcb-gerber.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pcb-gerber.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pcb-gerber.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

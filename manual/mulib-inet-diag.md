@@ -36,7 +36,7 @@ See `../tests/test_inet-diag.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-inet-diag.h`](../include/mulib-inet-diag.h) |
+| Header | [`kernels/mulib-inet-diag.h`](../kernels/mulib-inet-diag.h) |
 | Implementation switch | `MULIB_IMPL_INET_DIAG` |
 | Repository-local includes | [mulib-sock-diag](mulib-sock-diag.md) |
 | Complete example | [`examples/modules/inet-diag.c`](../examples/modules/inet-diag.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inet-diag.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/inet-diag.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

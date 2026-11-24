@@ -27,10 +27,10 @@ if [ "${SANITIZE:-0}" = 1 ]; then
     LINK="$LINK -fsanitize=address,undefined"
 fi
 # Intentional word splitting for caller-supplied flags.
-"$CC" $FLAGS -Iinclude tests/test-wl-headless-private.c \
+"$CC" $FLAGS -Ikernels tests/test-wl-headless-private.c \
     examples/wl-headless-private.c $LINK -o "$BUILD/wire"
 TMPDIR="$PARENT" "$BUILD/wire"
-"$CC" $FLAGS -Iinclude examples/wl-headless-private.c \
+"$CC" $FLAGS -Ikernels examples/wl-headless-private.c \
     examples/wl-headless-private-main.c $LINK -o "$BUILD/server"
 
 if [ "${LIBWAYLAND:-1}" = 0 ] || ! command -v pkg-config >/dev/null 2>&1 ||

@@ -1,5 +1,5 @@
 /* Demonstration of independent, bounded publication output writers.
- * Build: cc -std=c11 -Wall -Wextra -Iinclude examples/build-publication.c -lm -o publish-example
+ * Build: cc -std=c11 -Wall -Wextra -Ikernels examples/build-publication.c -lm -o publish-example
  * Run: ./publish-example /tmp/mulib-published
  * IMPORTANT: these are minimal target-format examples, not a full typesetter.
  */

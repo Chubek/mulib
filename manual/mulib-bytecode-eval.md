@@ -20,7 +20,7 @@ arithmetic faults; the execution budget remains necessary for bounded work.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-eval.h`](../include/mulib-bytecode-eval.h) |
+| Header | [`kernels/mulib-bytecode-eval.h`](../kernels/mulib-bytecode-eval.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_EVAL` |
 | Repository-local includes | [mulib-bytecode-verify](mulib-bytecode-verify.md) |
 | Complete example | [`examples/modules/bytecode-eval.c`](../examples/modules/bytecode-eval.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-eval.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-eval.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

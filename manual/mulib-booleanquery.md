@@ -14,7 +14,7 @@ The merge is O(a.count + b.count), with O(output bound) allocated storage.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-booleanquery.h`](../include/mulib-booleanquery.h).
+Verbatim declaration section from [`kernels/mulib-booleanquery.h`](../kernels/mulib-booleanquery.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -57,7 +57,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-booleanquery.h`](../include/mulib-booleanquery.h) |
+| Header | [`kernels/mulib-booleanquery.h`](../kernels/mulib-booleanquery.h) |
 | Implementation switch | `MULIB_IMPL_BOOLEANQUERY` |
 | Repository-local includes | [mulib-postings](mulib-postings.md) |
 | Complete example | [`examples/modules/booleanquery.c`](../examples/modules/booleanquery.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/booleanquery.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/booleanquery.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

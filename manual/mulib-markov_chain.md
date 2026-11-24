@@ -21,7 +21,7 @@ or SIZE_MAX on invalid input. It does not own RNG state or train a model.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-markov_chain.h`](../include/mulib-markov_chain.h).
+Verbatim declaration section from [`kernels/mulib-markov_chain.h`](../kernels/mulib-markov_chain.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ size_t mulib_markov_chain_sample(const mulib_markov_chain_t *chain, size_t state
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-markov_chain.h`](../include/mulib-markov_chain.h) |
+| Header | [`kernels/mulib-markov_chain.h`](../kernels/mulib-markov_chain.h) |
 | Implementation switch | `MULIB_IMPL_MARKOV_CHAIN` |
 | Repository-local includes | [mulib-probability](mulib-probability.md) |
 | Complete example | [`examples/modules/markov_chain.c`](../examples/modules/markov_chain.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/markov_chain.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/markov_chain.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

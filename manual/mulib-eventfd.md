@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-eventfd.h` · **Switch:** `MULIB_IMPL_EVENTFD`  
+**Header:** `kernels/mulib-eventfd.h` · **Switch:** `MULIB_IMPL_EVENTFD`  
 **Dependencies:** none. Linux eventfd; C11 / C-linkage declarations.
 
 ## Exact API
@@ -53,7 +53,7 @@ close and ownership externally. Eventfd is not a message queue: counts coalesce.
 ## Runnable example and checks
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/eventfd.c -o /tmp/opencode/eventfd-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/eventfd.c -o /tmp/opencode/eventfd-example
 /tmp/opencode/eventfd-example
 ```
 
@@ -70,7 +70,7 @@ ownership. No privileges or third-party libraries are normally needed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eventfd.h`](../include/mulib-eventfd.h) |
+| Header | [`kernels/mulib-eventfd.h`](../kernels/mulib-eventfd.h) |
 | Implementation switch | `MULIB_IMPL_EVENTFD` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eventfd.c`](../examples/modules/eventfd.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eventfd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eventfd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

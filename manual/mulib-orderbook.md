@@ -13,7 +13,7 @@ there is no venue protocol or trade matching. See [FinPRED verification and limi
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-orderbook.h`](../include/mulib-orderbook.h) |
+| Header | [`kernels/mulib-orderbook.h`](../kernels/mulib-orderbook.h) |
 | Implementation switch | `MULIB_IMPL_ORDERBOOK` |
 | Repository-local includes | None |
 | Complete example | [`examples/finpred_market.c`](../examples/finpred_market.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/finpred_market.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/finpred_market.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

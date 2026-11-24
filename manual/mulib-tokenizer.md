@@ -14,7 +14,7 @@ Total iteration is O(bytes), allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tokenizer.h`](../include/mulib-tokenizer.h).
+Verbatim declaration section from [`kernels/mulib-tokenizer.h`](../kernels/mulib-tokenizer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -57,7 +57,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tokenizer.h`](../include/mulib-tokenizer.h) |
+| Header | [`kernels/mulib-tokenizer.h`](../kernels/mulib-tokenizer.h) |
 | Implementation switch | `MULIB_IMPL_TOKENIZER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/tokenizer.c`](../examples/modules/tokenizer.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tokenizer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tokenizer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

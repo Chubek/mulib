@@ -16,9 +16,9 @@ include declarations only. No dependency implementations are enabled implicitly.
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-multipart.c -o /tmp/test-multipart
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-multipart.c -o /tmp/test-multipart
 /tmp/test-multipart
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/multipart.c -o /tmp/example-multipart
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/multipart.c -o /tmp/example-multipart
 ```
 
 ## API
@@ -64,7 +64,7 @@ uploads, not a general email MIME implementation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-multipart.h`](../include/mulib-multipart.h) |
+| Header | [`kernels/mulib-multipart.h`](../kernels/mulib-multipart.h) |
 | Implementation switch | `MULIB_IMPL_MULTIPART` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/multipart.c`](../examples/modules/multipart.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/multipart.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/multipart.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

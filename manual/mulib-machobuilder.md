@@ -39,7 +39,7 @@ LLVM format-reader checks are in `tools/check_android.py`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-machobuilder.h`](../include/mulib-machobuilder.h).
+Verbatim declaration section from [`kernels/mulib-machobuilder.h`](../kernels/mulib-machobuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -95,7 +95,7 @@ int mulib_machobuilder_finish_abi (const mulib_machobuilder_t *b,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-machobuilder.h`](../include/mulib-machobuilder.h) |
+| Header | [`kernels/mulib-machobuilder.h`](../kernels/mulib-machobuilder.h) |
 | Implementation switch | `MULIB_IMPL_MACHOBUILDER` |
 | Repository-local includes | [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-bycutils](mulib-bycutils.md), [mulib-machobuidler](mulib-machobuidler.md), [mulib-objfilebuilder](mulib-objfilebuilder.md) |
 | Complete example | [`examples/modules/machobuilder.c`](../examples/modules/machobuilder.c) |
@@ -108,6 +108,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machobuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/machobuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

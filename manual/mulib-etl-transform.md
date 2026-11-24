@@ -14,7 +14,7 @@ wrapper manages ownership, not a parser, scheduler, or stream source.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-etl-transform.h`](../include/mulib-etl-transform.h).
+Verbatim declaration section from [`kernels/mulib-etl-transform.h`](../kernels/mulib-etl-transform.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -53,7 +53,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-etl-transform.h`](../include/mulib-etl-transform.h) |
+| Header | [`kernels/mulib-etl-transform.h`](../kernels/mulib-etl-transform.h) |
 | Implementation switch | `MULIB_IMPL_ETL_TRANSFORM` |
 | Repository-local includes | [mulib-record](mulib-record.md) |
 | Complete example | [`examples/modules/etl-transform.c`](../examples/modules/etl-transform.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/etl-transform.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/etl-transform.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

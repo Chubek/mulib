@@ -13,9 +13,9 @@ Define `MULIB_IMPL_REDIRECT` in exactly one C11 translation unit. Use `#include 
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-redirect.c -o /tmp/test-redirect
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-redirect.c -o /tmp/test-redirect
 /tmp/test-redirect
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/redirect.c -o /tmp/example-redirect
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/redirect.c -o /tmp/example-redirect
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-redirect.h`](../include/mulib-redirect.h) |
+| Header | [`kernels/mulib-redirect.h`](../kernels/mulib-redirect.h) |
 | Implementation switch | `MULIB_IMPL_REDIRECT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/redirect.c`](../examples/modules/redirect.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/redirect.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/redirect.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -3,7 +3,7 @@ project(MuLIB VERSION 0.1.0 LANGUAGES C)
 
 find_package(Threads REQUIRED)
 add_library(mulib INTERFACE)
-target_include_directories(mulib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(mulib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/kernels)
 target_compile_features(mulib INTERFACE c_std_11)
 target_link_libraries(mulib INTERFACE Threads::Threads)
 
@@ -293,7 +293,7 @@ if(MULIB_BUILD_TESTS)
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
     add_test(NAME mulib_mull_inventory
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/scripts/check_mulib_inventory.py
-        --include ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        --include ${CMAKE_CURRENT_SOURCE_DIR}/kernels)
     add_test(NAME mulib_mull_inventory_regressions
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/tests/test_mulib_inventory.py)
     add_test(NAME mulib_manual_inventory
@@ -894,7 +894,7 @@ if(MULIB_BUILD_TESTS)
       add_test(NAME "${emitter}_aot"
         COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_mir_aot.py
           --emitter $<TARGET_FILE:${emitter}> --compiler ${CMAKE_C_COMPILER}
-          --include ${CMAKE_CURRENT_SOURCE_DIR}/include ${aot_options})
+          --include ${CMAKE_CURRENT_SOURCE_DIR}/kernels ${aot_options})
       set_tests_properties("${emitter}_aot" PROPERTIES TIMEOUT 180)
     endforeach()
   endif()

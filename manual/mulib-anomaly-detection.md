@@ -20,7 +20,7 @@ outliers in training and distribution drift can compromise the baseline.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-anomaly-detection.h`](../include/mulib-anomaly-detection.h).
+Verbatim declaration section from [`kernels/mulib-anomaly-detection.h`](../kernels/mulib-anomaly-detection.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ int mulib_anomaly_train(mulib_stats_t *baseline, double value);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-anomaly-detection.h`](../include/mulib-anomaly-detection.h) |
+| Header | [`kernels/mulib-anomaly-detection.h`](../kernels/mulib-anomaly-detection.h) |
 | Implementation switch | `MULIB_IMPL_ANOMALY_DETECTION` |
 | Repository-local includes | [mulib-stats](mulib-stats.md) |
 | Complete example | [`examples/modules/anomaly-detection.c`](../examples/modules/anomaly-detection.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/anomaly-detection.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/anomaly-detection.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

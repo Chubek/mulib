@@ -1,7 +1,7 @@
 # mulib-ecad-erc
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-ecad-erc.h`  
+**Header:** `kernels/mulib-ecad-erc.h`  
 **Implementation switch:** `MULIB_IMPL_ECAD_ERC`  
 **Dependencies:** `ecad-schematic`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ECAD_ERC` defined before in
 `tests/test_ecad_erc.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_ecad_erc.c -lm -o /tmp/test_ecad_erc
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_ecad_erc.c -lm -o /tmp/test_ecad_erc
 /tmp/test_ecad_erc
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ecad-erc.h`](../include/mulib-ecad-erc.h).
+Verbatim declaration section from [`kernels/mulib-ecad-erc.h`](../kernels/mulib-ecad-erc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -83,7 +83,7 @@ int mulib_ecad_erc_run(const mulib_ecad_schematic_t *s, mulib_ecad_erc_result_t 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ecad-erc.h`](../include/mulib-ecad-erc.h) |
+| Header | [`kernels/mulib-ecad-erc.h`](../kernels/mulib-ecad-erc.h) |
 | Implementation switch | `MULIB_IMPL_ECAD_ERC` |
 | Repository-local includes | [mulib-ecad-schematic](mulib-ecad-schematic.md) |
 | Complete example | [`examples/modules/ecad-erc.c`](../examples/modules/ecad-erc.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ecad-erc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ecad-erc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

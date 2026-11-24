@@ -31,7 +31,7 @@ See `../tests/test_nm-device.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nm-device.h`](../include/mulib-nm-device.h) |
+| Header | [`kernels/mulib-nm-device.h`](../kernels/mulib-nm-device.h) |
 | Implementation switch | `MULIB_IMPL_NM_DEVICE` |
 | Repository-local includes | [mulib-dbus-properties](mulib-dbus-properties.md) |
 | Complete example | [`examples/modules/nm-device.c`](../examples/modules/nm-device.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nm-device.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nm-device.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

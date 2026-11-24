@@ -1,7 +1,7 @@
 # mulib-num-statistics
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-statistics.h`  
+**Header:** `kernels/mulib-num-statistics.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_STATISTICS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_STATISTICS` defined bef
 `tests/test_num_statistics.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_statistics.c -lm -o /tmp/test_num_statistics
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_statistics.c -lm -o /tmp/test_num_statistics
 /tmp/test_num_statistics
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-statistics.h`](../include/mulib-num-statistics.h).
+Verbatim declaration section from [`kernels/mulib-num-statistics.h`](../kernels/mulib-num-statistics.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -87,7 +87,7 @@ int mulib_num_stat_merge(mulib_num_stat_t *s, const mulib_num_stat_t *other);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-statistics.h`](../include/mulib-num-statistics.h) |
+| Header | [`kernels/mulib-num-statistics.h`](../kernels/mulib-num-statistics.h) |
 | Implementation switch | `MULIB_IMPL_NUM_STATISTICS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/num-statistics.c`](../examples/modules/num-statistics.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-statistics.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-statistics.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

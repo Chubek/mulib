@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-buildvm.h` · **Switches:** `MULIB_IMPL_BUILDVM`,
+**Header:** `kernels/mulib-buildvm.h` · **Switches:** `MULIB_IMPL_BUILDVM`,
 `MULIB_IMPL_BUILDGRAPH`, `MULIB_IMPL_ARTIFACT`, `MULIB_IMPL_VCDIFF`.
 
 BuildVM is a deterministic, finite artifact-register machine for hermetic build
@@ -69,7 +69,7 @@ publish partial graph products. Direct callback users must supply graph-managed
 step storage and honor this rollback contract.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/buildvm.c -o /tmp/opencode/buildvm
+cc -std=c11 -Ikernels examples/modules/buildvm.c -o /tmp/opencode/buildvm
 /tmp/opencode/buildvm
 ```
 
@@ -85,7 +85,7 @@ or a production distributed build system.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-buildvm.h`](../include/mulib-buildvm.h) |
+| Header | [`kernels/mulib-buildvm.h`](../kernels/mulib-buildvm.h) |
 | Implementation switch | `MULIB_IMPL_BUILDVM` |
 | Repository-local includes | [mulib-buildgraph](mulib-buildgraph.md), [mulib-vcdiff](mulib-vcdiff.md) |
 | Complete example | [`examples/modules/buildvm.c`](../examples/modules/buildvm.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildvm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/buildvm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -33,7 +33,7 @@ CR0.WP, SMEP, SMAP, protection-key or virtualization permissions.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-paging.h`](../include/mulib-paging.h).
+Verbatim declaration section from [`kernels/mulib-paging.h`](../kernels/mulib-paging.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ int mulib_paging_translate(mulib_paging_read_t read, void *context, uint64_t roo
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-paging.h`](../include/mulib-paging.h) |
+| Header | [`kernels/mulib-paging.h`](../kernels/mulib-paging.h) |
 | Implementation switch | `MULIB_IMPL_PAGING` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/paging.c`](../examples/modules/paging.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/paging.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/paging.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

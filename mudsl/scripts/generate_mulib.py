@@ -42,7 +42,7 @@ def discover_functions(index, c, include, header, args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--include', type=Path, default=ROOT.parent / 'include')
+    parser.add_argument('--include', type=Path, default=ROOT.parent / 'kernels')
     parser.add_argument('--clang', default='clang')
     parser.add_argument('--libclang', default=os.environ.get('LIBCLANG_LIBRARY_FILE'))
     parser.add_argument('--bindings', type=Path, default=DEST,

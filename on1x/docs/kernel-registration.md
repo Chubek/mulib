@@ -42,7 +42,7 @@ On1x (including `unsafe import kernel`) remain unsupported: these APIs require
 buffer and client ownership, borrowed-view lifetimes, and separate host network
 authorization. The raw archive is for trusted C consumers, not an admission.
 
-`include/mulib-*.h` is the source inventory. `MANIFEST.yaml` records each
+`kernels/mulib-*.h` is the source inventory. `MANIFEST.yaml` records each
 kernel's header, implementation kind and dependencies. Contract, archive and
 source-bundle tools read that shared registry. The generated
 `on1x/contracts-exotract/kernel-auto.json` supplies declaration discovery for

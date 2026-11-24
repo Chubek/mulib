@@ -1,7 +1,7 @@
 # OpenCode V2 client for C and Mune
 
-Include [`mune-opencode-client.h`](../include/mune-opencode-client.h) or its
-MuLIB catalog entry [`mulib-opencode-client.h`](../include/mulib-opencode-client.h).
+Include [`mune-opencode-client.h`](../kernels/mune-opencode-client.h) or its
+MuLIB catalog entry [`mulib-opencode-client.h`](../kernels/mulib-opencode-client.h).
 Define `MULIB_IMPL_CDD_MUNE_OPENCODE_CLIENT` in exactly one implementation
 translation unit. The declaration header can also be included by C++17.
 The client uses MuW3 for transport, JSON for bodies, and SSE for event
@@ -107,9 +107,9 @@ live OpenCode service or use any service credentials.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-opencode-client.h`](../include/mulib-opencode-client.h) |
+| Header | [`kernels/mulib-opencode-client.h`](../kernels/mulib-opencode-client.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MUNE_OPENCODE_CLIENT` |
-| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-json](mulib-json.md), [mulib-mune](mulib-mune.md), [mulib-muw3](mulib-muw3.md), [mulib-sse](mulib-sse.md), [mulib-uri](mulib-uri.md), [mulib-url](mulib-url.md), [mulib-utf8](mulib-utf8.md), [`include/mune-opencode-client.h`](../include/mune-opencode-client.h) |
+| Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-json](mulib-json.md), [mulib-mune](mulib-mune.md), [mulib-muw3](mulib-muw3.md), [mulib-sse](mulib-sse.md), [mulib-uri](mulib-uri.md), [mulib-url](mulib-url.md), [mulib-utf8](mulib-utf8.md), [`kernels/mune-opencode-client.h`](../kernels/mune-opencode-client.h) |
 | Complete example | [`examples/modules/opencode-client.c`](../examples/modules/opencode-client.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/opencode-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/opencode-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

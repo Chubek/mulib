@@ -71,9 +71,9 @@ transport or authorization conformance is claimed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mcp-http.h`](../include/mulib-mcp-http.h) |
+| Header | [`kernels/mulib-mcp-http.h`](../kernels/mulib-mcp-http.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MCP_HTTP` |
-| Repository-local includes | [`include/detail/mulib-jsonrpc-envelope.h`](../include/detail/mulib-jsonrpc-envelope.h), [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-http](mulib-http.md), [mulib-mcp-client](mulib-mcp-client.md), [mulib-mcp-server](mulib-mcp-server.md), [mulib-sse](mulib-sse.md) |
+| Repository-local includes | [`kernels/detail/mulib-jsonrpc-envelope.h`](../kernels/detail/mulib-jsonrpc-envelope.h), [`kernels/detail/mulib-mcp-wire.h`](../kernels/detail/mulib-mcp-wire.h), [mulib-http](mulib-http.md), [mulib-mcp-client](mulib-mcp-client.md), [mulib-mcp-server](mulib-mcp-server.md), [mulib-sse](mulib-sse.md) |
 | Complete example | [`examples/modules/mcp-http.c`](../examples/modules/mcp-http.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -84,6 +84,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mcp-http.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mcp-http.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

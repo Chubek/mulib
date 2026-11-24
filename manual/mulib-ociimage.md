@@ -18,7 +18,7 @@ Switches: `MULIB_IMPL_OCIIMAGE`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ociimage.h`](../include/mulib-ociimage.h).
+Verbatim declaration section from [`kernels/mulib-ociimage.h`](../kernels/mulib-ociimage.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -46,7 +46,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ociimage.h`](../include/mulib-ociimage.h) |
+| Header | [`kernels/mulib-ociimage.h`](../kernels/mulib-ociimage.h) |
 | Implementation switch | `MULIB_IMPL_OCIIMAGE` |
 | Repository-local includes | [`.deprecated/mulib-ociimage.h`](../.deprecated/mulib-ociimage.h), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/ociimage.c`](../examples/modules/ociimage.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ociimage.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ociimage.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

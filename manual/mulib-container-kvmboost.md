@@ -55,7 +55,7 @@ usable host KVM device and valid guest callbacks.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-kvmboost.h`](../include/mulib-container-kvmboost.h) |
+| Header | [`kernels/mulib-container-kvmboost.h`](../kernels/mulib-container-kvmboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_KVMBOOST` |
 | Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-kvmcontainer](mulib-kvmcontainer.md) |
 | Complete example | [`examples/modules/container-kvmboost.c`](../examples/modules/container-kvmboost.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-kvmboost.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-kvmboost.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

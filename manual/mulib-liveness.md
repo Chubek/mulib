@@ -20,7 +20,7 @@ bounded by monotone bit propagation, with fixed-size 64-block result/scratch.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-liveness.h`](../include/mulib-liveness.h) |
+| Header | [`kernels/mulib-liveness.h`](../kernels/mulib-liveness.h) |
 | Implementation switch | `MULIB_IMPL_LIVENESS` |
 | Repository-local includes | [mulib-cfg](mulib-cfg.md) |
 | Complete example | [`examples/modules/liveness.c`](../examples/modules/liveness.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/liveness.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/liveness.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

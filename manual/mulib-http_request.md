@@ -24,7 +24,7 @@ failure in `tests/test_http_hardening.c` and `tests/test_http_alloc.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-http_request.h`](../include/mulib-http_request.h).
+Verbatim declaration section from [`kernels/mulib-http_request.h`](../kernels/mulib-http_request.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -68,7 +68,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http_request.h`](../include/mulib-http_request.h) |
+| Header | [`kernels/mulib-http_request.h`](../kernels/mulib-http_request.h) |
 | Implementation switch | `MULIB_IMPL_HTTP_REQUEST` |
 | Repository-local includes | [mulib-http](mulib-http.md) |
 | Complete example | [`examples/modules/http_request.c`](../examples/modules/http_request.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http_request.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http_request.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

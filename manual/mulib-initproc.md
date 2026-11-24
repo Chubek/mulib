@@ -15,7 +15,7 @@ Switch: `MULIB_IMPL_INITPROC`. Example: `examples/modules/initproc.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-initproc.h`](../include/mulib-initproc.h).
+Verbatim declaration section from [`kernels/mulib-initproc.h`](../kernels/mulib-initproc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-initproc.h`](../include/mulib-initproc.h) |
+| Header | [`kernels/mulib-initproc.h`](../kernels/mulib-initproc.h) |
 | Implementation switch | `MULIB_IMPL_INITPROC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/initproc.c`](../examples/modules/initproc.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/initproc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/initproc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

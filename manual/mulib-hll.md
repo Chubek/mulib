@@ -13,7 +13,7 @@ add is O(key bytes), estimate/merge O(1024). Registers must not be edited manual
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hll.h`](../include/mulib-hll.h).
+Verbatim declaration section from [`kernels/mulib-hll.h`](../kernels/mulib-hll.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hll.h`](../include/mulib-hll.h) |
+| Header | [`kernels/mulib-hll.h`](../kernels/mulib-hll.h) |
 | Implementation switch | `MULIB_IMPL_HLL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hll.c`](../examples/modules/hll.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hll.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hll.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

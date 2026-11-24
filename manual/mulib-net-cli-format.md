@@ -32,7 +32,7 @@ See `../tests/test_net-cli-format.c` for its compile/link verification. Selected
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-cli-format.h`](../include/mulib-net-cli-format.h) |
+| Header | [`kernels/mulib-net-cli-format.h`](../kernels/mulib-net-cli-format.h) |
 | Implementation switch | `MULIB_IMPL_NET_CLI_FORMAT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/net-cli-format.c`](../examples/modules/net-cli-format.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-cli-format.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-cli-format.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

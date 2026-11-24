@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-mathdelimiter.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-mathdelimiter.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_MATHDELIMITER
 #include "mulib-mathdelimiter.h"

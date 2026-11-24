@@ -20,7 +20,7 @@ not a CFG fixed-point pass. Time O(n), extra storage O(1).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dce.h`](../include/mulib-dce.h) |
+| Header | [`kernels/mulib-dce.h`](../kernels/mulib-dce.h) |
 | Implementation switch | `MULIB_IMPL_DCE` |
 | Repository-local includes | [mulib-defuse](mulib-defuse.md) |
 | Complete example | [`examples/modules/dce.c`](../examples/modules/dce.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dce.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dce.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

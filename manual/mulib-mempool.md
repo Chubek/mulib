@@ -56,7 +56,7 @@ Runnable example: `examples/modules/mempool.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mempool.h`](../include/mulib-mempool.h) |
+| Header | [`kernels/mulib-mempool.h`](../kernels/mulib-mempool.h) |
 | Implementation switch | `MULIB_IMPL_MEMPOOL` |
 | Repository-local includes | [mulib-alloc](mulib-alloc.md) |
 | Complete example | [`examples/modules/mempool.c`](../examples/modules/mempool.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mempool.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mempool.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

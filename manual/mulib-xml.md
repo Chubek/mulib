@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-xml.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-xml.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
 
@@ -122,7 +122,7 @@ int main(void) {
 Build the extended example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/xml.c -o ./mulib-xml
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/xml.c -o ./mulib-xml
 ./mulib-xml
 ```
 
@@ -136,7 +136,7 @@ normalization, nesting limits, ownership cycles, and allocation-failure cleanup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xml.h`](../include/mulib-xml.h) |
+| Header | [`kernels/mulib-xml.h`](../kernels/mulib-xml.h) |
 | Implementation switch | `MULIB_IMPL_XML` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/xml.c`](../examples/modules/xml.c) |
@@ -149,6 +149,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

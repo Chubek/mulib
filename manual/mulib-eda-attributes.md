@@ -1,7 +1,7 @@
 # mulib-eda-attributes
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-attributes.h`  
+**Header:** `kernels/mulib-eda-attributes.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_ATTRIBUTES`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_ATTRIBUTES` defined bef
 `tests/test_eda_attributes.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_attributes.c -lm -o /tmp/test_eda_attributes
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_attributes.c -lm -o /tmp/test_eda_attributes
 /tmp/test_eda_attributes
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-attributes.h`](../include/mulib-eda-attributes.h).
+Verbatim declaration section from [`kernels/mulib-eda-attributes.h`](../kernels/mulib-eda-attributes.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -102,7 +102,7 @@ int mulib_eda_attrs_remove(mulib_eda_attrs_t *a, uint64_t owner, const char *key
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-attributes.h`](../include/mulib-eda-attributes.h) |
+| Header | [`kernels/mulib-eda-attributes.h`](../kernels/mulib-eda-attributes.h) |
 | Implementation switch | `MULIB_IMPL_EDA_ATTRIBUTES` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-attributes.c`](../examples/modules/eda-attributes.c) |
@@ -115,6 +115,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-attributes.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-attributes.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

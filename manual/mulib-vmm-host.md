@@ -48,7 +48,7 @@ native guest that uses the RAM block provider through the VMM call-frame boundar
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmm-host.h`](../include/mulib-vmm-host.h) |
+| Header | [`kernels/mulib-vmm-host.h`](../kernels/mulib-vmm-host.h) |
 | Implementation switch | `MULIB_IMPL_VMM_HOST` |
 | Repository-local includes | [mulib-virtio](mulib-virtio.md) |
 | Complete example | [`examples/modules/vmm-host.c`](../examples/modules/vmm-host.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm-host.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmm-host.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

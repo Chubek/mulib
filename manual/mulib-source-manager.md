@@ -20,7 +20,7 @@ unchanged. Set takes O(bytes), lookup O(log lines), storage O(bytes + lines).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-source-manager.h`](../include/mulib-source-manager.h) |
+| Header | [`kernels/mulib-source-manager.h`](../kernels/mulib-source-manager.h) |
 | Implementation switch | `MULIB_IMPL_SOURCE_MANAGER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/source-manager.c`](../examples/modules/source-manager.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/source-manager.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/source-manager.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

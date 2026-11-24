@@ -48,7 +48,7 @@ int main(void) {
 Compile from repository root (using the additions copied into its directories):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -lm -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -lm -o example
 ```
 
 The `-lm` link flag is for the system C math library, not an external third-party dependency.
@@ -64,7 +64,7 @@ All algorithms are deterministic. Data collections are borrowed; their lifetimes
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-statsprice.h`](../include/mulib-statsprice.h).
+Verbatim declaration section from [`kernels/mulib-statsprice.h`](../kernels/mulib-statsprice.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -121,7 +121,7 @@ int mulib_statsprice_summarize(const double *prices, size_t n,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-statsprice.h`](../include/mulib-statsprice.h) |
+| Header | [`kernels/mulib-statsprice.h`](../kernels/mulib-statsprice.h) |
 | Implementation switch | `MULIB_IMPL_STATSPRICE` |
 | Repository-local includes | [mulib-statsproc](mulib-statsproc.md) |
 | Complete example | [`examples/modules/statsprice.c`](../examples/modules/statsprice.c) |
@@ -134,6 +134,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/statsprice.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/statsprice.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

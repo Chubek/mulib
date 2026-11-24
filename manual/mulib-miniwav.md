@@ -34,7 +34,7 @@ byte unpacking remains scalar.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-miniwav.h`](../include/mulib-miniwav.h).
+Verbatim declaration section from [`kernels/mulib-miniwav.h`](../kernels/mulib-miniwav.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -77,7 +77,7 @@ mulib_audio_status_t mulib_miniwav_encode (const mulib_audio_pcm_t *, unsigned b
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-miniwav.h`](../include/mulib-miniwav.h) |
+| Header | [`kernels/mulib-miniwav.h`](../kernels/mulib-miniwav.h) |
 | Implementation switch | `MULIB_IMPL_MINIWAV` |
 | Repository-local includes | [mulib-audio](mulib-audio.md) |
 | Complete example | [`examples/modules/miniwav.c`](../examples/modules/miniwav.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/miniwav.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/miniwav.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

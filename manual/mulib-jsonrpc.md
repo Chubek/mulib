@@ -16,7 +16,7 @@ switches. C++17 consumers include the declaration headers without switches.
 available for compatibility.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/jsonrpc.c -pthread -lm -ldl -o jsonrpc
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/jsonrpc.c -pthread -lm -ldl -o jsonrpc
 ./jsonrpc
 ```
 
@@ -66,9 +66,9 @@ leaves the output unchanged. Initialize the reply to zero and use
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-jsonrpc.h`](../include/mulib-jsonrpc.h) |
+| Header | [`kernels/mulib-jsonrpc.h`](../kernels/mulib-jsonrpc.h) |
 | Implementation switch | `MULIB_IMPL_CDD_JSONRPC` |
-| Repository-local includes | [`include/detail/mulib-jsonrpc-envelope.h`](../include/detail/mulib-jsonrpc-envelope.h), [mulib-rest](mulib-rest.md) |
+| Repository-local includes | [`kernels/detail/mulib-jsonrpc-envelope.h`](../kernels/detail/mulib-jsonrpc-envelope.h), [mulib-rest](mulib-rest.md) |
 | Complete example | [`examples/modules/jsonrpc.c`](../examples/modules/jsonrpc.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/jsonrpc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/jsonrpc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

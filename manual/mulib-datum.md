@@ -14,7 +14,7 @@ with a canonical 0/1 scalar value. Do not assign owned byte datums by value.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-datum.h`](../include/mulib-datum.h).
+Verbatim declaration section from [`kernels/mulib-datum.h`](../kernels/mulib-datum.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -77,7 +77,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-datum.h`](../include/mulib-datum.h) |
+| Header | [`kernels/mulib-datum.h`](../kernels/mulib-datum.h) |
 | Implementation switch | `MULIB_IMPL_DATUM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/datum.c`](../examples/modules/datum.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/datum.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/datum.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

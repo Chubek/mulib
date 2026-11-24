@@ -14,7 +14,7 @@ previously derived concepts but not independently copied masks.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fca.h`](../include/mulib-fca.h).
+Verbatim declaration section from [`kernels/mulib-fca.h`](../kernels/mulib-fca.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -58,7 +58,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fca.h`](../include/mulib-fca.h) |
+| Header | [`kernels/mulib-fca.h`](../kernels/mulib-fca.h) |
 | Implementation switch | `MULIB_IMPL_FCA` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/fca.c`](../examples/modules/fca.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fca.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fca.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

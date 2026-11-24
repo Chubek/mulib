@@ -30,14 +30,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-texbytecode.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-texbytecode.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-texbytecode.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-texbytecode.c -lm -o test
 ./test
 ```
 
@@ -56,7 +56,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-texbytecode.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-texbytecode.h`](../include/mulib-texbytecode.h) |
+| Header | [`kernels/mulib-texbytecode.h`](../kernels/mulib-texbytecode.h) |
 | Implementation switch | `MULIB_IMPL_TEXBYTECODE` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-texbytecode.c`](../examples/mulib-texbytecode.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-texbytecode.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-texbytecode.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

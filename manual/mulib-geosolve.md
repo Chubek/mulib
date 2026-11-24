@@ -295,7 +295,7 @@ against independent squared-distance classifications and distance checks.
 It is discovered by CMake/CTest and `tools/check.py`.
 
 ```sh
-cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test_geosolve.c -lm -o /tmp/opencode/test-geosolve
 /tmp/opencode/test-geosolve
 ```
@@ -307,7 +307,7 @@ cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-geosolve.h`](../include/mulib-geosolve.h) |
+| Header | [`kernels/mulib-geosolve.h`](../kernels/mulib-geosolve.h) |
 | Implementation switch | `MULIB_IMPL_GEOSOLVE` |
 | Repository-local includes | [mulib-alloc](mulib-alloc.md), [mulib-cgeom](mulib-cgeom.md), [mulib-geometry](mulib-geometry.md) |
 | Complete example | [`examples/modules/geosolve.c`](../examples/modules/geosolve.c) |
@@ -320,6 +320,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/geosolve.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/geosolve.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

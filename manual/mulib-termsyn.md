@@ -105,7 +105,7 @@ negative EINVAL/ENOMEM/ERANGE/ENOTFOUND/ELEXER report cache failures. Theme/rend
 can also propagate negative termstyle errors; do not interpret overlapping enum
 numbers without knowing which operation failed.
 
-Build: `cc -std=c11 -Iinclude examples/modules/termsyn.c -lm -o termsyn-example`.
+Build: `cc -std=c11 -Ikernels examples/modules/termsyn.c -lm -o termsyn-example`.
 
 <!-- manual-reference -->
 ## Source and build reference
@@ -114,7 +114,7 @@ Build: `cc -std=c11 -Iinclude examples/modules/termsyn.c -lm -o termsyn-example`
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termsyn.h`](../include/mulib-termsyn.h) |
+| Header | [`kernels/mulib-termsyn.h`](../kernels/mulib-termsyn.h) |
 | Implementation switch | `MULIB_IMPL_TERMSYN` |
 | Repository-local includes | [mulib-edbuf](mulib-edbuf.md), [mulib-termstyle](mulib-termstyle.md) |
 | Complete example | [`examples/modules/termsyn.c`](../examples/modules/termsyn.c) |
@@ -127,6 +127,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termsyn.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/termsyn.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

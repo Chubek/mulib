@@ -1,7 +1,7 @@
 # mulib-rf-microstrip
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-rf-microstrip.h`  
+**Header:** `kernels/mulib-rf-microstrip.h`  
 **Implementation switch:** `MULIB_IMPL_RF_MICROSTRIP`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_RF_MICROSTRIP` defined befo
 `tests/test_rf_microstrip.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_rf_microstrip.c -lm -o /tmp/test_rf_microstrip
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_rf_microstrip.c -lm -o /tmp/test_rf_microstrip
 /tmp/test_rf_microstrip
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rf-microstrip.h`](../include/mulib-rf-microstrip.h).
+Verbatim declaration section from [`kernels/mulib-rf-microstrip.h`](../kernels/mulib-rf-microstrip.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_rf_microstrip_z0(double width_mm, double substrate_mm, double epsilon_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rf-microstrip.h`](../include/mulib-rf-microstrip.h) |
+| Header | [`kernels/mulib-rf-microstrip.h`](../kernels/mulib-rf-microstrip.h) |
 | Implementation switch | `MULIB_IMPL_RF_MICROSTRIP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/rf-microstrip.c`](../examples/modules/rf-microstrip.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rf-microstrip.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rf-microstrip.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

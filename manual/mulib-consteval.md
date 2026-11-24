@@ -20,7 +20,7 @@ stop cycles. Time is O(visited nodes plus symbol lookup), stack O(depth).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-consteval.h`](../include/mulib-consteval.h) |
+| Header | [`kernels/mulib-consteval.h`](../kernels/mulib-consteval.h) |
 | Implementation switch | `MULIB_IMPL_CONSTEVAL` |
 | Repository-local includes | [mulib-parser-pratt](mulib-parser-pratt.md), [mulib-symboltable](mulib-symboltable.md) |
 | Complete example | [`examples/modules/consteval.c`](../examples/modules/consteval.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/consteval.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/consteval.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

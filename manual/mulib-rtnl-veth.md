@@ -31,7 +31,7 @@ See `../tests/test_rtnl-veth.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rtnl-veth.h`](../include/mulib-rtnl-veth.h) |
+| Header | [`kernels/mulib-rtnl-veth.h`](../kernels/mulib-rtnl-veth.h) |
 | Implementation switch | `MULIB_IMPL_RTNL_VETH` |
 | Repository-local includes | [mulib-rtnl-link](mulib-rtnl-link.md), [mulib-rtnl](mulib-rtnl.md) |
 | Complete example | [`examples/modules/rtnl-veth.c`](../examples/modules/rtnl-veth.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rtnl-veth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rtnl-veth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

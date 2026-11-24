@@ -16,7 +16,7 @@ ident escapes are not decoded, and tokens are not semantic CSS values.
 
 ## Integration and ownership
 
-Include `include/mulib-css-tokenizer.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-css-tokenizer.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-css-tokenizer.h`](../include/mulib-css-tokenizer.h).
+Verbatim declaration section from [`kernels/mulib-css-tokenizer.h`](../kernels/mulib-css-tokenizer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -99,7 +99,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-css-tokenizer.h`](../include/mulib-css-tokenizer.h) |
+| Header | [`kernels/mulib-css-tokenizer.h`](../kernels/mulib-css-tokenizer.h) |
 | Implementation switch | `MULIB_IMPL_CSS_TOKENIZER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/css-tokenizer.c`](../examples/modules/css-tokenizer.c) |
@@ -112,6 +112,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/css-tokenizer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/css-tokenizer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

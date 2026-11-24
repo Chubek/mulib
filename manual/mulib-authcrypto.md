@@ -45,7 +45,7 @@ vectors, plus hostile input and boundary cases.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-authcrypto.h`](../include/mulib-authcrypto.h) |
+| Header | [`kernels/mulib-authcrypto.h`](../kernels/mulib-authcrypto.h) |
 | Implementation switch | `MULIB_IMPL_AUTHCRYPTO` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/authcrypto.c`](../examples/modules/authcrypto.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/authcrypto.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/authcrypto.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

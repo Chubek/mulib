@@ -31,14 +31,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-typesrc.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-typesrc.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-typesrc.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-typesrc.c -lm -o test
 ./test
 ```
 
@@ -66,7 +66,7 @@ a null data pointer with nonzero size without modifying outputs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-typesrc.h`](../include/mulib-typesrc.h) |
+| Header | [`kernels/mulib-typesrc.h`](../kernels/mulib-typesrc.h) |
 | Implementation switch | `MULIB_IMPL_TYPESRC` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-typesrc.c`](../examples/mulib-typesrc.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-typesrc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-typesrc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

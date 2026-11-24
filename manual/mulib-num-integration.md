@@ -1,7 +1,7 @@
 # mulib-num-integration
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-integration.h`  
+**Header:** `kernels/mulib-num-integration.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_INTEGRATION`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_INTEGRATION` defined be
 `tests/test_num_integration.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_integration.c -lm -o /tmp/test_num_integration
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_integration.c -lm -o /tmp/test_num_integration
 /tmp/test_num_integration
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-integration.h`](../include/mulib-num-integration.h).
+Verbatim declaration section from [`kernels/mulib-num-integration.h`](../kernels/mulib-num-integration.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ int mulib_num_integrate_adaptive(mulib_num_integrand f, void *user, double lo, d
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-integration.h`](../include/mulib-num-integration.h) |
+| Header | [`kernels/mulib-num-integration.h`](../kernels/mulib-num-integration.h) |
 | Implementation switch | `MULIB_IMPL_NUM_INTEGRATION` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/num-integration.c`](../examples/modules/num-integration.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-integration.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-integration.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,7 +31,7 @@ See `../tests/test_nftables.c` for its compile/link verification. Selected runna
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nftables.h`](../include/mulib-nftables.h) |
+| Header | [`kernels/mulib-nftables.h`](../kernels/mulib-nftables.h) |
 | Implementation switch | `MULIB_IMPL_NFTABLES` |
 | Repository-local includes | [mulib-nfnetlink](mulib-nfnetlink.md) |
 | Complete example | [`examples/modules/nftables.c`](../examples/modules/nftables.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nftables.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nftables.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

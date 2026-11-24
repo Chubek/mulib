@@ -1,7 +1,7 @@
 # mulib-fpga-route
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-fpga-route.h`  
+**Header:** `kernels/mulib-fpga-route.h`  
 **Implementation switch:** `MULIB_IMPL_FPGA_ROUTE`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FPGA_ROUTE` defined before 
 `tests/test_fpga_route.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_fpga_route.c -lm -o /tmp/test_fpga_route
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_fpga_route.c -lm -o /tmp/test_fpga_route
 /tmp/test_fpga_route
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fpga-route.h`](../include/mulib-fpga-route.h).
+Verbatim declaration section from [`kernels/mulib-fpga-route.h`](../kernels/mulib-fpga-route.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_fpga_route_bfs(mulib_fpga_grid_t grid, uint16_t sx, uint16_t sy, uint1
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fpga-route.h`](../include/mulib-fpga-route.h) |
+| Header | [`kernels/mulib-fpga-route.h`](../kernels/mulib-fpga-route.h) |
 | Implementation switch | `MULIB_IMPL_FPGA_ROUTE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/fpga-route.c`](../examples/modules/fpga-route.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fpga-route.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fpga-route.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

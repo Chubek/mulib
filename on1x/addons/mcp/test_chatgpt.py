@@ -27,18 +27,18 @@ ROOT = HOME.parents[2]
 
 
 def fixture(root):
-    for directory in ("include", "manual", "on1x/docs", "on1x/examples",
+    for directory in ("kernels", "manual", "on1x/docs", "on1x/examples",
                       "on1x/contracts-exoml"):
         (root / directory).mkdir(parents=True, exist_ok=True)
     blocks = []
     for name in ("alpha", "alpha-extra"):
         blocks.append(
-            f"- name: {name}\n  header: include/mulib-{name}.h\n"
+            f"- name: {name}\n  header: kernels/mulib-{name}.h\n"
             f"  manual: manual/mulib-{name}.md\n"
             f"  macro: MULIB_IMPL_{name.upper().replace('-', '_')}\n"
             f"  purpose: Bounded {name} example.\n  dependencies: []\n"
             "  status: implemented\n")
-        (root / f"include/mulib-{name}.h").write_text(
+        (root / f"kernels/mulib-{name}.h").write_text(
             f"/* Public declarations, not ABI proof. */\nint mulib_{name.replace('-', '_')}_read(void);\n")
         (root / f"manual/mulib-{name}.md").write_text(f"# {name}\nNever infer safe admission.\n")
     (root / "MANIFEST.yaml").write_text(
@@ -54,7 +54,7 @@ def fixture(root):
     (root / "on1x/contracts-exoml/alpha.exocontract.json").write_text(json.dumps({
         "library": "alpha", "headers": ["mulib-alpha.h"],
         "bundle_provenance": {"revision": "sha256:" + hashlib.sha256(
-            (root / "include/mulib-alpha.h").read_bytes()).hexdigest()},
+            (root / "kernels/mulib-alpha.h").read_bytes()).hexdigest()},
         "functions": [{"c_name": "mulib_alpha_read"}],
     }))
 
@@ -113,7 +113,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(result["manifest_citation"]["path"], "MANIFEST.yaml")
 
     def test_header_inventory_and_inquiry(self):
-        (self.root / "include/mulib-unregistered.h").write_text("int not_in_manifest(void);\n")
+        (self.root / "kernels/mulib-unregistered.h").write_text("int not_in_manifest(void);\n")
         index = core.Index(self.root)
         first = index.call("list_headers", {"limit": 2})
         self.assertEqual(first["matches"], 3)
@@ -126,13 +126,13 @@ class CoreTests(unittest.TestCase):
         self.assertIn("int mulib_alpha_read", alpha["excerpts"][0]["text"])
         self.assertEqual(alpha["excerpts"][0], index.fetch(alpha["excerpt_ids"][0]))
         self.assertEqual(alpha["manifest_module"], "alpha")
-        self.assertEqual(index.call("inspect_header", {"path": "include/mulib-alpha.h", "line": 2}), alpha)
+        self.assertEqual(index.call("inspect_header", {"path": "kernels/mulib-alpha.h", "line": 2}), alpha)
         self.rejected("HEADER_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-missing.h"}))
         self.rejected("INVALID_ARGUMENT", lambda: index.call("inspect_header", {"path": "../include/mulib-alpha.h"}))
         self.rejected("LINE_NOT_FOUND", lambda: index.call("inspect_header", {"path": "mulib-alpha.h", "line": 100}))
 
     def test_contract_drift_is_not_admission(self):
-        (self.root / "include/mulib-alpha.h").write_text("drift")
+        (self.root / "kernels/mulib-alpha.h").write_text("drift")
         result = core.Index(self.root).inspect_kernel("alpha")
         self.assertFalse(result["contract"]["header_pin_matches"])
         self.assertEqual(result["on1x_admission"]["status"], "NOT_ESTABLISHED")
@@ -197,7 +197,7 @@ class CoreTests(unittest.TestCase):
             original.replace("name: alpha-extra", "name: alpha"),
             original.replace("dependencies: []", "dependencies: [missing]", 1),
             original.replace("dependencies: []", "dependencies: [alpha, alpha]", 1),
-            original.replace("include/mulib-alpha.h", "../../etc/passwd", 1),
+            original.replace("kernels/mulib-alpha.h", "../../etc/passwd", 1),
             original.replace("manual/mulib-alpha.md", "manual/../README.md", 1),
             original.replace("manual/mulib-alpha.md", "manual/nested/alpha.md", 1),
             original.replace("  macro: MULIB_IMPL_ALPHA\n", "  macro: !python evil\n", 1),
@@ -211,22 +211,22 @@ class CoreTests(unittest.TestCase):
         path.write_text(original)
 
     def test_missing_required_sources(self):
-        (self.root / "include/mulib-alpha.h").unlink()
+        (self.root / "kernels/mulib-alpha.h").unlink()
         self.rejected("MISSING_SOURCE", lambda: core.Index(self.root))
 
     def test_symlink_final_and_parent(self):
-        path = self.root / "include/mulib-alpha.h"
+        path = self.root / "kernels/mulib-alpha.h"
         path.unlink()
         path.symlink_to("/etc/passwd")
         self.rejected("UNSAFE_SOURCE", lambda: core.Index(self.root))
         path.unlink()
         path.write_text("safe")
-        (self.root / "include").rename(self.root / "real-include")
-        (self.root / "include").symlink_to(self.root / "real-include", target_is_directory=True)
+        (self.root / "kernels").rename(self.root / "real-include")
+        (self.root / "kernels").symlink_to(self.root / "real-include", target_is_directory=True)
         self.rejected("UNSAFE_SOURCE", lambda: core.Index(self.root))
 
     def test_fifo_is_not_read(self):
-        path = self.root / "include/mulib-alpha.h"
+        path = self.root / "kernels/mulib-alpha.h"
         path.unlink()
         os.mkfifo(path)
         self.rejected("UNSAFE_SOURCE", lambda: core.Index(self.root))
@@ -234,10 +234,10 @@ class CoreTests(unittest.TestCase):
     def test_unallowlisted_secrets_not_indexed(self):
         (self.root / "on1x/docs/.env").write_text("SECRET_TOKEN")
         (self.root / "on1x/examples/credentials.json").write_text("SECRET_TOKEN")
-        (self.root / "include/private.h").write_text("SECRET_TOKEN")
+        (self.root / "kernels/private.h").write_text("SECRET_TOKEN")
         index = core.Index(self.root)
         self.assertEqual(index.search("SECRET_TOKEN")["results"], [])
-        self.assertNotIn("include/private.h", index.sources)
+        self.assertNotIn("kernels/private.h", index.sources)
 
     def test_index_limits(self):
         for field, budget in (("MAX_FILES", 1), ("MAX_BYTES", 10), ("MAX_FILE", 10),

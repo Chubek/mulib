@@ -9,7 +9,7 @@ fi
 B=$(mktemp -d "$tmp/mulib-sandbox-tests.XXXXXXXX")
 trap 'rm -rf "$B"' EXIT HUP INT TERM
 # strict production workers must not use ASan runtime (VM mapping / syscall needs).
-FLAGS='-D_GNU_SOURCE -std=c11 -O2 -g -Wall -Wextra -Wpedantic -Werror -Iinclude'
+FLAGS='-D_GNU_SOURCE -std=c11 -O2 -g -Wall -Wextra -Wpedantic -Werror -Ikernels'
 $CC $FLAGS -c tests/sandbox-implementation.c -o "$B/implementation.o"
 $CC $FLAGS tests/worker.c "$B/implementation.o" -o "$B/worker"
 $CC $FLAGS -DFAKE_READY tests/worker.c "$B/implementation.o" -o "$B/fake"

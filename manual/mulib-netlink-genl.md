@@ -35,7 +35,7 @@ See `../tests/test_netlink-genl.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netlink-genl.h`](../include/mulib-netlink-genl.h) |
+| Header | [`kernels/mulib-netlink-genl.h`](../kernels/mulib-netlink-genl.h) |
 | Implementation switch | `MULIB_IMPL_NETLINK_GENL` |
 | Repository-local includes | [mulib-netlink-attr](mulib-netlink-attr.md), [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/netlink-genl.c`](../examples/modules/netlink-genl.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netlink-genl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netlink-genl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

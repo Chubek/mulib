@@ -1,7 +1,7 @@
 # mulib-eda-netgraph
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-netgraph.h`  
+**Header:** `kernels/mulib-eda-netgraph.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_NETGRAPH`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_NETGRAPH` defined befor
 `tests/test_eda_netgraph.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_netgraph.c -lm -o /tmp/test_eda_netgraph
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_netgraph.c -lm -o /tmp/test_eda_netgraph
 /tmp/test_eda_netgraph
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-netgraph.h`](../include/mulib-eda-netgraph.h).
+Verbatim declaration section from [`kernels/mulib-eda-netgraph.h`](../kernels/mulib-eda-netgraph.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -95,7 +95,7 @@ int mulib_eda_netgraph_merge(mulib_eda_netgraph_t *g, uint32_t target, uint32_t 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-netgraph.h`](../include/mulib-eda-netgraph.h) |
+| Header | [`kernels/mulib-eda-netgraph.h`](../kernels/mulib-eda-netgraph.h) |
 | Implementation switch | `MULIB_IMPL_EDA_NETGRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-netgraph.c`](../examples/modules/eda-netgraph.c) |
@@ -108,6 +108,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-netgraph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-netgraph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

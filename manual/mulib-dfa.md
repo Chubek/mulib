@@ -62,7 +62,7 @@ serialization, corruption and state-limit tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dfa.h`](../include/mulib-dfa.h) |
+| Header | [`kernels/mulib-dfa.h`](../kernels/mulib-dfa.h) |
 | Implementation switch | `MULIB_IMPL_DFA` |
 | Repository-local includes | [mulib-crc32](mulib-crc32.md), [mulib-endian](mulib-endian.md), [mulib-fst](mulib-fst.md) |
 | Complete example | [`examples/modules/dfa.c`](../examples/modules/dfa.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dfa.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dfa.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -14,7 +14,7 @@ two allocated rows, O(n*m) time and O(min(n,m)) memory; failure preserves score.
 
 ## Integration and ownership
 
-Include `include/mulib-price-match.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-price-match.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -38,7 +38,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-price-match.h`](../include/mulib-price-match.h).
+Verbatim declaration section from [`kernels/mulib-price-match.h`](../kernels/mulib-price-match.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -82,7 +82,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-price-match.h`](../include/mulib-price-match.h) |
+| Header | [`kernels/mulib-price-match.h`](../kernels/mulib-price-match.h) |
 | Implementation switch | `MULIB_IMPL_PRICE_MATCH` |
 | Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/price-match.c`](../examples/modules/price-match.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/price-match.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/price-match.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

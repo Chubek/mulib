@@ -52,7 +52,7 @@ write persistent storage or start an eviction thread. Externally serialize use.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerd-cache.h`](../include/mulib-containerd-cache.h) |
+| Header | [`kernels/mulib-containerd-cache.h`](../kernels/mulib-containerd-cache.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERD_CACHE` |
 | Repository-local includes | [mulib-imgformat](mulib-imgformat.md) |
 | Complete example | [`examples/modules/containerd-cache.c`](../examples/modules/containerd-cache.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-cache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerd-cache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

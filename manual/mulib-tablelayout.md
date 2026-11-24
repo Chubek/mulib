@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-tablelayout.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-tablelayout.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-tablelayout.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-tablelayout.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-tablelayout.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tablelayout.h`](../include/mulib-tablelayout.h) |
+| Header | [`kernels/mulib-tablelayout.h`](../kernels/mulib-tablelayout.h) |
 | Implementation switch | `MULIB_IMPL_TABLELAYOUT` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-tablelayout.c`](../examples/mulib-tablelayout.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-tablelayout.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-tablelayout.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

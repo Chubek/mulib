@@ -26,7 +26,7 @@ python3 on1x/hir/FFIHandler/test_ffispec_gen.py
 The generator uses `cephyr.Compiler.parse_c11` and `emit_interface` on the
 same C11 translation unit: a kernel implementation define and a canonical
 header include, with the pinned Cephyr checkout's `Cephyr.toml`,
-`--stdlib=cephyr`, `--no-factir`, and `-I include`.
+`--stdlib=cephyr`, `--no-factir`, and `-I kernels`.
 It joins fixed, external, signed-i64 interface declarations to actual AST
 definitions using the canonical header path and source line. It lowers only
 bounded expressions and `return`/`if` control flow. It rejects unsupported

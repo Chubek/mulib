@@ -96,7 +96,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert not surfaces[name]['declaration_only']
     exe = tmp/'c11-client'
     result = run([cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *flags,
-                  '-I', archive, '-I', root.parent/'include', root/'tests/fixtures/kernel_sandbox_archive.c',
+                  '-I', archive, '-I', root.parent/'kernels', root/'tests/fixtures/kernel_sandbox_archive.c',
                   archive/'libmulib.a', '-o', exe])
     assert result.returncode == 0, result
     result = run([exe])

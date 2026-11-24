@@ -87,7 +87,7 @@ Host mocks do not establish actual firmware boot success.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bootmgr.h`](../include/mulib-bootmgr.h) |
+| Header | [`kernels/mulib-bootmgr.h`](../kernels/mulib-bootmgr.h) |
 | Implementation switch | `MULIB_IMPL_BOOTMGR` |
 | Repository-local includes | [mulib-bios](mulib-bios.md), [mulib-efi](mulib-efi.md), [mulib-uefiutils](mulib-uefiutils.md) |
 | Complete example | [`examples/modules/bootmgr.c`](../examples/modules/bootmgr.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bootmgr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bootmgr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

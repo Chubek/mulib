@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-taskdag.h` / `MULIB_IMPL_TASKDAG`  
+**Header/switch:** `kernels/mulib-taskdag.h` / `MULIB_IMPL_TASKDAG`  
 **Transitive implementation switches:** `MULIB_IMPL_TASKPOOL`  
 **Build:** C11, `-pthread`; C++17 declaration-only inclusion supported.
 
@@ -15,7 +15,7 @@ worker pool. The calling thread is the coordinator, never a worker that waits
 on other pool jobs. No dependency implementation is enabled implicitly.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Ikernels \
   examples/modules/taskdag.c -o /tmp/taskdag
 /tmp/taskdag
 ```
@@ -92,7 +92,7 @@ self-cycles and multi-node cycles with no callback side effects.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-taskdag.h`](../include/mulib-taskdag.h) |
+| Header | [`kernels/mulib-taskdag.h`](../kernels/mulib-taskdag.h) |
 | Implementation switch | `MULIB_IMPL_TASKDAG` |
 | Repository-local includes | [mulib-taskpool](mulib-taskpool.md) |
 | Complete example | [`examples/modules/taskdag.c`](../examples/modules/taskdag.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/taskdag.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/taskdag.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

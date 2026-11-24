@@ -22,7 +22,7 @@ records), with no allocation. Regression: `tests/test_data_patches.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dbquery.h`](../include/mulib-dbquery.h).
+Verbatim declaration section from [`kernels/mulib-dbquery.h`](../kernels/mulib-dbquery.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -68,7 +68,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbquery.h`](../include/mulib-dbquery.h) |
+| Header | [`kernels/mulib-dbquery.h`](../kernels/mulib-dbquery.h) |
 | Implementation switch | `MULIB_IMPL_DBQUERY` |
 | Repository-local includes | [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/dbquery.c`](../examples/modules/dbquery.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbquery.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbquery.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

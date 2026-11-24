@@ -31,7 +31,7 @@ See `../tests/test_networkd-client.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-networkd-client.h`](../include/mulib-networkd-client.h) |
+| Header | [`kernels/mulib-networkd-client.h`](../kernels/mulib-networkd-client.h) |
 | Implementation switch | `MULIB_IMPL_NETWORKD_CLIENT` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/networkd-client.c`](../examples/modules/networkd-client.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/networkd-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/networkd-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

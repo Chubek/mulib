@@ -69,7 +69,7 @@ wrapping arithmetic, traps, truncation, malformed LEBs and bounded mutations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wask.h`](../include/mulib-wask.h) |
+| Header | [`kernels/mulib-wask.h`](../kernels/mulib-wask.h) |
 | Implementation switch | `MULIB_IMPL_WASK` |
 | Repository-local includes | [mulib-dsymspec](mulib-dsymspec.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/wask.c`](../examples/modules/wask.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wask.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wask.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

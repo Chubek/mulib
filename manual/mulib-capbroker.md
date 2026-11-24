@@ -46,7 +46,7 @@ receive subject, operation and status, not raw payload/secrets.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-capbroker.h`](../include/mulib-capbroker.h) |
+| Header | [`kernels/mulib-capbroker.h`](../kernels/mulib-capbroker.h) |
 | Implementation switch | `MULIB_IMPL_CAPBROKER` |
 | Repository-local includes | [mulib-sandbox-profile](mulib-sandbox-profile.md) |
 | Complete example | [`examples/modules/capbroker.c`](../examples/modules/capbroker.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/capbroker.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/capbroker.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

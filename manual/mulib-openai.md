@@ -1,6 +1,6 @@
 # OpenAI protocol utilities
 
-**Header:** `include/mulib-openai.h` · **Switch:** `MULIB_IMPL_OPENAI`
+**Header:** `kernels/mulib-openai.h` · **Switch:** `MULIB_IMPL_OPENAI`
 
 Shared protocol support for the [client](mulib-openai-client.md) and
 [server](mulib-openai-server.md). Uses MuLIB HTTP, JSON, UTF8 and their dependency
@@ -27,7 +27,7 @@ properties, permissions, model inference, resource storage and event sequences.
 Realtime WebSocket/WebRTC media transport is separate from the REST call/session
 setup operations covered here; it is not implemented by these headers.
 
-The generated catalog lives in `include/detail/mulib-openai-operations.inc` and
+The generated catalog lives in `kernels/detail/mulib-openai-operations.inc` and
 records the source SHA-256. Regenerate/check it without dependencies:
 
 ```sh
@@ -86,9 +86,9 @@ construction/routing and the dependent client/server workflows.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-openai.h`](../include/mulib-openai.h) |
+| Header | [`kernels/mulib-openai.h`](../kernels/mulib-openai.h) |
 | Implementation switch | `MULIB_IMPL_OPENAI` |
-| Repository-local includes | [`include/detail/mulib-openai-operations.inc`](../include/detail/mulib-openai-operations.inc), [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [`kernels/detail/mulib-openai-operations.inc`](../kernels/detail/mulib-openai-operations.inc), [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/openai.c`](../examples/modules/openai.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/openai.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/openai.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -40,7 +40,7 @@ See [CAPASM](mulib-capasm.md) for emission, rewrite passes, and tools.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xmacir.h`](../include/mulib-xmacir.h) |
+| Header | [`kernels/mulib-xmacir.h`](../kernels/mulib-xmacir.h) |
 | Implementation switch | `MULIB_IMPL_XMACIR` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/capasm.c`](../examples/modules/capasm.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/capasm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/capasm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

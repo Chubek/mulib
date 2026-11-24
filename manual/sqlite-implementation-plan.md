@@ -4,9 +4,9 @@ Status: **an independent, bounded engine is implemented; full compatibility is
 not yet implemented**. See [the actual SQL/storage profile](mulib-sqlite.md),
 [format codecs](mulib-sqlite-format.md) and [pager](mulib-sqlite-pager.md).
 
-The requested endpoint is `include/mulib-sqlite.h`: an independent C11 database
+The requested endpoint is `kernels/mulib-sqlite.h`: an independent C11 database
 engine that opens, queries and updates SQLite databases, with SQL parsing built
-on `include/mulib-parsec.h`. A system SQLite wrapper, subprocess backend,
+on `kernels/mulib-parsec.h`. A system SQLite wrapper, subprocess backend,
 renamed SQLite amalgamation, or proprietary replacement file format does not
 satisfy this request. Intermediate milestones below are not the final scope.
 
@@ -82,9 +82,9 @@ switches. Register new dependencies only when actual code uses them.
 
 ## 3. Intended architecture
 
-The engine's public entry point is `include/mulib-sqlite.h`, with a public guard,
+The engine's public entry point is `kernels/mulib-sqlite.h`, with a public guard,
 C linkage and a `MULIB_IMPL_SQLITE` implementation section. Per the clarified
-requirement, reusable support libraries are separate `include/mulib-*.h` modules:
+requirement, reusable support libraries are separate `kernels/mulib-*.h` modules:
 `sqlite-format` and `sqlite-pager` currently implement native storage layers,
 while existing parsec/PEG/arena/buffer/endian/RNG/strbuf modules are reused.
 Each module has its own explicit implementation switch, manual, example and
@@ -353,9 +353,9 @@ At the first implemented milestone with a useful, complete public surface:
 
 The earlier static-file inventory mismatch has been resolved separately from
 SQLite: tests, examples, documentation and inventory now consistently use
-`include/mulib-static_file.h`.
+`kernels/mulib-static_file.h`.
 
-The implementation now adds `include/mulib-sqlite.h` and its two support
+The implementation now adds `kernels/mulib-sqlite.h` and its two support
 headers. Their manuals describe actual functionality and outstanding gaps.
 The next compatibility work includes the full pinned reference recipe, a
 capability-aware VFS, index/WITHOUT ROWID/UTF-16 support, complete SQL/schema

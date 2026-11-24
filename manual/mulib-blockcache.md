@@ -15,7 +15,7 @@ Switch: `MULIB_IMPL_BLOCKCACHE`. Example: `examples/modules/blockcache.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-blockcache.h`](../include/mulib-blockcache.h).
+Verbatim declaration section from [`kernels/mulib-blockcache.h`](../kernels/mulib-blockcache.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -74,7 +74,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-blockcache.h`](../include/mulib-blockcache.h) |
+| Header | [`kernels/mulib-blockcache.h`](../kernels/mulib-blockcache.h) |
 | Implementation switch | `MULIB_IMPL_BLOCKCACHE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/blockcache.c`](../examples/modules/blockcache.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/blockcache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/blockcache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ Example: `examples/modules/heaptable.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-heaptable.h`](../include/mulib-heaptable.h).
+Verbatim declaration section from [`kernels/mulib-heaptable.h`](../kernels/mulib-heaptable.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-heaptable.h`](../include/mulib-heaptable.h) |
+| Header | [`kernels/mulib-heaptable.h`](../kernels/mulib-heaptable.h) |
 | Implementation switch | `MULIB_IMPL_HEAPTABLE` |
 | Repository-local includes | [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/heaptable.c`](../examples/modules/heaptable.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/heaptable.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/heaptable.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

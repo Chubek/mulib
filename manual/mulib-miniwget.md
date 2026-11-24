@@ -16,7 +16,7 @@ Implementation macros are never enabled by dependencies; declarations have C++
 C linkage.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/miniwget.c -o /tmp/opencode/miniwget
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/miniwget.c -o /tmp/opencode/miniwget
 /tmp/opencode/miniwget
 ```
 
@@ -83,7 +83,7 @@ server composition.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-miniwget.h`](../include/mulib-miniwget.h) |
+| Header | [`kernels/mulib-miniwget.h`](../kernels/mulib-miniwget.h) |
 | Implementation switch | `MULIB_IMPL_MINIWGET` |
 | Repository-local includes | [mulib-webclient](mulib-webclient.md) |
 | Complete example | [`examples/modules/miniwget.c`](../examples/modules/miniwget.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/miniwget.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/miniwget.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

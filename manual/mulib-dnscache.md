@@ -63,7 +63,7 @@ The caller decides whether data is trustworthy before inserting it.
 
 ## Example and tests
 
-`cc -std=c11 -Iinclude examples/modules/dnscache.c -o dnscache` builds a runnable
+`cc -std=c11 -Ikernels examples/modules/dnscache.c -o dnscache` builds a runnable
 copy-ownership and expiry example. `tests/test_dns_stack.c` checks normalization,
 family isolation, remaining TTL, replacement, zero capacity, invalid capacities,
 backwards clocks, zero TTL and timestamps near `UINT64_MAX`.
@@ -75,7 +75,7 @@ backwards clocks, zero TTL and timestamps near `UINT64_MAX`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dnscache.h`](../include/mulib-dnscache.h) |
+| Header | [`kernels/mulib-dnscache.h`](../kernels/mulib-dnscache.h) |
 | Implementation switch | `MULIB_IMPL_DNSCACHE` |
 | Repository-local includes | [mulib-dns](mulib-dns.md) |
 | Complete example | [`examples/modules/dnscache.c`](../examples/modules/dnscache.c) |
@@ -88,6 +88,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnscache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dnscache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

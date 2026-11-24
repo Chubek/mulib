@@ -39,7 +39,7 @@ Netlink is lossy: applications must reconcile state after ENOBUFS and cannot
 treat this stream as a complete device database. Authentication here checks the
 kernel netlink sender address; it is not a cryptographic event signature.
 
-`cc -std=c11 -Iinclude examples/modules/udev.c -o udev`. Tests decode synthetic
+`cc -std=c11 -Ikernels examples/modules/udev.c -o udev`. Tests decode synthetic
 packets, duplicates, contradictions, truncated fields and limits, without devices.
 
 <!-- manual-reference -->
@@ -49,7 +49,7 @@ packets, duplicates, contradictions, truncated fields and limits, without device
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-udev.h`](../include/mulib-udev.h) |
+| Header | [`kernels/mulib-udev.h`](../kernels/mulib-udev.h) |
 | Implementation switch | `MULIB_IMPL_UDEV` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md) |
 | Complete example | [`examples/modules/udev.c`](../examples/modules/udev.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/udev.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/udev.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

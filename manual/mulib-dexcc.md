@@ -97,7 +97,7 @@ records and bounded raw bytecode under ASan/UBSan.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dexcc.h`](../include/mulib-dexcc.h) |
+| Header | [`kernels/mulib-dexcc.h`](../kernels/mulib-dexcc.h) |
 | Implementation switch | `MULIB_IMPL_DEXCC` |
 | Repository-local includes | [mulib-adler32](mulib-adler32.md), [mulib-authcrypto](mulib-authcrypto.md), [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/dexcc.c`](../examples/modules/dexcc.c) |
@@ -110,6 +110,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dexcc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dexcc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

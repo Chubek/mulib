@@ -27,7 +27,7 @@ Tests: `tests/test_transport_extensions.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-xtks.h`](../include/mulib-xtks.h).
+Verbatim declaration section from [`kernels/mulib-xtks.h`](../kernels/mulib-xtks.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xtks.h`](../include/mulib-xtks.h) |
+| Header | [`kernels/mulib-xtks.h`](../kernels/mulib-xtks.h) |
 | Implementation switch | `MULIB_IMPL_XTKS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/xtks.c`](../examples/modules/xtks.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xtks.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xtks.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -55,7 +55,7 @@ Use [container-qvmboost](mulib-container-qvmboost.md) for lifecycle integration.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-qvm.h`](../include/mulib-qvm.h) |
+| Header | [`kernels/mulib-qvm.h`](../kernels/mulib-qvm.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/qvm-core.c`](../examples/modules/qvm-core.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/qvm-core.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/qvm-core.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

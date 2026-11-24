@@ -14,7 +14,7 @@ INFINITY. O(n) time, no allocation. No squared-distance or sparse-vector API.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-euclidean_distance.h`](../include/mulib-euclidean_distance.h).
+Verbatim declaration section from [`kernels/mulib-euclidean_distance.h`](../kernels/mulib-euclidean_distance.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -49,7 +49,7 @@ double mulib_euclidean_distance(const double *a, const double *b, size_t n);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-euclidean_distance.h`](../include/mulib-euclidean_distance.h) |
+| Header | [`kernels/mulib-euclidean_distance.h`](../kernels/mulib-euclidean_distance.h) |
 | Implementation switch | `MULIB_IMPL_EUCLIDEAN_DISTANCE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/euclidean_distance.c`](../examples/modules/euclidean_distance.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/euclidean_distance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/euclidean_distance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ from cephyr import Compiler
 SCRIPT = Path(__file__).with_name("ffispec-gen.py")
 GEN = runpy.run_path(str(SCRIPT))
 ROOT, CONFIG = GEN["ROOT"], GEN["CEPHYR_CONFIG"]
-INCLUDE = ROOT / "include"
+INCLUDE = ROOT / "kernels"
 REVIEW = json.loads(Path(__file__).with_name("reviewed.json").read_bytes())
 CLAMP = REVIEW["clamp"]
 HEADER = INCLUDE / CLAMP["header"]

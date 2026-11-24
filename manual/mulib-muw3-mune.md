@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [HTTP client](mulib-muw3.md) · [MicroChan](mulib-microchan.md)
 
-**Header:** `include/mulib-muw3-mune.h` · **Switch:** `MULIB_IMPL_MUW3_MUNE`
+**Header:** `kernels/mulib-muw3-mune.h` · **Switch:** `MULIB_IMPL_MUW3_MUNE`
 
 The engine embeds Mune and the Lua module in `library/lmuw3/lmuw3.lua`. Each
 engine has independent persistent globals, HTTP configuration and IPC connections.
@@ -143,9 +143,9 @@ enforcement, binary strings, data conversion, persistent state and cleanup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-muw3-mune.h`](../include/mulib-muw3-mune.h) |
+| Header | [`kernels/mulib-muw3-mune.h`](../kernels/mulib-muw3-mune.h) |
 | Implementation switch | `MULIB_IMPL_MUW3_MUNE` |
-| Repository-local includes | [`include/detail/mulib-lmuw3.inc`](../include/detail/mulib-lmuw3.inc), [mulib-microchan](mulib-microchan.md), [mulib-mune](mulib-mune.md), [mulib-muw3](mulib-muw3.md), [mulib-yaml](mulib-yaml.md) |
+| Repository-local includes | [`kernels/detail/mulib-lmuw3.inc`](../kernels/detail/mulib-lmuw3.inc), [mulib-microchan](mulib-microchan.md), [mulib-mune](mulib-mune.md), [mulib-muw3](mulib-muw3.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/muw3-mune.c`](../examples/modules/muw3-mune.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -156,6 +156,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/muw3-mune.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/muw3-mune.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

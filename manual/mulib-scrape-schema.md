@@ -13,9 +13,9 @@ Define `MULIB_IMPL_SCRAPE_SCHEMA` in exactly one C11 translation unit. Use `#inc
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-scrape-schema.c -o /tmp/test-scrape-schema
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-scrape-schema.c -o /tmp/test-scrape-schema
 /tmp/test-scrape-schema
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/scrape-schema.c -o /tmp/example-scrape-schema
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/scrape-schema.c -o /tmp/example-scrape-schema
 ```
 
 ## API
@@ -41,7 +41,7 @@ C locale (including hexadecimal float syntax). Boolean accepts exactly `true`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-scrape-schema.h`](../include/mulib-scrape-schema.h).
+Verbatim declaration section from [`kernels/mulib-scrape-schema.h`](../kernels/mulib-scrape-schema.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -83,7 +83,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-scrape-schema.h`](../include/mulib-scrape-schema.h) |
+| Header | [`kernels/mulib-scrape-schema.h`](../kernels/mulib-scrape-schema.h) |
 | Implementation switch | `MULIB_IMPL_SCRAPE_SCHEMA` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/scrape-schema.c`](../examples/modules/scrape-schema.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/scrape-schema.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/scrape-schema.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

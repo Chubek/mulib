@@ -1,5 +1,5 @@
 /* Solve a triangle and construct its circumcircle using MuLIB geometry types.
- * cc -std=c11 -Iinclude examples/modules/geosolve.c -lm -o geosolve */
+ * cc -std=c11 -Ikernels examples/modules/geosolve.c -lm -o geosolve */
 #define MULIB_IMPL_GEOSOLVE
 #define MULIB_IMPL_GEOMETRY
 #define MULIB_IMPL_CGEOM

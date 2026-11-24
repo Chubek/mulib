@@ -35,7 +35,7 @@ Xlib facilities when needed. Title uses XStoreName legacy encoding, not an EWMH
 UTF-8 property. Applications supply native event handling and WM_DELETE_WINDOW
 support themselves. Queued requests copy borrowed titles; windows need no heap free.
 
-`cc -std=c11 -Iinclude examples/modules/xlib.c -ldl -o xlib`; no arguments is
+`cc -std=c11 -Ikernels examples/modules/xlib.c -ldl -o xlib`; no arguments is
 hardware-free, an extra argument explicitly opens the default display and queues
 a brief window creation/map/destroy sequence. Core tests validate NULL operations;
 they do not claim successful communication with a live X server. The isolated
@@ -49,7 +49,7 @@ native call forwarding using a deterministic synthetic loader.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xlib.h`](../include/mulib-xlib.h) |
+| Header | [`kernels/mulib-xlib.h`](../kernels/mulib-xlib.h) |
 | Implementation switch | `MULIB_IMPL_XLIB` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md) |
 | Complete example | [`examples/modules/xlib.c`](../examples/modules/xlib.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xlib.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xlib.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

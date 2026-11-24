@@ -1,7 +1,7 @@
 # mulib-qa-corpus
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-qa-corpus.h`  
+**Header:** `kernels/mulib-qa-corpus.h`  
 **Implementation switch:** `MULIB_IMPL_QA_CORPUS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_QA_CORPUS` defined before i
 `tests/test_qa_corpus.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_qa_corpus.c -lm -o /tmp/test_qa_corpus
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_qa_corpus.c -lm -o /tmp/test_qa_corpus
 /tmp/test_qa_corpus
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-qa-corpus.h`](../include/mulib-qa-corpus.h).
+Verbatim declaration section from [`kernels/mulib-qa-corpus.h`](../kernels/mulib-qa-corpus.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ const mulib_qa_case_t *mulib_qa_corpus_find(const mulib_qa_corpus_t *c, const ch
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-qa-corpus.h`](../include/mulib-qa-corpus.h) |
+| Header | [`kernels/mulib-qa-corpus.h`](../kernels/mulib-qa-corpus.h) |
 | Implementation switch | `MULIB_IMPL_QA_CORPUS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/qa-corpus.c`](../examples/modules/qa-corpus.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/qa-corpus.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/qa-corpus.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,4 +1,4 @@
-/* Device-free shared renderer demo: cc -std=c11 -Iinclude
+/* Device-free shared renderer demo: cc -std=c11 -Ikernels
  * -Wno-misleading-indentation examples/gfx-headless.c -lm -ldl -o demo
  * ./demo [output.ppm] */
 #include "mulib-immgtk-native.h"

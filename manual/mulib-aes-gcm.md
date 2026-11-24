@@ -1,6 +1,6 @@
 # aes-gcm — AES-128-GCM authenticated encryption
 
-**Header:** `include/mulib-aes-gcm.h` · **Switch:** `MULIB_IMPL_AES_GCM`
+**Header:** `kernels/mulib-aes-gcm.h` · **Switch:** `MULIB_IMPL_AES_GCM`
 
 Also define `MULIB_IMPL_ENTROPY`. This module implements NIST SP 800-38D with
 16-byte AES keys, 12-byte nonces and 16-byte authentication tags. It does not
@@ -40,7 +40,7 @@ and portable/hardware paths are covered by `tests/test-tls-crypto.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-aes-gcm.h`](../include/mulib-aes-gcm.h) |
+| Header | [`kernels/mulib-aes-gcm.h`](../kernels/mulib-aes-gcm.h) |
 | Implementation switch | `MULIB_IMPL_AES_GCM` |
 | Repository-local includes | [mulib-entropy](mulib-entropy.md) |
 | Complete example | [`examples/modules/aes-gcm.c`](../examples/modules/aes-gcm.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/aes-gcm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/aes-gcm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

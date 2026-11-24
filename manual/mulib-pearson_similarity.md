@@ -15,7 +15,7 @@ near-constant input remains subject to floating-point resolution.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pearson_similarity.h`](../include/mulib-pearson_similarity.h).
+Verbatim declaration section from [`kernels/mulib-pearson_similarity.h`](../kernels/mulib-pearson_similarity.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -50,7 +50,7 @@ double mulib_pearson_similarity(const double *a, const double *b, size_t n);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pearson_similarity.h`](../include/mulib-pearson_similarity.h) |
+| Header | [`kernels/mulib-pearson_similarity.h`](../kernels/mulib-pearson_similarity.h) |
 | Implementation switch | `MULIB_IMPL_PEARSON_SIMILARITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/pearson_similarity.c`](../examples/modules/pearson_similarity.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pearson_similarity.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pearson_similarity.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

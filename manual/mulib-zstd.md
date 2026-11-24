@@ -101,7 +101,7 @@ interoperability with the installed `zstd` command when available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-zstd.h`](../include/mulib-zstd.h) |
+| Header | [`kernels/mulib-zstd.h`](../kernels/mulib-zstd.h) |
 | Implementation switch | `MULIB_IMPL_ZSTD` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md), [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/zstd.c`](../examples/modules/zstd.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/zstd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/zstd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

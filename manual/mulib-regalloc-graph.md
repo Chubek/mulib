@@ -19,7 +19,7 @@ accepted. There is no heap allocation; time O(V³) with V <= 64, fixed O(V) scra
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-regalloc-graph.h`](../include/mulib-regalloc-graph.h) |
+| Header | [`kernels/mulib-regalloc-graph.h`](../kernels/mulib-regalloc-graph.h) |
 | Implementation switch | `MULIB_IMPL_REGALLOC_GRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/regalloc-graph.c`](../examples/modules/regalloc-graph.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/regalloc-graph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/regalloc-graph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

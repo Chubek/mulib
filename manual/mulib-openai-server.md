@@ -1,6 +1,6 @@
 # OpenAI protocol server
 
-**Header:** `include/mulib-openai-server.h` · **Switch:** `MULIB_IMPL_OPENAI_SERVER`
+**Header:** `kernels/mulib-openai-server.h` · **Switch:** `MULIB_IMPL_OPENAI_SERVER`
 
 This transport-independent library parses and dispatches all REST operations in
 the [shared OpenAI catalog](mulib-openai.md), then serializes ordinary HTTP or live
@@ -97,7 +97,7 @@ limits explicitly for larger media requests or long event streams.
 ## Running the example
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/openai-server.c -lm -o /tmp/opencode/openai-server
+cc -std=c11 -Ikernels examples/modules/openai-server.c -lm -o /tmp/opencode/openai-server
 /tmp/opencode/openai-server                # offline HTTP example
 /tmp/opencode/openai-server --listen 8000  # loopback example service
 ```
@@ -115,7 +115,7 @@ with both the MuLIB client and Python's independent HTTP parser. Run
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-openai-server.h`](../include/mulib-openai-server.h) |
+| Header | [`kernels/mulib-openai-server.h`](../kernels/mulib-openai-server.h) |
 | Implementation switch | `MULIB_IMPL_OPENAI_SERVER` |
 | Repository-local includes | [mulib-multipart](mulib-multipart.md), [mulib-openai](mulib-openai.md), [mulib-sse](mulib-sse.md) |
 | Complete example | [`examples/modules/openai-server.c`](../examples/modules/openai-server.c) |
@@ -128,6 +128,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/openai-server.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/openai-server.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

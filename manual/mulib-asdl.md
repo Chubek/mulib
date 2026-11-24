@@ -239,7 +239,7 @@ and ASan/UBSan can be used without any external ASDL toolchain.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-asdl.h`](../include/mulib-asdl.h) |
+| Header | [`kernels/mulib-asdl.h`](../kernels/mulib-asdl.h) |
 | Implementation switch | `MULIB_IMPL_ASDL` |
 | Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/asdl.c`](../examples/modules/asdl.c) |
@@ -252,6 +252,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asdl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/asdl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

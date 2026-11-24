@@ -64,7 +64,7 @@ failure ENOMEM. See [image2container](mulib-image2container.md) for full import.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imgformat.h`](../include/mulib-imgformat.h) |
+| Header | [`kernels/mulib-imgformat.h`](../kernels/mulib-imgformat.h) |
 | Implementation switch | `MULIB_IMPL_IMGFORMAT` |
 | Repository-local includes | [mulib-container](mulib-container.md), [mulib-crc32](mulib-crc32.md) |
 | Complete example | [`examples/modules/imgformat.c`](../examples/modules/imgformat.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgformat.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/imgformat.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

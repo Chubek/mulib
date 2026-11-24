@@ -9,7 +9,7 @@ Import through the deliberately restricted `otpauth://` profile. The URI and par
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-otp-uri.h`](../include/mulib-secret-otp-uri.h) |
+| Header | [`kernels/mulib-secret-otp-uri.h`](../kernels/mulib-secret-otp-uri.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_OTP_URI` |
 | Repository-local includes | [mulib-secret-codec](mulib-secret-codec.md), [mulib-secret-otp](mulib-secret-otp.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -69,7 +69,7 @@ failure and checkpoint restore. No method extracts paths onto the host.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rootfs.h`](../include/mulib-rootfs.h) |
+| Header | [`kernels/mulib-rootfs.h`](../kernels/mulib-rootfs.h) |
 | Implementation switch | `MULIB_IMPL_ROOTFS` |
 | Repository-local includes | [mulib-archive](mulib-archive.md), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/rootfs.c`](../examples/modules/rootfs.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rootfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rootfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

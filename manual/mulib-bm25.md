@@ -16,7 +16,7 @@ Time is O(fields), with no allocation. Scores are per term; callers sum terms.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bm25.h`](../include/mulib-bm25.h).
+Verbatim declaration section from [`kernels/mulib-bm25.h`](../kernels/mulib-bm25.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -56,7 +56,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bm25.h`](../include/mulib-bm25.h) |
+| Header | [`kernels/mulib-bm25.h`](../kernels/mulib-bm25.h) |
 | Implementation switch | `MULIB_IMPL_BM25` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bm25.c`](../examples/modules/bm25.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bm25.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bm25.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

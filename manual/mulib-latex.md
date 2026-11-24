@@ -16,7 +16,7 @@ Switches: `MULIB_IMPL_LATEX`, `MULIB_IMPL_TEX`, `MULIB_IMPL_STRBUF`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-latex.h`](../include/mulib-latex.h).
+Verbatim declaration section from [`kernels/mulib-latex.h`](../kernels/mulib-latex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -84,7 +84,7 @@ and ABI are unchanged. See [the full scope and tested engine](docir-publishing.m
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-latex.h`](../include/mulib-latex.h) |
+| Header | [`kernels/mulib-latex.h`](../kernels/mulib-latex.h) |
 | Implementation switch | `MULIB_IMPL_LATEX` |
 | Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/latex.c`](../examples/modules/latex.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/latex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/latex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

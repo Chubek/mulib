@@ -16,7 +16,7 @@ visits may invalidate URL views that were in the forward branch.
 
 ## Integration and ownership
 
-Include `include/mulib-browser-navigation.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-browser-navigation.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-browser-navigation.h`](../include/mulib-browser-navigation.h).
+Verbatim declaration section from [`kernels/mulib-browser-navigation.h`](../kernels/mulib-browser-navigation.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browser-navigation.h`](../include/mulib-browser-navigation.h) |
+| Header | [`kernels/mulib-browser-navigation.h`](../kernels/mulib-browser-navigation.h) |
 | Implementation switch | `MULIB_IMPL_BROWSER_NAVIGATION` |
 | Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/browser-navigation.c`](../examples/modules/browser-navigation.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browser-navigation.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browser-navigation.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-buildplan.h`  
+**Header:** `kernels/mulib-buildplan.h`  
 **Switch:** `MULIB_IMPL_BUILDPLAN`
 
 BuildPlan is an owned, bounded target dependency graph for build-system
@@ -51,7 +51,7 @@ synchronization. Destroying a plan during a callback is ignored.
 ## Example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
   examples/modules/buildplan.c -o /tmp/opencode/buildplan
 /tmp/opencode/buildplan
 ```
@@ -66,7 +66,7 @@ cycles, resource waves, busy callbacks and critical paths.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-buildplan.h`](../include/mulib-buildplan.h) |
+| Header | [`kernels/mulib-buildplan.h`](../kernels/mulib-buildplan.h) |
 | Implementation switch | `MULIB_IMPL_BUILDPLAN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/buildplan.c`](../examples/modules/buildplan.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildplan.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/buildplan.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

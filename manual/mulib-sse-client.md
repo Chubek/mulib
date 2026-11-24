@@ -54,7 +54,7 @@ C++17 C linkage. The legacy `MULIB_IMPL_SSE_CLIENT` switch and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sse-client.h`](../include/mulib-sse-client.h) |
+| Header | [`kernels/mulib-sse-client.h`](../kernels/mulib-sse-client.h) |
 | Implementation switch | `MULIB_IMPL_CDD_SSE_CLIENT` |
 | Repository-local includes | [mulib-muw3](mulib-muw3.md), [mulib-sse](mulib-sse.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/sse-client.c`](../examples/modules/sse-client.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sse-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sse-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

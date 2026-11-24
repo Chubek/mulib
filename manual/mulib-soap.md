@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Include [`mulib-soap.h`](../include/mulib-soap.h). Define `MULIB_IMPL_CDD_SOAP`
+Include [`mulib-soap.h`](../kernels/mulib-soap.h). Define `MULIB_IMPL_CDD_SOAP`
 in one C translation unit and link [MuW3](mulib-muw3.md) and
 [XML](mulib-xml.md) (`MULIB_IMPL_XML`, `MULIB_IMPL_STRBUF`,
 `MULIB_IMPL_UTF8`). The `MULIB_IMPL_SOAP` spelling and original
@@ -63,7 +63,7 @@ HTTP status mapping is implemented.
 [Focused tests](../tests/test-api-soap.c)
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/soap.c -pthread -lm -ldl -o soap-example
 ```
 
@@ -74,7 +74,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-soap.h`](../include/mulib-soap.h) |
+| Header | [`kernels/mulib-soap.h`](../kernels/mulib-soap.h) |
 | Implementation switch | `MULIB_IMPL_CDD_SOAP` |
 | Repository-local includes | [mulib-muw3](mulib-muw3.md), [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/soap.c`](../examples/modules/soap.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/soap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/soap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

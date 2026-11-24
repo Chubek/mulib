@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-graphviz.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-graphviz.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
 
@@ -104,7 +104,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/graphviz.c -o ./mulib-graphviz
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/graphviz.c -o ./mulib-graphviz
 ./mulib-graphviz
 ```
 
@@ -119,7 +119,7 @@ backslashes, labels/default attributes, loops, empty graphs and OOM behavior.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-graphviz.h`](../include/mulib-graphviz.h) |
+| Header | [`kernels/mulib-graphviz.h`](../kernels/mulib-graphviz.h) |
 | Implementation switch | `MULIB_IMPL_GRAPHVIZ` |
 | Repository-local includes | [mulib-graph](mulib-graph.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/graphviz.c`](../examples/modules/graphviz.c) |
@@ -132,6 +132,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/graphviz.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/graphviz.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

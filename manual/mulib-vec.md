@@ -40,7 +40,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vec.h`](../include/mulib-vec.h).
+Verbatim declaration section from [`kernels/mulib-vec.h`](../kernels/mulib-vec.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -128,7 +128,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vec.h`](../include/mulib-vec.h) |
+| Header | [`kernels/mulib-vec.h`](../kernels/mulib-vec.h) |
 | Implementation switch | `MULIB_IMPL_VEC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vec.c`](../examples/modules/vec.c) |
@@ -141,6 +141,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

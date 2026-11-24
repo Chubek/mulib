@@ -26,7 +26,7 @@ the tree. Time O(tokens), storage O(nodes).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-parser-pratt.h`](../include/mulib-parser-pratt.h) |
+| Header | [`kernels/mulib-parser-pratt.h`](../kernels/mulib-parser-pratt.h) |
 | Implementation switch | `MULIB_IMPL_PARSER_PRATT` |
 | Repository-local includes | [mulib-lexer](mulib-lexer.md) |
 | Complete example | [`examples/modules/parser-pratt.c`](../examples/modules/parser-pratt.c) |
@@ -39,6 +39,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/parser-pratt.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/parser-pratt.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

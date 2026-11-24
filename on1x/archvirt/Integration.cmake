@@ -76,11 +76,11 @@ add_executable(on1x-archvirt-run archvirt/run_main.c)
 target_link_libraries(on1x-archvirt-run PRIVATE on1x_archvirt_host)
 set_target_properties(on1x-archvirt-run PROPERTIES INSTALL_RPATH "${_archvirt_libdir}")
 add_executable(on1x-vmm-repl archvirt/session_host.cpp archvirt/session_console.c)
-target_include_directories(on1x-vmm-repl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_include_directories(on1x-vmm-repl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")
 
 add_library(on1x_archvirt_cache STATIC src/archvirt_cache.cpp)
 target_include_directories(on1x_archvirt_cache PUBLIC include)
-target_include_directories(on1x_archvirt_cache PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_include_directories(on1x_archvirt_cache PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")
 # on1x_frontend owns the single MuLIB SHA implementation TU used by the cache.
 target_link_libraries(on1x_archvirt_cache PRIVATE on1x_frontend)
 target_sources(on1xc PRIVATE src/archvirt_driver.cpp)

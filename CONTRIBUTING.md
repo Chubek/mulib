@@ -1,6 +1,6 @@
 # Contributing to MuLIB
 
-Every new module must have a single self-contained `include/mulib-<name>.h`, a public header guard,
+Every new module must have a single self-contained `kernels/mulib-<name>.h`, a public header guard,
 `extern "C"` declarations, a `MULIB_IMPL_<NAME>` implementation switch, a dedicated Doxygen comment
 for the file and functions, one detailed `manual/mulib-<name>.md`, and a runnable
 `examples/modules/<name>.c` example. Register it in `MANIFEST.yaml`.
@@ -55,7 +55,7 @@ invalid input is rejected before writing inventory files.
 The same command refreshes On1x's generated KernelBind discovery catalog.
 
 Enable automatic registration for this clone with `python3 tools/install_hooks.py`.
-When you stage a new `include/mulib-*.h`, also stage its manual and any required
+When you stage a new `kernels/mulib-*.h`, also stage its manual and any required
 manifest metadata. The pre-commit hook uses staged inputs and stages changes
 only to `MANIFEST.yaml` and `on1x/contracts-exotract/kernel-auto.json`. It stops
 rather than overwriting unstaged edits to either output. Use `git add` followed
@@ -79,9 +79,9 @@ Then regenerate dependency documentation with `python3 tools/stratify.py`.
 Neither command implements APIs or replaces handwritten examples/manuals.
 
 Public-header changes also require refreshing the MuLL native bridge with
-`python3 mudsl/scripts/generate_mulib.py --include include` (Python libclang
+`python3 mudsl/scripts/generate_mulib.py --include kernels` (Python libclang
 bindings are required for generation). The normal verification suite runs
-`python3 mudsl/scripts/check_mulib_inventory.py --include include` without
+`python3 mudsl/scripts/check_mulib_inventory.py --include kernels` without
 libclang to catch missing registrations and stale generated artifacts. Add
 MuLL integration fixtures under `mudsl/tests/mull/mulib/` when introducing
 new callable APIs; MuDSL CTest exercises them through both available hosts.

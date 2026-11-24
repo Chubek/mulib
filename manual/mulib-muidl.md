@@ -10,7 +10,7 @@ in the header, not a parser/compiler. Append is atomic, without a trailing NUL.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-muidl.h`](../include/mulib-muidl.h).
+Verbatim declaration section from [`kernels/mulib-muidl.h`](../kernels/mulib-muidl.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -49,7 +49,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-muidl.h`](../include/mulib-muidl.h) |
+| Header | [`kernels/mulib-muidl.h`](../kernels/mulib-muidl.h) |
 | Implementation switch | `MULIB_IMPL_MUIDL` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-dbschema](mulib-dbschema.md) |
 | Complete example | [`examples/modules/muidl.c`](../examples/modules/muidl.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/muidl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/muidl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

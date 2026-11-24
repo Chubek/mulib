@@ -12,7 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--emitter', required=True)
     parser.add_argument('--compiler', default=os.environ.get('CC', 'cc'))
-    parser.add_argument('--include', default=str(Path(__file__).resolve().parent.parent / 'include'))
+    parser.add_argument('--include', default=str(Path(__file__).resolve().parent.parent / 'kernels'))
     parser.add_argument('--sanitizers', action='store_true')
     args = parser.parse_args()
     parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None

@@ -1,7 +1,7 @@
 # mulib-immgtk-drawlist
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-immgtk-drawlist.h`  
+**Header:** `kernels/mulib-immgtk-drawlist.h`  
 **Implementation switch:** `MULIB_IMPL_IMMGTK_DRAWLIST`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_IMMGTK_DRAWLIST` defined be
 `tests/test_immgtk_drawlist.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_immgtk_drawlist.c -lm -o /tmp/test_immgtk_drawlist
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_immgtk_drawlist.c -lm -o /tmp/test_immgtk_drawlist
 /tmp/test_immgtk_drawlist
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-immgtk-drawlist.h`](../include/mulib-immgtk-drawlist.h).
+Verbatim declaration section from [`kernels/mulib-immgtk-drawlist.h`](../kernels/mulib-immgtk-drawlist.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -101,7 +101,7 @@ void mulib_immgtk_drawlist_free(mulib_immgtk_drawlist_t *d);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-immgtk-drawlist.h`](../include/mulib-immgtk-drawlist.h) |
+| Header | [`kernels/mulib-immgtk-drawlist.h`](../kernels/mulib-immgtk-drawlist.h) |
 | Implementation switch | `MULIB_IMPL_IMMGTK_DRAWLIST` |
 | Repository-local includes | [mulib-immgtk-drawlist-bridge](mulib-gfx-immgtk.md) |
 | Complete example | [`examples/modules/immgtk-drawlist.c`](../examples/modules/immgtk-drawlist.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/immgtk-drawlist.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/immgtk-drawlist.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

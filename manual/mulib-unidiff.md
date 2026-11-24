@@ -40,7 +40,7 @@ checks actual files and does not execute metadata or commands.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-unidiff.h`](../include/mulib-unidiff.h) |
+| Header | [`kernels/mulib-unidiff.h`](../kernels/mulib-unidiff.h) |
 | Implementation switch | `MULIB_IMPL_UNIDIFF` |
 | Repository-local includes | None |
 | Complete example | [`examples/apply_unidiff.c`](../examples/apply_unidiff.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/apply_unidiff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/apply_unidiff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

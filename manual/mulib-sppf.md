@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-sppf.h` represents many derivation trees using shared symbol
+`kernels/mulib-sppf.h` represents many derivation trees using shared symbol
 nodes and packed alternatives. It supports nullable spans and cycles, including
 finite graphs representing infinitely many finite derivation trees.
 
@@ -146,7 +146,7 @@ int main(void) {
 See `examples/modules/sppf.c` for additional sharing assertions:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/sppf.c -o ./sppf
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/sppf.c -o ./sppf
 ./sppf
 ```
 
@@ -157,7 +157,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/sppf.c -o
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sppf.h`](../include/mulib-sppf.h) |
+| Header | [`kernels/mulib-sppf.h`](../kernels/mulib-sppf.h) |
 | Implementation switch | `MULIB_IMPL_SPPF` |
 | Repository-local includes | [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/sppf.c`](../examples/modules/sppf.c) |
@@ -170,6 +170,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sppf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sppf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

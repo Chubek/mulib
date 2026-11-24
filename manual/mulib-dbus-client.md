@@ -48,7 +48,7 @@ See `../tests/test_dbus-client.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbus-client.h`](../include/mulib-dbus-client.h) |
+| Header | [`kernels/mulib-dbus-client.h`](../kernels/mulib-dbus-client.h) |
 | Implementation switch | `MULIB_IMPL_DBUS_CLIENT` |
 | Repository-local includes | [mulib-dbus-transport](mulib-dbus-transport.md) |
 | Complete example | [`examples/modules/dbus-client.c`](../examples/modules/dbus-client.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbus-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

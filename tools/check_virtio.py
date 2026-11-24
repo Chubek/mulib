@@ -20,7 +20,7 @@ def dependencies(name):
     def visit(module):
         if module in ordered:
             return
-        text = (ROOT / 'include' / f'mulib-{module}.h').read_text()
+        text = (ROOT / 'kernels' / f'mulib-{module}.h').read_text()
         for dependency in re.findall(r'^#include "mulib-([^"\n]+)\.h"', text, re.M):
             visit(dependency)
         ordered.append(module)
@@ -38,7 +38,7 @@ def main():
     if not compilers:
         parser.error('no C compiler available; set CC')
     flags = ['-std=c11', '-O1' if args.sanitizers else '-O2', '-Wall', '-Wextra',
-             '-Wpedantic', '-Werror', '-UNDEBUG', '-I' + str(ROOT / 'include')]
+             '-Wpedantic', '-Werror', '-UNDEBUG', '-I' + str(ROOT / 'kernels')]
     if args.sanitizers:
         flags += ['-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']

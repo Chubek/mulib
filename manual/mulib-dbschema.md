@@ -27,7 +27,7 @@ not JSON Schema or type coercion.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dbschema.h`](../include/mulib-dbschema.h).
+Verbatim declaration section from [`kernels/mulib-dbschema.h`](../kernels/mulib-dbschema.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -79,7 +79,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbschema.h`](../include/mulib-dbschema.h) |
+| Header | [`kernels/mulib-dbschema.h`](../kernels/mulib-dbschema.h) |
 | Implementation switch | `MULIB_IMPL_DBSCHEMA` |
 | Repository-local includes | [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/dbschema.c`](../examples/modules/dbschema.c) |
@@ -92,6 +92,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbschema.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbschema.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -95,7 +95,7 @@ These tests do not claim device ABI or Java compatibility certification.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ezjni.h`](../include/mulib-ezjni.h) |
+| Header | [`kernels/mulib-ezjni.h`](../kernels/mulib-ezjni.h) |
 | Implementation switch | `MULIB_IMPL_EZJNI` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ezjni.c`](../examples/modules/ezjni.c) |
@@ -108,6 +108,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ezjni.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ezjni.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

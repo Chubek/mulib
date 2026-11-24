@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-- **Header:** `include/mulib-hattrie.h`
+- **Header:** `kernels/mulib-hattrie.h`
 - **Implementation switches:** `MULIB_IMPL_HATTRIE`, **`MULIB_IMPL_HASH`**
 - **Dependency:** `mulib-hash.h` (FNV-1a); ISO C11, C++17-compatible declarations.
 
@@ -105,7 +105,7 @@ int main(void) {
 For bursting and prefix enumeration:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/hattrie.c -o ./hattrie
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/hattrie.c -o ./hattrie
 ./hattrie
 ```
 
@@ -121,7 +121,7 @@ deferred bursting. No external libraries are used.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hattrie.h`](../include/mulib-hattrie.h) |
+| Header | [`kernels/mulib-hattrie.h`](../kernels/mulib-hattrie.h) |
 | Implementation switch | `MULIB_IMPL_HATTRIE` |
 | Repository-local includes | [mulib-hash](mulib-hash.md) |
 | Complete example | [`examples/modules/hattrie.c`](../examples/modules/hattrie.c) |
@@ -134,6 +134,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hattrie.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hattrie.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -30,7 +30,7 @@ engine, codesign verifier or parser of every command's private payload.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-macho.h`](../include/mulib-macho.h).
+Verbatim declaration section from [`kernels/mulib-macho.h`](../kernels/mulib-macho.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -106,7 +106,7 @@ int mulib_macho_bytes (const mulib_macho_t *v, uint64_t offset, uint64_t size, c
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-macho.h`](../include/mulib-macho.h) |
+| Header | [`kernels/mulib-macho.h`](../kernels/mulib-macho.h) |
 | Implementation switch | `MULIB_IMPL_MACHO` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/macho.c`](../examples/modules/macho.c) |
@@ -119,6 +119,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/macho.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/macho.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

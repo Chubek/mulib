@@ -32,26 +32,26 @@ class Tools(unittest.TestCase):
         parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
         with tempfile.TemporaryDirectory(dir=parent) as tmp:
             root = Path(tmp)
-            (root / 'include').mkdir()
+            (root / 'kernels').mkdir()
             (root / 'tests').mkdir()
             (root / 'tests/implementation.c').write_text('/* ABI TU */\n')
             (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
-            (root / 'include/mulib-a.h').write_text(
+            (root / 'kernels/mulib-a.h').write_text(
                 '#if defined(MULIB_IMPL_A)\n#endif\n')
-            (root / 'include/mulib-glx-core.h').write_text(
+            (root / 'kernels/mulib-glx-core.h').write_text(
                 'static inline int mulib_gfx_core(void) { return 7; }\n')
-            (root / 'include/mulib-glx-surface.h').write_text(
+            (root / 'kernels/mulib-glx-surface.h').write_text(
                 '#include "mulib-glx-core.h"\n')
-            (root / 'include/mulib-glx-scene.h').write_text(
+            (root / 'kernels/mulib-glx-scene.h').write_text(
                 'static inline int mulib_scene(void) { return 1; }\n')
-            notebook = ('- name: glx-scene\n  header: include/mulib-glx-scene.h\n'
+            notebook = ('- name: glx-scene\n  header: kernels/mulib-glx-scene.h\n'
                         '  implementation: static-inline\n  status: bounded\n'
                         '  profile: notebook-desktop\n'
                         '  purpose: Independent notebook scene.\n  dependencies: []\n')
             manifest = root / 'MANIFEST.yaml'
             manifest.write_text(
                 'module_count: 1\nimplemented_module_count: 1\nmodules:\n'
-                '- name: a\n  header: include/mulib-a.h\n'
+                '- name: a\n  header: kernels/mulib-a.h\n'
                 '  purpose: User-authored scope.\n  status: implemented\n'
                 '  macro: MULIB_IMPL_A\n  dependencies: []\n' + notebook +
                 'project_files:\n- file: user.c\n  purpose: User work.\n')
@@ -69,9 +69,9 @@ class Tools(unittest.TestCase):
             self.assertEqual(expected, graphics.updated_manifest(root))
             # Another inventory can append after graphics without making an
             # otherwise unchanged graphics record stale or moving it.
-            appended = ('- name: b\n  header: include/mulib-b.h\n'
+            appended = ('- name: b\n  header: kernels/mulib-b.h\n'
                         '  macro: MULIB_IMPL_B\n  status: implemented\n  dependencies: []\n')
-            (root / 'include/mulib-b.h').write_text('#if defined(MULIB_IMPL_B)\n#endif\n')
+            (root / 'kernels/mulib-b.h').write_text('#if defined(MULIB_IMPL_B)\n#endif\n')
             interleaved = expected.replace('project_files:\n', appended + 'project_files:\n')
             interleaved = interleaved.replace('module_count: 4\n', 'module_count: 5\n', 1)
             interleaved = interleaved.replace('implemented_module_count: 1\n',
@@ -83,7 +83,7 @@ class Tools(unittest.TestCase):
                 '#include "mulib-glx-'), 0)
             self.assertIn('  status: bounded\n', manifest.read_text())
             self.assertIn('implemented_module_count: 2\n', manifest.read_text())
-            (root / 'include/mulib-glx-core.h').write_text(
+            (root / 'kernels/mulib-glx-core.h').write_text(
                 '#if defined(MULIB_IMPL_GLX_CORE)\n#endif\n')
             with self.assertRaisesRegex(ValueError, 'ABI switch'):
                 graphics.updated_manifest(root)
@@ -92,11 +92,11 @@ class Tools(unittest.TestCase):
         parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
         with tempfile.TemporaryDirectory(dir=parent) as tmp:
             root = Path(tmp)
-            (root / 'include').mkdir()
-            (root / 'include/mulib-glx-core.h').write_text(
+            (root / 'kernels').mkdir()
+            (root / 'kernels/mulib-glx-core.h').write_text(
                 '#include "mulib-missing.h"\n')
             (root / 'MANIFEST.yaml').write_text(
-                'modules:\n- name: a\n  header: include/mulib-a.h\n'
+                'modules:\n- name: a\n  header: kernels/mulib-a.h\n'
                 'project_files:\n')
             with self.assertRaisesRegex(ValueError, 'unknown dependency'):
                 graphics.updated_manifest(root)
@@ -161,27 +161,27 @@ class Tools(unittest.TestCase):
     def test_inventory_sync(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / 'include').mkdir()
+            (root / 'kernels').mkdir()
             (root / 'tests').mkdir()
             (root / 'MANIFEST.yaml').write_text(
                 'module_count: 0\nimplemented_module_count: 0\nbounded_module_count: 0\nmodules:\n'
-                '- name: container-core\n  header: include/mulib-container-core.h\n'
+                '- name: container-core\n  header: kernels/mulib-container-core.h\n'
                 '  implementation: static-inline\n  status: bounded\n'
                 '  purpose: Maintainer storage contract.\n  dependencies: []\n'
-                '- name: lprowse\n  header: include/mulib-lprowse.h\n'
+                '- name: lprowse\n  header: kernels/mulib-lprowse.h\n'
                 '  implementation: static-data\n  status: bounded\n'
                 '  manual: manual/embedded.md\n  example: examples/host.c\n'
                 '  purpose: Maintainer embedded data contract.\n  dependencies: []\n'
                 'project_files:\n')
             (root / 'tests/implementation.c').write_text('/* existing client */\n')
             (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
-            (root / 'include/mulib-a.h').write_text(
+            (root / 'kernels/mulib-a.h').write_text(
                 '/** @brief Sample API. */\n#include "mulib-container-core.h"\n#if defined(MULIB_IMPL_A)\n#endif\n')
-            (root / 'include/mulib-container-core.h').write_text(
+            (root / 'kernels/mulib-container-core.h').write_text(
                 'static inline int mulib_ct_support(void) { return 1; }\n')
-            (root / 'include/mulib-lprowse.h').write_text(
+            (root / 'kernels/mulib-lprowse.h').write_text(
                 'static const char *const mulib_lprowse_source_[] = {"return {}"};\n')
-            (root / 'include/mulib-future.h').write_text('/* reserved user notes */\n')
+            (root / 'kernels/mulib-future.h').write_text('/* reserved user notes */\n')
             inventory.sync(root)
             before = {p: p.read_text() for p in (root / 'MANIFEST.yaml',
                       root / 'tests/implementation.c', root / 'tests/declarations.c')}
@@ -201,18 +201,18 @@ class Tools(unittest.TestCase):
             inventory.sync(root)
             self.assertEqual(before, {p: p.read_text() for p in before})
             for name in ('container-core', 'lprowse'):
-                header = root / 'include' / f'mulib-{name}.h'
+                header = root / 'kernels' / f'mulib-{name}.h'
                 original = header.read_text()
                 header.write_text(original + '\n#if defined(MULIB_IMPL_FORGED)\n#endif\n')
                 with self.assertRaisesRegex(ValueError, 'internal-linkage header gained an ABI switch'):
                     inventory.sync(root)
                 self.assertEqual(before, {p: p.read_text() for p in before})
                 header.write_text(original)
-            (root / 'include/mulib-a.h').write_text('/* API accidentally erased */\n')
+            (root / 'kernels/mulib-a.h').write_text('/* API accidentally erased */\n')
             with self.assertRaisesRegex(ValueError, 'lost its API'):
                 inventory.sync(root)
             self.assertEqual(before, {p: p.read_text() for p in before})
-            (root / 'include/mulib-a.h').write_text(
+            (root / 'kernels/mulib-a.h').write_text(
                 '/** @brief Sample API. */\n#if defined(MULIB_IMPL_A)\n#endif\n')
             # Promote a reserved module and refresh dependencies, preserving
             # maintainer prose and custom implementation switches.
@@ -220,7 +220,7 @@ class Tools(unittest.TestCase):
             path.write_text(path.read_text().replace(
                 '  purpose: "Sample API."',
                 '  purpose: "Maintainer description"\n  extra_macros: [MULIB_IMPL_EXTRA]'))
-            (root / 'include/mulib-future.h').write_text(
+            (root / 'kernels/mulib-future.h').write_text(
                 '#include "mulib-a.h"\n#if defined(MULIB_IMPL_FUTURE)\n#endif\n')
             inventory.sync(root)
             self.assertNotIn('status: reserved', path.read_text())
@@ -230,7 +230,7 @@ class Tools(unittest.TestCase):
             self.assertIn('#define MULIB_IMPL_FUTURE',
                           (root / 'tests/implementation.c').read_text())
             # An invalid client file must not leave the manifest half-updated.
-            (root / 'include/mulib-b.h').write_text('/* future */\n')
+            (root / 'kernels/mulib-b.h').write_text('/* future */\n')
             (root / 'tests/declarations.c').write_text('/* no main */\n')
             before = {p: p.read_text() for p in before}
             with self.assertRaisesRegex(ValueError, 'insertion point'):
@@ -242,7 +242,7 @@ class Tools(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 root = manuals.ROOT = strata.ROOT = Path(tmp)
-                for name in ('include', 'tests', 'manual'):
+                for name in ('kernels', 'tests', 'manual'):
                     (root / name).mkdir()
                 implementation = root / 'tests/implementation.c'
                 declarations = root / 'tests/declarations.c'
@@ -250,18 +250,18 @@ class Tools(unittest.TestCase):
                 declarations.write_text('int main(void) { return 0; }\n')
                 (root / 'examples/modules').mkdir(parents=True)
                 (root / 'manual/engineering-kernels.md').write_text('# Reference kernels\n')
-                (root / 'include/mulib-reference-base.h').write_text(
+                (root / 'kernels/mulib-reference-base.h').write_text(
                     'static inline int reference_identity(int n) { return n; }\n')
-                (root / 'include/mulib-reference-example.h').write_text(
+                (root / 'kernels/mulib-reference-example.h').write_text(
                     '#include "mulib-reference-base.h"\n#if defined(MULIB_IMPL_REFERENCE_EXAMPLE)\n#endif\n')
                 manifest = root / 'MANIFEST.yaml'
                 manifest.write_text(
                     'module_count: 0\nimplemented_module_count: 0\nbounded_module_count: 0\n'
                     'modules:\n'
-                    '- name: reference-base\n  header: include/mulib-reference-base.h\n'
+                    '- name: reference-base\n  header: kernels/mulib-reference-base.h\n'
                     '  manual: manual/engineering-kernels.md\n  profile: engineering\n'
                     '  implementation: static-inline\n  status: bounded\n  dependencies: []\n'
-                    '- name: reference-example\n  header: include/mulib-reference-example.h\n'
+                    '- name: reference-example\n  header: kernels/mulib-reference-example.h\n'
                     '  manual: manual/engineering-kernels.md\n  profile: engineering\n'
                     '  macro: MULIB_IMPL_REFERENCE_EXAMPLE\n  status: implemented\n'
                     '  dependencies: []\nproject_files:\n')
@@ -288,16 +288,16 @@ class Tools(unittest.TestCase):
         for filename in ('MANIFEST.yaml.additions', 'MANIFESTS.yaml.additions'):
             with self.subTest(filename=filename), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
-                for name in ('include', 'tests', 'examples'):
+                for name in ('kernels', 'tests', 'examples'):
                     (root / name).mkdir()
                 manifest = root / 'MANIFEST.yaml'
                 manifest.write_text('name: MuLIB\nmodule_count: 0\n'
                                     'implemented_module_count: 0\nmodules:\nproject_files:\n')
                 (root / 'tests/implementation.c').write_text('/* existing client */\n')
                 (root / 'tests/declarations.c').write_text('int main(void) { return 0; }\n')
-                (root / 'include/mulib-core.h').write_text(
+                (root / 'kernels/mulib-core.h').write_text(
                     '#if defined(MULIB_IMPL_CORE)\n#endif\n')
-                (root / 'include/mulib-new.h').write_text(
+                (root / 'kernels/mulib-new.h').write_text(
                     '#include "mulib-core.h"\n#if defined(MULIB_IMPL_NEW)\n#endif\n')
                 (root / 'examples/mulib-new.c').write_text('int main(void) { return 0; }\n')
                 inventory.sync(root)
@@ -310,7 +310,7 @@ class Tools(unittest.TestCase):
                 additions = root / filename
                 additions.write_text(
                     'name: Additions\nmodule_count: 999\nimplemented_module_count: 999\nmodules:\n'
-                    '- name: new\n  header: include/mulib-new.h\n'
+                    '- name: new\n  header: kernels/mulib-new.h\n'
                     '  manual: manual/mulib-new.md\n  macro: MULIB_IMPL_NEW\n'
                     '  purpose: Checked table view only, not a complete shaper.\n'
                     '  dependencies:\n  - core\n  status: implemented\n'
@@ -338,15 +338,15 @@ class Tools(unittest.TestCase):
                 self.assertEqual(before[root / 'tests/implementation.c'].count(
                     '#define MULIB_IMPL_CORE\n'), 1)
                 # Every collision must fail before changing files or deleting the additions.
-                for field, value in (('name', 'core'), ('header', 'include/mulib-core.h'),
+                for field, value in (('name', 'core'), ('header', 'kernels/mulib-core.h'),
                                      ('macro', 'MULIB_IMPL_CORE')):
-                    block = ('- name: other\n  header: include/mulib-other.h\n'
+                    block = ('- name: other\n  header: kernels/mulib-other.h\n'
                              '  macro: MULIB_IMPL_OTHER\n  status: implemented\n')
-                    old = {'name': '- name: other', 'header': '  header: include/mulib-other.h',
+                    old = {'name': '- name: other', 'header': '  header: kernels/mulib-other.h',
                            'macro': '  macro: MULIB_IMPL_OTHER'}[field]
                     prefix = '- ' if field == 'name' else '  '
                     additions.write_text('modules:\n' + block.replace(old, prefix + field + ': ' + value))
-                    (root / 'include/mulib-other.h').write_text(
+                    (root / 'kernels/mulib-other.h').write_text(
                         '#if defined(MULIB_IMPL_OTHER)\n#endif\n')
                     with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'collision'):
                         inventory.sync(root)
@@ -356,7 +356,7 @@ class Tools(unittest.TestCase):
     def test_snapshot(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / 'include').mkdir()
+            (root / 'kernels').mkdir()
             (root / 'library/dsymspec/schema').mkdir(parents=True)
             source, schema = b'schema: 1\n', b'{}\n'
             (root / 'library/dsymspec/test.dsymspec.yaml').write_bytes(source)
@@ -372,7 +372,7 @@ class Tools(unittest.TestCase):
                                  for i in range(0, len(wire), 23))
             text = ('static const char *const mulib_dsymspec_chunks_0_[] = {\n'
                     + literals + ',\n  NULL\n};\n')
-            path = root / 'include/mulib-dsymspec-data.inc'
+            path = root / 'kernels/mulib-dsymspec-data.inc'
             path.write_text(text)
             self.assertEqual(snapshot.verify(root), 1)
             for invalid in (text.replace('  NULL\n', ''),
@@ -392,7 +392,7 @@ class Tools(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 strata.ROOT = Path(tmp)
-                directory = strata.ROOT / 'include'
+                directory = strata.ROOT / 'kernels'
                 directory.mkdir()
                 (directory / 'mulib-a.h').write_text('#include "mulib-b.h"\n')
                 (directory / 'mulib-b.h').write_text('#include "mulib-a.h"\n')

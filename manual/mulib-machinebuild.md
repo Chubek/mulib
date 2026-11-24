@@ -22,7 +22,7 @@ Define all transitive implementation switches in one C11 translation unit:
 The [standalone example](../examples/modules/machinebuild.c) emits JavaScript:
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/machinebuild.c -o machinebuild
+cc -std=c11 -Ikernels examples/modules/machinebuild.c -o machinebuild
 ./machinebuild > machine.js
 ```
 
@@ -161,7 +161,7 @@ a seven-symbol boundary-focused alphabet.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-machinebuild.h`](../include/mulib-machinebuild.h) |
+| Header | [`kernels/mulib-machinebuild.h`](../kernels/mulib-machinebuild.h) |
 | Implementation switch | `MULIB_IMPL_MACHINEBUILD` |
 | Repository-local includes | [mulib-fst](mulib-fst.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/machinebuild.c`](../examples/modules/machinebuild.c) |
@@ -174,6 +174,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machinebuild.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/machinebuild.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ See [FFT](mulib-fft.md) for sign conventions and supported scope.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ifft.h`](../include/mulib-ifft.h).
+Verbatim declaration section from [`kernels/mulib-ifft.h`](../kernels/mulib-ifft.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ int mulib_ifft(mulib_complex_t *values, size_t n);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ifft.h`](../include/mulib-ifft.h) |
+| Header | [`kernels/mulib-ifft.h`](../kernels/mulib-ifft.h) |
 | Implementation switch | `MULIB_IMPL_IFFT` |
 | Repository-local includes | [mulib-fft](mulib-fft.md) |
 | Complete example | [`examples/modules/ifft.c`](../examples/modules/ifft.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ifft.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ifft.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

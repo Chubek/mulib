@@ -127,7 +127,7 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
   --cflag=-fsanitize=address,undefined --cflag=-fno-sanitize-recover=all
 gcc -std=c11 -Wall -Wextra -Wpedantic -Werror -Wno-error=tsan \
   -D_POSIX_C_SOURCE=200809L -pthread -fsanitize=thread -no-pie \
-  -I include -I on1x/runtime -I on1x/stdlib/container \
+  -I kernels -I on1x/runtime -I on1x/stdlib/container \
   on1x/tests/test_container_shared_stress.c on1x/runtime/on1x_runtime.c \
   on1x/tests/fixtures/container_shared/kernels.c -o /tmp/opencode/shared-tsan
 /tmp/opencode/shared-tsan

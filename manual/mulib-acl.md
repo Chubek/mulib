@@ -38,7 +38,7 @@ authentication, and concurrent mutation of a borrowed rule array is unsupported.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-acl.h`](../include/mulib-acl.h) |
+| Header | [`kernels/mulib-acl.h`](../kernels/mulib-acl.h) |
 | Implementation switch | `MULIB_IMPL_ACL` |
 | Repository-local includes | [mulib-inet6](mulib-inet6.md) |
 | Complete example | [`examples/modules/acl.c`](../examples/modules/acl.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/acl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/acl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

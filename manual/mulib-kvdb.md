@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-kvdb.h`  
+**Header:** `kernels/mulib-kvdb.h`  
 **Implementation switches:** `MULIB_IMPL_KVDB`, `MULIB_IMPL_BUFFER`,
 `MULIB_IMPL_VARINT`, `MULIB_IMPL_CRC32`, `MULIB_IMPL_ENDIAN`  
 **Link flags/external libraries:** none.
@@ -147,7 +147,7 @@ int main(void) {
 
 Run only in a scratch directory with no existing `kv-demo.tmp`. Build the full
 example using
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/kvdb.c -o kvdb-example`.
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/kvdb.c -o kvdb-example`.
 Tests reopen snapshots, cover binary/empty/prefix keys, uncommitted close,
 removal/replacement, every corrupted/truncated byte, valid-CRC malformed records,
 and deterministic pre-rename failures that preserve the previous file.
@@ -159,7 +159,7 @@ and deterministic pre-rename failures that preserve the previous file.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-kvdb.h`](../include/mulib-kvdb.h) |
+| Header | [`kernels/mulib-kvdb.h`](../kernels/mulib-kvdb.h) |
 | Implementation switch | `MULIB_IMPL_KVDB` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-crc32](mulib-crc32.md), [mulib-endian](mulib-endian.md), [mulib-varint](mulib-varint.md) |
 | Complete example | [`examples/modules/kvdb.c`](../examples/modules/kvdb.c) |
@@ -172,6 +172,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/kvdb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/kvdb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

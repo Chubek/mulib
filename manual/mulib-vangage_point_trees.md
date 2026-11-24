@@ -24,7 +24,7 @@ recursive stack and can visit every point. No nearest-neighbor/k-NN API.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vangage_point_trees.h`](../include/mulib-vangage_point_trees.h).
+Verbatim declaration section from [`kernels/mulib-vangage_point_trees.h`](../kernels/mulib-vangage_point_trees.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ void mulib_vp_tree_free(mulib_vp_tree_t *tree);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vangage_point_trees.h`](../include/mulib-vangage_point_trees.h) |
+| Header | [`kernels/mulib-vangage_point_trees.h`](../kernels/mulib-vangage_point_trees.h) |
 | Implementation switch | `MULIB_IMPL_VANGAGE_POINT_TREES` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vangage_point_trees.c`](../examples/modules/vangage_point_trees.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vangage_point_trees.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vangage_point_trees.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 /* TEST-ONLY FALLBACK: ABI-shaped subset of MuLIB Money for offline bootstrap.
  * DO NOT install/ship this as an application header. For canonical MuLIB tests
- * set MULIB_ROOT and compile with its include/ before tests/support/ .
+ * set MULIB_ROOT and compile with its kernels/ before tests/support/ .
  * Uses long double in scale, unlike upstream's checked integer algorithm.
  */
 #ifndef FINPRED_TEST_MONEY_H

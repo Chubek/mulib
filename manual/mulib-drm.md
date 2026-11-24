@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-drm.h`  
+**Header:** `kernels/mulib-drm.h`  
 **Implementation switch:** `MULIB_IMPL_DRM`  
 **Dependencies/link flags:** Linux native ioctl/mmap APIs only; **no libdrm**, GPU
 runtime, third-party headers, or extra link flags.
@@ -117,7 +117,7 @@ int main(void) {
 
 This inline example targets Linux. The full `examples/modules/drm.c` also checks
 unsupported platforms and failed creation. Build with
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/drm.c -o drm-example`.
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/drm.c -o drm-example`.
 `tests/test_storage.c` verifies native request sizes/offsets/numbers, unchanged
 outputs and fd cleanup on `/dev/null` ioctl failures, retryable destroy state,
 and real non-GPU mapping cleanup. It deliberately does not require or claim
@@ -130,7 +130,7 @@ successful operation against a physical DRM/GPU device.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-drm.h`](../include/mulib-drm.h) |
+| Header | [`kernels/mulib-drm.h`](../kernels/mulib-drm.h) |
 | Implementation switch | `MULIB_IMPL_DRM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/drm.c`](../examples/modules/drm.c) |
@@ -143,6 +143,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/drm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/drm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

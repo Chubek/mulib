@@ -21,7 +21,7 @@ and return-value placement are outside this API. Time O(n), scratch O(1).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-callconv.h`](../include/mulib-callconv.h) |
+| Header | [`kernels/mulib-callconv.h`](../kernels/mulib-callconv.h) |
 | Implementation switch | `MULIB_IMPL_CALLCONV` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/callconv.c`](../examples/modules/callconv.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/callconv.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/callconv.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

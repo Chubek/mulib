@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-Include [`mulib-grpc.h`](../include/mulib-grpc.h). Define `MULIB_IMPL_CDD_GRPC`
+Include [`mulib-grpc.h`](../kernels/mulib-grpc.h). Define `MULIB_IMPL_CDD_GRPC`
 in one C translation unit and link [MuW3](mulib-muw3.md) and
 [buffer](mulib-buffer.md). The `MULIB_IMPL_GRPC` spelling, original typedefs
 and `mulib_grpc_*` entry points remain available.
@@ -61,7 +61,7 @@ compression or Protobuf serialization is included.
 [Focused tests](../tests/test-api-grpc.c)
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/grpc.c -pthread -lm -ldl -o grpc-example
 ```
 
@@ -72,7 +72,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-grpc.h`](../include/mulib-grpc.h) |
+| Header | [`kernels/mulib-grpc.h`](../kernels/mulib-grpc.h) |
 | Implementation switch | `MULIB_IMPL_CDD_GRPC` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-muw3](mulib-muw3.md) |
 | Complete example | [`examples/modules/grpc.c`](../examples/modules/grpc.c) |
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/grpc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/grpc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ Example: `examples/modules/objfile.c` also generates an object using the writer.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfile.h`](../include/mulib-objfile.h).
+Verbatim declaration section from [`kernels/mulib-objfile.h`](../kernels/mulib-objfile.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfile.h`](../include/mulib-objfile.h) |
+| Header | [`kernels/mulib-objfile.h`](../kernels/mulib-objfile.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILE` |
 | Repository-local includes | [mulib-binfile](mulib-binfile.md), [mulib-elfutils](mulib-elfutils.md) |
 | Complete example | [`examples/modules/objfile.c`](../examples/modules/objfile.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -20,5 +20,5 @@ foreach(target shiraz shiraz-reg)
   target_link_libraries(${target} PRIVATE mulib mulib_shiraz_win32)
 endforeach()
 target_compile_definitions(shiraz PRIVATE
-  SHIRAZ_INCLUDE_DIR="${PROJECT_SOURCE_DIR}/include"
+  SHIRAZ_INCLUDE_DIR="${PROJECT_SOURCE_DIR}/kernels"
   SHIRAZ_LIBRARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")

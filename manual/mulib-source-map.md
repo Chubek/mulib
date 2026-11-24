@@ -19,7 +19,7 @@ Zero-initialize and `free` after use. Add is amortized O(1), lookup O(log entrie
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-source-map.h`](../include/mulib-source-map.h) |
+| Header | [`kernels/mulib-source-map.h`](../kernels/mulib-source-map.h) |
 | Implementation switch | `MULIB_IMPL_SOURCE_MAP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/source-map.c`](../examples/modules/source-map.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/source-map.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/source-map.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

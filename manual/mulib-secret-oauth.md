@@ -9,7 +9,7 @@ PKCE S256 and random state helpers do not exchange, validate or issue tokens. As
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-oauth.h`](../include/mulib-secret-oauth.h) |
+| Header | [`kernels/mulib-secret-oauth.h`](../kernels/mulib-secret-oauth.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_OAUTH` |
 | Repository-local includes | [mulib-secret-codec](mulib-secret-codec.md), [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

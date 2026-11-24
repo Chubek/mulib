@@ -53,7 +53,7 @@ Runnable example: `examples/modules/alloc.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-alloc.h`](../include/mulib-alloc.h) |
+| Header | [`kernels/mulib-alloc.h`](../kernels/mulib-alloc.h) |
 | Implementation switch | `MULIB_IMPL_ALLOC` |
 | Repository-local includes | [mulib-port](mulib-port.md) |
 | Complete example | [`examples/modules/alloc.c`](../examples/modules/alloc.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/alloc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/alloc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

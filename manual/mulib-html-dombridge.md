@@ -16,7 +16,7 @@ rolled back. Input must be an acyclic tree within a safe recursion budget.
 
 ## Integration and ownership
 
-Include `include/mulib-html-dombridge.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-html-dombridge.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-html-dombridge.h`](../include/mulib-html-dombridge.h).
+Verbatim declaration section from [`kernels/mulib-html-dombridge.h`](../kernels/mulib-html-dombridge.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-html-dombridge.h`](../include/mulib-html-dombridge.h) |
+| Header | [`kernels/mulib-html-dombridge.h`](../kernels/mulib-html-dombridge.h) |
 | Implementation switch | `MULIB_IMPL_HTML_DOMBRIDGE` |
 | Repository-local includes | [mulib-html-treebuilder](mulib-html-treebuilder.md) |
 | Complete example | [`examples/modules/html-dombridge.c`](../examples/modules/html-dombridge.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/html-dombridge.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/html-dombridge.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -40,7 +40,7 @@ Cache-maintenance and exclusive-memory requirements are identical to `run`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-memtest.h`](../include/mulib-memtest.h) |
+| Header | [`kernels/mulib-memtest.h`](../kernels/mulib-memtest.h) |
 | Implementation switch | `MULIB_IMPL_MEMTEST` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/memtest.c`](../examples/modules/memtest.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/memtest.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/memtest.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

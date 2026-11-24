@@ -1,6 +1,6 @@
 # OpenAI client over MuW3
 
-**Header:** `include/mulib-openai-client.h` · **Switch:** `MULIB_IMPL_OPENAI_CLIENT`
+**Header:** `kernels/mulib-openai-client.h` · **Switch:** `MULIB_IMPL_OPENAI_CLIENT`
 
 The synchronous client composes [MuW3](mulib-muw3.md), [OpenAI utilities](mulib-openai.md),
 [SSE](mulib-sse.md) and [multipart](mulib-multipart.md). Enable these modules and
@@ -125,7 +125,7 @@ from the primitive calls and JSON values.
 ## Examples, tests and MuLL
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/openai-client.c -lm -o /tmp/opencode/openai-client
+cc -std=c11 -Ikernels examples/modules/openai-client.c -lm -o /tmp/opencode/openai-client
 /tmp/opencode/openai-client                         # offline fixture
 OPENAI_BASE_URL=http://127.0.0.1:8000/v1 /tmp/opencode/openai-client synthetic-model Hello
 make check-openai
@@ -143,7 +143,7 @@ and prompt. No example embeds credentials. MuLL exposes the complete API as
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-openai-client.h`](../include/mulib-openai-client.h) |
+| Header | [`kernels/mulib-openai-client.h`](../kernels/mulib-openai-client.h) |
 | Implementation switch | `MULIB_IMPL_OPENAI_CLIENT` |
 | Repository-local includes | [mulib-multipart](mulib-multipart.md), [mulib-muw3](mulib-muw3.md), [mulib-openai](mulib-openai.md), [mulib-sse](mulib-sse.md) |
 | Complete example | [`examples/modules/openai-client.c`](../examples/modules/openai-client.c) |
@@ -156,6 +156,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/openai-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/openai-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -49,7 +49,7 @@ failure. LZMA-alone does not accept concatenated streams; lzip/XZ do.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lzma.h`](../include/mulib-lzma.h) |
+| Header | [`kernels/mulib-lzma.h`](../kernels/mulib-lzma.h) |
 | Implementation switch | `MULIB_IMPL_LZMA` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md) |
 | Complete example | [`examples/modules/lzma.c`](../examples/modules/lzma.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lzma.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lzma.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -61,7 +61,7 @@ PTX, malformed identifiers and transactional short-buffer failures.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-gpu.h`](../include/mulib-gpu.h).
+Verbatim declaration section from [`kernels/mulib-gpu.h`](../kernels/mulib-gpu.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -120,7 +120,7 @@ mulib_archml_result mulib_gpu_emit_text (const mulib_gpu_t *, mulib_emitter_t *,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gpu.h`](../include/mulib-gpu.h) |
+| Header | [`kernels/mulib-gpu.h`](../kernels/mulib-gpu.h) |
 | Implementation switch | `MULIB_IMPL_GPU` |
 | Repository-local includes | [mulib-unit](mulib-unit.md) |
 | Complete example | [`examples/modules/gpu.c`](../examples/modules/gpu.c) |
@@ -133,6 +133,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gpu.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gpu.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

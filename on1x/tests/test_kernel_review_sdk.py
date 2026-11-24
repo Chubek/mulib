@@ -85,7 +85,7 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
     assert not any(name in linked for name in ('libclang', 'liblua', 'libstdc++', 'libexoml', 'libexotract'))
     oracle = d/'oracle'
     strict = [cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *cflags,
-              '-I', root.parent/'include']
+              '-I', root.parent/'kernels']
     run([*strict, root/'tests/fixtures/kernel_clamp_oracle.c', bundle/'libmulib.a', '-o', oracle])
     assert run([oracle]).stdout == result.stdout
     raw = d/'raw-clamp'
@@ -312,13 +312,13 @@ with tempfile.TemporaryDirectory(dir=work) as temporary:
             os.link(source, target)
         except OSError:
             shutil.copyfile(source, target)
-    for name in ('include', 'manual'):
+    for name in ('kernels', 'manual'):
         shutil.copytree(root.parent/name, changed/name, copy_function=link_or_copy, symlinks=True)
     drifting_cc = d/'drifting-compiler'
     drifting_cc.write_text(f'#!{sys.executable}\n'
                           'import pathlib,subprocess,sys\n'
                           'if "-c" in sys.argv and any(a.endswith("/mulib.c") for a in sys.argv):\n'
-                          f' p=pathlib.Path({str(changed/"include/mulib-clamp.h")!r});p.write_bytes(p.read_bytes()+b"\\n")\n'
+                          f' p=pathlib.Path({str(changed/"kernels/mulib-clamp.h")!r});p.write_bytes(p.read_bytes()+b"\\n")\n'
                           f'sys.exit(subprocess.call([{str(Path(shutil.which(cc)).resolve())!r},*sys.argv[1:]]))\n')
     drifting_cc.chmod(0o700)
     drift_subject = d/'drift-subject.json'

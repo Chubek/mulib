@@ -9,7 +9,7 @@ set(ON1X_STDFFI_SPEC_FILES "" CACHE STRING "Override the standard FFI recipe inp
 if(ON1X_STDFFI_SPEC_FILES)
   set(_ffi_specs ${ON1X_STDFFI_SPEC_FILES})
 endif()
-set(_ffi_include "${CMAKE_CURRENT_SOURCE_DIR}/../../../include")
+set(_ffi_include "${CMAKE_CURRENT_SOURCE_DIR}/../../../kernels")
 set(_ffi_grammar "${CMAKE_CURRENT_SOURCE_DIR}/FFIHandler.llsynth")
 set(_ffi_review "${CMAKE_CURRENT_SOURCE_DIR}/reviewed.json")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_ffi_review}")

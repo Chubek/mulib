@@ -32,7 +32,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-replace.h`](../include/mulib-replace.h).
+Verbatim declaration section from [`kernels/mulib-replace.h`](../kernels/mulib-replace.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-replace.h`](../include/mulib-replace.h) |
+| Header | [`kernels/mulib-replace.h`](../kernels/mulib-replace.h) |
 | Implementation switch | `MULIB_IMPL_REPLACE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/replace.c`](../examples/modules/replace.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/replace.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/replace.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

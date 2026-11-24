@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-ligature.h` operates on real HarfBuzz glyph output. It does not
+`kernels/mulib-ligature.h` operates on real HarfBuzz glyph output. It does not
 replace character strings with Unicode presentation-form characters, which
 would lose font-specific shaping and source correspondence.
 
@@ -49,7 +49,7 @@ uses cluster edges so it cannot split combining sequences.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ligature.h`](../include/mulib-ligature.h) |
+| Header | [`kernels/mulib-ligature.h`](../kernels/mulib-ligature.h) |
 | Implementation switch | `MULIB_IMPL_LIGATURE` |
 | Repository-local includes | [mulib-fontshape](mulib-fontshape.md) |
 | Complete example | [`examples/modules/ligature.c`](../examples/modules/ligature.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ligature.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ligature.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

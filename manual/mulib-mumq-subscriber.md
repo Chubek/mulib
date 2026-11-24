@@ -20,7 +20,7 @@ AGAIN and errors follow `mulib-mumq.md`. Runnable exchange:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-mumq-subscriber.h`](../include/mulib-mumq-subscriber.h).
+Verbatim declaration section from [`kernels/mulib-mumq-subscriber.h`](../kernels/mulib-mumq-subscriber.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -58,7 +58,7 @@ int mulib_mumq_subscribed(const mulib_mumq_message_t *, const char *topic);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mumq-subscriber.h`](../include/mulib-mumq-subscriber.h) |
+| Header | [`kernels/mulib-mumq-subscriber.h`](../kernels/mulib-mumq-subscriber.h) |
 | Implementation switch | `MULIB_IMPL_MUMQ_SUBSCRIBER` |
 | Repository-local includes | [mulib-mumq](mulib-mumq.md) |
 | Complete example | [`examples/modules/mumq-subscriber.c`](../examples/modules/mumq-subscriber.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq-subscriber.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mumq-subscriber.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

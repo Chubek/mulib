@@ -32,7 +32,7 @@ Tests: `tests/test_vcs_formats.c`, including a hand-encoded RFC example.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vcdiff.h`](../include/mulib-vcdiff.h).
+Verbatim declaration section from [`kernels/mulib-vcdiff.h`](../kernels/mulib-vcdiff.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -82,7 +82,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vcdiff.h`](../include/mulib-vcdiff.h) |
+| Header | [`kernels/mulib-vcdiff.h`](../kernels/mulib-vcdiff.h) |
 | Implementation switch | `MULIB_IMPL_VCDIFF` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vcdiff.c`](../examples/modules/vcdiff.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vcdiff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vcdiff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

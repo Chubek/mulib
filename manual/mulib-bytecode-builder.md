@@ -20,7 +20,7 @@ the owned code and resets the builder. Append is amortized O(1), patch O(1).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-builder.h`](../include/mulib-bytecode-builder.h) |
+| Header | [`kernels/mulib-bytecode-builder.h`](../kernels/mulib-bytecode-builder.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_BUILDER` |
 | Repository-local includes | [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/bytecode-builder.c`](../examples/modules/bytecode-builder.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-builder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-builder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

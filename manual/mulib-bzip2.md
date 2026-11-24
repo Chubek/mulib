@@ -38,7 +38,7 @@ randomization extension.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bzip2.h`](../include/mulib-bzip2.h) |
+| Header | [`kernels/mulib-bzip2.h`](../kernels/mulib-bzip2.h) |
 | Implementation switch | `MULIB_IMPL_BZIP2` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md) |
 | Complete example | [`examples/modules/bzip2.c`](../examples/modules/bzip2.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bzip2.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bzip2.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

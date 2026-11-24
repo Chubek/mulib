@@ -11,7 +11,7 @@ that tab's contents. The mouse can focus the tab strip.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-tabs.h`](../include/mulib-imtui-tabs.h) |
+| Header | [`kernels/mulib-imtui-tabs.h`](../kernels/mulib-imtui-tabs.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_TABS` |
 | Repository-local includes | [mulib-imtui-draw](mulib-imtui-draw.md) |
 | Complete example | [`examples/imtui/composites.c`](../examples/imtui/composites.c) |
@@ -24,6 +24,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -34,7 +34,7 @@ See `../tests/test_uip-udp.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-udp.h`](../include/mulib-uip-udp.h) |
+| Header | [`kernels/mulib-uip-udp.h`](../kernels/mulib-uip-udp.h) |
 | Implementation switch | `MULIB_IMPL_UIP_UDP` |
 | Repository-local includes | [mulib-uip-checksum](mulib-uip-checksum.md) |
 | Complete example | [`examples/modules/uip-udp.c`](../examples/modules/uip-udp.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-udp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-udp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

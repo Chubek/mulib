@@ -41,7 +41,7 @@ streams, corruption and injected allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xz.h`](../include/mulib-xz.h) |
+| Header | [`kernels/mulib-xz.h`](../kernels/mulib-xz.h) |
 | Implementation switch | `MULIB_IMPL_XZ` |
 | Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md), [mulib-bcj](mulib-bcj.md), [mulib-crc32](mulib-crc32.md), [mulib-lzma](mulib-lzma.md) |
 | Complete example | [`examples/modules/xz.c`](../examples/modules/xz.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xz.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xz.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

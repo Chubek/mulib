@@ -15,7 +15,7 @@ padding. O(length) time, no allocation or ownership transfer.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hamming_distance.h`](../include/mulib-hamming_distance.h).
+Verbatim declaration section from [`kernels/mulib-hamming_distance.h`](../kernels/mulib-hamming_distance.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -52,7 +52,7 @@ size_t mulib_hamming_bits(const void *a, const void *b, size_t length);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hamming_distance.h`](../include/mulib-hamming_distance.h) |
+| Header | [`kernels/mulib-hamming_distance.h`](../kernels/mulib-hamming_distance.h) |
 | Implementation switch | `MULIB_IMPL_HAMMING_DISTANCE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hamming_distance.c`](../examples/modules/hamming_distance.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hamming_distance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hamming_distance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

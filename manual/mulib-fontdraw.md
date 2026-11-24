@@ -104,7 +104,7 @@ bitmaps/outlines remain valid after the paired font is closed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fontdraw.h`](../include/mulib-fontdraw.h) |
+| Header | [`kernels/mulib-fontdraw.h`](../kernels/mulib-fontdraw.h) |
 | Implementation switch | `MULIB_IMPL_FONTDRAW` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md) |
 | Complete example | [`examples/modules/fontdraw.c`](../examples/modules/fontdraw.c) |
@@ -117,6 +117,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fontdraw.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fontdraw.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

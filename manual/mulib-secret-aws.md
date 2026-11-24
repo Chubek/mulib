@@ -9,7 +9,7 @@ Derive a SigV4 signing key and compute a signature over caller-prepared input. T
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-aws.h`](../include/mulib-secret-aws.h) |
+| Header | [`kernels/mulib-secret-aws.h`](../kernels/mulib-secret-aws.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_AWS` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

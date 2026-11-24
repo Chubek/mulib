@@ -109,7 +109,7 @@ text/memory-operand frontend.
 ## Example and checks
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/machine.c -lm -o machine
+cc -std=c11 -Ikernels examples/modules/machine.c -lm -o machine
 ./machine
 ```
 
@@ -125,7 +125,7 @@ cross-assemble RV64IM output when Clang is available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-machine.h`](../include/mulib-machine.h) |
+| Header | [`kernels/mulib-machine.h`](../kernels/mulib-machine.h) |
 | Implementation switch | `MULIB_IMPL_MACHINE` |
 | Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-muburg](mulib-muburg.md) |
 | Complete example | [`examples/modules/machine.c`](../examples/modules/machine.c) |
@@ -138,6 +138,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machine.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/machine.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

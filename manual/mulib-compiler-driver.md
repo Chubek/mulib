@@ -20,7 +20,7 @@ Append is amortized O(1), dispatch O(stages) plus callback costs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-compiler-driver.h`](../include/mulib-compiler-driver.h) |
+| Header | [`kernels/mulib-compiler-driver.h`](../kernels/mulib-compiler-driver.h) |
 | Implementation switch | `MULIB_IMPL_COMPILER_DRIVER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/compiler-driver.c`](../examples/modules/compiler-driver.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/compiler-driver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/compiler-driver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

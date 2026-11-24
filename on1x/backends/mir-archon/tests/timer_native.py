@@ -29,7 +29,7 @@ def main():
                    'on1x_async_frame_alloc_v1', 'on1x_async_frame_free_v1',
                    'on1x_async_launch_v1')
     wraps = ['-Wl,--wrap=' + name for name in observation]
-    probe_args = ('-I', source_root / 'runtime', '-I', source_root.parent / 'include',
+    probe_args = ('-I', source_root / 'runtime', '-I', source_root.parent / 'kernels',
                   probe, trace, *wraps)
     libs = (args.timer_abi, args.runtime, '-pthread', '-lm')
 

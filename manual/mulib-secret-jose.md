@@ -9,7 +9,7 @@ The fixed-header compact HS256 JWS primitive verifies the signature only. It is 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-jose.h`](../include/mulib-secret-jose.h) |
+| Header | [`kernels/mulib-secret-jose.h`](../kernels/mulib-secret-jose.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_JOSE` |
 | Repository-local includes | [mulib-secret-codec](mulib-secret-codec.md), [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

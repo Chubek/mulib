@@ -24,7 +24,7 @@ and [shared contracts](binary-formats.md).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-peutils.h`](../include/mulib-peutils.h).
+Verbatim declaration section from [`kernels/mulib-peutils.h`](../kernels/mulib-peutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -61,7 +61,7 @@ int mulib_peutils_symbol (const mulib_pe_t *v, const char *name, mulib_coff_symb
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-peutils.h`](../include/mulib-peutils.h) |
+| Header | [`kernels/mulib-peutils.h`](../kernels/mulib-peutils.h) |
 | Implementation switch | `MULIB_IMPL_PEUTILS` |
 | Repository-local includes | [mulib-coffutils](mulib-coffutils.md), [mulib-pe](mulib-pe.md) |
 | Complete example | [`examples/modules/peutils.c`](../examples/modules/peutils.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/peutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/peutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

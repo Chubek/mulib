@@ -21,7 +21,7 @@ check arithmetic values, or require exactly one stack value at HALT.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-verify.h`](../include/mulib-bytecode-verify.h) |
+| Header | [`kernels/mulib-bytecode-verify.h`](../kernels/mulib-bytecode-verify.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_VERIFY` |
 | Repository-local includes | [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/bytecode-verify.c`](../examples/modules/bytecode-verify.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-verify.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-verify.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

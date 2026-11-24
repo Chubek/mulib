@@ -55,7 +55,7 @@ See the [QVM](mulib-container-qvmboost.md), [JIT](mulib-container-jitboost.md),
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerboost.h`](../include/mulib-containerboost.h) |
+| Header | [`kernels/mulib-containerboost.h`](../kernels/mulib-containerboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERBOOST` |
 | Repository-local includes | [mulib-container-runtime](mulib-container-runtime.md), [mulib-imgformat](mulib-imgformat.md) |
 | Complete example | [`examples/modules/containerboost.c`](../examples/modules/containerboost.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerboost.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerboost.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

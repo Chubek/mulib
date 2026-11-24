@@ -32,7 +32,7 @@ See `../tests/test_net-stats.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-stats.h`](../include/mulib-net-stats.h) |
+| Header | [`kernels/mulib-net-stats.h`](../kernels/mulib-net-stats.h) |
 | Implementation switch | `MULIB_IMPL_NET_STATS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/net-stats.c`](../examples/modules/net-stats.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-stats.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-stats.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

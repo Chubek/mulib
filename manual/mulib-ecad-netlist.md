@@ -1,7 +1,7 @@
 # mulib-ecad-netlist
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-ecad-netlist.h`  
+**Header:** `kernels/mulib-ecad-netlist.h`  
 **Implementation switch:** `MULIB_IMPL_ECAD_NETLIST`  
 **Dependencies:** `ecad-schematic`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ECAD_NETLIST` defined befor
 `tests/test_ecad_netlist.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_ecad_netlist.c -lm -o /tmp/test_ecad_netlist
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_ecad_netlist.c -lm -o /tmp/test_ecad_netlist
 /tmp/test_ecad_netlist
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ecad-netlist.h`](../include/mulib-ecad-netlist.h).
+Verbatim declaration section from [`kernels/mulib-ecad-netlist.h`](../kernels/mulib-ecad-netlist.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_ecad_netlist_write(const mulib_ecad_schematic_t *s, char *buffer, size
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ecad-netlist.h`](../include/mulib-ecad-netlist.h) |
+| Header | [`kernels/mulib-ecad-netlist.h`](../kernels/mulib-ecad-netlist.h) |
 | Implementation switch | `MULIB_IMPL_ECAD_NETLIST` |
 | Repository-local includes | [mulib-ecad-schematic](mulib-ecad-schematic.md) |
 | Complete example | [`examples/modules/ecad-netlist.c`](../examples/modules/ecad-netlist.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ecad-netlist.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ecad-netlist.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -17,7 +17,7 @@ Receive events borrow the input; process them before reusing the buffer.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshchannel.h`](../include/mulib-sshchannel.h) |
+| Header | [`kernels/mulib-sshchannel.h`](../kernels/mulib-sshchannel.h) |
 | Implementation switch | `MULIB_IMPL_SSHCHANNEL` |
 | Repository-local includes | [mulib-sshpacket](mulib-sshpacket.md), [mulib-sshproto](mulib-sshproto.md) |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -30,6 +30,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

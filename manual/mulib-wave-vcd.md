@@ -1,7 +1,7 @@
 # mulib-wave-vcd
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-wave-vcd.h`  
+**Header:** `kernels/mulib-wave-vcd.h`  
 **Implementation switch:** `MULIB_IMPL_WAVE_VCD`  
 **Dependencies:** `dsim-logic4`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_WAVE_VCD` defined before in
 `tests/test_wave_vcd.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_wave_vcd.c -lm -o /tmp/test_wave_vcd
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_wave_vcd.c -lm -o /tmp/test_wave_vcd
 /tmp/test_wave_vcd
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-wave-vcd.h`](../include/mulib-wave-vcd.h).
+Verbatim declaration section from [`kernels/mulib-wave-vcd.h`](../kernels/mulib-wave-vcd.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ int mulib_wave_vcd_at(mulib_wave_vcd_t *v, uint64_t time, mulib_dsim_logic4_t va
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wave-vcd.h`](../include/mulib-wave-vcd.h) |
+| Header | [`kernels/mulib-wave-vcd.h`](../kernels/mulib-wave-vcd.h) |
 | Implementation switch | `MULIB_IMPL_WAVE_VCD` |
 | Repository-local includes | [mulib-dsim-logic4](mulib-dsim-logic4.md) |
 | Complete example | [`examples/modules/wave-vcd.c`](../examples/modules/wave-vcd.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wave-vcd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wave-vcd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -38,7 +38,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-strbuf.h`](../include/mulib-strbuf.h).
+Verbatim declaration section from [`kernels/mulib-strbuf.h`](../kernels/mulib-strbuf.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -119,7 +119,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-strbuf.h`](../include/mulib-strbuf.h) |
+| Header | [`kernels/mulib-strbuf.h`](../kernels/mulib-strbuf.h) |
 | Implementation switch | `MULIB_IMPL_STRBUF` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/strbuf.c`](../examples/modules/strbuf.c) |
@@ -132,6 +132,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/strbuf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/strbuf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

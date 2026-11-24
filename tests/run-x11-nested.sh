@@ -24,7 +24,7 @@ umask 077
 compile() {
     # Deliberate word splitting for compiler/linker flags.
     "$CC" -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror \
-        ${CFLAGS:-} -UNDEBUG -I"$ROOT/include" "$@" ${LDFLAGS:-}
+        ${CFLAGS:-} -UNDEBUG -I"$ROOT/kernels" "$@" ${LDFLAGS:-}
 }
 compile "$ROOT/tests/test-x11-nested-wire.c" -o "$BUILD/wire"
 compile "$ROOT/examples/x11-nested-wm.c" -o "$BUILD/wm"

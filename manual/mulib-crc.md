@@ -48,7 +48,7 @@ intrinsic implementation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-crc.h`](../include/mulib-crc.h) |
+| Header | [`kernels/mulib-crc.h`](../kernels/mulib-crc.h) |
 | Implementation switch | `MULIB_IMPL_CRC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/crc.c`](../examples/modules/crc.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/crc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/crc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

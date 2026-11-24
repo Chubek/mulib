@@ -13,7 +13,7 @@ O(min(an,bn)) memory; this is byte distance, not Unicode code-point distance.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fuzzyquery.h`](../include/mulib-fuzzyquery.h).
+Verbatim declaration section from [`kernels/mulib-fuzzyquery.h`](../kernels/mulib-fuzzyquery.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fuzzyquery.h`](../include/mulib-fuzzyquery.h) |
+| Header | [`kernels/mulib-fuzzyquery.h`](../kernels/mulib-fuzzyquery.h) |
 | Implementation switch | `MULIB_IMPL_FUZZYQUERY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/fuzzyquery.c`](../examples/modules/fuzzyquery.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fuzzyquery.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fuzzyquery.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

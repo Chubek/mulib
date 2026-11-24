@@ -1,7 +1,7 @@
 # mulib-synth-aig
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-synth-aig.h`  
+**Header:** `kernels/mulib-synth-aig.h`  
 **Implementation switch:** `MULIB_IMPL_SYNTH_AIG`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SYNTH_AIG` defined before i
 `tests/test_synth_aig.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_synth_aig.c -lm -o /tmp/test_synth_aig
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_synth_aig.c -lm -o /tmp/test_synth_aig
 /tmp/test_synth_aig
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-synth-aig.h`](../include/mulib-synth-aig.h).
+Verbatim declaration section from [`kernels/mulib-synth-aig.h`](../kernels/mulib-synth-aig.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -95,7 +95,7 @@ int mulib_synth_aig_valid(const mulib_synth_aig_t *g);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-synth-aig.h`](../include/mulib-synth-aig.h) |
+| Header | [`kernels/mulib-synth-aig.h`](../kernels/mulib-synth-aig.h) |
 | Implementation switch | `MULIB_IMPL_SYNTH_AIG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/synth-aig.c`](../examples/modules/synth-aig.c) |
@@ -108,6 +108,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/synth-aig.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/synth-aig.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

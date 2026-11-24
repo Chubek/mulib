@@ -6,7 +6,7 @@ callback, scheduler and native admission gates.
 
 ## Two different interfaces
 
-- MANIFEST `ipc-framed` is `include/mulib-ipc-framed.h`, depending on
+- MANIFEST `ipc-framed` is `kernels/mulib-ipc-framed.h`, depending on
   `sandbox-profile`. The real native recipe builds the two implementation
   macros in one TU. The public framing record **borrows** its connected
   stream FD, requires exclusive access and absolute monotonic deadlines;

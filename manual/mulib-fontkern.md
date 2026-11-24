@@ -28,14 +28,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-fontkern.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-fontkern.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-fontkern.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-fontkern.c -lm -o test
 ./test
 ```
 
@@ -65,7 +65,7 @@ vertical/cross-stream policy are not executed by this single-pair reader.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fontkern.h`](../include/mulib-fontkern.h) |
+| Header | [`kernels/mulib-fontkern.h`](../kernels/mulib-fontkern.h) |
 | Implementation switch | `MULIB_IMPL_FONTKERN` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-fontkern.c`](../examples/mulib-fontkern.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-fontkern.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-fontkern.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -22,7 +22,7 @@ outputs. Worst-case time O(n²), scratch O(n).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-branch-layout.h`](../include/mulib-branch-layout.h) |
+| Header | [`kernels/mulib-branch-layout.h`](../kernels/mulib-branch-layout.h) |
 | Implementation switch | `MULIB_IMPL_BRANCH_LAYOUT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/branch-layout.c`](../examples/modules/branch-layout.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/branch-layout.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/branch-layout.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

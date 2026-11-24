@@ -31,7 +31,7 @@ See `../tests/test_rtnl-nexthop.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rtnl-nexthop.h`](../include/mulib-rtnl-nexthop.h) |
+| Header | [`kernels/mulib-rtnl-nexthop.h`](../kernels/mulib-rtnl-nexthop.h) |
 | Implementation switch | `MULIB_IMPL_RTNL_NEXTHOP` |
 | Repository-local includes | [mulib-rtnl](mulib-rtnl.md) |
 | Complete example | [`examples/modules/rtnl-nexthop.c`](../examples/modules/rtnl-nexthop.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rtnl-nexthop.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rtnl-nexthop.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

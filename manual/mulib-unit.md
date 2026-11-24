@@ -106,7 +106,7 @@ tests the underlying profile encodings against independent fixtures.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-unit.h`](../include/mulib-unit.h).
+Verbatim declaration section from [`kernels/mulib-unit.h`](../kernels/mulib-unit.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -187,9 +187,9 @@ mulib_archml_result mulib_unit_emit (const mulib_unit_t *, mulib_emitter_t *,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-unit.h`](../include/mulib-unit.h) |
+| Header | [`kernels/mulib-unit.h`](../kernels/mulib-unit.h) |
 | Implementation switch | `MULIB_IMPL_UNIT` |
-| Repository-local includes | [mulib-archml](mulib-archml.md), [mulib-emitter](mulib-emitter.md), [`include/mulib-unit-data.inc`](../include/mulib-unit-data.inc) |
+| Repository-local includes | [mulib-archml](mulib-archml.md), [mulib-emitter](mulib-emitter.md), [`kernels/mulib-unit-data.inc`](../kernels/mulib-unit-data.inc) |
 | Complete example | [`examples/modules/unit.c`](../examples/modules/unit.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -200,6 +200,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/unit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/unit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

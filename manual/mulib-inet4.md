@@ -28,13 +28,13 @@ bits. Prefix zero matches every address; invalid arguments return zero.
 ## Example and tests
 
 See [`examples/modules/inet4.c`](../examples/modules/inet4.c):
-`cc -std=c11 -Iinclude examples/modules/inet4.c -o inet4`.
+`cc -std=c11 -Ikernels examples/modules/inet4.c -o inet4`.
 `tests/test_network.c` covers malformed syntax, unchanged outputs and boundaries.
 
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-inet4.h`](../include/mulib-inet4.h).
+Verbatim declaration section from [`kernels/mulib-inet4.h`](../kernels/mulib-inet4.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-inet4.h`](../include/mulib-inet4.h) |
+| Header | [`kernels/mulib-inet4.h`](../kernels/mulib-inet4.h) |
 | Implementation switch | `MULIB_IMPL_INET4` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md) |
 | Complete example | [`examples/modules/inet4.c`](../examples/modules/inet4.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inet4.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/inet4.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

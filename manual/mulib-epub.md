@@ -125,9 +125,9 @@ independent verification](docir-publishing.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-epub.h`](../include/mulib-epub.h) |
+| Header | [`kernels/mulib-epub.h`](../kernels/mulib-epub.h) |
 | Implementation switch | `MULIB_IMPL_EPUB` |
-| Repository-local includes | [`include/detail/mulib-epub-docir.h`](../include/detail/mulib-epub-docir.h), [mulib-html](mulib-html.md), [mulib-xml](mulib-xml.md), [mulib-zip](mulib-zip.md) |
+| Repository-local includes | [`kernels/detail/mulib-epub-docir.h`](../kernels/detail/mulib-epub-docir.h), [mulib-html](mulib-html.md), [mulib-xml](mulib-xml.md), [mulib-zip](mulib-zip.md) |
 | Complete example | [`examples/modules/epub.c`](../examples/modules/epub.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -138,6 +138,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/epub.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/epub.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

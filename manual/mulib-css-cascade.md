@@ -16,7 +16,7 @@ only on success. No rendering or element-default display model is inferred.
 
 ## Integration and ownership
 
-Include `include/mulib-css-cascade.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-css-cascade.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-css-cascade.h`](../include/mulib-css-cascade.h).
+Verbatim declaration section from [`kernels/mulib-css-cascade.h`](../kernels/mulib-css-cascade.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -87,7 +87,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-css-cascade.h`](../include/mulib-css-cascade.h) |
+| Header | [`kernels/mulib-css-cascade.h`](../kernels/mulib-css-cascade.h) |
 | Implementation switch | `MULIB_IMPL_CSS_CASCADE` |
 | Repository-local includes | [mulib-css-computed](mulib-css-computed.md), [mulib-css-parser](mulib-css-parser.md), [mulib-css-selector](mulib-css-selector.md) |
 | Complete example | [`examples/modules/css-cascade.c`](../examples/modules/css-cascade.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/css-cascade.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/css-cascade.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

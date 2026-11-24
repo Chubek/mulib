@@ -26,8 +26,8 @@ def run(args,check=True):
 
 with tempfile.TemporaryDirectory(dir=a.work,prefix='run-') as temporary:
     work=Path(temporary);include=work/'kernel headers';include.mkdir()
-    header=include/'mulib-bitset.h'
-    header.write_bytes((a.root.parent/'include/mulib-bitset.h').read_bytes()+b'\n/* selected-header SDK fixture */\n')
+    header=kernels/'mulib-bitset.h'
+    header.write_bytes((a.root.parent/'kernels/mulib-bitset.h').read_bytes()+b'\n/* selected-header SDK fixture */\n')
     archive=work/'archive'
     resource=run(['clang','-print-resource-dir']).stdout.strip()
     run([sys.executable,a.root/'tools/on1x-exotract.py','--mulib-path',include,

@@ -32,7 +32,7 @@ run in the focused compression suites.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lzo.h`](../include/mulib-lzo.h) |
+| Header | [`kernels/mulib-lzo.h`](../kernels/mulib-lzo.h) |
 | Implementation switch | `MULIB_IMPL_LZO` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md) |
 | Complete example | [`examples/modules/lzo.c`](../examples/modules/lzo.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lzo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lzo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

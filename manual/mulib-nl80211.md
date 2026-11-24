@@ -32,7 +32,7 @@ See `../tests/test_nl80211.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nl80211.h`](../include/mulib-nl80211.h) |
+| Header | [`kernels/mulib-nl80211.h`](../kernels/mulib-nl80211.h) |
 | Implementation switch | `MULIB_IMPL_NL80211` |
 | Repository-local includes | [mulib-netlink-attr](mulib-netlink-attr.md), [mulib-netlink-genl](mulib-netlink-genl.md), [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/nl80211.c`](../examples/modules/nl80211.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nl80211.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nl80211.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

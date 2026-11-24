@@ -21,7 +21,7 @@ def main():
         work = Path(temp)
         for name in ('client', 'server'):
             subprocess.run([args.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                            '-I' + str(ROOT / 'include'), str(ROOT / f'examples/modules/openai-{name}.c'),
+                            '-I' + str(ROOT / 'kernels'), str(ROOT / f'examples/modules/openai-{name}.c'),
                             '-lm', '-o', str(work / name)], check=True, timeout=60)
         env = dict(os.environ, OPENAI_API_KEY='synthetic-key')
         server = subprocess.Popen([str(work / 'server'), '--listen', '0'], env=env,

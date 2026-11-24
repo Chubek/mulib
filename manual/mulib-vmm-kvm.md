@@ -82,7 +82,7 @@ marks the skip separately. Native tests actually passed on the development host.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmm-kvm.h`](../include/mulib-vmm-kvm.h) |
+| Header | [`kernels/mulib-vmm-kvm.h`](../kernels/mulib-vmm-kvm.h) |
 | Implementation switch | `MULIB_IMPL_VMM_KVM` |
 | Repository-local includes | [mulib-kvm](mulib-kvm.md), [mulib-vmm](mulib-vmm.md) |
 | Complete example | [`examples/modules/vmm-kvm.c`](../examples/modules/vmm-kvm.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm-kvm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmm-kvm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

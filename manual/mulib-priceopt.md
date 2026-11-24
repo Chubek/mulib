@@ -64,7 +64,7 @@ int main(void) {
 Compile from repository root (using the additions copied into its directories):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -lm -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -lm -o example
 ```
 
 The `-lm` link flag is for the system C math library, not an external third-party dependency.
@@ -80,7 +80,7 @@ All algorithms are deterministic. Data collections are borrowed; their lifetimes
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-priceopt.h`](../include/mulib-priceopt.h).
+Verbatim declaration section from [`kernels/mulib-priceopt.h`](../kernels/mulib-priceopt.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -161,7 +161,7 @@ int mulib_priceopt_ucb(const size_t *trials, const double *mean_reward,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-priceopt.h`](../include/mulib-priceopt.h) |
+| Header | [`kernels/mulib-priceopt.h`](../kernels/mulib-priceopt.h) |
 | Implementation switch | `MULIB_IMPL_PRICEOPT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/priceopt.c`](../examples/modules/priceopt.c) |
@@ -174,6 +174,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/priceopt.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/priceopt.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

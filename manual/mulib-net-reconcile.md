@@ -32,7 +32,7 @@ See `../tests/test_net-reconcile.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-reconcile.h`](../include/mulib-net-reconcile.h) |
+| Header | [`kernels/mulib-net-reconcile.h`](../kernels/mulib-net-reconcile.h) |
 | Implementation switch | `MULIB_IMPL_NET_RECONCILE` |
 | Repository-local includes | [mulib-net-profile](mulib-net-profile.md), [mulib-net-state](mulib-net-state.md) |
 | Complete example | [`examples/modules/net-reconcile.c`](../examples/modules/net-reconcile.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-reconcile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-reconcile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

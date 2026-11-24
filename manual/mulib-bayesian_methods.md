@@ -19,7 +19,7 @@ a general inference/sampling framework.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bayesian_methods.h`](../include/mulib-bayesian_methods.h).
+Verbatim declaration section from [`kernels/mulib-bayesian_methods.h`](../kernels/mulib-bayesian_methods.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -58,7 +58,7 @@ int mulib_bayesian_update(const double *prior, const double *log_likelihood,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bayesian_methods.h`](../include/mulib-bayesian_methods.h) |
+| Header | [`kernels/mulib-bayesian_methods.h`](../kernels/mulib-bayesian_methods.h) |
 | Implementation switch | `MULIB_IMPL_BAYESIAN_METHODS` |
 | Repository-local includes | [mulib-probability](mulib-probability.md) |
 | Complete example | [`examples/modules/bayesian_methods.c`](../examples/modules/bayesian_methods.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bayesian_methods.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bayesian_methods.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

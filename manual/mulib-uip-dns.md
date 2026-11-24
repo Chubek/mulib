@@ -39,7 +39,7 @@ See `../tests/test_uip-dns.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-dns.h`](../include/mulib-uip-dns.h) |
+| Header | [`kernels/mulib-uip-dns.h`](../kernels/mulib-uip-dns.h) |
 | Implementation switch | `MULIB_IMPL_UIP_DNS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-dns.c`](../examples/modules/uip-dns.c) |
@@ -52,6 +52,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-dns.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-dns.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

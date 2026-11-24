@@ -22,7 +22,7 @@ ranking, provider traits, or per-engine scripts.
 
 ## Paths
 
-- `include/mulib-elvi-scrape.h` — public API and implementation switch.
+- `kernels/mulib-elvi-scrape.h` — public API and implementation switch.
 - [`library/elvis/`](../library/elvis/README.md) — shipped profiles with
   template and response-field provenance.
 - `tests/test-elvi-scrape.c` — deterministic offline behavior tests.
@@ -197,7 +197,7 @@ Build and run the standalone demo from the repository root. Without a saved
 page it prints only the generated URL; neither mode performs network I/O.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/elvi-scrape.c -lm -o elvi-demo
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/elvi-scrape.c -lm -o elvi-demo
 ./elvi-demo library/elvis/Google.elvs "C11 compiler"
 ./elvi-demo library/elvis/Google.elvs ""
 ./elvi-demo library/elvis/Google.elvs "C11 compiler" tests/fixtures/elvi-scrape/layout.html
@@ -315,9 +315,9 @@ until reusable compiler/selector/runner APIs have stable tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-elvi-scrape.h`](../include/mulib-elvi-scrape.h) |
+| Header | [`kernels/mulib-elvi-scrape.h`](../kernels/mulib-elvi-scrape.h) |
 | Implementation switch | `MULIB_IMPL_ELVI_SCRAPE` |
-| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h), [mulib-fetch](mulib-fetch.md), [mulib-https](mulib-https.md), [mulib-json](mulib-json.md), [mulib-url](mulib-url.md) |
+| Repository-local includes | [`kernels/detail/mulib-webscan.h`](../kernels/detail/mulib-webscan.h), [mulib-fetch](mulib-fetch.md), [mulib-https](mulib-https.md), [mulib-json](mulib-json.md), [mulib-url](mulib-url.md) |
 | Complete example | [`examples/elvi-scrape.c`](../examples/elvi-scrape.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -328,6 +328,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/elvi-scrape.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/elvi-scrape.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

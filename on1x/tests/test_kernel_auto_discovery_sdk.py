@@ -71,7 +71,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert declaration['kind'] == 'function' and declaration['definition']
         assert declaration['linkage'] == '2'
     qvm_inputs = data['modules']['mulib.qvm']['metadata']['cdecl']['inputs']
-    assert str(on1x.parent/'include/mulib-container-core.h') in {p['path'] for p in qvm_inputs}
+    assert str(on1x.parent/'kernels/mulib-container-core.h') in {p['path'] for p in qvm_inputs}
     embedded = data['modules']['mulib.lprowse']
     assert embedded['automatic_registration']['implementation'] == 'static-data'
     assert 'macro' not in embedded['automatic_registration']
@@ -104,7 +104,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         (tools_home/subdir).mkdir(parents=True)
         for name in names:
             shutil.copyfile(on1x/subdir/name, tools_home/subdir/name)
-    (checkout/'include').mkdir()
+    (checkout/'kernels').mkdir()
     (checkout/'manual').mkdir()
     manifest = checkout/'MANIFEST.yaml'
     manifest.write_text('name: MuLIB\nmodules:\n')
@@ -114,12 +114,12 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     generate = [sys.executable, on1x.parent/'tools/extend-kernelbind.py', '--root', checkout]
 
     def register(name, header, *, dependencies=(), bounded=False, optional=None):
-        (checkout/'include'/f'mulib-{name}.h').write_text(header)
+        (checkout/'kernels'/f'mulib-{name}.h').write_text(header)
         (checkout/'manual'/f'mulib-{name}.md').write_text('# Test declarations\n')
         implementation = ('implementation: static-inline\n  status: bounded' if bounded else
                           'macro: MULIB_IMPL_'+name.upper().replace('-', '_')+'\n  status: implemented')
         with manifest.open('a') as out:
-            out.write(f'- name: {name}\n  header: include/mulib-{name}.h\n'
+            out.write(f'- name: {name}\n  header: kernels/mulib-{name}.h\n'
                       f'  manual: manual/mulib-{name}.md\n  {implementation}\n'
                       f'  dependencies: [{", ".join(dependencies)}]\n')
             if optional:
@@ -135,16 +135,16 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
              'static inline int future_inline_value(void) { return 3; }\n',
              dependencies=('future-types',), optional='Future Provider SDK')
     with manifest.open('a') as out:
-        out.write('- name: future-reserved\n  header: include/mulib-future-reserved.h\n'
+        out.write('- name: future-reserved\n  header: kernels/mulib-future-reserved.h\n'
                   '  status: reserved\n  dependencies: []\n')
-    (checkout/'include/mulib-auxiliary.h').write_text('int not_registered(void);\n')
+    (checkout/'kernels/mulib-auxiliary.h').write_text('int not_registered(void);\n')
     source.write_text('import kernel mulib.future_kernel as F;\n'
                       'import kernel mulib.future_types as T;\n'
                       'import kernel mulib.future_inline as I;\nfn main(){}\n')
     result = run(generate)
     assert result.returncode != 0 and 'unregistered kernel header' in result.stderr, result
     assert not catalog.exists(), 'incomplete header coverage published a catalog'
-    (checkout/'include/mulib-auxiliary.h').unlink()
+    (checkout/'kernels/mulib-auxiliary.h').unlink()
     result = run(generate)
     assert result.returncode == 0, result
     future = directory/'future.json'
@@ -162,7 +162,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     assert functions['future_inline_value']['linkage'] == '2' and functions['future_inline_value']['definition']
     assert modules['mulib.future_inline']['automatic_registration']['implementation'] == 'static-inline'
     assert modules['mulib.future_kernel']['automatic_registration']['optional_dependency'] == 'Future Provider SDK'
-    assert str(checkout/'include/mulib-future-types.h') in {row['path'] for row in graph['inputs']}
+    assert str(checkout/'kernels/mulib-future-types.h') in {row['path'] for row in graph['inputs']}
 
     def fail(mode, text, expected, *extra):
         source.write_text(text+'fn main(){}\n')
@@ -183,7 +183,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     fail('--inspect-kernels', 'import kernel mulib.future_reserved;\n', ('ON1X-KERNEL-PROFILE', 'no discovery profile'))
     shadow = directory/'shadow'
     shadow.mkdir()
-    (shadow/'mulib-future-types.h').symlink_to(checkout/'include/mulib-future-types.h')
+    (shadow/'mulib-future-types.h').symlink_to(checkout/'kernels/mulib-future-types.h')
     fail('--inspect-kernels', future_import, ('ambiguous MuLIB kernel header',), '--mulib-path', shadow)
 
     valid = catalog.read_bytes()

@@ -31,7 +31,7 @@ See `../tests/test_wifi-regulatory.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-regulatory.h`](../include/mulib-wifi-regulatory.h) |
+| Header | [`kernels/mulib-wifi-regulatory.h`](../kernels/mulib-wifi-regulatory.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_REGULATORY` |
 | Repository-local includes | [mulib-nl80211](mulib-nl80211.md) |
 | Complete example | [`examples/modules/wifi-regulatory.c`](../examples/modules/wifi-regulatory.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-regulatory.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-regulatory.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

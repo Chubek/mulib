@@ -17,7 +17,7 @@ No MuLIB dependencies, heap allocations or hidden switches. The public quote
 helper is reused by `mulib-impaclient.h`. C11 implementation, C++ declarations.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/imapserver.c -o /tmp/opencode/imapserver
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/imapserver.c -o /tmp/opencode/imapserver
 /tmp/opencode/imapserver
 ```
 
@@ -107,7 +107,7 @@ share its scratch buffer.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imapserver.h`](../include/mulib-imapserver.h) |
+| Header | [`kernels/mulib-imapserver.h`](../kernels/mulib-imapserver.h) |
 | Implementation switch | `MULIB_IMPL_IMAPSERVER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/imapserver.c`](../examples/modules/imapserver.c) |
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imapserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/imapserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

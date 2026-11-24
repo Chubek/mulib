@@ -21,7 +21,7 @@ point. This module does not train HMMs or implement continuous emissions.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hidden_markov_chain.h`](../include/mulib-hidden_markov_chain.h).
+Verbatim declaration section from [`kernels/mulib-hidden_markov_chain.h`](../kernels/mulib-hidden_markov_chain.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -66,7 +66,7 @@ int mulib_hidden_markov_chain_forward(const mulib_hidden_markov_chain_t *model,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hidden_markov_chain.h`](../include/mulib-hidden_markov_chain.h) |
+| Header | [`kernels/mulib-hidden_markov_chain.h`](../kernels/mulib-hidden_markov_chain.h) |
 | Implementation switch | `MULIB_IMPL_HIDDEN_MARKOV_CHAIN` |
 | Repository-local includes | [mulib-markov_chain](mulib-markov_chain.md) |
 | Complete example | [`examples/modules/hidden_markov_chain.c`](../examples/modules/hidden_markov_chain.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hidden_markov_chain.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hidden_markov_chain.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

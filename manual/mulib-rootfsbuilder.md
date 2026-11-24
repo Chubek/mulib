@@ -15,7 +15,7 @@ Switches: `MULIB_IMPL_ROOTFSBUILDER`, `MULIB_IMPL_ROOTFS`, `MULIB_IMPL_VFS`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rootfsbuilder.h`](../include/mulib-rootfsbuilder.h).
+Verbatim declaration section from [`kernels/mulib-rootfsbuilder.h`](../kernels/mulib-rootfsbuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rootfsbuilder.h`](../include/mulib-rootfsbuilder.h) |
+| Header | [`kernels/mulib-rootfsbuilder.h`](../kernels/mulib-rootfsbuilder.h) |
 | Implementation switch | `MULIB_IMPL_ROOTFSBUILDER` |
 | Repository-local includes | [mulib-archive](mulib-archive.md), [mulib-buffer](mulib-buffer.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/rootfsbuilder.c`](../examples/modules/rootfsbuilder.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rootfsbuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rootfsbuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

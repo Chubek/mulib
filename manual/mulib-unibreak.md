@@ -59,7 +59,7 @@ can require backend availability and run ASan/UBSan.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-unibreak.h`](../include/mulib-unibreak.h) |
+| Header | [`kernels/mulib-unibreak.h`](../kernels/mulib-unibreak.h) |
 | Implementation switch | `MULIB_IMPL_UNIBREAK` |
 | Repository-local includes | [mulib-uniproc](mulib-uniproc.md) |
 | Complete example | [`examples/modules/unibreak.c`](../examples/modules/unibreak.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/unibreak.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/unibreak.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

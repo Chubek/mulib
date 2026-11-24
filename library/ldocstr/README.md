@@ -1,7 +1,7 @@
 # ldocstr
 
 The automatically installed Lua library for
-[`include/mulib-docstring.h`](../../include/mulib-docstring.h).
+[`kernels/mulib-docstring.h`](../../kernels/mulib-docstring.h).
 It runs in MuLIB's Mune Lua implementation, without a third-party Lua runtime.
 
 - [`ldocstr.lua`](ldocstr.lua): DocstrIL constructors, source parsing, all output

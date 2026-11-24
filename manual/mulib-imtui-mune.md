@@ -15,7 +15,7 @@ layout and widget compositions.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-mune.h`](../include/mulib-imtui-mune.h) |
+| Header | [`kernels/mulib-imtui-mune.h`](../kernels/mulib-imtui-mune.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_MUNE` |
 | Repository-local includes | [mulib-imtui-layout](mulib-imtui-layout.md), [mulib-imtui-syntax](mulib-imtui-syntax.md), [mulib-imtui-widgets](mulib-imtui-widgets.md), [mulib-mune](mulib-mune.md) |
 | Complete example | [`tests/test_imtui_mune.c`](../tests/test_imtui_mune.c) |
@@ -28,6 +28,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude tests/test_imtui_mune.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels tests/test_imtui_mune.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

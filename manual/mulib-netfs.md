@@ -71,7 +71,7 @@ caller-provided scratch buffers. Neither helper owns or closes its stream.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netfs.h`](../include/mulib-netfs.h) |
+| Header | [`kernels/mulib-netfs.h`](../kernels/mulib-netfs.h) |
 | Implementation switch | `MULIB_IMPL_NETFS` |
 | Repository-local includes | [mulib-endian](mulib-endian.md), [mulib-fuse](mulib-fuse.md), [mulib-xtks](mulib-xtks.md) |
 | Complete example | [`examples/modules/netfs.c`](../examples/modules/netfs.c) |
@@ -84,6 +84,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

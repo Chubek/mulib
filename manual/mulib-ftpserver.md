@@ -17,7 +17,7 @@ linkage. No heap allocation occurs. Fixed caller storage is more appropriate
 than an allocating container for this bounded framing/session API.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/ftpserver.c -o /tmp/opencode/ftpserver
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/ftpserver.c -o /tmp/opencode/ftpserver
 /tmp/opencode/ftpserver
 ```
 
@@ -118,7 +118,7 @@ See `examples/modules/ftpclient.c` for control-session composition and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ftpserver.h`](../include/mulib-ftpserver.h) |
+| Header | [`kernels/mulib-ftpserver.h`](../kernels/mulib-ftpserver.h) |
 | Implementation switch | `MULIB_IMPL_FTPSERVER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ftpserver.c`](../examples/modules/ftpserver.c) |
@@ -131,6 +131,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ftpserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ftpserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

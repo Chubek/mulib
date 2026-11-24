@@ -192,7 +192,7 @@ def extract_exolib(name, recipe, root, exotract, compiler, resource, target,
                  COMPILER=compiler, RESOURCE=resource)
     if sidecar:
         globs['CONTRACT'] = sidecar
-    for key, values in dict(INCLUDES=[root/'include'], PINS=pins,
+    for key, values in dict(INCLUDES=[root/'kernels'], PINS=pins,
                             REQUIRED=required, FLAGS=flags, DEFINES=defines,
                             UNDEFINES=undefines, DEPENDENCIES=dependencies,
                             IMPL=recipe['implementation_macros']).items():

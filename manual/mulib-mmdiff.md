@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-- **Header:** `include/mulib-mmdiff.h`
+- **Header:** `kernels/mulib-mmdiff.h`
 - **Implementation switches:** `MULIB_IMPL_MMDIFF`, **`MULIB_IMPL_VEC`**,
   **`MULIB_IMPL_BUFFER`**
 - **Dependencies:** MuLIB vec and binary buffer only; ISO C11, C++17 declarations.
@@ -126,7 +126,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/mmdiff.c -o ./mmdiff
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/mmdiff.c -o ./mmdiff
 ./mmdiff
 ```
 
@@ -142,7 +142,7 @@ limits, alias-safe application and injected allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mmdiff.h`](../include/mulib-mmdiff.h) |
+| Header | [`kernels/mulib-mmdiff.h`](../kernels/mulib-mmdiff.h) |
 | Implementation switch | `MULIB_IMPL_MMDIFF` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/mmdiff.c`](../examples/modules/mmdiff.c) |
@@ -155,6 +155,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mmdiff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mmdiff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

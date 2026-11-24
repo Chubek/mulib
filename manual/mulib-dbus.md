@@ -94,7 +94,7 @@ authentication claim is implied by accepting a valid binary frame.
 checks its binary header, then decodes the string body:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/dbus.c -o ./dbus
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/dbus.c -o ./dbus
 ./dbus
 ```
 
@@ -105,7 +105,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/dbus.c -o
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbus.h`](../include/mulib-dbus.h) |
+| Header | [`kernels/mulib-dbus.h`](../kernels/mulib-dbus.h) |
 | Implementation switch | `MULIB_IMPL_DBUS` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-endian](mulib-endian.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/dbus.c`](../examples/modules/dbus.c) |
@@ -118,6 +118,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbus.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

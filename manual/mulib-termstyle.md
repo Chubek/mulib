@@ -101,7 +101,7 @@ token classes and incremental per-line lexical states.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termstyle.h`](../include/mulib-termstyle.h) |
+| Header | [`kernels/mulib-termstyle.h`](../kernels/mulib-termstyle.h) |
 | Implementation switch | `MULIB_IMPL_TERMSTYLE` |
 | Repository-local includes | [mulib-css](mulib-css.md), [mulib-terminfo](mulib-terminfo.md), [mulib-vterm](mulib-vterm.md) |
 | Complete example | [`examples/modules/termstyle.c`](../examples/modules/termstyle.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termstyle.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/termstyle.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

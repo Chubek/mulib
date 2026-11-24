@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-musicnotation.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-musicnotation.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-musicnotation.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-musicnotation.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-musicnotation.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-musicnotation.h`](../include/mulib-musicnotation.h) |
+| Header | [`kernels/mulib-musicnotation.h`](../kernels/mulib-musicnotation.h) |
 | Implementation switch | `MULIB_IMPL_MUSICNOTATION` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-musicnotation.c`](../examples/mulib-musicnotation.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-musicnotation.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-musicnotation.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

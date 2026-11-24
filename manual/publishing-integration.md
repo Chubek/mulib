@@ -23,7 +23,7 @@ make -j4 check check-examples formats
 python3 tests/test_tools.py
 python3 tools/stratify.py --check
 python3 tools/manuals.py --check
-python3 mudsl/scripts/check_mulib_inventory.py --include include
+python3 mudsl/scripts/check_mulib_inventory.py --include kernels
 python3 tools/check.py --no-isolation -j4
 make docir-formats
 ```
@@ -37,7 +37,7 @@ both upstream and publishing module examples with `MULIB_BUILD_MODULE_EXAMPLES=O
 
 The generated MuLL bridge also registers the new headers and native functions.
 After changing public headers, regenerate it with
-`python3 mudsl/scripts/generate_mulib.py --include include` (regeneration requires
+`python3 mudsl/scripts/generate_mulib.py --include kernels` (regeneration requires
 the Python clang bindings and libclang), then run the inventory check above.
 Normal builds do not require those generator dependencies.
 

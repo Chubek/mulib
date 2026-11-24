@@ -35,7 +35,7 @@ and run by the inventory checker.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dyegram.h`](../include/mulib-dyegram.h) |
+| Header | [`kernels/mulib-dyegram.h`](../kernels/mulib-dyegram.h) |
 | Implementation switch | `MULIB_IMPL_DYEGRAM` |
 | Repository-local includes | [mulib-gvizz](mulib-gvizz.md) |
 | Complete example | [`examples/modules/dyegram.c`](../examples/modules/dyegram.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dyegram.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dyegram.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

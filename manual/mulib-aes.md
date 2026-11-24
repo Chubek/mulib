@@ -42,7 +42,7 @@ on an untrusted network.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-aes.h`](../include/mulib-aes.h) |
+| Header | [`kernels/mulib-aes.h`](../kernels/mulib-aes.h) |
 | Implementation switch | `MULIB_IMPL_AES` |
 | Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md) |
 | Complete example | [`examples/modules/aes.c`](../examples/modules/aes.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/aes.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/aes.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

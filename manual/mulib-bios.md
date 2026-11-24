@@ -56,7 +56,7 @@ Hardware/real-mode transitions remain integration responsibilities.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bios.h`](../include/mulib-bios.h) |
+| Header | [`kernels/mulib-bios.h`](../kernels/mulib-bios.h) |
 | Implementation switch | `MULIB_IMPL_BIOS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bios.c`](../examples/modules/bios.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bios.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bios.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

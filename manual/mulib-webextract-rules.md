@@ -16,7 +16,7 @@ This profile does not implement compound CSS selectors or multiple rule sets.
 
 ## Integration and ownership
 
-Include `include/mulib-webextract-rules.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-webextract-rules.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-webextract-rules.h`](../include/mulib-webextract-rules.h).
+Verbatim declaration section from [`kernels/mulib-webextract-rules.h`](../kernels/mulib-webextract-rules.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -92,7 +92,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webextract-rules.h`](../include/mulib-webextract-rules.h) |
+| Header | [`kernels/mulib-webextract-rules.h`](../kernels/mulib-webextract-rules.h) |
 | Implementation switch | `MULIB_IMPL_WEBEXTRACT_RULES` |
 | Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-dom-query](mulib-dom-query.md), [mulib-html-textstream](mulib-html-textstream.md) |
 | Complete example | [`examples/modules/webextract-rules.c`](../examples/modules/webextract-rules.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webextract-rules.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webextract-rules.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -69,7 +69,7 @@ promise of zero failures against every UAX #9 case.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bidi.h`](../include/mulib-bidi.h) |
+| Header | [`kernels/mulib-bidi.h`](../kernels/mulib-bidi.h) |
 | Implementation switch | `MULIB_IMPL_BIDI` |
 | Repository-local includes | [mulib-uniproc](mulib-uniproc.md) |
 | Complete example | [`examples/modules/bidi.c`](../examples/modules/bidi.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bidi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bidi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

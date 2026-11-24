@@ -61,7 +61,7 @@ comparisons. The fourth check, compiling that same adapter with Cephyr, exited
 **1**:
 
 ```text
-include/mulib-clamp.h:23: error[cephyr.preprocessor.error]: file 'math.h' not found
+kernels/mulib-clamp.h:23: error[cephyr.preprocessor.error]: file 'math.h' not found
 ```
 
 **Suggested upstream fix:** add and package a target-correct `math.h` in

@@ -57,7 +57,7 @@ See [imgbuilder](mulib-imgbuilder.md) for deterministic build reports and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imgbuildspec.h`](../include/mulib-imgbuildspec.h) |
+| Header | [`kernels/mulib-imgbuildspec.h`](../kernels/mulib-imgbuildspec.h) |
 | Implementation switch | `MULIB_IMPL_IMGBUILDSPEC` |
 | Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-rootfs-buildspec](mulib-rootfs-buildspec.md) |
 | Complete example | [`examples/modules/imgbuildspec.c`](../examples/modules/imgbuildspec.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgbuildspec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/imgbuildspec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-artifact.h`  
+**Header:** `kernels/mulib-artifact.h`  
 **Switch:** `MULIB_IMPL_ARTIFACT` · **Dependencies:** none
 
 Artifacts are immutable envelopes for application values. They carry a required
@@ -77,7 +77,7 @@ archives and binary round trips.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/artifact.c -o /tmp/opencode/artifact
+cc -std=c11 -Ikernels examples/modules/artifact.c -o /tmp/opencode/artifact
 /tmp/opencode/artifact
 ```
 
@@ -92,7 +92,7 @@ retained graph inputs and outputs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-artifact.h`](../include/mulib-artifact.h) |
+| Header | [`kernels/mulib-artifact.h`](../kernels/mulib-artifact.h) |
 | Implementation switch | `MULIB_IMPL_ARTIFACT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/artifact.c`](../examples/modules/artifact.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/artifact.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/artifact.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

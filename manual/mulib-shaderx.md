@@ -86,7 +86,7 @@ API/text construction, diagnostics, bounds and both backends. Its optional
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-shaderx.h`](../include/mulib-shaderx.h) |
+| Header | [`kernels/mulib-shaderx.h`](../kernels/mulib-shaderx.h) |
 | Implementation switch | `MULIB_IMPL_SHADERX` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/shaderx.c`](../examples/modules/shaderx.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shaderx.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/shaderx.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

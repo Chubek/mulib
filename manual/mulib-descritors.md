@@ -41,7 +41,7 @@ masking are deliberately separate. Wrong tables can triple-fault a machine.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-descritors.h`](../include/mulib-descritors.h) |
+| Header | [`kernels/mulib-descritors.h`](../kernels/mulib-descritors.h) |
 | Implementation switch | `MULIB_IMPL_DESCRITORS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/descritors.c`](../examples/modules/descritors.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/descritors.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/descritors.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

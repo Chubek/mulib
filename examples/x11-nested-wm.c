@@ -1,5 +1,5 @@
 /* Reference WM for a caller-created private Xvfb/Xephyr server only.
- * cc -std=c11 -D_POSIX_C_SOURCE=200809L -Iinclude examples/x11-nested-wm.c -o nested-wm
+ * cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ikernels examples/x11-nested-wm.c -o nested-wm
  * Usage: nested-wm --private-socket /absolute/socket /path/to/raw-16-byte-cookie
  * No DISPLAY fallback. This does not prove the supplied server is nested. */
 #include <stdio.h>

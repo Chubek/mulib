@@ -9,7 +9,7 @@ Build basic assertion bytes and signing inputs. This is not an authenticator or 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-webauthn.h`](../include/mulib-secret-webauthn.h) |
+| Header | [`kernels/mulib-secret-webauthn.h`](../kernels/mulib-secret-webauthn.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_WEBAUTHN` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

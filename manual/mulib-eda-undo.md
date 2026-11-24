@@ -1,7 +1,7 @@
 # mulib-eda-undo
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-undo.h`  
+**Header:** `kernels/mulib-eda-undo.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_UNDO`  
 **Dependencies:** `eda-design-db`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_UNDO` defined before in
 `tests/test_eda_undo.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_undo.c -lm -o /tmp/test_eda_undo
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_undo.c -lm -o /tmp/test_eda_undo
 /tmp/test_eda_undo
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-undo.h`](../include/mulib-eda-undo.h).
+Verbatim declaration section from [`kernels/mulib-eda-undo.h`](../kernels/mulib-eda-undo.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ int mulib_eda_undo_forward(mulib_eda_undo_t *u, mulib_eda_design_db_t *db);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-undo.h`](../include/mulib-eda-undo.h) |
+| Header | [`kernels/mulib-eda-undo.h`](../kernels/mulib-eda-undo.h) |
 | Implementation switch | `MULIB_IMPL_EDA_UNDO` |
 | Repository-local includes | [mulib-eda-design-db](mulib-eda-design-db.md) |
 | Complete example | [`examples/modules/eda-undo.c`](../examples/modules/eda-undo.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-undo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-undo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

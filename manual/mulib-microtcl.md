@@ -40,7 +40,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-microtcl.h`](../include/mulib-microtcl.h).
+Verbatim declaration section from [`kernels/mulib-microtcl.h`](../kernels/mulib-microtcl.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -138,7 +138,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-microtcl.h`](../include/mulib-microtcl.h) |
+| Header | [`kernels/mulib-microtcl.h`](../kernels/mulib-microtcl.h) |
 | Implementation switch | `MULIB_IMPL_MICROTCL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/microtcl.c`](../examples/modules/microtcl.c) |
@@ -151,6 +151,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microtcl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/microtcl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -20,7 +20,7 @@ graph. Add/has are O(E); reachability is O(VE), postorder O(VE), with O(V) scrat
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cfg.h`](../include/mulib-cfg.h) |
+| Header | [`kernels/mulib-cfg.h`](../kernels/mulib-cfg.h) |
 | Implementation switch | `MULIB_IMPL_CFG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cfg.c`](../examples/modules/cfg.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cfg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cfg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

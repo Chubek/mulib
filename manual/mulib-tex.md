@@ -17,7 +17,7 @@ Example: `examples/modules/tex.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tex.h`](../include/mulib-tex.h).
+Verbatim declaration section from [`kernels/mulib-tex.h`](../kernels/mulib-tex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -83,7 +83,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tex.h`](../include/mulib-tex.h) |
+| Header | [`kernels/mulib-tex.h`](../kernels/mulib-tex.h) |
 | Implementation switch | `MULIB_IMPL_TEX` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/tex.c`](../examples/modules/tex.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

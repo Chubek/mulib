@@ -103,7 +103,7 @@ From the repository root:
 
 ```sh
 lua tests/test-gfx-immgtk-lua.lua
-cc -std=c11 -Iinclude tests/test_immgtk.c -lm -ldl -pthread -o /tmp/opencode/test-immgtk
+cc -std=c11 -Ikernels tests/test_immgtk.c -lm -ldl -pthread -o /tmp/opencode/test-immgtk
 /tmp/opencode/test-immgtk "$PWD/library"
 ```
 
@@ -112,7 +112,7 @@ mutation/failure injection, frame-input ownership, UTF-8, scoped cleanup and
 legacy module identity. It can also run in the repository's Mune runtime:
 
 ```sh
-cc -std=c11 -Iinclude tests/test_mune_runtime.c -lm -ldl -pthread -o /tmp/opencode/mune-runtime
+cc -std=c11 -Ikernels tests/test_mune_runtime.c -lm -ldl -pthread -o /tmp/opencode/mune-runtime
 /tmp/opencode/mune-runtime --run tests/test-gfx-immgtk-lua.lua
 /tmp/opencode/mune-runtime --vm tests/test-gfx-immgtk-lua.lua
 ```

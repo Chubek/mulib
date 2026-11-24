@@ -35,7 +35,7 @@ Backward times do not rewind previously accepted events or emit future ones.
 events must track/release held keys on cancellation/error and preserve SYN frames.
 No concurrency guarantee; callbacks can forward to `mulib-vdev` explicitly.
 
-`cc -std=c11 -Iinclude examples/modules/marionette.c -o marionette`.
+`cc -std=c11 -Ikernels examples/modules/marionette.c -o marionette`.
 Tests cover limits, empty playback, clock/overflow boundaries and sink retry.
 
 <!-- manual-reference -->
@@ -45,7 +45,7 @@ Tests cover limits, empty playback, clock/overflow boundaries and sink retry.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-marionette.h`](../include/mulib-marionette.h) |
+| Header | [`kernels/mulib-marionette.h`](../kernels/mulib-marionette.h) |
 | Implementation switch | `MULIB_IMPL_MARIONETTE` |
 | Repository-local includes | [mulib-input](mulib-input.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/marionette.c`](../examples/modules/marionette.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/marionette.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/marionette.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

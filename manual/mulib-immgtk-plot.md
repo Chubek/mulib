@@ -1,7 +1,7 @@
 # mulib-immgtk-plot
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-immgtk-plot.h`  
+**Header:** `kernels/mulib-immgtk-plot.h`  
 **Implementation switch:** `MULIB_IMPL_IMMGTK_PLOT`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_IMMGTK_PLOT` defined before
 `tests/test_immgtk_plot.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_immgtk_plot.c -lm -o /tmp/test_immgtk_plot
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_immgtk_plot.c -lm -o /tmp/test_immgtk_plot
 /tmp/test_immgtk_plot
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-immgtk-plot.h`](../include/mulib-immgtk-plot.h).
+Verbatim declaration section from [`kernels/mulib-immgtk-plot.h`](../kernels/mulib-immgtk-plot.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_immgtk_plot_log_transform(double x, double base, double *out);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-immgtk-plot.h`](../include/mulib-immgtk-plot.h) |
+| Header | [`kernels/mulib-immgtk-plot.h`](../kernels/mulib-immgtk-plot.h) |
 | Implementation switch | `MULIB_IMPL_IMMGTK_PLOT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/immgtk-plot.c`](../examples/modules/immgtk-plot.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/immgtk-plot.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/immgtk-plot.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

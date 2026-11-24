@@ -16,7 +16,7 @@ def no_ucontext_advisory(stderr):
 def check_async_frames(t):
     exe = t.work / 'async_frame'
     p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-pthread',
-             '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
+             '-I', t.root / 'runtime', '-I', t.root.parent / 'kernels',
              t.root / 'tests/fixtures/async_frame.c', t.root / 'runtime/on1x_runtime.c',
              t.root / 'runtime/on1x_concurrency.c',
              '-Wl,--wrap=mulib_fiber_spawn', '-Wl,--wrap=clock_gettime', '-Wl,--wrap=nanosleep',

@@ -97,7 +97,7 @@ with tempfile.TemporaryDirectory(prefix="recipe-test-", dir=work) as temp:
     assert run.returncode == 0, run.stderr
     assert b'{"mir-c11","","hint","private-code",true}' in output.read_bytes()
     assert b'{"mir-c11","","hint","private-code",false}' in output.read_bytes()
-    stale = temp / "include"
+    stale = temp / "kernels"
     stale.mkdir()
     edited = (include / "mulib-clamp.h").read_bytes() + b"\n/* edited */\n"
     (stale / "mulib-clamp.h").write_bytes(edited)

@@ -13,7 +13,7 @@ header. No transitive implementation switches are required. C++ declaration
 inclusion uses C linkage.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/minincat.c -o /tmp/opencode/minincat
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/minincat.c -o /tmp/opencode/minincat
 /tmp/opencode/minincat
 ```
 
@@ -74,7 +74,7 @@ budget, invalid callbacks, oversized read counts and zero-progress writes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-minincat.h`](../include/mulib-minincat.h) |
+| Header | [`kernels/mulib-minincat.h`](../kernels/mulib-minincat.h) |
 | Implementation switch | `MULIB_IMPL_MININCAT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/minincat.c`](../examples/modules/minincat.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minincat.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/minincat.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

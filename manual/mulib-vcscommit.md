@@ -29,7 +29,7 @@ spelling. Tests: `tests/test_vcs_formats.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vcscommit.h`](../include/mulib-vcscommit.h).
+Verbatim declaration section from [`kernels/mulib-vcscommit.h`](../kernels/mulib-vcscommit.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vcscommit.h`](../include/mulib-vcscommit.h) |
+| Header | [`kernels/mulib-vcscommit.h`](../kernels/mulib-vcscommit.h) |
 | Implementation switch | `MULIB_IMPL_VCSCOMMIT` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-vcsrepo](mulib-vcsrepo.md) |
 | Complete example | [`examples/modules/vcscommit.c`](../examples/modules/vcscommit.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vcscommit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vcscommit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

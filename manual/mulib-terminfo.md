@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-terminfo.h` provides a **native compiled-record reader**, a
+`kernels/mulib-terminfo.h` provides a **native compiled-record reader**, a
 numeric terminfo parameter interpreter, and a separately selected ANSI profile.
 It does not use curses or another terminal library.
 
@@ -146,7 +146,7 @@ int main(void) {
 Compile/run `examples/modules/terminfo.c`:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/terminfo.c -o ./terminfo-example
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/terminfo.c -o ./terminfo-example
 ./terminfo-example
 ```
 
@@ -162,7 +162,7 @@ terminal or installed terminfo database is required.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-terminfo.h`](../include/mulib-terminfo.h) |
+| Header | [`kernels/mulib-terminfo.h`](../kernels/mulib-terminfo.h) |
 | Implementation switch | `MULIB_IMPL_TERMINFO` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/terminfo.c`](../examples/modules/terminfo.c) |
@@ -175,6 +175,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/terminfo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/terminfo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

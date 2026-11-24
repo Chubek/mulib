@@ -44,7 +44,7 @@ def denied(message, *argv):
 tool = a.root/'tools/on1x-exotract.py'
 build = a.root/'tools/on1x-build.py'
 fixture = a.root/'tests/fixtures/inline_wrappers_client.c'
-include = (a.root/'../include').resolve()
+include = (a.root/'../kernels').resolve()
 switch = 'MULIB_IMPL_FRACTION'
 rescale = 'mulib_media_timebase_rescale'
 prefix = 'on1x_inline_v1_'
@@ -90,7 +90,7 @@ with tempfile.TemporaryDirectory(dir=a.work) as tmp:
         assert hashlib.sha256(Path(path).read_bytes()).hexdigest() == expected, path
     for path, expected in lock['artifacts'].items():
         assert hashlib.sha256((bundle/path).read_bytes()).hexdigest() == expected, path
-    assert str(include/'mulib-fraction.h') in lock['inputs']
+    assert str(kernels/'mulib-fraction.h') in lock['inputs']
 
     # The separately compiled caller has unresolved references until the one
     # wrapper object is linked. Run it against manual timing/overflow oracles.

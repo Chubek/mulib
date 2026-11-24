@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-archive.h`  
+**Header:** `kernels/mulib-archive.h`  
 **Implementation switches:** `MULIB_IMPL_ARCHIVE`, `MULIB_IMPL_BUFFER`  
 **Link flags:** none. ISO C11; declarations are C++17-compatible.
 
@@ -93,7 +93,7 @@ int main(void) {
 ```
 
 Build the fuller example with
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/archive.c -o archive-example`
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/archive.c -o archive-example`
 and run `./archive-example`. `tests/test_storage.c` covers long USTAR paths,
 binary data, forbidden types/paths, bad checksums/numbers, truncation, and endings.
 
@@ -104,7 +104,7 @@ binary data, forbidden types/paths, bad checksums/numbers, truncation, and endin
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-archive.h`](../include/mulib-archive.h) |
+| Header | [`kernels/mulib-archive.h`](../kernels/mulib-archive.h) |
 | Implementation switch | `MULIB_IMPL_ARCHIVE` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/archive.c`](../examples/modules/archive.c) |
@@ -117,6 +117,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/archive.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/archive.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

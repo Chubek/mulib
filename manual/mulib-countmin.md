@@ -14,7 +14,7 @@ promised. Storage is width × depth counters; operations cost O(depth × key byt
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-countmin.h`](../include/mulib-countmin.h).
+Verbatim declaration section from [`kernels/mulib-countmin.h`](../kernels/mulib-countmin.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -59,7 +59,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-countmin.h`](../include/mulib-countmin.h) |
+| Header | [`kernels/mulib-countmin.h`](../kernels/mulib-countmin.h) |
 | Implementation switch | `MULIB_IMPL_COUNTMIN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/countmin.c`](../examples/modules/countmin.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/countmin.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/countmin.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

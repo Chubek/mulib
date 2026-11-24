@@ -40,7 +40,7 @@ See `../tests/test_uip-fragment.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-fragment.h`](../include/mulib-uip-fragment.h) |
+| Header | [`kernels/mulib-uip-fragment.h`](../kernels/mulib-uip-fragment.h) |
 | Implementation switch | `MULIB_IMPL_UIP_FRAGMENT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-fragment.c`](../examples/modules/uip-fragment.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-fragment.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-fragment.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

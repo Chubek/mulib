@@ -12,7 +12,7 @@ depth to 64 and input to 16 MiB. [Example](../examples/modules/bson.c),
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bson.h`](../include/mulib-bson.h).
+Verbatim declaration section from [`kernels/mulib-bson.h`](../kernels/mulib-bson.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bson.h`](../include/mulib-bson.h) |
+| Header | [`kernels/mulib-bson.h`](../kernels/mulib-bson.h) |
 | Implementation switch | `MULIB_IMPL_BSON` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/bson.c`](../examples/modules/bson.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bson.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bson.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

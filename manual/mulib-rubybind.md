@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-rubybind.h`  
+**Header:** `kernels/mulib-rubybind.h`  
 **Implementation switches:** `MULIB_IMPL_RUBYBIND`, `MULIB_IMPL_PYBIND`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB pybind's shared descriptors/validator, strbuf, ISO C11.
 
@@ -98,7 +98,7 @@ int main(void) {
 }
 ```
 
-Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -o example`.
+Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -o example`.
 No Ruby installation or demo library is necessary for this example. The full
 `examples/modules/rubybind.c` writes the source to stdout. Saving its output as
 `bindings.rb` permits `require_relative 'bindings'; MuLIBBindings.add(20, 22)`
@@ -129,7 +129,7 @@ Declaration-only C++17 inclusion is supported through `extern "C"`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rubybind.h`](../include/mulib-rubybind.h) |
+| Header | [`kernels/mulib-rubybind.h`](../kernels/mulib-rubybind.h) |
 | Implementation switch | `MULIB_IMPL_RUBYBIND` |
 | Repository-local includes | [mulib-pybind](mulib-pybind.md) |
 | Complete example | [`examples/modules/rubybind.c`](../examples/modules/rubybind.c) |
@@ -142,6 +142,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rubybind.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rubybind.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

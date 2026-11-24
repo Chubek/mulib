@@ -11,7 +11,7 @@ supported value and is limited to 16 MiB. No automatic format detection.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dbdesializer.h`](../include/mulib-dbdesializer.h).
+Verbatim declaration section from [`kernels/mulib-dbdesializer.h`](../kernels/mulib-dbdesializer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -48,7 +48,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbdesializer.h`](../include/mulib-dbdesializer.h) |
+| Header | [`kernels/mulib-dbdesializer.h`](../kernels/mulib-dbdesializer.h) |
 | Implementation switch | `MULIB_IMPL_DBDESIALIZER` |
 | Repository-local includes | [mulib-dbserializer](mulib-dbserializer.md) |
 | Complete example | [`examples/modules/dbdesializer.c`](../examples/modules/dbdesializer.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbdesializer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbdesializer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

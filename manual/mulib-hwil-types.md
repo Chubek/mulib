@@ -1,7 +1,7 @@
 # mulib-hwil-types
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-hwil-types.h`  
+**Header:** `kernels/mulib-hwil-types.h`  
 **Implementation switch:** `MULIB_IMPL_HWIL_TYPES`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_HWIL_TYPES` defined before 
 `tests/test_hwil_types.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_hwil_types.c -lm -o /tmp/test_hwil_types
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_hwil_types.c -lm -o /tmp/test_hwil_types
 /tmp/test_hwil_types
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hwil-types.h`](../include/mulib-hwil-types.h).
+Verbatim declaration section from [`kernels/mulib-hwil-types.h`](../kernels/mulib-hwil-types.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ int mulib_hwil_type_equal(mulib_hwil_type_t a, mulib_hwil_type_t b);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hwil-types.h`](../include/mulib-hwil-types.h) |
+| Header | [`kernels/mulib-hwil-types.h`](../kernels/mulib-hwil-types.h) |
 | Implementation switch | `MULIB_IMPL_HWIL_TYPES` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hwil-types.c`](../examples/modules/hwil-types.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hwil-types.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hwil-types.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

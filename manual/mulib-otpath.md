@@ -18,7 +18,7 @@ See the canonical manual for supported digests, windows and deployment limits.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-otpath.h`](../include/mulib-otpath.h).
+Verbatim declaration section from [`kernels/mulib-otpath.h`](../kernels/mulib-otpath.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -58,7 +58,7 @@ int mulib_otpath_totp_verify (const mulib_otpauth_config_t *config,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-otpath.h`](../include/mulib-otpath.h) |
+| Header | [`kernels/mulib-otpath.h`](../kernels/mulib-otpath.h) |
 | Implementation switch | `MULIB_IMPL_OTPATH` |
 | Repository-local includes | [mulib-otpauth](mulib-otpauth.md) |
 | Complete example | [`examples/modules/otpath.c`](../examples/modules/otpath.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/otpath.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/otpath.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

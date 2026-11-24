@@ -87,7 +87,7 @@ tests do not establish Android package/hardware availability on real devices.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-androidlibs.h`](../include/mulib-androidlibs.h) |
+| Header | [`kernels/mulib-androidlibs.h`](../kernels/mulib-androidlibs.h) |
 | Implementation switch | `MULIB_IMPL_ANDROIDLIBS` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-ezjni](mulib-ezjni.md), [mulib-ezndk](mulib-ezndk.md) |
 | Complete example | [`examples/modules/androidlibs.c`](../examples/modules/androidlibs.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/androidlibs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/androidlibs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

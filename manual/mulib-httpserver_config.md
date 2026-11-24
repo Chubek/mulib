@@ -23,7 +23,7 @@ remain the server's responsibility.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-httpserver_config.h`](../include/mulib-httpserver_config.h).
+Verbatim declaration section from [`kernels/mulib-httpserver_config.h`](../kernels/mulib-httpserver_config.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -71,7 +71,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-httpserver_config.h`](../include/mulib-httpserver_config.h) |
+| Header | [`kernels/mulib-httpserver_config.h`](../kernels/mulib-httpserver_config.h) |
 | Implementation switch | `MULIB_IMPL_HTTPSERVER_CONFIG` |
 | Repository-local includes | [mulib-http](mulib-http.md) |
 | Complete example | [`examples/modules/httpserver_config.c`](../examples/modules/httpserver_config.c) |
@@ -84,6 +84,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/httpserver_config.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/httpserver_config.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

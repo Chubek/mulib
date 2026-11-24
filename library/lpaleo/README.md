@@ -1,6 +1,6 @@
 # lpaleo
 
-Auto-loaded Mune profiles for [`mulib-paleography.h`](../../include/mulib-paleography.h).
+Auto-loaded Mune profiles for [`mulib-paleography.h`](../../kernels/mulib-paleography.h).
 `lpaleo.define` copies vector glyphs into the native inventory. `lpaleo.native`
 explicitly calls the host's configured outline provider. `lpaleo.script` adds a
 longest-match transcription profile. `shape` returns glyph tokens and direction;

@@ -55,7 +55,7 @@ must be removed before raw pool removal; `containerd` coordinates this ordering.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containterpool.h`](../include/mulib-containterpool.h) |
+| Header | [`kernels/mulib-containterpool.h`](../kernels/mulib-containterpool.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINTERPOOL` |
 | Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-image2container](mulib-image2container.md) |
 | Complete example | [`examples/modules/containterpool.c`](../examples/modules/containterpool.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containterpool.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containterpool.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

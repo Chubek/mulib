@@ -21,7 +21,7 @@ working scores/order O(states). Caller must bound total work/storage.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-viterbi_decoding.h`](../include/mulib-viterbi_decoding.h).
+Verbatim declaration section from [`kernels/mulib-viterbi_decoding.h`](../kernels/mulib-viterbi_decoding.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ int mulib_viterbi_decode_beam(const mulib_hidden_markov_chain_t *model, const si
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-viterbi_decoding.h`](../include/mulib-viterbi_decoding.h) |
+| Header | [`kernels/mulib-viterbi_decoding.h`](../kernels/mulib-viterbi_decoding.h) |
 | Implementation switch | `MULIB_IMPL_VITERBI_DECODING` |
 | Repository-local includes | [mulib-hidden_markov_chain](mulib-hidden_markov_chain.md) |
 | Complete example | [`examples/modules/viterbi_decoding.c`](../examples/modules/viterbi_decoding.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/viterbi_decoding.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/viterbi_decoding.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -11,7 +11,7 @@ ExoML/libclang declaration extractor to produce:
 - A build plan and an input/artifact SHA-256 lock file.
 - `symbols.json`, separating actual archive exports from declaration-only APIs.
 
-The binding source is `include/mulib-*.h`. Both this catalog and the
+The binding source is `kernels/mulib-*.h`. Both this catalog and the
 [ExoML inventory](../contracts-exoml/README.md) use `MANIFEST.yaml` as the
 module registry. `list` reports each canonical header, manual, implementation
 switch and dependencies, plus its archive recipe and whether any semantic
@@ -75,7 +75,7 @@ python3 on1x/tools/on1x-exotract.py wrap-inline \
   --compiler gcc --resource-dir "$(clang -print-resource-dir)" \
   --output /tmp/opencode/media-timebase-raw
 gcc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-  -Iinclude -I/tmp/opencode/media-timebase-raw \
+  -Ikernels -I/tmp/opencode/media-timebase-raw \
   -c on1x/tests/fixtures/inline_wrappers_client.c -o /tmp/opencode/time-client.o
 gcc /tmp/opencode/time-client.o /tmp/opencode/media-timebase-raw/libmulib.a \
   -o /tmp/opencode/time-client
@@ -127,7 +127,7 @@ python3 on1x/tools/on1x-exotract.py build json vec parsec \
   --exotract /tmp/opencode/on1x-exotract/libstone-moonstone/exotract/exotract \
   --compiler clang --output /tmp/opencode/mulib-static
 clang -std=c11 -Wall -Wextra -Werror \
-  -Iinclude -I/tmp/opencode/mulib-static \
+  -Ikernels -I/tmp/opencode/mulib-static \
   on1x/contracts-exotract/examples/client.c \
   /tmp/opencode/mulib-static/libmulib.a -lm -o /tmp/opencode/static-client
 /tmp/opencode/static-client
@@ -178,7 +178,7 @@ declaration provenance and the archive lock; drift invalidates rebinding.
 python3 on1x/tools/on1x-exotract.py build mune \
   --exotract /tmp/opencode/on1x-exotract/libstone-moonstone/exotract/exotract \
   --compiler clang --output /tmp/opencode/mune-static
-clang -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+clang -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   on1x/contracts-exotract/examples/mune.c /tmp/opencode/mune-static/libmulib.a \
   -pthread -lm -ldl -o /tmp/opencode/mune-client
 /tmp/opencode/mune-client
@@ -216,7 +216,7 @@ The existing On1x JSON facade can already link the generated archive:
 ```sh
 /tmp/opencode/on1x-exotract/on1xc --emit-c on1x/examples/json.on1x \
   -o /tmp/opencode/json-client.c
-clang -std=c11 -Ion1x/runtime -Iinclude /tmp/opencode/json-client.c \
+clang -std=c11 -Ion1x/runtime -Ikernels /tmp/opencode/json-client.c \
   on1x/runtime/on1x_runtime.c on1x/runtime/on1x_json.c \
   /tmp/opencode/mulib-static/libmulib.a -lm -o /tmp/opencode/json-client
 /tmp/opencode/json-client

@@ -83,7 +83,7 @@ row-width queries adding per-row scans. Evidence:
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tbl.h`](../include/mulib-tbl.h) |
+| Header | [`kernels/mulib-tbl.h`](../kernels/mulib-tbl.h) |
 | Implementation switch | `MULIB_IMPL_TBL` |
 | Repository-local includes | [mulib-csv](mulib-csv.md), [mulib-dsdom](mulib-dsdom.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/tbl.c`](../examples/modules/tbl.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tbl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tbl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ C++17. `MULIB_IMPL_GRAPHQL` and the original `mulib_graphql_*` symbols remain
 available for compatibility.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/graphql.c -pthread -lm -ldl -o graphql
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/graphql.c -pthread -lm -ldl -o graphql
 ./graphql
 ```
 
@@ -59,7 +59,7 @@ message and parsed JSON.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-graphql.h`](../include/mulib-graphql.h) |
+| Header | [`kernels/mulib-graphql.h`](../kernels/mulib-graphql.h) |
 | Implementation switch | `MULIB_IMPL_CDD_GRAPHQL` |
 | Repository-local includes | [mulib-rest](mulib-rest.md) |
 | Complete example | [`examples/modules/graphql.c`](../examples/modules/graphql.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/graphql.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/graphql.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

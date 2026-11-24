@@ -29,7 +29,7 @@ class InventoryTests(unittest.TestCase):
 
     def test_source_dependencies(self):
         for record in self.records:
-            source = (ROOT / "include" / record["header"]).read_text()
+            source = (ROOT / "kernels" / record["header"]).read_text()
             expected = sorted(set(re.findall(
                 r'^\s*#\s*include\s*["<](mulib-[^">]+\.h)[">]', source, re.M)))
             self.assertEqual(record["dependencies"], expected)
@@ -51,7 +51,7 @@ class InventoryTests(unittest.TestCase):
         existing = (
             "name: Fixture\nmodule_count: 1\nbounded_module_count: 0\n"
             "implemented_module_count: 1\nmodules:\n"
-            "- name: existing\n  header: include/mulib-existing.h\n"
+            "- name: existing\n  header: kernels/mulib-existing.h\n"
             "  macro: MULIB_IMPL_EXISTING\n  status: implemented\n"
             "  purpose: User-owned description.\n"
         )
@@ -68,7 +68,7 @@ class InventoryTests(unittest.TestCase):
     def test_collision_is_not_overwritten(self):
         fixture = (
             "module_count: 1\nbounded_module_count: 0\nmodules:\n"
-            "- name: media-core\n  header: include/mulib-media-core.h\n"
+            "- name: media-core\n  header: kernels/mulib-media-core.h\n"
             "  macro: MULIB_IMPL_USER_CORE\n  status: implemented\nproject_files:\n"
         )
         with self.assertRaisesRegex(ValueError, "refuse to replace"):
@@ -76,10 +76,10 @@ class InventoryTests(unittest.TestCase):
 
     def test_duplicate_and_name_collisions_are_rejected(self):
         base = "module_count: 2\nbounded_module_count: 0\nmodules:\n"
-        block = "- name: x\n  header: include/mulib-x.h\n  status: implemented\n"
+        block = "- name: x\n  header: kernels/mulib-x.h\n  status: implemented\n"
         with self.assertRaisesRegex(ValueError, "duplicate"):
             inventory.manifest_with_additions(base + block + block + "project_files:\n", self.records)
-        other = "- name: media-core\n  header: include/mulib-user.h\n  status: implemented\n"
+        other = "- name: media-core\n  header: kernels/mulib-user.h\n  status: implemented\n"
         with self.assertRaisesRegex(ValueError, "module-name collision"):
             inventory.manifest_with_additions(base + other + "project_files:\n", self.records)
 

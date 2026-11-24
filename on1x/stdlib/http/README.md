@@ -92,7 +92,7 @@ From the repository root, use an existing `on1xc` and a C11 compiler on Linux:
 
 ```sh
 on1xc --emit-c consumer.on1x -o consumer.c
-cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ion1x/runtime -Iinclude \
+cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ion1x/runtime -Ikernels \
   consumer.c on1x/runtime/on1x_runtime.c \
   on1x/stdlib/http/runtime.c on1x/stdlib/http/kernels.c \
   my_host_policy.c -o consumer

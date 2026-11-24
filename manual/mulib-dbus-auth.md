@@ -36,7 +36,7 @@ See `../tests/test_dbus-auth.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbus-auth.h`](../include/mulib-dbus-auth.h) |
+| Header | [`kernels/mulib-dbus-auth.h`](../kernels/mulib-dbus-auth.h) |
 | Implementation switch | `MULIB_IMPL_DBUS_AUTH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dbus-auth.c`](../examples/modules/dbus-auth.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus-auth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbus-auth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

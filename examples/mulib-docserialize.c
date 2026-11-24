@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-docserialize.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-docserialize.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_DOCSERIALIZE
 #include "mulib-docserialize.h"

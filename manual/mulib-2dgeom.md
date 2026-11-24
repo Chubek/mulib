@@ -93,7 +93,7 @@ identities, analytic curvature/length, exact extrema, transforms and DSL errors.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-2dgeom.h`](../include/mulib-2dgeom.h) |
+| Header | [`kernels/mulib-2dgeom.h`](../kernels/mulib-2dgeom.h) |
 | Implementation switch | `MULIB_IMPL_2DGEOM` |
 | Repository-local includes | [mulib-geometry](mulib-geometry.md), [mulib-parsec](mulib-parsec.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/2dgeom.c`](../examples/modules/2dgeom.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/2dgeom.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/2dgeom.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

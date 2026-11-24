@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix="bootstrap-test-", dir=work) as path:
         assert run.returncode != 0 and "stale FFIHandler bootstrap" in run.stderr, run.stderr
         assert output.read_bytes() == published
 
-    changed = temp / "include"
+    changed = temp / "kernels"
     changed.mkdir()
     header = include / "mulib-clamp.h"
     (changed / header.name).write_bytes(header.read_bytes() + b"\n")

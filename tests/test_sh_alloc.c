@@ -21,8 +21,8 @@ static void release(void *p){if(p){assert(live);live--;}free(p);}
 #define MULIB_SHEBANG_SH_NO_MUNE
 #define MULIB_IMPL_PARALLEL_SH
 #define MULIB_IMPL_SHEBANG_SH
-#include "../include/mulib-parallel-sh.h"
-#include "../include/mulib-shebang-sh.h"
+#include "../kernels/mulib-parallel-sh.h"
+#include "../kernels/mulib-shebang-sh.h"
 
 int main(void){
   size_t limit=1;

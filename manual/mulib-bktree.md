@@ -41,7 +41,7 @@ See [`examples/modules/bktree.c`](../examples/modules/bktree.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bktree.h`](../include/mulib-bktree.h) |
+| Header | [`kernels/mulib-bktree.h`](../kernels/mulib-bktree.h) |
 | Implementation switch | `MULIB_IMPL_BKTREE` |
 | Repository-local includes | [mulib-bk-trees](mulib-bk-trees.md) |
 | Complete example | [`examples/modules/bktree.c`](../examples/modules/bktree.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bktree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bktree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

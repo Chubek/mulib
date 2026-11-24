@@ -15,7 +15,7 @@ Switch: `MULIB_IMPL_SPATIALTREE`. Example: `examples/modules/spatialtree.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spatialtree.h`](../include/mulib-spatialtree.h).
+Verbatim declaration section from [`kernels/mulib-spatialtree.h`](../kernels/mulib-spatialtree.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -75,7 +75,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spatialtree.h`](../include/mulib-spatialtree.h) |
+| Header | [`kernels/mulib-spatialtree.h`](../kernels/mulib-spatialtree.h) |
 | Implementation switch | `MULIB_IMPL_SPATIALTREE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/spatialtree.c`](../examples/modules/spatialtree.c) |
@@ -88,6 +88,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spatialtree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spatialtree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

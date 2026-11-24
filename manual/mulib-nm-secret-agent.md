@@ -31,7 +31,7 @@ See `../tests/test_nm-secret-agent.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nm-secret-agent.h`](../include/mulib-nm-secret-agent.h) |
+| Header | [`kernels/mulib-nm-secret-agent.h`](../kernels/mulib-nm-secret-agent.h) |
 | Implementation switch | `MULIB_IMPL_NM_SECRET_AGENT` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/nm-secret-agent.c`](../examples/modules/nm-secret-agent.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nm-secret-agent.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nm-secret-agent.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

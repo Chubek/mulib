@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-elf.h`  
+**Header:** `kernels/mulib-elf.h`  
 **Implementation switches:** `MULIB_IMPL_ELF`, `MULIB_IMPL_ENDIAN`  
 **Link flags:** none. ISO C11, C++17 declaration compatibility.
 
@@ -95,7 +95,7 @@ int main(void) {
 ```
 
 Build `examples/modules/elf.c` with
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/elf.c -o elf-example`
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/elf.c -o elf-example`
 then run `./elf-example`. For an actual file, combine with `mulib-mmfile.h` or
 `mulib-fs.h` and explicitly define their implementation switches as well.
 `tests/test_storage.c` uses unaligned synthetic inputs across both classes and
@@ -109,7 +109,7 @@ prefix, and (on Linux) the running test executable's real headers/symbols.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-elf.h`](../include/mulib-elf.h) |
+| Header | [`kernels/mulib-elf.h`](../kernels/mulib-elf.h) |
 | Implementation switch | `MULIB_IMPL_ELF` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/elf.c`](../examples/modules/elf.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/elf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/elf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

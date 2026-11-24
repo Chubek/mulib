@@ -13,7 +13,7 @@ multi-event policy are outside this API. See [FinPRED verification and limits](f
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-corporate-actions.h`](../include/mulib-corporate-actions.h) |
+| Header | [`kernels/mulib-corporate-actions.h`](../kernels/mulib-corporate-actions.h) |
 | Implementation switch | `MULIB_IMPL_CORPORATE_ACTIONS` |
 | Repository-local includes | [mulib-money](mulib-money.md) |
 | Complete example | [`examples/finpred_market.c`](../examples/finpred_market.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/finpred_market.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/finpred_market.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

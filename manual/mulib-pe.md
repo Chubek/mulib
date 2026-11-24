@@ -40,7 +40,7 @@ in stripped images. No native Windows headers are needed. See
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pe.h`](../include/mulib-pe.h) |
+| Header | [`kernels/mulib-pe.h`](../kernels/mulib-pe.h) |
 | Implementation switch | `MULIB_IMPL_PE` |
 | Repository-local includes | [mulib-coff](mulib-coff.md) |
 | Complete example | [`examples/modules/pe.c`](../examples/modules/pe.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pe.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pe.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

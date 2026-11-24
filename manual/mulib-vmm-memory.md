@@ -38,7 +38,7 @@ transactionality, aliases, gaps, overflow and permission-reduced device views.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmm-memory.h`](../include/mulib-vmm-memory.h) |
+| Header | [`kernels/mulib-vmm-memory.h`](../kernels/mulib-vmm-memory.h) |
 | Implementation switch | `MULIB_IMPL_VMM_MEMORY` |
 | Repository-local includes | [mulib-vmmdev](mulib-vmmdev.md) |
 | Complete example | [`examples/modules/vmm-memory.c`](../examples/modules/vmm-memory.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm-memory.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmm-memory.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

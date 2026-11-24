@@ -54,7 +54,7 @@ do not embed arbitrary image uploads or transport credentials.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-conainerd-ipc.h`](../include/mulib-conainerd-ipc.h) |
+| Header | [`kernels/mulib-conainerd-ipc.h`](../kernels/mulib-conainerd-ipc.h) |
 | Implementation switch | `MULIB_IMPL_CONAINERD_IPC` |
 | Repository-local includes | [mulib-container-ipc](mulib-container-ipc.md), [mulib-container](mulib-container.md) |
 | Complete example | [`examples/modules/conainerd-ipc.c`](../examples/modules/conainerd-ipc.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/conainerd-ipc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/conainerd-ipc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

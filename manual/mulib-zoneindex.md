@@ -12,7 +12,7 @@ excluded by the caller. Two O(count) passes, no allocation or stored index.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-zoneindex.h`](../include/mulib-zoneindex.h).
+Verbatim declaration section from [`kernels/mulib-zoneindex.h`](../kernels/mulib-zoneindex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-zoneindex.h`](../include/mulib-zoneindex.h) |
+| Header | [`kernels/mulib-zoneindex.h`](../kernels/mulib-zoneindex.h) |
 | Implementation switch | `MULIB_IMPL_ZONEINDEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/zoneindex.c`](../examples/modules/zoneindex.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/zoneindex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/zoneindex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

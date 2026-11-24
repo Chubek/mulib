@@ -31,7 +31,7 @@ See `../tests/test_wifi-station.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-station.h`](../include/mulib-wifi-station.h) |
+| Header | [`kernels/mulib-wifi-station.h`](../kernels/mulib-wifi-station.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_STATION` |
 | Repository-local includes | [mulib-nl80211](mulib-nl80211.md) |
 | Complete example | [`examples/modules/wifi-station.c`](../examples/modules/wifi-station.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-station.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-station.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

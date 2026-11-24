@@ -16,7 +16,7 @@ Example: `examples/modules/objfilepacker.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilepacker.h`](../include/mulib-objfilepacker.h).
+Verbatim declaration section from [`kernels/mulib-objfilepacker.h`](../kernels/mulib-objfilepacker.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilepacker.h`](../include/mulib-objfilepacker.h) |
+| Header | [`kernels/mulib-objfilepacker.h`](../kernels/mulib-objfilepacker.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILEPACKER` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/objfilepacker.c`](../examples/modules/objfilepacker.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilepacker.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilepacker.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

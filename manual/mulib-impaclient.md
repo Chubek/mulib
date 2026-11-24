@@ -21,7 +21,7 @@ unit. There are no other dependencies or implicit switches; C++ declarations
 have C linkage. Scratch storage avoids unnecessary allocating containers.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/impaclient.c -o /tmp/opencode/impaclient
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/impaclient.c -o /tmp/opencode/impaclient
 /tmp/opencode/impaclient
 ```
 
@@ -107,7 +107,7 @@ share its scratch buffer.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-impaclient.h`](../include/mulib-impaclient.h) |
+| Header | [`kernels/mulib-impaclient.h`](../kernels/mulib-impaclient.h) |
 | Implementation switch | `MULIB_IMPL_IMPACLIENT` |
 | Repository-local includes | [mulib-imapserver](mulib-imapserver.md) |
 | Complete example | [`examples/modules/impaclient.c`](../examples/modules/impaclient.c) |
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/impaclient.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/impaclient.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,7 +1,7 @@
 # mulib-eda-hierarchy
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-hierarchy.h`  
+**Header:** `kernels/mulib-eda-hierarchy.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_HIERARCHY`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_HIERARCHY` defined befo
 `tests/test_eda_hierarchy.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_hierarchy.c -lm -o /tmp/test_eda_hierarchy
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_hierarchy.c -lm -o /tmp/test_eda_hierarchy
 /tmp/test_eda_hierarchy
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-hierarchy.h`](../include/mulib-eda-hierarchy.h).
+Verbatim declaration section from [`kernels/mulib-eda-hierarchy.h`](../kernels/mulib-eda-hierarchy.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ void mulib_eda_hierarchy_free(mulib_eda_hierarchy_t *h);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-hierarchy.h`](../include/mulib-eda-hierarchy.h) |
+| Header | [`kernels/mulib-eda-hierarchy.h`](../kernels/mulib-eda-hierarchy.h) |
 | Implementation switch | `MULIB_IMPL_EDA_HIERARCHY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-hierarchy.c`](../examples/modules/eda-hierarchy.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-hierarchy.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-hierarchy.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,7 +31,7 @@ See `../tests/test_rtnl-tunnel.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rtnl-tunnel.h`](../include/mulib-rtnl-tunnel.h) |
+| Header | [`kernels/mulib-rtnl-tunnel.h`](../kernels/mulib-rtnl-tunnel.h) |
 | Implementation switch | `MULIB_IMPL_RTNL_TUNNEL` |
 | Repository-local includes | [mulib-rtnl-link](mulib-rtnl-link.md), [mulib-rtnl](mulib-rtnl.md) |
 | Complete example | [`examples/modules/rtnl-tunnel.c`](../examples/modules/rtnl-tunnel.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rtnl-tunnel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rtnl-tunnel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

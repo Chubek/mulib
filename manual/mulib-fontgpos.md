@@ -46,14 +46,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-fontgpos.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-fontgpos.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-fontgpos.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-fontgpos.c -lm -o test
 ./test
 ```
 
@@ -72,9 +72,9 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-fontgpos.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fontgpos.h`](../include/mulib-fontgpos.h) |
+| Header | [`kernels/mulib-fontgpos.h`](../kernels/mulib-fontgpos.h) |
 | Implementation switch | `MULIB_IMPL_FONTGPOS` |
-| Repository-local includes | [`include/detail/mulib-otlayout.h`](../include/detail/mulib-otlayout.h), [mulib-typecore](mulib-typecore.md) |
+| Repository-local includes | [`kernels/detail/mulib-otlayout.h`](../kernels/detail/mulib-otlayout.h), [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-fontgpos.c`](../examples/mulib-fontgpos.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-fontgpos.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-fontgpos.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

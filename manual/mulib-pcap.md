@@ -33,7 +33,7 @@ See `../tests/test_pcap.c` for its compile/link verification. Selected runnable 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pcap.h`](../include/mulib-pcap.h) |
+| Header | [`kernels/mulib-pcap.h`](../kernels/mulib-pcap.h) |
 | Implementation switch | `MULIB_IMPL_PCAP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/pcap.c`](../examples/modules/pcap.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pcap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pcap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

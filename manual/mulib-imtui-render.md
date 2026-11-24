@@ -13,7 +13,7 @@ longer matches the terminal (for example, after printing outside the UI).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-render.h`](../include/mulib-imtui-render.h) |
+| Header | [`kernels/mulib-imtui-render.h`](../kernels/mulib-imtui-render.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_RENDER` |
 | Repository-local includes | [mulib-imtui-core](mulib-imtui-core.md), [mulib-termstyle](mulib-termstyle.md) |
 | Complete example | [`examples/imtui/terminal.c`](../examples/imtui/terminal.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/terminal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/terminal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

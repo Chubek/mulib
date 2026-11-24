@@ -34,7 +34,7 @@ headers, header CRC corruption, truncations, concatenation and allocation failur
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gzip.h`](../include/mulib-gzip.h) |
+| Header | [`kernels/mulib-gzip.h`](../kernels/mulib-gzip.h) |
 | Implementation switch | `MULIB_IMPL_GZIP` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md), [mulib-crc32](mulib-crc32.md), [mulib-deflate](mulib-deflate.md) |
 | Complete example | [`examples/modules/gzip.c`](../examples/modules/gzip.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gzip.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gzip.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,7 +1,7 @@
 # mulib-num-dense
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-dense.h`  
+**Header:** `kernels/mulib-num-dense.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_DENSE`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_DENSE` defined before i
 `tests/test_num_dense.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_dense.c -lm -o /tmp/test_num_dense
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_dense.c -lm -o /tmp/test_num_dense
 /tmp/test_num_dense
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-dense.h`](../include/mulib-num-dense.h).
+Verbatim declaration section from [`kernels/mulib-num-dense.h`](../kernels/mulib-num-dense.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_num_dense_solve(size_t n, const double *a, const double *b, double *so
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-dense.h`](../include/mulib-num-dense.h) |
+| Header | [`kernels/mulib-num-dense.h`](../kernels/mulib-num-dense.h) |
 | Implementation switch | `MULIB_IMPL_NUM_DENSE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/num-dense.c`](../examples/modules/num-dense.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-dense.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-dense.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

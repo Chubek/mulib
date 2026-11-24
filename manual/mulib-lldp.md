@@ -32,7 +32,7 @@ See `../tests/test_lldp.c` for its compile/link verification. Selected runnable 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lldp.h`](../include/mulib-lldp.h) |
+| Header | [`kernels/mulib-lldp.h`](../kernels/mulib-lldp.h) |
 | Implementation switch | `MULIB_IMPL_LLDP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lldp.c`](../examples/modules/lldp.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lldp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lldp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

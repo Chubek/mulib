@@ -53,14 +53,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-fontcmap.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-fontcmap.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-fontcmap.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-fontcmap.c -lm -o test
 ./test
 ```
 
@@ -79,7 +79,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-fontcmap.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fontcmap.h`](../include/mulib-fontcmap.h) |
+| Header | [`kernels/mulib-fontcmap.h`](../kernels/mulib-fontcmap.h) |
 | Implementation switch | `MULIB_IMPL_FONTCMAP` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-fontcmap.c`](../examples/mulib-fontcmap.c) |
@@ -92,6 +92,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-fontcmap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-fontcmap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

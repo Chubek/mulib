@@ -21,7 +21,7 @@ def main():
     args = parser.parse_args()
     cc = shlex.split(os.environ.get('CC', 'cc'))
     flags = ['-std=c11', '-O2', '-g', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-             '-I' + str(ROOT / 'include')]
+             '-I' + str(ROOT / 'kernels')]
     if args.sanitizers:
         flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']
@@ -51,7 +51,7 @@ def main():
         def closure(name, found):
             if name in found:
                 return
-            text = (ROOT / 'include' / f'mulib-{name}.h').read_text()
+            text = (ROOT / 'kernels' / f'mulib-{name}.h').read_text()
             found[name] = re.search(r'^#\s*if.*?(MULIB_IMPL_[A-Z0-9_]+)', text, re.M).group(1)
             for dependency in re.findall(r'^\s*#\s*include\s*"mulib-([^"]+)\.h"', text, re.M):
                 closure(dependency, found)

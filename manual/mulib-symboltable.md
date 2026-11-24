@@ -21,7 +21,7 @@ O(bindings removed). There is no mutation of an existing binding.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-symboltable.h`](../include/mulib-symboltable.h) |
+| Header | [`kernels/mulib-symboltable.h`](../kernels/mulib-symboltable.h) |
 | Implementation switch | `MULIB_IMPL_SYMBOLTABLE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/symboltable.c`](../examples/modules/symboltable.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/symboltable.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/symboltable.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

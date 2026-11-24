@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-select.h`  
+**Header:** `kernels/mulib-select.h`  
 **Implementation:** `MULIB_IMPL_SELECT` in exactly one translation unit.  
 **Dependencies:** none; POSIX libc. C11, C++ declarations with C linkage.
 
@@ -62,7 +62,7 @@ writes, waits at most 1000 ms, reads, and explicitly closes both ends. Its helpe
 pipe comes from `syscall`; the example defines both implementation switches.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/select.c -o /tmp/opencode/select-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/select.c -o /tmp/opencode/select-example
 /tmp/opencode/select-example
 ```
 
@@ -77,7 +77,7 @@ and reactor integration. No third-party library is required.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-select.h`](../include/mulib-select.h) |
+| Header | [`kernels/mulib-select.h`](../kernels/mulib-select.h) |
 | Implementation switch | `MULIB_IMPL_SELECT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/select.c`](../examples/modules/select.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/select.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/select.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

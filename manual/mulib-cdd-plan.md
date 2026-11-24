@@ -26,7 +26,7 @@ Capabilities accumulate; a requirement must be provided externally or by an earl
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-plan.h`](../include/mulib-cdd-plan.h) |
+| Header | [`kernels/mulib-cdd-plan.h`](../kernels/mulib-cdd-plan.h) |
 | Implementation switch | `MULIB_IMPL_CDD_PLAN` |
 | Repository-local includes | [mulib-cdd-catalogue](mulib-cdd-catalogue.md) |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -39,6 +39,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

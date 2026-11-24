@@ -87,7 +87,7 @@ not Java compatibility certification or on-device ART testing.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-jvm.h`](../include/mulib-jvm.h) |
+| Header | [`kernels/mulib-jvm.h`](../kernels/mulib-jvm.h) |
 | Implementation switch | `MULIB_IMPL_JVM` |
 | Repository-local includes | [mulib-art](mulib-art.md) |
 | Complete example | [`examples/modules/jvm.c`](../examples/modules/jvm.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/jvm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/jvm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

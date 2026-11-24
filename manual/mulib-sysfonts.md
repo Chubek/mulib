@@ -68,7 +68,7 @@ No native implementation source is copied or bundled.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sysfonts.h`](../include/mulib-sysfonts.h) |
+| Header | [`kernels/mulib-sysfonts.h`](../kernels/mulib-sysfonts.h) |
 | Implementation switch | `MULIB_IMPL_SYSFONTS` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md) |
 | Complete example | [`examples/modules/sysfonts.c`](../examples/modules/sysfonts.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sysfonts.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sysfonts.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,7 +1,7 @@
 # mulib-num-sparse
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-sparse.h`  
+**Header:** `kernels/mulib-num-sparse.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_SPARSE`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_SPARSE` defined before 
 `tests/test_num_sparse.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_sparse.c -lm -o /tmp/test_num_sparse
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_sparse.c -lm -o /tmp/test_num_sparse
 /tmp/test_num_sparse
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-sparse.h`](../include/mulib-num-sparse.h).
+Verbatim declaration section from [`kernels/mulib-num-sparse.h`](../kernels/mulib-num-sparse.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -94,7 +94,7 @@ int mulib_num_sparse_canonicalize(mulib_num_sparse_t *s);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-sparse.h`](../include/mulib-num-sparse.h) |
+| Header | [`kernels/mulib-num-sparse.h`](../kernels/mulib-num-sparse.h) |
 | Implementation switch | `MULIB_IMPL_NUM_SPARSE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/num-sparse.c`](../examples/modules/num-sparse.c) |
@@ -107,6 +107,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-sparse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-sparse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

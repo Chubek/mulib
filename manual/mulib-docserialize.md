@@ -29,14 +29,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-docserialize.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-docserialize.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-docserialize.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-docserialize.c -lm -o test
 ./test
 ```
 
@@ -64,9 +64,9 @@ Caller limits bound nodes/depth/strings. Legacy string-escaping APIs are unchang
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-docserialize.h`](../include/mulib-docserialize.h) |
+| Header | [`kernels/mulib-docserialize.h`](../kernels/mulib-docserialize.h) |
 | Implementation switch | `MULIB_IMPL_DOCSERIALIZE` |
-| Repository-local includes | [`include/detail/mulib-docserialize-tree.h`](../include/detail/mulib-docserialize-tree.h), [mulib-docir](mulib-docir.md), [mulib-typecore](mulib-typecore.md) |
+| Repository-local includes | [`kernels/detail/mulib-docserialize-tree.h`](../kernels/detail/mulib-docserialize-tree.h), [mulib-docir](mulib-docir.md), [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-docserialize.c`](../examples/mulib-docserialize.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-docserialize.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-docserialize.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

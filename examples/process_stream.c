@@ -1,5 +1,5 @@
 /* Build: cc -std=c11 -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L \
- *  -Iinclude examples/process_stream.c -o /tmp/mulib-process-stream-example
+ *  -Ikernels examples/process_stream.c -o /tmp/mulib-process-stream-example
  */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

@@ -23,7 +23,7 @@ are O(types), storage O(types). No target size/alignment computation is provided
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-typesystem.h`](../include/mulib-typesystem.h) |
+| Header | [`kernels/mulib-typesystem.h`](../kernels/mulib-typesystem.h) |
 | Implementation switch | `MULIB_IMPL_TYPESYSTEM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/typesystem.c`](../examples/modules/typesystem.c) |
@@ -36,6 +36,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/typesystem.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/typesystem.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

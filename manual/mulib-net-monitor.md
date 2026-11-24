@@ -32,7 +32,7 @@ See `../tests/test_net-monitor.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-monitor.h`](../include/mulib-net-monitor.h) |
+| Header | [`kernels/mulib-net-monitor.h`](../kernels/mulib-net-monitor.h) |
 | Implementation switch | `MULIB_IMPL_NET_MONITOR` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/net-monitor.c`](../examples/modules/net-monitor.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-monitor.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-monitor.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

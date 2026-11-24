@@ -21,7 +21,7 @@ terminal. In Termscript, `[[name]]` is inert data until `emit` is called.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termdb.h`](../include/mulib-termdb.h) |
+| Header | [`kernels/mulib-termdb.h`](../kernels/mulib-termdb.h) |
 | Implementation switch | `MULIB_IMPL_TERMDB` |
 | Repository-local includes | [mulib-sqlite](mulib-sqlite.md), [mulib-terminfo](mulib-terminfo.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

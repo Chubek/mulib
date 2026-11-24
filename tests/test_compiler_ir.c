@@ -1,4 +1,4 @@
-/* Standalone: cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_compiler_ir.c */
+/* Standalone: cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_compiler_ir.c */
 #define MULIB_IMPL_MIR
 #define MULIB_IMPL_MINIVM
 #define MULIB_IMPL_STRBUF

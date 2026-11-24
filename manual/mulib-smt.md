@@ -51,7 +51,7 @@ int main(void) {
 Compile from repository root (using the additions copied into its directories):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -lm -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -lm -o example
 ```
 
 The `-lm` link flag is for the system C math library, not an external third-party dependency.
@@ -67,7 +67,7 @@ All algorithms are deterministic. Data collections are borrowed; their lifetimes
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-smt.h`](../include/mulib-smt.h).
+Verbatim declaration section from [`kernels/mulib-smt.h`](../kernels/mulib-smt.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -126,7 +126,7 @@ int mulib_smt_real_value(const mulib_smt_t *solver, size_t variable, double *out
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-smt.h`](../include/mulib-smt.h) |
+| Header | [`kernels/mulib-smt.h`](../kernels/mulib-smt.h) |
 | Implementation switch | `MULIB_IMPL_SMT` |
 | Repository-local includes | [mulib-sat](mulib-sat.md) |
 | Complete example | [`examples/modules/smt.c`](../examples/modules/smt.c) |
@@ -139,6 +139,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/smt.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/smt.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

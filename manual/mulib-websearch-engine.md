@@ -15,7 +15,7 @@ free releases and resets. This is a result collection, not a network provider.
 
 ## Integration and ownership
 
-Include `include/mulib-websearch-engine.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-websearch-engine.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -39,7 +39,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-websearch-engine.h`](../include/mulib-websearch-engine.h).
+Verbatim declaration section from [`kernels/mulib-websearch-engine.h`](../kernels/mulib-websearch-engine.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -102,7 +102,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-websearch-engine.h`](../include/mulib-websearch-engine.h) |
+| Header | [`kernels/mulib-websearch-engine.h`](../kernels/mulib-websearch-engine.h) |
 | Implementation switch | `MULIB_IMPL_WEBSEARCH_ENGINE` |
 | Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md), [mulib-browser-origin](mulib-browser-origin.md) |
 | Complete example | [`examples/modules/websearch-engine.c`](../examples/modules/websearch-engine.c) |
@@ -115,6 +115,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/websearch-engine.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/websearch-engine.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

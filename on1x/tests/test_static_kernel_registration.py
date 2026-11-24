@@ -98,7 +98,7 @@ def main():
     headers = {row['declaration']['header'] for row in modules.values()}
     reserved = set(inventory['reserved_headers'])
     assert not headers & reserved
-    assert headers | reserved == {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
+    assert headers | reserved == {p.relative_to(root).as_posix() for p in (root/'kernels').glob('mulib-*.h')}
     assert {name for name, row in modules.items() if row['static_compile']['safe'] == 'requires_review'} == {
         'clamp', 'histprice', 'priceopt'}
     assert {name for name, row in modules.items() if row['static_compile']['unsafe'] == 'requires_checked_adapter'} == {
@@ -132,18 +132,18 @@ def main():
             (home/subdir).mkdir(parents=True)
             for name in names:
                 shutil.copyfile(on1x/subdir/name, home/subdir/name)
-        (checkout/'include').mkdir()
+        (checkout/'kernels').mkdir()
         (checkout/'manual').mkdir()
         manifest = checkout/'MANIFEST.yaml'
         manifest.write_text('name: MuLIB\nmodules:\n')
 
         def register(name, macro):
-            (checkout/'include'/f'mulib-{name}.h').write_text(
+            (checkout/'kernels'/f'mulib-{name}.h').write_text(
                 f'int mulib_future_value(void);\n#ifdef {macro}\n'
                 'int mulib_future_value(void) { return 42; }\n#endif\n')
             (checkout/'manual'/f'mulib-{name}.md').write_text('# Future C11 declarations\n')
             with manifest.open('a') as stream:
-                stream.write(f'- name: {name}\n  header: include/mulib-{name}.h\n'
+                stream.write(f'- name: {name}\n  header: kernels/mulib-{name}.h\n'
                              f'  manual: manual/mulib-{name}.md\n  status: implemented\n'
                              f'  macro: {macro}\n  dependencies: []\n')
 
@@ -187,7 +187,7 @@ def main():
         # A registry from an older generator could contain both canonical
         # declarations; listing must not report either spelling as eligible.
         legacy = json.loads(previous)
-        legacy['modules'][collision] = dict(future['declaration'], header=f'include/mulib-{collision}.h',
+        legacy['modules'][collision] = dict(future['declaration'], header=f'kernels/mulib-{collision}.h',
                                             macro='MULIB_IMPL_COLLIDING_VALUE')
         catalog(home).write_text(json.dumps(legacy))
         rows = check_registry(home, checkout)

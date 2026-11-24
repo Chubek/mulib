@@ -11,7 +11,7 @@ codes, sequences and tombstones. No disk engine or query language.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-documentdb.h`](../include/mulib-documentdb.h).
+Verbatim declaration section from [`kernels/mulib-documentdb.h`](../kernels/mulib-documentdb.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-documentdb.h`](../include/mulib-documentdb.h) |
+| Header | [`kernels/mulib-documentdb.h`](../kernels/mulib-documentdb.h) |
 | Implementation switch | `MULIB_IMPL_DOCUMENTDB` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/documentdb.c`](../examples/modules/documentdb.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/documentdb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/documentdb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

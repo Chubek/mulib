@@ -40,7 +40,7 @@ int main(void) {
 Compile from repository root (using the additions copied into its directories):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -lm -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -lm -o example
 ```
 
 The `-lm` link flag is for the system C math library, not an external third-party dependency.
@@ -56,7 +56,7 @@ All algorithms are deterministic. Data collections are borrowed; their lifetimes
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-sat.h`](../include/mulib-sat.h).
+Verbatim declaration section from [`kernels/mulib-sat.h`](../kernels/mulib-sat.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -109,7 +109,7 @@ size_t mulib_sat_variables(const mulib_sat_t *solver);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sat.h`](../include/mulib-sat.h) |
+| Header | [`kernels/mulib-sat.h`](../kernels/mulib-sat.h) |
 | Implementation switch | `MULIB_IMPL_SAT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/sat.c`](../examples/modules/sat.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sat.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sat.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

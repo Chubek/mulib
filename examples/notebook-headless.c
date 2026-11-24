@@ -1,5 +1,5 @@
 /* Device-free notebook shell. Build from the repository root:
- * cc -std=c11 -D_POSIX_C_SOURCE=200809L -Iinclude examples/notebook-headless.c \
+ * cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ikernels examples/notebook-headless.c \
  *    -lm -ldl -o notebook-headless
  * ./notebook-headless --ppm notebook.ppm [--scroll 220] [--save notebook.mnb]
  */

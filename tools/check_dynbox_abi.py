@@ -144,7 +144,7 @@ def main():
         print('SKIP: dynbox compiler ABI requires Linux x86-64')
         return
     flags = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(ROOT / 'include')]
+             '-I' + str(ROOT / 'kernels')]
     if args.sanitizers:
         flags += ['-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer']
     compiler = shlex.split(args.compiler)

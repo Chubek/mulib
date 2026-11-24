@@ -25,7 +25,7 @@ The host supplies and authorizes the callbacks and decides which descriptors the
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-execute.h`](../include/mulib-cdd-execute.h) |
+| Header | [`kernels/mulib-cdd-execute.h`](../kernels/mulib-cdd-execute.h) |
 | Implementation switch | `MULIB_IMPL_CDD_EXECUTE` |
 | Repository-local includes | [mulib-cdd-plan](mulib-cdd-plan.md) |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -38,6 +38,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

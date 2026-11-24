@@ -1,6 +1,6 @@
 # ImmGTK: 30 optional Mune widgets
 
-The C host in `include/mulib-immgtk.h` contains **no widgets**. These original
+The C host in `kernels/mulib-immgtk.h` contains **no widgets**. These original
 Lua modules use only its four drawing/input primitives. No GTK or external Lua
 runtime is required. Copy this directory as `immgtk` into your module directory.
 

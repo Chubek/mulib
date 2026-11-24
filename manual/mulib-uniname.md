@@ -49,7 +49,7 @@ The implementation resolves the documented ICU `u_charName` and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uniname.h`](../include/mulib-uniname.h) |
+| Header | [`kernels/mulib-uniname.h`](../kernels/mulib-uniname.h) |
 | Implementation switch | `MULIB_IMPL_UNINAME` |
 | Repository-local includes | [mulib-uniproc](mulib-uniproc.md) |
 | Complete example | [`examples/modules/uniname.c`](../examples/modules/uniname.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uniname.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uniname.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

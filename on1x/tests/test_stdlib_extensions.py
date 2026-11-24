@@ -68,13 +68,13 @@ spec=importlib.util.spec_from_file_location('house',t.root/'stdlib/mulib/houseke
 house=importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
 implementation=t.work/'ini_impl.c';implementation.write_text(house.implementation(t.root.parent,house.plan(t.root.parent,['ini'])))
 allocation=t.work/'bridge_allocation'
-p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root.parent/'include',
+p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root.parent/'kernels',
        t.root/'tests/test_stdlib_bridge_allocation.c',implementation,*t.flags,'-o',allocation])
 assert p.returncode==0,p.stderr
 execute(allocation,'')
 for group in ['JSON','YAML','TOML','INI','CRYPTO','SOCKET','UNIX','']:
     flags=['-DON1X_BRIDGE_'+group] if group else []
-    p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root.parent/'include',
+    p=run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',t.root.parent/'kernels',
            *flags,*t.flags,'-c',t.root/'stdlib/_bridge/mulib_bridge.c','-o',t.work/('group_'+group+'.o')])
     assert p.returncode==0,(group,p.stderr)
 

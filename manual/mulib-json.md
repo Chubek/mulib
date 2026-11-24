@@ -148,7 +148,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/json.c -lm -o ./json
+cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ikernels examples/modules/json.c -lm -o ./json
 ./json
 ```
 
@@ -159,7 +159,7 @@ cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/json.c -
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-json.h`](../include/mulib-json.h) |
+| Header | [`kernels/mulib-json.h`](../kernels/mulib-json.h) |
 | Implementation switch | `MULIB_IMPL_JSON` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/json.c`](../examples/modules/json.c) |
@@ -172,6 +172,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/json.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/json.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

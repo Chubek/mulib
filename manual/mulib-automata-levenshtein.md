@@ -19,7 +19,7 @@ No Unicode normalization, transpositions, substring matching or tree traversal.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-automata-levenshtein.h`](../include/mulib-automata-levenshtein.h).
+Verbatim declaration section from [`kernels/mulib-automata-levenshtein.h`](../kernels/mulib-automata-levenshtein.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ void mulib_levenshtein_automaton_destroy(mulib_levenshtein_automaton_t *a);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-automata-levenshtein.h`](../include/mulib-automata-levenshtein.h) |
+| Header | [`kernels/mulib-automata-levenshtein.h`](../kernels/mulib-automata-levenshtein.h) |
 | Implementation switch | `MULIB_IMPL_AUTOMATA_LEVENSHTEIN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/automata-levenshtein.c`](../examples/modules/automata-levenshtein.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/automata-levenshtein.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/automata-levenshtein.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

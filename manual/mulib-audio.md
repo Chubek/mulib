@@ -40,7 +40,7 @@ used concurrently.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-audio.h`](../include/mulib-audio.h) |
+| Header | [`kernels/mulib-audio.h`](../kernels/mulib-audio.h) |
 | Implementation switch | `MULIB_IMPL_AUDIO` |
 | Repository-local includes | [mulib-xsimd](mulib-xsimd.md) |
 | Complete example | [`examples/modules/audio.c`](../examples/modules/audio.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/audio.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/audio.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

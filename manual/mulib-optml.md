@@ -4,7 +4,7 @@
 
 Annotation-driven LIR optimization and complete native-MIR-to-assembly pipeline.
 The static catalogue contains 75 guarded shallow-tree rewrites, followed by
-conservative dead-write elimination. All implementation code is in `include/`;
+conservative dead-write elimination. All implementation code is in `kernels/`;
 [`library/optim`](../library/optim/README.md) contains the loadable rule policy.
 
 ## Integration
@@ -92,7 +92,7 @@ mapping requires assembling/linking first, using the existing machine-code
 loader/JIT APIs for a supported object format.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/optml.c -lm -o optml
+cc -std=c11 -Ikernels examples/modules/optml.c -lm -o optml
 ./optml library/archml/amd64.aml > twice.s
 cc -c twice.s -o twice.o
 ```
@@ -109,7 +109,7 @@ RV64 cross-assembly. No unimplemented optimization names are advertised as passe
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-optml.h`](../include/mulib-optml.h) |
+| Header | [`kernels/mulib-optml.h`](../kernels/mulib-optml.h) |
 | Implementation switch | `MULIB_IMPL_OPTML` |
 | Repository-local includes | [mulib-isel](mulib-isel.md), [mulib-peephole](mulib-peephole.md), [mulib-superinstr](mulib-superinstr.md) |
 | Complete example | [`examples/modules/optml.c`](../examples/modules/optml.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/optml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/optml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -15,7 +15,7 @@ Example: `examples/modules/binfilereader.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-binfilereader.h`](../include/mulib-binfilereader.h).
+Verbatim declaration section from [`kernels/mulib-binfilereader.h`](../kernels/mulib-binfilereader.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -66,7 +66,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-binfilereader.h`](../include/mulib-binfilereader.h) |
+| Header | [`kernels/mulib-binfilereader.h`](../kernels/mulib-binfilereader.h) |
 | Implementation switch | `MULIB_IMPL_BINFILEREADER` |
 | Repository-local includes | [mulib-binfile](mulib-binfile.md), [mulib-bycutils](mulib-bycutils.md) |
 | Complete example | [`examples/modules/binfilereader.c`](../examples/modules/binfilereader.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/binfilereader.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/binfilereader.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

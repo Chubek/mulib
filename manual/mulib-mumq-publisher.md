@@ -19,7 +19,7 @@ roundtrip. See `mulib-mumq.md` for wire format and security boundaries.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-mumq-publisher.h`](../include/mulib-mumq-publisher.h).
+Verbatim declaration section from [`kernels/mulib-mumq-publisher.h`](../kernels/mulib-mumq-publisher.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ int mulib_mumq_publish(mulib_mumq_t *, const char *topic, const void *data, size
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mumq-publisher.h`](../include/mulib-mumq-publisher.h) |
+| Header | [`kernels/mulib-mumq-publisher.h`](../kernels/mulib-mumq-publisher.h) |
 | Implementation switch | `MULIB_IMPL_MUMQ_PUBLISHER` |
 | Repository-local includes | [mulib-mumq](mulib-mumq.md) |
 | Complete example | [`examples/modules/mumq-publisher.c`](../examples/modules/mumq-publisher.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq-publisher.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mumq-publisher.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

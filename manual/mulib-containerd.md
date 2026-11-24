@@ -67,7 +67,7 @@ are implied by this embeddable core.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerd.h`](../include/mulib-containerd.h) |
+| Header | [`kernels/mulib-containerd.h`](../kernels/mulib-containerd.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERD` |
 | Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md), [mulib-container-log](mulib-container-log.md), [mulib-containerd-cache](mulib-containerd-cache.md), [mulib-containerd-mount](mulib-containerd-mount.md), [mulib-containterpool](mulib-containterpool.md) |
 | Complete example | [`examples/modules/containerd.c`](../examples/modules/containerd.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

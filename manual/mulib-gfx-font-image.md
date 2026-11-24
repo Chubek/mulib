@@ -197,18 +197,18 @@ From the repository root:
 
 ```sh
 cc -std=c11 -pedantic -Wall -Wextra -Werror \
-  -Iinclude tests/test-gfx-font-image.c \
+  -Ikernels tests/test-gfx-font-image.c \
   -lm -o /tmp/opencode/test-gfx-font-image
 /tmp/opencode/test-gfx-font-image
 
 cc -std=c11 -pedantic -Wall -Wextra -Werror \
   -g -O1 -fsanitize=address,undefined \
-  -fno-omit-frame-pointer -Iinclude tests/test-gfx-font-image.c \
+  -fno-omit-frame-pointer -Ikernels tests/test-gfx-font-image.c \
   -lm -o /tmp/opencode/test-gfx-font-image-asan
 ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 /tmp/opencode/test-gfx-font-image-asan
 
 cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror \
-  -Iinclude tests/test-gfx-font-image-followup.c \
+  -Ikernels tests/test-gfx-font-image-followup.c \
   -lm -o /tmp/opencode/test-gfx-font-image-followup
 /tmp/opencode/test-gfx-font-image-followup
 ```

@@ -1,7 +1,7 @@
 # mulib-num-csc
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-csc.h`  
+**Header:** `kernels/mulib-num-csc.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_CSC`  
 **Dependencies:** `num-sparse`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_CSC` defined before inc
 `tests/test_num_csc.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_csc.c -lm -o /tmp/test_num_csc
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_csc.c -lm -o /tmp/test_num_csc
 /tmp/test_num_csc
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-csc.h`](../include/mulib-num-csc.h).
+Verbatim declaration section from [`kernels/mulib-num-csc.h`](../kernels/mulib-num-csc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ Constructors and conversions require an empty destination; release existing owne
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-csc.h`](../include/mulib-num-csc.h) |
+| Header | [`kernels/mulib-num-csc.h`](../kernels/mulib-num-csc.h) |
 | Implementation switch | `MULIB_IMPL_NUM_CSC` |
 | Repository-local includes | [mulib-num-sparse](mulib-num-sparse.md) |
 | Complete example | [`examples/modules/num-csc.c`](../examples/modules/num-csc.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-csc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-csc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -19,7 +19,7 @@ traversal visits the selected subtree, prefix lookup follows input bytes.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-trie_traversal.h`](../include/mulib-trie_traversal.h).
+Verbatim declaration section from [`kernels/mulib-trie_traversal.h`](../kernels/mulib-trie_traversal.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -61,7 +61,7 @@ int mulib_trie_longest_prefix(const mulib_trie_t *trie, const void *key, size_t 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-trie_traversal.h`](../include/mulib-trie_traversal.h) |
+| Header | [`kernels/mulib-trie_traversal.h`](../kernels/mulib-trie_traversal.h) |
 | Implementation switch | `MULIB_IMPL_TRIE_TRAVERSAL` |
 | Repository-local includes | [mulib-trie](mulib-trie.md) |
 | Complete example | [`examples/modules/trie_traversal.c`](../examples/modules/trie_traversal.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/trie_traversal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/trie_traversal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

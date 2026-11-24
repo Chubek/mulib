@@ -12,7 +12,7 @@ the high bit would otherwise make a nonnegative value look negative.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshwire.h`](../include/mulib-sshwire.h) |
+| Header | [`kernels/mulib-sshwire.h`](../kernels/mulib-sshwire.h) |
 | Implementation switch | `MULIB_IMPL_SSHWIRE` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

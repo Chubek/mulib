@@ -4,7 +4,7 @@ AR ?= ar
 PREFIX ?= /usr/local
 DESTDIR ?=
 BUILD ?= build
-INCLUDE ?= ../../include
+INCLUDE ?= ../../kernels
 CFLAGS ?= -O2 -g
 SHIRAZ_CPPFLAGS = -D_POSIX_C_SOURCE=200809L -I$(INCLUDE)
 WARN = -std=c11 -Wall -Wextra -Wpedantic -Werror

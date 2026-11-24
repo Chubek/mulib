@@ -64,7 +64,7 @@ int main(void) {
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-memtkx.h`](../include/mulib-memtkx.h) |
+| Header | [`kernels/mulib-memtkx.h`](../kernels/mulib-memtkx.h) |
 | Implementation switch | `MULIB_IMPL_MEMTKX` |
 | Repository-local includes | [mulib-alloc](mulib-alloc.md) |
 | Complete example | [`examples/modules/memtkx.c`](../examples/modules/memtkx.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/memtkx.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/memtkx.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

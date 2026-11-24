@@ -30,7 +30,7 @@ state, EOF. Treat nonzero as non-success unless an API specifies otherwise.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sandbox-profile.h`](../include/mulib-sandbox-profile.h) |
+| Header | [`kernels/mulib-sandbox-profile.h`](../kernels/mulib-sandbox-profile.h) |
 | Implementation switch | `MULIB_IMPL_SANDBOX_PROFILE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/sandbox-process.c`](../examples/modules/sandbox-process.c) |
@@ -43,6 +43,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

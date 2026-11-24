@@ -14,6 +14,6 @@ profile runs inside `mulib_daemon_compile`/`compile_file`. Neither loading a hel
 nor compiling a unit implicitly installs or starts a system service.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/daemon.c -pthread -lm -ldl -o /tmp/opencode/daemon
+cc -std=c11 -Ikernels examples/modules/daemon.c -pthread -lm -ldl -o /tmp/opencode/daemon
 /tmp/opencode/daemon library/ldaemon/systemd.lua > /tmp/opencode/example.service
 ```

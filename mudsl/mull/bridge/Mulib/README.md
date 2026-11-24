@@ -63,7 +63,7 @@ From the MuDSL root:
 
 ```sh
 cmake -S . -B build -DMULL_ENABLE_MULIB=ON \
-  -DMULL_MULIB_INCLUDE_DIR=/mnt/nvme/mulib/include
+  -DMULL_MULIB_INCLUDE_DIR=/mnt/nvme/mulib/kernels
 cmake --build build -j4
 ctest --test-dir build --output-on-failure
 ```
@@ -223,8 +223,8 @@ native users must stop using them before provider destruction.
 ## Regenerate
 
 ```sh
-python3 scripts/generate_mulib.py --include ../include
-python3 scripts/generate_mulib.py --include ../include --check
+python3 scripts/generate_mulib.py --include ../kernels
+python3 scripts/generate_mulib.py --include ../kernels --check
 ```
 
 The generator discovers additional headers in isolated declaration TUs, so
@@ -240,10 +240,10 @@ both runtimes.
 The dependency-free freshness check runs in both MuLIB and MuDSL CTest suites:
 
 ```sh
-python3 scripts/check_mulib_inventory.py --include ../include
+python3 scripts/check_mulib_inventory.py --include ../kernels
 ```
 
-It verifies header/library coverage, the callable policy, the complete `include/`
+It verifies header/library coverage, the callable policy, the complete `kernels/`
 fingerprint including local detail inputs, and the generated C artifacts' hashes.
 Regenerate after a header input changes, then use `--check` for a compiler-backed
 reproduction of the snapshot. Regeneration here was verified on Linux x86-64

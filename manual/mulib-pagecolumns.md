@@ -29,14 +29,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-pagecolumns.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-pagecolumns.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-pagecolumns.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-pagecolumns.c -lm -o test
 ./test
 ```
 
@@ -55,7 +55,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-pagecolumns.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pagecolumns.h`](../include/mulib-pagecolumns.h) |
+| Header | [`kernels/mulib-pagecolumns.h`](../kernels/mulib-pagecolumns.h) |
 | Implementation switch | `MULIB_IMPL_PAGECOLUMNS` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-pagecolumns.c`](../examples/mulib-pagecolumns.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-pagecolumns.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-pagecolumns.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

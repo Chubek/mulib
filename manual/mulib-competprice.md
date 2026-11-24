@@ -58,7 +58,7 @@ int main(void) {
 Compile from repository root (using the additions copied into its directories):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -lm -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -lm -o example
 ```
 
 The `-lm` link flag is for the system C math library, not an external third-party dependency.
@@ -74,7 +74,7 @@ All algorithms are deterministic. Data collections are borrowed; their lifetimes
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-competprice.h`](../include/mulib-competprice.h).
+Verbatim declaration section from [`kernels/mulib-competprice.h`](../kernels/mulib-competprice.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -144,7 +144,7 @@ int mulib_competprice_recommend(const mulib_competprice_rival_t *rivals, size_t 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-competprice.h`](../include/mulib-competprice.h) |
+| Header | [`kernels/mulib-competprice.h`](../kernels/mulib-competprice.h) |
 | Implementation switch | `MULIB_IMPL_COMPETPRICE` |
 | Repository-local includes | [mulib-statsproc](mulib-statsproc.md) |
 | Complete example | [`examples/modules/competprice.c`](../examples/modules/competprice.c) |
@@ -157,6 +157,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/competprice.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/competprice.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

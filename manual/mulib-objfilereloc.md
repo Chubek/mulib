@@ -15,7 +15,7 @@ Switches: `MULIB_IMPL_OBJFILERELOC`, `MULIB_IMPL_OBJFILEPOSINDEP`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilereloc.h`](../include/mulib-objfilereloc.h).
+Verbatim declaration section from [`kernels/mulib-objfilereloc.h`](../kernels/mulib-objfilereloc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilereloc.h`](../include/mulib-objfilereloc.h) |
+| Header | [`kernels/mulib-objfilereloc.h`](../kernels/mulib-objfilereloc.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILERELOC` |
 | Repository-local includes | [mulib-bycutils](mulib-bycutils.md), [mulib-objfileposindep](mulib-objfileposindep.md) |
 | Complete example | [`examples/modules/objfilereloc.c`](../examples/modules/objfilereloc.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilereloc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilereloc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

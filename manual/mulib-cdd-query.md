@@ -26,7 +26,7 @@ This is a filter, not a dependency resolver. To constrain composition, translate
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-query.h`](../include/mulib-cdd-query.h) |
+| Header | [`kernels/mulib-cdd-query.h`](../kernels/mulib-cdd-query.h) |
 | Implementation switch | `MULIB_IMPL_CDD_QUERY` |
 | Repository-local includes | [mulib-cdd-catalogue](mulib-cdd-catalogue.md) |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -39,6 +39,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

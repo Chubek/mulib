@@ -122,20 +122,20 @@ change permissions, implement logind, or manage VT process-mode signals.
 Run from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -Ikernels \
   tests/test-gfx-drm.c -lm -o /tmp/opencode/test-gfx-drm
 /tmp/opencode/test-gfx-drm
 
 cc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined \
-  -fno-omit-frame-pointer -g -Iinclude tests/test-gfx-drm.c -lm \
+  -fno-omit-frame-pointer -g -Ikernels tests/test-gfx-drm.c -lm \
   -o /tmp/opencode/test-gfx-drm-asan
 ASAN_OPTIONS=detect_leaks=1 /tmp/opencode/test-gfx-drm-asan
 
-cc -std=c11 -Wall -Wextra -Werror -DMULIB_GFX_DRM_UAPI=0 -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -DMULIB_GFX_DRM_UAPI=0 -Ikernels \
   tests/test-gfx-drm.c -lm -o /tmp/opencode/test-gfx-drm-no-uapi
 /tmp/opencode/test-gfx-drm-no-uapi
 
-cc -std=c11 -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -Ikernels \
   tests/gfx-drm-prime-no-cloexec.c -o /tmp/opencode/test-gfx-drm-prime-no-cloexec
 /tmp/opencode/test-gfx-drm-prime-no-cloexec
 ```

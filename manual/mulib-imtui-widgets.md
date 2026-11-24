@@ -12,7 +12,7 @@ changes; disabled controls render without accepting interaction.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-widgets.h`](../include/mulib-imtui-widgets.h) |
+| Header | [`kernels/mulib-imtui-widgets.h`](../kernels/mulib-imtui-widgets.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_WIDGETS` |
 | Repository-local includes | [mulib-imtui-draw](mulib-imtui-draw.md) |
 | Complete example | [`examples/imtui/headless.c`](../examples/imtui/headless.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

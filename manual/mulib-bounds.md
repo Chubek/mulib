@@ -30,7 +30,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bounds.h`](../include/mulib-bounds.h).
+Verbatim declaration section from [`kernels/mulib-bounds.h`](../kernels/mulib-bounds.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -103,7 +103,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bounds.h`](../include/mulib-bounds.h) |
+| Header | [`kernels/mulib-bounds.h`](../kernels/mulib-bounds.h) |
 | Implementation switch | `MULIB_IMPL_BOUNDS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bounds.c`](../examples/modules/bounds.c) |
@@ -116,6 +116,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bounds.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bounds.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

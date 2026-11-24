@@ -31,7 +31,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-color.h`](../include/mulib-color.h).
+Verbatim declaration section from [`kernels/mulib-color.h`](../kernels/mulib-color.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -107,7 +107,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-color.h`](../include/mulib-color.h) |
+| Header | [`kernels/mulib-color.h`](../kernels/mulib-color.h) |
 | Implementation switch | `MULIB_IMPL_COLOR` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/color.c`](../examples/modules/color.c) |
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/color.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/color.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

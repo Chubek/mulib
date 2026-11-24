@@ -22,7 +22,7 @@ A change stores kind and old/new indices; NONE means not applicable. Output orde
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-diff.h`](../include/mulib-cdd-diff.h) |
+| Header | [`kernels/mulib-cdd-diff.h`](../kernels/mulib-cdd-diff.h) |
 | Implementation switch | `MULIB_IMPL_CDD_DIFF` |
 | Repository-local includes | [mulib-cdd-catalogue](mulib-cdd-catalogue.md) |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

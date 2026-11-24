@@ -28,7 +28,7 @@ Other translation units include the header without switches. See `examples/cdd-p
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cdd-resolve.h`](../include/mulib-cdd-resolve.h) |
+| Header | [`kernels/mulib-cdd-resolve.h`](../kernels/mulib-cdd-resolve.h) |
 | Implementation switch | `MULIB_IMPL_CDD_RESOLVE` |
 | Repository-local includes | [mulib-cdd-plan](mulib-cdd-plan.md) |
 | Complete example | [`examples/cdd-pipeline.c`](../examples/cdd-pipeline.c) |
@@ -41,6 +41,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/cdd-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -191,7 +191,7 @@ def main():
           print('Mune AOT passed')''')
         generated.write_text(run([runtime, '--emit', str(source)], work).stdout)
         binary = work / 'aot'
-        flags = ['-std=c11', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include')]
+        flags = ['-std=c11', '-O1', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'kernels')]
         if os.name == 'posix':
             flags += ['-pthread']
         if sys.platform.startswith(('linux', 'freebsd')):
@@ -220,7 +220,7 @@ mulib_mune_status_t muneopen_fallback(mulib_mune_state_t *s,const mulib_mune_val
  size_t n,mulib_mune_result_t *r,void *u) { return muneopen_probe(s,a,n,r,u); }
 \n''')
             run(shlex.split(args.compiler) + (['-undefined', 'dynamic_lookup'] if sys.platform == 'darwin' else [])
-                + ['-std=c11', '-shared', '-fPIC', '-I' + str(ROOT / 'include'),
+                + ['-std=c11', '-shared', '-fPIC', '-I' + str(ROOT / 'kernels'),
                                                str(plugin), '-o', str(work / 'probe.so')], work)
             shutil.copyfile(work / 'probe.so', work / 'probe-v2.so')
             shutil.copyfile(work / 'probe.so', work / 'ignored-fallback.so')

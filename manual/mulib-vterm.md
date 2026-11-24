@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-vterm.h` implements a bounded in-memory terminal screen emulator
+`kernels/mulib-vterm.h` implements a bounded in-memory terminal screen emulator
 and the cell/style value types shared with MuLIB TUI. Bytes can be supplied in
 arbitrary fragments; there is no PTY, terminal access, or output callback.
 
@@ -148,7 +148,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/vterm.c -o ./vterm-example
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/vterm.c -o ./vterm-example
 ./vterm-example
 ```
 
@@ -165,7 +165,7 @@ TUI output replay without an interactive terminal.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vterm.h`](../include/mulib-vterm.h) |
+| Header | [`kernels/mulib-vterm.h`](../kernels/mulib-vterm.h) |
 | Implementation switch | `MULIB_IMPL_VTERM` |
 | Repository-local includes | [mulib-grid](mulib-grid.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/vterm.c`](../examples/modules/vterm.c) |
@@ -178,6 +178,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vterm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vterm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

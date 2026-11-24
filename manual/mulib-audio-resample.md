@@ -24,7 +24,7 @@ Capacities describe live backing storage supplied by the caller, not merely nume
 
 ## Current callable surface
 
-Signatures extracted from this header; dependency types and complete checks are in [the source](../include/mulib-audio-resample.h). Helpers listed here are not automatically safe foreign imports.
+Signatures extracted from this header; dependency types and complete checks are in [the source](../kernels/mulib-audio-resample.h). Helpers listed here are not automatically safe foreign imports.
 
 ```c
 static inline bool mulib_audio_resample_linear(float *out,size_t out_frames,const float *in,size_t in_frames,size_t ch,double ratio,double phase);
@@ -51,7 +51,7 @@ The runner checks the 193 original kernels plus the shared PCM helper, isolated 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-audio-resample.h`](../include/mulib-audio-resample.h) |
+| Header | [`kernels/mulib-audio-resample.h`](../kernels/mulib-audio-resample.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | [mulib-audio-core](mulib-audio-core.md) |
 | Complete example | [`examples/media-pipeline.c`](../examples/media-pipeline.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

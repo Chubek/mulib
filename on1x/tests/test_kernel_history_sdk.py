@@ -139,7 +139,7 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
     assert p.stdout == ('0x1.4000000000000p+3\n0x1.2000000000000p+4\ntrue\n'
                         '0x1.8000000000000p+3\n0x1.0000000000000p+6\n0x1.4000000000000p+3\n3\n0\n'), p
     oracle = d/'oracle'
-    run(cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root.parent/'include',
+    run(cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root.parent/'kernels',
         *[flag.removeprefix('--cflag=') for flag in flags],
         root/'tests/fixtures/kernel_pricing_oracle.c', linked/'libmulib.a', '-lm', '-o', oracle)
     assert run(oracle).stdout == p.stdout
@@ -149,7 +149,7 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
     trap = run(d/'edges/program', stdin='trap', reject='slice bounds out of range')
     assert (trap.returncode, trap.stdout) == (70, '1\n6\n'), trap
     status_probe = d/'status-probe'
-    run(cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root.parent/'include',
+    run(cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root.parent/'kernels',
         *[flag.removeprefix('--cflag=') for flag in flags],
         root/'tests/fixtures/kernel_numerics_status_probe.c', linked/'kernel-adapter.o', '-lm', '-o', status_probe)
     run(status_probe)

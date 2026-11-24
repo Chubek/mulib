@@ -1,7 +1,7 @@
 # mulib-pcb-pnp
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-pcb-pnp.h`  
+**Header:** `kernels/mulib-pcb-pnp.h`  
 **Implementation switch:** `MULIB_IMPL_PCB_PNP`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_PCB_PNP` defined before inc
 `tests/test_pcb_pnp.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_pcb_pnp.c -lm -o /tmp/test_pcb_pnp
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_pcb_pnp.c -lm -o /tmp/test_pcb_pnp
 /tmp/test_pcb_pnp
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pcb-pnp.h`](../include/mulib-pcb-pnp.h).
+Verbatim declaration section from [`kernels/mulib-pcb-pnp.h`](../kernels/mulib-pcb-pnp.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -87,7 +87,7 @@ int mulib_pcb_pnp_write(FILE *fp, const mulib_pcb_placement_t *parts, size_t cou
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pcb-pnp.h`](../include/mulib-pcb-pnp.h) |
+| Header | [`kernels/mulib-pcb-pnp.h`](../kernels/mulib-pcb-pnp.h) |
 | Implementation switch | `MULIB_IMPL_PCB_PNP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/pcb-pnp.c`](../examples/modules/pcb-pnp.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pcb-pnp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pcb-pnp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

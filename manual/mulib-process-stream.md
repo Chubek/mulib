@@ -54,7 +54,7 @@ reap a live child.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-process-stream.h`](../include/mulib-process-stream.h) |
+| Header | [`kernels/mulib-process-stream.h`](../kernels/mulib-process-stream.h) |
 | Implementation switch | `MULIB_IMPL_PROCESS_STREAM` |
 | Repository-local includes | [mulib-pty](notebook-desktop.md) |
 | Complete example | [`examples/process_stream.c`](../examples/process_stream.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/process_stream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/process_stream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

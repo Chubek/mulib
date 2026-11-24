@@ -13,7 +13,7 @@ rounding rather than compensated or exact arithmetic.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-matview.h`](../include/mulib-matview.h).
+Verbatim declaration section from [`kernels/mulib-matview.h`](../kernels/mulib-matview.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-matview.h`](../include/mulib-matview.h) |
+| Header | [`kernels/mulib-matview.h`](../kernels/mulib-matview.h) |
 | Implementation switch | `MULIB_IMPL_MATVIEW` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/matview.c`](../examples/modules/matview.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/matview.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/matview.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

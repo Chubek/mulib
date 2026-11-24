@@ -1,7 +1,7 @@
 # mulib-hdl-verilog-lex
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-hdl-verilog-lex.h`  
+**Header:** `kernels/mulib-hdl-verilog-lex.h`  
 **Implementation switch:** `MULIB_IMPL_HDL_VERILOG_LEX`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_HDL_VERILOG_LEX` defined be
 `tests/test_hdl_verilog_lex.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_hdl_verilog_lex.c -lm -o /tmp/test_hdl_verilog_lex
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_hdl_verilog_lex.c -lm -o /tmp/test_hdl_verilog_lex
 /tmp/test_hdl_verilog_lex
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hdl-verilog-lex.h`](../include/mulib-hdl-verilog-lex.h).
+Verbatim declaration section from [`kernels/mulib-hdl-verilog-lex.h`](../kernels/mulib-hdl-verilog-lex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ mulib_hdl_token_t mulib_hdl_lexer_next(mulib_hdl_lexer_t *lex);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hdl-verilog-lex.h`](../include/mulib-hdl-verilog-lex.h) |
+| Header | [`kernels/mulib-hdl-verilog-lex.h`](../kernels/mulib-hdl-verilog-lex.h) |
 | Implementation switch | `MULIB_IMPL_HDL_VERILOG_LEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hdl-verilog-lex.c`](../examples/modules/hdl-verilog-lex.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hdl-verilog-lex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hdl-verilog-lex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

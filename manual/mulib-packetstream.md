@@ -27,7 +27,7 @@ message semantics. Tests: `tests/test_transport_extensions.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-packetstream.h`](../include/mulib-packetstream.h).
+Verbatim declaration section from [`kernels/mulib-packetstream.h`](../kernels/mulib-packetstream.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-packetstream.h`](../include/mulib-packetstream.h) |
+| Header | [`kernels/mulib-packetstream.h`](../kernels/mulib-packetstream.h) |
 | Implementation switch | `MULIB_IMPL_PACKETSTREAM` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/packetstream.c`](../examples/modules/packetstream.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/packetstream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/packetstream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

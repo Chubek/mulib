@@ -1,7 +1,7 @@
 # mulib-dsim-bitvec
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-dsim-bitvec.h`  
+**Header:** `kernels/mulib-dsim-bitvec.h`  
 **Implementation switch:** `MULIB_IMPL_DSIM_BITVEC`  
 **Dependencies:** `dsim-logic4`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_DSIM_BITVEC` defined before
 `tests/test_dsim_bitvec.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_dsim_bitvec.c -lm -o /tmp/test_dsim_bitvec
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_dsim_bitvec.c -lm -o /tmp/test_dsim_bitvec
 /tmp/test_dsim_bitvec
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dsim-bitvec.h`](../include/mulib-dsim-bitvec.h).
+Verbatim declaration section from [`kernels/mulib-dsim-bitvec.h`](../kernels/mulib-dsim-bitvec.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -98,7 +98,7 @@ int mulib_dsim_bitvec_concat(mulib_dsim_bitvec_t a, mulib_dsim_bitvec_t b,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dsim-bitvec.h`](../include/mulib-dsim-bitvec.h) |
+| Header | [`kernels/mulib-dsim-bitvec.h`](../kernels/mulib-dsim-bitvec.h) |
 | Implementation switch | `MULIB_IMPL_DSIM_BITVEC` |
 | Repository-local includes | [mulib-dsim-logic4](mulib-dsim-logic4.md) |
 | Complete example | [`examples/modules/dsim-bitvec.c`](../examples/modules/dsim-bitvec.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dsim-bitvec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dsim-bitvec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-glr.h` compiles a context-free grammar into canonical **LR(0)
+`kernels/mulib-glr.h` compiles a context-free grammar into canonical **LR(0)
 item sets**, then parses with a graph-structured stack (`mulib-gss`) and an
 n-ary shared packed parse forest (`mulib-sppf`). All shift/reduce and
 reduce/reduce conflicts are retained. An ambiguous grammar produces an
@@ -220,9 +220,9 @@ overlapping ranges, hard limits, allocation-failure injection, and comparison
 against an independent span-relation CFG recognizer.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/glr.c -o ./glr
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/glr.c -o ./glr
 ./glr
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test_grammar.c -o ./test_grammar
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test_grammar.c -o ./test_grammar
 ./test_grammar
 ```
 
@@ -233,7 +233,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test_grammar.c -o ./
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-glr.h`](../include/mulib-glr.h) |
+| Header | [`kernels/mulib-glr.h`](../kernels/mulib-glr.h) |
 | Implementation switch | `MULIB_IMPL_GLR` |
 | Repository-local includes | [mulib-atn](mulib-atn.md), [mulib-gss](mulib-gss.md), [mulib-sppf](mulib-sppf.md) |
 | Complete example | [`examples/modules/glr.c`](../examples/modules/glr.c) |
@@ -246,6 +246,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/glr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,7 +31,7 @@ See `../tests/test_wifi-ap.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-ap.h`](../include/mulib-wifi-ap.h) |
+| Header | [`kernels/mulib-wifi-ap.h`](../kernels/mulib-wifi-ap.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_AP` |
 | Repository-local includes | [mulib-nl80211](mulib-nl80211.md) |
 | Complete example | [`examples/modules/wifi-ap.c`](../examples/modules/wifi-ap.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-ap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-ap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

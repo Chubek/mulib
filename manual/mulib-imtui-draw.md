@@ -11,7 +11,7 @@ escape sequences. See [ImTUI](mulib-imtui.md) for the width model.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-draw.h`](../include/mulib-imtui-draw.h) |
+| Header | [`kernels/mulib-imtui-draw.h`](../kernels/mulib-imtui-draw.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_DRAW` |
 | Repository-local includes | [mulib-imtui-core](mulib-imtui-core.md) |
 | Complete example | [`examples/imtui/headless.c`](../examples/imtui/headless.c) |
@@ -24,6 +24,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

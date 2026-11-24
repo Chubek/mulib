@@ -21,7 +21,7 @@ Original fixtures live in `library/statistical-text`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-corpus.h`](../include/mulib-corpus.h).
+Verbatim declaration section from [`kernels/mulib-corpus.h`](../kernels/mulib-corpus.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ void mulib_corpus_free(mulib_corpus_t *corpus);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-corpus.h`](../include/mulib-corpus.h) |
+| Header | [`kernels/mulib-corpus.h`](../kernels/mulib-corpus.h) |
 | Implementation switch | `MULIB_IMPL_CORPUS` |
 | Repository-local includes | [mulib-trie](mulib-trie.md) |
 | Complete example | [`examples/modules/corpus.c`](../examples/modules/corpus.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/corpus.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/corpus.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

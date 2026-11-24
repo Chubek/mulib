@@ -47,7 +47,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert exolib['header_only']['implementation_translation_units'] == 1
         assert not exolib['header_only']['implementation_defines']
         graph = module['metadata']['cdecl']
-        header = root.parent/'include'/('mulib-'+name+'.h')
+        header = root.parent/'kernels'/('mulib-'+name+'.h')
         assert graph['complete'] is True and graph['safe_export'] is False
         assert graph['target']['triple'] == data['target']
         assert graph['revision'] == 'sha256:'+hashlib.sha256(header.read_bytes()).hexdigest()

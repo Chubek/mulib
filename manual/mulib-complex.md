@@ -30,7 +30,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-complex.h`](../include/mulib-complex.h).
+Verbatim declaration section from [`kernels/mulib-complex.h`](../kernels/mulib-complex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -105,7 +105,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-complex.h`](../include/mulib-complex.h) |
+| Header | [`kernels/mulib-complex.h`](../kernels/mulib-complex.h) |
 | Implementation switch | `MULIB_IMPL_COMPLEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/complex.c`](../examples/modules/complex.c) |
@@ -118,6 +118,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/complex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/complex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

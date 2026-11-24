@@ -5,7 +5,7 @@ in this directory, including configuration validation and queue parsing.
 `virtio-os.c` implements shared lifecycle, DMA validation and dispatch;
 `internal.h` is private. Host resources are supplied by service callbacks.
 
-[`include/mulib-virtio-os.h`](../../include/mulib-virtio-os.h) retains the
+[`kernels/mulib-virtio-os.h`](../../kernels/mulib-virtio-os.h) retains the
 single-header API and a generated implementation. After changing sources run
 `python3 tools/amalgamate_virtio.py`; `--check` verifies reproducibility.
 

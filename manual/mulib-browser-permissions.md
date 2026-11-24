@@ -16,7 +16,7 @@ OS sandbox, user prompt or automatic browser-engine integration is implied.
 
 ## Integration and ownership
 
-Include `include/mulib-browser-permissions.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-browser-permissions.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-browser-permissions.h`](../include/mulib-browser-permissions.h).
+Verbatim declaration section from [`kernels/mulib-browser-permissions.h`](../kernels/mulib-browser-permissions.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -105,7 +105,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browser-permissions.h`](../include/mulib-browser-permissions.h) |
+| Header | [`kernels/mulib-browser-permissions.h`](../kernels/mulib-browser-permissions.h) |
 | Implementation switch | `MULIB_IMPL_BROWSER_PERMISSIONS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/browser-permissions.c`](../examples/modules/browser-permissions.c) |
@@ -118,6 +118,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browser-permissions.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browser-permissions.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

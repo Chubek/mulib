@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Weblet engine](mulib-muw3-mune.md)
 
-**Header:** `include/mulib-muw3.h` · **Switch:** `MULIB_IMPL_MUW3`
+**Header:** `kernels/mulib-muw3.h` · **Switch:** `MULIB_IMPL_MUW3`
 
 MuW3 composes MuLIB's HTTP parser, webclient and verified HTTPS adapter into a
 synchronous client with bounded redirects, native TCP/DNS transport, binary bodies
@@ -140,7 +140,7 @@ certificate and TLS failure checks, and cryptographic vectors.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-muw3.h`](../include/mulib-muw3.h) |
+| Header | [`kernels/mulib-muw3.h`](../kernels/mulib-muw3.h) |
 | Implementation switch | `MULIB_IMPL_MUW3` |
 | Repository-local includes | [mulib-https](mulib-https.md), [mulib-socket](mulib-socket.md), [mulib-tls](mulib-tls.md) |
 | Complete example | [`examples/modules/muw3.c`](../examples/modules/muw3.c) |
@@ -153,6 +153,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/muw3.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/muw3.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

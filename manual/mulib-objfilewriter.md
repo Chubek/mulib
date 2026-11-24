@@ -18,7 +18,7 @@ Example: `examples/modules/objfilewriter.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilewriter.h`](../include/mulib-objfilewriter.h).
+Verbatim declaration section from [`kernels/mulib-objfilewriter.h`](../kernels/mulib-objfilewriter.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilewriter.h`](../include/mulib-objfilewriter.h) |
+| Header | [`kernels/mulib-objfilewriter.h`](../kernels/mulib-objfilewriter.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILEWRITER` |
 | Repository-local includes | [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md) |
 | Complete example | [`examples/modules/objfilewriter.c`](../examples/modules/objfilewriter.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilewriter.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilewriter.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -37,7 +37,7 @@ Tests: `tests/test_compression_codecs.c`, `tests/test_compression_alloc.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-codec-core.h`](../include/mulib-codec-core.h) |
+| Header | [`kernels/mulib-codec-core.h`](../kernels/mulib-codec-core.h) |
 | Implementation switch | `MULIB_IMPL_CODEC_CORE` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/codec-core.c`](../examples/modules/codec-core.c) |
@@ -50,6 +50,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/codec-core.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/codec-core.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-minivm.h`  
+**Header:** `kernels/mulib-minivm.h`  
 **Implementation switch:** `MULIB_IMPL_MINIVM`  
 **Dependencies:** ISO C11 only; no other MuLIB module or runtime library.
 
@@ -136,7 +136,7 @@ int main(void) {
 }
 ```
 
-Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -o example`.
+Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -o example`.
 `examples/modules/minivm.c` demonstrates locals and a terminating loop.
 `tests/test_runtime.c` additionally covers arithmetic bounds/signs, division,
 underflow, invalid operands/opcodes, fallthrough, instruction/allocation limits,
@@ -154,7 +154,7 @@ unit. Other units include declarations only, including C++17 callers.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-minivm.h`](../include/mulib-minivm.h) |
+| Header | [`kernels/mulib-minivm.h`](../kernels/mulib-minivm.h) |
 | Implementation switch | `MULIB_IMPL_MINIVM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/minivm.c`](../examples/modules/minivm.c) |
@@ -167,6 +167,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minivm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/minivm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

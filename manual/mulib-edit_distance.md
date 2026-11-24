@@ -16,7 +16,7 @@ empty-side results require no allocation. Caller must bound computational work.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-edit_distance.h`](../include/mulib-edit_distance.h).
+Verbatim declaration section from [`kernels/mulib-edit_distance.h`](../kernels/mulib-edit_distance.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ size_t mulib_edit_distance_n(const void *a, size_t n, const void *b, size_t m);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-edit_distance.h`](../include/mulib-edit_distance.h) |
+| Header | [`kernels/mulib-edit_distance.h`](../kernels/mulib-edit_distance.h) |
 | Implementation switch | `MULIB_IMPL_EDIT_DISTANCE` |
 | Repository-local includes | [mulib-levenshtein](mulib-levenshtein.md) |
 | Complete example | [`examples/modules/edit_distance.c`](../examples/modules/edit_distance.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/edit_distance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/edit_distance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

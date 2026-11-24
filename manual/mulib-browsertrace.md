@@ -13,9 +13,9 @@ Define `MULIB_IMPL_BROWSERTRACE` in exactly one C11 translation unit. Use `#incl
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-browsertrace.c -o /tmp/test-browsertrace
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-browsertrace.c -o /tmp/test-browsertrace
 /tmp/test-browsertrace
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/browsertrace.c -o /tmp/example-browsertrace
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/browsertrace.c -o /tmp/example-browsertrace
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browsertrace.h`](../include/mulib-browsertrace.h) |
+| Header | [`kernels/mulib-browsertrace.h`](../kernels/mulib-browsertrace.h) |
 | Implementation switch | `MULIB_IMPL_BROWSERTRACE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/browsertrace.c`](../examples/modules/browsertrace.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browsertrace.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browsertrace.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

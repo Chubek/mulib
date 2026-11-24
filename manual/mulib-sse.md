@@ -1,6 +1,6 @@
 # Server-sent events
 
-**Header:** `include/mulib-sse.h` · **Switch:** `MULIB_IMPL_SSE`
+**Header:** `kernels/mulib-sse.h` · **Switch:** `MULIB_IMPL_SSE`
 
 A bounded incremental UTF-8 SSE parser/encoder. Also define `MULIB_IMPL_STRBUF`
 and `MULIB_IMPL_UTF8` in the implementation TU. No network transport is implicit.
@@ -37,7 +37,7 @@ See [the example](../examples/modules/sse.c), `tests/test-sse.c`, and the
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sse.h`](../include/mulib-sse.h) |
+| Header | [`kernels/mulib-sse.h`](../kernels/mulib-sse.h) |
 | Implementation switch | `MULIB_IMPL_SSE` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/sse.c`](../examples/modules/sse.c) |
@@ -50,6 +50,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

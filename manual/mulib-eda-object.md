@@ -1,7 +1,7 @@
 # mulib-eda-object
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-object.h`  
+**Header:** `kernels/mulib-eda-object.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_OBJECT`  
 **Dependencies:** `eda-ids`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_OBJECT` defined before 
 `tests/test_eda_object.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_object.c -lm -o /tmp/test_eda_object
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_object.c -lm -o /tmp/test_eda_object
 /tmp/test_eda_object
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-object.h`](../include/mulib-eda-object.h).
+Verbatim declaration section from [`kernels/mulib-eda-object.h`](../kernels/mulib-eda-object.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ int mulib_eda_object_rename(mulib_eda_object_t *o, const char *name);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-object.h`](../include/mulib-eda-object.h) |
+| Header | [`kernels/mulib-eda-object.h`](../kernels/mulib-eda-object.h) |
 | Implementation switch | `MULIB_IMPL_EDA_OBJECT` |
 | Repository-local includes | [mulib-eda-ids](mulib-eda-ids.md) |
 | Complete example | [`examples/modules/eda-object.c`](../examples/modules/eda-object.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-object.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-object.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

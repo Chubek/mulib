@@ -39,7 +39,7 @@ Mune is enabled by default and needs its implementation/dependency switches.
 [examples/shebang.c](../examples/shebang.c) contains a complete CLI build:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/shebang.c -pthread -lm -ldl -o shebang-sh
 ```
 
@@ -253,7 +253,7 @@ focused C tests and CLI regression script.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-shebang-sh.h`](../include/mulib-shebang-sh.h) |
+| Header | [`kernels/mulib-shebang-sh.h`](../kernels/mulib-shebang-sh.h) |
 | Implementation switch | `MULIB_IMPL_SHEBANG_SH` |
 | Repository-local includes | [mulib-mune](mulib-mune.md) |
 | Complete example | [`examples/shebang.c`](../examples/shebang.c) |
@@ -266,6 +266,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/shebang.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/shebang.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

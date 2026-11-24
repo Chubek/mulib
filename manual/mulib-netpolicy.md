@@ -13,9 +13,9 @@ Define `MULIB_IMPL_NETPOLICY` and `MULIB_IMPL_URLCANON` in exactly one C11 trans
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-netpolicy.c -o /tmp/test-netpolicy
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-netpolicy.c -o /tmp/test-netpolicy
 /tmp/test-netpolicy
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/netpolicy.c -o /tmp/example-netpolicy
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/netpolicy.c -o /tmp/example-netpolicy
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netpolicy.h`](../include/mulib-netpolicy.h) |
+| Header | [`kernels/mulib-netpolicy.h`](../kernels/mulib-netpolicy.h) |
 | Implementation switch | `MULIB_IMPL_NETPOLICY` |
 | Repository-local includes | [mulib-urlcanon](mulib-urlcanon.md) |
 | Complete example | [`examples/modules/netpolicy.c`](../examples/modules/netpolicy.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netpolicy.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netpolicy.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

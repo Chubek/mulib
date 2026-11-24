@@ -40,7 +40,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-map.h`](../include/mulib-map.h).
+Verbatim declaration section from [`kernels/mulib-map.h`](../kernels/mulib-map.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -126,7 +126,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-map.h`](../include/mulib-map.h) |
+| Header | [`kernels/mulib-map.h`](../kernels/mulib-map.h) |
 | Implementation switch | `MULIB_IMPL_MAP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/map.c`](../examples/modules/map.c) |
@@ -139,6 +139,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/map.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/map.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

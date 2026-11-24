@@ -141,11 +141,11 @@ From the repository root:
 
 ```sh
 cc -std=c11 -Wall -Wextra -Werror -Wno-misleading-indentation -pedantic \
-  -Iinclude tests/test-gfx-gui.c -lm -o /tmp/opencode/test-gfx-gui
+  -Ikernels tests/test-gfx-gui.c -lm -o /tmp/opencode/test-gfx-gui
 /tmp/opencode/test-gfx-gui
 cc -std=c11 -g -O1 -Wall -Wextra -Werror -Wno-misleading-indentation \
   -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer \
-  -Iinclude tests/test-gfx-gui.c -lm -o /tmp/opencode/test-gfx-gui-san
+  -Ikernels tests/test-gfx-gui.c -lm -o /tmp/opencode/test-gfx-gui-san
 ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 /tmp/opencode/test-gfx-gui-san
 lua5.4 tests/test-gfx-retgtk-lua.lua
 luajit tests/test-gfx-retgtk-lua.lua

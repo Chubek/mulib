@@ -16,7 +16,7 @@ two implementations in separate units). Neither switch defines another switch.
 Other units may use C or C++ declarations. No heap allocation occurs.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/smtpclient.c -o /tmp/opencode/smtpclient
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/smtpclient.c -o /tmp/opencode/smtpclient
 /tmp/opencode/smtpclient
 ```
 
@@ -110,7 +110,7 @@ share its scratch buffer.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-smtpclient.h`](../include/mulib-smtpclient.h) |
+| Header | [`kernels/mulib-smtpclient.h`](../kernels/mulib-smtpclient.h) |
 | Implementation switch | `MULIB_IMPL_SMTPCLIENT` |
 | Repository-local includes | [mulib-smtpserver](mulib-smtpserver.md) |
 | Complete example | [`examples/modules/smtpclient.c`](../examples/modules/smtpclient.c) |
@@ -123,6 +123,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/smtpclient.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/smtpclient.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -41,7 +41,7 @@ See [`examples/modules/weighted-edit-distance.c`](../examples/modules/weighted-e
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-weighted-edit-distance.h`](../include/mulib-weighted-edit-distance.h) |
+| Header | [`kernels/mulib-weighted-edit-distance.h`](../kernels/mulib-weighted-edit-distance.h) |
 | Implementation switch | `MULIB_IMPL_WEIGHTED_EDIT_DISTANCE` |
 | Repository-local includes | [mulib-weighed_edit_distane](mulib-weighed_edit_distane.md) |
 | Complete example | [`examples/modules/weighted-edit-distance.c`](../examples/modules/weighted-edit-distance.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/weighted-edit-distance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/weighted-edit-distance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

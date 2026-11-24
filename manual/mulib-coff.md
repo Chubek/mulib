@@ -31,7 +31,7 @@ Results: `OK=0`, `EINVAL=-1`, `EFORMAT=-2`, `EBOUNDS=-3`, `EUNSUPPORTED=-4`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-coff.h`](../include/mulib-coff.h).
+Verbatim declaration section from [`kernels/mulib-coff.h`](../kernels/mulib-coff.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -104,7 +104,7 @@ int mulib_coff_bytes (const mulib_coff_t *v, uint64_t offset, uint64_t size, con
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-coff.h`](../include/mulib-coff.h) |
+| Header | [`kernels/mulib-coff.h`](../kernels/mulib-coff.h) |
 | Implementation switch | `MULIB_IMPL_COFF` |
 | Repository-local includes | [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/coff.c`](../examples/modules/coff.c) |
@@ -117,6 +117,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/coff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/coff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

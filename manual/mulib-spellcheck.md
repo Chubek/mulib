@@ -103,7 +103,7 @@ model versions and invalidation policy. `destroy` never commits files.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spellcheck.h`](../include/mulib-spellcheck.h) |
+| Header | [`kernels/mulib-spellcheck.h`](../kernels/mulib-spellcheck.h) |
 | Implementation switch | `MULIB_IMPL_SPELLCHECK` |
 | Repository-local includes | [mulib-bktree](mulib-bktree.md), [mulib-cache](mulib-cache.md), [mulib-endian](mulib-endian.md), [mulib-fst](mulib-fst.md), [mulib-utf8](mulib-utf8.md), [mulib-weighted-edit-distance](mulib-weighted-edit-distance.md) |
 | Complete example | [`examples/modules/spellcheck.c`](../examples/modules/spellcheck.c) |
@@ -116,6 +116,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spellcheck.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spellcheck.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

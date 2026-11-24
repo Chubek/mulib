@@ -41,7 +41,7 @@ and [allocation-failure suite](../tests/test_hardening.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dsdom.h`](../include/mulib-dsdom.h) |
+| Header | [`kernels/mulib-dsdom.h`](../kernels/mulib-dsdom.h) |
 | Implementation switch | `MULIB_IMPL_DSDOM` |
 | Repository-local includes | [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/dsdom.c`](../examples/modules/dsdom.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dsdom.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dsdom.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

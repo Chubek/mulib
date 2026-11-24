@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Weblets](mulib-muw3-mune.md)
 
-**Header:** `include/mulib-microchan.h` · **Switch:** `MULIB_IMPL_MICROCHAN`
+**Header:** `kernels/mulib-microchan.h` · **Switch:** `MULIB_IMPL_MICROCHAN`
 
 MicroChannel is a local, binary-safe publish/subscribe protocol with correlated
 acknowledgements. The header supplies a portable codec, a Unix-stream client and
@@ -133,7 +133,7 @@ See [daemon README](../library/microchan/README.md),
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-microchan.h`](../include/mulib-microchan.h) |
+| Header | [`kernels/mulib-microchan.h`](../kernels/mulib-microchan.h) |
 | Implementation switch | `MULIB_IMPL_MICROCHAN` |
 | Repository-local includes | [mulib-container-ipc](mulib-container-ipc.md), [mulib-socket](mulib-socket.md) |
 | Complete example | [`examples/modules/microchan.c`](../examples/modules/microchan.c) |
@@ -146,6 +146,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microchan.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/microchan.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

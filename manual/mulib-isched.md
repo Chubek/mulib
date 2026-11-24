@@ -91,7 +91,7 @@ limits accept that complexity. No recursion or per-cycle idle loops are used.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/isched.c -o /tmp/isched
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/isched.c -o /tmp/isched
 /tmp/isched
 ```
 
@@ -107,7 +107,7 @@ with SSA remapping followed by equivalent MINIVM execution.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-isched.h`](../include/mulib-isched.h) |
+| Header | [`kernels/mulib-isched.h`](../kernels/mulib-isched.h) |
 | Implementation switch | `MULIB_IMPL_ISCHED` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/isched.c`](../examples/modules/isched.c) |
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/isched.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/isched.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

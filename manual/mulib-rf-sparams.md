@@ -1,7 +1,7 @@
 # mulib-rf-sparams
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-rf-sparams.h`  
+**Header:** `kernels/mulib-rf-sparams.h`  
 **Implementation switch:** `MULIB_IMPL_RF_SPARAMS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_RF_SPARAMS` defined before 
 `tests/test_rf_sparams.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_rf_sparams.c -lm -o /tmp/test_rf_sparams
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_rf_sparams.c -lm -o /tmp/test_rf_sparams
 /tmp/test_rf_sparams
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rf-sparams.h`](../include/mulib-rf-sparams.h).
+Verbatim declaration section from [`kernels/mulib-rf-sparams.h`](../kernels/mulib-rf-sparams.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ int mulib_rf_s11_vswr(mulib_rf_complex_t reflection, double *out);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rf-sparams.h`](../include/mulib-rf-sparams.h) |
+| Header | [`kernels/mulib-rf-sparams.h`](../kernels/mulib-rf-sparams.h) |
 | Implementation switch | `MULIB_IMPL_RF_SPARAMS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/rf-sparams.c`](../examples/modules/rf-sparams.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rf-sparams.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rf-sparams.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

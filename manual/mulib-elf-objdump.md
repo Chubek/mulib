@@ -28,7 +28,7 @@ dump/application, DWARF decoding or external tool invocation. See
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-elf-objdump.h`](../include/mulib-elf-objdump.h).
+Verbatim declaration section from [`kernels/mulib-elf-objdump.h`](../kernels/mulib-elf-objdump.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ int mulib_elf_objdump (const void *data, size_t size, const mulib_objdump_option
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-elf-objdump.h`](../include/mulib-elf-objdump.h) |
+| Header | [`kernels/mulib-elf-objdump.h`](../kernels/mulib-elf-objdump.h) |
 | Implementation switch | `MULIB_IMPL_ELF_OBJDUMP` |
 | Repository-local includes | [mulib-elf](mulib-elf.md), [mulib-objdump](mulib-objdump.md) |
 | Complete example | [`examples/modules/elf-objdump.c`](../examples/modules/elf-objdump.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/elf-objdump.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/elf-objdump.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

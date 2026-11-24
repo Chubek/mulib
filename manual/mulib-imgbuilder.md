@@ -64,7 +64,7 @@ empty roots, failure-preserved outputs and codec round-trips.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imgbuilder.h`](../include/mulib-imgbuilder.h) |
+| Header | [`kernels/mulib-imgbuilder.h`](../kernels/mulib-imgbuilder.h) |
 | Implementation switch | `MULIB_IMPL_IMGBUILDER` |
 | Repository-local includes | [mulib-imgbuildspec](mulib-imgbuildspec.md), [mulib-rootfsbuilder](mulib-rootfsbuilder.md) |
 | Complete example | [`examples/modules/imgbuilder.c`](../examples/modules/imgbuilder.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgbuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/imgbuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

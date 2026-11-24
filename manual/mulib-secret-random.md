@@ -9,7 +9,7 @@ Generate from an approved cryptographic RNG, with no predictable fallback. A gen
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-random.h`](../include/mulib-secret-random.h) |
+| Header | [`kernels/mulib-secret-random.h`](../kernels/mulib-secret-random.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_RANDOM` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

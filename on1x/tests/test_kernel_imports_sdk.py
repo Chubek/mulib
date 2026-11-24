@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
             assert module['contract'] is None
     hist = data['modules']['mulib.histprice']
     assert hist['exolib']['header_only']['implementation_defines'] == ['MULIB_IMPL_STATSPROC','MULIB_IMPL_HISTPRICE']
-    assert hist['exolib']['header_only']['dependencies'] == [str(root.parent/'include/mulib-statsproc.h')]
+    assert hist['exolib']['header_only']['dependencies'] == [str(root.parent/'kernels/mulib-statsproc.h')]
     graph = hist['metadata']['cdecl']
     holt = next(item for item in graph['declarations'] if item['name'] == 'mulib_histprice_holt')
     assert holt['kind'] == 'function' and holt['definition'] is False and len(holt['parameters']) == 7
@@ -71,7 +71,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     assert p.returncode == 1 and 'implementation macros' in p.stderr, p
     shadow = directory/'shadow'
     shadow.mkdir()
-    (shadow/'mulib-statsproc.h').symlink_to(root.parent/'include/mulib-statsproc.h')
+    (shadow/'mulib-statsproc.h').symlink_to(root.parent/'kernels/mulib-statsproc.h')
     p = run([*cmd, fixture, '--mulib-path', shadow, '-o', unsupported])
     assert p.returncode == 1 and 'ambiguous MuLIB kernel header' in p.stderr, p
     assert not unsupported.exists()
@@ -168,7 +168,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     assert p.returncode == 0 and p.stdout.splitlines() == ['mulib.o'], p
     client = directory/'holt-c'
     p = run([cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *cflags,
-             '-I', root.parent/'include', root/'tests/fixtures/kernel_histprice_boundary.c',
+             '-I', root.parent/'kernels', root/'tests/fixtures/kernel_histprice_boundary.c',
              archive/'libmulib.a', '-lm', '-o', client])
     assert p.returncode == 0, p
     assert run([client]).returncode == 0
@@ -193,7 +193,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
         for symbol in exports:
             assert module['symbols'][symbol]['callable'] is False
         if name == 'prettysexpr':
-            header = root.parent/'include/mulib-prettysexpr.h'
+            header = root.parent/'kernels/mulib-prettysexpr.h'
             sidecar = root/'contracts-exoml/prettysexpr.exocontract.json'
             graph = module['metadata']['cdecl']
             contract = module['contract']
@@ -234,7 +234,7 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     impl.write_text('#define MULIB_IMPL_CLAMP\n#include "mulib-clamp.h"\n')
     oracle = directory/'oracle'
     p = run([cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *cflags,
-             '-I', root.parent/'include', root/'tests/fixtures/kernel_clamp_oracle.c', impl, '-o', oracle])
+             '-I', root.parent/'kernels', root/'tests/fixtures/kernel_clamp_oracle.c', impl, '-o', oracle])
     assert p.returncode == 0, p
     c_run = run([oracle])
     assert c_run.returncode == 0 and c_run.stdout == result.stdout, c_run
@@ -262,7 +262,7 @@ fn main(){
     assert p.returncode == 0 and p.stdout == '42\n7\n40\n4\n2\n42\n', p
     duplicate = directory/'duplicate-impl.c'
     duplicate.write_bytes(impl.read_bytes())
-    p = run([cc, '-std=c11', *cflags, '-I', root.parent/'include',
+    p = run([cc, '-std=c11', *cflags, '-I', root.parent/'kernels',
              root/'tests/fixtures/kernel_clamp_oracle.c', impl, duplicate,
              '-o', directory/'duplicate-oracle'])
     assert p.returncode != 0 and 'mulib_clamp_add_i64' in p.stderr, p
@@ -289,9 +289,9 @@ fn main(){
         except OSError:
             shutil.copyfile(source, destination)
     shutil.copytree(root.parent/'manual', changed/'manual', copy_function=link_or_copy, symlinks=True)
-    (changed/'include').mkdir()
-    for header in (root.parent/'include').glob('mulib-*.h'):
-        target = changed/'include'/header.name
+    (changed/'kernels').mkdir()
+    for header in (root.parent/'kernels').glob('mulib-*.h'):
+        target = changed/'kernels'/header.name
         if header.name == 'mulib-clamp.h':
             original = header.read_text()
             drifted = original.replace('int64_t mulib_clamp_add_i64 (int64_t a, int64_t b);',

@@ -11,11 +11,11 @@ warn='-Wall -Wextra -Wpedantic -Werror -UNDEBUG'
 # These two fixtures instantiate their own implementation switches.
 for mod in grpc soap; do
   source="tests/test-api-$mod.c"
-  "$cc" -std=c11 $warn ${CFLAGS:-} -Iinclude "$source" ${LDFLAGS:-} \
+  "$cc" -std=c11 $warn ${CFLAGS:-} -Ikernels "$source" ${LDFLAGS:-} \
     -lm -ldl -pthread -o "$work/check"
   "$work/check"
 done
-"$cc" -std=c11 $warn ${CFLAGS:-} -Iinclude -c tests/api-kernels/dependencies.c -o "$work/deps.o"
+"$cc" -std=c11 $warn ${CFLAGS:-} -Ikernels -c tests/api-kernels/dependencies.c -o "$work/deps.o"
 # Delayed definitions and independent C TUs exercise both switch spellings,
 # including modules whose declarations include another of the seven headers.
 for flavor in canonical legacy; do
@@ -25,14 +25,14 @@ for flavor in canonical legacy; do
     if [ "$flavor" = canonical ]; then prefix=MULIB_IMPL_CDD_; fi
     printf '#include "mulib-%s.h"\n#define %s%s\n#include "mulib-%s.h"\n#include "mulib-%s.h"\n' \
       "$mod" "$prefix" "$macro" "$mod" "$mod" > "$work/module.c"
-    "$cc" -std=c11 $warn ${CFLAGS:-} -Iinclude -c "$work/module.c" -o "$work/$mod.o"
+    "$cc" -std=c11 $warn ${CFLAGS:-} -Ikernels -c "$work/module.c" -o "$work/$mod.o"
   done
-  "$cxx" -std=c++17 $warn ${CXXFLAGS:-} -Iinclude tests/api-kernels/link.cpp \
+  "$cxx" -std=c++17 $warn ${CXXFLAGS:-} -Ikernels tests/api-kernels/link.cpp \
     "$work"/*.o ${LDFLAGS:-} -lm -ldl -pthread -o "$work/check"
   "$work/check"
   if [ "$flavor" = canonical ]; then
     for mod in json-http sse-client websocket; do
-      "$cc" -std=c11 $warn ${CFLAGS:-} -Iinclude "tests/test-api-$mod.c" \
+      "$cc" -std=c11 $warn ${CFLAGS:-} -Ikernels "tests/test-api-$mod.c" \
         "$work"/*.o ${LDFLAGS:-} -lm -ldl -pthread -o "$work/check"
       "$work/check"
     done

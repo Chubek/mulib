@@ -1,7 +1,7 @@
 # mulib-wave-decimate
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-wave-decimate.h`  
+**Header:** `kernels/mulib-wave-decimate.h`  
 **Implementation switch:** `MULIB_IMPL_WAVE_DECIMATE`  
 **Dependencies:** `wave-signal`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_WAVE_DECIMATE` defined befo
 `tests/test_wave_decimate.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_wave_decimate.c -lm -o /tmp/test_wave_decimate
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_wave_decimate.c -lm -o /tmp/test_wave_decimate
 /tmp/test_wave_decimate
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-wave-decimate.h`](../include/mulib-wave-decimate.h).
+Verbatim declaration section from [`kernels/mulib-wave-decimate.h`](../kernels/mulib-wave-decimate.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_wave_decimate_minmax(const mulib_wave_signal_t *s, size_t buckets,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wave-decimate.h`](../include/mulib-wave-decimate.h) |
+| Header | [`kernels/mulib-wave-decimate.h`](../kernels/mulib-wave-decimate.h) |
 | Implementation switch | `MULIB_IMPL_WAVE_DECIMATE` |
 | Repository-local includes | [mulib-wave-signal](mulib-wave-signal.md) |
 | Complete example | [`examples/modules/wave-decimate.c`](../examples/modules/wave-decimate.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wave-decimate.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wave-decimate.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

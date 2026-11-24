@@ -19,7 +19,7 @@ endif()
 
 get_filename_component(_on1x_rt_dir "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 target_sources(on1x_rt_sdk PRIVATE "${_on1x_rt_dir}/src/On1xRT-Dynamic.c")
-target_include_directories(on1x_rt_sdk PRIVATE "${_on1x_rt_dir}/../../include")
+target_include_directories(on1x_rt_sdk PRIVATE "${_on1x_rt_dir}/../../kernels")
 target_compile_definitions(on1x_rt_sdk PRIVATE ON1X_RT_ENABLE_DYNAMIC=1)
 if(CMAKE_DL_LIBS)
     target_link_libraries(on1x_rt_sdk PRIVATE ${CMAKE_DL_LIBS})

@@ -24,7 +24,7 @@ Tests: `tests/test_ipc_extensions.c`, including UINT64_MAX and equality cases.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-schedutils.h`](../include/mulib-schedutils.h).
+Verbatim declaration section from [`kernels/mulib-schedutils.h`](../kernels/mulib-schedutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -70,7 +70,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-schedutils.h`](../include/mulib-schedutils.h) |
+| Header | [`kernels/mulib-schedutils.h`](../kernels/mulib-schedutils.h) |
 | Implementation switch | `MULIB_IMPL_SCHEDUTILS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/schedutils.c`](../examples/modules/schedutils.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/schedutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/schedutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

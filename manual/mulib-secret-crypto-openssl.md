@@ -9,7 +9,7 @@ Optional EVP adapter. Define its implementation switch only in a build with Open
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-crypto-openssl.h`](../include/mulib-secret-crypto-openssl.h) |
+| Header | [`kernels/mulib-secret-crypto-openssl.h`](../kernels/mulib-secret-crypto-openssl.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_CRYPTO_OPENSSL` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -126,7 +126,7 @@ int main(void) {
 }
 ''')
         compiler = shlex.split(args.compiler)
-        flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(root / 'include')]
+        flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(root / 'kernels')]
         if args.sanitizers:
             flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer']
         run(compiler + flags + [str(driver), '-lm', '-o', str(work / 'aot')])

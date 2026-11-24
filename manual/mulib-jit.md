@@ -72,7 +72,7 @@ unchanged on validation failure. Zero-length writes do not extend code size.
 ## Runnable examples
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
    examples/modules/jit.c -lm -o /tmp/opencode/mulib-jit
 /tmp/opencode/mulib-jit
 ```
@@ -119,7 +119,7 @@ instruction counts, resumption, and side effects.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-jit.h`](../include/mulib-jit.h) |
+| Header | [`kernels/mulib-jit.h`](../kernels/mulib-jit.h) |
 | Implementation switch | `MULIB_IMPL_JIT` |
 | Repository-local includes | [mulib-dyncall](mulib-dyncall.md), [mulib-vmweave](mulib-vmweave.md) |
 | Complete example | [`examples/modules/jit.c`](../examples/modules/jit.c) |
@@ -132,6 +132,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/jit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/jit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

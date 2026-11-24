@@ -226,7 +226,7 @@ is used by the test runner only; no SQLite dependency enters the native engine.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sqlite.h`](../include/mulib-sqlite.h) |
+| Header | [`kernels/mulib-sqlite.h`](../kernels/mulib-sqlite.h) |
 | Implementation switch | `MULIB_IMPL_SQLITE` |
 | Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-parsec](mulib-parsec.md), [mulib-peg](mulib-peg.md), [mulib-rng](mulib-rng.md), [mulib-sqlite-pager](mulib-sqlite-pager.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/sqlite.c`](../examples/modules/sqlite.c) |
@@ -239,6 +239,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sqlite.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -29,7 +29,7 @@ terms. This complements, rather than replaces, the egraph rewrite module.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-term_rewriting.h`](../include/mulib-term_rewriting.h).
+Verbatim declaration section from [`kernels/mulib-term_rewriting.h`](../kernels/mulib-term_rewriting.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -74,7 +74,7 @@ int mulib_term_rewrite(const mulib_ast_t *input, const mulib_term_rule_t *rules,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-term_rewriting.h`](../include/mulib-term_rewriting.h) |
+| Header | [`kernels/mulib-term_rewriting.h`](../kernels/mulib-term_rewriting.h) |
 | Implementation switch | `MULIB_IMPL_TERM_REWRITING` |
 | Repository-local includes | [mulib-ast](mulib-ast.md) |
 | Complete example | [`examples/modules/term_rewriting.c`](../examples/modules/term_rewriting.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/term_rewriting.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/term_rewriting.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

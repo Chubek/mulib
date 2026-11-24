@@ -78,7 +78,7 @@ The wrapper is original code; no ICU implementation or data is vendored.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uniproc.h`](../include/mulib-uniproc.h) |
+| Header | [`kernels/mulib-uniproc.h`](../kernels/mulib-uniproc.h) |
 | Implementation switch | `MULIB_IMPL_UNIPROC` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/uniproc.c`](../examples/modules/uniproc.c) |
@@ -91,6 +91,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uniproc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uniproc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

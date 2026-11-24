@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-metapp.h`  
+**Header:** `kernels/mulib-metapp.h`  
 **Implementation:** C11; declarations usable from C++17 and later.
 
 MetaPP is a token-based C/C++ preprocessor with a persistent macro environment,
@@ -355,17 +355,17 @@ have independent state.
 ## Examples and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/metapp.c -o /tmp/opencode/metapp
+cc -std=c11 -Ikernels examples/modules/metapp.c -o /tmp/opencode/metapp
 /tmp/opencode/metapp
-/tmp/opencode/metapp --cpp -Iinclude '-DVALUE=42' input.cpp
+/tmp/opencode/metapp --cpp -Ikernels '-DVALUE=42' input.cpp
 /tmp/opencode/metapp --deps=project project/include/common.h > graph.dot
 
 cc -std=c11 -O2 -fPIC -fno-builtin -fno-stack-protector \
-  -fno-asynchronous-unwind-tables -fno-unwind-tables -Iinclude \
+  -fno-asynchronous-unwind-tables -fno-unwind-tables -Ikernels \
   -c examples/plugins/metapp-count.c -o /tmp/opencode/metapp-count.o
 /tmp/opencode/metapp --plugin=/tmp/opencode/metapp-count.o input.c
 
-cc -std=c11 -Iinclude tests/test_metapp.c -o /tmp/opencode/test-metapp
+cc -std=c11 -Ikernels tests/test_metapp.c -o /tmp/opencode/test-metapp
 /tmp/opencode/test-metapp
 python3 tools/check_metapp.py --preprocessor /tmp/opencode/test-metapp --compiler cc
 ```
@@ -386,7 +386,7 @@ are available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-metapp.h`](../include/mulib-metapp.h) |
+| Header | [`kernels/mulib-metapp.h`](../kernels/mulib-metapp.h) |
 | Implementation switch | `MULIB_IMPL_METAPP` |
 | Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-dsu](mulib-dsu.md), [mulib-elf](mulib-elf.md), [mulib-endian](mulib-endian.md), [mulib-linker](mulib-linker.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/metapp.c`](../examples/modules/metapp.c) |
@@ -399,6 +399,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/metapp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/metapp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

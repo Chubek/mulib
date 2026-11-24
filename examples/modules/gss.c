@@ -1,4 +1,4 @@
-/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/gss.c -o ./gss */
+/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/gss.c -o ./gss */
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_GSS
 #include "mulib-gss.h"

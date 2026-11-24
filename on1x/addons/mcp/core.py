@@ -54,7 +54,7 @@ FIXED = CAPABILITY_SOURCES + (
 )
 # Nonrecursive, exact directory + filename policies, never supplied by a client.
 PATTERNS = (
-    ("include", HEADER_PATTERN),
+    ("kernels", HEADER_PATTERN),
     ("on1x/docs", r"[A-Za-z0-9_-]+\.md"),
     ("on1x/examples", r"[A-Za-z0-9_-]+\.on1x"),
     ("on1x/examples/kernel", r"[A-Za-z0-9_-]+\.on1x"),
@@ -157,7 +157,7 @@ class Index:
             paths.update(self._list(directory, pattern))
         for path in sorted(paths):
             self._read(path, required=path in required_paths)
-        self.headers = tuple(sorted(p for p in self.sources if p.startswith("include/")))
+        self.headers = tuple(sorted(p for p in self.sources if p.startswith("kernels/")))
         self.header_modules = {item["header"]: name for name, item in self.modules.items()}
         for path, source in sorted(self.sources.items()):
             if path.endswith(".json"):
@@ -349,7 +349,7 @@ class Index:
                 )
             # Implementation-switch modules can also share a family manual.
             # Keep the same flat, Markdown-only allowlist for both profiles.
-            if (item.get("header") != "include/mulib-" + name + ".h"
+            if (item.get("header") != "kernels/mulib-" + name + ".h"
                     or not re.fullmatch(r"manual/[a-z0-9][a-z0-9_+-]*\.md", item.get("manual", ""))
                     or not valid_implementation):
                 fail("INVALID_MANIFEST", "Noncanonical kernel fields.")
@@ -508,10 +508,10 @@ class Index:
             "evidence": self.meta}
 
     def inspect_header(self, path, query=None, line=None):
-        basename = path.removeprefix("include/")
+        basename = path.removeprefix("kernels/")
         if not re.fullmatch(HEADER_PATTERN, basename):
-            fail("INVALID_ARGUMENT", "Use an exact mulib-*.h filename or its include/ path.")
-        path = "include/" + basename
+            fail("INVALID_ARGUMENT", "Use an exact mulib-*.h filename or its kernels/ path.")
+        path = "kernels/" + basename
         if path not in self.sources:
             fail("HEADER_NOT_FOUND", "Header is not in this startup snapshot.")
         if query is not None and line is not None:
@@ -580,7 +580,7 @@ def tools():
          {"query": query, "limit": limit}, ["query"]),
          ("inspect_kernel", "Inspect one exact canonical kernel: manifest, dependencies, switch, header/manual, contract and separate ABI/admission states.",
           {"name": {"type": "string", "minLength": 1, "maxLength": 100}}, ["name"]),
-         ("list_headers", "Page through indexed include/mulib-*.h headers, optionally filtering by literal path substring.",
+         ("list_headers", "Page through indexed kernels/mulib-*.h headers, optionally filtering by literal path substring.",
           {"query": query, "limit": limit, "offset": {"type": "integer", "minimum": 0, "maximum": MAX_FILES}}, []),
          ("inspect_header", "Inspect an exact indexed header by its filename, with optional keyword query or source line.",
           {"path": {"type": "string", "maxLength": 200}, "query": query,

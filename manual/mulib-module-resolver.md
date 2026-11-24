@@ -19,7 +19,7 @@ Lookup is O(entries × compared name bytes), insertion adds copying costs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-module-resolver.h`](../include/mulib-module-resolver.h) |
+| Header | [`kernels/mulib-module-resolver.h`](../kernels/mulib-module-resolver.h) |
 | Implementation switch | `MULIB_IMPL_MODULE_RESOLVER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/module-resolver.c`](../examples/modules/module-resolver.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/module-resolver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/module-resolver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

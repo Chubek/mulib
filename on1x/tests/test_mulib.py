@@ -83,7 +83,7 @@ exe=build('provider','''import std.mulib as M;
 extern fn fixture_yantlr_artifacts(source:string)->i64;
 fn main(){
  assert(M.has_kernel("yantlr"));assert(M.has_kernel("json"));
- assert(M.kernel_header("yantlr")=="include/mulib-yantlr.h");
+ assert(M.kernel_header("yantlr")=="kernels/mulib-yantlr.h");
  assert(text_len(M.kernel_sha256("yantlr"))==64);
  let path="library/yantlr/example.y1";
  assert(M.has_fixture(path));assert(M.fixture_group(path)=="yantlr");
@@ -129,7 +129,7 @@ fn main(){
  println("embedded lmuw3 OK");}''',
  ['--mulib','muw3-mune','--extra-c',t.root/'tests/mulib/lmuw3.c','--mulib-plan',embedded_report]),'embedded lmuw3 OK\n')
 embedded=json.loads(embedded_report.read_text())
-assert str(root/'include/detail/mulib-lmuw3.inc') in embedded['inputs']
+assert str(root/'kernels/detail/mulib-lmuw3.inc') in embedded['inputs']
 
 # Compiler-produced dependency escaping and implementation-only includes.
 dependency_dir=t.work/'includes with spaces';dependency_dir.mkdir(exist_ok=True)
@@ -182,13 +182,13 @@ except ValueError:pass
 
 # A generator/kernel mismatch rejects without updating checked-in generated files.
 fake=t.work/'stale';(fake/'tools').mkdir(parents=True,exist_ok=True)
-(fake/'library/lmuw3').mkdir(parents=True,exist_ok=True);(fake/'include/detail').mkdir(parents=True,exist_ok=True)
+(fake/'library/lmuw3').mkdir(parents=True,exist_ok=True);(fake/'kernels/detail').mkdir(parents=True,exist_ok=True)
 shutil.copy2(root/'tools/embed_lmuw3.py',fake/'tools/embed_lmuw3.py')
 (fake/'library/lmuw3/lmuw3.lua').write_text('return {}\n')
-(fake/'include/detail/mulib-lmuw3.inc').write_text('stale')
+(fake/'kernels/detail/mulib-lmuw3.inc').write_text('stale')
 try:house.check_generated(fake,{'generator_checks':['tools/embed_lmuw3.py']});raise AssertionError('stale embedding accepted')
 except ValueError as e:assert 'mismatch' in str(e)
-assert (fake/'include/detail/mulib-lmuw3.inc').read_text()=='stale'
+assert (fake/'kernels/detail/mulib-lmuw3.inc').read_text()=='stale'
 
 for options,diagnostic in [(['--mulib','absent'],'known MuLIB modules'),
                            (['--mulib','json','--cflag=-DMULIB_IMPL_JSON'],'single generated TU'),

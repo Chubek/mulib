@@ -21,7 +21,7 @@ No Unicode normalization or weighted/nonmetric distance substitution is allowed.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bk-trees.h`](../include/mulib-bk-trees.h).
+Verbatim declaration section from [`kernels/mulib-bk-trees.h`](../kernels/mulib-bk-trees.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -73,7 +73,7 @@ size_t mulib_bk_tree_search_bounded(const mulib_bk_tree_t *, const char *, size_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bk-trees.h`](../include/mulib-bk-trees.h) |
+| Header | [`kernels/mulib-bk-trees.h`](../kernels/mulib-bk-trees.h) |
 | Implementation switch | `MULIB_IMPL_BK_TREES` |
 | Repository-local includes | [mulib-levenshtein](mulib-levenshtein.md) |
 | Complete example | [`examples/modules/bk-trees.c`](../examples/modules/bk-trees.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bk-trees.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bk-trees.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

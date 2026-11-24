@@ -26,7 +26,7 @@ management are outside these APIs. Tests: `tests/test_protocol_extensions.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-socks5.h`](../include/mulib-socks5.h).
+Verbatim declaration section from [`kernels/mulib-socks5.h`](../kernels/mulib-socks5.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-socks5.h`](../include/mulib-socks5.h) |
+| Header | [`kernels/mulib-socks5.h`](../kernels/mulib-socks5.h) |
 | Implementation switch | `MULIB_IMPL_SOCKS5` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/socks5.c`](../examples/modules/socks5.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/socks5.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/socks5.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

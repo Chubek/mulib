@@ -14,7 +14,7 @@ Close and clear the session on a failed AEAD operation or limit exhaustion.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshcrypto.h`](../include/mulib-sshcrypto.h) |
+| Header | [`kernels/mulib-sshcrypto.h`](../kernels/mulib-sshcrypto.h) |
 | Implementation switch | `MULIB_IMPL_SSHCRYPTO` |
 | Repository-local includes | [mulib-aes-gcm](mulib-aes-gcm.md), [mulib-sshpacket](mulib-sshpacket.md) |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -27,6 +27,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

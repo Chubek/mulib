@@ -1,7 +1,7 @@
 # mulib-ecad-connect
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-ecad-connect.h`  
+**Header:** `kernels/mulib-ecad-connect.h`  
 **Implementation switch:** `MULIB_IMPL_ECAD_CONNECT`  
 **Dependencies:** `ecad-schematic`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ECAD_CONNECT` defined befor
 `tests/test_ecad_connect.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_ecad_connect.c -lm -o /tmp/test_ecad_connect
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_ecad_connect.c -lm -o /tmp/test_ecad_connect
 /tmp/test_ecad_connect
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ecad-connect.h`](../include/mulib-ecad-connect.h).
+Verbatim declaration section from [`kernels/mulib-ecad-connect.h`](../kernels/mulib-ecad-connect.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_ecad_connect_count_nodes(const mulib_ecad_schematic_t *s, size_t *node
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ecad-connect.h`](../include/mulib-ecad-connect.h) |
+| Header | [`kernels/mulib-ecad-connect.h`](../kernels/mulib-ecad-connect.h) |
 | Implementation switch | `MULIB_IMPL_ECAD_CONNECT` |
 | Repository-local includes | [mulib-ecad-schematic](mulib-ecad-schematic.md) |
 | Complete example | [`examples/modules/ecad-connect.c`](../examples/modules/ecad-connect.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ecad-connect.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ecad-connect.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -15,7 +15,7 @@ switches are never defined implicitly. Declaration-only C++ inclusion is
 supported.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/webframework.c -o /tmp/opencode/webframework
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/webframework.c -o /tmp/opencode/webframework
 /tmp/opencode/webframework
 ```
 
@@ -101,7 +101,7 @@ client/file server composition.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webframework.h`](../include/mulib-webframework.h) |
+| Header | [`kernels/mulib-webframework.h`](../kernels/mulib-webframework.h) |
 | Implementation switch | `MULIB_IMPL_WEBFRAMEWORK` |
 | Repository-local includes | [mulib-http](mulib-http.md) |
 | Complete example | [`examples/modules/webframework.c`](../examples/modules/webframework.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webframework.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webframework.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-perf.h` · **Switch:** `MULIB_IMPL_PERF`  
+**Header:** `kernels/mulib-perf.h` · **Switch:** `MULIB_IMPL_PERF`  
 **Dependencies:** none; native monotonic libc clock. C11 / C-linkage declarations.
 
 ## Supported scope and platforms
@@ -52,7 +52,7 @@ retries after EINTR; the readiness wrappers intentionally do not retry for you.
 ## Runnable example and checks
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/perf.c -o /tmp/opencode/perf-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/perf.c -o /tmp/opencode/perf-example
 /tmp/opencode/perf-example
 ```
 
@@ -68,7 +68,7 @@ input. Strict independent compilation also tests inclusion after `<time.h>`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-perf.h`](../include/mulib-perf.h) |
+| Header | [`kernels/mulib-perf.h`](../kernels/mulib-perf.h) |
 | Implementation switch | `MULIB_IMPL_PERF` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/perf.c`](../examples/modules/perf.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/perf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/perf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

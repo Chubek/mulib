@@ -85,7 +85,7 @@ entity/edge/node array.
 ## Example
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/depir.c -lm -o depir
+cc -std=c11 -Ikernels examples/modules/depir.c -lm -o depir
 ./depir
 ```
 
@@ -100,7 +100,7 @@ execute the generated assembly, and inject failure at every allocation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-depir.h`](../include/mulib-depir.h) |
+| Header | [`kernels/mulib-depir.h`](../kernels/mulib-depir.h) |
 | Implementation switch | `MULIB_IMPL_DEPIR` |
 | Repository-local includes | [mulib-anfir](mulib-anfir.md), [mulib-clickir](mulib-clickir.md), [mulib-superblocks](mulib-superblocks.md) |
 | Complete example | [`examples/modules/depir.c`](../examples/modules/depir.c) |
@@ -113,6 +113,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/depir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/depir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -30,7 +30,7 @@ def main():
     parser.add_argument("--native-only", action="store_true")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    kernel_headers = root.parent / "include"
+    kernel_headers = root.parent / "kernels"
     runtime = root / "stdlib/container/runtime.c"
     fixture = root / "tests/fixtures/container_native.on1x"
     on1xc = args.on1xc.resolve()

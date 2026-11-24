@@ -1,7 +1,7 @@
 # mulib-ecad-pcb-sync
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-ecad-pcb-sync.h`  
+**Header:** `kernels/mulib-ecad-pcb-sync.h`  
 **Implementation switch:** `MULIB_IMPL_ECAD_PCB_SYNC`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ECAD_PCB_SYNC` defined befo
 `tests/test_ecad_pcb_sync.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_ecad_pcb_sync.c -lm -o /tmp/test_ecad_pcb_sync
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_ecad_pcb_sync.c -lm -o /tmp/test_ecad_pcb_sync
 /tmp/test_ecad_pcb_sync
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ecad-pcb-sync.h`](../include/mulib-ecad-pcb-sync.h).
+Verbatim declaration section from [`kernels/mulib-ecad-pcb-sync.h`](../kernels/mulib-ecad-pcb-sync.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ uint64_t mulib_ecad_pcb_sync_lookup(const mulib_ecad_pcb_sync_t *s, uint64_t sch
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ecad-pcb-sync.h`](../include/mulib-ecad-pcb-sync.h) |
+| Header | [`kernels/mulib-ecad-pcb-sync.h`](../kernels/mulib-ecad-pcb-sync.h) |
 | Implementation switch | `MULIB_IMPL_ECAD_PCB_SYNC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ecad-pcb-sync.c`](../examples/modules/ecad-pcb-sync.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ecad-pcb-sync.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ecad-pcb-sync.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

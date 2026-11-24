@@ -35,7 +35,7 @@ header or a declared payload cut short is `MULIB_SB_PROTOCOL`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ipc-framed.h`](../include/mulib-ipc-framed.h) |
+| Header | [`kernels/mulib-ipc-framed.h`](../kernels/mulib-ipc-framed.h) |
 | Implementation switch | `MULIB_IMPL_IPC_FRAMED` |
 | Repository-local includes | [mulib-sandbox-profile](mulib-sandbox-profile.md) |
 | Complete example | [`examples/modules/sandbox-process.c`](../examples/modules/sandbox-process.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

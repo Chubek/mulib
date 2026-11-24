@@ -19,7 +19,7 @@ Insertion costs O(message length) amortized; no sorting or rendering is performe
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-diagnostic.h`](../include/mulib-diagnostic.h) |
+| Header | [`kernels/mulib-diagnostic.h`](../kernels/mulib-diagnostic.h) |
 | Implementation switch | `MULIB_IMPL_DIAGNOSTIC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/diagnostic.c`](../examples/modules/diagnostic.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/diagnostic.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/diagnostic.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

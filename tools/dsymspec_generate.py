@@ -16,7 +16,7 @@ import jsonschema
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / 'include/mulib-dsymspec-data.inc'
+OUTPUT = ROOT / 'kernels/mulib-dsymspec-data.inc'
 
 
 class UniqueLoader(yaml.SafeLoader):

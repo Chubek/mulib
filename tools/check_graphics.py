@@ -21,7 +21,7 @@ def main():
     cc = shlex.split(os.environ.get('CC', 'cc'))
     cxx = shlex.split(os.environ.get('CXX', 'c++'))
     flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(ROOT / 'include'), '-pthread']
+             '-I' + str(ROOT / 'kernels'), '-pthread']
     if args.sanitizers:
         flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']
@@ -30,7 +30,7 @@ def main():
     def visit(name):
         if name in headers:
             return
-        text = (ROOT / 'include' / name).read_text()
+        text = (ROOT / 'kernels' / name).read_text()
         headers[name] = text
         for dependency in re.findall(r'^\s*#\s*include\s*"(mulib-[^"]+\.h)"', text, re.M):
             visit(dependency)
@@ -73,7 +73,7 @@ def main():
         subprocess.run([str(combined)], check=True, timeout=60)
         if shutil.which(cxx[0]):
             subprocess.run(cxx + ['-std=c++17', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                                 '-I' + str(ROOT / 'include'), '-x', 'c++', '-fsyntax-only', '-'],
+                                 '-I' + str(ROOT / 'kernels'), '-x', 'c++', '-fsyntax-only', '-'],
                            input=includes, text=True, check=True, timeout=60)
         validator = shutil.which('glslangValidator')
         if validator:

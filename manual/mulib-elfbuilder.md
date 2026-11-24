@@ -30,7 +30,7 @@ and the other new builder profile paths, checking cleanup and atomic prefixes.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-elfbuilder.h`](../include/mulib-elfbuilder.h).
+Verbatim declaration section from [`kernels/mulib-elfbuilder.h`](../kernels/mulib-elfbuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -92,7 +92,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-elfbuilder.h`](../include/mulib-elfbuilder.h) |
+| Header | [`kernels/mulib-elfbuilder.h`](../kernels/mulib-elfbuilder.h) |
 | Implementation switch | `MULIB_IMPL_ELFBUILDER` |
 | Repository-local includes | [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-bycutils](mulib-bycutils.md), [mulib-objfilebuilder](mulib-objfilebuilder.md) |
 | Complete example | [`examples/modules/elfbuilder.c`](../examples/modules/elfbuilder.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/elfbuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/elfbuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

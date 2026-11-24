@@ -65,7 +65,7 @@ rate limiting externally. PKCE does not replace state or token verification.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-oauth2.h`](../include/mulib-oauth2.h) |
+| Header | [`kernels/mulib-oauth2.h`](../kernels/mulib-oauth2.h) |
 | Implementation switch | `MULIB_IMPL_OAUTH2` |
 | Repository-local includes | [mulib-auth](mulib-auth.md), [mulib-authcrypto](mulib-authcrypto.md) |
 | Complete example | [`examples/modules/oauth2.c`](../examples/modules/oauth2.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/oauth2.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/oauth2.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

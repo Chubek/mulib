@@ -49,7 +49,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-graph.h`](../include/mulib-graph.h).
+Verbatim declaration section from [`kernels/mulib-graph.h`](../kernels/mulib-graph.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ int mulib_graph_reverse(const mulib_graph_t *g,mulib_graph_t *out);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-graph.h`](../include/mulib-graph.h) |
+| Header | [`kernels/mulib-graph.h`](../kernels/mulib-graph.h) |
 | Implementation switch | `MULIB_IMPL_GRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/graph.c`](../examples/modules/graph.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/graph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/graph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

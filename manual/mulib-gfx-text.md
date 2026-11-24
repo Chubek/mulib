@@ -135,11 +135,11 @@ This guard does not provide cross-thread synchronization.
 
 ```sh
 cc -std=c11 -pedantic -Wall -Wextra -Werror -Wno-misleading-indentation \
-  -Iinclude tests/test-gfx-text.c -lm -o /tmp/opencode/test-gfx-text
+  -Ikernels tests/test-gfx-text.c -lm -o /tmp/opencode/test-gfx-text
 /tmp/opencode/test-gfx-text
 cc -std=c11 -g -fsanitize=address,undefined -fno-omit-frame-pointer \
   -Wall -Wextra -Werror -Wno-misleading-indentation \
-  -Iinclude tests/test-gfx-text.c -lm -o /tmp/opencode/test-gfx-text-asan
+  -Ikernels tests/test-gfx-text.c -lm -o /tmp/opencode/test-gfx-text-asan
 ASAN_OPTIONS=detect_leaks=1 /tmp/opencode/test-gfx-text-asan
 ```
 

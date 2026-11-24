@@ -33,7 +33,7 @@ See `../tests/test_ipv6-ra.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ipv6-ra.h`](../include/mulib-ipv6-ra.h) |
+| Header | [`kernels/mulib-ipv6-ra.h`](../kernels/mulib-ipv6-ra.h) |
 | Implementation switch | `MULIB_IMPL_IPV6_RA` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ipv6-ra.c`](../examples/modules/ipv6-ra.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ipv6-ra.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ipv6-ra.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

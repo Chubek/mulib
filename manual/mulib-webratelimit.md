@@ -13,9 +13,9 @@ Define `MULIB_IMPL_WEBRATELIMIT` in exactly one C11 translation unit. Use `#incl
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-webratelimit.c -o /tmp/test-webratelimit
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-webratelimit.c -o /tmp/test-webratelimit
 /tmp/test-webratelimit
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/webratelimit.c -o /tmp/example-webratelimit
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/webratelimit.c -o /tmp/example-webratelimit
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webratelimit.h`](../include/mulib-webratelimit.h) |
+| Header | [`kernels/mulib-webratelimit.h`](../kernels/mulib-webratelimit.h) |
 | Implementation switch | `MULIB_IMPL_WEBRATELIMIT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/webratelimit.c`](../examples/modules/webratelimit.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webratelimit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webratelimit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

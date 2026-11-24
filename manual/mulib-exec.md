@@ -260,7 +260,7 @@ for both backends and checks that allocations and direct children are released.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-exec.h`](../include/mulib-exec.h) |
+| Header | [`kernels/mulib-exec.h`](../kernels/mulib-exec.h) |
 | Implementation switch | `MULIB_IMPL_EXEC` |
 | Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-perf](mulib-perf.md), [mulib-process](mulib-process.md) |
 | Complete example | [`examples/modules/exec.c`](../examples/modules/exec.c) |
@@ -273,6 +273,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/exec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/exec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

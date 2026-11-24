@@ -1,4 +1,4 @@
-/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/sppf.c -o ./sppf */
+/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/sppf.c -o ./sppf */
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_SPPF
 #include "mulib-sppf.h"

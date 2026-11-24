@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-gss.h` stores shared stack tops and labelled predecessor edges.
+`kernels/mulib-gss.h` stores shared stack tops and labelled predecessor edges.
 A node is interned by **(state, input position)**. An edge is interned by
 **(head node, predecessor node, label)**. Distinct histories can consequently
 share a top, a tail, or both, without copying complete stacks. `mulib-glr` uses
@@ -107,7 +107,7 @@ int main(void) {
 The equivalent standalone example is `examples/modules/gss.c`:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/gss.c -o ./gss
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/gss.c -o ./gss
 ./gss
 ```
 
@@ -118,7 +118,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/gss.c -o 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gss.h`](../include/mulib-gss.h) |
+| Header | [`kernels/mulib-gss.h`](../kernels/mulib-gss.h) |
 | Implementation switch | `MULIB_IMPL_GSS` |
 | Repository-local includes | [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/gss.c`](../examples/modules/gss.c) |
@@ -131,6 +131,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gss.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gss.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-unicodecase.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-unicodecase.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-unicodecase.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-unicodecase.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-unicodecase.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-unicodecase.h`](../include/mulib-unicodecase.h) |
+| Header | [`kernels/mulib-unicodecase.h`](../kernels/mulib-unicodecase.h) |
 | Implementation switch | `MULIB_IMPL_UNICODECASE` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-unicodecase.c`](../examples/mulib-unicodecase.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-unicodecase.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-unicodecase.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

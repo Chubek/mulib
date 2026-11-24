@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-textrace.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-textrace.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-textrace.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-textrace.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-textrace.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-textrace.h`](../include/mulib-textrace.h) |
+| Header | [`kernels/mulib-textrace.h`](../kernels/mulib-textrace.h) |
 | Implementation switch | `MULIB_IMPL_TEXTRACE` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-textrace.c`](../examples/mulib-textrace.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-textrace.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-textrace.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

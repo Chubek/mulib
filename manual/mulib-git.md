@@ -134,7 +134,7 @@ branches, merge, tags, aliases, pipelines, clone, fetch and push.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-git.h`](../include/mulib-git.h) |
+| Header | [`kernels/mulib-git.h`](../kernels/mulib-git.h) |
 | Implementation switch | `MULIB_IMPL_GIT` |
 | Repository-local includes | [mulib-exec](mulib-exec.md) |
 | Complete example | [`examples/modules/git.c`](../examples/modules/git.c) |
@@ -147,6 +147,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/git.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/git.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

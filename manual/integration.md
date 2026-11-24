@@ -31,7 +31,7 @@ int main(void)
 Save as `example.c`, then run from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude example.c -o example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels example.c -o example
 ./example
 ```
 
@@ -63,8 +63,8 @@ Other files include `mulib-json.h` without these definitions. Compile and link
 the implementation once with the application:
 
 ```sh
-cc -std=c11 -Iinclude -c mulib_impl.c -o mulib_impl.o
-cc -std=c11 -Iinclude app.c mulib_impl.o -lm -o app
+cc -std=c11 -Ikernels -c mulib_impl.c -o mulib_impl.o
+cc -std=c11 -Ikernels app.c mulib_impl.o -lm -o app
 ```
 
 When combining recipes, deduplicate shared implementation switches and place
@@ -79,8 +79,8 @@ application. Public C-linkage declarations do not imply that every implementatio
 is valid C++ source:
 
 ```sh
-cc -std=c11 -Iinclude -c mulib_impl.c -o mulib_impl.o
-c++ -std=c++17 -Iinclude app.cpp mulib_impl.o -lm -o app
+cc -std=c11 -Ikernels -c mulib_impl.c -o mulib_impl.o
+c++ -std=c++17 -Ikernels app.cpp mulib_impl.o -lm -o app
 ```
 
 ### CMake consumers

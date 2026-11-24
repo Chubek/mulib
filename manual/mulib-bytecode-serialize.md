@@ -21,7 +21,7 @@ verification is separate. Time and allocated memory are O(n).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-serialize.h`](../include/mulib-bytecode-serialize.h) |
+| Header | [`kernels/mulib-bytecode-serialize.h`](../kernels/mulib-bytecode-serialize.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_SERIALIZE` |
 | Repository-local includes | [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/bytecode-serialize.c`](../examples/modules/bytecode-serialize.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-serialize.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-serialize.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

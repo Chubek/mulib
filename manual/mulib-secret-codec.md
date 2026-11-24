@@ -9,7 +9,7 @@ Use strict canonical Base64url, Base32 and hexadecimal encodings. Respect the ex
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-codec.h`](../include/mulib-secret-codec.h) |
+| Header | [`kernels/mulib-secret-codec.h`](../kernels/mulib-secret-codec.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_CODEC` |
 | Repository-local includes | [mulib-secret-core](mulib-secret-core.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

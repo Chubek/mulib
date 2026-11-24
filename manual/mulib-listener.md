@@ -28,7 +28,7 @@ callbacks must not change the traversed tree.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-listener.h`](../include/mulib-listener.h).
+Verbatim declaration section from [`kernels/mulib-listener.h`](../kernels/mulib-listener.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -72,7 +72,7 @@ int mulib_listener_walk_bounded(const mulib_ast_t *root,const mulib_listener_t *
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-listener.h`](../include/mulib-listener.h) |
+| Header | [`kernels/mulib-listener.h`](../kernels/mulib-listener.h) |
 | Implementation switch | `MULIB_IMPL_LISTENER` |
 | Repository-local includes | [mulib-evtstream](mulib-evtstream.md) |
 | Complete example | [`examples/modules/listener.c`](../examples/modules/listener.c) |
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/listener.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/listener.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

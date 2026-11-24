@@ -25,7 +25,7 @@ the initial burst. The caller must synchronize shared access.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rate_limit.h`](../include/mulib-rate_limit.h).
+Verbatim declaration section from [`kernels/mulib-rate_limit.h`](../kernels/mulib-rate_limit.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -65,7 +65,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rate_limit.h`](../include/mulib-rate_limit.h) |
+| Header | [`kernels/mulib-rate_limit.h`](../kernels/mulib-rate_limit.h) |
 | Implementation switch | `MULIB_IMPL_RATE_LIMIT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/rate_limit.c`](../examples/modules/rate_limit.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rate_limit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rate_limit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 # tls — native authenticated TLS 1.3 client
 
-**Header:** `include/mulib-tls.h` · **Switch:** `MULIB_IMPL_TLS`
+**Header:** `kernels/mulib-tls.h` · **Switch:** `MULIB_IMPL_TLS`
 
 MuLIB's TLS client implements its cryptography, certificate verification and
 wire protocol using MuLIB headers and C/POSIX APIs. It implements the TSL adapter
@@ -99,7 +99,7 @@ independent cryptographic audit.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tls.h`](../include/mulib-tls.h) |
+| Header | [`kernels/mulib-tls.h`](../kernels/mulib-tls.h) |
 | Implementation switch | `MULIB_IMPL_TLS` |
 | Repository-local includes | [mulib-aes-gcm](mulib-aes-gcm.md), [mulib-hkdf](mulib-hkdf.md), [mulib-socket](mulib-socket.md), [mulib-tsl](mulib-tsl.md), [mulib-uri](mulib-uri.md), [mulib-x25519](mulib-x25519.md), [mulib-x509](mulib-x509.md) |
 | Complete example | [`examples/modules/tls.c`](../examples/modules/tls.c) |
@@ -112,6 +112,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tls.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tls.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

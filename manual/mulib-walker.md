@@ -30,7 +30,7 @@ For preorder skip/stop controls rather than paired events see
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-walker.h`](../include/mulib-walker.h).
+Verbatim declaration section from [`kernels/mulib-walker.h`](../kernels/mulib-walker.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ int mulib_walker_walk(const mulib_ast_t *, const mulib_evtlistener_t *);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-walker.h`](../include/mulib-walker.h) |
+| Header | [`kernels/mulib-walker.h`](../kernels/mulib-walker.h) |
 | Implementation switch | `MULIB_IMPL_WALKER` |
 | Repository-local includes | [mulib-evtlistener](mulib-evtlistener.md) |
 | Complete example | [`examples/modules/walker.c`](../examples/modules/walker.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/walker.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/walker.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

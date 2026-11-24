@@ -44,7 +44,7 @@ int main(void) { return 0; }" ON1X_ARCHON_HAS_TIMER_ABI)
     add_library(on1x_archon_timer_abi STATIC TimerABI.c TimerKernels.c
       "${PROJECT_SOURCE_DIR}/runtime/on1x_concurrency.c")
     target_compile_features(on1x_archon_timer_abi PRIVATE c_std_11)
-    target_include_directories(on1x_archon_timer_abi PRIVATE "${PROJECT_SOURCE_DIR}/../include")
+    target_include_directories(on1x_archon_timer_abi PRIVATE "${PROJECT_SOURCE_DIR}/../kernels")
     target_link_libraries(on1x_archon_timer_abi PUBLIC on1x_runtime Threads::Threads)
     target_compile_definitions(on1x_archon_bridge PRIVATE ON1X_ARCHON_TIMER_TARGET=1)
     install(TARGETS on1x_archon_timer_abi ARCHIVE DESTINATION lib)

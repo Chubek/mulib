@@ -31,7 +31,7 @@ account policy and the handling of channel requests.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-sshserver.h`](../include/mulib-sshserver.h).
+Verbatim declaration section from [`kernels/mulib-sshserver.h`](../kernels/mulib-sshserver.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -143,7 +143,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshserver.h`](../include/mulib-sshserver.h) |
+| Header | [`kernels/mulib-sshserver.h`](../kernels/mulib-sshserver.h) |
 | Implementation switch | `MULIB_IMPL_SSHSERVER` |
 | Repository-local includes | [mulib-sshauth](mulib-sshauth.md), [mulib-sshtransport](mulib-sshtransport.md) |
 | Complete example | [`examples/modules/sshserver.c`](../examples/modules/sshserver.c) |
@@ -156,6 +156,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sshserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sshserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

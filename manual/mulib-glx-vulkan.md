@@ -1,6 +1,6 @@
 # GLX Vulkan: headless device and transfer API
 
-`include/mulib-glx-vulkan.h` is a C11, header-only Linux helper. The original
+`kernels/mulib-glx-vulkan.h` is a C11, header-only Linux helper. The original
 `mulib_glx_vulkan_t` and `open`/`symbol`/`close` functions still work without
 Vulkan SDK headers. They load `libvulkan.so.1` at runtime and do not create an
 instance. Close a successful loader before opening it again.

@@ -18,7 +18,7 @@ no ownership, allocation, sorting, or interval derivation; both predicates are O
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-liveintervals.h`](../include/mulib-liveintervals.h) |
+| Header | [`kernels/mulib-liveintervals.h`](../kernels/mulib-liveintervals.h) |
 | Implementation switch | `MULIB_IMPL_LIVEINTERVALS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/liveintervals.c`](../examples/modules/liveintervals.c) |
@@ -31,6 +31,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/liveintervals.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/liveintervals.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

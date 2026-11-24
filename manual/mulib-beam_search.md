@@ -21,7 +21,7 @@ It retains the full backpointer table and dense transition computation.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-beam_search.h`](../include/mulib-beam_search.h).
+Verbatim declaration section from [`kernels/mulib-beam_search.h`](../kernels/mulib-beam_search.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ int mulib_beam_search(const mulib_hidden_markov_chain_t *model, const size_t *ob
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-beam_search.h`](../include/mulib-beam_search.h) |
+| Header | [`kernels/mulib-beam_search.h`](../kernels/mulib-beam_search.h) |
 | Implementation switch | `MULIB_IMPL_BEAM_SEARCH` |
 | Repository-local includes | [mulib-viterbi_decoding](mulib-viterbi_decoding.md) |
 | Complete example | [`examples/modules/beam_search.c`](../examples/modules/beam_search.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/beam_search.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/beam_search.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

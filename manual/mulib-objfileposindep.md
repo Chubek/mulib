@@ -14,7 +14,7 @@ Switch: `MULIB_IMPL_OBJFILEPOSINDEP`. Example: `examples/modules/objfileposindep
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfileposindep.h`](../include/mulib-objfileposindep.h).
+Verbatim declaration section from [`kernels/mulib-objfileposindep.h`](../kernels/mulib-objfileposindep.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -52,7 +52,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfileposindep.h`](../include/mulib-objfileposindep.h) |
+| Header | [`kernels/mulib-objfileposindep.h`](../kernels/mulib-objfileposindep.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILEPOSINDEP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/objfileposindep.c`](../examples/modules/objfileposindep.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfileposindep.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfileposindep.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

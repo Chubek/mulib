@@ -1,7 +1,7 @@
 # mulib-num-csr
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-csr.h`  
+**Header:** `kernels/mulib-num-csr.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_CSR`  
 **Dependencies:** `num-sparse`; numerical substrate helpers (static inline, no additional link dependency).
 
@@ -74,7 +74,7 @@ failures, ownership, and each copy allocation failure. The engineering suite als
 exercises both adapter symbols in a separately compiled C++ consumer.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_csr.c -lm -o /tmp/test_num_csr
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_csr.c -lm -o /tmp/test_num_csr
 /tmp/test_num_csr
 ```
 
@@ -85,7 +85,7 @@ Maintained as a MuLIB numerical kernel. No external code was copied. The broader
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-csr.h`](../include/mulib-num-csr.h).
+Verbatim declaration section from [`kernels/mulib-num-csr.h`](../kernels/mulib-num-csr.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -156,7 +156,7 @@ Constructors and conversions require an empty destination; release existing owne
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-csr.h`](../include/mulib-num-csr.h) |
+| Header | [`kernels/mulib-num-csr.h`](../kernels/mulib-num-csr.h) |
 | Implementation switch | `MULIB_IMPL_NUM_CSR` |
 | Repository-local includes | [mulib-num-core](engineering-kernels.md), [mulib-num-sparse](mulib-num-sparse.md) |
 | Complete example | [`examples/modules/num-csr.c`](../examples/modules/num-csr.c) |
@@ -169,6 +169,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-csr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-csr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -29,7 +29,7 @@ def skip(message):
 
 def native(args, root, work, cgroup):
     container = root / "stdlib/container"
-    kernel = root.parent / "include"
+    kernel = root.parent / "kernels"
     cc = [
         args.cc, "-std=c11", "-O2", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
         "-I", kernel, "-I", container,

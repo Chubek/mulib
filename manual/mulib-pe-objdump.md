@@ -28,7 +28,7 @@ unwind data, relocation processing or signature validation are implemented.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pe-objdump.h`](../include/mulib-pe-objdump.h).
+Verbatim declaration section from [`kernels/mulib-pe-objdump.h`](../kernels/mulib-pe-objdump.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ int mulib_pe_objdump (const void *data, size_t size, const mulib_objdump_options
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pe-objdump.h`](../include/mulib-pe-objdump.h) |
+| Header | [`kernels/mulib-pe-objdump.h`](../kernels/mulib-pe-objdump.h) |
 | Implementation switch | `MULIB_IMPL_PE_OBJDUMP` |
 | Repository-local includes | [mulib-coff-objdump](mulib-coff-objdump.md), [mulib-pe](mulib-pe.md) |
 | Complete example | [`examples/modules/pe-objdump.c`](../examples/modules/pe-objdump.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pe-objdump.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pe-objdump.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -79,9 +79,9 @@ below trusted ancestors and run:
 ```sh
 scratch=$(mktemp -d "$HOME/on1x-archvirt-cache-test-XXXXXX")
 export TMPDIR="$scratch"
-cc -std=c11 -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -Ikernels \
   -c on1x/src/extensions_hash.c -o "$scratch/sha.o"
-c++ -std=c++20 -Wall -Wextra -Werror -Wpedantic -Ion1x/include -Iinclude \
+c++ -std=c++20 -Wall -Wextra -Werror -Wpedantic -Ion1x/include -Ikernels \
   on1x/src/archvirt_cache.cpp on1x/tests/test_archvirt_cache.cpp \
   "$scratch/sha.o" -o "$scratch/test_archvirt_cache"
 "$scratch/test_archvirt_cache" "$scratch"

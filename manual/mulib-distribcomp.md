@@ -120,7 +120,7 @@ Define `MULIB_IMPL_DISTRIBCOMP`, `MULIB_IMPL_DISTRIBTASK`,
 `MULIB_IMPL_UTF8`, and Mune's complete switch closure listed in
 `mulib-distribtask.md`, in exactly one TU. A local broker additionally needs
 `MULIB_IMPL_MUMQ_SERVER`. `examples/distrib-common.h` shows explicit placement.
-Linux: `cc -std=c11 -Iinclude examples/modules/distribcomp.c -lm -pthread -ldl`.
+Linux: `cc -std=c11 -Ikernels examples/modules/distribcomp.c -lm -pthread -ldl`.
 All public objects require external synchronization; callbacks must not reenter.
 
 <!-- manual-reference -->
@@ -130,7 +130,7 @@ All public objects require external synchronization; callbacks must not reenter.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-distribcomp.h`](../include/mulib-distribcomp.h) |
+| Header | [`kernels/mulib-distribcomp.h`](../kernels/mulib-distribcomp.h) |
 | Implementation switch | `MULIB_IMPL_DISTRIBCOMP` |
 | Repository-local includes | [mulib-daemon](mulib-daemon.md), [mulib-distribtask](mulib-distribtask.md), [mulib-mumq-publisher](mulib-mumq-publisher.md), [mulib-mumq-subscriber](mulib-mumq-subscriber.md) |
 | Complete example | [`examples/modules/distribcomp.c`](../examples/modules/distribcomp.c) |
@@ -143,6 +143,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distribcomp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/distribcomp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

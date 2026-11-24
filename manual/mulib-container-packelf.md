@@ -59,7 +59,7 @@ CT codes. Tests verify byte-preserving overlays and section/trailer round-trips.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-packelf.h`](../include/mulib-container-packelf.h) |
+| Header | [`kernels/mulib-container-packelf.h`](../kernels/mulib-container-packelf.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKELF` |
 | Repository-local includes | [mulib-elf](mulib-elf.md), [mulib-imgformat](mulib-imgformat.md) |
 | Complete example | [`examples/modules/container-packelf.c`](../examples/modules/container-packelf.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packelf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-packelf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

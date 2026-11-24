@@ -15,7 +15,7 @@ also used by the matching client; clients explicitly link this implementation.
 Caller buffers avoid hidden allocation and automatic dependency switches.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/smtpserver.c -o /tmp/opencode/smtpserver
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/smtpserver.c -o /tmp/opencode/smtpserver
 /tmp/opencode/smtpserver
 ```
 
@@ -110,7 +110,7 @@ share its buffers.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-smtpserver.h`](../include/mulib-smtpserver.h) |
+| Header | [`kernels/mulib-smtpserver.h`](../kernels/mulib-smtpserver.h) |
 | Implementation switch | `MULIB_IMPL_SMTPSERVER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/smtpserver.c`](../examples/modules/smtpserver.c) |
@@ -123,6 +123,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/smtpserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/smtpserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

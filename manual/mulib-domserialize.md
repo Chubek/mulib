@@ -13,9 +13,9 @@ Define `MULIB_IMPL_DOMSERIALIZE` in exactly one C11 translation unit. Use `#incl
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-domserialize.c -o /tmp/test-domserialize
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-domserialize.c -o /tmp/test-domserialize
 /tmp/test-domserialize
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/domserialize.c -o /tmp/example-domserialize
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/domserialize.c -o /tmp/example-domserialize
 ```
 
 ## API
@@ -40,7 +40,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-domserialize.h`](../include/mulib-domserialize.h) |
+| Header | [`kernels/mulib-domserialize.h`](../kernels/mulib-domserialize.h) |
 | Implementation switch | `MULIB_IMPL_DOMSERIALIZE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/domserialize.c`](../examples/modules/domserialize.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/domserialize.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/domserialize.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

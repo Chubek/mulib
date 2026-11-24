@@ -33,7 +33,7 @@ def main():
     compiler = cephyr.Compiler(args.library.resolve(strict=True))
     target = "--target=x86_64-linux-gnu"
     fixture = on1x/"tests/fixtures"
-    include = on1x.parent/"include"
+    include = on1x.parent/"kernels"
     control = '''#include "contract_abi.h"
 _Static_assert(_Generic(&contract_add, int (*)(int,int): 1, default: 0), "signature drift");
 int main(void) { return contract_add(40,2) != 42; }

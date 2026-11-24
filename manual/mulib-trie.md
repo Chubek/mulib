@@ -31,7 +31,7 @@ used. [Spellcheck](mulib-spellcheck.md) wraps it with owned ranked results.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-trie.h`](../include/mulib-trie.h).
+Verbatim declaration section from [`kernels/mulib-trie.h`](../kernels/mulib-trie.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -93,7 +93,7 @@ size_t mulib_trie_approximate(const mulib_trie_t *, const void *, size_t, size_t
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-trie.h`](../include/mulib-trie.h) |
+| Header | [`kernels/mulib-trie.h`](../kernels/mulib-trie.h) |
 | Implementation switch | `MULIB_IMPL_TRIE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/trie.c`](../examples/modules/trie.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/trie.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/trie.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -13,9 +13,9 @@ Define `MULIB_IMPL_BROWSERCONTEXT` in exactly one C11 translation unit. Use `#in
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-browsercontext.c -o /tmp/test-browsercontext
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-browsercontext.c -o /tmp/test-browsercontext
 /tmp/test-browsercontext
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/browsercontext.c -o /tmp/example-browsercontext
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/browsercontext.c -o /tmp/example-browsercontext
 ```
 
 ## API
@@ -40,7 +40,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browsercontext.h`](../include/mulib-browsercontext.h) |
+| Header | [`kernels/mulib-browsercontext.h`](../kernels/mulib-browsercontext.h) |
 | Implementation switch | `MULIB_IMPL_BROWSERCONTEXT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/browsercontext.c`](../examples/modules/browsercontext.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browsercontext.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browsercontext.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

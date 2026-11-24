@@ -64,7 +64,7 @@ and multicall dispatch, exit codes, duplicate/ABI rejection and partial writes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-shoebox-contract.h`](../include/mulib-shoebox-contract.h) |
+| Header | [`kernels/mulib-shoebox-contract.h`](../kernels/mulib-shoebox-contract.h) |
 | Implementation switch | `MULIB_IMPL_SHOEBOX_CONTRACT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/shoebox-contract.c`](../examples/modules/shoebox-contract.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shoebox-contract.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/shoebox-contract.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

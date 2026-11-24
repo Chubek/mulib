@@ -14,8 +14,8 @@
 #define MULIB_IMPL_GLOB
 #define MULIB_IMPL_PARALLEL_SH
 #define MULIB_IMPL_SHEBANG_SH
-#include "../include/mulib-parallel-sh.h"
-#include "../include/mulib-shebang-sh.h"
+#include "../kernels/mulib-parallel-sh.h"
+#include "../kernels/mulib-shebang-sh.h"
 #include <assert.h>
 
 static void lua(mulib_shebang_sh_t *p,const char *source){

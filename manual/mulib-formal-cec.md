@@ -1,7 +1,7 @@
 # mulib-formal-cec
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-formal-cec.h`  
+**Header:** `kernels/mulib-formal-cec.h`  
 **Implementation switch:** `MULIB_IMPL_FORMAL_CEC`  
 **Dependencies:** `synth-truthtable`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FORMAL_CEC` defined before 
 `tests/test_formal_cec.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_formal_cec.c -lm -o /tmp/test_formal_cec
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_formal_cec.c -lm -o /tmp/test_formal_cec
 /tmp/test_formal_cec
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-formal-cec.h`](../include/mulib-formal-cec.h).
+Verbatim declaration section from [`kernels/mulib-formal-cec.h`](../kernels/mulib-formal-cec.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -79,7 +79,7 @@ int mulib_formal_truth_equivalent(mulib_synth_truth_t a, mulib_synth_truth_t b);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-formal-cec.h`](../include/mulib-formal-cec.h) |
+| Header | [`kernels/mulib-formal-cec.h`](../kernels/mulib-formal-cec.h) |
 | Implementation switch | `MULIB_IMPL_FORMAL_CEC` |
 | Repository-local includes | [mulib-synth-truthtable](mulib-synth-truthtable.md) |
 | Complete example | [`examples/modules/formal-cec.c`](../examples/modules/formal-cec.c) |
@@ -92,6 +92,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/formal-cec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/formal-cec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

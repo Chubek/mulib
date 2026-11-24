@@ -1,6 +1,6 @@
 # JSON — discovery-only: `conditional_tree_ownership`
 
-Unresolved semantics from `include/mulib-json.h`, the manual,
+Unresolved semantics from `kernels/mulib-json.h`, the manual,
 `on1x/contracts-exoml/json.exocontract.json` (20 entries) and the JSON section
 of `on1x/contracts-exoml/obligations.json`. Not executable or reviewed.
 

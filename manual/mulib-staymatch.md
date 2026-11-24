@@ -18,7 +18,7 @@ zero feasible bundles. See [FinPRED verification and limits](finpred.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-staymatch.h`](../include/mulib-staymatch.h) |
+| Header | [`kernels/mulib-staymatch.h`](../kernels/mulib-staymatch.h) |
 | Implementation switch | `MULIB_IMPL_STAYMATCH` |
 | Repository-local includes | [mulib-money](mulib-money.md) |
 | Complete example | [`examples/hospitality_demo.c`](../examples/hospitality_demo.c) |
@@ -31,6 +31,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

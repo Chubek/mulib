@@ -17,7 +17,7 @@ This is not an arbitrary-length, real-packed, multidimensional or windowed FFT.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fft.h`](../include/mulib-fft.h).
+Verbatim declaration section from [`kernels/mulib-fft.h`](../kernels/mulib-fft.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ int mulib_fft_transform(mulib_complex_t *values, size_t n, int inverse);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fft.h`](../include/mulib-fft.h) |
+| Header | [`kernels/mulib-fft.h`](../kernels/mulib-fft.h) |
 | Implementation switch | `MULIB_IMPL_FFT` |
 | Repository-local includes | [mulib-complex](mulib-complex.md) |
 | Complete example | [`examples/modules/fft.c`](../examples/modules/fft.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fft.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fft.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

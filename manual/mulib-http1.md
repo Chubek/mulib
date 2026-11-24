@@ -24,7 +24,7 @@ status-205 handling, EOF and pipeline boundaries.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-http1.h`](../include/mulib-http1.h).
+Verbatim declaration section from [`kernels/mulib-http1.h`](../kernels/mulib-http1.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -71,7 +71,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http1.h`](../include/mulib-http1.h) |
+| Header | [`kernels/mulib-http1.h`](../kernels/mulib-http1.h) |
 | Implementation switch | `MULIB_IMPL_HTTP1` |
 | Repository-local includes | [mulib-http](mulib-http.md) |
 | Complete example | [`examples/modules/http1.c`](../examples/modules/http1.c) |
@@ -84,6 +84,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http1.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http1.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

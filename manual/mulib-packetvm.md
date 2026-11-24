@@ -26,7 +26,7 @@ verifier. It is suitable for explicit application packet policy. Tests:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-packetvm.h`](../include/mulib-packetvm.h).
+Verbatim declaration section from [`kernels/mulib-packetvm.h`](../kernels/mulib-packetvm.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-packetvm.h`](../include/mulib-packetvm.h) |
+| Header | [`kernels/mulib-packetvm.h`](../kernels/mulib-packetvm.h) |
 | Implementation switch | `MULIB_IMPL_PACKETVM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/packetvm.c`](../examples/modules/packetvm.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/packetvm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/packetvm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

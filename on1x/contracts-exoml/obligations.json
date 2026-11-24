@@ -11,7 +11,7 @@
   ],
   "json": {
     "source_ranges": [
-      "include/mulib-json.h (construction, access, mutation, bounded parsing and stringify ownership)",
+      "kernels/mulib-json.h (construction, access, mutation, bounded parsing and stringify ownership)",
       "tests/test_parsers.c (nesting and wide-object work limits)"
     ],
     "preconditions": [
@@ -35,7 +35,7 @@
   },
   "vec": {
     "source_ranges": [
-      "include/mulib-vec.h:77-169"
+      "kernels/mulib-vec.h:77-169"
     ],
     "preconditions": [
       "Initialize fresh/freed struct storage; init overwrites but does not free old storage.",
@@ -57,8 +57,8 @@
   },
   "parsec": {
     "source_ranges": [
-      "include/mulib-parsec.h:233-348 (borrowed descriptors)",
-      "include/mulib-parsec.h:648-712 (result initialization/cleanup)"
+      "kernels/mulib-parsec.h:233-348 (borrowed descriptors)",
+      "kernels/mulib-parsec.h:648-712 (result initialization/cleanup)"
     ],
     "preconditions": [
       "Every descriptor's transitive child/literal/bitmap/reference-slot/user/label referent must outlive each run.",
@@ -82,7 +82,7 @@
   },
   "mune": {
     "source_ranges": [
-      "include/mulib-mune.h: public declarations, runtime C API, native callback path, GC roots and standard-library implementations",
+      "kernels/mulib-mune.h: public declarations, runtime C API, native callback path, GC roots and standard-library implementations",
       "manual/mulib-mune.md: ownership, limits, standard-library behavior, modes and module formats",
       "tests/test_mune_runtime.c, tests/test_mune_runtime_alloc.c and tools/check_mune_runtime.py: source-pinned execution/allocation/differential evidence",
       "on1x/tests/fixtures/mune_semantics.c: separate-TU archive/C ABI ownership and Lua-library acceptance"
@@ -117,8 +117,8 @@
   },
   "quic": {
     "source_ranges": [
-      "include/mulib-quic.h (canonical declarations and wire codecs)",
-      "include/detail/mulib-quic-client.h and include/mulib-tls.h (optional native transport)",
+      "kernels/mulib-quic.h (canonical declarations and wire codecs)",
+      "kernels/detail/mulib-quic-client.h and kernels/mulib-tls.h (optional native transport)",
       "tests/test_quic_http3_stream.c and tests/test_http3_client.c (codec, RFC vector and reassembly evidence)"
     ],
     "preconditions": [
@@ -136,8 +136,8 @@
   },
   "http3": {
     "source_ranges": [
-      "include/mulib-http3.h (canonical declarations and dependency-free codecs)",
-      "include/detail/mulib-http3-client.h and include/detail/mulib-qpack-tables.h (optional native HTTP/3 GET and static QPACK)",
+      "kernels/mulib-http3.h (canonical declarations and dependency-free codecs)",
+      "kernels/detail/mulib-http3-client.h and kernels/detail/mulib-qpack-tables.h (optional native HTTP/3 GET and static QPACK)",
       "tests/test_http3_client.c and tests/test_http3_integration.py (loopback oracle and vector evidence)"
     ],
     "preconditions": [
@@ -155,8 +155,8 @@
   },
   "elvi-scrape": {
     "source_ranges": [
-      "include/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
-      "include/detail/mulib-webscan.h (iterative scanner and explicit work accounting), include/mulib-json.h (bounded JSON tree construction)",
+      "kernels/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
+      "kernels/detail/mulib-webscan.h (iterative scanner and explicit work accounting), kernels/mulib-json.h (bounded JSON tree construction)",
       "tests/test-elvi-scrape{,-providers,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
       "library/elvis/*.elvs and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
     ],

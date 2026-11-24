@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-pybind.h`  
+**Header:** `kernels/mulib-pybind.h`  
 **Implementation switches:** `MULIB_IMPL_PYBIND`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB strbuf and ISO C11 only.
 
@@ -128,7 +128,7 @@ int main(void) {
 }
 ```
 
-Compile with `cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -o example`.
+Compile with `cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -o example`.
 The repository's `examples/modules/pybind.c` additionally writes the generated
 source to stdout. With a real library exporting `int demo_add(int,int)`, save
 that output as `bindings.py`, then `import bindings; bindings.add(20, 22)` yields
@@ -141,7 +141,7 @@ malformed/VOID types, count/text limits, source escaping, and empty lists.
 Compile and run using only C:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_runtime.c -o ./test-runtime
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_runtime.c -o ./test-runtime
 ./test-runtime
 ```
 
@@ -164,7 +164,7 @@ include declarations only; those declarations support C++17 with C linkage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pybind.h`](../include/mulib-pybind.h) |
+| Header | [`kernels/mulib-pybind.h`](../kernels/mulib-pybind.h) |
 | Implementation switch | `MULIB_IMPL_PYBIND` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/pybind.c`](../examples/modules/pybind.c) |
@@ -177,6 +177,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pybind.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pybind.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

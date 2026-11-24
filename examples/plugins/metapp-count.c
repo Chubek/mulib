@@ -1,6 +1,6 @@
 /* Compile as a freestanding, position-independent relocatable object:
  * cc -std=c11 -fPIC -fno-builtin -fno-stack-protector
- *    -fno-asynchronous-unwind-tables -Iinclude -c examples/plugins/metapp-count.c
+ *    -fno-asynchronous-unwind-tables -Ikernels -c examples/plugins/metapp-count.c
  *    -o metapp-count.o
  * Load with the metapp example's --plugin=metapp-count.o option.
  */

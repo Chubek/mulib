@@ -73,7 +73,7 @@ See [`examples/modules/xthreads.c`](../examples/modules/xthreads.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xthreads.h`](../include/mulib-xthreads.h) |
+| Header | [`kernels/mulib-xthreads.h`](../kernels/mulib-xthreads.h) |
 | Implementation switch | `MULIB_IMPL_XTHREADS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/xthreads.c`](../examples/modules/xthreads.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xthreads.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xthreads.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

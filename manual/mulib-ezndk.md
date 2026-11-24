@@ -78,7 +78,7 @@ compatibility or hardware test.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ezndk.h`](../include/mulib-ezndk.h) |
+| Header | [`kernels/mulib-ezndk.h`](../kernels/mulib-ezndk.h) |
 | Implementation switch | `MULIB_IMPL_EZNDK` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/ezndk.c`](../examples/modules/ezndk.c) |
@@ -91,6 +91,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ezndk.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ezndk.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

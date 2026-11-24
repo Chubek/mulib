@@ -32,14 +32,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-docvalidate.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-docvalidate.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-docvalidate.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-docvalidate.c -lm -o test
 ./test
 ```
 
@@ -67,7 +67,7 @@ remains independent. See [the pipeline contract](docir-publishing.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-docvalidate.h`](../include/mulib-docvalidate.h) |
+| Header | [`kernels/mulib-docvalidate.h`](../kernels/mulib-docvalidate.h) |
 | Implementation switch | `MULIB_IMPL_DOCVALIDATE` |
 | Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-docvalidate.c`](../examples/mulib-docvalidate.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-docvalidate.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-docvalidate.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

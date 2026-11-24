@@ -30,12 +30,12 @@ int main(void) {
 }
 ```
 
-Compile: `cc -std=c11 -Iinclude examples/modules/port.c -o port`.
+Compile: `cc -std=c11 -Ikernels examples/modules/port.c -o port`.
 
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-port.h`](../include/mulib-port.h).
+Verbatim declaration section from [`kernels/mulib-port.h`](../kernels/mulib-port.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -101,7 +101,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-port.h`](../include/mulib-port.h) |
+| Header | [`kernels/mulib-port.h`](../kernels/mulib-port.h) |
 | Implementation switch | `MULIB_IMPL_PORT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/port.c`](../examples/modules/port.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/port.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/port.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

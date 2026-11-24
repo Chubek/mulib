@@ -60,7 +60,7 @@ truncation at every byte, invalid ranges and bounded extraction.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-azw3.h`](../include/mulib-azw3.h) |
+| Header | [`kernels/mulib-azw3.h`](../kernels/mulib-azw3.h) |
 | Implementation switch | `MULIB_IMPL_AZW3` |
 | Repository-local includes | [mulib-mobi](mulib-mobi.md) |
 | Complete example | [`examples/modules/azw3.c`](../examples/modules/azw3.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/azw3.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/azw3.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

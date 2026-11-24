@@ -29,14 +29,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-docnormalize.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-docnormalize.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-docnormalize.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-docnormalize.c -lm -o test
 ./test
 ```
 
@@ -63,7 +63,7 @@ normalization or arbitrary document rewriting. See [the pipeline contract](docir
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-docnormalize.h`](../include/mulib-docnormalize.h) |
+| Header | [`kernels/mulib-docnormalize.h`](../kernels/mulib-docnormalize.h) |
 | Implementation switch | `MULIB_IMPL_DOCNORMALIZE` |
 | Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-docnormalize.c`](../examples/mulib-docnormalize.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-docnormalize.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-docnormalize.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

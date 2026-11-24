@@ -8,7 +8,7 @@ current repository names; renaming them is not a new execution claim.
 MuLIB baseline: `b6f240d440e20683698ee5ee525a86ec833b49ff`, initially clean.
 Environment: Linux x86-64, kernel `7.2.6-arch2-1`, glibc 2.44,
 GCC `16.2.1 20260810`, Clang `22.1.8`, CMake `4.4.3`.
-The checkout contains 1,085 `include/mulib-*.h`, 375 `tests/test_*.c`
+The checkout contains 1,085 `kernels/mulib-*.h`, 375 `tests/test_*.c`
 (hyphen-named suites are additional), and 1,086 `manual/mulib-*.md` files.
 
 Scope: M0 inventory/dependency/profile mapping, existing EDA regression baseline,
@@ -37,7 +37,7 @@ Machine-readable change inventory (runtime results are detailed under Evidence):
   "unsupported": ["persistent IDs", "cross-pool uniqueness", "typed DB graph", "atomic pool/DB transactions"],
   "next_dependency": "M0 behavioral gap audit before typed DB references",
   "affected_paths": [
-    "include/mulib-eda-ids.h",
+    "kernels/mulib-eda-ids.h",
     "tests/test_eda_ids.c", "tests/test_eda_alloc.c", "tests/test_cpp_link.cpp",
     "examples/modules/eda-ids.c", "manual/mulib-eda-ids.md",
     "tools/audit_engineering.py", "manual/engineering-inventory.json", "manual/engineering-status.md",
@@ -69,7 +69,7 @@ python3 tools/audit_engineering.py --check
 
 ### ID ownership and generation exhaustion
 
-- `include/mulib-eda-ids.h`: initialize into a temporary pool, release temporary
+- `kernels/mulib-eda-ids.h`: initialize into a temporary pool, release temporary
   arrays on failure, and publish only after all three allocations succeed.
   Previously, a failed initialization overwrote the destination.
 - Reuse an inactive slot at generation `0xffffff`. Previously the `<` comparison
@@ -175,15 +175,15 @@ Completed focused verification:
 ```sh
 # Repeated for eda_ids, eda_alloc, eda_object, eda_design_db,
 # eda_transaction and eda_undo, then each executable was run:
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test_eda_ids.c -lm -o /tmp/opencode/cc-test_eda_ids
 clang -std=c11 -Wall -Wextra -Wpedantic -Werror \
   -fsanitize=address,undefined -fno-sanitize-recover=all \
-  -fno-omit-frame-pointer -Iinclude tests/test_eda_ids.c \
+  -fno-omit-frame-pointer -Ikernels tests/test_eda_ids.c \
   -lm -o /tmp/opencode/clang-test_eda_ids
 
 # Compile/run the integration example with both compilers:
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/eda-ids.c -lm -o /tmp/opencode/ids-example
 /tmp/opencode/ids-example
 
@@ -204,8 +204,8 @@ python3 tools/sync_inventory.py
 python3 tools/stratify.py
 python3 tools/manuals.py --write
 python3 tools/manuals.py --check
-python3 mudsl/scripts/generate_mulib.py --include include
-python3 mudsl/scripts/check_mulib_inventory.py --include include
+python3 mudsl/scripts/generate_mulib.py --include kernels
+python3 mudsl/scripts/check_mulib_inventory.py --include kernels
 ```
 
 All completed successfully with the installed libclang bindings. MuLL validation:
@@ -314,7 +314,7 @@ to transaction begin and focused coverage of existing commit/rollback behavior.
   "unsupported": ["nested transactions", "cross-DB atomicity", "persistent journals", "concurrent unsynchronized access", "target reset/ABA detection"],
   "next_dependency": "typed DB reference and lifetime contract after M0 behavioral review",
   "affected_paths": [
-    "include/mulib-eda-transaction.h",
+    "kernels/mulib-eda-transaction.h",
     "manual/mulib-eda-transaction.md",
     "examples/modules/eda-transaction.c",
     "tests/test_eda_transaction.c",
@@ -377,8 +377,8 @@ REPRODUCE:
 python3 tools/sync_inventory.py
 python3 tools/stratify.py
 python3 tools/manuals.py --write
-python3 mudsl/scripts/generate_mulib.py --include include
-python3 mudsl/scripts/check_mulib_inventory.py --include include
+python3 mudsl/scripts/generate_mulib.py --include kernels
+python3 mudsl/scripts/check_mulib_inventory.py --include kernels
 python3 tools/audit_engineering.py --write
 # Reuse the first slice's sanitizer-enabled CMake configuration:
 cmake --build /tmp/opencode/mulib-build-engineering -j 2

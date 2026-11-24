@@ -18,7 +18,7 @@ SUPPORT = {"container-core", "qvm", "lprowse"}
 INCLUDE = re.compile(r'^\s*#\s*include\s*["<]mulib-([^">]+)\.h[">]', re.M)
 SWITCH = re.compile(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)MULIB_IMPL_', re.M)
 MODULES = re.compile(r'^- name: .*?(?=^- name: |\Z)', re.M | re.S)
-MANIFEST_HEADER = re.compile(r'^  header: include/(mulib-.+\.h)$', re.M)
+MANIFEST_HEADER = re.compile(r'^  header: kernels/(mulib-.+\.h)$', re.M)
 VALIDATION = "  validation: tests/run-graphics.sh; header compilation is not feature completeness.\n"
 NOTEBOOK_PROFILE = re.compile(r'^  profile: notebook-desktop$', re.M)
 PURPOSES = {
@@ -38,7 +38,7 @@ def headers(root=ROOT):
         if not match:
             raise ValueError("notebook desktop manifest entry lacks a public header path")
         notebook.add(match.group(1))
-    return sorted(p for p in (root / "include").glob("mulib-*.h")
+    return sorted(p for p in (root / "kernels").glob("mulib-*.h")
                   if p.name not in notebook and p.stem[6:] not in LEGACY
                   and (p.stem[6:] in TEXT or p.stem[6:].startswith(PREFIXES)))
 
@@ -123,12 +123,12 @@ def updated_manifest(root=ROOT):
             raise ValueError(f"graphics header now has an ABI switch: {name}")
         deps = sorted(set(INCLUDE.findall(text)) - SUPPORT)
         for dependency in deps:
-            if not (root / "include" / f"mulib-{dependency}.h").is_file():
+            if not (root / "kernels" / f"mulib-{dependency}.h").is_file():
                 raise ValueError(f"{name}: unknown dependency {dependency}")
         purpose = PURPOSES.get(name, f"Bounded {name} API; see documented scope and acceptance gates.")
         generated[header.name] = (
             f"- name: {name}\n"
-            f"  header: include/{header.name}\n"
+            f"  header: kernels/{header.name}\n"
             f"  manual: {documentation(name)}\n"
             "  implementation: static-inline\n"
             "  status: bounded\n"

@@ -15,7 +15,7 @@ Example: `examples/modules/index.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-index.h`](../include/mulib-index.h).
+Verbatim declaration section from [`kernels/mulib-index.h`](../kernels/mulib-index.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-index.h`](../include/mulib-index.h) |
+| Header | [`kernels/mulib-index.h`](../kernels/mulib-index.h) |
 | Implementation switch | `MULIB_IMPL_INDEX` |
 | Repository-local includes | [mulib-b+tree](mulib-b+tree.md) |
 | Complete example | [`examples/modules/index.c`](../examples/modules/index.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/index.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/index.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-daemon.h` · **Switch:** `MULIB_IMPL_DAEMON`
+**Header:** `kernels/mulib-daemon.h` · **Switch:** `MULIB_IMPL_DAEMON`
 
 Build an owned daemon specification with C setters or a Mune configuration;
 compile it through a Mune profile, or launch it as an owned POSIX child session.
@@ -130,7 +130,7 @@ Daemon specs/runtime state require external synchronization.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/daemon.c -pthread -lm -ldl -o /tmp/opencode/daemon
+cc -std=c11 -Ikernels examples/modules/daemon.c -pthread -lm -ldl -o /tmp/opencode/daemon
 /tmp/opencode/daemon library/ldaemon/systemd.lua > /tmp/opencode/example.service
 ```
 
@@ -145,7 +145,7 @@ exit statuses, watcher launch, SIGTERM and reaping.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-daemon.h`](../include/mulib-daemon.h) |
+| Header | [`kernels/mulib-daemon.h`](../kernels/mulib-daemon.h) |
 | Implementation switch | `MULIB_IMPL_DAEMON` |
 | Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-process](mulib-process.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/daemon.c`](../examples/modules/daemon.c) |
@@ -158,6 +158,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/daemon.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/daemon.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

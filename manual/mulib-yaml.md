@@ -85,7 +85,7 @@ Exponent forms also include a decimal point for compatibility with common YAML
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
   examples/modules/yaml.c -o ./mulib-yaml
 ./mulib-yaml
 ```
@@ -112,7 +112,7 @@ generated-DOM roundtrip coverage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-yaml.h`](../include/mulib-yaml.h) |
+| Header | [`kernels/mulib-yaml.h`](../kernels/mulib-yaml.h) |
 | Implementation switch | `MULIB_IMPL_YAML` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/yaml.c`](../examples/modules/yaml.c) |
@@ -125,6 +125,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/yaml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/yaml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

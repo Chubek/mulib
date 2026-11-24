@@ -13,9 +13,9 @@ Define `MULIB_IMPL_BROWSERWAIT` in exactly one C11 translation unit. Use `#inclu
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-browserwait.c -o /tmp/test-browserwait
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-browserwait.c -o /tmp/test-browserwait
 /tmp/test-browserwait
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/browserwait.c -o /tmp/example-browserwait
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/browserwait.c -o /tmp/example-browserwait
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browserwait.h`](../include/mulib-browserwait.h) |
+| Header | [`kernels/mulib-browserwait.h`](../kernels/mulib-browserwait.h) |
 | Implementation switch | `MULIB_IMPL_BROWSERWAIT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/browserwait.c`](../examples/modules/browserwait.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browserwait.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browserwait.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

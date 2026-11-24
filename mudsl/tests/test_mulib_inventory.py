@@ -19,7 +19,7 @@ class InventoryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=parent)
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.include = self.root / 'include'
+        self.include = self.root / 'kernels'
         self.bindings = self.root / 'bindings'
         self.include.mkdir()
         self.bindings.mkdir()

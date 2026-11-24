@@ -15,7 +15,7 @@ Always try to leave terminal mode before destroying its descriptors.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-terminal.h`](../include/mulib-imtui-terminal.h) |
+| Header | [`kernels/mulib-imtui-terminal.h`](../kernels/mulib-imtui-terminal.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_TERMINAL` |
 | Repository-local includes | [mulib-terminfo](mulib-terminfo.md), [mulib-termkey](mulib-termkey.md), [mulib-termutils](mulib-termutils.md) |
 | Complete example | [`examples/imtui/terminal.c`](../examples/imtui/terminal.c) |
@@ -28,6 +28,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/terminal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/terminal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

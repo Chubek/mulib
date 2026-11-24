@@ -75,7 +75,7 @@ The caller supplies all packet storage and synchronizes shared callback state.
 
 `examples/modules/dnsclient.c` implements an in-process echo-question transport,
 checks a valid empty reply, then demonstrates ID-mismatch rejection. Build with
-`cc -std=c11 -Iinclude examples/modules/dnsclient.c -o dnsclient`.
+`cc -std=c11 -Ikernels examples/modules/dnsclient.c -o dnsclient`.
 `tests/test_dns_stack.c` also tests authoritative replies, malformed flags,
 truncation, callback failures and an oversized callback length.
 
@@ -86,7 +86,7 @@ truncation, callback failures and an oversized callback length.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dnsclient.h`](../include/mulib-dnsclient.h) |
+| Header | [`kernels/mulib-dnsclient.h`](../kernels/mulib-dnsclient.h) |
 | Implementation switch | `MULIB_IMPL_DNSCLIENT` |
 | Repository-local includes | [mulib-dns](mulib-dns.md) |
 | Complete example | [`examples/modules/dnsclient.c`](../examples/modules/dnsclient.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dnsclient.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dnsclient.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

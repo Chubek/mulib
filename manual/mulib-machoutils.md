@@ -23,7 +23,7 @@ and [shared contracts](binary-formats.md).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-machoutils.h`](../include/mulib-machoutils.h).
+Verbatim declaration section from [`kernels/mulib-machoutils.h`](../kernels/mulib-machoutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -59,7 +59,7 @@ int mulib_machoutils_symbol (const mulib_macho_t *v, const char *name, mulib_mac
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-machoutils.h`](../include/mulib-machoutils.h) |
+| Header | [`kernels/mulib-machoutils.h`](../kernels/mulib-machoutils.h) |
 | Implementation switch | `MULIB_IMPL_MACHOUTILS` |
 | Repository-local includes | [mulib-macho](mulib-macho.md) |
 | Complete example | [`examples/modules/machoutils.c`](../examples/modules/machoutils.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/machoutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/machoutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

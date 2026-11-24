@@ -127,7 +127,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/peg.c -o ./peg
+cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ikernels examples/modules/peg.c -o ./peg
 ./peg
 ```
 
@@ -138,7 +138,7 @@ cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/peg.c -o
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-peg.h`](../include/mulib-peg.h) |
+| Header | [`kernels/mulib-peg.h`](../kernels/mulib-peg.h) |
 | Implementation switch | `MULIB_IMPL_PEG` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/peg.c`](../examples/modules/peg.c) |
@@ -151,6 +151,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/peg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/peg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

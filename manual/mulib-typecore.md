@@ -33,7 +33,7 @@ arbitrary input bytes form legal XML/HTML text.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-typecore.h`](../include/mulib-typecore.h) |
+| Header | [`kernels/mulib-typecore.h`](../kernels/mulib-typecore.h) |
 | Implementation switch | `MULIB_IMPL_TYPECORE` |
 | Repository-local includes | None |
 | Complete example | [`examples/mulib-typecore.c`](../examples/mulib-typecore.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-typecore.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-typecore.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

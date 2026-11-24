@@ -16,7 +16,7 @@ Example: `examples/modules/elfutils.c` also uses the object writer to build inpu
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-elfutils.h`](../include/mulib-elfutils.h).
+Verbatim declaration section from [`kernels/mulib-elfutils.h`](../kernels/mulib-elfutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -57,7 +57,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-elfutils.h`](../include/mulib-elfutils.h) |
+| Header | [`kernels/mulib-elfutils.h`](../kernels/mulib-elfutils.h) |
 | Implementation switch | `MULIB_IMPL_ELFUTILS` |
 | Repository-local includes | [mulib-elf](mulib-elf.md) |
 | Complete example | [`examples/modules/elfutils.c`](../examples/modules/elfutils.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/elfutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/elfutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

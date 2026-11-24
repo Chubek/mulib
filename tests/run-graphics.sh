@@ -27,17 +27,17 @@ while IFS= read -r header; do
     printf '#include "%s"\n#include "%s"\n' "$header" "$header" > "$BUILD/header.c"
     # Deliberate word splitting permits compiler flags, not source paths.
     # shellcheck disable=SC2086
-    "$CC" $FLAGS -I"$ROOT/include" -fsyntax-only "$BUILD/header.c"
+    "$CC" $FLAGS -I"$ROOT/kernels" -fsyntax-only "$BUILD/header.c"
     printf '#include "%s"\n' "$header" >> "$BUILD/combined.c"
     headers=$((headers + 1))
 done < "$BUILD/headers"
 printf 'int main(void) { return 0; }\n' >> "$BUILD/combined.c"
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" "$BUILD/combined.c" $LINK -o "$BUILD/combined"
+"$CC" $FLAGS -I"$ROOT/kernels" "$BUILD/combined.c" $LINK -o "$BUILD/combined"
 "$BUILD/combined"
 # Optional adapters must also parse against the actual upstream declarations.
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" -fsyntax-only "$ROOT/tests/graphics/bridges.c"
+"$CC" $FLAGS -I"$ROOT/kernels" -fsyntax-only "$ROOT/tests/graphics/bridges.c"
 printf 'PASS: %s standalone headers and combined C11 linkage\n' "$headers"
 tests=0
 for source in "$ROOT"/tests/test-gfx-*.c \
@@ -60,7 +60,7 @@ for source in "$ROOT"/tests/test-gfx-*.c \
         *) set -- ;;
     esac
     # shellcheck disable=SC2086
-    "$CC" $FLAGS -I"$ROOT/include" "$source" "$@" $LINK -o "$BUILD/$name"
+    "$CC" $FLAGS -I"$ROOT/kernels" "$source" "$@" $LINK -o "$BUILD/$name"
     "$BUILD/$name"
     tests=$((tests + 1))
 done
@@ -68,13 +68,13 @@ done
 if [ "${LEGACY:-1}" = 1 ]; then
     for name in test_immgtk test_immgtk_canvas test_immgtk_drawlist test_immgtk_plot; do
         # shellcheck disable=SC2086
-        "$CC" $FLAGS -I"$ROOT/include" "$ROOT/tests/$name.c" $LINK -o "$BUILD/$name"
+        "$CC" $FLAGS -I"$ROOT/kernels" "$ROOT/tests/$name.c" $LINK -o "$BUILD/$name"
         "$BUILD/$name" "$ROOT/library"
     done
     # Run the scripted extension regression through the actual Mune parser
     # and bytecode VM as well as the stock-Lua run below.
     # shellcheck disable=SC2086
-    "$CC" $FLAGS -I"$ROOT/include" "$ROOT/tests/test_mune_runtime.c" \
+    "$CC" $FLAGS -I"$ROOT/kernels" "$ROOT/tests/test_mune_runtime.c" \
         $LINK -o "$BUILD/mune-runtime"
     "$BUILD/mune-runtime" --run tests/test-gfx-immgtk-lua.lua
     "$BUILD/mune-runtime" --vm tests/test-gfx-immgtk-lua.lua
@@ -82,7 +82,7 @@ fi
 # Exercise independent C TUs and a C++ consumer of an explicit C ABI boundary.
 # These C11 headers are NOT thereby certified as directly C++-compilable.
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" -I"$ROOT/tests/graphics" \
+"$CC" $FLAGS -I"$ROOT/kernels" -I"$ROOT/tests/graphics" \
     -c "$ROOT/tests/graphics/producer.c" -o "$BUILD/producer.o"
 # shellcheck disable=SC2086
 "$CC" $FLAGS -I"$ROOT/tests/graphics" "$ROOT/tests/graphics/consumer.c" \
@@ -95,17 +95,17 @@ if command -v "$CXX" >/dev/null 2>&1; then
     "$BUILD/link-cxx"
     if [ -f "$ROOT/tests/gfx-immgtk-legacy-cxx.cpp" ]; then
         # shellcheck disable=SC2086
-        "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/include" \
+        "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/kernels" \
             "$ROOT/tests/gfx-immgtk-legacy-cxx.cpp" $LINK -o "$BUILD/legacy-cxx"
         "$BUILD/legacy-cxx"
     fi
     # The legacy PNG header remains directly C++-includable, independently of
     # the C11-only GLX overlay. Exercise original encoder and additive decoder.
     # shellcheck disable=SC2086
-    "$CC" $FLAGS -I"$ROOT/include" -c "$ROOT/tests/graphics/png-producer.c" \
+    "$CC" $FLAGS -I"$ROOT/kernels" -c "$ROOT/tests/graphics/png-producer.c" \
         -o "$BUILD/png-producer.o"
     # shellcheck disable=SC2086
-    "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/include" \
+    "$CXX" -std=c++17 $WARN ${CXXFLAGS:-} $CXX_SANITIZERS -I"$ROOT/kernels" \
         "$ROOT/tests/graphics/png-consumer.cpp" "$BUILD/png-producer.o" \
         $LINK -o "$BUILD/png-cxx"
     "$BUILD/png-cxx"
@@ -113,7 +113,7 @@ else
     printf 'SKIP: C++ ABI consumer (compiler unavailable)\n'
 fi
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" "$ROOT/examples/gfx-headless.c" $LINK -o "$BUILD/demo"
+"$CC" $FLAGS -I"$ROOT/kernels" "$ROOT/examples/gfx-headless.c" $LINK -o "$BUILD/demo"
 "$BUILD/demo" "$BUILD/demo.ppm"
 LUA=${LUA:-lua}
 if command -v "$LUA" >/dev/null 2>&1; then

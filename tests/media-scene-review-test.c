@@ -1,6 +1,6 @@
 /* New scene kernels only; no production/foreign ABI admission implied.
  * cc -std=c11 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined \
- *   -Iinclude tests/media-scene-review-test.c -lm -o /tmp/opencode/scene-test
+ *   -Ikernels tests/media-scene-review-test.c -lm -o /tmp/opencode/scene-test
  */
 #include "mulib-mesh-primitives.h"
 #include "mulib-mesh-subdivide.h"

@@ -25,7 +25,7 @@ format detection, gzip support, or HTTP content-encoding negotiation.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-compression.h`](../include/mulib-compression.h).
+Verbatim declaration section from [`kernels/mulib-compression.h`](../kernels/mulib-compression.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -70,7 +70,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-compression.h`](../include/mulib-compression.h) |
+| Header | [`kernels/mulib-compression.h`](../kernels/mulib-compression.h) |
 | Implementation switch | `MULIB_IMPL_COMPRESSION` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-rle](mulib-rle.md) |
 | Complete example | [`examples/modules/compression.c`](../examples/modules/compression.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/compression.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/compression.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

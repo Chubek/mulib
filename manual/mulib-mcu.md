@@ -50,7 +50,7 @@ allocation failure recovery.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-mcu.h`](../include/mulib-mcu.h).
+Verbatim declaration section from [`kernels/mulib-mcu.h`](../kernels/mulib-mcu.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -100,7 +100,7 @@ void mulib_mcu_free (mulib_mcu_t *);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mcu.h`](../include/mulib-mcu.h) |
+| Header | [`kernels/mulib-mcu.h`](../kernels/mulib-mcu.h) |
 | Implementation switch | `MULIB_IMPL_MCU` |
 | Repository-local includes | [mulib-unit](mulib-unit.md) |
 | Complete example | [`examples/modules/mcu.c`](../examples/modules/mcu.c) |
@@ -113,6 +113,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mcu.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mcu.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

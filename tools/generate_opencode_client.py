@@ -8,7 +8,7 @@ import re
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "standards/opencode-v2/openapi.json"
-TARGET = ROOT / "include/detail/mulib-opencode-operations.inc"
+TARGET = ROOT / "kernels/detail/mulib-opencode-operations.inc"
 
 # Deliberate client surface; no raw routes, shell, credentials, permission
 # changes, or server/process management. The scripting binding is GET-only.

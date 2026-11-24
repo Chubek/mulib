@@ -34,7 +34,7 @@ check golden bytes, SGPR aliases/ranges and transactional failures.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-amdgpu.h`](../include/mulib-amdgpu.h).
+Verbatim declaration section from [`kernels/mulib-amdgpu.h`](../kernels/mulib-amdgpu.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -84,7 +84,7 @@ void mulib_amdgpu_free (mulib_amdgpu_t *);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-amdgpu.h`](../include/mulib-amdgpu.h) |
+| Header | [`kernels/mulib-amdgpu.h`](../kernels/mulib-amdgpu.h) |
 | Implementation switch | `MULIB_IMPL_AMDGPU` |
 | Repository-local includes | [mulib-gpu](mulib-gpu.md) |
 | Complete example | [`examples/modules/amdgpu.c`](../examples/modules/amdgpu.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/amdgpu.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/amdgpu.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -35,7 +35,7 @@ allocation failures and independent liblzf raw payload compatibility when presen
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lzf.h`](../include/mulib-lzf.h) |
+| Header | [`kernels/mulib-lzf.h`](../kernels/mulib-lzf.h) |
 | Implementation switch | `MULIB_IMPL_LZF` |
 | Repository-local includes | [mulib-codec-core](mulib-codec-core.md) |
 | Complete example | [`examples/modules/lzf.c`](../examples/modules/lzf.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lzf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lzf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

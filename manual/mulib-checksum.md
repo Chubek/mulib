@@ -35,7 +35,7 @@ its check digit and returns 1/0. Embedded NUL and other nondigits are rejected.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-checksum.h`](../include/mulib-checksum.h) |
+| Header | [`kernels/mulib-checksum.h`](../kernels/mulib-checksum.h) |
 | Implementation switch | `MULIB_IMPL_CHECKSUM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/checksum.c`](../examples/modules/checksum.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/checksum.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/checksum.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

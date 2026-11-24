@@ -71,7 +71,7 @@ analysis. Overflow is checked before allocation. Zero is a literal bound;
 NO_MEMORY and RESOURCE_LIMIT are distinct from malformed-reference/type errors.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/anfir.c -lm -o anfir
+cc -std=c11 -Ikernels examples/modules/anfir.c -lm -o anfir
 ./anfir
 ```
 
@@ -87,7 +87,7 @@ compilation allocations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-anfir.h`](../include/mulib-anfir.h) |
+| Header | [`kernels/mulib-anfir.h`](../kernels/mulib-anfir.h) |
 | Implementation switch | `MULIB_IMPL_ANFIR` |
 | Repository-local includes | [mulib-gssair](mulib-gssair.md) |
 | Complete example | [`examples/modules/anfir.c`](../examples/modules/anfir.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/anfir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/anfir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

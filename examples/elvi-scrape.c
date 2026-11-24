@@ -1,5 +1,5 @@
 /* Example: build a provider URL and optionally parse a saved response. No network.
- * Build: cc -std=c11 -Iinclude examples/elvi-scrape.c -lm -o demo
+ * Build: cc -std=c11 -Ikernels examples/elvi-scrape.c -lm -o demo
  * Usage: ./demo library/elvis/Google.elvs "C11 compiler" [response.html|json]
  */
 #define MULIB_IMPL_PARSEC

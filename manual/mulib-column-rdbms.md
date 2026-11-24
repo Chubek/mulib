@@ -10,7 +10,7 @@ until mutation/free. Dimensions must not change while live. No SQL/nulls.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-column-rdbms.h`](../include/mulib-column-rdbms.h).
+Verbatim declaration section from [`kernels/mulib-column-rdbms.h`](../kernels/mulib-column-rdbms.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -56,7 +56,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-column-rdbms.h`](../include/mulib-column-rdbms.h) |
+| Header | [`kernels/mulib-column-rdbms.h`](../kernels/mulib-column-rdbms.h) |
 | Implementation switch | `MULIB_IMPL_COLUMN_RDBMS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/column-rdbms.c`](../examples/modules/column-rdbms.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/column-rdbms.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/column-rdbms.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

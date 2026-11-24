@@ -61,10 +61,10 @@ def build_kernel_shared(exo, report, root, recipe, stage, cephyr):
             raise ValueError('Cephyr kernel[dynlib] cannot link external libraries; '
                              'select --kernel-dynlib-compiler=host explicitly')
         with source.open('rb') as stream, shared.open('xb') as output:
-            subprocess.run([cephyr, root/'include'], stdin=stream, stdout=output,
+            subprocess.run([cephyr, root/'kernels'], stdin=stream, stdout=output,
                            check=True, timeout=120)
     else:
-        flags = [*STRICT_C11, '-fPIC', '-I', str(root/'include')]
+        flags = [*STRICT_C11, '-fPIC', '-I', str(root/'kernels')]
         source_path = str(source.resolve())
         for path, digest in house.compile_inputs(report['compiler'], flags, source).items():
             if path != source_path and report['inputs'].setdefault(path, digest) != digest:
@@ -475,7 +475,7 @@ def main():
         if args.kernel_review or ipc_raw or dyn_modules:
             # Discovery checked alternate kernel candidates but did not add
             # those search roots to ExoLib's C header search path.
-            includes=[mulib_root/'include']
+            includes=[mulib_root/'kernels']
         include_flags=[part for path in includes for part in ['-I',str(path)]]
         if stdffi_library:
             include_flags += ['-I', str(ROOT/'runtime-sdk/include')]
@@ -711,7 +711,7 @@ def main():
                         if worker.parent != bridge.parent:
                             raise ValueError('Pod worker and runtime must come from the same stdlib')
                         worker_flags = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-                                        '-I', str(mulib_root/'include'), '-static']
+                                        '-I', str(mulib_root/'kernels'), '-static']
                         for path, digest in house.compile_inputs(args.cc, worker_flags, worker).items():
                             if path in fingerprints and fingerprints[path] != digest:
                                 raise ValueError('Pod worker input drift: '+path)

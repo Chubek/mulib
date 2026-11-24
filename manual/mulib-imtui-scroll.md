@@ -12,7 +12,7 @@ testing respect the resulting clip.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-scroll.h`](../include/mulib-imtui-scroll.h) |
+| Header | [`kernels/mulib-imtui-scroll.h`](../kernels/mulib-imtui-scroll.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_SCROLL` |
 | Repository-local includes | [mulib-imtui-core](mulib-imtui-core.md) |
 | Complete example | [`examples/imtui/composites.c`](../examples/imtui/composites.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -29,7 +29,7 @@ must provide matching code, symbol decoration and relocations where needed.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-coffbuilder.h`](../include/mulib-coffbuilder.h).
+Verbatim declaration section from [`kernels/mulib-coffbuilder.h`](../kernels/mulib-coffbuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-coffbuilder.h`](../include/mulib-coffbuilder.h) |
+| Header | [`kernels/mulib-coffbuilder.h`](../kernels/mulib-coffbuilder.h) |
 | Implementation switch | `MULIB_IMPL_COFFBUILDER` |
 | Repository-local includes | [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md), [mulib-objfilebuilder](mulib-objfilebuilder.md) |
 | Complete example | [`examples/modules/coffbuilder.c`](../examples/modules/coffbuilder.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/coffbuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/coffbuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

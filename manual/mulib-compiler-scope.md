@@ -19,7 +19,7 @@ See [symboltable](mulib-symboltable.md) for ownership and rollback rules.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-compiler-scope.h`](../include/mulib-compiler-scope.h) |
+| Header | [`kernels/mulib-compiler-scope.h`](../kernels/mulib-compiler-scope.h) |
 | Implementation switch | `MULIB_IMPL_COMPILER_SCOPE` |
 | Repository-local includes | [mulib-symboltable](mulib-symboltable.md) |
 | Complete example | [`examples/modules/compiler-scope.c`](../examples/modules/compiler-scope.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/compiler-scope.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/compiler-scope.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

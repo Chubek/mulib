@@ -60,7 +60,7 @@ Secure Boot validation are not exercised by these host tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-efi.h`](../include/mulib-efi.h) |
+| Header | [`kernels/mulib-efi.h`](../kernels/mulib-efi.h) |
 | Implementation switch | `MULIB_IMPL_EFI` |
 | Repository-local includes | [mulib-pe](mulib-pe.md) |
 | Complete example | [`examples/modules/efi.c`](../examples/modules/efi.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/efi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/efi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

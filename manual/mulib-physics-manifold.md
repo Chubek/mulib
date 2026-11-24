@@ -24,7 +24,7 @@ Capacities describe live backing storage supplied by the caller, not merely nume
 
 ## Current callable surface
 
-Signatures extracted from this header; dependency types and complete checks are in [the source](../include/mulib-physics-manifold.h). Helpers listed here are not automatically safe foreign imports.
+Signatures extracted from this header; dependency types and complete checks are in [the source](../kernels/mulib-physics-manifold.h). Helpers listed here are not automatically safe foreign imports.
 
 ```c
 static inline void mulib_physics_manifold_match(mulib_physics_contact *now,size_t n,const mulib_physics_contact *old,size_t count);
@@ -47,7 +47,7 @@ The runner checks the 193 original kernels plus the shared PCM helper, isolated 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-physics-manifold.h`](../include/mulib-physics-manifold.h) |
+| Header | [`kernels/mulib-physics-manifold.h`](../kernels/mulib-physics-manifold.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | [mulib-mesh-core](mulib-mesh-core.md), [mulib-physics-narrowphase](mulib-physics-narrowphase.md) |
 | Complete example | [`examples/media-pipeline.c`](../examples/media-pipeline.c) |
@@ -60,6 +60,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

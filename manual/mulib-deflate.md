@@ -67,7 +67,7 @@ Reference: [RFC 1951](https://www.rfc-editor.org/rfc/rfc1951).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-deflate.h`](../include/mulib-deflate.h) |
+| Header | [`kernels/mulib-deflate.h`](../kernels/mulib-deflate.h) |
 | Implementation switch | `MULIB_IMPL_DEFLATE` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/deflate.c`](../examples/modules/deflate.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/deflate.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/deflate.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

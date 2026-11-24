@@ -9,7 +9,7 @@ MSV1 wraps a random development vault root under a password-derived key. Use `mu
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-vault.h`](../include/mulib-secret-vault.h) |
+| Header | [`kernels/mulib-secret-vault.h`](../kernels/mulib-secret-vault.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_VAULT` |
 | Repository-local includes | [mulib-secret-memory](mulib-secret-memory.md), [mulib-secret-record](mulib-secret-record.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

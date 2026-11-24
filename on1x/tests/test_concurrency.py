@@ -97,7 +97,7 @@ assert p.returncode == 0, p
 
 capture_descriptors = t.work / 'process_capture_descriptors'
 p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-pthread',
-         '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
+         '-I', t.root / 'runtime', '-I', t.root.parent / 'kernels',
          t.root / 'tests/fixtures/process_capture_descriptors.c',
          t.root / 'runtime/on1x_runtime.c', t.root / 'runtime/on1x_concurrency.c',
          *t.flags, '-o', capture_descriptors])

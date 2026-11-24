@@ -28,7 +28,7 @@ bigobj, linking, relocation or execution is provided.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-container-packcoff.h`](../include/mulib-container-packcoff.h).
+Verbatim declaration section from [`kernels/mulib-container-packcoff.h`](../kernels/mulib-container-packcoff.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -68,7 +68,7 @@ int mulib_container_packcoff_open (const void *file, size_t length, size_t max_i
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-packcoff.h`](../include/mulib-container-packcoff.h) |
+| Header | [`kernels/mulib-container-packcoff.h`](../kernels/mulib-container-packcoff.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKCOFF` |
 | Repository-local includes | [mulib-coff](mulib-coff.md), [mulib-imgformat](mulib-imgformat.md) |
 | Complete example | [`examples/modules/container-packcoff.c`](../examples/modules/container-packcoff.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packcoff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-packcoff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

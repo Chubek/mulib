@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-fswatch.h` · **Switch:** `MULIB_IMPL_FSWATCH`  
+**Header:** `kernels/mulib-fswatch.h` · **Switch:** `MULIB_IMPL_FSWATCH`  
 **Dependencies:** daemon, glob, select, vfs and their transitive dependencies.
 C11 / C-linkage declarations. See the integration section below.
 
@@ -192,7 +192,7 @@ before closing it. No mandatory third-party library or elevated privilege.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/fswatch.c -pthread -lm -ldl -o /tmp/opencode/fswatch-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/fswatch.c -pthread -lm -ldl -o /tmp/opencode/fswatch-example
 /tmp/opencode/fswatch-example
 ```
 
@@ -213,7 +213,7 @@ handler failures, daemon execution and Mune/systemd profiles.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fswatch.h`](../include/mulib-fswatch.h) |
+| Header | [`kernels/mulib-fswatch.h`](../kernels/mulib-fswatch.h) |
 | Implementation switch | `MULIB_IMPL_FSWATCH` |
 | Repository-local includes | [mulib-daemon](mulib-daemon.md), [mulib-glob](mulib-glob.md), [mulib-select](mulib-select.md), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/fswatch.c`](../examples/modules/fswatch.c) |
@@ -226,6 +226,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fswatch.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fswatch.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

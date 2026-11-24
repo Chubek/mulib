@@ -1,5 +1,5 @@
 /* Standalone: cc -std=c11 -Wall -Wextra -Wpedantic -Werror
- * -Wno-misleading-indentation -Iinclude tests/test-gfx-path.c -lm -o test */
+ * -Wno-misleading-indentation -Ikernels tests/test-gfx-path.c -lm -o test */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

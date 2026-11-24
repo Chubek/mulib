@@ -1,7 +1,7 @@
 # mulib-eda-status
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-status.h`  
+**Header:** `kernels/mulib-eda-status.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_STATUS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_STATUS` defined before 
 `tests/test_eda_status.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_status.c -lm -o /tmp/test_eda_status
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_status.c -lm -o /tmp/test_eda_status
 /tmp/test_eda_status
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-status.h`](../include/mulib-eda-status.h).
+Verbatim declaration section from [`kernels/mulib-eda-status.h`](../kernels/mulib-eda-status.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ void mulib_eda_diagnostic_set(mulib_eda_diagnostic_t *d, mulib_eda_code_t code, 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-status.h`](../include/mulib-eda-status.h) |
+| Header | [`kernels/mulib-eda-status.h`](../kernels/mulib-eda-status.h) |
 | Implementation switch | `MULIB_IMPL_EDA_STATUS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-status.c`](../examples/modules/eda-status.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-status.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-status.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

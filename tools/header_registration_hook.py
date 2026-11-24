@@ -10,7 +10,7 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parent.parent
-HEADERS = ':(top,glob)include/mulib-*.h'
+HEADERS = ':(top,glob)kernels/mulib-*.h'
 OUTPUTS = ('MANIFEST.yaml', 'on1x/contracts-exotract/kernel-auto.json')
 FRAGMENTS = ('MANIFEST.yaml.additions', 'MANIFESTS.yaml.additions')
 GENERATOR = 'tools/sync_inventory.py'
@@ -27,7 +27,7 @@ def git(*args, data=None, env=None):
 
 def public_header(path):
     filename = PurePosixPath(path)
-    return filename.parent.as_posix() == 'include' and filename.match('mulib-*.h')
+    return filename.parent.as_posix() == 'kernels' and filename.match('mulib-*.h')
 
 
 def snapshot_input(path):
@@ -44,7 +44,7 @@ def snapshot_input(path):
 def tree_entries(tree):
     entries = {}
     records = git('ls-tree', '-r', '-z', tree, '--', *OUTPUTS, *FRAGMENTS,
-                  GENERATOR, 'include/', 'manual/', 'examples/', 'tests/')
+                  GENERATOR, 'kernels/', 'manual/', 'examples/', 'tests/')
     for record in records.split(b'\0'):
         if record:
             info, name = record.split(b'\t', 1)

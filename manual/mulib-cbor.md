@@ -11,7 +11,7 @@ rounding. Encode emits binary64 numbers. Exact owned decode is limited to
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-cbor.h`](../include/mulib-cbor.h).
+Verbatim declaration section from [`kernels/mulib-cbor.h`](../kernels/mulib-cbor.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cbor.h`](../include/mulib-cbor.h) |
+| Header | [`kernels/mulib-cbor.h`](../kernels/mulib-cbor.h) |
 | Implementation switch | `MULIB_IMPL_CBOR` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/cbor.c`](../examples/modules/cbor.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cbor.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cbor.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

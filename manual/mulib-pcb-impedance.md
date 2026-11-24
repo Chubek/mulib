@@ -1,7 +1,7 @@
 # mulib-pcb-impedance
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-pcb-impedance.h`  
+**Header:** `kernels/mulib-pcb-impedance.h`  
 **Implementation switch:** `MULIB_IMPL_PCB_IMPEDANCE`  
 **Dependencies:** `rf-microstrip`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_PCB_IMPEDANCE` defined befo
 `tests/test_pcb_impedance.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_pcb_impedance.c -lm -o /tmp/test_pcb_impedance
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_pcb_impedance.c -lm -o /tmp/test_pcb_impedance
 /tmp/test_pcb_impedance
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pcb-impedance.h`](../include/mulib-pcb-impedance.h).
+Verbatim declaration section from [`kernels/mulib-pcb-impedance.h`](../kernels/mulib-pcb-impedance.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_pcb_microstrip_impedance(double copper_width_mm, double dielectric_hei
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pcb-impedance.h`](../include/mulib-pcb-impedance.h) |
+| Header | [`kernels/mulib-pcb-impedance.h`](../kernels/mulib-pcb-impedance.h) |
 | Implementation switch | `MULIB_IMPL_PCB_IMPEDANCE` |
 | Repository-local includes | [mulib-rf-microstrip](mulib-rf-microstrip.md) |
 | Complete example | [`examples/modules/pcb-impedance.c`](../examples/modules/pcb-impedance.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pcb-impedance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pcb-impedance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

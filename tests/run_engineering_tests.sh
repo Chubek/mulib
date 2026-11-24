@@ -15,13 +15,13 @@ sed -n 's/^#include "mulib-\(.*\)\.h"$/\1/p' tests/engineering_implementation.c 
 printf '%s\n' all_headers engineering_vertical eda_extended eda_alloc substrate_core >> "$WORK/modules"
 while IFS= read -r module; do
   src="tests/test_${module}.c"
-  "$CC" $CFLAGS -Iinclude "$src" -lm -o "$WORK/prog"
+  "$CC" $CFLAGS -Ikernels "$src" -lm -o "$WORK/prog"
   "$WORK/prog" >/dev/null
   n=$((n+1))
 done < "$WORK/modules"
-"$CXX" $CXXFLAGS -Iinclude tests/test_all_headers_cpp.cpp -o "$WORK/prog_cpp"
+"$CXX" $CXXFLAGS -Ikernels tests/test_all_headers_cpp.cpp -o "$WORK/prog_cpp"
 "$WORK/prog_cpp"
-"$CC" $CFLAGS -Iinclude -c tests/engineering_implementation.c -o "$WORK/implementation.o"
-"$CXX" $CXXFLAGS -Iinclude tests/test_cpp_link.cpp "$WORK/implementation.o" -lm -o "$WORK/link_cpp"
+"$CC" $CFLAGS -Ikernels -c tests/engineering_implementation.c -o "$WORK/implementation.o"
+"$CXX" $CXXFLAGS -Ikernels tests/test_cpp_link.cpp "$WORK/implementation.o" -lm -o "$WORK/link_cpp"
 "$WORK/link_cpp"
 printf 'PASS: %s C regression/integration tests, C++ declarations and C/C++ linkage\n' "$n"

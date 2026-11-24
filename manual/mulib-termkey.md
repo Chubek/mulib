@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-termkey.h` is an allocation-free, incremental byte-to-event
+`kernels/mulib-termkey.h` is an allocation-free, incremental byte-to-event
 decoder. It does not read stdin, change termios settings, query terminfo, start
 timers, or assume a terminal is attached.
 
@@ -103,7 +103,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/termkey.c -o ./termkey-example
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/termkey.c -o ./termkey-example
 ./termkey-example
 ```
 
@@ -118,7 +118,7 @@ numeric/sequence limits, mouse coordinates and paste-end fragmentation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termkey.h`](../include/mulib-termkey.h) |
+| Header | [`kernels/mulib-termkey.h`](../kernels/mulib-termkey.h) |
 | Implementation switch | `MULIB_IMPL_TERMKEY` |
 | Repository-local includes | [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/termkey.c`](../examples/modules/termkey.c) |
@@ -131,6 +131,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termkey.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/termkey.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

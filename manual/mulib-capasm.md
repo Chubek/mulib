@@ -13,7 +13,7 @@ bridge with immutable payload bytes. Generated capsules do not perform
 I/O or load any plugin.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/capasm.c -o capasm-example
+cc -std=c11 -Ikernels examples/modules/capasm.c -o capasm-example
 ./capasm-example > answer.c
 cc -std=c90 -pedantic-errors -c answer.c -o answer.o
 ```
@@ -48,7 +48,7 @@ C90, but the complete file must use the selected headers' C dialect.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-capasm.h`](../include/mulib-capasm.h) |
+| Header | [`kernels/mulib-capasm.h`](../kernels/mulib-capasm.h) |
 | Implementation switch | `MULIB_IMPL_CAPASM` |
 | Repository-local includes | [mulib-xmacir](mulib-xmacir.md) |
 | Complete example | [`examples/modules/capasm.c`](../examples/modules/capasm.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/capasm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/capasm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

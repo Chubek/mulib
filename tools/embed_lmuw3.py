@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
-    path = ROOT / 'include/detail/mulib-lmuw3.inc'
+    path = ROOT / 'kernels/detail/mulib-lmuw3.inc'
     text = generated()
     if args.check:
         if not path.exists() or path.read_text() != text:

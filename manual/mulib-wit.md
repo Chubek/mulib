@@ -11,7 +11,7 @@ layer. Append is atomic without a NUL. No parser/component runtime/bindings.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-wit.h`](../include/mulib-wit.h).
+Verbatim declaration section from [`kernels/mulib-wit.h`](../kernels/mulib-wit.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -49,7 +49,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wit.h`](../include/mulib-wit.h) |
+| Header | [`kernels/mulib-wit.h`](../kernels/mulib-wit.h) |
 | Implementation switch | `MULIB_IMPL_WIT` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-dbschema](mulib-dbschema.md) |
 | Complete example | [`examples/modules/wit.c`](../examples/modules/wit.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wit.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wit.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

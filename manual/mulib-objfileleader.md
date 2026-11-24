@@ -16,7 +16,7 @@ Example: `examples/modules/objfileleader.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfileleader.h`](../include/mulib-objfileleader.h).
+Verbatim declaration section from [`kernels/mulib-objfileleader.h`](../kernels/mulib-objfileleader.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -57,7 +57,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfileleader.h`](../include/mulib-objfileleader.h) |
+| Header | [`kernels/mulib-objfileleader.h`](../kernels/mulib-objfileleader.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILELEADER` |
 | Repository-local includes | [mulib-elf](mulib-elf.md) |
 | Complete example | [`examples/modules/objfileleader.c`](../examples/modules/objfileleader.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfileleader.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfileleader.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

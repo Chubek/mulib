@@ -13,9 +13,9 @@ Define `MULIB_IMPL_WEBEXTRACT` in exactly one C11 translation unit. Use `#includ
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-webextract.c -o /tmp/test-webextract
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-webextract.c -o /tmp/test-webextract
 /tmp/test-webextract
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/webextract.c -o /tmp/example-webextract
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/webextract.c -o /tmp/example-webextract
 ```
 
 ## API
@@ -40,9 +40,9 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webextract.h`](../include/mulib-webextract.h) |
+| Header | [`kernels/mulib-webextract.h`](../kernels/mulib-webextract.h) |
 | Implementation switch | `MULIB_IMPL_WEBEXTRACT` |
-| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h) |
+| Repository-local includes | [`kernels/detail/mulib-webscan.h`](../kernels/detail/mulib-webscan.h) |
 | Complete example | [`examples/modules/webextract.c`](../examples/modules/webextract.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webextract.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webextract.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -27,7 +27,7 @@ Tests: `tests/test_ipc_extensions.c`, using unprivileged loopback UDP.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-datagram.h`](../include/mulib-datagram.h).
+Verbatim declaration section from [`kernels/mulib-datagram.h`](../kernels/mulib-datagram.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -100,7 +100,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-datagram.h`](../include/mulib-datagram.h) |
+| Header | [`kernels/mulib-datagram.h`](../kernels/mulib-datagram.h) |
 | Implementation switch | `MULIB_IMPL_DATAGRAM` |
 | Repository-local includes | [mulib-filectl](mulib-filectl.md) |
 | Complete example | [`examples/modules/datagram.c`](../examples/modules/datagram.c) |
@@ -113,6 +113,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/datagram.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/datagram.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

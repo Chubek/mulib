@@ -214,7 +214,7 @@ for index, source in enumerate([t.root / 'tests/fixtures/stream_poll_boundary.c'
             '-DON1X_CSP_FREE=on1x_test_runtime_free',
         ]
     p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-              '-pthread', '-I', t.root / 'runtime', '-I', t.root.parent / 'include',
+              '-pthread', '-I', t.root / 'runtime', '-I', t.root.parent / 'kernels',
               *allocation_hook, *t.flags, '-c', source, '-o', obj])
     assert p.returncode == 0, p
     objects.append(obj)

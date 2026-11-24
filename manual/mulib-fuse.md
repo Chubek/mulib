@@ -17,7 +17,7 @@ dependency implementation switches are never enabled implicitly. C11 is
 required; declarations can be included from C++.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/fuse.c -o /tmp/fuse-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/fuse.c -o /tmp/fuse-example
 /tmp/fuse-example
 ```
 
@@ -102,7 +102,7 @@ The daemon mount module provides generation-tagged leases around these sessions.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fuse.h`](../include/mulib-fuse.h) |
+| Header | [`kernels/mulib-fuse.h`](../kernels/mulib-fuse.h) |
 | Implementation switch | `MULIB_IMPL_FUSE` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/fuse.c`](../examples/modules/fuse.c) |
@@ -115,6 +115,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fuse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fuse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

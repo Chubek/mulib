@@ -32,7 +32,7 @@ See `../tests/test_packet-socket.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-packet-socket.h`](../include/mulib-packet-socket.h) |
+| Header | [`kernels/mulib-packet-socket.h`](../kernels/mulib-packet-socket.h) |
 | Implementation switch | `MULIB_IMPL_PACKET_SOCKET` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/packet-socket.c`](../examples/modules/packet-socket.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/packet-socket.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/packet-socket.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

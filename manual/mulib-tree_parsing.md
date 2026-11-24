@@ -21,7 +21,7 @@ allocatable nodes, recursive stack depth<=128; input is borrowed, not mutated.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tree_parsing.h`](../include/mulib-tree_parsing.h).
+Verbatim declaration section from [`kernels/mulib-tree_parsing.h`](../kernels/mulib-tree_parsing.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ mulib_ast_t *mulib_tree_parse(const char *source, size_t node_limit, size_t *err
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tree_parsing.h`](../include/mulib-tree_parsing.h) |
+| Header | [`kernels/mulib-tree_parsing.h`](../kernels/mulib-tree_parsing.h) |
 | Implementation switch | `MULIB_IMPL_TREE_PARSING` |
 | Repository-local includes | [mulib-ast](mulib-ast.md) |
 | Complete example | [`examples/modules/tree_parsing.c`](../examples/modules/tree_parsing.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tree_parsing.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tree_parsing.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

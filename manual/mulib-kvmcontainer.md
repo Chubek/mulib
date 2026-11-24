@@ -16,7 +16,7 @@ Example: `examples/modules/kvmcontainer.c` is hardware-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-kvmcontainer.h`](../include/mulib-kvmcontainer.h).
+Verbatim declaration section from [`kernels/mulib-kvmcontainer.h`](../kernels/mulib-kvmcontainer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-kvmcontainer.h`](../include/mulib-kvmcontainer.h) |
+| Header | [`kernels/mulib-kvmcontainer.h`](../kernels/mulib-kvmcontainer.h) |
 | Implementation switch | `MULIB_IMPL_KVMCONTAINER` |
 | Repository-local includes | [mulib-kvm](mulib-kvm.md) |
 | Complete example | [`examples/modules/kvmcontainer.c`](../examples/modules/kvmcontainer.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/kvmcontainer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/kvmcontainer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

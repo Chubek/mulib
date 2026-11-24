@@ -53,7 +53,7 @@ Use [container-network](mulib-container-network.md) for routing/filtering.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-netdev.h`](../include/mulib-container-netdev.h) |
+| Header | [`kernels/mulib-container-netdev.h`](../kernels/mulib-container-netdev.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_NETDEV` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container-netdev.c`](../examples/modules/container-netdev.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-netdev.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-netdev.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

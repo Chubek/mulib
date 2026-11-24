@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-css.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-css.h` · **Language:** ISO C11, C++17 declarations
 
 ## Supported scope
 
@@ -108,7 +108,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/css.c -o ./mulib-css
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/css.c -o ./mulib-css
 ./mulib-css
 ```
 
@@ -160,7 +160,7 @@ failure cleanup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-css.h`](../include/mulib-css.h) |
+| Header | [`kernels/mulib-css.h`](../kernels/mulib-css.h) |
 | Implementation switch | `MULIB_IMPL_CSS` |
 | Repository-local includes | [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/css.c`](../examples/modules/css.c) |
@@ -173,6 +173,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/css.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/css.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

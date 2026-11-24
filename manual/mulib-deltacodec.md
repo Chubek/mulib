@@ -12,7 +12,7 @@ overlap is not. Empty ranges permit NULL. O(count), allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-deltacodec.h`](../include/mulib-deltacodec.h).
+Verbatim declaration section from [`kernels/mulib-deltacodec.h`](../kernels/mulib-deltacodec.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -48,7 +48,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-deltacodec.h`](../include/mulib-deltacodec.h) |
+| Header | [`kernels/mulib-deltacodec.h`](../kernels/mulib-deltacodec.h) |
 | Implementation switch | `MULIB_IMPL_DELTACODEC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/deltacodec.c`](../examples/modules/deltacodec.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/deltacodec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/deltacodec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

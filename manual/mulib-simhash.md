@@ -14,7 +14,7 @@ consistently before calling; this API does not tokenize text.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-simhash.h`](../include/mulib-simhash.h).
+Verbatim declaration section from [`kernels/mulib-simhash.h`](../kernels/mulib-simhash.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -50,7 +50,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-simhash.h`](../include/mulib-simhash.h) |
+| Header | [`kernels/mulib-simhash.h`](../kernels/mulib-simhash.h) |
 | Implementation switch | `MULIB_IMPL_SIMHASH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/simhash.c`](../examples/modules/simhash.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/simhash.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/simhash.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

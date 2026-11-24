@@ -58,7 +58,7 @@ All lookup pointers are valid only while the owning configuration remains alive.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-confuse.h`](../include/mulib-confuse.h) |
+| Header | [`kernels/mulib-confuse.h`](../kernels/mulib-confuse.h) |
 | Implementation switch | `MULIB_IMPL_CONFUSE` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md) |
 | Complete example | [`examples/modules/confuse.c`](../examples/modules/confuse.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/confuse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/confuse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

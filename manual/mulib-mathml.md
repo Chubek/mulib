@@ -77,7 +77,7 @@ allocation-failure cleanup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mathml.h`](../include/mulib-mathml.h) |
+| Header | [`kernels/mulib-mathml.h`](../kernels/mulib-mathml.h) |
 | Implementation switch | `MULIB_IMPL_MATHML` |
 | Repository-local includes | [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/mathml.c`](../examples/modules/mathml.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mathml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mathml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

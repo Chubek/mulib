@@ -20,7 +20,7 @@ insertion/replacement is O(n + artifact length).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-compiler-cache.h`](../include/mulib-compiler-cache.h) |
+| Header | [`kernels/mulib-compiler-cache.h`](../kernels/mulib-compiler-cache.h) |
 | Implementation switch | `MULIB_IMPL_COMPILER_CACHE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/compiler-cache.c`](../examples/modules/compiler-cache.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/compiler-cache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/compiler-cache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

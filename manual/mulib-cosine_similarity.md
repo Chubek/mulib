@@ -15,7 +15,7 @@ Dense equal-length coordinates only, O(n) time, no allocations.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-cosine_similarity.h`](../include/mulib-cosine_similarity.h).
+Verbatim declaration section from [`kernels/mulib-cosine_similarity.h`](../kernels/mulib-cosine_similarity.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ double mulib_cosine_similarity(const double *a, const double *b, size_t n);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cosine_similarity.h`](../include/mulib-cosine_similarity.h) |
+| Header | [`kernels/mulib-cosine_similarity.h`](../kernels/mulib-cosine_similarity.h) |
 | Implementation switch | `MULIB_IMPL_COSINE_SIMILARITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cosine_similarity.c`](../examples/modules/cosine_similarity.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cosine_similarity.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cosine_similarity.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

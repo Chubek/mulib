@@ -1,6 +1,6 @@
 # signature — RSA and ECDSA verification
 
-**Header:** `include/mulib-signature.h` · **Switch:** `MULIB_IMPL_SIGNATURE`
+**Header:** `kernels/mulib-signature.h` · **Switch:** `MULIB_IMPL_SIGNATURE`
 
 Also define `DER`, `SHA` and `ENTROPY` implementation switches. This module
 verifies signatures using public data. It has no signing, private RSA operation
@@ -50,7 +50,7 @@ into MuLIB.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-signature.h`](../include/mulib-signature.h) |
+| Header | [`kernels/mulib-signature.h`](../kernels/mulib-signature.h) |
 | Implementation switch | `MULIB_IMPL_SIGNATURE` |
 | Repository-local includes | [mulib-der](mulib-der.md), [mulib-entropy](mulib-entropy.md), [mulib-sha](mulib-sha.md) |
 | Complete example | [`examples/modules/signature.c`](../examples/modules/signature.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/signature.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/signature.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

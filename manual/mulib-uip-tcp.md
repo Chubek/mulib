@@ -34,7 +34,7 @@ See `../tests/test_uip-tcp.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-tcp.h`](../include/mulib-uip-tcp.h) |
+| Header | [`kernels/mulib-uip-tcp.h`](../kernels/mulib-uip-tcp.h) |
 | Implementation switch | `MULIB_IMPL_UIP_TCP` |
 | Repository-local includes | [mulib-uip-checksum](mulib-uip-checksum.md) |
 | Complete example | [`examples/modules/uip-tcp.c`](../examples/modules/uip-tcp.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-tcp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-tcp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

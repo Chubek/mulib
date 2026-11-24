@@ -40,7 +40,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-search.h`](../include/mulib-search.h).
+Verbatim declaration section from [`kernels/mulib-search.h`](../kernels/mulib-search.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ size_t mulib_search_all(const void *haystack,size_t hay_len,const void *needle,s
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-search.h`](../include/mulib-search.h) |
+| Header | [`kernels/mulib-search.h`](../kernels/mulib-search.h) |
 | Implementation switch | `MULIB_IMPL_SEARCH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/search.c`](../examples/modules/search.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/search.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/search.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

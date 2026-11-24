@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-signal.h` · **Switch:** `MULIB_IMPL_SIGNAL`  
+**Header:** `kernels/mulib-signal.h` · **Switch:** `MULIB_IMPL_SIGNAL`  
 **Dependencies:** none; hosted ISO C `signal()`. C11 / C-linkage declarations.
 
 ## Deliberately narrow scope
@@ -69,7 +69,7 @@ silently treated as successful installation.
 ## Example and tests
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/signal.c -o /tmp/opencode/signal-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/signal.c -o /tmp/opencode/signal-example
 /tmp/opencode/signal-example
 ```
 
@@ -85,7 +85,7 @@ invalid input, active-guard rejection, and idempotent restoration tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-signal.h`](../include/mulib-signal.h) |
+| Header | [`kernels/mulib-signal.h`](../kernels/mulib-signal.h) |
 | Implementation switch | `MULIB_IMPL_SIGNAL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/signal.c`](../examples/modules/signal.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/signal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/signal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

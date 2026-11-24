@@ -17,7 +17,7 @@ for supported markup and limits.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-prettyemit.h`](../include/mulib-prettyemit.h) |
+| Header | [`kernels/mulib-prettyemit.h`](../kernels/mulib-prettyemit.h) |
 | Implementation switch | `MULIB_IMPL_PRETTYEMIT` |
 | Repository-local includes | [mulib-prettydoc](mulib-prettydoc.md) |
 | Complete example | [`examples/prettyprint-demo.c`](../examples/prettyprint-demo.c) |
@@ -30,6 +30,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/prettyprint-demo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/prettyprint-demo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

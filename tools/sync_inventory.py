@@ -80,7 +80,7 @@ def merge_additions(root, manifest):
                     raise ValueError('additions collision for ' + field + ': ' + value)
                 used[field].add(value)
                 if field == 'header':
-                    if not re.fullmatch(r'include/mulib-[a-z0-9][a-z0-9_+-]*\.h', value):
+                    if not re.fullmatch(r'kernels/mulib-[a-z0-9][a-z0-9_+-]*\.h', value):
                         raise ValueError('invalid additions header: ' + value)
                     header = root / value
                     if not header.is_file():
@@ -107,11 +107,11 @@ def sync(root, *, fixtures=True, kernelbind=None):
     if not re.search(r'^project_files:\s*$', manifest, re.M):
         raise ValueError('manifest lacks project_files section')
     manifest, additions = merge_additions(root, manifest)
-    headers = sorted((root / 'include').glob('mulib-*.h'))
+    headers = sorted((root / 'kernels').glob('mulib-*.h'))
     registered = {}
     for block in re.findall(r'^- name: .*?(?=^- name: |^project_files:|\Z)',
                             manifest, re.M | re.S):
-        name = re.search(r'^  header: include/(.+)$', block, re.M)
+        name = re.search(r'^  header: kernels/(.+)$', block, re.M)
         if not name or name.group(1) in registered:
             raise ValueError('missing or duplicate header in manifest')
         registered[name.group(1)] = block
@@ -169,7 +169,7 @@ def sync(root, *, fixtures=True, kernelbind=None):
                         new = new.rstrip() + '\n' + line + '\n'
             manifest = manifest.replace(old, new, 1)
             continue
-        block = f'- name: {name}\n  header: include/{header.name}\n'
+        block = f'- name: {name}\n  header: kernels/{header.name}\n'
         if match:
             brief = re.search(r'@brief\s+([^\n]+)', text)
             purpose = brief.group(1).split('*/')[0].strip() if brief else name + ' utilities.'

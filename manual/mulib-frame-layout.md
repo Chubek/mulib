@@ -19,7 +19,7 @@ Append is amortized O(1); finish O(1); storage O(slots).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-frame-layout.h`](../include/mulib-frame-layout.h) |
+| Header | [`kernels/mulib-frame-layout.h`](../kernels/mulib-frame-layout.h) |
 | Implementation switch | `MULIB_IMPL_FRAME_LAYOUT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/frame-layout.c`](../examples/modules/frame-layout.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/frame-layout.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/frame-layout.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

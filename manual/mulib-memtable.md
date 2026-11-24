@@ -19,7 +19,7 @@ See [storage contracts and limits](extension-layers.md#database-storage).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-memtable.h`](../include/mulib-memtable.h).
+Verbatim declaration section from [`kernels/mulib-memtable.h`](../kernels/mulib-memtable.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -104,7 +104,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-memtable.h`](../include/mulib-memtable.h) |
+| Header | [`kernels/mulib-memtable.h`](../kernels/mulib-memtable.h) |
 | Implementation switch | `MULIB_IMPL_MEMTABLE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/memtable.c`](../examples/modules/memtable.c) |
@@ -117,6 +117,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/memtable.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/memtable.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

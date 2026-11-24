@@ -61,7 +61,7 @@ concatenation, missing trailers, invalid paths and rollback failure ordering.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-initsysutils.h`](../include/mulib-initsysutils.h) |
+| Header | [`kernels/mulib-initsysutils.h`](../kernels/mulib-initsysutils.h) |
 | Implementation switch | `MULIB_IMPL_INITSYSUTILS` |
 | Repository-local includes | [mulib-cpio](mulib-cpio.md) |
 | Complete example | [`examples/modules/initsysutils.c`](../examples/modules/initsysutils.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/initsysutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/initsysutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

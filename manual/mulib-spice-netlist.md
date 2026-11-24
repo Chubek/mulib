@@ -1,7 +1,7 @@
 # mulib-spice-netlist
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-netlist.h`  
+**Header:** `kernels/mulib-spice-netlist.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_NETLIST`  
 **Dependencies:** `spice-lexer`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_NETLIST` defined befo
 `tests/test_spice_netlist.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_netlist.c -lm -o /tmp/test_spice_netlist
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_netlist.c -lm -o /tmp/test_spice_netlist
 /tmp/test_spice_netlist
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-netlist.h`](../include/mulib-spice-netlist.h).
+Verbatim declaration section from [`kernels/mulib-spice-netlist.h`](../kernels/mulib-spice-netlist.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -96,7 +96,7 @@ int mulib_spice_netlist_valid(const mulib_spice_netlist_t *net);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-netlist.h`](../include/mulib-spice-netlist.h) |
+| Header | [`kernels/mulib-spice-netlist.h`](../kernels/mulib-spice-netlist.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_NETLIST` |
 | Repository-local includes | [mulib-spice-lexer](mulib-spice-lexer.md) |
 | Complete example | [`examples/modules/spice-netlist.c`](../examples/modules/spice-netlist.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-netlist.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-netlist.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -15,7 +15,7 @@ Example: `examples/modules/ocicontainernetwrork.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ocicontainernetwrork.h`](../include/mulib-ocicontainernetwrork.h).
+Verbatim declaration section from [`kernels/mulib-ocicontainernetwrork.h`](../kernels/mulib-ocicontainernetwrork.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -43,7 +43,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ocicontainernetwrork.h`](../include/mulib-ocicontainernetwrork.h) |
+| Header | [`kernels/mulib-ocicontainernetwrork.h`](../kernels/mulib-ocicontainernetwrork.h) |
 | Implementation switch | `MULIB_IMPL_OCICONTAINERNETWRORK` |
 | Repository-local includes | [`.deprecated/mulib-ocicontainernetwrork.h`](../.deprecated/mulib-ocicontainernetwrork.h), [mulib-ocicontainernetwork](mulib-ocicontainernetwork.md) |
 | Complete example | [`examples/modules/ocicontainernetwrork.c`](../examples/modules/ocicontainernetwrork.c) |
@@ -56,6 +56,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ocicontainernetwrork.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ocicontainernetwrork.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

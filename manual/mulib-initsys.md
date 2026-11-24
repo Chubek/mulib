@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-initsys.h` / `MULIB_IMPL_INITSYS`  
+**Header/switch:** `kernels/mulib-initsys.h` / `MULIB_IMPL_INITSYS`  
 **Transitive implementations:** `MULIB_IMPL_TASKDAG`, `MULIB_IMPL_TASKPOOL`,
 `MULIB_IMPL_PROCESS`, each provided explicitly in exactly one C11 translation unit.
 Link **`-pthread`** on a supported POSIX host. C++17 declarations are supported.
@@ -105,7 +105,7 @@ platforms cannot create the required pool. No dependency is silently emulated.
 ## Runnable example and validation
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Ikernels \
   examples/modules/initsys.c -o /tmp/initsys
 /tmp/initsys
 ```
@@ -124,7 +124,7 @@ supervision. Its process tests use only local standard executables and no networ
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-initsys.h`](../include/mulib-initsys.h) |
+| Header | [`kernels/mulib-initsys.h`](../kernels/mulib-initsys.h) |
 | Implementation switch | `MULIB_IMPL_INITSYS` |
 | Repository-local includes | [mulib-process](mulib-process.md), [mulib-taskdag](mulib-taskdag.md) |
 | Complete example | [`examples/modules/initsys.c`](../examples/modules/initsys.c) |
@@ -137,6 +137,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/initsys.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/initsys.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

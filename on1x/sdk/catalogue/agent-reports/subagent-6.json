@@ -236,7 +236,7 @@
       "result": "PASS with GCC 16.2.1 and Clang 22.1.8"
     },
     {
-      "command": "gcc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-gcc && /tmp/opencode/sdk6-cdd-gcc && clang -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-clang && /tmp/opencode/sdk6-cdd-clang",
+      "command": "gcc -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Ikernels on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-gcc && /tmp/opencode/sdk6-cdd-gcc && clang -std=c11 -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror -Ion1x/contracts-exotract/include -Ikernels on1x/sdk/src/contracts/CddAccessors.c on1x/sdk/tests/contracts/cdd_accessors.c -o /tmp/opencode/sdk6-cdd-clang && /tmp/opencode/sdk6-cdd-clang",
       "result": "PASS with GCC 16.2.1 and Clang 22.1.8"
     },
     {
@@ -244,11 +244,11 @@
       "result": "PASS for all On1xRT, structured FFI and CDD accessor headers"
     },
     {
-      "command": "clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c -o /tmp/opencode/sdk6-rt-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c -o /tmp/opencode/sdk6-ffi-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c -o /tmp/opencode/sdk6-cdd-analyze.plist",
+      "command": "clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c -o /tmp/opencode/sdk6-rt-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c -o /tmp/opencode/sdk6-ffi-analyze.plist && clang --analyze -std=c11 -Wall -Wextra -Wpedantic -Ion1x/contracts-exotract/include -Ikernels on1x/sdk/src/contracts/CddAccessors.c -o /tmp/opencode/sdk6-cdd-analyze.plist",
       "result": "PASS; no diagnostics"
     },
     {
-      "command": "cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/contracts-exotract/include -Iinclude on1x/sdk/src/contracts/CddAccessors.c",
+      "command": "cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/runtime-sdk/include on1x/runtime-sdk/src/On1xRT.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/sdk/include on1x/sdk/src/contracts/ForeignAdmission.c && cppcheck --enable=warning,performance,portability --error-exitcode=1 --std=c11 --inline-suppr -Ion1x/contracts-exotract/include -Ikernels on1x/sdk/src/contracts/CddAccessors.c",
       "result": "PASS; no findings"
     },
     {

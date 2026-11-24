@@ -16,7 +16,7 @@ Switches: `MULIB_IMPL_CONTAINERSTUB`, `MULIB_IMPL_OCICONTAINER`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-containerstub.h`](../include/mulib-containerstub.h).
+Verbatim declaration section from [`kernels/mulib-containerstub.h`](../kernels/mulib-containerstub.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -57,7 +57,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerstub.h`](../include/mulib-containerstub.h) |
+| Header | [`kernels/mulib-containerstub.h`](../kernels/mulib-containerstub.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERSTUB` |
 | Repository-local includes | [mulib-container2daemonproto](mulib-container2daemonproto.md), [mulib-ocicontainer](mulib-ocicontainer.md) |
 | Complete example | [`examples/modules/containerstub.c`](../examples/modules/containerstub.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerstub.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerstub.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

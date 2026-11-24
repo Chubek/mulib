@@ -20,7 +20,7 @@ no dependency implementation switches implicitly.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-oauth.h`](../include/mulib-oauth.h).
+Verbatim declaration section from [`kernels/mulib-oauth.h`](../kernels/mulib-oauth.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ int mulib_oauth_pkce_challenge (const char *verifier, char *out, size_t capacity
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-oauth.h`](../include/mulib-oauth.h) |
+| Header | [`kernels/mulib-oauth.h`](../kernels/mulib-oauth.h) |
 | Implementation switch | `MULIB_IMPL_OAUTH` |
 | Repository-local includes | [mulib-oauth2](mulib-oauth2.md) |
 | Complete example | [`examples/modules/oauth.c`](../examples/modules/oauth.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/oauth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/oauth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

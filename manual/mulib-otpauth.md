@@ -52,7 +52,7 @@ Code/secret/output buffers must not alias the configuration or secret storage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-otpauth.h`](../include/mulib-otpauth.h) |
+| Header | [`kernels/mulib-otpauth.h`](../kernels/mulib-otpauth.h) |
 | Implementation switch | `MULIB_IMPL_OTPAUTH` |
 | Repository-local includes | [mulib-authcrypto](mulib-authcrypto.md), [mulib-seurity](mulib-seurity.md) |
 | Complete example | [`examples/modules/otpauth.c`](../examples/modules/otpauth.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/otpauth.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/otpauth.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

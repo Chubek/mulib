@@ -34,7 +34,7 @@ See `../tests/test_uip-ipv6.c` for its compile/link verification. Selected runna
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-ipv6.h`](../include/mulib-uip-ipv6.h) |
+| Header | [`kernels/mulib-uip-ipv6.h`](../kernels/mulib-uip-ipv6.h) |
 | Implementation switch | `MULIB_IMPL_UIP_IPV6` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-ipv6.c`](../examples/modules/uip-ipv6.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-ipv6.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-ipv6.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

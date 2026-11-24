@@ -82,9 +82,9 @@ response leaves the pending request intact.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mcp-client.h`](../include/mulib-mcp-client.h) |
+| Header | [`kernels/mulib-mcp-client.h`](../kernels/mulib-mcp-client.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MCP_CLIENT` |
-| Repository-local includes | [`include/detail/mulib-mcp-common.h`](../include/detail/mulib-mcp-common.h), [`include/detail/mulib-mcp-wire.h`](../include/detail/mulib-mcp-wire.h), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [`kernels/detail/mulib-mcp-common.h`](../kernels/detail/mulib-mcp-common.h), [`kernels/detail/mulib-mcp-wire.h`](../kernels/detail/mulib-mcp-wire.h), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/mcp-client.c`](../examples/modules/mcp-client.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mcp-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mcp-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

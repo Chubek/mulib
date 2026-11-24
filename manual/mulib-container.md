@@ -66,7 +66,7 @@ for backend-acknowledged transitions and [stack](container-stack.md) for tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container.h`](../include/mulib-container.h) |
+| Header | [`kernels/mulib-container.h`](../kernels/mulib-container.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container.c`](../examples/modules/container.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -132,7 +132,7 @@ int main(void) {
 The checked-in example additionally checks a mismatch:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/parsec.c -o ./parsec
+cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ikernels examples/modules/parsec.c -o ./parsec
 ./parsec
 ```
 
@@ -215,7 +215,7 @@ Parser work/depth/capture exhaustion and AST depth exhaustion report
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-parsec.h`](../include/mulib-parsec.h) |
+| Header | [`kernels/mulib-parsec.h`](../kernels/mulib-parsec.h) |
 | Implementation switch | `MULIB_IMPL_PARSEC` |
 | Repository-local includes | [mulib-ast](mulib-ast.md), [mulib-glob](mulib-glob.md), [mulib-peg](mulib-peg.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/parsec.c`](../examples/modules/parsec.c) |
@@ -228,6 +228,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/parsec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/parsec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

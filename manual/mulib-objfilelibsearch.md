@@ -16,7 +16,7 @@ Example: `examples/modules/objfilelibsearch.c` also uses the ar writer.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilelibsearch.h`](../include/mulib-objfilelibsearch.h).
+Verbatim declaration section from [`kernels/mulib-objfilelibsearch.h`](../kernels/mulib-objfilelibsearch.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilelibsearch.h`](../include/mulib-objfilelibsearch.h) |
+| Header | [`kernels/mulib-objfilelibsearch.h`](../kernels/mulib-objfilelibsearch.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILELIBSEARCH` |
 | Repository-local includes | [mulib-binfile](mulib-binfile.md) |
 | Complete example | [`examples/modules/objfilelibsearch.c`](../examples/modules/objfilelibsearch.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilelibsearch.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilelibsearch.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

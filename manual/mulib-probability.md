@@ -19,7 +19,7 @@ NaN or a missing nonempty array. All operations are linear, allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-probability.h`](../include/mulib-probability.h).
+Verbatim declaration section from [`kernels/mulib-probability.h`](../kernels/mulib-probability.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ double mulib_probability_logsumexp(const double *x, size_t n);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-probability.h`](../include/mulib-probability.h) |
+| Header | [`kernels/mulib-probability.h`](../kernels/mulib-probability.h) |
 | Implementation switch | `MULIB_IMPL_PROBABILITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/probability.c`](../examples/modules/probability.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/probability.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/probability.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 #define MULIB_SHEBANG_SH_NO_MUNE
 #define MULIB_IMPL_SHEBANG_SH
-#include "../include/mulib-shebang-sh.h"
+#include "../kernels/mulib-shebang-sh.h"
 #include <assert.h>
 #include <string.h>
 int main(void){

@@ -221,7 +221,7 @@ house=importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
 kernels=[t.work/'kernel one',t.work/'kernel two']
 for directory in kernels:directory.mkdir(exist_ok=True)
 header=kernels[1]/'mulib-bitset.h'
-header.write_bytes((t.root.parent/'include/mulib-bitset.h').read_bytes()+b'\n/* search-path fixture */\n')
+header.write_bytes((t.root.parent/'kernels/mulib-bitset.h').read_bytes()+b'\n/* search-path fixture */\n')
 shim=write(t.work/'kernel_adapter.c','''#include <mulib-bitset.h>
 #include <stdint.h>
 int64_t check_bits(void) {
@@ -242,7 +242,7 @@ assert record['plan']['implementation_macros'].count('MULIB_IMPL_BITSET')==1
 assert record['plan']['modules'][0]['header_sha256']==hashlib.sha256(header.read_bytes()).hexdigest()
 execute('kernel_cli',kernelclient,'1\n',[*options,'--mulib-path',f'{kernels[0]}:{kernels[1]}'])
 other=kernels[0]/'mulib-strbuf.h'
-shutil.copy2(t.root.parent/'include/mulib-strbuf.h',other)
+shutil.copy2(t.root.parent/'kernels/mulib-strbuf.h',other)
 execute('kernel_multi_root',kernelclient,'1\n',
         [*options,'--mulib','strbuf','--mulib-path',f'{kernels[0]}:{kernels[1]}'])
 inputs=json.loads(report.read_text())['inputs']
@@ -256,7 +256,7 @@ execute('kernel_precedence',kernelclient,'1\n',[*options,'--mulib-path',kernels[
         {'ON1X_MULIB_PATH':str(kernels[1])})
 assert str(first.resolve()) in json.loads(report.read_text())['inputs']
 # Reviewed/core source pins may not silently select a changed external header.
-write(kernels[0]/'mulib-json.h',(t.root.parent/'include/mulib-json.h').read_text()+'\n/* drift */\n')
+write(kernels[0]/'mulib-json.h',(t.root.parent/'kernels/mulib-json.h').read_text()+'\n/* drift */\n')
 output=t.work/'preserved.exe';output.write_text('preserved')
 p=run([sys.executable,helper,t.source('core_pin','fn main(){}'),'--on1xc',t.compiler,'--cc',t.cc,
        '-o',output,'--mulib','json','--mulib-path',kernels[0]],env=env)

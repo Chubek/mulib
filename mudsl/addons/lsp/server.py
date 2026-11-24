@@ -194,7 +194,7 @@ class Server:
         for candidate in candidates:
             if (candidate / "MuDSL.hpp").is_file():
                 self.mudsl = candidate
-                self.root = candidate.parent if (candidate.parent / "include").is_dir() else None
+                self.root = candidate.parent if (candidate.parent / "kernels").is_dir() else None
                 break
             if (candidate / "mudsl/MuDSL.hpp").is_file():
                 self.root, self.mudsl = candidate, candidate / "mudsl"
@@ -386,7 +386,7 @@ class Server:
                 if len(headers) != 1:
                     return None  # The name may have incompatible declarations.
                 header = next(iter(headers))
-            path = self.root / "include" / header
+            path = self.root / "kernels" / header
             if path.is_file():
                 text = path.read_text(encoding="utf-8", errors="replace")
                 match = re.search(r"\b" + re.escape(token.text) + r"\s*\(", text)

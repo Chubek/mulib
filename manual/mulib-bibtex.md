@@ -28,14 +28,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-bibtex.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-bibtex.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-bibtex.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-bibtex.c -lm -o test
 ./test
 ```
 
@@ -54,7 +54,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-bibtex.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bibtex.h`](../include/mulib-bibtex.h) |
+| Header | [`kernels/mulib-bibtex.h`](../kernels/mulib-bibtex.h) |
 | Implementation switch | `MULIB_IMPL_BIBTEX` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-bibtex.c`](../examples/mulib-bibtex.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-bibtex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-bibtex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

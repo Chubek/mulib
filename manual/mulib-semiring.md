@@ -16,7 +16,7 @@ operands return NaN. Operations are O(1), allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-semiring.h`](../include/mulib-semiring.h).
+Verbatim declaration section from [`kernels/mulib-semiring.h`](../kernels/mulib-semiring.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-semiring.h`](../include/mulib-semiring.h) |
+| Header | [`kernels/mulib-semiring.h`](../kernels/mulib-semiring.h) |
 | Implementation switch | `MULIB_IMPL_SEMIRING` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/semiring.c`](../examples/modules/semiring.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/semiring.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/semiring.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

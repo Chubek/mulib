@@ -39,7 +39,7 @@ See `../tests/test_uip-checksum.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-checksum.h`](../include/mulib-uip-checksum.h) |
+| Header | [`kernels/mulib-uip-checksum.h`](../kernels/mulib-uip-checksum.h) |
 | Implementation switch | `MULIB_IMPL_UIP_CHECKSUM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-checksum.c`](../examples/modules/uip-checksum.c) |
@@ -52,6 +52,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-checksum.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-checksum.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

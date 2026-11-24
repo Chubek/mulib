@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-prowse-protocol.h` supplies synchronous browser-protocol clients,
+`kernels/mulib-prowse-protocol.h` supplies synchronous browser-protocol clients,
 including stream framing, native POSIX TCP transport, response correlation and
 owned JSON replies. Use [Prowse control](mulib-prowse-control.md) for portable
 browser operations and the `lprowse` Lua DSL.
@@ -43,7 +43,7 @@ and link the C implementation.
 The standalone example shares the complete control-stack implementation unit:
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/prowse-protocol.c -pthread -lm -ldl -o prowse-protocol
+cc -std=c11 -Ikernels examples/modules/prowse-protocol.c -pthread -lm -ldl -o prowse-protocol
 ./prowse-protocol                         # offline checks
 ./prowse-protocol http://127.0.0.1:4444   # GET /status
 ./prowse-protocol http://127.0.0.1:9222 /json/list
@@ -146,7 +146,7 @@ The implementation is original MuLIB code.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-prowse-protocol.h`](../include/mulib-prowse-protocol.h) |
+| Header | [`kernels/mulib-prowse-protocol.h`](../kernels/mulib-prowse-protocol.h) |
 | Implementation switch | `MULIB_IMPL_PROWSE_PROTOCOL` |
 | Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-git](mulib-git.md), [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-socket](mulib-socket.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/prowse-protocol.c`](../examples/modules/prowse-protocol.c) |
@@ -159,6 +159,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prowse-protocol.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/prowse-protocol.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

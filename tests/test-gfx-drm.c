@@ -1,5 +1,5 @@
 /* CPU/mock tests only. Never opens a DRM, tty, or input device.
- * cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test-gfx-drm.c -lm -o test
+ * cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test-gfx-drm.c -lm -o test
  * Also compile with -DMULIB_GFX_DRM_UAPI=0 to test the disabled capability. */
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>

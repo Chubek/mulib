@@ -17,7 +17,7 @@ Example: `examples/modules/objfilebuilder.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilebuilder.h`](../include/mulib-objfilebuilder.h).
+Verbatim declaration section from [`kernels/mulib-objfilebuilder.h`](../kernels/mulib-objfilebuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -64,7 +64,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilebuilder.h`](../include/mulib-objfilebuilder.h) |
+| Header | [`kernels/mulib-objfilebuilder.h`](../kernels/mulib-objfilebuilder.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILEBUILDER` |
 | Repository-local includes | [mulib-objfilewriter](mulib-objfilewriter.md) |
 | Complete example | [`examples/modules/objfilebuilder.c`](../examples/modules/objfilebuilder.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilebuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilebuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -17,7 +17,7 @@ for name in ['type-safety','closures','tuples','polymorphism','staging','json','
     exe=t.work/name
     extra=[]
     if 'on1x_json' in checked.stdout:
-        extra=[t.root/'runtime/on1x_json.c',t.root/'runtime/on1x_mulib_impl.c','-I',t.root.parent/'include','-lm']
+        extra=[t.root/'runtime/on1x_json.c',t.root/'runtime/on1x_mulib_impl.c','-I',t.root.parent/'kernels','-lm']
     p=run([t.cc,'-std=c11','-Wall','-Wextra','-Werror',*t.flags,code,'-I',t.root/'runtime',t.root/'runtime/on1x_runtime.c',*extra,'-o',exe])
     assert p.returncode==0,(name,p.stderr)
     p=run([exe]);assert p.returncode==0,(name,p.stderr)

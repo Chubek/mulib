@@ -188,7 +188,7 @@ def discovery(work, on1xc, clang, exotract):
     kernel = data["modules"]["mulib.prettysexpr"]
     impl = kernel["exolib"]["header_only"]
     assert impl["implementation_defines"] == MACROS and impl["implementation_translation_units"] == 1
-    assert impl["dependencies"] == [str(ROOT / "include" / f"mulib-{name}.h") for name in DEPS + MODULES[:-1]]
+    assert impl["dependencies"] == [str(ROOT / "kernels" / f"mulib-{name}.h") for name in DEPS + MODULES[:-1]]
     sidecar = ROOT / "on1x/contracts-exoml/prettysexpr.exocontract.json"
     seed = kernel["contract"]
     assert seed["bundle_provenance"]["review_status"] == "unreviewed"

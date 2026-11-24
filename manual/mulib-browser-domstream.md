@@ -17,7 +17,7 @@ Use browser-stream's lifecycle, mask, callback and synchronization rules.
 
 ## Integration and ownership
 
-Include `include/mulib-browser-domstream.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-browser-domstream.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -41,7 +41,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-browser-domstream.h`](../include/mulib-browser-domstream.h).
+Verbatim declaration section from [`kernels/mulib-browser-domstream.h`](../kernels/mulib-browser-domstream.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browser-domstream.h`](../include/mulib-browser-domstream.h) |
+| Header | [`kernels/mulib-browser-domstream.h`](../kernels/mulib-browser-domstream.h) |
 | Implementation switch | `MULIB_IMPL_BROWSER_DOMSTREAM` |
 | Repository-local includes | [mulib-browser-stream](mulib-browser-stream.md) |
 | Complete example | [`examples/modules/browser-domstream.c`](../examples/modules/browser-domstream.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browser-domstream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browser-domstream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

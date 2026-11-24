@@ -18,7 +18,7 @@ do not leave partial output. Render untrusted text through
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termfunc.h`](../include/mulib-termfunc.h) |
+| Header | [`kernels/mulib-termfunc.h`](../kernels/mulib-termfunc.h) |
 | Implementation switch | `MULIB_IMPL_TERMFUNC` |
 | Repository-local includes | [mulib-terminfo](mulib-terminfo.md) |
 | Complete example | [`examples/termscript/support.c`](../examples/termscript/support.c) |
@@ -31,6 +31,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/termscript/support.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/termscript/support.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

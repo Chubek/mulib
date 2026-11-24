@@ -120,7 +120,7 @@ implemented profiles. Standalone C and C++ declarations are checked separately.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-virtio-guest.h`](../include/mulib-virtio-guest.h) |
+| Header | [`kernels/mulib-virtio-guest.h`](../kernels/mulib-virtio-guest.h) |
 | Implementation switch | `MULIB_IMPL_VIRTIO_GUEST` |
 | Repository-local includes | [mulib-virtio](mulib-virtio.md) |
 | Complete example | [`examples/modules/virtio-guest.c`](../examples/modules/virtio-guest.c) |
@@ -133,6 +133,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio-guest.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/virtio-guest.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

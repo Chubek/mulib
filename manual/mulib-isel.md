@@ -94,9 +94,9 @@ to match the annotated cycle model.
 ## Example and checks
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/isel.c -lm -o isel
+cc -std=c11 -Ikernels examples/modules/isel.c -lm -o isel
 ./isel
-cc -std=c11 -Iinclude examples/modules/optml.c -lm -o optml
+cc -std=c11 -Ikernels examples/modules/optml.c -lm -o optml
 ./optml library/archml/amd64.aml > twice.s
 ```
 
@@ -113,7 +113,7 @@ and executes AMD64 output and cross-assembles RV64 with Clang when available.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-isel.h`](../include/mulib-isel.h) |
+| Header | [`kernels/mulib-isel.h`](../kernels/mulib-isel.h) |
 | Implementation switch | `MULIB_IMPL_ISEL` |
 | Repository-local includes | [mulib-archml](mulib-archml.md), [mulib-isched](mulib-isched.md), [mulib-lir](mulib-lir.md), [mulib-lowopt](mulib-lowopt.md) |
 | Complete example | [`examples/modules/isel.c`](../examples/modules/isel.c) |
@@ -126,6 +126,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/isel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/isel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

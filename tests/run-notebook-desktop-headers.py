@@ -31,7 +31,7 @@ def inventory(include):
             continue
         filename = f"mulib-{name}.h"
         if (not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name)
-                or fields.get("header") != f"include/{filename}"
+                or fields.get("header") != f"kernels/{filename}"
                 or paths[fields["header"]] != 1):
             raise ValueError(f"invalid or duplicate desktop module: {name}")
         if fields.get("status") != "bounded" or fields.get("implementation") != "static-inline":
@@ -96,7 +96,7 @@ def check_compiler(compiler, include, headers, build):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cc", action="append", help="C compiler command (default: gcc and clang)")
-    parser.add_argument("--include", type=Path, default=ROOT / "include",
+    parser.add_argument("--include", type=Path, default=ROOT / "kernels",
                         help="header directory (can be a staged install)")
     args = parser.parse_args()
     try:

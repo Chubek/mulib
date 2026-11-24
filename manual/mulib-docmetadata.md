@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-docmetadata.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-docmetadata.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-docmetadata.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-docmetadata.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-docmetadata.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-docmetadata.h`](../include/mulib-docmetadata.h) |
+| Header | [`kernels/mulib-docmetadata.h`](../kernels/mulib-docmetadata.h) |
 | Implementation switch | `MULIB_IMPL_DOCMETADATA` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-docmetadata.c`](../examples/mulib-docmetadata.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-docmetadata.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-docmetadata.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -9,7 +9,7 @@ Adapts MuLIB entropy, SHA, HMAC, PBKDF2-SHA256 and AES-128-GCM. No external libr
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-crypto-native.h`](../include/mulib-secret-crypto-native.h) |
+| Header | [`kernels/mulib-secret-crypto-native.h`](../kernels/mulib-secret-crypto-native.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_CRYPTO_NATIVE` |
 | Repository-local includes | [mulib-aes-gcm](mulib-aes-gcm.md), [mulib-authcrypto](mulib-authcrypto.md), [mulib-entropy](mulib-entropy.md), [mulib-hkdf](mulib-hkdf.md), [mulib-secret-crypto](mulib-secret-crypto.md), [mulib-sha](mulib-sha.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

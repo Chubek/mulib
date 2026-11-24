@@ -12,7 +12,7 @@ time and no allocation. Null validity masks must be handled by the caller.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-scanvec.h`](../include/mulib-scanvec.h).
+Verbatim declaration section from [`kernels/mulib-scanvec.h`](../kernels/mulib-scanvec.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-scanvec.h`](../include/mulib-scanvec.h) |
+| Header | [`kernels/mulib-scanvec.h`](../kernels/mulib-scanvec.h) |
 | Implementation switch | `MULIB_IMPL_SCANVEC` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/scanvec.c`](../examples/modules/scanvec.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/scanvec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/scanvec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

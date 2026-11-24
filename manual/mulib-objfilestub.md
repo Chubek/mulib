@@ -14,7 +14,7 @@ Example: `examples/modules/objfilestub.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objfilestub.h`](../include/mulib-objfilestub.h).
+Verbatim declaration section from [`kernels/mulib-objfilestub.h`](../kernels/mulib-objfilestub.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objfilestub.h`](../include/mulib-objfilestub.h) |
+| Header | [`kernels/mulib-objfilestub.h`](../kernels/mulib-objfilestub.h) |
 | Implementation switch | `MULIB_IMPL_OBJFILESTUB` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md) |
 | Complete example | [`examples/modules/objfilestub.c`](../examples/modules/objfilestub.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objfilestub.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objfilestub.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

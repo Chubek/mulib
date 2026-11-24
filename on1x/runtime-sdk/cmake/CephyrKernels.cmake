@@ -1,6 +1,6 @@
 # Include inside ON1X_WITH_CEPHYR after the baseline config and on1xc exist.
 set(_kernel_rt "${CMAKE_CURRENT_LIST_DIR}/..")
-set(_kernel_rt_clamp "${_kernel_rt}/../../include/mulib-clamp.h")
+set(_kernel_rt_clamp "${_kernel_rt}/../../kernels/mulib-clamp.h")
 set(_kernel_rt_review "${CMAKE_CURRENT_SOURCE_DIR}/hir/FFIHandler/reviewed.json")
 set(_kernel_rt_config "${cephyr_config_dir}/cephyr-baseline.toml")
 set(_kernel_rt_embedded "${CMAKE_CURRENT_BINARY_DIR}/on1x_kernel_rt_embedded.inc")

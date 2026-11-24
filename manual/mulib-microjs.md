@@ -20,7 +20,7 @@ separate translation units. The application owns implementation placement;
 MicroJS never silently enables another module's implementation.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/microjs.c -lm -o microjs
 ./microjs
 ```
@@ -231,7 +231,7 @@ implementation in existing standalone integrations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-microjs.h`](../include/mulib-microjs.h) |
+| Header | [`kernels/mulib-microjs.h`](../kernels/mulib-microjs.h) |
 | Implementation switch | `MULIB_IMPL_MICROJS` |
 | Repository-local includes | [mulib-minivm](mulib-minivm.md) |
 | Complete example | [`examples/modules/microjs.c`](../examples/modules/microjs.c) |
@@ -244,6 +244,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/microjs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/microjs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

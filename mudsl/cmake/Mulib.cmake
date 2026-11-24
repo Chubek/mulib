@@ -1,5 +1,5 @@
 find_path(MULL_MULIB_INCLUDE_DIR mulib-parsec.h
-    HINTS "${CMAKE_CURRENT_LIST_DIR}/../../include"
+    HINTS "${CMAKE_CURRENT_LIST_DIR}/../../kernels"
     DOC "MuLIB public header directory")
 set(_mull_mulib_default OFF)
 if(MULL_MULIB_INCLUDE_DIR)
@@ -8,7 +8,7 @@ endif()
 option(MULL_ENABLE_MULIB "Build the complete MuLL MuLIB wrapper" ${_mull_mulib_default})
 if(MULL_ENABLE_MULIB)
     if(NOT MULL_MULIB_INCLUDE_DIR)
-        message(FATAL_ERROR "Set MULL_MULIB_INCLUDE_DIR to the MuLIB include directory")
+        message(FATAL_ERROR "Set MULL_MULIB_INCLUDE_DIR to the MuLIB kernels directory")
     endif()
     enable_language(C)
     find_package(Threads REQUIRED)

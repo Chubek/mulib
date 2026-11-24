@@ -36,7 +36,7 @@ See `../tests/test_dns-manager.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dns-manager.h`](../include/mulib-dns-manager.h) |
+| Header | [`kernels/mulib-dns-manager.h`](../kernels/mulib-dns-manager.h) |
 | Implementation switch | `MULIB_IMPL_DNS_MANAGER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dns-manager.c`](../examples/modules/dns-manager.c) |
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dns-manager.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dns-manager.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

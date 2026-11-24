@@ -38,7 +38,7 @@ staging=$(mktemp -d "${TMPDIR:-/tmp}/on1x-mcp-deploy.XXXXXXXX")
 trap 'rm -rf -- "$staging"' EXIT
 trap 'exit 1' HUP INT TERM
 archive=$staging/release.tar
-git -C "$repo" archive --format=tar "$revision" README.md MANIFEST.yaml include manual on1x >"$archive"
+git -C "$repo" archive --format=tar "$revision" README.md MANIFEST.yaml kernels manual on1x >"$archive"
 
 # Check the actual archive, not just the tree: export attributes can omit or
 # rewrite files. Nothing from the working tree is added to the archive.

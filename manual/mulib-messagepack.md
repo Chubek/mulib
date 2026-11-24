@@ -11,7 +11,7 @@ is limited to 16 MiB/depth 64; encode atomically appends.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-messagepack.h`](../include/mulib-messagepack.h).
+Verbatim declaration section from [`kernels/mulib-messagepack.h`](../kernels/mulib-messagepack.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -50,7 +50,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-messagepack.h`](../include/mulib-messagepack.h) |
+| Header | [`kernels/mulib-messagepack.h`](../kernels/mulib-messagepack.h) |
 | Implementation switch | `MULIB_IMPL_MESSAGEPACK` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/messagepack.c`](../examples/modules/messagepack.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/messagepack.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/messagepack.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

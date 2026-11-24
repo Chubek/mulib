@@ -13,9 +13,9 @@ Define `MULIB_IMPL_COOKIEJAR` in exactly one C11 translation unit. Use `#include
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-cookiejar.c -o /tmp/test-cookiejar
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-cookiejar.c -o /tmp/test-cookiejar
 /tmp/test-cookiejar
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/cookiejar.c -o /tmp/example-cookiejar
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/cookiejar.c -o /tmp/example-cookiejar
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cookiejar.h`](../include/mulib-cookiejar.h) |
+| Header | [`kernels/mulib-cookiejar.h`](../kernels/mulib-cookiejar.h) |
 | Implementation switch | `MULIB_IMPL_COOKIEJAR` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cookiejar.c`](../examples/modules/cookiejar.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cookiejar.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cookiejar.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -85,8 +85,8 @@ When pairing Clang with GNU `as` on ELF targets, pass
 Repeat `--kernel NAME` to add declaration includes, for example
 `--kernel money --kernel termscript-runtime`. The names `capasm` and
 `xmacir` cannot be selected. When an external C tool is selected, the CLI
-uses C11 with these headers; pass `--cc-arg -Iinclude` (or
-`--cpp-arg -Iinclude` for a separate preprocessor). Without the option, the
+uses C11 with these headers; pass `--cc-arg -Ikernels` (or
+`--cpp-arg -Ikernels` for a separate preprocessor). Without the option, the
 translation unit remains strict C90.
 
 <!-- manual-reference -->
@@ -96,7 +96,7 @@ translation unit remains strict C90.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript.h`](../include/mulib-termscript.h) |
+| Header | [`kernels/mulib-termscript.h`](../kernels/mulib-termscript.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT` |
 | Repository-local includes | [mulib-termscript-capasm](mulib-termscript-capasm.md), [mulib-termscript-host](mulib-termscript-host.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

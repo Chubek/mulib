@@ -20,7 +20,7 @@ time and O(entries) storage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gvn.h`](../include/mulib-gvn.h) |
+| Header | [`kernels/mulib-gvn.h`](../kernels/mulib-gvn.h) |
 | Implementation switch | `MULIB_IMPL_GVN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/gvn.c`](../examples/modules/gvn.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gvn.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gvn.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

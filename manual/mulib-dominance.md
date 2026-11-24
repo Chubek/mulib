@@ -19,7 +19,7 @@ bounded by graph size, with worst-case O(V²E + V²) work and fixed 64-block sto
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dominance.h`](../include/mulib-dominance.h) |
+| Header | [`kernels/mulib-dominance.h`](../kernels/mulib-dominance.h) |
 | Implementation switch | `MULIB_IMPL_DOMINANCE` |
 | Repository-local includes | [mulib-cfg](mulib-cfg.md) |
 | Complete example | [`examples/modules/dominance.c`](../examples/modules/dominance.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dominance.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dominance.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

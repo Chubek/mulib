@@ -120,7 +120,7 @@ and [xsimd](mulib-xsimd.md) for ownership, failure and implementation details.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-audrey.h`](../include/mulib-audrey.h) |
+| Header | [`kernels/mulib-audrey.h`](../kernels/mulib-audrey.h) |
 | Implementation switch | `MULIB_IMPL_AUDREY` |
 | Repository-local includes | [mulib-midi](mulib-midi.md), [mulib-miniflac](mulib-miniflac.md), [mulib-minimpeg](mulib-minimpeg.md), [mulib-minivorbis](mulib-minivorbis.md), [mulib-miniwav](mulib-miniwav.md), [mulib-mune](mulib-mune.md) |
 | Complete example | [`examples/modules/audrey.c`](../examples/modules/audrey.c) |
@@ -133,6 +133,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/audrey.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/audrey.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

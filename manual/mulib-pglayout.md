@@ -175,7 +175,7 @@ round trips, wrapping, mandatory breaks, hidden flow and transactional failure.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pglayout.h`](../include/mulib-pglayout.h) |
+| Header | [`kernels/mulib-pglayout.h`](../kernels/mulib-pglayout.h) |
 | Implementation switch | `MULIB_IMPL_PGLAYOUT` |
 | Repository-local includes | [mulib-bidi](mulib-bidi.md), [mulib-fontshape](mulib-fontshape.md), [mulib-json](mulib-json.md), [mulib-stylesheet](mulib-stylesheet.md), [mulib-unibreak](mulib-unibreak.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/pglayout.c`](../examples/modules/pglayout.c) |
@@ -188,6 +188,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pglayout.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pglayout.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

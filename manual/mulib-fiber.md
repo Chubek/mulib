@@ -90,7 +90,7 @@ See [`examples/modules/fiber.c`](../examples/modules/fiber.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fiber.h`](../include/mulib-fiber.h) |
+| Header | [`kernels/mulib-fiber.h`](../kernels/mulib-fiber.h) |
 | Implementation switch | `MULIB_IMPL_FIBER` |
 | Repository-local includes | [mulib-xthreads](mulib-xthreads.md) |
 | Complete example | [`examples/modules/fiber.c`](../examples/modules/fiber.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fiber.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fiber.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 # Header hardening and verification
 
-This pass checks the complete `include/mulib-*.h` inventory, not just newly added
+This pass checks the complete `kernels/mulib-*.h` inventory, not just newly added
 modules. Compilation, static analysis and finite tests are **not** a certification
 of memory safety, complete standards support, or readiness for hostile production
 traffic. Files without a demonstrated defect need not receive cosmetic edits.
@@ -47,7 +47,7 @@ Supplementary checks added here:
   packet framing, VCDIFF and Git PACK. VCDIFF encoding is roundtripped on each
   input. Mutated PACK records are also re-signed to reach inner zlib validation.
   Valid binary seeds and every truncated prefix accompany the text seeds.
-- `clang --analyze -std=c11 -Iinclude tests/all_headers.c` analyzes the combined
+- `clang --analyze -std=c11 -Ikernels tests/all_headers.c` analyzes the combined
   implementation translation unit. A clean result only covers enabled checkers.
 
 ## Strengthened contracts
@@ -118,7 +118,7 @@ CC=clang CXX=clang++ python3 tools/check.py --sanitizers
 cmake -S . -B build -DMULIB_BUILD_MODULE_EXAMPLES=ON
 cmake --build build
 ctest --test-dir build --output-on-failure
-clang --analyze -std=c11 -Iinclude tests/all_headers.c
+clang --analyze -std=c11 -Ikernels tests/all_headers.c
 ```
 
 Optional mutation fuzzing, with artifacts outside the source tree:

@@ -1,5 +1,5 @@
 /* From the source root, build and run the standalone real-Mune test:
- * cc -std=c11 -O2 -Wall -Wextra -pedantic -Iinclude tests/test_imtui_mune.c \
+ * cc -std=c11 -O2 -Wall -Wextra -pedantic -Ikernels tests/test_imtui_mune.c \
  *    -o /tmp/opencode/test_imtui_mune -lm -pthread -ldl
  * /tmp/opencode/test_imtui_mune [source-root]
  * The switches below are the complete implementation-TU recipe. */

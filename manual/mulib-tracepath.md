@@ -31,7 +31,7 @@ See `../tests/test_tracepath.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tracepath.h`](../include/mulib-tracepath.h) |
+| Header | [`kernels/mulib-tracepath.h`](../kernels/mulib-tracepath.h) |
 | Implementation switch | `MULIB_IMPL_TRACEPATH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/tracepath.c`](../examples/modules/tracepath.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tracepath.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tracepath.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

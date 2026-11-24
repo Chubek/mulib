@@ -1,5 +1,5 @@
 /* Headless UTF-8 editor regressions, moving realloc and allocation failures.
- * cc -std=c11 -Wall -Wextra -Werror -Wno-misleading-indentation -Iinclude
+ * cc -std=c11 -Wall -Wextra -Werror -Wno-misleading-indentation -Ikernels
  *    tests/test-gfx-text.c -lm -o /tmp/opencode/test-gfx-text
  */
 #include <assert.h>

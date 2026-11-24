@@ -27,7 +27,7 @@ iteration or external tools are used. See [COFF profile](mulib-coff.md).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-coff-objdump.h`](../include/mulib-coff-objdump.h).
+Verbatim declaration section from [`kernels/mulib-coff-objdump.h`](../kernels/mulib-coff-objdump.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -65,7 +65,7 @@ int mulib_coff_objdump_view (const mulib_coff_t *v, const mulib_objdump_options_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-coff-objdump.h`](../include/mulib-coff-objdump.h) |
+| Header | [`kernels/mulib-coff-objdump.h`](../kernels/mulib-coff-objdump.h) |
 | Implementation switch | `MULIB_IMPL_COFF_OBJDUMP` |
 | Repository-local includes | [mulib-coff](mulib-coff.md), [mulib-objdump](mulib-objdump.md) |
 | Complete example | [`examples/modules/coff-objdump.c`](../examples/modules/coff-objdump.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/coff-objdump.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/coff-objdump.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

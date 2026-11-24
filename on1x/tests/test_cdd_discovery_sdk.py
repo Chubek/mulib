@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert module['symbols'] and all(s['callable'] is False and 'checked accessors' in s['reason']
                                          for s in module['symbols'].values())
         graph = module['metadata']['cdecl']
-        assert graph['header'] == str(root.parent/'include'/('mulib-'+name+'.h'))
+        assert graph['header'] == str(root.parent/'kernels'/('mulib-'+name+'.h'))
         assert graph['complete'] is True and graph['safe_export'] is False and graph['target']['triple'] == data['target']
         assert all(not m['defined'] for m in graph['preprocessing']['final_macros'] if m['name'].startswith('MULIB_IMPL_'))
         assert str(root/'contracts-exotract/catalog.json') in {p['path'] for p in graph['inputs']}

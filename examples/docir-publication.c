@@ -1,5 +1,5 @@
 /* One semantic tree -> normalized DocIR v1, HTML/MathML, LaTeX and EPUB.
- * Build: cc -std=c11 -Wall -Wextra -Iinclude examples/docir-publication.c -lm -o docir-publication
+ * Build: cc -std=c11 -Wall -Wextra -Ikernels examples/docir-publication.c -lm -o docir-publication
  * Run without arguments for in-memory checks, or pass an existing output directory.
  */
 #define MULIB_ENABLE_DOCIR

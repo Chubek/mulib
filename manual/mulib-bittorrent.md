@@ -29,7 +29,7 @@ BitTorrent v2 Merkle verification is supplied. Tests:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-bittorrent.h`](../include/mulib-bittorrent.h).
+Verbatim declaration section from [`kernels/mulib-bittorrent.h`](../kernels/mulib-bittorrent.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -94,7 +94,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bittorrent.h`](../include/mulib-bittorrent.h) |
+| Header | [`kernels/mulib-bittorrent.h`](../kernels/mulib-bittorrent.h) |
 | Implementation switch | `MULIB_IMPL_BITTORRENT` |
 | Repository-local includes | [mulib-endian](mulib-endian.md), [mulib-git](mulib-git.md) |
 | Complete example | [`examples/modules/bittorrent.c`](../examples/modules/bittorrent.c) |
@@ -107,6 +107,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bittorrent.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bittorrent.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -79,7 +79,7 @@ interpolation intentionally bypasses it.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
   examples/modules/template.c -o ./mulib-template
 ./mulib-template
 ```
@@ -96,7 +96,7 @@ Unicode, NULs, root/parent/index/key paths, and borrowed-context ownership.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-template.h`](../include/mulib-template.h) |
+| Header | [`kernels/mulib-template.h`](../kernels/mulib-template.h) |
 | Implementation switch | `MULIB_IMPL_TEMPLATE` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/template.c`](../examples/modules/template.c) |
@@ -109,6 +109,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/template.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/template.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

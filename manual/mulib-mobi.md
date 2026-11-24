@@ -82,7 +82,7 @@ the C implementation and fixtures are original, with no vendored decoder code.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mobi.h`](../include/mulib-mobi.h) |
+| Header | [`kernels/mulib-mobi.h`](../kernels/mulib-mobi.h) |
 | Implementation switch | `MULIB_IMPL_MOBI` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/mobi.c`](../examples/modules/mobi.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mobi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mobi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

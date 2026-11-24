@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-pageref.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-pageref.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-pageref.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-pageref.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-pageref.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pageref.h`](../include/mulib-pageref.h) |
+| Header | [`kernels/mulib-pageref.h`](../kernels/mulib-pageref.h) |
 | Implementation switch | `MULIB_IMPL_PAGEREF` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-pageref.c`](../examples/mulib-pageref.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-pageref.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-pageref.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

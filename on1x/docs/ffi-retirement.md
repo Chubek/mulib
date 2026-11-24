@@ -82,7 +82,7 @@ explicit release decision.
 - **Exotract directory exceptions:** `contracts-exotract/catalog.json` has
   live recipes, `kernel-auto.json` drives registration/inspection, and
   `examples/{client,elvi-scrape,http3,microjs,mune}.c` exercise native APIs.
-  Preserve or migrate the C fixtures. `include/mulib-cdd-accessors.h` is
+  Preserve or migrate the C fixtures. `kernels/mulib-cdd-accessors.h` is
   installed by `sdk/cmake/Subagent6.cmake` and implemented in
   `sdk/src/contracts/CddAccessors.c`; it is not a disposable declaration dump.
   Retain the header/API and checked CDD behavior, even if relocated.
@@ -134,7 +134,7 @@ explicit release decision.
 - **Independent consumers:** MuLL's `mudsl/scripts/{generate_mulib,check_mulib_inventory}.py`
   and `mudsl/mull/bridge/Mulib/` independently enumerate canonical C headers
   and supply a different bridge. They are not a second On1x FFI implementation
-  and must not be removed. Preserve public `include/mulib-*.h`, independent
+  and must not be removed. Preserve public `kernels/mulib-*.h`, independent
   LibStone ExoML/Exotract, CDD itself, and foreign interfaces unrelated to the
   replaced standard-kernel path (e.g. trusted InlineC11/native extensions).
 

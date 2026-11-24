@@ -120,11 +120,11 @@ transactional on allocation/representation failure.
 
 ```sh
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-  -Iinclude tests/test-gfx-raster.c -lm -o /tmp/opencode/test-gfx-raster
+  -Ikernels tests/test-gfx-raster.c -lm -o /tmp/opencode/test-gfx-raster
 /tmp/opencode/test-gfx-raster
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
   -fsanitize=address,undefined -fno-omit-frame-pointer -g \
-  -Iinclude tests/test-gfx-raster.c -lm -o /tmp/opencode/test-gfx-raster-san
+  -Ikernels tests/test-gfx-raster.c -lm -o /tmp/opencode/test-gfx-raster-san
 ASAN_OPTIONS=detect_leaks=1 /tmp/opencode/test-gfx-raster-san
 ```
 

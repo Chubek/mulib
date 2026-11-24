@@ -34,7 +34,7 @@ Caller must coordinate partial multi-event frames and release held keys on error
 
 `close` closes/reset the fd and destroys the kernel device, idempotently. No
 automatic release generation or global input injection occurs merely by inclusion.
-`cc -std=c11 -Iinclude examples/modules/vdev.c -o vdev` intentionally creates no
+`cc -std=c11 -Ikernels examples/modules/vdev.c -o vdev` intentionally creates no
 device. Tests cover validation and native failure cleanup; successful injection
 requires explicit hardware/environment testing and is not run by the suite.
 
@@ -45,7 +45,7 @@ requires explicit hardware/environment testing and is not run by the suite.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vdev.h`](../include/mulib-vdev.h) |
+| Header | [`kernels/mulib-vdev.h`](../kernels/mulib-vdev.h) |
 | Implementation switch | `MULIB_IMPL_VDEV` |
 | Repository-local includes | [mulib-input](mulib-input.md) |
 | Complete example | [`examples/modules/vdev.c`](../examples/modules/vdev.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vdev.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vdev.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

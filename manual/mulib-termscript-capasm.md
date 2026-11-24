@@ -22,9 +22,9 @@ continues to write a C translation unit by default.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript-capasm.h`](../include/mulib-termscript-capasm.h) |
+| Header | [`kernels/mulib-termscript-capasm.h`](../kernels/mulib-termscript-capasm.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_CAPASM` |
-| Repository-local includes | [`include/detail/mulib-termscript-capsule.inc`](../include/detail/mulib-termscript-capsule.inc), [mulib-capasm](mulib-capasm.md), [mulib-strbuf](mulib-strbuf.md), [mulib-termscript-ast](mulib-termscript-ast.md) |
+| Repository-local includes | [`kernels/detail/mulib-termscript-capsule.inc`](../kernels/detail/mulib-termscript-capsule.inc), [mulib-capasm](mulib-capasm.md), [mulib-strbuf](mulib-strbuf.md), [mulib-termscript-ast](mulib-termscript-ast.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

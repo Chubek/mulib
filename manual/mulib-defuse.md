@@ -20,7 +20,7 @@ O(registers). The caller retains ownership of input and output arrays.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-defuse.h`](../include/mulib-defuse.h) |
+| Header | [`kernels/mulib-defuse.h`](../kernels/mulib-defuse.h) |
 | Implementation switch | `MULIB_IMPL_DEFUSE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/defuse.c`](../examples/modules/defuse.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/defuse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/defuse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

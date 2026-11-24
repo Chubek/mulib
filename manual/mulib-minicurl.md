@@ -15,7 +15,7 @@ Include `mulib-minicurl.h`. No implementation macro is enabled implicitly.
 Declarations can also be included from C++.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/minicurl.c -o /tmp/opencode/minicurl
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/minicurl.c -o /tmp/opencode/minicurl
 /tmp/opencode/minicurl
 ```
 
@@ -74,7 +74,7 @@ Content-Type injection, URL rejection, HEAD, IO errors and composed behavior.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-minicurl.h`](../include/mulib-minicurl.h) |
+| Header | [`kernels/mulib-minicurl.h`](../kernels/mulib-minicurl.h) |
 | Implementation switch | `MULIB_IMPL_MINICURL` |
 | Repository-local includes | [mulib-webclient](mulib-webclient.md) |
 | Complete example | [`examples/modules/minicurl.c`](../examples/modules/minicurl.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minicurl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/minicurl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

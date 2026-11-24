@@ -13,7 +13,7 @@ Define `MULIB_IMPL_PERLPOD` once, and separately provide `MULIB_IMPL_STRBUF` and
 only declarations; C++ consumers use the provided linkage guards.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/perlpod.c -o perlpod
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/perlpod.c -o perlpod
 ./perlpod
 ```
 
@@ -111,7 +111,7 @@ output limits, nesting limits, empty input, allocation failure, and mutations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-perlpod.h`](../include/mulib-perlpod.h) |
+| Header | [`kernels/mulib-perlpod.h`](../kernels/mulib-perlpod.h) |
 | Implementation switch | `MULIB_IMPL_PERLPOD` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/perlpod.c`](../examples/modules/perlpod.c) |
@@ -124,6 +124,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/perlpod.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/perlpod.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,14 +31,14 @@ chunks, until complete. On EIO it reports partial progress; EAGAIN remains in
 errno and callers may resume from `written`. Zero-length data may be NULL. No
 SIGPIPE suppression: callers writing to pipes must select their own signal policy.
 
-`cc -std=c11 -Iinclude examples/modules/termutils.c -o termutils` does not alter
+`cc -std=c11 -Ikernels examples/modules/termutils.c -o termutils` does not alter
 the user's console. Tests use an isolated pseudo-terminal for raw/restore/size
 and a pipe for complete writes.
 
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-termutils.h`](../include/mulib-termutils.h).
+Verbatim declaration section from [`kernels/mulib-termutils.h`](../kernels/mulib-termutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -104,7 +104,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termutils.h`](../include/mulib-termutils.h) |
+| Header | [`kernels/mulib-termutils.h`](../kernels/mulib-termutils.h) |
 | Implementation switch | `MULIB_IMPL_TERMUTILS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/termutils.c`](../examples/modules/termutils.c) |
@@ -117,6 +117,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/termutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/termutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -110,7 +110,7 @@ numbers in an e-graph.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/egraph.c -o /tmp/egraph
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/egraph.c -o /tmp/egraph
 /tmp/egraph
 ```
 
@@ -126,7 +126,7 @@ zero costs, overflow, duplicate hash-consing and output limits.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-egraph.h`](../include/mulib-egraph.h) |
+| Header | [`kernels/mulib-egraph.h`](../kernels/mulib-egraph.h) |
 | Implementation switch | `MULIB_IMPL_EGRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/egraph.c`](../examples/modules/egraph.c) |
@@ -139,6 +139,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/egraph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/egraph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

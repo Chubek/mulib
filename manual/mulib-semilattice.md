@@ -11,7 +11,7 @@ provides algebra only; it does not store replicas or perform synchronization.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-semilattice.h`](../include/mulib-semilattice.h).
+Verbatim declaration section from [`kernels/mulib-semilattice.h`](../kernels/mulib-semilattice.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -48,7 +48,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-semilattice.h`](../include/mulib-semilattice.h) |
+| Header | [`kernels/mulib-semilattice.h`](../kernels/mulib-semilattice.h) |
 | Implementation switch | `MULIB_IMPL_SEMILATTICE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/semilattice.c`](../examples/modules/semilattice.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/semilattice.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/semilattice.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

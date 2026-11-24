@@ -33,7 +33,7 @@ a rejecting fixture, not fake obfs4 encryption; tests in
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-obs4.h`](../include/mulib-obs4.h).
+Verbatim declaration section from [`kernels/mulib-obs4.h`](../kernels/mulib-obs4.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -99,7 +99,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-obs4.h`](../include/mulib-obs4.h) |
+| Header | [`kernels/mulib-obs4.h`](../kernels/mulib-obs4.h) |
 | Implementation switch | `MULIB_IMPL_OBS4` |
 | Repository-local includes | [mulib-xtks](mulib-xtks.md) |
 | Complete example | [`examples/modules/obs4.c`](../examples/modules/obs4.c) |
@@ -112,6 +112,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/obs4.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/obs4.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

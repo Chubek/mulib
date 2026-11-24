@@ -33,7 +33,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-histogram.h`](../include/mulib-histogram.h).
+Verbatim declaration section from [`kernels/mulib-histogram.h`](../kernels/mulib-histogram.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -109,7 +109,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-histogram.h`](../include/mulib-histogram.h) |
+| Header | [`kernels/mulib-histogram.h`](../kernels/mulib-histogram.h) |
 | Implementation switch | `MULIB_IMPL_HISTOGRAM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/histogram.c`](../examples/modules/histogram.c) |
@@ -122,6 +122,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/histogram.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/histogram.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,12 +1,12 @@
 CC ?= cc
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -Werror -O2
-CPPFLAGS ?= -Iinclude
+CPPFLAGS ?= -Ikernels
 LDLIBS ?= -lm
 TESTS := $(patsubst tests/%.c,build/%,$(wildcard tests/test-*.c)) build/cdd-test
 TESTS += $(patsubst tests/%.c,build/%,$(wildcard tests/media-*-test.c)) build/media-link
 # These fixtures need additional TUs, arguments, or a private Xvfb.
 TESTS := $(filter-out build/test-notebook-headless build/test-wl-headless-private build/test-x11-nested-live,$(TESTS))
-HEADERS := $(wildcard include/*.h include/detail/*.h include/detail/*.inc)
+HEADERS := $(wildcard kernels/*.h kernels/detail/*.h kernels/detail/*.inc)
 TEST_FIXTURES := $(wildcard tests/fixtures/*.h)
 EXAMPLES := $(patsubst examples/%.c,build/%,$(wildcard examples/mulib-*.c)) build/fontshape-native build/docir-publication
 EXAMPLES += build/cdd-pipeline
@@ -257,7 +257,7 @@ $(PRETTY_DIR)/test_prettydoc: tests/test_prettydoc.c tests/prettyprint-implement
 $(PRETTY_DIR)/test_prettybridge: tests/test_prettybridge.c tests/prettyprint-implementation.c $(PRETTY_BRIDGE).c $(PRETTY_BRIDGE).h
 $(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge: private PRETTY_TEST_FLAGS := -UNDEBUG -DPRETTYPRINT_TEST_SEPARATE
 $(PRETTY_DIR)/ppfmt $(PRETTY_DIR)/prettyprint-demo $(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge: $(HEADERS) | $(PRETTY_DIR)
-	$(CC) $(CPPFLAGS) $(CFLAGS) -std=c11 -Iinclude $(PRETTY_TEST_FLAGS) $(filter %.c,$^) $(LDFLAGS) $(LDLIBS) -lm -ldl -o "$@"
+	$(CC) $(CPPFLAGS) $(CFLAGS) -std=c11 -Ikernels $(PRETTY_TEST_FLAGS) $(filter %.c,$^) $(LDFLAGS) $(LDLIBS) -lm -ldl -o "$@"
 check-prettyprint: prettyprint $(PRETTY_DIR)/test_prettydoc $(PRETTY_DIR)/test_prettybridge
 	"$(PRETTY_DIR)/test_prettydoc"
 	"$(PRETTY_DIR)/test_prettybridge"

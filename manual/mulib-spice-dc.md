@@ -1,7 +1,7 @@
 # mulib-spice-dc
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-dc.h`  
+**Header:** `kernels/mulib-spice-dc.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_DC`  
 **Dependencies:** `spice-op`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_DC` defined before in
 `tests/test_spice_dc.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_dc.c -lm -o /tmp/test_spice_dc
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_dc.c -lm -o /tmp/test_spice_dc
 /tmp/test_spice_dc
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-dc.h`](../include/mulib-spice-dc.h).
+Verbatim declaration section from [`kernels/mulib-spice-dc.h`](../kernels/mulib-spice-dc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_spice_dc_sweep(const mulib_spice_netlist_t *net, const char *source_na
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-dc.h`](../include/mulib-spice-dc.h) |
+| Header | [`kernels/mulib-spice-dc.h`](../kernels/mulib-spice-dc.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_DC` |
 | Repository-local includes | [mulib-spice-op](mulib-spice-op.md) |
 | Complete example | [`examples/modules/spice-dc.c`](../examples/modules/spice-dc.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-dc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-dc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

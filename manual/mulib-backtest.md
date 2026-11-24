@@ -14,7 +14,7 @@ the kernel. See [FinPRED verification and limits](finpred.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-backtest.h`](../include/mulib-backtest.h) |
+| Header | [`kernels/mulib-backtest.h`](../kernels/mulib-backtest.h) |
 | Implementation switch | `MULIB_IMPL_BACKTEST` |
 | Repository-local includes | None |
 | Complete example | [`examples/finpred_market.c`](../examples/finpred_market.c) |
@@ -27,6 +27,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/finpred_market.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/finpred_market.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

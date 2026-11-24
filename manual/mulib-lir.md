@@ -82,7 +82,7 @@ a diagnostic serialization; construct executable LIR through the C API.
 Writers return nonzero on success; a failed writer may have partial output.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/lir.c -lm -o lir
+cc -std=c11 -Ikernels examples/modules/lir.c -lm -o lir
 ./lir
 ```
 
@@ -93,7 +93,7 @@ cc -std=c11 -Iinclude examples/modules/lir.c -lm -o lir
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lir.h`](../include/mulib-lir.h) |
+| Header | [`kernels/mulib-lir.h`](../kernels/mulib-lir.h) |
 | Implementation switch | `MULIB_IMPL_LIR` |
 | Repository-local includes | [mulib-lowopt](mulib-lowopt.md), [mulib-machine](mulib-machine.md) |
 | Complete example | [`examples/modules/lir.c`](../examples/modules/lir.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

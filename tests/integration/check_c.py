@@ -60,7 +60,7 @@ def main():
         for name in ('circuit', 'media', 'http'):
             exe = work / name
             run(args.cc, '-std=c11', '-Wall', '-Wextra', '-Werror', '-pedantic',
-                *args.cflag, '-UNDEBUG', '-I', here.parents[1] / 'include',
+                *args.cflag, '-UNDEBUG', '-I', here.parents[1] / 'kernels',
                 here / f'{name}.c', '-lm', '-o', exe)
             print(run(exe).decode(), end='')
         circuit_compare(work / 'circuit', work)

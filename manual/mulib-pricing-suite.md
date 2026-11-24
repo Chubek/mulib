@@ -40,9 +40,9 @@ corresponding switch and its dependency switches only.
 
 ```sh
 # From the root of the checkout:
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
    -c tests/price_implementations.c -o price_implementations.o
-c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -Ikernels \
    tests/test_pricing_cpp.cpp price_implementations.o -lm -o pricing_cpp
 ./pricing_cpp
 sh tests/run_pricing_tests.sh

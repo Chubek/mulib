@@ -19,7 +19,7 @@ Ordering takes O(V²+VE) time and O(V) scratch; storage O(E).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-importgraph.h`](../include/mulib-importgraph.h) |
+| Header | [`kernels/mulib-importgraph.h`](../kernels/mulib-importgraph.h) |
 | Implementation switch | `MULIB_IMPL_IMPORTGRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/importgraph.c`](../examples/modules/importgraph.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/importgraph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/importgraph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

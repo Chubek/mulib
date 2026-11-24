@@ -26,7 +26,7 @@ Tests: `tests/test_protocol_extensions.c`, including every incomplete prefix.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-v2rayproto.h`](../include/mulib-v2rayproto.h).
+Verbatim declaration section from [`kernels/mulib-v2rayproto.h`](../kernels/mulib-v2rayproto.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -77,7 +77,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-v2rayproto.h`](../include/mulib-v2rayproto.h) |
+| Header | [`kernels/mulib-v2rayproto.h`](../kernels/mulib-v2rayproto.h) |
 | Implementation switch | `MULIB_IMPL_V2RAYPROTO` |
 | Repository-local includes | [mulib-socks5](mulib-socks5.md) |
 | Complete example | [`examples/modules/v2rayproto.c`](../examples/modules/v2rayproto.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/v2rayproto.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/v2rayproto.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

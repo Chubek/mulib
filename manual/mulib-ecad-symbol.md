@@ -1,7 +1,7 @@
 # mulib-ecad-symbol
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-ecad-symbol.h`  
+**Header:** `kernels/mulib-ecad-symbol.h`  
 **Implementation switch:** `MULIB_IMPL_ECAD_SYMBOL`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ECAD_SYMBOL` defined before
 `tests/test_ecad_symbol.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_ecad_symbol.c -lm -o /tmp/test_ecad_symbol
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_ecad_symbol.c -lm -o /tmp/test_ecad_symbol
 /tmp/test_ecad_symbol
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ecad-symbol.h`](../include/mulib-ecad-symbol.h).
+Verbatim declaration section from [`kernels/mulib-ecad-symbol.h`](../kernels/mulib-ecad-symbol.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -97,7 +97,7 @@ int mulib_ecad_symbol_pin(mulib_ecad_symbol_t *s, const char *name, int x, int y
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ecad-symbol.h`](../include/mulib-ecad-symbol.h) |
+| Header | [`kernels/mulib-ecad-symbol.h`](../kernels/mulib-ecad-symbol.h) |
 | Implementation switch | `MULIB_IMPL_ECAD_SYMBOL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ecad-symbol.c`](../examples/modules/ecad-symbol.c) |
@@ -110,6 +110,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ecad-symbol.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ecad-symbol.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

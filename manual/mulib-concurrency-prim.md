@@ -93,7 +93,7 @@ See [`examples/modules/concurrency-prim.c`](../examples/modules/concurrency-prim
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-concurrency-prim.h`](../include/mulib-concurrency-prim.h) |
+| Header | [`kernels/mulib-concurrency-prim.h`](../kernels/mulib-concurrency-prim.h) |
 | Implementation switch | `MULIB_IMPL_CONCURRENCY_PRIM` |
 | Repository-local includes | [mulib-fiber](mulib-fiber.md) |
 | Complete example | [`examples/modules/concurrency-prim.c`](../examples/modules/concurrency-prim.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/concurrency-prim.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/concurrency-prim.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

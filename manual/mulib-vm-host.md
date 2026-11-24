@@ -20,7 +20,7 @@ Zero-initialize and `free`; registration amortized O(1), dispatch O(1).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vm-host.h`](../include/mulib-vm-host.h) |
+| Header | [`kernels/mulib-vm-host.h`](../kernels/mulib-vm-host.h) |
 | Implementation switch | `MULIB_IMPL_VM_HOST` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vm-host.c`](../examples/modules/vm-host.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vm-host.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vm-host.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,4 +1,4 @@
-/* cc -std=c11 -Iinclude examples/calculator.c -lm -o calculator
+/* cc -std=c11 -Ikernels examples/calculator.c -lm -o calculator
  * ./calculator 'let subtotal = 7 * 6; subtotal / 2'
  * This demonstrates the numeric subset of the MiniVM-backed MicroJS engine.
  */

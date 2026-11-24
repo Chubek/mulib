@@ -1,7 +1,7 @@
 # mulib-eda-constraints
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-constraints.h`  
+**Header:** `kernels/mulib-eda-constraints.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_CONSTRAINTS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_CONSTRAINTS` defined be
 `tests/test_eda_constraints.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_constraints.c -lm -o /tmp/test_eda_constraints
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_constraints.c -lm -o /tmp/test_eda_constraints
 /tmp/test_eda_constraints
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-constraints.h`](../include/mulib-eda-constraints.h).
+Verbatim declaration section from [`kernels/mulib-eda-constraints.h`](../kernels/mulib-eda-constraints.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ int mulib_eda_constraint_check(mulib_eda_constraint_t c, double *violation);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-constraints.h`](../include/mulib-eda-constraints.h) |
+| Header | [`kernels/mulib-eda-constraints.h`](../kernels/mulib-eda-constraints.h) |
 | Implementation switch | `MULIB_IMPL_EDA_CONSTRAINTS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/eda-constraints.c`](../examples/modules/eda-constraints.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-constraints.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-constraints.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

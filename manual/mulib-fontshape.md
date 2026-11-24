@@ -115,7 +115,7 @@ backend; a non-NULL runtime-library path is rejected. This standalone build need
 neither HarfBuzz nor libdl:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/fontshape-native.c -o native-font
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/fontshape-native.c -o native-font
 ./native-font /path/to/static-font.ttf
 ```
 
@@ -176,9 +176,9 @@ or HarfBuzz are unavailable; it is not a complex-script conformance suite.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fontshape.h`](../include/mulib-fontshape.h) |
+| Header | [`kernels/mulib-fontshape.h`](../kernels/mulib-fontshape.h) |
 | Implementation switch | `MULIB_IMPL_FONTSHAPE` |
-| Repository-local includes | [`include/detail/mulib-fontshape-native.h`](../include/detail/mulib-fontshape-native.h), [mulib-dynload](mulib-dynload.md), [mulib-fontcmap](mulib-fontcmap.md), [mulib-fontgdef](mulib-fontgdef.md), [mulib-fontgpos](mulib-fontgpos.md), [mulib-fontgsub](mulib-fontgsub.md), [mulib-fontkern](mulib-fontkern.md), [mulib-fontmetrics](mulib-fontmetrics.md), [mulib-sfnt](mulib-sfnt.md), [mulib-utf8](mulib-utf8.md) |
+| Repository-local includes | [`kernels/detail/mulib-fontshape-native.h`](../kernels/detail/mulib-fontshape-native.h), [mulib-dynload](mulib-dynload.md), [mulib-fontcmap](mulib-fontcmap.md), [mulib-fontgdef](mulib-fontgdef.md), [mulib-fontgpos](mulib-fontgpos.md), [mulib-fontgsub](mulib-fontgsub.md), [mulib-fontkern](mulib-fontkern.md), [mulib-fontmetrics](mulib-fontmetrics.md), [mulib-sfnt](mulib-sfnt.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/fontshape.c`](../examples/modules/fontshape.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -189,6 +189,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fontshape.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fontshape.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

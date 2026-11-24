@@ -24,7 +24,7 @@ Capacities describe live backing storage supplied by the caller, not merely nume
 
 ## Current callable surface
 
-Signatures extracted from this header; dependency types and complete checks are in [the source](../include/mulib-anim-driver.h). Helpers listed here are not automatically safe foreign imports.
+Signatures extracted from this header; dependency types and complete checks are in [the source](../kernels/mulib-anim-driver.h). Helpers listed here are not automatically safe foreign imports.
 
 ```c
 static inline bool mulib_anim_driver_eval(const size_t *offset,size_t offset_count,const size_t *deps,size_t dep_count,size_t n,double *values,double *scratch,size_t cap,mulib_anim_driver_fn fn,void *ctx);
@@ -51,7 +51,7 @@ The runner checks the 193 original kernels plus the shared PCM helper, isolated 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-anim-driver.h`](../include/mulib-anim-driver.h) |
+| Header | [`kernels/mulib-anim-driver.h`](../kernels/mulib-anim-driver.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | [mulib-mesh-core](mulib-mesh-core.md) |
 | Complete example | [`examples/media-pipeline.c`](../examples/media-pipeline.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

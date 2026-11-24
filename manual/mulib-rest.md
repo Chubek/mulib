@@ -27,7 +27,7 @@ Compile the offline standalone [example](../examples/modules/rest.c) from
 the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/rest.c -pthread -lm -ldl -o rest
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/rest.c -pthread -lm -ldl -o rest
 ./rest
 ```
 
@@ -77,7 +77,7 @@ this helper need not be a valid MuW3 endpoint.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rest.h`](../include/mulib-rest.h) |
+| Header | [`kernels/mulib-rest.h`](../kernels/mulib-rest.h) |
 | Implementation switch | `MULIB_IMPL_CDD_REST` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-muw3](mulib-muw3.md), [mulib-uri](mulib-uri.md) |
 | Complete example | [`examples/modules/rest.c`](../examples/modules/rest.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rest.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rest.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

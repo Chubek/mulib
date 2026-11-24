@@ -35,7 +35,7 @@ See `../tests/test_netlink-attr.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netlink-attr.h`](../include/mulib-netlink-attr.h) |
+| Header | [`kernels/mulib-netlink-attr.h`](../kernels/mulib-netlink-attr.h) |
 | Implementation switch | `MULIB_IMPL_NETLINK_ATTR` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/netlink-attr.c`](../examples/modules/netlink-attr.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netlink-attr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netlink-attr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

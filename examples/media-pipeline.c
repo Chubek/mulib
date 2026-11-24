@@ -1,6 +1,6 @@
 /*
  * Synthetic CPU image pipeline: no video decoder, GUI, GPU or On1x binding.
- * cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+ * cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
  *    examples/media-pipeline.c -lm -o /tmp/opencode/media-pipeline
  */
 #include "mulib-media-timebase.h"

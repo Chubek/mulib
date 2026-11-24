@@ -16,7 +16,7 @@ natural numeric sorting; UTF-8 bytes are not decoded.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-lexographic_sort.h`](../include/mulib-lexographic_sort.h).
+Verbatim declaration section from [`kernels/mulib-lexographic_sort.h`](../kernels/mulib-lexographic_sort.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ int mulib_lexographic_sort(const char **strings, size_t n, int fold_ascii);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lexographic_sort.h`](../include/mulib-lexographic_sort.h) |
+| Header | [`kernels/mulib-lexographic_sort.h`](../kernels/mulib-lexographic_sort.h) |
 | Implementation switch | `MULIB_IMPL_LEXOGRAPHIC_SORT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lexographic_sort.c`](../examples/modules/lexographic_sort.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lexographic_sort.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lexographic_sort.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

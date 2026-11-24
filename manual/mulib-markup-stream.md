@@ -22,7 +22,7 @@ implementation switches.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-markup-stream.h`](../include/mulib-markup-stream.h) |
+| Header | [`kernels/mulib-markup-stream.h`](../kernels/mulib-markup-stream.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MARKUP_STREAM` |
 | Repository-local includes | [mulib-markup-tree](mulib-markup-tree.md) |
 | Complete example | [`examples/markup-ir.c`](../examples/markup-ir.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/markup-ir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/markup-ir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

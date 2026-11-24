@@ -31,7 +31,7 @@ See `../tests/test_nm-connection.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nm-connection.h`](../include/mulib-nm-connection.h) |
+| Header | [`kernels/mulib-nm-connection.h`](../kernels/mulib-nm-connection.h) |
 | Implementation switch | `MULIB_IMPL_NM_CONNECTION` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/nm-connection.c`](../examples/modules/nm-connection.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nm-connection.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nm-connection.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ def main():
         parser.add_argument('--' + arg, required=True, type=Path)
     args = parser.parse_args()
     fixture = ON1X / 'tests/fixtures/ffi_rv64'
-    include = ON1X.parent / 'include'
+    include = ON1X.parent / 'kernels'
 
     args.work.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='ffi-rv64-', dir=args.work) as tmp:

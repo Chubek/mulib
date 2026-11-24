@@ -31,7 +31,7 @@ See `../tests/test_bpf-kernel.c` for its compile/link verification. Selected run
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bpf-kernel.h`](../include/mulib-bpf-kernel.h) |
+| Header | [`kernels/mulib-bpf-kernel.h`](../kernels/mulib-bpf-kernel.h) |
 | Implementation switch | `MULIB_IMPL_BPF_KERNEL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bpf-kernel.c`](../examples/modules/bpf-kernel.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bpf-kernel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bpf-kernel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

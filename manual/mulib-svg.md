@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-svg.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-svg.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
 
@@ -87,7 +87,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/svg.c -o ./mulib-svg
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/svg.c -o ./mulib-svg
 ./mulib-svg
 ```
 
@@ -101,7 +101,7 @@ and negative geometry rejection, and cleanup on allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-svg.h`](../include/mulib-svg.h) |
+| Header | [`kernels/mulib-svg.h`](../kernels/mulib-svg.h) |
 | Implementation switch | `MULIB_IMPL_SVG` |
 | Repository-local includes | [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/svg.c`](../examples/modules/svg.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/svg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/svg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

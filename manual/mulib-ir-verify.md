@@ -20,7 +20,7 @@ O(instructions + registers) time and O(registers) temporary storage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ir-verify.h`](../include/mulib-ir-verify.h) |
+| Header | [`kernels/mulib-ir-verify.h`](../kernels/mulib-ir-verify.h) |
 | Implementation switch | `MULIB_IMPL_IR_VERIFY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ir-verify.c`](../examples/modules/ir-verify.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ir-verify.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ir-verify.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

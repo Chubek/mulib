@@ -32,7 +32,7 @@ See `../tests/test_ustack-tuntap.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ustack-tuntap.h`](../include/mulib-ustack-tuntap.h) |
+| Header | [`kernels/mulib-ustack-tuntap.h`](../kernels/mulib-ustack-tuntap.h) |
 | Implementation switch | `MULIB_IMPL_USTACK_TUNTAP` |
 | Repository-local includes | [mulib-ustack](mulib-ustack.md) |
 | Complete example | [`examples/modules/ustack-tuntap.c`](../examples/modules/ustack-tuntap.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ustack-tuntap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ustack-tuntap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -18,7 +18,7 @@ program is owned by the caller.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript-library.h`](../include/mulib-termscript-library.h) |
+| Header | [`kernels/mulib-termscript-library.h`](../kernels/mulib-termscript-library.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_LIBRARY` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md), [mulib-termscript-ast](mulib-termscript-ast.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
@@ -31,6 +31,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

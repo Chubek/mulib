@@ -19,7 +19,7 @@ stemmer. Rules never recurse, avoiding rewrite loops.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-orthographic_rules.h`](../include/mulib-orthographic_rules.h).
+Verbatim declaration section from [`kernels/mulib-orthographic_rules.h`](../kernels/mulib-orthographic_rules.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -61,7 +61,7 @@ char *mulib_orthographic_apply(const char *word, const mulib_orthographic_rule_t
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-orthographic_rules.h`](../include/mulib-orthographic_rules.h) |
+| Header | [`kernels/mulib-orthographic_rules.h`](../kernels/mulib-orthographic_rules.h) |
 | Implementation switch | `MULIB_IMPL_ORTHOGRAPHIC_RULES` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/orthographic_rules.c`](../examples/modules/orthographic_rules.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/orthographic_rules.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/orthographic_rules.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

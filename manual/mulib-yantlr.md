@@ -160,7 +160,7 @@ evaluation, checking cleanup of partial values, opaque owners and artifacts.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-yantlr.h`](../include/mulib-yantlr.h) |
+| Header | [`kernels/mulib-yantlr.h`](../kernels/mulib-yantlr.h) |
 | Implementation switch | `MULIB_IMPL_YANTLR` |
 | Repository-local includes | [mulib-arena](mulib-arena.md), [mulib-json](mulib-json.md), [mulib-parsec](mulib-parsec.md), [mulib-peg](mulib-peg.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/yantlr.c`](../examples/modules/yantlr.c) |
@@ -173,6 +173,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/yantlr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/yantlr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

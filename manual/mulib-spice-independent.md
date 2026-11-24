@@ -1,7 +1,7 @@
 # mulib-spice-independent
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-independent.h`  
+**Header:** `kernels/mulib-spice-independent.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_INDEPENDENT`  
 **Dependencies:** `spice-stamp`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_INDEPENDENT` defined 
 `tests/test_spice_independent.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_independent.c -lm -o /tmp/test_spice_independent
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_independent.c -lm -o /tmp/test_spice_independent
 /tmp/test_spice_independent
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-independent.h`](../include/mulib-spice-independent.h).
+Verbatim declaration section from [`kernels/mulib-spice-independent.h`](../kernels/mulib-spice-independent.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_spice_independent_voltage(mulib_spice_stamp_t *s, uint16_t a, uint16_t
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-independent.h`](../include/mulib-spice-independent.h) |
+| Header | [`kernels/mulib-spice-independent.h`](../kernels/mulib-spice-independent.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_INDEPENDENT` |
 | Repository-local includes | [mulib-spice-stamp](mulib-spice-stamp.md) |
 | Complete example | [`examples/modules/spice-independent.c`](../examples/modules/spice-independent.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-independent.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-independent.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -33,7 +33,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fraction.h`](../include/mulib-fraction.h).
+Verbatim declaration section from [`kernels/mulib-fraction.h`](../kernels/mulib-fraction.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -107,7 +107,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fraction.h`](../include/mulib-fraction.h) |
+| Header | [`kernels/mulib-fraction.h`](../kernels/mulib-fraction.h) |
 | Implementation switch | `MULIB_IMPL_FRACTION` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/fraction.c`](../examples/modules/fraction.c) |
@@ -120,6 +120,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fraction.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fraction.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

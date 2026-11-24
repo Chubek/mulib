@@ -149,7 +149,7 @@ void *no_scratch_malloc(size_t bytes) { (void)bytes; return NULL; }
                 assert re.search(r"on1x_kernel_ipc_v1_open_(?:session|pair)\(&on1x_v\d+_ipc_out\)", text)
                 assert re.search(r"on1x_unique \*on1x_v\d+_ipc_out = NULL;", text)
                 assert ("size_t bytes; }" in text) == (stack_bytes == 0)
-                options = ("-D_GNU_SOURCE", "-DON1X_KERNEL_ABI_V1=1", "-I", root.parent / "include")
+                options = ("-D_GNU_SOURCE", "-DON1X_KERNEL_ABI_V1=1", "-I", root.parent / "kernels")
                 p = native(c, impl, runtime / "on1x_kernel_ipc.c", flags=options)
                 assert p.stdout == trace and not p.stderr, p
     else:

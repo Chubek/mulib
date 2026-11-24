@@ -37,7 +37,7 @@ policy; real cryptography must come from the backend.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-shadowsocks.h`](../include/mulib-shadowsocks.h) |
+| Header | [`kernels/mulib-shadowsocks.h`](../kernels/mulib-shadowsocks.h) |
 | Implementation switch | `MULIB_IMPL_SHADOWSOCKS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/shadowsocks.c`](../examples/modules/shadowsocks.c) |
@@ -50,6 +50,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/shadowsocks.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/shadowsocks.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

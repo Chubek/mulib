@@ -1,7 +1,7 @@
 # mulib-hwil-verify
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-hwil-verify.h`  
+**Header:** `kernels/mulib-hwil-verify.h`  
 **Implementation switch:** `MULIB_IMPL_HWIL_VERIFY`  
 **Dependencies:** `hwil-module`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_HWIL_VERIFY` defined before
 `tests/test_hwil_verify.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_hwil_verify.c -lm -o /tmp/test_hwil_verify
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_hwil_verify.c -lm -o /tmp/test_hwil_verify
 /tmp/test_hwil_verify
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hwil-verify.h`](../include/mulib-hwil-verify.h).
+Verbatim declaration section from [`kernels/mulib-hwil-verify.h`](../kernels/mulib-hwil-verify.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_hwil_module_verify(const mulib_hwil_module_t *m, size_t *invalid_node)
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hwil-verify.h`](../include/mulib-hwil-verify.h) |
+| Header | [`kernels/mulib-hwil-verify.h`](../kernels/mulib-hwil-verify.h) |
 | Implementation switch | `MULIB_IMPL_HWIL_VERIFY` |
 | Repository-local includes | [mulib-hwil-module](mulib-hwil-module.md) |
 | Complete example | [`examples/modules/hwil-verify.c`](../examples/modules/hwil-verify.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hwil-verify.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hwil-verify.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

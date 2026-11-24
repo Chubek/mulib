@@ -38,7 +38,7 @@ Implement `MULIB_IMPL_EVTLISTENER` explicitly when using these APIs.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-evtstream.h`](../include/mulib-evtstream.h).
+Verbatim declaration section from [`kernels/mulib-evtstream.h`](../kernels/mulib-evtstream.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ int mulib_evtstream_next_bounded(mulib_evtstream_t *stream,mulib_event_t *event,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-evtstream.h`](../include/mulib-evtstream.h) |
+| Header | [`kernels/mulib-evtstream.h`](../kernels/mulib-evtstream.h) |
 | Implementation switch | `MULIB_IMPL_EVTSTREAM` |
 | Repository-local includes | [mulib-ast](mulib-ast.md) |
 | Complete example | [`examples/modules/evtstream.c`](../examples/modules/evtstream.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/evtstream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/evtstream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,7 +1,7 @@
 # mulib-eda-transaction
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-transaction.h`  
+**Header:** `kernels/mulib-eda-transaction.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_TRANSACTION`  
 **Dependencies:** `eda-design-db`.
 
@@ -90,7 +90,7 @@ fixture exercises rollback and commit against a C11 implementation object. The
 standalone example demonstrates grouped scalar edits and retained conflict data.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_transaction.c -lm -o /tmp/test_eda_transaction
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_transaction.c -lm -o /tmp/test_eda_transaction
 /tmp/test_eda_transaction
 ```
 
@@ -101,7 +101,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-transaction.h`](../include/mulib-eda-transaction.h).
+Verbatim declaration section from [`kernels/mulib-eda-transaction.h`](../kernels/mulib-eda-transaction.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -167,7 +167,7 @@ void mulib_eda_transaction_rollback(mulib_eda_transaction_t *t);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-transaction.h`](../include/mulib-eda-transaction.h) |
+| Header | [`kernels/mulib-eda-transaction.h`](../kernels/mulib-eda-transaction.h) |
 | Implementation switch | `MULIB_IMPL_EDA_TRANSACTION` |
 | Repository-local includes | [mulib-eda-design-db](mulib-eda-design-db.md) |
 | Complete example | [`examples/modules/eda-transaction.c`](../examples/modules/eda-transaction.c) |
@@ -180,6 +180,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-transaction.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-transaction.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

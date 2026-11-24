@@ -31,7 +31,7 @@ selects the vendor-appropriate leaf; sharing count is not an online CPU count.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hwinfo.h`](../include/mulib-hwinfo.h).
+Verbatim declaration section from [`kernels/mulib-hwinfo.h`](../kernels/mulib-hwinfo.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ int mulib_hwinfo_cache(mulib_hwinfo_query_t query, void *context, uint32_t leaf,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hwinfo.h`](../include/mulib-hwinfo.h) |
+| Header | [`kernels/mulib-hwinfo.h`](../kernels/mulib-hwinfo.h) |
 | Implementation switch | `MULIB_IMPL_HWINFO` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hwinfo.c`](../examples/modules/hwinfo.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hwinfo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hwinfo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

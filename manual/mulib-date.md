@@ -30,7 +30,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-date.h`](../include/mulib-date.h).
+Verbatim declaration section from [`kernels/mulib-date.h`](../kernels/mulib-date.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -98,7 +98,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-date.h`](../include/mulib-date.h) |
+| Header | [`kernels/mulib-date.h`](../kernels/mulib-date.h) |
 | Implementation switch | `MULIB_IMPL_DATE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/date.c`](../examples/modules/date.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/date.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/date.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

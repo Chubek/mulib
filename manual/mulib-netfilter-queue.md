@@ -31,7 +31,7 @@ See `../tests/test_netfilter-queue.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netfilter-queue.h`](../include/mulib-netfilter-queue.h) |
+| Header | [`kernels/mulib-netfilter-queue.h`](../kernels/mulib-netfilter-queue.h) |
 | Implementation switch | `MULIB_IMPL_NETFILTER_QUEUE` |
 | Repository-local includes | [mulib-netlink-attr](mulib-netlink-attr.md), [mulib-nfnetlink](mulib-nfnetlink.md) |
 | Complete example | [`examples/modules/netfilter-queue.c`](../examples/modules/netfilter-queue.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netfilter-queue.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netfilter-queue.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

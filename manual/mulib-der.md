@@ -1,6 +1,6 @@
 # der — bounded ASN.1 DER decoding
 
-**Header:** `include/mulib-der.h` · **Switch:** `MULIB_IMPL_DER`
+**Header:** `kernels/mulib-der.h` · **Switch:** `MULIB_IMPL_DER`
 
 No allocation or module dependencies. A `mulib_der_cursor_t` borrows input and
 tracks an offset. `mulib_der_next` returns 1 for a complete TLV, 0 at exact end,
@@ -34,7 +34,7 @@ INTEGER 42. `tests/test-tls-crypto.c` includes malformed-length/integer vectors;
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-der.h`](../include/mulib-der.h) |
+| Header | [`kernels/mulib-der.h`](../kernels/mulib-der.h) |
 | Implementation switch | `MULIB_IMPL_DER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/der.c`](../examples/modules/der.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/der.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/der.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -94,7 +94,7 @@ why its separate explicit callback bound is mandatory.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/muburg.c -o /tmp/muburg
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/muburg.c -o /tmp/muburg
 /tmp/muburg
 ```
 
@@ -112,7 +112,7 @@ MIR lowered through CMACHINE.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-muburg.h`](../include/mulib-muburg.h) |
+| Header | [`kernels/mulib-muburg.h`](../kernels/mulib-muburg.h) |
 | Implementation switch | `MULIB_IMPL_MUBURG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/muburg.c`](../examples/modules/muburg.c) |
@@ -125,6 +125,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/muburg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/muburg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

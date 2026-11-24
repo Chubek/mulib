@@ -59,7 +59,7 @@ executable-address conversion. No conversion is performed by dyncall itself.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/dyncall.c -o /tmp/opencode/mulib-dyncall
 /tmp/opencode/mulib-dyncall
 ```
@@ -74,7 +74,7 @@ any incompatible function-pointer casts.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dyncall.h`](../include/mulib-dyncall.h) |
+| Header | [`kernels/mulib-dyncall.h`](../kernels/mulib-dyncall.h) |
 | Implementation switch | `MULIB_IMPL_DYNCALL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dyncall.c`](../examples/modules/dyncall.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dyncall.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dyncall.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

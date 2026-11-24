@@ -34,7 +34,7 @@ See `../tests/test_rtnl.c` for its compile/link verification. Selected runnable 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rtnl.h`](../include/mulib-rtnl.h) |
+| Header | [`kernels/mulib-rtnl.h`](../kernels/mulib-rtnl.h) |
 | Implementation switch | `MULIB_IMPL_RTNL` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/rtnl.c`](../examples/modules/rtnl.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rtnl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rtnl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

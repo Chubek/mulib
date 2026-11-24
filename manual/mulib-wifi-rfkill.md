@@ -33,7 +33,7 @@ See `../tests/test_wifi-rfkill.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-rfkill.h`](../include/mulib-wifi-rfkill.h) |
+| Header | [`kernels/mulib-wifi-rfkill.h`](../kernels/mulib-wifi-rfkill.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_RFKILL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/wifi-rfkill.c`](../examples/modules/wifi-rfkill.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-rfkill.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-rfkill.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

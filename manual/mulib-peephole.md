@@ -43,7 +43,7 @@ SMT prover or a whole-program validator.
 arithmetic evaluator, including random words and each rule's boundary literals.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/peephole.c -lm -o peephole
+cc -std=c11 -Ikernels examples/modules/peephole.c -lm -o peephole
 ./peephole
 ```
 
@@ -54,7 +54,7 @@ cc -std=c11 -Iinclude examples/modules/peephole.c -lm -o peephole
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-peephole.h`](../include/mulib-peephole.h) |
+| Header | [`kernels/mulib-peephole.h`](../kernels/mulib-peephole.h) |
 | Implementation switch | `MULIB_IMPL_PEEPHOLE` |
 | Repository-local includes | [mulib-lowopt](mulib-lowopt.md) |
 | Complete example | [`examples/modules/peephole.c`](../examples/modules/peephole.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/peephole.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/peephole.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

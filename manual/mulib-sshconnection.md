@@ -24,7 +24,7 @@ Use direct transport APIs when the application must initiate key rotation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshconnection.h`](../include/mulib-sshconnection.h) |
+| Header | [`kernels/mulib-sshconnection.h`](../kernels/mulib-sshconnection.h) |
 | Implementation switch | `MULIB_IMPL_SSHCONNECTION` |
 | Repository-local includes | [mulib-sshchannel](mulib-sshchannel.md), [mulib-sshserver](mulib-sshserver.md) |
 | Complete example | [`examples/ssh/connection.c`](../examples/ssh/connection.c) |
@@ -37,6 +37,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/connection.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/connection.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

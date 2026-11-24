@@ -29,7 +29,7 @@ requires an appropriately configured Linux environment.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tuntap.h`](../include/mulib-tuntap.h).
+Verbatim declaration section from [`kernels/mulib-tuntap.h`](../kernels/mulib-tuntap.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -82,7 +82,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tuntap.h`](../include/mulib-tuntap.h) |
+| Header | [`kernels/mulib-tuntap.h`](../kernels/mulib-tuntap.h) |
 | Implementation switch | `MULIB_IMPL_TUNTAP` |
 | Repository-local includes | [mulib-abstun](mulib-abstun.md), [mulib-filectl](mulib-filectl.md) |
 | Complete example | [`examples/modules/tuntap.c`](../examples/modules/tuntap.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tuntap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tuntap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

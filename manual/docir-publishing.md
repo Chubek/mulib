@@ -7,7 +7,7 @@ page-placement solver, CSL processor, or standards-certification claim.
 ## Build and verify
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/docir-publication.c -lm -o docir-publication
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/docir-publication.c -lm -o docir-publication
 ./docir-publication
 make docir-formats
 ```

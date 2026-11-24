@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-webidl.h` parses a UTF-8 WebIDL source span and compiles it to:
+`kernels/mulib-webidl.h` parses a UTF-8 WebIDL source span and compiles it to:
 
 * **S-expression AST** (default): semantic definitions, members, types and arguments.
 * **S-expression CST**: a lossless concrete token tree, retaining punctuation,
@@ -42,7 +42,7 @@ file into a buffer, then pass its bytes. The
 [runnable example](../examples/modules/webidl.c) also acts as a small file compiler:
 
 ```sh
-cc -std=c99 -Iinclude examples/modules/webidl.c -o webidl
+cc -std=c99 -Ikernels examples/modules/webidl.c -o webidl
 ./webidl --ast input.idl
 ./webidl --cst input.idl
 ./webidl --yaml input.idl
@@ -249,7 +249,7 @@ behavior is implemented separately by [mulib-dom](mulib-dom.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webidl.h`](../include/mulib-webidl.h) |
+| Header | [`kernels/mulib-webidl.h`](../kernels/mulib-webidl.h) |
 | Implementation switch | `MULIB_IMPL_WEBIDL` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-dbschema](mulib-dbschema.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/webidl.c`](../examples/modules/webidl.c) |
@@ -262,6 +262,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webidl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webidl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

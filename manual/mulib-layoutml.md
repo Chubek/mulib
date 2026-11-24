@@ -22,7 +22,7 @@ Switches: `MULIB_IMPL_LAYOUTML`, `MULIB_IMPL_LAYOUT`, `MULIB_IMPL_XML`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-layoutml.h`](../include/mulib-layoutml.h).
+Verbatim declaration section from [`kernels/mulib-layoutml.h`](../kernels/mulib-layoutml.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -66,7 +66,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-layoutml.h`](../include/mulib-layoutml.h) |
+| Header | [`kernels/mulib-layoutml.h`](../kernels/mulib-layoutml.h) |
 | Implementation switch | `MULIB_IMPL_LAYOUTML` |
 | Repository-local includes | [mulib-layout](mulib-layout.md), [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/layoutml.c`](../examples/modules/layoutml.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/layoutml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/layoutml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

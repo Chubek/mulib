@@ -1,6 +1,6 @@
 /* EXAMPLE ONLY. Requires trusted approval by a separate host before invocation.
  * Build from package root:
- * cc -std=c11 -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -Iinclude \
+ * cc -std=c11 -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L -Ikernels \
  *   examples/apply_unidiff.c -o /tmp/apply-unidiff
  * Usage: /tmp/apply-unidiff WORKSPACE_DIR DIFF_FILE
  */

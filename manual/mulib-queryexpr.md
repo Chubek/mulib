@@ -14,7 +14,7 @@ other types O(1). NULL is not equal to NULL under this predicate convention.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-queryexpr.h`](../include/mulib-queryexpr.h).
+Verbatim declaration section from [`kernels/mulib-queryexpr.h`](../kernels/mulib-queryexpr.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -50,7 +50,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-queryexpr.h`](../include/mulib-queryexpr.h) |
+| Header | [`kernels/mulib-queryexpr.h`](../kernels/mulib-queryexpr.h) |
 | Implementation switch | `MULIB_IMPL_QUERYEXPR` |
 | Repository-local includes | [mulib-datum](mulib-datum.md) |
 | Complete example | [`examples/modules/queryexpr.c`](../examples/modules/queryexpr.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/queryexpr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/queryexpr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

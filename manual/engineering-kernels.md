@@ -12,7 +12,7 @@ source comments for capacities, ownership, units, and deliberate restrictions.
 
 Reusable types and helpers are separated into storage, numerical, graph,
 2D-geometry, hardware, and domain-specific substrates. The
-[`mulib-kernel-substrates.h`](../include/mulib-kernel-substrates.h) aggregate
+[`mulib-kernel-substrates.h`](../kernels/mulib-kernel-substrates.h) aggregate
 includes these static-inline facilities; it does not automatically adapt
 the older EDA/HWIL/SPICE representations.
 
@@ -21,8 +21,8 @@ and their dependency closure in one C11 translation unit before inclusion.
 Other consumers include declarations only. Link with `-lm` where required.
 Registration describes code present, not complete standards conformance.
 
-Do not combine the new [`dsim-resolve`](../include/mulib-dsim-resolve.h)
-implementation with legacy [`dsim-logic4`](../include/mulib-dsim-logic4.h):
+Do not combine the new [`dsim-resolve`](../kernels/mulib-dsim-resolve.h)
+implementation with legacy [`dsim-logic4`](../kernels/mulib-dsim-logic4.h):
 both export `mulib_dsim_resolve` with incompatible signatures. The checker
 builds these profiles separately.
 

@@ -29,7 +29,7 @@ liblzma, including random bytes and overlapping x86 branch-like patterns.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bcj.h`](../include/mulib-bcj.h) |
+| Header | [`kernels/mulib-bcj.h`](../kernels/mulib-bcj.h) |
 | Implementation switch | `MULIB_IMPL_BCJ` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bcj.c`](../examples/modules/bcj.c) |
@@ -42,6 +42,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bcj.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bcj.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

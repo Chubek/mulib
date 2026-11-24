@@ -82,7 +82,7 @@ required or automatically loaded. See AES manual for audit limitations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mumq.h`](../include/mulib-mumq.h) |
+| Header | [`kernels/mulib-mumq.h`](../kernels/mulib-mumq.h) |
 | Implementation switch | `MULIB_IMPL_MUMQ` |
 | Repository-local includes | [mulib-aes](mulib-aes.md), [mulib-socket](mulib-socket.md) |
 | Complete example | [`examples/modules/mumq.c`](../examples/modules/mumq.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mumq.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

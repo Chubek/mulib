@@ -17,7 +17,7 @@ Switches: `MULIB_IMPL_IMGTRACKERD`, `MULIB_IMPL_MEMTABLE`, `MULIB_IMPL_BYCUTILS`
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-imgtrackerd.h`](../include/mulib-imgtrackerd.h).
+Verbatim declaration section from [`kernels/mulib-imgtrackerd.h`](../kernels/mulib-imgtrackerd.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -47,7 +47,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imgtrackerd.h`](../include/mulib-imgtrackerd.h) |
+| Header | [`kernels/mulib-imgtrackerd.h`](../kernels/mulib-imgtrackerd.h) |
 | Implementation switch | `MULIB_IMPL_IMGTRACKERD` |
 | Repository-local includes | [`.deprecated/mulib-imgtrackerd.h`](../.deprecated/mulib-imgtrackerd.h), [mulib-bycutils](mulib-bycutils.md), [mulib-memtable](mulib-memtable.md), [mulib-ociimage](mulib-ociimage.md) |
 | Complete example | [`examples/modules/imgtrackerd.c`](../examples/modules/imgtrackerd.c) |
@@ -60,6 +60,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/imgtrackerd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/imgtrackerd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

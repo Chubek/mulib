@@ -25,7 +25,7 @@ ordered in-memory memtable; this API adds no persistence or query language.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-graphdb.h`](../include/mulib-graphdb.h).
+Verbatim declaration section from [`kernels/mulib-graphdb.h`](../kernels/mulib-graphdb.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -72,7 +72,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-graphdb.h`](../include/mulib-graphdb.h) |
+| Header | [`kernels/mulib-graphdb.h`](../kernels/mulib-graphdb.h) |
 | Implementation switch | `MULIB_IMPL_GRAPHDB` |
 | Repository-local includes | [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/graphdb.c`](../examples/modules/graphdb.c) |
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/graphdb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/graphdb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

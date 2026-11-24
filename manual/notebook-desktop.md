@@ -8,7 +8,7 @@ implementation of X11, Wayland, or Jupyter. The existing
 
 ## Build and validation
 
-Include the individual `mulib-*.h` headers from `include/`. The desktop headers
+Include the individual `mulib-*.h` headers from `kernels/`. The desktop headers
 are `static inline`; do not define a desktop-specific `MULIB_IMPL_*` switch.
 Legacy ABI dependencies of an application, such as the HMAC/JSON libraries,
 still need their own switches in one translation unit. Use `-D_GNU_SOURCE`
@@ -18,7 +18,7 @@ Direct C++ inclusion is not part of this profile.
 
 ```sh
 # A notebook model example, requiring no display or worker process:
-cc -std=c11 -D_GNU_SOURCE -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/notebook-desktop-headers/consumer.c -lm -ldl -o notebook-example
 ./notebook-example
 

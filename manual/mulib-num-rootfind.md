@@ -1,7 +1,7 @@
 # mulib-num-rootfind
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-num-rootfind.h`  
+**Header:** `kernels/mulib-num-rootfind.h`  
 **Implementation switch:** `MULIB_IMPL_NUM_ROOTFIND`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_NUM_ROOTFIND` defined befor
 `tests/test_num_rootfind.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_num_rootfind.c -lm -o /tmp/test_num_rootfind
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_num_rootfind.c -lm -o /tmp/test_num_rootfind
 /tmp/test_num_rootfind
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-num-rootfind.h`](../include/mulib-num-rootfind.h).
+Verbatim declaration section from [`kernels/mulib-num-rootfind.h`](../kernels/mulib-num-rootfind.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -84,7 +84,7 @@ int mulib_num_newton(mulib_num_scalar_fn f, mulib_num_scalar_fn deriv, void *use
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-num-rootfind.h`](../include/mulib-num-rootfind.h) |
+| Header | [`kernels/mulib-num-rootfind.h`](../kernels/mulib-num-rootfind.h) |
 | Implementation switch | `MULIB_IMPL_NUM_ROOTFIND` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/num-rootfind.c`](../examples/modules/num-rootfind.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/num-rootfind.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/num-rootfind.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

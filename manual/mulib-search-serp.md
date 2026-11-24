@@ -13,9 +13,9 @@ Define `MULIB_IMPL_SEARCH_SERP` in exactly one C11 translation unit. Use `#inclu
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-search-serp.c -o /tmp/test-search-serp
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-search-serp.c -o /tmp/test-search-serp
 /tmp/test-search-serp
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/search-serp.c -o /tmp/example-search-serp
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/search-serp.c -o /tmp/example-search-serp
 ```
 
 ## API
@@ -40,9 +40,9 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-search-serp.h`](../include/mulib-search-serp.h) |
+| Header | [`kernels/mulib-search-serp.h`](../kernels/mulib-search-serp.h) |
 | Implementation switch | `MULIB_IMPL_SEARCH_SERP` |
-| Repository-local includes | [`include/detail/mulib-webscan.h`](../include/detail/mulib-webscan.h) |
+| Repository-local includes | [`kernels/detail/mulib-webscan.h`](../kernels/detail/mulib-webscan.h) |
 | Complete example | [`examples/modules/search-serp.c`](../examples/modules/search-serp.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/search-serp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/search-serp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

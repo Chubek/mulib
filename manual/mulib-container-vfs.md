@@ -53,7 +53,7 @@ See [containerd-mount](mulib-containerd-mount.md) for export leases.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-vfs.h`](../include/mulib-container-vfs.h) |
+| Header | [`kernels/mulib-container-vfs.h`](../kernels/mulib-container-vfs.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_VFS` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/container-vfs.c`](../examples/modules/container-vfs.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-vfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-vfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

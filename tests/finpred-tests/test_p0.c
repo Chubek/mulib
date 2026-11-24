@@ -1,5 +1,5 @@
 /* Focused Contract, RateQuote, CompSet and PriceCurve regressions.
- * Build with the canonical include directory and -DMULIB_IMPL_MONEY. */
+ * Build with the canonical kernels/ directory and -DMULIB_IMPL_MONEY. */
 #define MULIB_IMPL_SHA
 #define MULIB_IMPL_CONTRACT
 #define MULIB_IMPL_RATEQUOTE

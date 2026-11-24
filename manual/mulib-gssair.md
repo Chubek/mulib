@@ -97,7 +97,7 @@ CALL arguments become native register-ID slices and symbols are copied.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/gssair.c -lm -o gssair
+cc -std=c11 -Ikernels examples/modules/gssair.c -lm -o gssair
 ./gssair
 ```
 
@@ -113,7 +113,7 @@ limits. Allocation-failure coverage is in `tests/test_microcc_alloc.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gssair.h`](../include/mulib-gssair.h) |
+| Header | [`kernels/mulib-gssair.h`](../kernels/mulib-gssair.h) |
 | Implementation switch | `MULIB_IMPL_GSSAIR` |
 | Repository-local includes | [mulib-mir](mulib-mir.md) |
 | Complete example | [`examples/modules/gssair.c`](../examples/modules/gssair.c) |
@@ -126,6 +126,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gssair.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gssair.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

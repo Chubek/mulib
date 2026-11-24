@@ -14,7 +14,7 @@ See [FinPRED verification and limits](finpred.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pricecurve.h`](../include/mulib-pricecurve.h) |
+| Header | [`kernels/mulib-pricecurve.h`](../kernels/mulib-pricecurve.h) |
 | Implementation switch | `MULIB_IMPL_PRICECURVE` |
 | Repository-local includes | None |
 | Complete example | [`examples/hospitality_demo.c`](../examples/hospitality_demo.c) |
@@ -27,6 +27,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

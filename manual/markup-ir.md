@@ -2,7 +2,7 @@
 
 ## Intent and module map
 
-These are **five ISO C11 single-header modules** under `include/`, designed
+These are **five ISO C11 single-header modules** under `kernels/`, designed
 as an additive counterpart to MuLIB's `mulib-docir.h`, `mulib-dom.h`,
 `mulib-syntax-tree.h`, `mulib-sexpr.h`, `mulib-graph.h`, and `mulib-evtstream.h`.
 The supplied `mulib_mkir_` API remains available; new entry points use
@@ -25,11 +25,11 @@ The supplied `mulib_mkir_` API remains available; new entry points use
 Modules and implementation switches:
 
 ```
-include/mulib-markup-tree.h      MULIB_IMPL_CDD_MARKUP_TREE
-include/mulib-markup-stream.h    MULIB_IMPL_CDD_MARKUP_STREAM
-include/mulib-markup-spans.h     MULIB_IMPL_CDD_MARKUP_SPANS
-include/mulib-markup-graph.h     MULIB_IMPL_CDD_MARKUP_GRAPH
-include/mulib-markup-bridge.h    MULIB_IMPL_CDD_MARKUP_BRIDGE
+kernels/mulib-markup-tree.h      MULIB_IMPL_CDD_MARKUP_TREE
+kernels/mulib-markup-stream.h    MULIB_IMPL_CDD_MARKUP_STREAM
+kernels/mulib-markup-spans.h     MULIB_IMPL_CDD_MARKUP_SPANS
+kernels/mulib-markup-graph.h     MULIB_IMPL_CDD_MARKUP_GRAPH
+kernels/mulib-markup-bridge.h    MULIB_IMPL_CDD_MARKUP_BRIDGE
 ```
 
 The original `MULIB_IMPL_MARKUP_*` spellings remain compatibility aliases.
@@ -153,7 +153,7 @@ and dense overlapping ranges can still be expensive.
 From the MuLIB repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/markup-ir.c -o markup-ir-example
 ./markup-ir-example
 make check-markup

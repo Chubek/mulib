@@ -18,7 +18,7 @@ Example: `examples/modules/ocicontainerruntime.c` uses a test-only backend.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ocicontainerruntime.h`](../include/mulib-ocicontainerruntime.h).
+Verbatim declaration section from [`kernels/mulib-ocicontainerruntime.h`](../kernels/mulib-ocicontainerruntime.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -46,7 +46,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ocicontainerruntime.h`](../include/mulib-ocicontainerruntime.h) |
+| Header | [`kernels/mulib-ocicontainerruntime.h`](../kernels/mulib-ocicontainerruntime.h) |
 | Implementation switch | `MULIB_IMPL_OCICONTAINERRUNTIME` |
 | Repository-local includes | [`.deprecated/mulib-ocicontainerruntime.h`](../.deprecated/mulib-ocicontainerruntime.h), [mulib-ocicontainer](mulib-ocicontainer.md) |
 | Complete example | [`examples/modules/ocicontainerruntime.c`](../examples/modules/ocicontainerruntime.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ocicontainerruntime.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ocicontainerruntime.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

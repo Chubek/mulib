@@ -205,7 +205,7 @@ def main():
         if platform.system() == 'Linux' and platform.machine() == 'x86_64':
             obj = work / 'plugin.o'
             run(compiler + ['-std=c11', '-O2', '-fPIC', '-fno-builtin', '-fno-stack-protector',
-                '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-I'+str(ROOT/'include'), '-c',
+                '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-I'+str(ROOT/'kernels'), '-c',
                 str(ROOT/'examples/plugins/metapp-count.c'), '-o', str(obj)])
             run([args.preprocessor, '--native', str(obj)])
             rejected = reject_objects(args.preprocessor, obj, work)

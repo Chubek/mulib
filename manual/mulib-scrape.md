@@ -13,9 +13,9 @@ Define `MULIB_IMPL_SCRAPE` and `MULIB_IMPL_SCRAPE_READABLE` in exactly one C11 t
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-scrape.c -o /tmp/test-scrape
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-scrape.c -o /tmp/test-scrape
 /tmp/test-scrape
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/scrape.c -o /tmp/example-scrape
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/scrape.c -o /tmp/example-scrape
 ```
 
 ## API
@@ -40,7 +40,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-scrape.h`](../include/mulib-scrape.h) |
+| Header | [`kernels/mulib-scrape.h`](../kernels/mulib-scrape.h) |
 | Implementation switch | `MULIB_IMPL_SCRAPE` |
 | Repository-local includes | [mulib-scrape-readable](mulib-scrape-readable.md) |
 | Complete example | [`examples/modules/scrape.c`](../examples/modules/scrape.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/scrape.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/scrape.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

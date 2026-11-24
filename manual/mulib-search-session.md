@@ -13,9 +13,9 @@ Define `MULIB_IMPL_SEARCH_SESSION` in exactly one C11 translation unit. Use `#in
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-search-session.c -o /tmp/test-search-session
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-search-session.c -o /tmp/test-search-session
 /tmp/test-search-session
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/search-session.c -o /tmp/example-search-session
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/search-session.c -o /tmp/example-search-session
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-search-session.h`](../include/mulib-search-session.h) |
+| Header | [`kernels/mulib-search-session.h`](../kernels/mulib-search-session.h) |
 | Implementation switch | `MULIB_IMPL_SEARCH_SESSION` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/search-session.c`](../examples/modules/search-session.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/search-session.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/search-session.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

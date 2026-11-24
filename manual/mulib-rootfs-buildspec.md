@@ -61,7 +61,7 @@ operations or process execution occur. See [stack](container-stack.md) for tests
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rootfs-buildspec.h`](../include/mulib-rootfs-buildspec.h) |
+| Header | [`kernels/mulib-rootfs-buildspec.h`](../kernels/mulib-rootfs-buildspec.h) |
 | Implementation switch | `MULIB_IMPL_ROOTFS_BUILDSPEC` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/rootfs-buildspec.c`](../examples/modules/rootfs-buildspec.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rootfs-buildspec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rootfs-buildspec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

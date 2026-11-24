@@ -57,7 +57,7 @@ roundtrip coverage in `tests/fuzz_headers.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http2.h`](../include/mulib-http2.h) |
+| Header | [`kernels/mulib-http2.h`](../kernels/mulib-http2.h) |
 | Implementation switch | `MULIB_IMPL_HTTP2` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md) |
 | Complete example | [`examples/modules/http2.c`](../examples/modules/http2.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http2.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http2.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

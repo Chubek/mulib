@@ -27,7 +27,7 @@ int main(void)
 }
 ```
 
-Compile with `cc -std=c11 -Iinclude example.c -lm -o example`.
+Compile with `cc -std=c11 -Ikernels example.c -lm -o example`.
 The example renders headlessly into memory; it does not create a native window.
 
 ## Paths and curves
@@ -111,11 +111,11 @@ From the repository root:
 
 ```sh
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-  -Wno-misleading-indentation -Iinclude tests/test-gfx-path.c \
+  -Wno-misleading-indentation -Ikernels tests/test-gfx-path.c \
   -lm -o /tmp/opencode/test-gfx-path
 /tmp/opencode/test-gfx-path
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror \
-  -Wno-misleading-indentation -Iinclude tests/test-gfx-path-limits.c \
+  -Wno-misleading-indentation -Ikernels tests/test-gfx-path-limits.c \
   -lm -o /tmp/opencode/gfx-path-limits
 /tmp/opencode/gfx-path-limits
 ```

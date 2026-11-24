@@ -1,7 +1,7 @@
 # mulib-wave-signal
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-wave-signal.h`  
+**Header:** `kernels/mulib-wave-signal.h`  
 **Implementation switch:** `MULIB_IMPL_WAVE_SIGNAL`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_WAVE_SIGNAL` defined before
 `tests/test_wave_signal.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_wave_signal.c -lm -o /tmp/test_wave_signal
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_wave_signal.c -lm -o /tmp/test_wave_signal
 /tmp/test_wave_signal
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-wave-signal.h`](../include/mulib-wave-signal.h).
+Verbatim declaration section from [`kernels/mulib-wave-signal.h`](../kernels/mulib-wave-signal.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -93,7 +93,7 @@ int mulib_wave_signal_interpolate(const mulib_wave_signal_t *s, double time, dou
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wave-signal.h`](../include/mulib-wave-signal.h) |
+| Header | [`kernels/mulib-wave-signal.h`](../kernels/mulib-wave-signal.h) |
 | Implementation switch | `MULIB_IMPL_WAVE_SIGNAL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/wave-signal.c`](../examples/modules/wave-signal.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wave-signal.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wave-signal.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

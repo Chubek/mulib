@@ -19,7 +19,7 @@ query mode. Time O(instructions + text length), fixed temporary line storage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ir-print.h`](../include/mulib-ir-print.h) |
+| Header | [`kernels/mulib-ir-print.h`](../kernels/mulib-ir-print.h) |
 | Implementation switch | `MULIB_IMPL_IR_PRINT` |
 | Repository-local includes | [mulib-ir-verify](mulib-ir-verify.md) |
 | Complete example | [`examples/modules/ir-print.c`](../examples/modules/ir-print.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ir-print.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ir-print.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

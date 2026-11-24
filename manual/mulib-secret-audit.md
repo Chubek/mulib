@@ -9,7 +9,7 @@ Verify HMAC-chained audit records with a dedicated key. The caller must persist 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-audit.h`](../include/mulib-secret-audit.h) |
+| Header | [`kernels/mulib-secret-audit.h`](../kernels/mulib-secret-audit.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_AUDIT` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

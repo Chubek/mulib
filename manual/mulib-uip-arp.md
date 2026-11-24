@@ -33,7 +33,7 @@ See `../tests/test_uip-arp.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-arp.h`](../include/mulib-uip-arp.h) |
+| Header | [`kernels/mulib-uip-arp.h`](../kernels/mulib-uip-arp.h) |
 | Implementation switch | `MULIB_IMPL_UIP_ARP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-arp.c`](../examples/modules/uip-arp.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-arp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-arp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

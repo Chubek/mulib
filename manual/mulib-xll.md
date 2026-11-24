@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-xll.h` — C11 implementation, C++ declarations.
+**Header:** `kernels/mulib-xll.h` — C11 implementation, C++ declarations.
 
 XLL version 1 describes named Unicode text layouts. The same owned program can
 be parsed from a `.xll` file, built with the C API, executed directly, serialized
@@ -155,7 +155,7 @@ Contexts require the same caller synchronization as the native layout/font APIs.
 Build the runnable example as a translator:
 
 ```sh
-cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/xll.c -lm -ldl -pthread -o xll
 ./xll examples/greeting.xll greeting.c page
 ```
@@ -267,7 +267,7 @@ coverage instead of allowing a backend-unavailable skip.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xll.h`](../include/mulib-xll.h) |
+| Header | [`kernels/mulib-xll.h`](../kernels/mulib-xll.h) |
 | Implementation switch | `MULIB_IMPL_XLL` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-layout](mulib-layout.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/xll.c`](../examples/modules/xll.c) |
@@ -280,6 +280,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xll.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xll.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

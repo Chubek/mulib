@@ -31,7 +31,7 @@ See `../tests/test_sock-diag.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sock-diag.h`](../include/mulib-sock-diag.h) |
+| Header | [`kernels/mulib-sock-diag.h`](../kernels/mulib-sock-diag.h) |
 | Implementation switch | `MULIB_IMPL_SOCK_DIAG` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/sock-diag.c`](../examples/modules/sock-diag.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sock-diag.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sock-diag.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

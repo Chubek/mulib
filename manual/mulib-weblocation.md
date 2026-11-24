@@ -13,9 +13,9 @@ Define `MULIB_IMPL_WEBLOCATION` and `MULIB_IMPL_URLCANON` in exactly one C11 tra
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-weblocation.c -o /tmp/test-weblocation
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-weblocation.c -o /tmp/test-weblocation
 /tmp/test-weblocation
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/weblocation.c -o /tmp/example-weblocation
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/weblocation.c -o /tmp/example-weblocation
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-weblocation.h`](../include/mulib-weblocation.h) |
+| Header | [`kernels/mulib-weblocation.h`](../kernels/mulib-weblocation.h) |
 | Implementation switch | `MULIB_IMPL_WEBLOCATION` |
 | Repository-local includes | [mulib-urlcanon](mulib-urlcanon.md) |
 | Complete example | [`examples/modules/weblocation.c`](../examples/modules/weblocation.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/weblocation.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/weblocation.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

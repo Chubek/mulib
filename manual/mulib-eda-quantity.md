@@ -1,7 +1,7 @@
 # mulib-eda-quantity
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-eda-quantity.h`  
+**Header:** `kernels/mulib-eda-quantity.h`  
 **Implementation switch:** `MULIB_IMPL_EDA_QUANTITY`  
 **Dependencies:** `eda-units`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_EDA_QUANTITY` defined befor
 `tests/test_eda_quantity.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_eda_quantity.c -lm -o /tmp/test_eda_quantity
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_eda_quantity.c -lm -o /tmp/test_eda_quantity
 /tmp/test_eda_quantity
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-eda-quantity.h`](../include/mulib-eda-quantity.h).
+Verbatim declaration section from [`kernels/mulib-eda-quantity.h`](../kernels/mulib-eda-quantity.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ int mulib_eda_quantity_div(mulib_eda_quantity_t a, mulib_eda_quantity_t b,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eda-quantity.h`](../include/mulib-eda-quantity.h) |
+| Header | [`kernels/mulib-eda-quantity.h`](../kernels/mulib-eda-quantity.h) |
 | Implementation switch | `MULIB_IMPL_EDA_QUANTITY` |
 | Repository-local includes | [mulib-eda-units](mulib-eda-units.md) |
 | Complete example | [`examples/modules/eda-quantity.c`](../examples/modules/eda-quantity.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eda-quantity.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eda-quantity.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

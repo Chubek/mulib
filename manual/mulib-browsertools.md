@@ -20,7 +20,7 @@ are not required** unless your application uses their APIs. No dependency
 implementation switches are silently enabled. C++ declarations use C linkage.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/browsertools.c -lm -o browsertools
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/browsertools.c -lm -o browsertools
 ./browsertools
 ```
 
@@ -131,7 +131,7 @@ discovery, pending/message budgets, allocation failures, and mutated inputs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browsertools.h`](../include/mulib-browsertools.h) |
+| Header | [`kernels/mulib-browsertools.h`](../kernels/mulib-browsertools.h) |
 | Implementation switch | `MULIB_IMPL_BROWSERTOOLS` |
 | Repository-local includes | [mulib-http](mulib-http.md), [mulib-json](mulib-json.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/browsertools.c`](../examples/modules/browsertools.c) |
@@ -144,6 +144,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browsertools.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browsertools.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

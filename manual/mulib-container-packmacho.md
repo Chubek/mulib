@@ -29,7 +29,7 @@ supported. CRCs only detect accidental corruption.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-container-packmacho.h`](../include/mulib-container-packmacho.h).
+Verbatim declaration section from [`kernels/mulib-container-packmacho.h`](../kernels/mulib-container-packmacho.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ int mulib_container_packmacho_open (const void *file, size_t length, size_t max_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-packmacho.h`](../include/mulib-container-packmacho.h) |
+| Header | [`kernels/mulib-container-packmacho.h`](../kernels/mulib-container-packmacho.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKMACHO` |
 | Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-macho](mulib-macho.md) |
 | Complete example | [`examples/modules/container-packmacho.c`](../examples/modules/container-packmacho.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packmacho.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-packmacho.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

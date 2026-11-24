@@ -38,7 +38,7 @@ See `../tests/test_netlink-async.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netlink-async.h`](../include/mulib-netlink-async.h) |
+| Header | [`kernels/mulib-netlink-async.h`](../kernels/mulib-netlink-async.h) |
 | Implementation switch | `MULIB_IMPL_NETLINK_ASYNC` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/netlink-async.c`](../examples/modules/netlink-async.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netlink-async.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netlink-async.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -13,9 +13,9 @@ Define `MULIB_IMPL_BROWSERSNAPSHOT` in exactly one C11 translation unit. Use `#i
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-browsersnapshot.c -o /tmp/test-browsersnapshot
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-browsersnapshot.c -o /tmp/test-browsersnapshot
 /tmp/test-browsersnapshot
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/browsersnapshot.c -o /tmp/example-browsersnapshot
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/browsersnapshot.c -o /tmp/example-browsersnapshot
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-browsersnapshot.h`](../include/mulib-browsersnapshot.h) |
+| Header | [`kernels/mulib-browsersnapshot.h`](../kernels/mulib-browsersnapshot.h) |
 | Implementation switch | `MULIB_IMPL_BROWSERSNAPSHOT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/browsersnapshot.c`](../examples/modules/browsersnapshot.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/browsersnapshot.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/browsersnapshot.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

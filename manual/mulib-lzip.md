@@ -33,7 +33,7 @@ validate trailers independently and exercise concatenation and allocation failur
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lzip.h`](../include/mulib-lzip.h) |
+| Header | [`kernels/mulib-lzip.h`](../kernels/mulib-lzip.h) |
 | Implementation switch | `MULIB_IMPL_LZIP` |
 | Repository-local includes | [mulib-crc32](mulib-crc32.md), [mulib-lzma](mulib-lzma.md) |
 | Complete example | [`examples/modules/lzip.c`](../examples/modules/lzip.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lzip.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lzip.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

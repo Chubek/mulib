@@ -20,7 +20,7 @@ symbol table to populate bindings first. Scratch O(nodes), time includes lookup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-name-resolution.h`](../include/mulib-name-resolution.h) |
+| Header | [`kernels/mulib-name-resolution.h`](../kernels/mulib-name-resolution.h) |
 | Implementation switch | `MULIB_IMPL_NAME_RESOLUTION` |
 | Repository-local includes | [mulib-parser-pratt](mulib-parser-pratt.md), [mulib-symboltable](mulib-symboltable.md) |
 | Complete example | [`examples/modules/name-resolution.c`](../examples/modules/name-resolution.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/name-resolution.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/name-resolution.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

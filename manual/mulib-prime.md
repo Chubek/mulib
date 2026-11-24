@@ -34,7 +34,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-prime.h`](../include/mulib-prime.h).
+Verbatim declaration section from [`kernels/mulib-prime.h`](../kernels/mulib-prime.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -100,7 +100,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-prime.h`](../include/mulib-prime.h) |
+| Header | [`kernels/mulib-prime.h`](../kernels/mulib-prime.h) |
 | Implementation switch | `MULIB_IMPL_PRIME` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/prime.c`](../examples/modules/prime.c) |
@@ -113,6 +113,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/prime.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/prime.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

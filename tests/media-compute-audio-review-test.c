@@ -1,5 +1,5 @@
 /* Restricted new-kernel regression suite. No native GPU/audio device is used.
- * cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+ * cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
  *   -fsanitize=address,undefined -fno-omit-frame-pointer -g \
  *   tests/media-compute-audio-review-test.c -lm -o /tmp/opencode/media-ca-test
  */

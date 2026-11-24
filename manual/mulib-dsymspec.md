@@ -14,7 +14,7 @@ Define `MULIB_IMPL_DSYMSPEC`, `MULIB_IMPL_JSON`, `MULIB_IMPL_PARSEC`,
 `MULIB_IMPL_STRBUF`, and `MULIB_IMPL_UTF8` before MuLIB includes in exactly one
 C11 translation unit. Other units include `mulib-dsymspec.h` without switches.
 Declarations support C++17. No implementation switch enables another module.
-Ship `include/mulib-dsymspec-data.inc` beside the header. No runtime filesystem,
+Ship `kernels/mulib-dsymspec-data.inc` beside the header. No runtime filesystem,
 Python, YAML library, third-party C library, or architecture database is needed.
 
 ## Generation and provenance
@@ -94,7 +94,7 @@ code-generation input, not as authenticated ISA definitions.
 ## Runnable example and tests
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/dsymspec.c -lm -o /tmp/opencode/mulib-dsymspec
 /tmp/opencode/mulib-dsymspec
 ```
@@ -111,9 +111,9 @@ checked-in snapshot still matches all real source files.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dsymspec.h`](../include/mulib-dsymspec.h) |
+| Header | [`kernels/mulib-dsymspec.h`](../kernels/mulib-dsymspec.h) |
 | Implementation switch | `MULIB_IMPL_DSYMSPEC` |
-| Repository-local includes | [`include/mulib-dsymspec-data.inc`](../include/mulib-dsymspec-data.inc), [mulib-json](mulib-json.md) |
+| Repository-local includes | [`kernels/mulib-dsymspec-data.inc`](../kernels/mulib-dsymspec-data.inc), [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/dsymspec.c`](../examples/modules/dsymspec.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -124,6 +124,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dsymspec.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dsymspec.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

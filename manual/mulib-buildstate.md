@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-buildstate.h`  
+**Header:** `kernels/mulib-buildstate.h`  
 **Switches:** `MULIB_IMPL_SHA`, `MULIB_IMPL_BUILDSTATE`
 
 BuildState provides deterministic action identities, content provenance,
@@ -47,7 +47,7 @@ core policy.
 ## Example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
   examples/modules/buildstate.c -o /tmp/opencode/buildstate
 /tmp/opencode/buildstate
 ```
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-buildstate.h`](../include/mulib-buildstate.h) |
+| Header | [`kernels/mulib-buildstate.h`](../kernels/mulib-buildstate.h) |
 | Implementation switch | `MULIB_IMPL_BUILDSTATE` |
 | Repository-local includes | [mulib-sha](mulib-sha.md) |
 | Complete example | [`examples/modules/buildstate.c`](../examples/modules/buildstate.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildstate.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/buildstate.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

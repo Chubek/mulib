@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-bibtex.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-bibtex.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_BIBTEX
 #include "mulib-bibtex.h"

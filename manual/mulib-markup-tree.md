@@ -21,7 +21,7 @@ contracts and the [stream kernel](mulib-markup-stream.md) for parsing.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-markup-tree.h`](../include/mulib-markup-tree.h) |
+| Header | [`kernels/mulib-markup-tree.h`](../kernels/mulib-markup-tree.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MARKUP_TREE` |
 | Repository-local includes | None |
 | Complete example | [`examples/markup-ir.c`](../examples/markup-ir.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/markup-ir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/markup-ir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

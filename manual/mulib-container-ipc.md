@@ -59,7 +59,7 @@ split point, empty payloads, quota failures and checksum corruption.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-ipc.h`](../include/mulib-container-ipc.h) |
+| Header | [`kernels/mulib-container-ipc.h`](../kernels/mulib-container-ipc.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_IPC` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md), [mulib-crc32](mulib-crc32.md) |
 | Complete example | [`examples/modules/container-ipc.c`](../examples/modules/container-ipc.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-ipc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-ipc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

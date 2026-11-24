@@ -16,7 +16,7 @@ are deliberately separate concerns.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-n-grams.h`](../include/mulib-n-grams.h).
+Verbatim declaration section from [`kernels/mulib-n-grams.h`](../kernels/mulib-n-grams.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -53,7 +53,7 @@ size_t mulib_ngrams(const void *bytes, size_t length, size_t width, mulib_ngram_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-n-grams.h`](../include/mulib-n-grams.h) |
+| Header | [`kernels/mulib-n-grams.h`](../kernels/mulib-n-grams.h) |
 | Implementation switch | `MULIB_IMPL_N_GRAMS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/n-grams.c`](../examples/modules/n-grams.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/n-grams.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/n-grams.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

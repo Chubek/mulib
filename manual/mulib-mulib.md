@@ -21,7 +21,7 @@ this header does not aggregate every optional API or emit shared implementations
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-mulib.h`](../include/mulib-mulib.h).
+Verbatim declaration section from [`kernels/mulib-mulib.h`](../kernels/mulib-mulib.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -61,7 +61,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mulib.h`](../include/mulib-mulib.h) |
+| Header | [`kernels/mulib-mulib.h`](../kernels/mulib-mulib.h) |
 | Implementation switch | `MULIB_IMPL_MULIB` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/mulib.c`](../examples/modules/mulib.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mulib.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mulib.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

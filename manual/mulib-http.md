@@ -153,7 +153,7 @@ serialization and construction and verifies unchanged outputs and released memor
 chunked request containing an embedded NUL:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/http.c -o ./http
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/http.c -o ./http
 ./http
 ```
 
@@ -164,7 +164,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/http.c -o
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http.h`](../include/mulib-http.h) |
+| Header | [`kernels/mulib-http.h`](../kernels/mulib-http.h) |
 | Implementation switch | `MULIB_IMPL_HTTP` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-parsec](mulib-parsec.md), [mulib-uri](mulib-uri.md) |
 | Complete example | [`examples/modules/http.c`](../examples/modules/http.c) |
@@ -177,6 +177,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

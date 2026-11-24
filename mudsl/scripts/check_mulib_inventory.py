@@ -99,14 +99,14 @@ def check_inventory(include, bindings):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--include', type=Path, default=ROOT.parent / 'include')
+    parser.add_argument('--include', type=Path, default=ROOT.parent / 'kernels')
     parser.add_argument('--bindings', type=Path, default=ROOT / 'mull/bridge/Mulib')
     args = parser.parse_args()
     try:
         headers, declared, functions = check_inventory(args.include, args.bindings)
     except (OSError, ValueError, KeyError, TypeError) as error:
         parser.exit(1, f'MuLL MuLIB inventory: {error}\n'
-                    'Run python3 mudsl/scripts/generate_mulib.py --include include\n')
+                    'Run python3 mudsl/scripts/generate_mulib.py --include kernels\n')
     print(f'MuLL MuLIB inventory: {headers} headers, {declared} discovered function declarations, '
           f'{functions} legacy raw functions')
 

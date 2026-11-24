@@ -1,6 +1,6 @@
 # Vec — discovery-only: `stride_region_invalidation`
 
-Unresolved semantics from `include/mulib-vec.h`, the manual,
+Unresolved semantics from `kernels/mulib-vec.h`, the manual,
 `on1x/contracts-exoml/vec.exocontract.json` (7 entries) and the Vec section
 of `on1x/contracts-exoml/obligations.json`. Not executable or reviewed.
 

@@ -1,7 +1,7 @@
 # mulib-spice-c
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-c.h`  
+**Header:** `kernels/mulib-spice-c.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_C`  
 **Dependencies:** `spice-stamp`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_C` defined before inc
 `tests/test_spice_c.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_c.c -lm -o /tmp/test_spice_c
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_c.c -lm -o /tmp/test_spice_c
 /tmp/test_spice_c
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-c.h`](../include/mulib-spice-c.h).
+Verbatim declaration section from [`kernels/mulib-spice-c.h`](../kernels/mulib-spice-c.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_spice_c_backward_euler(mulib_spice_stamp_t *s, uint16_t a, uint16_t b,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-c.h`](../include/mulib-spice-c.h) |
+| Header | [`kernels/mulib-spice-c.h`](../kernels/mulib-spice-c.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_C` |
 | Repository-local includes | [mulib-spice-stamp](mulib-spice-stamp.md) |
 | Complete example | [`examples/modules/spice-c.c`](../examples/modules/spice-c.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-c.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-c.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -127,7 +127,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/regex.c -o ./regex
+cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ikernels examples/modules/regex.c -o ./regex
 ./regex
 ```
 
@@ -138,7 +138,7 @@ cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude examples/modules/regex.c 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-regex.h`](../include/mulib-regex.h) |
+| Header | [`kernels/mulib-regex.h`](../kernels/mulib-regex.h) |
 | Implementation switch | `MULIB_IMPL_REGEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/regex.c`](../examples/modules/regex.c) |
@@ -151,6 +151,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/regex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/regex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

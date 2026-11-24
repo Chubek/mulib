@@ -17,7 +17,7 @@ Example: `examples/modules/ociimagebuilder.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ociimagebuilder.h`](../include/mulib-ociimagebuilder.h).
+Verbatim declaration section from [`kernels/mulib-ociimagebuilder.h`](../kernels/mulib-ociimagebuilder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -45,7 +45,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ociimagebuilder.h`](../include/mulib-ociimagebuilder.h) |
+| Header | [`kernels/mulib-ociimagebuilder.h`](../kernels/mulib-ociimagebuilder.h) |
 | Implementation switch | `MULIB_IMPL_OCIIMAGEBUILDER` |
 | Repository-local includes | [`.deprecated/mulib-ociimagebuilder.h`](../.deprecated/mulib-ociimagebuilder.h), [mulib-ociimage](mulib-ociimage.md) |
 | Complete example | [`examples/modules/ociimagebuilder.c`](../examples/modules/ociimagebuilder.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ociimagebuilder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ociimagebuilder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

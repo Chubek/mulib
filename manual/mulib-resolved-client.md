@@ -31,7 +31,7 @@ See `../tests/test_resolved-client.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-resolved-client.h`](../include/mulib-resolved-client.h) |
+| Header | [`kernels/mulib-resolved-client.h`](../kernels/mulib-resolved-client.h) |
 | Implementation switch | `MULIB_IMPL_RESOLVED_CLIENT` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/resolved-client.c`](../examples/modules/resolved-client.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/resolved-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/resolved-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-minish.h`  
+**Header:** `kernels/mulib-minish.h`  
 **Implementation switches:** `MULIB_IMPL_MINISH`, `MULIB_IMPL_MAP`, `MULIB_IMPL_VEC`, `MULIB_IMPL_STRBUF`  
 **Dependencies:** MuLIB map/vec/strbuf and ISO C11. Optional POSIX OS APIs only.
 
@@ -204,7 +204,7 @@ int main(void) {
 }
 ```
 
-Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude example.c -o example`.
+Build with `cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels example.c -o example`.
 The example needs no shell/interpreter or process support. The repository's
 `examples/modules/minish.c` also demonstrates a registered command.
 
@@ -224,7 +224,7 @@ header. Declaration-only C++17 callers are supported via C linkage.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-minish.h`](../include/mulib-minish.h) |
+| Header | [`kernels/mulib-minish.h`](../kernels/mulib-minish.h) |
 | Implementation switch | `MULIB_IMPL_MINISH` |
 | Repository-local includes | [mulib-map](mulib-map.md), [mulib-strbuf](mulib-strbuf.md), [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/minish.c`](../examples/modules/minish.c) |
@@ -237,6 +237,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minish.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/minish.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -14,7 +14,7 @@ include `mulib-pathdb.h` for C11 or C++ declarations. Dependencies are not
 implemented implicitly.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/pathdb.c -o /tmp/pathdb-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/pathdb.c -o /tmp/pathdb-example
 /tmp/pathdb-example
 ```
 
@@ -140,7 +140,7 @@ allocation failure with always-moving realloc.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pathdb.h`](../include/mulib-pathdb.h) |
+| Header | [`kernels/mulib-pathdb.h`](../kernels/mulib-pathdb.h) |
 | Implementation switch | `MULIB_IMPL_PATHDB` |
 | Repository-local includes | [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/pathdb.c`](../examples/modules/pathdb.c) |
@@ -153,6 +153,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pathdb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pathdb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -33,7 +33,7 @@ See `../tests/test_uip-icmp.c` for its compile/link verification. Selected runna
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-icmp.h`](../include/mulib-uip-icmp.h) |
+| Header | [`kernels/mulib-uip-icmp.h`](../kernels/mulib-uip-icmp.h) |
 | Implementation switch | `MULIB_IMPL_UIP_ICMP` |
 | Repository-local includes | [mulib-uip-checksum](mulib-uip-checksum.md) |
 | Complete example | [`examples/modules/uip-icmp.c`](../examples/modules/uip-icmp.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-icmp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-icmp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

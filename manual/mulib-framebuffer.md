@@ -30,7 +30,7 @@ bits are zero. Returns 0 and writes pixel, or -1 without modifying output.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-framebuffer.h`](../include/mulib-framebuffer.h).
+Verbatim declaration section from [`kernels/mulib-framebuffer.h`](../kernels/mulib-framebuffer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -78,7 +78,7 @@ int mulib_framebuffer_rgb(uint8_t red, uint8_t green, uint8_t blue,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-framebuffer.h`](../include/mulib-framebuffer.h) |
+| Header | [`kernels/mulib-framebuffer.h`](../kernels/mulib-framebuffer.h) |
 | Implementation switch | `MULIB_IMPL_FRAMEBUFFER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/framebuffer.c`](../examples/modules/framebuffer.c) |
@@ -91,6 +91,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/framebuffer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/framebuffer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

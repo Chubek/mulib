@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-autonumber.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-autonumber.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_AUTONUMBER
 #include "mulib-autonumber.h"

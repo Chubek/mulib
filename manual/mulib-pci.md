@@ -33,7 +33,7 @@ not CardBus, PCIe extended lists or ARI. Stabilize configuration while traversin
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pci.h`](../include/mulib-pci.h).
+Verbatim declaration section from [`kernels/mulib-pci.h`](../kernels/mulib-pci.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -83,7 +83,7 @@ int mulib_pci_capability(mulib_pci_read_t read, void *context, unsigned bus,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pci.h`](../include/mulib-pci.h) |
+| Header | [`kernels/mulib-pci.h`](../kernels/mulib-pci.h) |
 | Implementation switch | `MULIB_IMPL_PCI` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/pci.c`](../examples/modules/pci.c) |
@@ -96,6 +96,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pci.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pci.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

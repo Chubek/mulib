@@ -35,7 +35,7 @@ short buffers and lifecycle failures.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-aarch64.h`](../include/mulib-aarch64.h).
+Verbatim declaration section from [`kernels/mulib-aarch64.h`](../kernels/mulib-aarch64.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ void mulib_aarch64_free (mulib_aarch64_t *);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-aarch64.h`](../include/mulib-aarch64.h) |
+| Header | [`kernels/mulib-aarch64.h`](../kernels/mulib-aarch64.h) |
 | Implementation switch | `MULIB_IMPL_AARCH64` |
 | Repository-local includes | [mulib-mpu](mulib-mpu.md) |
 | Complete example | [`examples/modules/aarch64.c`](../examples/modules/aarch64.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/aarch64.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/aarch64.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

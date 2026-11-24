@@ -44,7 +44,7 @@ scalar implementations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-simdmath.h`](../include/mulib-simdmath.h) |
+| Header | [`kernels/mulib-simdmath.h`](../kernels/mulib-simdmath.h) |
 | Implementation switch | `MULIB_IMPL_SIMDMATH` |
 | Repository-local includes | [mulib-linalg](mulib-linalg.md) |
 | Complete example | [`examples/modules/simdmath.c`](../examples/modules/simdmath.c) |
@@ -57,6 +57,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/simdmath.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/simdmath.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

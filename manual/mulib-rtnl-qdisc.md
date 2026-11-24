@@ -31,7 +31,7 @@ See `../tests/test_rtnl-qdisc.c` for its compile/link verification. Selected run
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rtnl-qdisc.h`](../include/mulib-rtnl-qdisc.h) |
+| Header | [`kernels/mulib-rtnl-qdisc.h`](../kernels/mulib-rtnl-qdisc.h) |
 | Implementation switch | `MULIB_IMPL_RTNL_QDISC` |
 | Repository-local includes | [mulib-rtnl](mulib-rtnl.md) |
 | Complete example | [`examples/modules/rtnl-qdisc.c`](../examples/modules/rtnl-qdisc.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rtnl-qdisc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rtnl-qdisc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

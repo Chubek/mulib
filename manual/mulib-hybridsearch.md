@@ -13,7 +13,7 @@ No allocation; duplicate detection is quadratic and final sorting O(u log u).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-hybridsearch.h`](../include/mulib-hybridsearch.h).
+Verbatim declaration section from [`kernels/mulib-hybridsearch.h`](../kernels/mulib-hybridsearch.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -59,7 +59,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-hybridsearch.h`](../include/mulib-hybridsearch.h) |
+| Header | [`kernels/mulib-hybridsearch.h`](../kernels/mulib-hybridsearch.h) |
 | Implementation switch | `MULIB_IMPL_HYBRIDSEARCH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/hybridsearch.c`](../examples/modules/hybridsearch.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/hybridsearch.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/hybridsearch.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

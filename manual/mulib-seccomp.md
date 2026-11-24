@@ -43,7 +43,7 @@ broker as appropriate. See the worker example and OS denial tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-seccomp.h`](../include/mulib-seccomp.h) |
+| Header | [`kernels/mulib-seccomp.h`](../kernels/mulib-seccomp.h) |
 | Implementation switch | `MULIB_IMPL_SECCOMP` |
 | Repository-local includes | [mulib-sandbox-profile](mulib-sandbox-profile.md) |
 | Complete example | [`examples/modules/sandbox-process.c`](../examples/modules/sandbox-process.c) |
@@ -56,6 +56,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

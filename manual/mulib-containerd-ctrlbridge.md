@@ -57,7 +57,7 @@ policy denial, mount-lease deletion rejection and complete client/server composi
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerd-ctrlbridge.h`](../include/mulib-containerd-ctrlbridge.h) |
+| Header | [`kernels/mulib-containerd-ctrlbridge.h`](../kernels/mulib-containerd-ctrlbridge.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERD_CTRLBRIDGE` |
 | Repository-local includes | [mulib-containerd-accessstub](mulib-containerd-accessstub.md), [mulib-containerd](mulib-containerd.md) |
 | Complete example | [`examples/modules/containerd-ctrlbridge.c`](../examples/modules/containerd-ctrlbridge.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-ctrlbridge.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerd-ctrlbridge.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

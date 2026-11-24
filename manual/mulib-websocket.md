@@ -73,7 +73,7 @@ remain available. See the offline [`websocket.c` example](../examples/modules/we
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-websocket.h`](../include/mulib-websocket.h) |
+| Header | [`kernels/mulib-websocket.h`](../kernels/mulib-websocket.h) |
 | Implementation switch | `MULIB_IMPL_CDD_WEBSOCKET` |
 | Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-buffer](mulib-buffer.md), [mulib-http](mulib-http.md), [mulib-uri](mulib-uri.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/websocket.c`](../examples/modules/websocket.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/websocket.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/websocket.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

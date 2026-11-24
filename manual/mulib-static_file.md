@@ -46,7 +46,7 @@ Run [`examples/modules/static_file.c`](../examples/modules/static_file.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-static_file.h`](../include/mulib-static_file.h) |
+| Header | [`kernels/mulib-static_file.h`](../kernels/mulib-static_file.h) |
 | Implementation switch | `MULIB_IMPL_STATIC_FILE` |
 | Repository-local includes | [mulib-http_response](mulib-http_response.md), [mulib-mime](mulib-mime.md), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/static_file.c`](../examples/modules/static_file.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/static_file.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/static_file.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

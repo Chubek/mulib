@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-task.h` · **Switch:** `MULIB_IMPL_TASK`
+**Header:** `kernels/mulib-task.h` · **Switch:** `MULIB_IMPL_TASK`
 
 An inert `mulib_task_t` describes one native process boundary. Initialize with
 `mulib_task_init`, set a nonempty name, and select:
@@ -50,7 +50,7 @@ No dependency switches are silently enabled by this header. See also EXEC's
 manual. POSIX hosts need `-pthread -lm -ldl` on Linux.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/task.c -pthread -lm -ldl -o /tmp/opencode/task
+cc -std=c11 -Ikernels examples/modules/task.c -pthread -lm -ldl -o /tmp/opencode/task
 /tmp/opencode/task
 ```
 
@@ -65,7 +65,7 @@ and returns EXEC_UNSUPPORTED elsewhere.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-task.h`](../include/mulib-task.h) |
+| Header | [`kernels/mulib-task.h`](../kernels/mulib-task.h) |
 | Implementation switch | `MULIB_IMPL_TASK` |
 | Repository-local includes | [mulib-exec](mulib-exec.md) |
 | Complete example | [`examples/modules/task.c`](../examples/modules/task.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/task.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/task.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

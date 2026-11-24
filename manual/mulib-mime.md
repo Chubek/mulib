@@ -13,9 +13,9 @@ Define `MULIB_IMPL_MIME` and `MULIB_IMPL_SECURITY` in exactly one C11 translatio
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-mime.c -o /tmp/test-mime
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-mime.c -o /tmp/test-mime
 /tmp/test-mime
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/mime.c -o /tmp/example-mime
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/mime.c -o /tmp/example-mime
 ```
 
 ## API
@@ -42,7 +42,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mime.h`](../include/mulib-mime.h) |
+| Header | [`kernels/mulib-mime.h`](../kernels/mulib-mime.h) |
 | Implementation switch | `MULIB_IMPL_MIME` |
 | Repository-local includes | [mulib-seurity](mulib-seurity.md) |
 | Complete example | [`examples/modules/mime.c`](../examples/modules/mime.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mime.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mime.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -53,7 +53,7 @@ See [inline QVM](mulib-qvm.md) for instruction semantics and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-qvmboost.h`](../include/mulib-container-qvmboost.h) |
+| Header | [`kernels/mulib-container-qvmboost.h`](../kernels/mulib-container-qvmboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_QVMBOOST` |
 | Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-qvm](mulib-qvm.md) |
 | Complete example | [`examples/modules/container-qvmboost.c`](../examples/modules/container-qvmboost.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-qvmboost.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-qvmboost.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

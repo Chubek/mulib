@@ -10,7 +10,7 @@ On1x compiler and SDK, and the On1xRT embedding interface.
 
 ## Kernels and conventions
 
-Public kernels live in `include/mulib-*.h`. Most expose declarations on ordinary
+Public kernels live in `kernels/mulib-*.h`. Most expose declarations on ordinary
 inclusion and emit implementations when their documented `MULIB_IMPL_*` switch
 is defined in exactly one C translation unit. Some bounded families use
 `static inline` definitions instead; these do not automatically provide an
@@ -74,7 +74,7 @@ safe foreign admission; the host retains dispatch and capability policy.
 Compile a checked-in example from the repository root:
 
 ```sh
-cc -std=c11 -Iinclude examples/quickstart.c -lm -o quickstart
+cc -std=c11 -Ikernels examples/quickstart.c -lm -o quickstart
 ./quickstart
 ```
 

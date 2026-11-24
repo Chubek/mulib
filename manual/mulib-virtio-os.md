@@ -294,7 +294,7 @@ future VMM; this module does not claim full device/standards conformance.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-virtio-os.h`](../include/mulib-virtio-os.h) |
+| Header | [`kernels/mulib-virtio-os.h`](../kernels/mulib-virtio-os.h) |
 | Implementation switch | `MULIB_IMPL_VIRTIO_OS` |
 | Repository-local includes | [mulib-virtio](mulib-virtio.md) |
 | Complete example | [`examples/modules/virtio-os.c`](../examples/modules/virtio-os.c) |
@@ -307,6 +307,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio-os.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/virtio-os.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

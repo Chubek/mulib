@@ -39,7 +39,7 @@ See `../tests/test_dbus-properties.c` for its compile/link verification. Selecte
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbus-properties.h`](../include/mulib-dbus-properties.h) |
+| Header | [`kernels/mulib-dbus-properties.h`](../kernels/mulib-dbus-properties.h) |
 | Implementation switch | `MULIB_IMPL_DBUS_PROPERTIES` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/dbus-properties.c`](../examples/modules/dbus-properties.c) |
@@ -52,6 +52,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus-properties.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbus-properties.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

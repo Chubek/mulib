@@ -1,6 +1,6 @@
 # x25519 — Curve25519 key agreement
 
-**Header:** `include/mulib-x25519.h` · **Switch:** `MULIB_IMPL_X25519`
+**Header:** `kernels/mulib-x25519.h` · **Switch:** `MULIB_IMPL_X25519`
 
 Also define `MULIB_IMPL_ENTROPY` for secret-buffer utilities. The implementation
 uses 17 radix-2^15 field limbs and a fixed-schedule Montgomery ladder. It needs
@@ -31,7 +31,7 @@ secret, high-bit masking, zero-secret rejection, aliasing and 1000 iterations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-x25519.h`](../include/mulib-x25519.h) |
+| Header | [`kernels/mulib-x25519.h`](../kernels/mulib-x25519.h) |
 | Implementation switch | `MULIB_IMPL_X25519` |
 | Repository-local includes | [mulib-entropy](mulib-entropy.md) |
 | Complete example | [`examples/modules/x25519.c`](../examples/modules/x25519.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/x25519.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/x25519.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

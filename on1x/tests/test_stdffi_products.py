@@ -17,7 +17,7 @@ def ok(*args):
 
 def native(name, source, *options):
     binary = t.work / name
-    ok(t.cc, '-std=c11', '-I', t.root.parent / 'include', '-I', t.root / 'runtime',
+    ok(t.cc, '-std=c11', '-I', t.root.parent / 'kernels', '-I', t.root / 'runtime',
        source, *options, *t.flags, '-o', binary)
     return ok(binary)
 

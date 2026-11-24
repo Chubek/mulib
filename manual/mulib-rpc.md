@@ -69,7 +69,7 @@ dispatch occurs; a nested array is an invalid request element.
 an exact byte-length JSON request, and checks the result through the DOM:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/rpc.c -o ./rpc
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/rpc.c -o ./rpc
 ./rpc
 ```
 
@@ -80,7 +80,7 @@ cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/rpc.c -o 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rpc.h`](../include/mulib-rpc.h) |
+| Header | [`kernels/mulib-rpc.h`](../kernels/mulib-rpc.h) |
 | Implementation switch | `MULIB_IMPL_RPC` |
 | Repository-local includes | [mulib-json](mulib-json.md) |
 | Complete example | [`examples/modules/rpc.c`](../examples/modules/rpc.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rpc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rpc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

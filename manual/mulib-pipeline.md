@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-pipeline.h` / `MULIB_IMPL_PIPELINE`  
+**Header/switch:** `kernels/mulib-pipeline.h` / `MULIB_IMPL_PIPELINE`  
 **Required implementations:** `MULIB_IMPL_PARALLEL`, `MULIB_IMPL_TASKPOOL`  
 **Build:** C11, `-pthread`; C++17 declarations supported. Dependencies are never auto-enabled.
 
@@ -74,7 +74,7 @@ from callbacks that throw, longjmp, terminate a worker or never return.
 ## Runnable example and tests
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -pthread -Ikernels \
   examples/modules/pipeline.c -o /tmp/pipeline
 /tmp/pipeline
 ```
@@ -91,7 +91,7 @@ validation failure retaining ownership, empty inputs, and cleared output handles
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pipeline.h`](../include/mulib-pipeline.h) |
+| Header | [`kernels/mulib-pipeline.h`](../kernels/mulib-pipeline.h) |
 | Implementation switch | `MULIB_IMPL_PIPELINE` |
 | Repository-local includes | [mulib-parallel](mulib-parallel.md) |
 | Complete example | [`examples/modules/pipeline.c`](../examples/modules/pipeline.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

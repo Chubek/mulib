@@ -16,9 +16,9 @@ if [ "${SANITIZE:-0}" = 1 ]; then
 fi
 # Deliberate word splitting of compiler and linker flags.
 # shellcheck disable=SC2086
-"$CC" $FLAGS ${CPPFLAGS:-} -I"$ROOT/include" "$ROOT/tests/graphics/vulkan-legacy.c" $LINK -o "$BUILD/legacy"
+"$CC" $FLAGS ${CPPFLAGS:-} -I"$ROOT/kernels" "$ROOT/tests/graphics/vulkan-legacy.c" $LINK -o "$BUILD/legacy"
 # shellcheck disable=SC2086
-"$CC" $FLAGS ${CPPFLAGS:-} -I"$ROOT/include" -DMULIB_GLX_VULKAN_ENABLE \
+"$CC" $FLAGS ${CPPFLAGS:-} -I"$ROOT/kernels" -DMULIB_GLX_VULKAN_ENABLE \
     "$ROOT/tests/graphics/vulkan-device.c" $LINK -o "$BUILD/device"
 "$BUILD/legacy"
 "$BUILD/device"

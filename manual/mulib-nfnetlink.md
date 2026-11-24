@@ -34,7 +34,7 @@ See `../tests/test_nfnetlink.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nfnetlink.h`](../include/mulib-nfnetlink.h) |
+| Header | [`kernels/mulib-nfnetlink.h`](../kernels/mulib-nfnetlink.h) |
 | Implementation switch | `MULIB_IMPL_NFNETLINK` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/nfnetlink.c`](../examples/modules/nfnetlink.c) |
@@ -47,6 +47,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nfnetlink.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nfnetlink.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

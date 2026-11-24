@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-asyncio.h` · **Switch:** `MULIB_IMPL_ASYNCIO`  
+**Header:** `kernels/mulib-asyncio.h` · **Switch:** `MULIB_IMPL_ASYNCIO`  
 **Header dependency:** `mulib-select.h`; separately define `MULIB_IMPL_SELECT`
 in one implementation translation unit. No switch is implicitly enabled.
 C11, C++ C-linkage declarations; no third-party dependency.
@@ -113,7 +113,7 @@ application loop rather than pretending select supports them.
 ## Runnable example and checks
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/asyncio.c -o /tmp/opencode/asyncio-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/asyncio.c -o /tmp/opencode/asyncio-example
 /tmp/opencode/asyncio-example
 ```
 
@@ -132,7 +132,7 @@ reported as explicit skips, never simulated successes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-asyncio.h`](../include/mulib-asyncio.h) |
+| Header | [`kernels/mulib-asyncio.h`](../kernels/mulib-asyncio.h) |
 | Implementation switch | `MULIB_IMPL_ASYNCIO` |
 | Repository-local includes | [mulib-select](mulib-select.md) |
 | Complete example | [`examples/modules/asyncio.c`](../examples/modules/asyncio.c) |
@@ -145,6 +145,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asyncio.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/asyncio.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

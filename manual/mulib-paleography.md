@@ -122,9 +122,9 @@ Evidence: [functional/native callback tests](../tests/test_notation.c),
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-paleography.h`](../include/mulib-paleography.h) |
+| Header | [`kernels/mulib-paleography.h`](../kernels/mulib-paleography.h) |
 | Implementation switch | `MULIB_IMPL_PALEOGRAPHY` |
-| Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-json](mulib-json.md), [`include/mulib-mune-markup.inc`](../include/mulib-mune-markup.inc), [mulib-mune](mulib-mune.md), [`include/mulib-paleography-data.inc`](../include/mulib-paleography-data.inc), [mulib-svg](mulib-svg.md), [mulib-tex](mulib-tex.md) |
+| Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-json](mulib-json.md), [`kernels/mulib-mune-markup.inc`](../kernels/mulib-mune-markup.inc), [mulib-mune](mulib-mune.md), [`kernels/mulib-paleography-data.inc`](../kernels/mulib-paleography-data.inc), [mulib-svg](mulib-svg.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/paleography.c`](../examples/modules/paleography.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -135,6 +135,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/paleography.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/paleography.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

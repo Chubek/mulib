@@ -50,7 +50,7 @@ and negative transport paths. It does not certify full Virtio conformance.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-virtio.h`](../include/mulib-virtio.h) |
+| Header | [`kernels/mulib-virtio.h`](../kernels/mulib-virtio.h) |
 | Implementation switch | `MULIB_IMPL_VIRTIO` |
 | Repository-local includes | [mulib-vmmdev](mulib-vmmdev.md) |
 | Complete example | [`examples/modules/virtio.c`](../examples/modules/virtio.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/virtio.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/virtio.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

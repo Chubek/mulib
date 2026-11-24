@@ -40,7 +40,7 @@ ctest --test-dir build/data --output-on-failure
 For a single focused suite:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_data_search.c -lm -o build/test-data-search
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_data_search.c -lm -o build/test-data-search
 ./build/test-data-search
 ```
 

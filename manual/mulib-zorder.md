@@ -11,7 +11,7 @@ not implement a rectangle query or preserve ordinary Euclidean distance.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-zorder.h`](../include/mulib-zorder.h).
+Verbatim declaration section from [`kernels/mulib-zorder.h`](../kernels/mulib-zorder.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -47,7 +47,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-zorder.h`](../include/mulib-zorder.h) |
+| Header | [`kernels/mulib-zorder.h`](../kernels/mulib-zorder.h) |
 | Implementation switch | `MULIB_IMPL_ZORDER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/zorder.c`](../examples/modules/zorder.c) |
@@ -60,6 +60,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/zorder.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/zorder.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

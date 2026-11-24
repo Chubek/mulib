@@ -13,7 +13,7 @@ and results. See [FinPRED verification and limits](finpred.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-decisiontrace.h`](../include/mulib-decisiontrace.h) |
+| Header | [`kernels/mulib-decisiontrace.h`](../kernels/mulib-decisiontrace.h) |
 | Implementation switch | `MULIB_IMPL_DECISIONTRACE` |
 | Repository-local includes | None |
 | Complete example | [`examples/hospitality_demo.c`](../examples/hospitality_demo.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/hospitality_demo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

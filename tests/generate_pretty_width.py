@@ -6,7 +6,7 @@ import unicodedata as ucd
 
 
 VERSION = "16.0.0"
-HEADER = Path(__file__).resolve().parents[1] / "include/mulib-prettydoc.h"
+HEADER = Path(__file__).resolve().parents[1] / "kernels/mulib-prettydoc.h"
 BEGIN = "/* BEGIN GENERATED WIDTH TABLE */\n"
 END = "/* END GENERATED WIDTH TABLE */\n"
 

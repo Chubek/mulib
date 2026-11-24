@@ -3,7 +3,7 @@
 From the MuLIB root, compile the standalone C-side ownership example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   on1x/examples/contracts/contract_usage.c -lm -o /tmp/opencode/contract-usage
 /tmp/opencode/contract-usage
 # [42]

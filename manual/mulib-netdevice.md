@@ -25,7 +25,7 @@ and link activation are external operations. Tests:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-netdevice.h`](../include/mulib-netdevice.h).
+Verbatim declaration section from [`kernels/mulib-netdevice.h`](../kernels/mulib-netdevice.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -73,7 +73,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netdevice.h`](../include/mulib-netdevice.h) |
+| Header | [`kernels/mulib-netdevice.h`](../kernels/mulib-netdevice.h) |
 | Implementation switch | `MULIB_IMPL_NETDEVICE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/netdevice.c`](../examples/modules/netdevice.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netdevice.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netdevice.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

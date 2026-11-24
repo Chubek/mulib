@@ -19,7 +19,7 @@ module's implementation switch is needed; bytecode supplies declaration types.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-disasm.h`](../include/mulib-bytecode-disasm.h) |
+| Header | [`kernels/mulib-bytecode-disasm.h`](../kernels/mulib-bytecode-disasm.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_DISASM` |
 | Repository-local includes | [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/bytecode-disasm.c`](../examples/modules/bytecode-disasm.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-disasm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-disasm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

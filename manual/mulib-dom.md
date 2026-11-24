@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-dom.h` implements a native, XML-style DOM tree and synchronous
+`kernels/mulib-dom.h` implements a native, XML-style DOM tree and synchronous
 event propagation. Define `MULIB_IMPL_DOM`, `MULIB_IMPL_BUFFER`, and
 `MULIB_IMPL_UTF8` in one C99/C11 translation unit; include the header normally
 elsewhere. Declarations have C linkage for C++ clients. No browser, scripting
@@ -195,7 +195,7 @@ listener mutation/reentrancy, depth limits, and allocation-failure rollback.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dom.h`](../include/mulib-dom.h) |
+| Header | [`kernels/mulib-dom.h`](../kernels/mulib-dom.h) |
 | Implementation switch | `MULIB_IMPL_DOM` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/dom.c`](../examples/modules/dom.c) |
@@ -208,6 +208,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dom.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dom.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

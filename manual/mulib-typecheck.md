@@ -20,7 +20,7 @@ types. Trees/scopes/types are borrowed. Work is recursive over visited nodes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-typecheck.h`](../include/mulib-typecheck.h) |
+| Header | [`kernels/mulib-typecheck.h`](../kernels/mulib-typecheck.h) |
 | Implementation switch | `MULIB_IMPL_TYPECHECK` |
 | Repository-local includes | [mulib-parser-pratt](mulib-parser-pratt.md), [mulib-symboltable](mulib-symboltable.md), [mulib-typesystem](mulib-typesystem.md) |
 | Complete example | [`examples/modules/typecheck.c`](../examples/modules/typecheck.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/typecheck.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/typecheck.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

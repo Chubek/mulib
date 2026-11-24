@@ -22,7 +22,7 @@ and `free`. Add is amortized O(1), valid-tree validation O(nodes).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-syntax-tree.h`](../include/mulib-syntax-tree.h) |
+| Header | [`kernels/mulib-syntax-tree.h`](../kernels/mulib-syntax-tree.h) |
 | Implementation switch | `MULIB_IMPL_SYNTAX_TREE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/syntax-tree.c`](../examples/modules/syntax-tree.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/syntax-tree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/syntax-tree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

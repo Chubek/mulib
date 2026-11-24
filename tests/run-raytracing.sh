@@ -13,11 +13,11 @@ if [ "${SANITIZE:-0}" = 1 ]; then
     FLAGS="$FLAGS -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer"
 fi
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" "$ROOT/tests/test_raytracing.c" \
+"$CC" $FLAGS -I"$ROOT/kernels" "$ROOT/tests/test_raytracing.c" \
     "$ROOT/tests/raytracing-implementation.c" ${LDFLAGS:-} -lm -o "$BUILD/path"
 "$BUILD/path"
 # shellcheck disable=SC2086
-"$CC" $FLAGS -I"$ROOT/include" "$ROOT/tests/test_graphics_render.c" \
+"$CC" $FLAGS -I"$ROOT/kernels" "$ROOT/tests/test_graphics_render.c" \
     ${LDFLAGS:-} -lm -o "$BUILD/legacy"
 "$BUILD/legacy"
 printf 'PASS: seeded path tracing and legacy raytracing regressions\n'

@@ -66,9 +66,9 @@ streaming boundaries, output sentinels, and intrinsic/portable comparisons.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cryptohash.h`](../include/mulib-cryptohash.h) |
+| Header | [`kernels/mulib-cryptohash.h`](../kernels/mulib-cryptohash.h) |
 | Implementation switch | `MULIB_IMPL_CRYPTOHASH` |
-| Repository-local includes | [`include/detail/mulib-hash-core.h`](../include/detail/mulib-hash-core.h), [mulib-sha](mulib-sha.md) |
+| Repository-local includes | [`kernels/detail/mulib-hash-core.h`](../kernels/detail/mulib-hash-core.h), [mulib-sha](mulib-sha.md) |
 | Complete example | [`examples/modules/cryptohash.c`](../examples/modules/cryptohash.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cryptohash.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cryptohash.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

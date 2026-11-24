@@ -66,7 +66,7 @@ and checks unchanged response ownership and exactly-once session cleanup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-https.h`](../include/mulib-https.h) |
+| Header | [`kernels/mulib-https.h`](../kernels/mulib-https.h) |
 | Implementation switch | `MULIB_IMPL_HTTPS` |
 | Repository-local includes | [mulib-tsl](mulib-tsl.md), [mulib-webclient](mulib-webclient.md) |
 | Complete example | [`examples/modules/https.c`](../examples/modules/https.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/https.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/https.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

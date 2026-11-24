@@ -46,7 +46,7 @@ and allocation failures in [test_docstring.c](../tests/test_docstring.c) and
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tas.h`](../include/mulib-tas.h) |
+| Header | [`kernels/mulib-tas.h`](../kernels/mulib-tas.h) |
 | Implementation switch | `MULIB_IMPL_TAS` |
 | Repository-local includes | [mulib-xtas](mulib-xtas.md) |
 | Complete example | [`examples/modules/tas.c`](../examples/modules/tas.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tas.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tas.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

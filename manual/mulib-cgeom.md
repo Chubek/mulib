@@ -61,7 +61,7 @@ degeneracy, capacity and SIMD-tail checks.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cgeom.h`](../include/mulib-cgeom.h) |
+| Header | [`kernels/mulib-cgeom.h`](../kernels/mulib-cgeom.h) |
 | Implementation switch | `MULIB_IMPL_CGEOM` |
 | Repository-local includes | [mulib-linalg](mulib-linalg.md), [mulib-simdmath](mulib-simdmath.md) |
 | Complete example | [`examples/modules/cgeom.c`](../examples/modules/cgeom.c) |
@@ -74,6 +74,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cgeom.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cgeom.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

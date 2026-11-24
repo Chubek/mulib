@@ -85,7 +85,7 @@ bounded by source/tree limits and catalogue lookups. Evidence:
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-eqn.h`](../include/mulib-eqn.h) |
+| Header | [`kernels/mulib-eqn.h`](../kernels/mulib-eqn.h) |
 | Implementation switch | `MULIB_IMPL_EQN` |
 | Repository-local includes | [mulib-symbol](mulib-symbol.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/eqn.c`](../examples/modules/eqn.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/eqn.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/eqn.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

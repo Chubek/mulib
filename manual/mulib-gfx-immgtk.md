@@ -199,22 +199,22 @@ it is not a complete native widget, keyboard, clipboard or IME binding.
 From the repository root (executables may instead be placed in `build/`):
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test-gfx-immgtk.c -lm -ldl -o /tmp/opencode/test-gfx-immgtk
 /tmp/opencode/test-gfx-immgtk
-cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test-gfx-immgtk-followup.c -lm -ldl -o /tmp/opencode/test-gfx-immgtk-followup
 /tmp/opencode/test-gfx-immgtk-followup
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/gfx-immgtk-alloc.c -lm -o /tmp/opencode/gfx-immgtk-alloc
 /tmp/opencode/gfx-immgtk-alloc
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/gfx-immgtk-link.c tests/gfx-immgtk-link-peer.c -lm -o /tmp/opencode/gfx-immgtk-link
 /tmp/opencode/gfx-immgtk-link
-cc -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/gfx-immgtk-mune.c -pthread -lm -ldl -o /tmp/opencode/gfx-immgtk-mune
 /tmp/opencode/gfx-immgtk-mune
-c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+c++ -std=c++17 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/gfx-immgtk-legacy-cxx.cpp -lm -o /tmp/opencode/gfx-immgtk-legacy-cxx
 /tmp/opencode/gfx-immgtk-legacy-cxx
 ```

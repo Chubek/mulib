@@ -19,5 +19,5 @@ install(DIRECTORY ../muw3lib DESTINATION share/mulib
   FILES_MATCHING PATTERN "*.lua" PATTERN "*.md"
   PATTERN "tests" EXCLUDE)
 install(FILES ../microchan/profiles/muw3.prof DESTINATION share/mulib/microchan/profiles)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/kernels/ DESTINATION include
   FILES_MATCHING PATTERN "*.h" PATTERN "*.inc")

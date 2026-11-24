@@ -41,7 +41,7 @@ No file I/O, machine-code decoding, demangling or relocation application occurs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objdump.h`](../include/mulib-objdump.h) |
+| Header | [`kernels/mulib-objdump.h`](../kernels/mulib-objdump.h) |
 | Implementation switch | `MULIB_IMPL_OBJDUMP` |
 | Repository-local includes | [mulib-termstyle](mulib-termstyle.md) |
 | Complete example | [`examples/modules/objdump.c`](../examples/modules/objdump.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objdump.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objdump.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

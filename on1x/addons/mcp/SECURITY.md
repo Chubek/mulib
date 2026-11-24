@@ -13,9 +13,9 @@ Only explicitly allowlisted source data is loaded at startup:
 
 - Fixed repository/On1x README, verification/completion/backend/spec documents;
   `MANIFEST.yaml` and the explicit grammar/ASDL files in `core.FIXED`.
-- Exactly the canonical `include/mulib-NAME.h` and
+- Exactly the canonical `kernels/mulib-NAME.h` and
   `manual/mulib-NAME.md` paths validated from each manifest entry, plus
-  nonrecursive `include/mulib-*.h` matching the canonical name grammar.
+  nonrecursive `kernels/mulib-*.h` matching the canonical name grammar.
 - Nonrecursive `on1x/docs/*.md`, `on1x/examples/*.on1x` and
   `on1x/examples/kernel/*.on1x`, with conservative filename character policies.
 - The fixed standard-library/Exotract/ExoML catalogs, obligations and README

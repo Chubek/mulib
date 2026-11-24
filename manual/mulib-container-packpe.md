@@ -29,7 +29,7 @@ authentication; PE directory/signature contents are not interpreted.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-container-packpe.h`](../include/mulib-container-packpe.h).
+Verbatim declaration section from [`kernels/mulib-container-packpe.h`](../kernels/mulib-container-packpe.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -70,7 +70,7 @@ int mulib_container_packpe_open (const void *file, size_t length, size_t max_ima
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-packpe.h`](../include/mulib-container-packpe.h) |
+| Header | [`kernels/mulib-container-packpe.h`](../kernels/mulib-container-packpe.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_PACKPE` |
 | Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-pe](mulib-pe.md) |
 | Complete example | [`examples/modules/container-packpe.c`](../examples/modules/container-packpe.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-packpe.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-packpe.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -13,7 +13,7 @@ O(n); query stops when interval lows exceed high. Free resets owned entries.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rangeindex.h`](../include/mulib-rangeindex.h).
+Verbatim declaration section from [`kernels/mulib-rangeindex.h`](../kernels/mulib-rangeindex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -65,7 +65,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rangeindex.h`](../include/mulib-rangeindex.h) |
+| Header | [`kernels/mulib-rangeindex.h`](../kernels/mulib-rangeindex.h) |
 | Implementation switch | `MULIB_IMPL_RANGEINDEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/rangeindex.c`](../examples/modules/rangeindex.c) |
@@ -78,6 +78,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rangeindex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rangeindex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

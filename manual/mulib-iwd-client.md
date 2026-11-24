@@ -31,7 +31,7 @@ See `../tests/test_iwd-client.c` for its compile/link verification. Selected run
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-iwd-client.h`](../include/mulib-iwd-client.h) |
+| Header | [`kernels/mulib-iwd-client.h`](../kernels/mulib-iwd-client.h) |
 | Implementation switch | `MULIB_IMPL_IWD_CLIENT` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/iwd-client.c`](../examples/modules/iwd-client.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/iwd-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/iwd-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

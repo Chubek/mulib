@@ -13,7 +13,7 @@ conventions and feed authorization. See [FinPRED verification and limits](finpre
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-marketquote.h`](../include/mulib-marketquote.h) |
+| Header | [`kernels/mulib-marketquote.h`](../kernels/mulib-marketquote.h) |
 | Implementation switch | `MULIB_IMPL_MARKETQUOTE` |
 | Repository-local includes | [mulib-money](mulib-money.md) |
 | Complete example | [`examples/finpred_market.c`](../examples/finpred_market.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/finpred_market.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/finpred_market.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

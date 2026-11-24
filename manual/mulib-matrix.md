@@ -38,7 +38,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-matrix.h`](../include/mulib-matrix.h).
+Verbatim declaration section from [`kernels/mulib-matrix.h`](../kernels/mulib-matrix.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -117,7 +117,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-matrix.h`](../include/mulib-matrix.h) |
+| Header | [`kernels/mulib-matrix.h`](../kernels/mulib-matrix.h) |
 | Implementation switch | `MULIB_IMPL_MATRIX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/matrix.c`](../examples/modules/matrix.c) |
@@ -130,6 +130,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/matrix.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/matrix.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

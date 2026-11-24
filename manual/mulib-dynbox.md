@@ -95,7 +95,7 @@ NULL destroy is harmless. The focused suite exercises compiler-ABI calls,
 variadics, aggregate rollback, structure/x87 returns, qsort callbacks, stack
 callbacks, and allocation failures.
 
-Build: `cc -std=c11 -Iinclude examples/modules/dynbox.c -o dynbox-example`.
+Build: `cc -std=c11 -Ikernels examples/modules/dynbox.c -o dynbox-example`.
 
 `python3 tools/check_dynbox_abi.py` generates 100 deterministic native C
 signatures, compares calls and closures with compiler-generated calls, and loads
@@ -110,7 +110,7 @@ The tool is also registered with CTest and the repository checker.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dynbox.h`](../include/mulib-dynbox.h) |
+| Header | [`kernels/mulib-dynbox.h`](../kernels/mulib-dynbox.h) |
 | Implementation switch | `MULIB_IMPL_DYNBOX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dynbox.c`](../examples/modules/dynbox.c) |
@@ -123,6 +123,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dynbox.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dynbox.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

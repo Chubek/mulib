@@ -1,7 +1,7 @@
 # mulib-synth-truthtable
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-synth-truthtable.h`  
+**Header:** `kernels/mulib-synth-truthtable.h`  
 **Implementation switch:** `MULIB_IMPL_SYNTH_TRUTHTABLE`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SYNTH_TRUTHTABLE` defined b
 `tests/test_synth_truthtable.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_synth_truthtable.c -lm -o /tmp/test_synth_truthtable
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_synth_truthtable.c -lm -o /tmp/test_synth_truthtable
 /tmp/test_synth_truthtable
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-synth-truthtable.h`](../include/mulib-synth-truthtable.h).
+Verbatim declaration section from [`kernels/mulib-synth-truthtable.h`](../kernels/mulib-synth-truthtable.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ int mulib_synth_truth_cofactor(mulib_synth_truth_t t, unsigned variable, int val
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-synth-truthtable.h`](../include/mulib-synth-truthtable.h) |
+| Header | [`kernels/mulib-synth-truthtable.h`](../kernels/mulib-synth-truthtable.h) |
 | Implementation switch | `MULIB_IMPL_SYNTH_TRUTHTABLE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/synth-truthtable.c`](../examples/modules/synth-truthtable.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/synth-truthtable.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/synth-truthtable.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

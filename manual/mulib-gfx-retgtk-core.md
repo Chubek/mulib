@@ -243,13 +243,13 @@ virtualization or a native input grab.
 Run the three translation units together:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -Wpedantic -Ikernels \
   tests/test-gfx-retgtk-core.c tests/gfx-retgtk-core-types-a.c \
   tests/gfx-retgtk-core-types-b.c -lm -o /tmp/opencode/test-gfx-retgtk-core
 /tmp/opencode/test-gfx-retgtk-core
 
 cc -std=c11 -Wall -Wextra -Werror -Wpedantic \
-  -fsanitize=address,undefined -fno-omit-frame-pointer -g -Iinclude \
+  -fsanitize=address,undefined -fno-omit-frame-pointer -g -Ikernels \
   tests/test-gfx-retgtk-core.c tests/gfx-retgtk-core-types-a.c \
   tests/gfx-retgtk-core-types-b.c -lm -o /tmp/opencode/test-gfx-retgtk-core-sanitize
 ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
@@ -268,13 +268,13 @@ all widget-specific callbacks, thread safety or complete toolkit parity.
 The retained follow-up has no extra translation-unit peer:
 
 ```sh
-cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup
 /tmp/opencode/retgtk-followup
-clang -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+clang -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup-clang
 /tmp/opencode/retgtk-followup-clang
-cc -std=c11 -D_GNU_SOURCE -O1 -g -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -O1 -g -Wall -Wextra -Wpedantic -Werror -Ikernels \
   -fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all \
   tests/test-gfx-retgtk-followup.c -lm -ldl -o /tmp/opencode/retgtk-followup-asan
 ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \

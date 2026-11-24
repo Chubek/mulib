@@ -68,7 +68,7 @@ Generated execution is not step-limited because this subset has no loops/calls.
 ## Runnable example and generated-source verification
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/ccweave.c -o /tmp/ccweave
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/ccweave.c -o /tmp/ccweave
 /tmp/ccweave > /tmp/generated.c
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror -c /tmp/generated.c -o /tmp/generated.o
 ```
@@ -77,7 +77,7 @@ The assert example emits a function returning 42. For a generated executable
 covering every scalar operation and checked arithmetic failures:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_compiler_ir.c -o /tmp/compiler-ir
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_compiler_ir.c -o /tmp/compiler-ir
 /tmp/compiler-ir --emit > /tmp/generated-tests.c
 cc -std=c11 -Wall -Wextra -Wpedantic -Werror /tmp/generated-tests.c -o /tmp/generated-tests
 /tmp/generated-tests
@@ -90,7 +90,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror /tmp/generated-tests.c -o /tmp/gene
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ccweave.h`](../include/mulib-ccweave.h) |
+| Header | [`kernels/mulib-ccweave.h`](../kernels/mulib-ccweave.h) |
 | Implementation switch | `MULIB_IMPL_CCWEAVE` |
 | Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/ccweave.c`](../examples/modules/ccweave.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ccweave.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ccweave.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

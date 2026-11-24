@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-polytask.h` · **Switch:** `MULIB_IMPL_POLYTASK`
+**Header:** `kernels/mulib-polytask.h` · **Switch:** `MULIB_IMPL_POLYTASK`
 
 PolyTask combines native TASK plans, an owned JSON plan reader and a persistent
 bounded TASKPOOL. There are no external executors or mandatory JSON libraries.
@@ -84,7 +84,7 @@ AST and GLOB (each `MULIB_IMPL_` prefixed) in the implementation TU.
 The runnable example's `examples/tasks-common.h` explicitly lists them.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/polytask.c -pthread -lm -ldl -o /tmp/opencode/polytask
+cc -std=c11 -Ikernels examples/modules/polytask.c -pthread -lm -ldl -o /tmp/opencode/polytask
 /tmp/opencode/polytask
 ```
 
@@ -98,7 +98,7 @@ concurrent batches, stable results, failures, cancellation and graph dispatch.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-polytask.h`](../include/mulib-polytask.h) |
+| Header | [`kernels/mulib-polytask.h`](../kernels/mulib-polytask.h) |
 | Implementation switch | `MULIB_IMPL_POLYTASK` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-task](mulib-task.md), [mulib-taskpool](mulib-taskpool.md) |
 | Complete example | [`examples/modules/polytask.c`](../examples/modules/polytask.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/polytask.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/polytask.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

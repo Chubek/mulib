@@ -45,7 +45,7 @@ See `../tests/test_ustack.c` for its compile/link verification. Selected runnabl
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ustack.h`](../include/mulib-ustack.h) |
+| Header | [`kernels/mulib-ustack.h`](../kernels/mulib-ustack.h) |
 | Implementation switch | `MULIB_IMPL_USTACK` |
 | Repository-local includes | [mulib-uip-arp-cache](mulib-uip-arp-cache.md), [mulib-uip-arp](mulib-uip-arp.md), [mulib-uip-ethernet](mulib-uip-ethernet.md), [mulib-uip-icmp](mulib-uip-icmp.md), [mulib-uip-ipv4](mulib-uip-ipv4.md), [mulib-uip-udp](mulib-uip-udp.md) |
 | Complete example | [`examples/modules/ustack.c`](../examples/modules/ustack.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ustack.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ustack.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,6 +1,6 @@
 # Parsec — discovery-only: `transitive_descriptor_borrows`
 
-Unresolved semantics from `include/mulib-parsec.h`, the manual,
+Unresolved semantics from `kernels/mulib-parsec.h`, the manual,
 `on1x/contracts-exoml/parsec.exocontract.json` (18 combinator entries) and
 the Parsec section of `on1x/contracts-exoml/obligations.json`. Not executable
 or reviewed.

@@ -65,7 +65,7 @@ def main():
             parser.error(f'{path}: header does not identify requested Unicode {args.version}')
         if not data.rstrip().endswith(b'# EOF'):
             parser.error(f'{path}: missing end marker (possibly truncated corpus)')
-    flags = ['-std=c11', '-O2', '-g', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include')]
+    flags = ['-std=c11', '-O2', '-g', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'kernels')]
     if args.sanitizers:
         flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer']
     links = ['-lm'] if os.name != 'nt' else []

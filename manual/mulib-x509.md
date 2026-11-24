@@ -1,6 +1,6 @@
 # x509 — server certificates and trust stores
 
-**Header:** `include/mulib-x509.h` · **Switch:** `MULIB_IMPL_X509`
+**Header:** `kernels/mulib-x509.h` · **Switch:** `MULIB_IMPL_X509`
 
 Dependencies: `SIGNATURE`, `DER`, `SHA`, `ENTROPY`, `BASE64`, `INET6`, `INET4`,
 and `PARSEC`. [`examples/modules/x509.c`](../examples/modules/x509.c) has a
@@ -72,7 +72,7 @@ path constraints, wildcards and IP SANs. Run `make check-tls`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-x509.h`](../include/mulib-x509.h) |
+| Header | [`kernels/mulib-x509.h`](../kernels/mulib-x509.h) |
 | Implementation switch | `MULIB_IMPL_X509` |
 | Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-inet6](mulib-inet6.md), [mulib-signature](mulib-signature.md) |
 | Complete example | [`examples/modules/x509.c`](../examples/modules/x509.c) |
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/x509.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/x509.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

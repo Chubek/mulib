@@ -32,7 +32,7 @@ See `../tests/test_ethtool-features.c` for its compile/link verification. Select
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ethtool-features.h`](../include/mulib-ethtool-features.h) |
+| Header | [`kernels/mulib-ethtool-features.h`](../kernels/mulib-ethtool-features.h) |
 | Implementation switch | `MULIB_IMPL_ETHTOOL_FEATURES` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ethtool-features.c`](../examples/modules/ethtool-features.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ethtool-features.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ethtool-features.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -24,7 +24,7 @@ Unix syntax; commands with `-ldl` target Linux.
 Obtain a checkout or source archive and run these commands from its root:
 
 ```sh
-cc -std=c11 -Iinclude examples/quickstart.c -lm -o quickstart
+cc -std=c11 -Ikernels examples/quickstart.c -lm -o quickstart
 ./quickstart
 ```
 
@@ -35,13 +35,13 @@ MuLIB ready
 ```
 
 For an application that vendors MuLIB under `third_party/mulib/`, add
-`third_party/mulib/include` to the compiler's include path. Compile the module
+`third_party/mulib/kernels` to the compiler's include path. Compile the module
 implementations once in your own `.c` file, as shown in [GUIDE.md](GUIDE.md).
 There is no prebuilt core archive to link.
 
 Keep the source layout when vendoring:
 
-- Copy `include/` with its support headers, rather than only the top-level
+- Copy `kernels/` with its support headers, rather than only the top-level
   header for a module with dependencies.
 - Retain the sibling `.deprecated/` directory for OCI/imgtracker compatibility
   headers, which forward to preserved implementations there.
@@ -216,11 +216,11 @@ full regeneration optionally uses developer-only PyYAML and jsonschema.
 
 | Symptom | Resolution |
 | --- | --- |
-| Header not found | Add the MuLIB `include/` directory to the include path and preserve support headers |
+| Header not found | Add the MuLIB `kernels/` directory to the include path and preserve support headers |
 | Undefined `mulib_*` symbol | Link one implementation file with the module's required switches and dependency implementations |
 | Duplicate `mulib_*` symbols | Emit each implementation in only one translation unit; remove global implementation compile definitions |
 | Undefined math, thread, or loader symbols | Add the required platform libraries, after source/object files where link order matters |
-| Missing OCI/imgtracker include | Preserve `.deprecated/` alongside `include/` |
+| Missing OCI/imgtracker include | Preserve `.deprecated/` alongside `kernels/` |
 | C++ implementation errors | Compile the implementation as C11 and link the resulting object with C++ |
 | Example skips operations in Release | Keep assertions enabled; use `-UNDEBUG` for GCC/Clang when compiling repository examples manually |
 | Runtime backend unavailable | Check the module's supported platform and install its required native runtime |

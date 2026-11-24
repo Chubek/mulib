@@ -281,16 +281,16 @@ byte order. Selection requests are not clipboard INCR or ICCCM/EWMH support.
 Run from the repository root:
 
 ```sh
-cc -std=c11 -pedantic -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -pedantic -Wall -Wextra -Werror -Ikernels \
   tests/test-gfx-wire.c -lm -o /tmp/opencode/test-gfx-wire
 /tmp/opencode/test-gfx-wire
 
-cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -D_GNU_SOURCE -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   tests/test-gfx-backend-followup.c -lm -ldl -o /tmp/opencode/gfx-backend-followup
 /tmp/opencode/gfx-backend-followup
 
 cc -std=c11 -pedantic -Wall -Wextra -Werror \
-  -fsanitize=address,undefined -fno-omit-frame-pointer -g -Iinclude \
+  -fsanitize=address,undefined -fno-omit-frame-pointer -g -Ikernels \
   tests/test-gfx-wire.c -lm -o /tmp/opencode/test-gfx-wire-sanitize
 ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 UBSAN_OPTIONS=halt_on_error=1 \
   /tmp/opencode/test-gfx-wire-sanitize

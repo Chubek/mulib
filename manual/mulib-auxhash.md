@@ -36,9 +36,9 @@ The older `mulib-hash.h` FNV-1a API remains compatible. No allocation occurs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-auxhash.h`](../include/mulib-auxhash.h) |
+| Header | [`kernels/mulib-auxhash.h`](../kernels/mulib-auxhash.h) |
 | Implementation switch | `MULIB_IMPL_AUXHASH` |
-| Repository-local includes | [`include/detail/mulib-hash-core.h`](../include/detail/mulib-hash-core.h) |
+| Repository-local includes | [`kernels/detail/mulib-hash-core.h`](../kernels/detail/mulib-hash-core.h) |
 | Complete example | [`examples/modules/auxhash.c`](../examples/modules/auxhash.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -49,6 +49,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/auxhash.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/auxhash.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

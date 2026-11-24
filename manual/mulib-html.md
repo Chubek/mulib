@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-html.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-html.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope and dependencies
 
@@ -122,7 +122,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/html.c -o ./mulib-html
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/html.c -o ./mulib-html
 ./mulib-html
 ```
 
@@ -147,7 +147,7 @@ replaced by this adapter. See [the pipeline contract](docir-publishing.md).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-html.h`](../include/mulib-html.h) |
+| Header | [`kernels/mulib-html.h`](../kernels/mulib-html.h) |
 | Implementation switch | `MULIB_IMPL_HTML` |
 | Repository-local includes | [mulib-docir](mulib-docir.md), [mulib-xml](mulib-xml.md) |
 | Complete example | [`examples/modules/html.c`](../examples/modules/html.c) |
@@ -160,6 +160,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/html.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/html.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

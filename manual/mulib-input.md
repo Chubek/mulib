@@ -34,7 +34,7 @@ external synchronization. Keep devices open only while actively consuming events
 
 ## Example
 
-`cc -std=c11 -Iinclude examples/modules/input.c -o input` runs without hardware.
+`cc -std=c11 -Ikernels examples/modules/input.c -o input` runs without hardware.
 `tests/test_devices.c` exercises native-record translation using a pipe and
 nonblocking/error paths without reading the user's keyboard.
 
@@ -45,7 +45,7 @@ nonblocking/error paths without reading the user's keyboard.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-input.h`](../include/mulib-input.h) |
+| Header | [`kernels/mulib-input.h`](../kernels/mulib-input.h) |
 | Implementation switch | `MULIB_IMPL_INPUT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/input.c`](../examples/modules/input.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/input.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/input.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -12,7 +12,7 @@ means no match or invalid. [Example](../examples/modules/vhpst.c),
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vhpst.h`](../include/mulib-vhpst.h).
+Verbatim declaration section from [`kernels/mulib-vhpst.h`](../kernels/mulib-vhpst.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vhpst.h`](../include/mulib-vhpst.h) |
+| Header | [`kernels/mulib-vhpst.h`](../kernels/mulib-vhpst.h) |
 | Implementation switch | `MULIB_IMPL_VHPST` |
 | Repository-local includes | [mulib-seurity](mulib-seurity.md) |
 | Complete example | [`examples/modules/vhpst.c`](../examples/modules/vhpst.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vhpst.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vhpst.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

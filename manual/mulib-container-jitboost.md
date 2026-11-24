@@ -56,7 +56,7 @@ native execution is supported.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-jitboost.h`](../include/mulib-container-jitboost.h) |
+| Header | [`kernels/mulib-container-jitboost.h`](../kernels/mulib-container-jitboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_JITBOOST` |
 | Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-jit](mulib-jit.md) |
 | Complete example | [`examples/modules/container-jitboost.c`](../examples/modules/container-jitboost.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-jitboost.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-jitboost.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

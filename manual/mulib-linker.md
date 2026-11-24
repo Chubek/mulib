@@ -69,7 +69,7 @@ image, relative definition outside the image, and image-base wraparound.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/linker.c -o /tmp/opencode/mulib-linker
 /tmp/opencode/mulib-linker
 ```
@@ -85,7 +85,7 @@ branches at base zero, signed boundaries/cancellation, limits and overflow.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-linker.h`](../include/mulib-linker.h) |
+| Header | [`kernels/mulib-linker.h`](../kernels/mulib-linker.h) |
 | Implementation switch | `MULIB_IMPL_LINKER` |
 | Repository-local includes | [mulib-emitter](mulib-emitter.md) |
 | Complete example | [`examples/modules/linker.c`](../examples/modules/linker.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/linker.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/linker.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

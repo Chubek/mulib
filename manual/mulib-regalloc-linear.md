@@ -22,7 +22,7 @@ O(n²), scratch O(n); register mask may be zero.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-regalloc-linear.h`](../include/mulib-regalloc-linear.h) |
+| Header | [`kernels/mulib-regalloc-linear.h`](../kernels/mulib-regalloc-linear.h) |
 | Implementation switch | `MULIB_IMPL_REGALLOC_LINEAR` |
 | Repository-local includes | [mulib-liveintervals](mulib-liveintervals.md), [mulib-physreg](mulib-physreg.md) |
 | Complete example | [`examples/modules/regalloc-linear.c`](../examples/modules/regalloc-linear.c) |
@@ -35,6 +35,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/regalloc-linear.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/regalloc-linear.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -36,7 +36,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ring.h`](../include/mulib-ring.h).
+Verbatim declaration section from [`kernels/mulib-ring.h`](../kernels/mulib-ring.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -115,7 +115,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ring.h`](../include/mulib-ring.h) |
+| Header | [`kernels/mulib-ring.h`](../kernels/mulib-ring.h) |
 | Implementation switch | `MULIB_IMPL_RING` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ring.c`](../examples/modules/ring.c) |
@@ -128,6 +128,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ring.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ring.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

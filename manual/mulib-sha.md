@@ -43,9 +43,9 @@ output bounds, and portable/intrinsic equivalence.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sha.h`](../include/mulib-sha.h) |
+| Header | [`kernels/mulib-sha.h`](../kernels/mulib-sha.h) |
 | Implementation switch | `MULIB_IMPL_SHA` |
-| Repository-local includes | [`include/detail/mulib-hash-core.h`](../include/detail/mulib-hash-core.h) |
+| Repository-local includes | [`kernels/detail/mulib-hash-core.h`](../kernels/detail/mulib-hash-core.h) |
 | Complete example | [`examples/modules/sha.c`](../examples/modules/sha.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -56,6 +56,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sha.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sha.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

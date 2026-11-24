@@ -16,11 +16,11 @@ if [ "${SANITIZE:-0}" = 1 ]; then
 fi
 # Deliberate word splitting permits compiler flags, not source paths.
 # shellcheck disable=SC2086
-"$CC" $FLAGS -DMULIB_NOTEBOOK_HEADLESS_NO_MAIN -Iinclude -Iexamples \
+"$CC" $FLAGS -DMULIB_NOTEBOOK_HEADLESS_NO_MAIN -Ikernels -Iexamples \
     examples/notebook-headless.c tests/test-notebook-headless.c $LINK -o "$BUILD/test"
 "$BUILD/test" "$BUILD/document.mnb" "$BUILD/must-not-exist"
 # shellcheck disable=SC2086
-"$CC" $FLAGS -Iinclude examples/notebook-headless.c $LINK -o "$BUILD/demo"
+"$CC" $FLAGS -Ikernels examples/notebook-headless.c $LINK -o "$BUILD/demo"
 "$BUILD/demo" --ppm "$BUILD/top.ppm" --save "$BUILD/fixture.mnb"
 "$BUILD/demo" --scroll 220 --ppm "$BUILD/scrolled.ppm"
 "$BUILD/demo" --load "$BUILD/fixture.mnb" --save "$BUILD/reopened.mnb"

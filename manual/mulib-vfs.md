@@ -14,7 +14,7 @@ header. Other translation units include declarations only. No implementation
 switch is enabled by the header.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/vfs.c -o /tmp/vfs-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/vfs.c -o /tmp/vfs-example
 /tmp/vfs-example
 ```
 
@@ -124,7 +124,7 @@ composition, and injected allocation failures with always-moving realloc.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vfs.h`](../include/mulib-vfs.h) |
+| Header | [`kernels/mulib-vfs.h`](../kernels/mulib-vfs.h) |
 | Implementation switch | `MULIB_IMPL_VFS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vfs.c`](../examples/modules/vfs.c) |
@@ -137,6 +137,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

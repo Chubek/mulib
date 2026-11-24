@@ -57,7 +57,7 @@ Tests compile/validate rootfs-based native images without requiring guest execut
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-oixboost.h`](../include/mulib-container-oixboost.h) |
+| Header | [`kernels/mulib-container-oixboost.h`](../kernels/mulib-container-oixboost.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_OIXBOOST` |
 | Repository-local includes | [mulib-containerboost](mulib-containerboost.md), [mulib-oix](mulib-oix.md) |
 | Complete example | [`examples/modules/container-oixboost.c`](../examples/modules/container-oixboost.c) |
@@ -70,6 +70,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-oixboost.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-oixboost.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

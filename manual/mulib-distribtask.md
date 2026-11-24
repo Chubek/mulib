@@ -76,7 +76,7 @@ Define `MULIB_IMPL_DISTRIBTASK`, `MULIB_IMPL_JSON`, `MULIB_IMPL_YAML`,
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-distribtask.h`](../include/mulib-distribtask.h) |
+| Header | [`kernels/mulib-distribtask.h`](../kernels/mulib-distribtask.h) |
 | Implementation switch | `MULIB_IMPL_DISTRIBTASK` |
 | Repository-local includes | [mulib-mune](mulib-mune.md), [mulib-utf8](mulib-utf8.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/distribtask.c`](../examples/modules/distribtask.c) |
@@ -89,6 +89,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distribtask.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/distribtask.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

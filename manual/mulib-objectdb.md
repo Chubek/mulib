@@ -28,7 +28,7 @@ freeing the database. State is in-memory and caller-synchronized.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-objectdb.h`](../include/mulib-objectdb.h).
+Verbatim declaration section from [`kernels/mulib-objectdb.h`](../kernels/mulib-objectdb.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -77,7 +77,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-objectdb.h`](../include/mulib-objectdb.h) |
+| Header | [`kernels/mulib-objectdb.h`](../kernels/mulib-objectdb.h) |
 | Implementation switch | `MULIB_IMPL_OBJECTDB` |
 | Repository-local includes | [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/objectdb.c`](../examples/modules/objectdb.c) |
@@ -90,6 +90,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/objectdb.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/objectdb.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

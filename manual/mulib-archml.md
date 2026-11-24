@@ -323,7 +323,7 @@ contracts. Extend runtime coverage records whenever a feature becomes selectable
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-archml.h`](../include/mulib-archml.h) |
+| Header | [`kernels/mulib-archml.h`](../kernels/mulib-archml.h) |
 | Implementation switch | `MULIB_IMPL_ARCHML` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md) |
 | Complete example | [`examples/modules/archml.c`](../examples/modules/archml.c) |
@@ -336,6 +336,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/archml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/archml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -19,7 +19,7 @@ pending bytes. O(chunk bytes), memory bounded by max_record.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ingest-stream.h`](../include/mulib-ingest-stream.h).
+Verbatim declaration section from [`kernels/mulib-ingest-stream.h`](../kernels/mulib-ingest-stream.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -68,7 +68,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ingest-stream.h`](../include/mulib-ingest-stream.h) |
+| Header | [`kernels/mulib-ingest-stream.h`](../kernels/mulib-ingest-stream.h) |
 | Implementation switch | `MULIB_IMPL_INGEST_STREAM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/ingest-stream.c`](../examples/modules/ingest-stream.c) |
@@ -81,6 +81,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ingest-stream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ingest-stream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

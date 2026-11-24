@@ -1,7 +1,7 @@
 # mulib-asic-sta
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-asic-sta.h`  
+**Header:** `kernels/mulib-asic-sta.h`  
 **Implementation switch:** `MULIB_IMPL_ASIC_STA`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_ASIC_STA` defined before in
 `tests/test_asic_sta.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_asic_sta.c -lm -o /tmp/test_asic_sta
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_asic_sta.c -lm -o /tmp/test_asic_sta
 /tmp/test_asic_sta
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-asic-sta.h`](../include/mulib-asic-sta.h).
+Verbatim declaration section from [`kernels/mulib-asic-sta.h`](../kernels/mulib-asic-sta.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ int mulib_asic_sta_slack(const mulib_asic_timing_node_t *nodes, size_t count, do
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-asic-sta.h`](../include/mulib-asic-sta.h) |
+| Header | [`kernels/mulib-asic-sta.h`](../kernels/mulib-asic-sta.h) |
 | Implementation switch | `MULIB_IMPL_ASIC_STA` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/asic-sta.c`](../examples/modules/asic-sta.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/asic-sta.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/asic-sta.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

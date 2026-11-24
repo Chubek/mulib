@@ -37,7 +37,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-queue.h`](../include/mulib-queue.h).
+Verbatim declaration section from [`kernels/mulib-queue.h`](../kernels/mulib-queue.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -115,7 +115,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-queue.h`](../include/mulib-queue.h) |
+| Header | [`kernels/mulib-queue.h`](../kernels/mulib-queue.h) |
 | Implementation switch | `MULIB_IMPL_QUEUE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/queue.c`](../examples/modules/queue.c) |
@@ -128,6 +128,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/queue.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/queue.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

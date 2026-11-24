@@ -31,7 +31,7 @@ See `../tests/test_uip-timer.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-timer.h`](../include/mulib-uip-timer.h) |
+| Header | [`kernels/mulib-uip-timer.h`](../kernels/mulib-uip-timer.h) |
 | Implementation switch | `MULIB_IMPL_UIP_TIMER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-timer.c`](../examples/modules/uip-timer.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-timer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-timer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

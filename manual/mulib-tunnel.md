@@ -26,7 +26,7 @@ Tests: `tests/test_transport_extensions.c`, with independently blocked lanes.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tunnel.h`](../include/mulib-tunnel.h).
+Verbatim declaration section from [`kernels/mulib-tunnel.h`](../kernels/mulib-tunnel.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -82,7 +82,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tunnel.h`](../include/mulib-tunnel.h) |
+| Header | [`kernels/mulib-tunnel.h`](../kernels/mulib-tunnel.h) |
 | Implementation switch | `MULIB_IMPL_TUNNEL` |
 | Repository-local includes | [mulib-xtks](mulib-xtks.md) |
 | Complete example | [`examples/modules/tunnel.c`](../examples/modules/tunnel.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tunnel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tunnel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

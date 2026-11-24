@@ -39,7 +39,7 @@ def main():
         if not shutil.which(compiler):
             parser.error(f"required compiler not found: {compiler}")
     records = []
-    source_hashes = {name: hashlib.sha256((ROOT / "include" / name).read_bytes()).hexdigest()
+    source_hashes = {name: hashlib.sha256((ROOT / "kernels" / name).read_bytes()).hexdigest()
                      for name in headers}
     env = dict(os.environ, LC_ALL="C")
     env["ASAN_OPTIONS"] = "detect_leaks=1:halt_on_error=1"
@@ -87,7 +87,7 @@ def main():
                 "audio", "raytracing", "colorprofile", "colorconvert", "colormodel",
             ]
             canonical = ["mulib-" + name + ".h" for name in canonical_names]
-            canonical += sorted(p.name for p in (ROOT / "include").glob("mulib-bytecode-*.h"))
+            canonical += sorted(p.name for p in (ROOT / "kernels").glob("mulib-bytecode-*.h"))
             composition = work / "composition.c"
             composition.write_text(
                 "".join(f'#include "{name}"\n' for name in canonical) +
@@ -111,7 +111,7 @@ def main():
                 raise RuntimeError("no media regression test sources found")
             run([sys.executable, ROOT / "tests/test-media-tools.py"])
             for compiler in compilers:
-                base = [compiler, *FLAGS, "-I", ROOT / "include"]
+                base = [compiler, *FLAGS, "-I", ROOT / "kernels"]
                 run([compiler, "--version"])
                 for header in headers:
                     one.write_text(f'#include "{header}"\nint main(void) {{ return 0; }}\n')
@@ -143,7 +143,7 @@ def main():
                       f"{len(tests)} regressions and example passed"
                       + ("" if args.no_sanitize else " (ASan/UBSan included)"), flush=True)
             if args.fuzz_runs:
-                run(["clang", *FLAGS, "-I", ROOT / "include", "-g", "-O1",
+                run(["clang", *FLAGS, "-I", ROOT / "kernels", "-g", "-O1",
                      "-fsanitize=fuzzer,address,undefined", "-fno-omit-frame-pointer",
                      ROOT / "tests/fuzz_media_parsers.c", "-lm", "-o", work / "fuzz-parsers"])
                 run([work / "fuzz-parsers", "-runs=" + str(args.fuzz_runs),
@@ -151,7 +151,7 @@ def main():
                      "-artifact_prefix=" + str(work) + "/"])
                 print(f"Clang libFuzzer: {args.fuzz_runs} bounded parser runs passed", flush=True)
             changed = [name for name, digest in source_hashes.items()
-                       if hashlib.sha256((ROOT / "include" / name).read_bytes()).hexdigest() != digest]
+                       if hashlib.sha256((ROOT / "kernels" / name).read_bytes()).hexdigest() != digest]
             if changed:
                 raise RuntimeError("headers changed during validation; rerun: " + ", ".join(changed))
     except (OSError, RuntimeError) as error:

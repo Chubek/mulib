@@ -32,14 +32,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-typeparallel.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-typeparallel.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-typeparallel.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-typeparallel.c -lm -o test
 ./test
 ```
 
@@ -58,7 +58,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-typeparallel.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-typeparallel.h`](../include/mulib-typeparallel.h) |
+| Header | [`kernels/mulib-typeparallel.h`](../kernels/mulib-typeparallel.h) |
 | Implementation switch | `MULIB_IMPL_TYPEPARALLEL` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-typeparallel.c`](../examples/mulib-typeparallel.c) |
@@ -71,6 +71,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-typeparallel.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-typeparallel.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

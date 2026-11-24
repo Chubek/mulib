@@ -119,7 +119,7 @@ def project_entry(contracts, name, lines):
             raise ValueError(f"line {number}: unsupported module field layout")
 
     header = fields.get("header")
-    if header != f"include/mulib-{name}.h":
+    if header != f"kernels/mulib-{name}.h":
         raise ValueError("missing or noncanonical module header")
     status = fields.get("status")
     if status not in {"implemented", "bounded", "reserved"}:
@@ -198,7 +198,7 @@ def generate(root, *, raw_manifest=None):
         if len(names) > 1:
             raise ValueError(f"ambiguous manifest alias: mulib.{alias} ({', '.join(sorted(names))})")
     registered = {item["header"] for item in modules.values()}
-    headers = {path.relative_to(root).as_posix() for path in root.glob("include/mulib-*.h")}
+    headers = {path.relative_to(root).as_posix() for path in root.glob("kernels/mulib-*.h")}
     missing = sorted(headers - registered)
     if missing:
         raise ValueError("unregistered kernel header: " + missing[0] + "; register in MANIFEST.yaml")

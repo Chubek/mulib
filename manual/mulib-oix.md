@@ -24,7 +24,7 @@ The [standalone example](../examples/modules/oix.c) is also a small compiler and
 runner:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude examples/modules/oix.c -lm -o oix
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels examples/modules/oix.c -lm -o oix
 ./oix --output oix.img
 ./oix --json config.json --output custom.img
 ./oix --yaml config.yaml --run
@@ -360,7 +360,7 @@ This interpreter is not exposed as a production backend or KVM substitute.
 Actual KVM execution is an explicit hardware test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_oix.c -lm -o test-oix
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_oix.c -lm -o test-oix
 ./test-oix
 MULIB_OIX_TEST_KVM=1 ./test-oix
 ```
@@ -376,7 +376,7 @@ the generated kernel behavior but cannot validate KVM setup or hardware executio
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-oix.h`](../include/mulib-oix.h) |
+| Header | [`kernels/mulib-oix.h`](../kernels/mulib-oix.h) |
 | Implementation switch | `MULIB_IMPL_OIX` |
 | Repository-local includes | [mulib-base64](mulib-base64.md), [mulib-confuse](mulib-confuse.md), [mulib-crc32](mulib-crc32.md), [mulib-emitter](mulib-emitter.md), [mulib-json](mulib-json.md), [mulib-kvm](mulib-kvm.md), [mulib-toml](mulib-toml.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/oix.c`](../examples/modules/oix.c) |
@@ -389,6 +389,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/oix.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/oix.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

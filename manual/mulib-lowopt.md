@@ -66,7 +66,7 @@ outputs. Zero is a real bound; input pointers must refer to readable arrays.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/lowopt.c -lm -o lowopt
+cc -std=c11 -Ikernels examples/modules/lowopt.c -lm -o lowopt
 ./lowopt
 ```
 
@@ -82,7 +82,7 @@ failures through the optimization pipeline.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lowopt.h`](../include/mulib-lowopt.h) |
+| Header | [`kernels/mulib-lowopt.h`](../kernels/mulib-lowopt.h) |
 | Implementation switch | `MULIB_IMPL_LOWOPT` |
 | Repository-local includes | [mulib-mir](mulib-mir.md) |
 | Complete example | [`examples/modules/lowopt.c`](../examples/modules/lowopt.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lowopt.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lowopt.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

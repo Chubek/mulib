@@ -129,7 +129,7 @@ and `mpegvideo` parser for decoding.
 Run the dedicated video test from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
   -DMULIB_MINIMPEG_USE_LIBAVCODEC tests/minimpeg-video.c \
   $(pkg-config --cflags --libs libavcodec libavutil) -lm -o minimpeg-video
 ./minimpeg-video
@@ -152,7 +152,7 @@ opt-in `MULIB_BUILD_MINIMPEG_VIDEO_TESTS` option for the same tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-minimpeg.h`](../include/mulib-minimpeg.h) |
+| Header | [`kernels/mulib-minimpeg.h`](../kernels/mulib-minimpeg.h) |
 | Implementation switch | `MULIB_IMPL_MINIMPEG` |
 | Repository-local includes | [mulib-audio](mulib-audio.md), [mulib-codec-core](mulib-codec-core.md) |
 | Complete example | [`examples/modules/minimpeg.c`](../examples/modules/minimpeg.c) |
@@ -165,6 +165,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/minimpeg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/minimpeg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

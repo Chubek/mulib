@@ -21,7 +21,7 @@ reusable plaintext buffers; wipe those buffers after use. Do not dispatch
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshauth.h`](../include/mulib-sshauth.h) |
+| Header | [`kernels/mulib-sshauth.h`](../kernels/mulib-sshauth.h) |
 | Implementation switch | `MULIB_IMPL_SSHAUTH` |
 | Repository-local includes | [mulib-ed25519](mulib-ed25519.md), [mulib-sshkey](mulib-sshkey.md), [mulib-sshproto](mulib-sshproto.md) |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

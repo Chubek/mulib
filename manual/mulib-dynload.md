@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-dynload.h`  
+**Header:** `kernels/mulib-dynload.h`  
 **Implementation switch:** `MULIB_IMPL_DYNLOAD`  
 **MuLIB dependencies:** none. **Link:** `-ldl` on Linux/other libdl systems;
 macOS uses its system loader, Windows its standard system libraries.
@@ -122,7 +122,7 @@ int main(void) {
 This inline example targets a dynamically linked POSIX process. The full
 `examples/modules/dynload.c` also selects a Windows system library when relevant.
 On Linux build/run with
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/dynload.c -ldl -o dynload-example`
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/dynload.c -ldl -o dynload-example`
 then `./dynload-example`. Storage tests cover native failures, unchanged symbol
 outputs, current-process lookup, tiny error buffers, state, and repeated close.
 
@@ -133,7 +133,7 @@ outputs, current-process lookup, tiny error buffers, state, and repeated close.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dynload.h`](../include/mulib-dynload.h) |
+| Header | [`kernels/mulib-dynload.h`](../kernels/mulib-dynload.h) |
 | Implementation switch | `MULIB_IMPL_DYNLOAD` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dynload.c`](../examples/modules/dynload.c) |
@@ -146,6 +146,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dynload.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dynload.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

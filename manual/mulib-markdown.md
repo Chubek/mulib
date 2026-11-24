@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-markdown.h` · **Language:** ISO C11, C++17 declarations
+**Header:** `kernels/mulib-markdown.h` · **Language:** ISO C11, C++17 declarations
 
 ## Scope: deliberately not CommonMark
 
@@ -114,7 +114,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/markdown.c -o ./mulib-markdown
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/markdown.c -o ./mulib-markdown
 ./mulib-markdown
 ```
 
@@ -128,7 +128,7 @@ schemes, malformed encodings/fences, randomized inputs and allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-markdown.h`](../include/mulib-markdown.h) |
+| Header | [`kernels/mulib-markdown.h`](../kernels/mulib-markdown.h) |
 | Implementation switch | `MULIB_IMPL_MARKDOWN` |
 | Repository-local includes | [mulib-html](mulib-html.md) |
 | Complete example | [`examples/modules/markdown.c`](../examples/modules/markdown.c) |
@@ -141,6 +141,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/markdown.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/markdown.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

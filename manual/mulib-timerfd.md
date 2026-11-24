@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-timerfd.h` · **Switch:** `MULIB_IMPL_TIMERFD`  
+**Header:** `kernels/mulib-timerfd.h` · **Switch:** `MULIB_IMPL_TIMERFD`  
 **Dependencies:** none. Linux native timerfd; C11 / C-linkage declarations.
 
 ## Supported timers
@@ -58,7 +58,7 @@ applications with concurrent consumers.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/timerfd.c -o /tmp/opencode/timerfd-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/timerfd.c -o /tmp/opencode/timerfd-example
 /tmp/opencode/timerfd-example
 ```
 
@@ -75,7 +75,7 @@ integration. No elevated permissions or third-party library is normally needed.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-timerfd.h`](../include/mulib-timerfd.h) |
+| Header | [`kernels/mulib-timerfd.h`](../kernels/mulib-timerfd.h) |
 | Implementation switch | `MULIB_IMPL_TIMERFD` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/timerfd.c`](../examples/modules/timerfd.c) |
@@ -88,6 +88,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/timerfd.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/timerfd.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

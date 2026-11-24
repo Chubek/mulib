@@ -12,7 +12,7 @@ Define `MULIB_IMPL_DATALOG` once, and include normally elsewhere. Declarations
 support C++ consumers; implementation requires C11.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/datalog.c -o datalog
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/datalog.c -o datalog
 ./datalog
 ```
 
@@ -120,7 +120,7 @@ fact/step/round budgets, and allocation failure.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-datalog.h`](../include/mulib-datalog.h) |
+| Header | [`kernels/mulib-datalog.h`](../kernels/mulib-datalog.h) |
 | Implementation switch | `MULIB_IMPL_DATALOG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/datalog.c`](../examples/modules/datalog.c) |
@@ -133,6 +133,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/datalog.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/datalog.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

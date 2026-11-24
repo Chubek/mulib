@@ -22,7 +22,7 @@ Windows, colon on POSIX).
 | `ON1X_STDLIB_PATH` | `--stdlib-path DIR:DIR` | `on1xc`, build helper: standard-library roots |
 | `ON1X_PPX_PATH` | `--ppx-path DIR:DIR` | `on1xc`, build helper: PPX, including standard processors |
 | `ON1X_STDPPX_PATH` | `--stdppx-path DIR:DIR` | `on1xc`, build helper: preferred standard-processor directories |
-| `ON1X_MULIB_PATH` | `--mulib-path DIR:DIR` | Build helper, `on1x-mulib.py`, `on1x-exotract.py`: kernel include directories (or checkout roots containing `include/`) |
+| `ON1X_MULIB_PATH` | `--mulib-path DIR:DIR` | Build helper, `on1x-mulib.py`, `on1x-exotract.py`: kernel include directories (or checkout roots containing `kernels/`) |
 
 The build helper is `on1x/tools/on1x-build.py`. It forwards library and PPX
 options to the actual compiler; it does not implement another import/manifest
@@ -31,13 +31,13 @@ parser. MuLIB inspection/extraction flags precede their subcommand.
 ```sh
 export ON1X_LIB_PATH="/opt/on1x/libraries:$HOME/.local/share/on1x/stdlib"
 export ON1X_PPX_PATH="$HOME/.local/lib/on1x/ppx"
-export ON1X_MULIB_PATH="/opt/mulib/include"
+export ON1X_MULIB_PATH="/opt/mulib/kernels"
 
 on1xc --use-ppx identity --check app.on1x
 python3 on1x/tools/on1x-build.py app.on1x --on1xc build/on1x/on1xc \
   --lib-path local-libs:vendor --ppx-path build/on1x/stdppx \
-  --use-ppx identity --mulib-path /opt/mulib/include -o build/app
-python3 on1x/tools/on1x-mulib.py --mulib-path /opt/mulib/include plan bitset
+  --use-ppx identity --mulib-path /opt/mulib/kernels -o build/app
+python3 on1x/tools/on1x-mulib.py --mulib-path /opt/mulib/kernels plan bitset
 ```
 
 Once discovered, source imports use module names, PPXs use processor names, and
@@ -192,7 +192,7 @@ executable/generated-C publication.
 ## Kernel lookup and evidence
 
 Kernel include lookup searches CLI lists, environment lists, then the selected
-checkout's `include/`. Metadata/fixtures still come from a real `MANIFEST.yaml`:
+checkout's `kernels/`. Metadata/fixtures still come from a real `MANIFEST.yaml`:
 explicit `--mulib-root` (`--root` for inspection/extraction), legacy
 `ON1X_MULIB_ROOT`, the first search entry's checkout with a manifest, then the
 existing source-tree default. Multiple include directories may supply different

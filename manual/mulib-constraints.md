@@ -19,7 +19,7 @@ and `free` after use. Amortized union/find is inverse-Ackermann time; storage O(
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-constraints.h`](../include/mulib-constraints.h) |
+| Header | [`kernels/mulib-constraints.h`](../kernels/mulib-constraints.h) |
 | Implementation switch | `MULIB_IMPL_CONSTRAINTS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/constraints.c`](../examples/modules/constraints.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/constraints.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/constraints.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -9,7 +9,7 @@ HOTP, TOTP and Steam generation are local primitives. Durable HOTP issuance requ
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-otp.h`](../include/mulib-secret-otp.h) |
+| Header | [`kernels/mulib-secret-otp.h`](../kernels/mulib-secret-otp.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_OTP` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md), [mulib-secret-state](mulib-secret-state.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

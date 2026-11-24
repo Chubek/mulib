@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-verttext.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-verttext.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-verttext.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-verttext.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-verttext.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-verttext.h`](../include/mulib-verttext.h) |
+| Header | [`kernels/mulib-verttext.h`](../kernels/mulib-verttext.h) |
 | Implementation switch | `MULIB_IMPL_VERTTEXT` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-verttext.c`](../examples/mulib-verttext.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-verttext.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-verttext.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

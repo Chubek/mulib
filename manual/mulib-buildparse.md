@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-buildparse.h`  
+**Header:** `kernels/mulib-buildparse.h`  
 **Switches:** `MULIB_IMPL_BUILDPLAN`, `MULIB_IMPL_BUILDPARSE`
 
 BuildParse supplies bounded, language-specific adapters from common build files
@@ -41,7 +41,7 @@ NULL on failure.
 ## Example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
   examples/modules/buildparse.c -o /tmp/opencode/buildparse
 /tmp/opencode/buildparse
 ```
@@ -53,7 +53,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-buildparse.h`](../include/mulib-buildparse.h) |
+| Header | [`kernels/mulib-buildparse.h`](../kernels/mulib-buildparse.h) |
 | Implementation switch | `MULIB_IMPL_BUILDPARSE` |
 | Repository-local includes | [mulib-buildplan](mulib-buildplan.md) |
 | Complete example | [`examples/modules/buildparse.c`](../examples/modules/buildparse.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildparse.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/buildparse.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

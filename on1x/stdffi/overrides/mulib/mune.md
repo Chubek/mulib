@@ -1,6 +1,6 @@
 # Mune — discovery-only: `gc_roots_and_callback_authority`
 
-Unresolved semantics from `include/mulib-mune.h`, `manual/mulib-mune.md`,
+Unresolved semantics from `kernels/mulib-mune.h`, `manual/mulib-mune.md`,
 `on1x/contracts-exoml/mune.exocontract.json` (52 entries) and the Mune
 section of `on1x/contracts-exoml/obligations.json`. The Exotract Mune example
 is discovery evidence, not prior safe approval. No legacy Gate B or native

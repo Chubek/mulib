@@ -11,7 +11,7 @@ failure. Write atomically appends. ZigZag handles the full int64 range.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-protobuf.h`](../include/mulib-protobuf.h).
+Verbatim declaration section from [`kernels/mulib-protobuf.h`](../kernels/mulib-protobuf.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-protobuf.h`](../include/mulib-protobuf.h) |
+| Header | [`kernels/mulib-protobuf.h`](../kernels/mulib-protobuf.h) |
 | Implementation switch | `MULIB_IMPL_PROTOBUF` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-varint](mulib-varint.md) |
 | Complete example | [`examples/modules/protobuf.c`](../examples/modules/protobuf.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/protobuf.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/protobuf.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

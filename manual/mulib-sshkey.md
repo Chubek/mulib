@@ -12,7 +12,7 @@ helpers do not verify signatures and do not read OpenSSH private key files or
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sshkey.h`](../include/mulib-sshkey.h) |
+| Header | [`kernels/mulib-sshkey.h`](../kernels/mulib-sshkey.h) |
 | Implementation switch | `MULIB_IMPL_SSHKEY` |
 | Repository-local includes | [mulib-sshwire](mulib-sshwire.md) |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

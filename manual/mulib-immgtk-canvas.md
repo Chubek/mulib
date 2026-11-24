@@ -1,7 +1,7 @@
 # mulib-immgtk-canvas
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-immgtk-canvas.h`  
+**Header:** `kernels/mulib-immgtk-canvas.h`  
 **Implementation switch:** `MULIB_IMPL_IMMGTK_CANVAS`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_IMMGTK_CANVAS` defined befo
 `tests/test_immgtk_canvas.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_immgtk_canvas.c -lm -o /tmp/test_immgtk_canvas
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_immgtk_canvas.c -lm -o /tmp/test_immgtk_canvas
 /tmp/test_immgtk_canvas
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-immgtk-canvas.h`](../include/mulib-immgtk-canvas.h).
+Verbatim declaration section from [`kernels/mulib-immgtk-canvas.h`](../kernels/mulib-immgtk-canvas.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -88,7 +88,7 @@ int mulib_immgtk_canvas_zoom_at(mulib_immgtk_canvas_t *c, double screen_x, doubl
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-immgtk-canvas.h`](../include/mulib-immgtk-canvas.h) |
+| Header | [`kernels/mulib-immgtk-canvas.h`](../kernels/mulib-immgtk-canvas.h) |
 | Implementation switch | `MULIB_IMPL_IMMGTK_CANVAS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/immgtk-canvas.c`](../examples/modules/immgtk-canvas.c) |
@@ -101,6 +101,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/immgtk-canvas.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/immgtk-canvas.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

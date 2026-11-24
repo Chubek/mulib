@@ -24,7 +24,7 @@ def inventory():
                     if p.suffix in ('.c', '.cpp')}
     modules = []
     for name in sorted(set(names + ['immgtk'])):
-        header = ROOT / f'include/mulib-{name}.h'
+        header = ROOT / f'kernels/mulib-{name}.h'
         manual = ROOT / f'manual/mulib-{name}.md'
         text, doc = header.read_text(), manual.read_text()
         public = text.split('#if defined(MULIB_IMPL_', 1)[0]
@@ -64,7 +64,7 @@ def inventory():
         'slice_module_count': len(names),
         'additional_modules': ['immgtk'],
         'repository_counts': {pattern: len(list(ROOT.glob(pattern))) for pattern in
-                              ['include/mulib-*.h', 'tests/test_*.c', 'manual/mulib-*.md']},
+                              ['kernels/mulib-*.h', 'tests/test_*.c', 'manual/mulib-*.md']},
         'interpretation': 'Extracted dependency/type/profile map. No inferred adapters, '
                           'runtime results, standards conformance, or missing-module claims.',
         'modules': modules,

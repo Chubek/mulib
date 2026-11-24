@@ -221,8 +221,8 @@ for name in ['unsigned_oracle','f32_oracle','numeric_conversions','f32_print']:
 # Generated-code ABI versions are mandatory even for an older installed header.
 for macro in ['ON1X_UNSIGNED_ABI_VERSION','ON1X_F32_ABI_VERSION']:
     include=t.work/macro;include.mkdir(exist_ok=True)
-    (include/'on1x_runtime.h').write_text((t.root/'runtime/on1x_runtime.h').read_text().replace(
+    (kernels/'on1x_runtime.h').write_text((t.root/'runtime/on1x_runtime.h').read_text().replace(
         '#define '+macro+' 1','#define '+macro+' 0'))
-    p=run([t.cc,'-std=c11','-I',include,'-c',t.work/'unsigned_f32.c','-o',include/'mismatch.o'])
+    p=run([t.cc,'-std=c11','-I',include,'-c',t.work/'unsigned_f32.c','-o',kernels/'mismatch.o'])
     assert p.returncode!=0 and 'runtime ABI' in p.stderr,p.stderr
 print('Unsigned widths and binary32 HIR/C11, bit oracles, conversions, failures and composition PASS')

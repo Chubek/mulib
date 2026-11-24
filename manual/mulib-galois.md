@@ -13,7 +13,7 @@ All operations are allocation-free and O(objects).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-galois.h`](../include/mulib-galois.h).
+Verbatim declaration section from [`kernels/mulib-galois.h`](../kernels/mulib-galois.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -50,7 +50,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-galois.h`](../include/mulib-galois.h) |
+| Header | [`kernels/mulib-galois.h`](../kernels/mulib-galois.h) |
 | Implementation switch | `MULIB_IMPL_GALOIS` |
 | Repository-local includes | [mulib-fca](mulib-fca.md) |
 | Complete example | [`examples/modules/galois.c`](../examples/modules/galois.c) |
@@ -63,6 +63,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/galois.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/galois.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

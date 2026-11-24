@@ -32,7 +32,7 @@ See `examples/modules/wmfunc.c` and `tests/test_new_modules.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-wmfunc.h`](../include/mulib-wmfunc.h).
+Verbatim declaration section from [`kernels/mulib-wmfunc.h`](../kernels/mulib-wmfunc.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -111,7 +111,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wmfunc.h`](../include/mulib-wmfunc.h) |
+| Header | [`kernels/mulib-wmfunc.h`](../kernels/mulib-wmfunc.h) |
 | Implementation switch | `MULIB_IMPL_WMFUNC` |
 | Repository-local includes | [mulib-wlroots](mulib-wlroots.md) |
 | Complete example | [`examples/modules/wmfunc.c`](../examples/modules/wmfunc.c) |
@@ -124,6 +124,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wmfunc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wmfunc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

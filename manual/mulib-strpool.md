@@ -51,7 +51,7 @@ Runnable example: `examples/modules/strpool.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-strpool.h`](../include/mulib-strpool.h).
+Verbatim declaration section from [`kernels/mulib-strpool.h`](../kernels/mulib-strpool.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -110,7 +110,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-strpool.h`](../include/mulib-strpool.h) |
+| Header | [`kernels/mulib-strpool.h`](../kernels/mulib-strpool.h) |
 | Implementation switch | `MULIB_IMPL_STRPOOL` |
 | Repository-local includes | [mulib-alloc](mulib-alloc.md), [mulib-hash](mulib-hash.md) |
 | Complete example | [`examples/modules/strpool.c`](../examples/modules/strpool.c) |
@@ -123,6 +123,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/strpool.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/strpool.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

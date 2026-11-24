@@ -1,4 +1,4 @@
-/* Standalone: cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test_indexes.c -o test_indexes */
+/* Standalone: cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test_indexes.c -o test_indexes */
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

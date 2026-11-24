@@ -1,7 +1,7 @@
 # mulib-flow-graph
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-flow-graph.h`  
+**Header:** `kernels/mulib-flow-graph.h`  
 **Implementation switch:** `MULIB_IMPL_FLOW_GRAPH`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FLOW_GRAPH` defined before 
 `tests/test_flow_graph.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_flow_graph.c -lm -o /tmp/test_flow_graph
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_flow_graph.c -lm -o /tmp/test_flow_graph
 /tmp/test_flow_graph
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-flow-graph.h`](../include/mulib-flow-graph.h).
+Verbatim declaration section from [`kernels/mulib-flow-graph.h`](../kernels/mulib-flow-graph.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_flow_graph_toposort(const mulib_flow_graph_t *g, uint8_t order[64]);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-flow-graph.h`](../include/mulib-flow-graph.h) |
+| Header | [`kernels/mulib-flow-graph.h`](../kernels/mulib-flow-graph.h) |
 | Implementation switch | `MULIB_IMPL_FLOW_GRAPH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/flow-graph.c`](../examples/modules/flow-graph.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/flow-graph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/flow-graph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

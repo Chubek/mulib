@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-- **Header:** `include/mulib-b+tree.h`
+- **Header:** `kernels/mulib-b+tree.h`
 - **Implementation switch:** `MULIB_IMPL_BPTREE`
 - **Dependencies:** ISO C11 standard library only; declarations support C++17.
 
@@ -92,7 +92,7 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude 'examples/modules/b+tree.c' -o ./bptree
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels 'examples/modules/b+tree.c' -o ./bptree
 ./bptree
 ```
 
@@ -108,7 +108,7 @@ a leaf/internal/root split chain.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-b+tree.h`](../include/mulib-b+tree.h) |
+| Header | [`kernels/mulib-b+tree.h`](../kernels/mulib-b+tree.h) |
 | Implementation switch | `MULIB_IMPL_BPTREE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/b+tree.c`](../examples/modules/b+tree.c) |
@@ -121,6 +121,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/b+tree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/b+tree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

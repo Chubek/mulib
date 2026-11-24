@@ -32,7 +32,7 @@ See `../tests/test_nm-client.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nm-client.h`](../include/mulib-nm-client.h) |
+| Header | [`kernels/mulib-nm-client.h`](../kernels/mulib-nm-client.h) |
 | Implementation switch | `MULIB_IMPL_NM_CLIENT` |
 | Repository-local includes | [mulib-dbus-properties](mulib-dbus-properties.md) |
 | Complete example | [`examples/modules/nm-client.c`](../examples/modules/nm-client.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nm-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nm-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

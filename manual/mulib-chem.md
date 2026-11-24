@@ -85,7 +85,7 @@ isotopes, mass approximations, redox charge conservation and failure cleanup in
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-chem.h`](../include/mulib-chem.h) |
+| Header | [`kernels/mulib-chem.h`](../kernels/mulib-chem.h) |
 | Implementation switch | `MULIB_IMPL_CHEM` |
 | Repository-local includes | [mulib-fraction](mulib-fraction.md), [mulib-symbol](mulib-symbol.md), [mulib-tex](mulib-tex.md) |
 | Complete example | [`examples/modules/chem.c`](../examples/modules/chem.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/chem.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/chem.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

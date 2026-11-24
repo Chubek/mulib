@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-texbox.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-texbox.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_TEXBOX
 #include "mulib-texbox.h"

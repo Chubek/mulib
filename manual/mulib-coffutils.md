@@ -23,7 +23,7 @@ See also [shared ownership/profile contracts](binary-formats.md).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-coffutils.h`](../include/mulib-coffutils.h).
+Verbatim declaration section from [`kernels/mulib-coffutils.h`](../kernels/mulib-coffutils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -59,7 +59,7 @@ int mulib_coffutils_symbol (const mulib_coff_t *v, const char *name, mulib_coff_
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-coffutils.h`](../include/mulib-coffutils.h) |
+| Header | [`kernels/mulib-coffutils.h`](../kernels/mulib-coffutils.h) |
 | Implementation switch | `MULIB_IMPL_COFFUTILS` |
 | Repository-local includes | [mulib-coff](mulib-coff.md) |
 | Complete example | [`examples/modules/coffutils.c`](../examples/modules/coffutils.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/coffutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/coffutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

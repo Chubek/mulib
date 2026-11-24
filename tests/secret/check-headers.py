@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import subprocess
 
-INCLUDE = Path(__file__).resolve().parents[2] / "include"
+INCLUDE = Path(__file__).resolve().parents[2] / "kernels"
 LOCAL_INCLUDE = re.compile(r'^\s*#\s*include\s*"(?P<name>mulib-[^"]+\.h)"', re.M)
 IMPL_SWITCH = re.compile(r'^#\s*(?:if\s+defined\s*\(\s*|ifdef\s+)(MULIB_IMPL_\w+)', re.M)
 OPTIONAL = "mulib-secret-crypto-openssl.h"

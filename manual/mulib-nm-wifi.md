@@ -32,7 +32,7 @@ See `../tests/test_nm-wifi.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nm-wifi.h`](../include/mulib-nm-wifi.h) |
+| Header | [`kernels/mulib-nm-wifi.h`](../kernels/mulib-nm-wifi.h) |
 | Implementation switch | `MULIB_IMPL_NM_WIFI` |
 | Repository-local includes | [mulib-dbus-client](mulib-dbus-client.md) |
 | Complete example | [`examples/modules/nm-wifi.c`](../examples/modules/nm-wifi.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nm-wifi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nm-wifi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

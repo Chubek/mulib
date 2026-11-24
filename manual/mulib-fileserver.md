@@ -16,7 +16,7 @@ Define `MULIB_IMPL_FILESERVER`, `MULIB_IMPL_WEBFRAMEWORK`, `MULIB_IMPL_HTTP`,
 declarations have C linkage.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/fileserver.c -o /tmp/opencode/fileserver
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/fileserver.c -o /tmp/opencode/fileserver
 /tmp/opencode/fileserver
 ```
 
@@ -120,7 +120,7 @@ allocation failure, method policy and (on POSIX) real symlink/FIFO rejection.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fileserver.h`](../include/mulib-fileserver.h) |
+| Header | [`kernels/mulib-fileserver.h`](../kernels/mulib-fileserver.h) |
 | Implementation switch | `MULIB_IMPL_FILESERVER` |
 | Repository-local includes | [mulib-webframework](mulib-webframework.md) |
 | Complete example | [`examples/modules/fileserver.c`](../examples/modules/fileserver.c) |
@@ -133,6 +133,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fileserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fileserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

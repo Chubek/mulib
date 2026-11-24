@@ -24,7 +24,7 @@ leaves the output unchanged. The HTTP hardening and allocation suites verify thi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-http_response.h`](../include/mulib-http_response.h).
+Verbatim declaration section from [`kernels/mulib-http_response.h`](../kernels/mulib-http_response.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -69,7 +69,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http_response.h`](../include/mulib-http_response.h) |
+| Header | [`kernels/mulib-http_response.h`](../kernels/mulib-http_response.h) |
 | Implementation switch | `MULIB_IMPL_HTTP_RESPONSE` |
 | Repository-local includes | [mulib-webframework](mulib-webframework.md) |
 | Complete example | [`examples/modules/http_response.c`](../examples/modules/http_response.c) |
@@ -82,6 +82,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http_response.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http_response.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

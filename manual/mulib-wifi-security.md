@@ -38,7 +38,7 @@ See `../tests/test_wifi-security.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-security.h`](../include/mulib-wifi-security.h) |
+| Header | [`kernels/mulib-wifi-security.h`](../kernels/mulib-wifi-security.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_SECURITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/wifi-security.c`](../examples/modules/wifi-security.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-security.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-security.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

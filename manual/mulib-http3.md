@@ -66,7 +66,7 @@ Define `MULIB_IMPL_HTTP3_CLIENT` alongside `MULIB_IMPL_HTTP3`, the
 dependencies in one C11 implementation translation unit:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude examples/http3-get.c -o http3-get
+cc -std=c11 -Wall -Wextra -Werror -Ikernels examples/http3-get.c -o http3-get
 ./http3-get 'https://host.example/path?q=1' [CA.pem]
 ```
 
@@ -106,9 +106,9 @@ also checks parse/write/read semantics and failure output preservation.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-http3.h`](../include/mulib-http3.h) |
+| Header | [`kernels/mulib-http3.h`](../kernels/mulib-http3.h) |
 | Implementation switch | `MULIB_IMPL_HTTP3` |
-| Repository-local includes | [`include/detail/mulib-http3-client.h`](../include/detail/mulib-http3-client.h), [mulib-quic](mulib-quic.md) |
+| Repository-local includes | [`kernels/detail/mulib-http3-client.h`](../kernels/detail/mulib-http3-client.h), [mulib-quic](mulib-quic.md) |
 | Complete example | [`examples/modules/http3.c`](../examples/modules/http3.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -119,6 +119,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/http3.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/http3.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

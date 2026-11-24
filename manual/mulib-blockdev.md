@@ -13,7 +13,7 @@ input buffer. The wrapper allocates nothing and does not perform offset arithmet
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-blockdev.h`](../include/mulib-blockdev.h).
+Verbatim declaration section from [`kernels/mulib-blockdev.h`](../kernels/mulib-blockdev.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -60,7 +60,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-blockdev.h`](../include/mulib-blockdev.h) |
+| Header | [`kernels/mulib-blockdev.h`](../kernels/mulib-blockdev.h) |
 | Implementation switch | `MULIB_IMPL_BLOCKDEV` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/blockdev.c`](../examples/modules/blockdev.c) |
@@ -73,6 +73,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/blockdev.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/blockdev.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

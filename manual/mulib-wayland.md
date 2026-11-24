@@ -35,7 +35,7 @@ return native >=0 or -1; flush may set EAGAIN. Use native Wayland APIs through
 the borrowed display for registry/proxy creation and polling/prepare-read loops.
 There is no implicit blocking event dispatch or thread-safety layer.
 
-`cc -std=c11 -Iinclude examples/modules/wayland.c -ldl -o wayland` runs without
+`cc -std=c11 -Ikernels examples/modules/wayland.c -ldl -o wayland` runs without
 a compositor/runtime. Tests cover framing, truncation and unaligned input; real
 display integration is optional and not asserted by hardware-free tests.
 `tests/test_desktop_adapters.c` uses a synthetic loader to verify call forwarding,
@@ -48,7 +48,7 @@ connection cleanup and every symbol-resolution failure without external runtimes
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wayland.h`](../include/mulib-wayland.h) |
+| Header | [`kernels/mulib-wayland.h`](../kernels/mulib-wayland.h) |
 | Implementation switch | `MULIB_IMPL_WAYLAND` |
 | Repository-local includes | [mulib-dynload](mulib-dynload.md) |
 | Complete example | [`examples/modules/wayland.c`](../examples/modules/wayland.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wayland.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wayland.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

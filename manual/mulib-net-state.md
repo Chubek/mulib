@@ -32,7 +32,7 @@ See `../tests/test_net-state.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-state.h`](../include/mulib-net-state.h) |
+| Header | [`kernels/mulib-net-state.h`](../kernels/mulib-net-state.h) |
 | Implementation switch | `MULIB_IMPL_NET_STATE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/net-state.c`](../examples/modules/net-state.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-state.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-state.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

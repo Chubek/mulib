@@ -38,7 +38,7 @@ See `../tests/test_netlink-extack.c` for its compile/link verification. Selected
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netlink-extack.h`](../include/mulib-netlink-extack.h) |
+| Header | [`kernels/mulib-netlink-extack.h`](../kernels/mulib-netlink-extack.h) |
 | Implementation switch | `MULIB_IMPL_NETLINK_EXTACK` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/netlink-extack.c`](../examples/modules/netlink-extack.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netlink-extack.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netlink-extack.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

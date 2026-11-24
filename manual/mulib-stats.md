@@ -34,7 +34,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-stats.h`](../include/mulib-stats.h).
+Verbatim declaration section from [`kernels/mulib-stats.h`](../kernels/mulib-stats.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -111,7 +111,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-stats.h`](../include/mulib-stats.h) |
+| Header | [`kernels/mulib-stats.h`](../kernels/mulib-stats.h) |
 | Implementation switch | `MULIB_IMPL_STATS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/stats.c`](../examples/modules/stats.c) |
@@ -124,6 +124,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/stats.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/stats.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

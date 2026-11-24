@@ -39,7 +39,7 @@ python3 -IB session.py --runner RUNNER --repl REPL stop ID
 
 `RUNNER` and `REPL` are trusted absolute installed paths; the helper is
 `on1x-vmm-repl`, built from `session_host.cpp` and `session_console.c` with the
-MuLIB root include directory. `ELF` is an optional verified, private staged
+MuLIB root `kernels` directory. `ELF` is an optional verified, private staged
 artifact supplied by the compiler. On a new start the helper pins the
 image before acknowledging startup and invokes exactly `RUNNER --interactive
 /proc/self/fd/N`. The compiler may unlink a private stage after the helper

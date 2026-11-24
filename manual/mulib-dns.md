@@ -82,7 +82,7 @@ feature outside this subset. Higher-level transaction errors share the enum.
 
 ## Example and verification
 
-`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/dns.c -o dns`
+`cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/dns.c -o dns`
 builds a runnable question/answer compression example. `tests/test_dns_stack.c`
 covers each supported RR, byte-for-byte compressed roundtrips, truncated packets,
 cyclic pointers, maximum names, count limits and deterministic malformed mutations.
@@ -94,7 +94,7 @@ cyclic pointers, maximum names, count limits and deterministic malformed mutatio
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dns.h`](../include/mulib-dns.h) |
+| Header | [`kernels/mulib-dns.h`](../kernels/mulib-dns.h) |
 | Implementation switch | `MULIB_IMPL_DNS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dns.c`](../examples/modules/dns.c) |
@@ -107,6 +107,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dns.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dns.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

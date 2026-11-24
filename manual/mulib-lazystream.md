@@ -53,7 +53,7 @@ Borrowed values may be valid only until the next pull, depending on the source.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lazystream.h`](../include/mulib-lazystream.h) |
+| Header | [`kernels/mulib-lazystream.h`](../kernels/mulib-lazystream.h) |
 | Implementation switch | `MULIB_IMPL_LAZYSTREAM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lazystream.c`](../examples/modules/lazystream.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lazystream.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lazystream.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

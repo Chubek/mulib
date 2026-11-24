@@ -45,7 +45,7 @@ def main():
         source, binary = Path(tmp) / 'reference.c', Path(tmp) / 'reference'
         source.write_text(SOURCE)
         subprocess.run(shlex.split(args.cc) + ['-std=c11', '-Wall', '-Wextra',
-                       '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include'),
+                       '-Wpedantic', '-Werror', '-I' + str(ROOT / 'kernels'),
                        str(source), '-lm', '-o', str(binary)], check=True)
         result = subprocess.run([str(binary)], input=''.join(
             f'{v} {n} {d}\n' for v, n, d in cases), capture_output=True,

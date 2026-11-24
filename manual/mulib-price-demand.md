@@ -15,7 +15,7 @@ input/nonfinite result. There are no causal, elasticity or out-of-sample claims.
 
 ## Integration and ownership
 
-Include `include/mulib-price-demand.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-price-demand.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -39,7 +39,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-price-demand.h`](../include/mulib-price-demand.h).
+Verbatim declaration section from [`kernels/mulib-price-demand.h`](../kernels/mulib-price-demand.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -89,7 +89,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-price-demand.h`](../include/mulib-price-demand.h) |
+| Header | [`kernels/mulib-price-demand.h`](../kernels/mulib-price-demand.h) |
 | Implementation switch | `MULIB_IMPL_PRICE_DEMAND` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/price-demand.c`](../examples/modules/price-demand.c) |
@@ -102,6 +102,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/price-demand.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/price-demand.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

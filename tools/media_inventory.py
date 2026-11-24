@@ -701,7 +701,7 @@ def inventory(root=ROOT):
         family = stem.split("-", 1)[0]
         if stem not in CONTRACTS or family not in FAMILIES:
             raise ValueError("missing per-header contract: " + header)
-        path = root / "include" / header
+        path = root / "kernels" / header
         source = path.read_text()
         if "static inline " not in source or manuals.IMPLEMENTATION.search(source):
             raise ValueError("expected static-inline-only review header: " + header)
@@ -709,7 +709,7 @@ def inventory(root=ROOT):
         deps = sorted(set(re.findall(
             r'^\s*#\s*include\s*["<](mulib-[^">]+\.h)[">]', uncommented, re.M)))
         for dep in deps:
-            if not (root / "include" / dep).is_file():
+            if not (root / "kernels" / dep).is_file():
                 raise ValueError("missing dependency: " + dep)
         records.append(dict(header=header, scope=scope, limitations=limitations,
                             dependencies=deps))
@@ -735,16 +735,16 @@ def document(record, records, root=ROOT):
     stem = name[6:-2]
     family = stem.split("-", 1)[0]
     area, common = FAMILIES[family]
-    source = (root / "include" / name).read_text()
+    source = (root / "kernels" / name).read_text()
     current_scope = re.search(r"^\s*\*\s*Scope:\s*(.+)$", source, re.M)
     comments = [
         re.sub(r"\s+", " ", re.sub(r"^\s*\* ?", "", text, flags=re.M)).strip()
         for text in re.findall(r"/\*(?!\*)(.*?)\*/", source, re.S)
     ]
     comments = [text for text in comments if text]
-    reference_record = dict(header=root / "include" / name,
+    reference_record = dict(header=root / "kernels" / name,
                             example=root / EXAMPLE, text=source, switch=None)
-    by_header = {root / "include" / row["header"]:
+    by_header = {root / "kernels" / row["header"]:
                  dict(manual=root / "manual" / (row["header"][:-2] + ".md"))
                  for row in records}
     limitation = record["limitations"] or (
@@ -766,7 +766,7 @@ def document(record, records, root=ROOT):
         "the documented preconditions. Bound untrusted counts and work before calling.", "",
         "## Current callable surface", "",
         "Signatures extracted from this header; dependency types and complete checks are in "
-        f"[the source](../include/{name}). Helpers listed here are not automatically safe foreign imports.", "",
+        f"[the source](../kernels/{name}). Helpers listed here are not automatically safe foreign imports.", "",
         "```c", signatures(source), "```", "",
     ]
     if current_scope and current_scope[1].strip() != record["limitations"]:
@@ -821,7 +821,7 @@ def manifest_with_additions(text, records):
     for record in records:
         header = record["header"]
         name = header[6:-2]
-        key = "include/" + header
+        key = "kernels/" + header
         if key in known_headers:
             old = known_headers[key]
             if not re.search(r"^  implementation: static-inline$", old, re.M) or not re.search(

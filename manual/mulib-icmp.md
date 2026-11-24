@@ -33,7 +33,7 @@ See `../tests/test_icmp.c` for its compile/link verification. Selected runnable 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-icmp.h`](../include/mulib-icmp.h) |
+| Header | [`kernels/mulib-icmp.h`](../kernels/mulib-icmp.h) |
 | Implementation switch | `MULIB_IMPL_ICMP` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/icmp.c`](../examples/modules/icmp.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/icmp.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/icmp.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

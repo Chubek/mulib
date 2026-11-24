@@ -96,7 +96,7 @@ def exotract_catalog():
     keys(data, ['schema', 'manifest', 'headers', 'implementation_translation_units',
                 'safe_export', 'discovery_only_prefixes', 'profiles', 'default_recipe'])
     if (data['schema'] != 'on1x.exotract-catalog/v1' or data['safe_export'] is not False
-            or data['manifest'] != 'MANIFEST.yaml' or data['headers'] != 'include/mulib-*.h'
+            or data['manifest'] != 'MANIFEST.yaml' or data['headers'] != 'kernels/mulib-*.h'
             or data['default_recipe'] != 'manifest' or data['implementation_translation_units'] != 1
             or not isinstance(data['profiles'], dict) or not isinstance(data['discovery_only_prefixes'], dict)):
         reject('unsupported Exotract catalog')
@@ -319,16 +319,16 @@ def manifest_inventory(root, *, raw=None, registration=False, reservations=None)
         status = manifest_scalar(entry, 'status', r'implemented|bounded|reserved',
                                  optional=not registration)
         if status == 'reserved':
-            if (manifest_scalar(entry, 'header', r'[A-Za-z0-9_./+-]+') != 'include/mulib-'+name+'.h'
+            if (manifest_scalar(entry, 'header', r'[A-Za-z0-9_./+-]+') != 'kernels/mulib-'+name+'.h'
                     or re.search(r'^  (macro|implementation):', entry, re.M)):
                 reject('invalid MANIFEST reservation: '+name)
             if manifest_list(entry, 'dependencies', r'[a-z0-9][a-z0-9_+-]*'):
                 reject('reserved MANIFEST module cannot declare dependencies: '+name)
             if reservations is not None:
-                reservations.add('include/mulib-'+name+'.h')
+                reservations.add('kernels/mulib-'+name+'.h')
             continue
         item = module_fields(name, entry, registration=registration)
-        if item['header'] != 'include/mulib-'+name+'.h':
+        if item['header'] != 'kernels/mulib-'+name+'.h':
             reject('noncanonical module header: '+name)
         local(root, item['header'])
         local(root, item['manual'])
@@ -414,7 +414,7 @@ def plan(root, data, libraries):
     definitions = sorted({d for n in libraries for d in data['profiles'][n].get('compile_definitions', [])})
     return {'schema': 'on1x.contract-build-plan/v1', 'safe_export': False,
             'libraries': libraries, 'modules': entries, 'implementation_macros': macros,
-            'implementation_translation_units': 1, 'include_directory': str(root/'include'),
+            'implementation_translation_units': 1, 'include_directory': str(root/'kernels'),
             'link_libraries': links, 'inactive_optional_macros': inactive,
             **({'compile_definitions': definitions} if definitions else {}),
             'note': 'Explicit manual-backed profiles. Optional MANIFEST switches require active_optional_macros in the selected profile; core Parsec alone does not enable its owned PARSER API.'}
@@ -469,7 +469,7 @@ def snapshot(root, data, libraries, bind, output, resource, target):
             evidence = [root/path for path in profile.get('evidence_sha256', {})]
             for path, expected in profile.get('evidence_sha256', {}).items():
                 observe(root/path, expected)
-            args = ['extract', root/profile['header'], '--revision', 'sha256:'+profile['header_sha256'], '--include', root/'include']
+            args = ['extract', root/profile['header'], '--revision', 'sha256:'+profile['header_sha256'], '--include', root/'kernels']
             if resource:
                 args += ['--resource-dir', resource]
             if target:

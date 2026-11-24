@@ -15,7 +15,7 @@ Example: `examples/modules/blockidx.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-blockidx.h`](../include/mulib-blockidx.h).
+Verbatim declaration section from [`kernels/mulib-blockidx.h`](../kernels/mulib-blockidx.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-blockidx.h`](../include/mulib-blockidx.h) |
+| Header | [`kernels/mulib-blockidx.h`](../kernels/mulib-blockidx.h) |
 | Implementation switch | `MULIB_IMPL_BLOCKIDX` |
 | Repository-local includes | [mulib-bycutils](mulib-bycutils.md), [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/blockidx.c`](../examples/modules/blockidx.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/blockidx.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/blockidx.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -66,7 +66,7 @@ polling, resize notifications and event dispatch.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-curses.h`](../include/mulib-curses.h) |
+| Header | [`kernels/mulib-curses.h`](../kernels/mulib-curses.h) |
 | Implementation switch | `MULIB_IMPL_CURSES` |
 | Repository-local includes | [mulib-termutils](mulib-termutils.md), [mulib-tui](mulib-tui.md) |
 | Complete example | [`examples/modules/curses.c`](../examples/modules/curses.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/curses.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/curses.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

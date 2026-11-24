@@ -24,7 +24,7 @@ Capacities describe live backing storage supplied by the caller, not merely nume
 
 ## Current callable surface
 
-Signatures extracted from this header; dependency types and complete checks are in [the source](../include/mulib-compute-image.h). Helpers listed here are not automatically safe foreign imports.
+Signatures extracted from this header; dependency types and complete checks are in [the source](../kernels/mulib-compute-image.h). Helpers listed here are not automatically safe foreign imports.
 
 ```c
 static inline bool mulib_compute_image_alloc(mulib_compute_image *i,size_t w,size_t h,size_t pixel,size_t align);
@@ -52,7 +52,7 @@ The runner checks the 193 original kernels plus the shared PCM helper, isolated 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-compute-image.h`](../include/mulib-compute-image.h) |
+| Header | [`kernels/mulib-compute-image.h`](../kernels/mulib-compute-image.h) |
 | Implementation switch | None (support header; see scope above) |
 | Repository-local includes | [mulib-compute-buffer](mulib-compute-buffer.md), [mulib-compute-core](mulib-compute-core.md) |
 | Complete example | [`examples/media-pipeline.c`](../examples/media-pipeline.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/media-pipeline.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

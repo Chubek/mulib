@@ -52,7 +52,7 @@ pin-independent binary storage and explicit pruning.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-log.h`](../include/mulib-container-log.h) |
+| Header | [`kernels/mulib-container-log.h`](../kernels/mulib-container-log.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_LOG` |
 | Repository-local includes | [mulib-container-core](mulib-container-core.md) |
 | Complete example | [`examples/modules/container-log.c`](../examples/modules/container-log.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-log.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-log.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

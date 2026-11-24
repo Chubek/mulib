@@ -11,7 +11,7 @@ by the visible table; a provider need not keep a full table of display cells.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-table.h`](../include/mulib-imtui-table.h) |
+| Header | [`kernels/mulib-imtui-table.h`](../kernels/mulib-imtui-table.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_TABLE` |
 | Repository-local includes | [mulib-imtui-list](mulib-imtui-list.md) |
 | Complete example | [`examples/imtui/composites.c`](../examples/imtui/composites.c) |
@@ -24,6 +24,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

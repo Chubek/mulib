@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-buildgraph.h`  
+**Header:** `kernels/mulib-buildgraph.h`  
 **Switches:** `MULIB_IMPL_ARTIFACT`, `MULIB_IMPL_BUILDGRAPH`
 
 The graph is a bounded, bipartite dependency DAG. Every node is either an
@@ -133,7 +133,7 @@ and is intended for bounded graphs, rather than million-node scheduling.
 ## Example and verification
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/buildgraph.c -o /tmp/opencode/buildgraph
+cc -std=c11 -Ikernels examples/modules/buildgraph.c -o /tmp/opencode/buildgraph
 /tmp/opencode/buildgraph
 ```
 
@@ -148,7 +148,7 @@ descendant blocking, report ownership, allocation failures and empty graphs.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-buildgraph.h`](../include/mulib-buildgraph.h) |
+| Header | [`kernels/mulib-buildgraph.h`](../kernels/mulib-buildgraph.h) |
 | Implementation switch | `MULIB_IMPL_BUILDGRAPH` |
 | Repository-local includes | [mulib-artifact](mulib-artifact.md) |
 | Complete example | [`examples/modules/buildgraph.c`](../examples/modules/buildgraph.c) |
@@ -161,6 +161,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/buildgraph.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/buildgraph.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

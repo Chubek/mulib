@@ -48,7 +48,7 @@ See also [visitors](mulib-visitor.md), [listeners](mulib-listener.md),
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ast.h`](../include/mulib-ast.h) |
+| Header | [`kernels/mulib-ast.h`](../kernels/mulib-ast.h) |
 | Implementation switch | `MULIB_IMPL_AST` |
 | Repository-local includes | [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/ast.c`](../examples/modules/ast.c) |
@@ -61,6 +61,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ast.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ast.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

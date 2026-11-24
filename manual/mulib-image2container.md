@@ -56,7 +56,7 @@ or [containerd](mulib-containerd.md) to prepare and manage an execution backend.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-image2container.h`](../include/mulib-image2container.h) |
+| Header | [`kernels/mulib-image2container.h`](../kernels/mulib-image2container.h) |
 | Implementation switch | `MULIB_IMPL_IMAGE2CONTAINER` |
 | Repository-local includes | [mulib-imgformat](mulib-imgformat.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/image2container.c`](../examples/modules/image2container.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/image2container.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/image2container.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

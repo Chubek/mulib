@@ -73,7 +73,7 @@ The caller owns serving policy and deployment security.
 
 ## Example and tests
 
-`cc -std=c11 -Iinclude examples/modules/nameserver.c -o nameserver` builds a
+`cc -std=c11 -Ikernels examples/modules/nameserver.c -o nameserver` builds a
 query/answer and NXDOMAIN example. `tests/test_dns_stack.c` verifies resolver
 composition, NODATA/apex behavior, ID echoing, truncation, REFUSED, CNAME rules,
 out-of-zone rejection and the compatibility facade.
@@ -85,7 +85,7 @@ out-of-zone rejection and the compatibility facade.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-nameserver.h`](../include/mulib-nameserver.h) |
+| Header | [`kernels/mulib-nameserver.h`](../kernels/mulib-nameserver.h) |
 | Implementation switch | `MULIB_IMPL_NAMESERVER` |
 | Repository-local includes | [mulib-dnsclient](mulib-dnsclient.md) |
 | Complete example | [`examples/modules/nameserver.c`](../examples/modules/nameserver.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/nameserver.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/nameserver.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

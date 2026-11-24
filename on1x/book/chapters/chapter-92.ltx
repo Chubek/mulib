@@ -24,8 +24,8 @@ and can allocate one on the stack. Its calls to initialize, push, look
 up and free the vector still require definitions at link time. With
 the files named as below, try the two compile steps before the link:
 \begin{OnxCodeBlock}[numbers=none,language={}]
-cc -std=c11 -Iinclude -c provider.c -o provider.o
-cc -std=c11 -Iinclude -c client.c -o client.o
+cc -std=c11 -Ikernels -c provider.c -o provider.o
+cc -std=c11 -Ikernels -c client.c -o client.o
 cc client.o provider.o -o vec-client
 \end{OnxCodeBlock}
 Running the resulting client should reach the assertion on the stored

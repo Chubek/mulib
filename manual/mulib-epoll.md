@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-epoll.h` · **Switch:** `MULIB_IMPL_EPOLL`  
+**Header:** `kernels/mulib-epoll.h` · **Switch:** `MULIB_IMPL_EPOLL`  
 **Dependencies:** none; Linux libc/kernel epoll. C11 and C-linkage declarations.
 
 ## Native subset
@@ -70,7 +70,7 @@ an example dependency, not a header dependency). Permission/platform failures
 are printed as skips.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/epoll.c -o /tmp/opencode/epoll-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/epoll.c -o /tmp/opencode/epoll-example
 /tmp/opencode/epoll-example
 ```
 
@@ -84,7 +84,7 @@ registration, one-shot rearming, invalid bounds, removal, and borrowed ownership
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-epoll.h`](../include/mulib-epoll.h) |
+| Header | [`kernels/mulib-epoll.h`](../kernels/mulib-epoll.h) |
 | Implementation switch | `MULIB_IMPL_EPOLL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/epoll.c`](../examples/modules/epoll.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/epoll.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/epoll.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

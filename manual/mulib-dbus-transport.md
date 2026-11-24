@@ -40,7 +40,7 @@ See `../tests/test_dbus-transport.c` for its compile/link verification. Selected
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbus-transport.h`](../include/mulib-dbus-transport.h) |
+| Header | [`kernels/mulib-dbus-transport.h`](../kernels/mulib-dbus-transport.h) |
 | Implementation switch | `MULIB_IMPL_DBUS_TRANSPORT` |
 | Repository-local includes | [mulib-dbus-auth](mulib-dbus-auth.md) |
 | Complete example | [`examples/modules/dbus-transport.c`](../examples/modules/dbus-transport.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbus-transport.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbus-transport.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

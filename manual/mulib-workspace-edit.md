@@ -55,7 +55,7 @@ fault injection constant. Never enable it in a production link product.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-workspace-edit.h`](../include/mulib-workspace-edit.h) |
+| Header | [`kernels/mulib-workspace-edit.h`](../kernels/mulib-workspace-edit.h) |
 | Implementation switch | `MULIB_IMPL_WORKSPACE_EDIT` |
 | Repository-local includes | [mulib-unidiff](mulib-unidiff.md), [mulib-workspace-fs](mulib-workspace-fs.md) |
 | Complete example | [`examples/apply_unidiff.c`](../examples/apply_unidiff.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/apply_unidiff.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/apply_unidiff.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

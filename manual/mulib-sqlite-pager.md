@@ -101,7 +101,7 @@ crash/reordering tests remain on the full-compatibility roadmap.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sqlite-pager.h`](../include/mulib-sqlite-pager.h) |
+| Header | [`kernels/mulib-sqlite-pager.h`](../kernels/mulib-sqlite-pager.h) |
 | Implementation switch | `MULIB_IMPL_SQLITE_PAGER` |
 | Repository-local includes | [mulib-sqlite-format](mulib-sqlite-format.md) |
 | Complete example | [`examples/modules/sqlite-pager.c`](../examples/modules/sqlite-pager.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite-pager.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sqlite-pager.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

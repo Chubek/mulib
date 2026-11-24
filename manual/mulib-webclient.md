@@ -18,7 +18,7 @@ only; declarations have C linkage in C++.
 Runnable offline example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/webclient.c -o /tmp/opencode/webclient
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/webclient.c -o /tmp/opencode/webclient
 /tmp/opencode/webclient
 ```
 
@@ -117,7 +117,7 @@ transport failure, limits and offline application composition.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webclient.h`](../include/mulib-webclient.h) |
+| Header | [`kernels/mulib-webclient.h`](../kernels/mulib-webclient.h) |
 | Implementation switch | `MULIB_IMPL_WEBCLIENT` |
 | Repository-local includes | [mulib-http](mulib-http.md) |
 | Complete example | [`examples/modules/webclient.c`](../examples/modules/webclient.c) |
@@ -130,6 +130,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webclient.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webclient.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

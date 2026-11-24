@@ -9,7 +9,7 @@ One-shot approvals are broker-owned trusted state. Prefer the v2 helpers, which 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-lease.h`](../include/mulib-secret-lease.h) |
+| Header | [`kernels/mulib-secret-lease.h`](../kernels/mulib-secret-lease.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_LEASE` |
 | Repository-local includes | [mulib-secret-crypto](mulib-secret-crypto.md), [mulib-secret-policy](mulib-secret-policy.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -3,7 +3,7 @@
 [Manuals](README.md) · [Library index](index.md)
 
 Exact repeated assembly sequences factored into GAS macros. All implementation
-code lives in `include/mulib-superinstr.h`.
+code lives in `kernels/mulib-superinstr.h`.
 
 Define `MULIB_IMPL_MIR`, `MULIB_IMPL_STRBUF` and `MULIB_IMPL_SUPERINSTR` before
 including the header in one translation unit. Link `-lm` for MIR.
@@ -48,7 +48,7 @@ OptML invokes this pass after ABI-aware assembly emission when
 macro-expanded arithmetic and cross-assembles RV64 macros.
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/superinstr.c -lm -o superinstr
+cc -std=c11 -Ikernels examples/modules/superinstr.c -lm -o superinstr
 ./superinstr
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Iinclude examples/modules/superinstr.c -lm -o superinstr
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-superinstr.h`](../include/mulib-superinstr.h) |
+| Header | [`kernels/mulib-superinstr.h`](../kernels/mulib-superinstr.h) |
 | Implementation switch | `MULIB_IMPL_SUPERINSTR` |
 | Repository-local includes | [mulib-mir](mulib-mir.md), [mulib-strbuf](mulib-strbuf.md) |
 | Complete example | [`examples/modules/superinstr.c`](../examples/modules/superinstr.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/superinstr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/superinstr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

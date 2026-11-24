@@ -29,12 +29,12 @@ def build(names,dest,flags=(),fixtures=()):
 def client(path,dest,expected,extra=()):
     exe=dest/'client'
     p=run([a.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror',*a.cflag,path,
-           '-I',dest,'-I',a.root.parent/'include',*extra,dest/'libmulib.a','-lm','-o',exe])
+           '-I',dest,'-I',a.root.parent/'kernels',*extra,dest/'libmulib.a','-lm','-o',exe])
     assert p.returncode==0,p.stderr
     p=run([exe]);assert p.returncode==0 and p.stdout==expected,(p.stdout,p.stderr)
 data=json.loads(run(command('list')).stdout)
 assert (len(data['modules']) + len(data['auxiliary_headers']) + len(data['reserved_headers'])
-        == len(list((a.root.parent/'include').glob('mulib-*.h'))))
+        == len(list((a.root.parent/'kernels').glob('mulib-*.h'))))
 assert 'b+tree' in data['modules'] and 'microjs' in data['modules']
 p=run(command('plan','json','vec','parsec'));assert p.returncode==0,p.stderr
 plan=json.loads(p.stdout)
@@ -76,7 +76,7 @@ for name,libraries,source,expected in [
         assert len(symbols['mune']['archive_exports'])==52 and not symbols['mune']['declaration_only']
         recipe=json.loads((dest/'build-plan.json').read_text())
         assert recipe['implementation_macros'].count('MULIB_IMPL_PARSER')==1
-        for path in ['include/mulib-mune.h','manual/mulib-mune.md','tests/test_mune_runtime.c',
+        for path in ['kernels/mulib-mune.h','manual/mulib-mune.md','tests/test_mune_runtime.c',
                      'tests/test_mune_runtime_alloc.c','tools/check_mune_runtime.py']:
             assert lock['inputs'][str((a.root.parent/path).resolve())]==hashlib.sha256((a.root.parent/path).read_bytes()).hexdigest()
     elif name=='http3':
@@ -86,8 +86,8 @@ for name,libraries,source,expected in [
         switches=recipe['implementation_macros']
         assert all(switches.count(m)==1 for m in ['MULIB_IMPL_HTTP3_CLIENT', 'MULIB_IMPL_QUIC_CLIENT', 'MULIB_IMPL_TLS'])
         assert 'MULIB_IMPL_PARSER' not in switches
-        for path in ['include/detail/mulib-quic-client.h','include/detail/mulib-http3-client.h',
-                     'include/detail/mulib-qpack-tables.h']:
+        for path in ['kernels/detail/mulib-quic-client.h','kernels/detail/mulib-http3-client.h',
+                     'kernels/detail/mulib-qpack-tables.h']:
             assert lock['inputs'][str((a.root.parent/path).resolve())]==hashlib.sha256((a.root.parent/path).read_bytes()).hexdigest()
     else:assert len(symbols['microjs']['archive_exports'])==15
     client(a.root/'contracts-exotract/examples'/source,dest,expected,['-pthread','-ldl'] if name=='mune' else [])

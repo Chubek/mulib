@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def render():
-    texts = {p.stem[6:]: p.read_text() for p in sorted((ROOT / 'include').glob('mulib-*.h'))}
+    texts = {p.stem[6:]: p.read_text() for p in sorted((ROOT / 'kernels').glob('mulib-*.h'))}
     manifest = ROOT / 'MANIFEST.yaml'
     manuals = {}
     if manifest.is_file():

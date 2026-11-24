@@ -17,7 +17,7 @@ model or multilingual phonetic transcription.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-phonetic_utils.h`](../include/mulib-phonetic_utils.h).
+Verbatim declaration section from [`kernels/mulib-phonetic_utils.h`](../kernels/mulib-phonetic_utils.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -52,7 +52,7 @@ int mulib_phonetic_soundex(const char *word, char output[5]);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-phonetic_utils.h`](../include/mulib-phonetic_utils.h) |
+| Header | [`kernels/mulib-phonetic_utils.h`](../kernels/mulib-phonetic_utils.h) |
 | Implementation switch | `MULIB_IMPL_PHONETIC_UTILS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/phonetic_utils.c`](../examples/modules/phonetic_utils.c) |
@@ -65,6 +65,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/phonetic_utils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/phonetic_utils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

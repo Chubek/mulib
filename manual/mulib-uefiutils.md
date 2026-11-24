@@ -66,7 +66,7 @@ binary optional data, Shell lookup, Unicode and native layout offsets.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uefiutils.h`](../include/mulib-uefiutils.h) |
+| Header | [`kernels/mulib-uefiutils.h`](../kernels/mulib-uefiutils.h) |
 | Implementation switch | `MULIB_IMPL_UEFIUTILS` |
 | Repository-local includes | [mulib-uefi](mulib-uefi.md) |
 | Complete example | [`examples/modules/uefiutils.c`](../examples/modules/uefiutils.c) |
@@ -79,6 +79,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uefiutils.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uefiutils.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

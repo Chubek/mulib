@@ -21,7 +21,7 @@ is linear; add includes O(code count) verification/copying.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vm-module.h`](../include/mulib-vm-module.h) |
+| Header | [`kernels/mulib-vm-module.h`](../kernels/mulib-vm-module.h) |
 | Implementation switch | `MULIB_IMPL_VM_MODULE` |
 | Repository-local includes | [mulib-bytecode-verify](mulib-bytecode-verify.md), [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/vm-module.c`](../examples/modules/vm-module.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vm-module.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vm-module.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

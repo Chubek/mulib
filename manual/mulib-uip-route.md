@@ -35,7 +35,7 @@ See `../tests/test_uip-route.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-route.h`](../include/mulib-uip-route.h) |
+| Header | [`kernels/mulib-uip-route.h`](../kernels/mulib-uip-route.h) |
 | Implementation switch | `MULIB_IMPL_UIP_ROUTE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-route.c`](../examples/modules/uip-route.c) |
@@ -48,6 +48,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-route.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-route.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

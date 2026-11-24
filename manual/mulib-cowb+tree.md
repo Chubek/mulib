@@ -17,7 +17,7 @@ Example: `examples/modules/cowb+tree.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-cowb+tree.h`](../include/mulib-cowb+tree.h).
+Verbatim declaration section from [`kernels/mulib-cowb+tree.h`](../kernels/mulib-cowb+tree.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -73,7 +73,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cowb+tree.h`](../include/mulib-cowb+tree.h) |
+| Header | [`kernels/mulib-cowb+tree.h`](../kernels/mulib-cowb+tree.h) |
 | Implementation switch | `MULIB_IMPL_COWBPTREE` |
 | Repository-local includes | [mulib-b+tree](mulib-b+tree.md) |
 | Complete example | [`examples/modules/cowb+tree.c`](../examples/modules/cowb+tree.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cowb+tree.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cowb+tree.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

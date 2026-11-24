@@ -61,7 +61,7 @@ The implementation moved from `mulib-inte6.h` without changing the existing
 you also want the new `mulib_inte6_*` forwarding functions; canonical users do
 not need that switch. See [`mulib-inte6`](mulib-inte6.md).
 
-`cc -std=c11 -Iinclude examples/modules/inet6.c -o inet6` builds an assert-based
+`cc -std=c11 -Ikernels examples/modules/inet6.c -o inet6` builds an assert-based
 canonicalization/prefix example. Existing `tests/test_network.c` covers malformed
 forms, every prefix and deterministic native `inet_pton` roundtrips on POSIX;
 `tests/test_dns_stack.c` adds canonical/compatibility and getaddr composition.
@@ -73,7 +73,7 @@ forms, every prefix and deterministic native `inet_pton` roundtrips on POSIX;
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-inet6.h`](../include/mulib-inet6.h) |
+| Header | [`kernels/mulib-inet6.h`](../kernels/mulib-inet6.h) |
 | Implementation switch | `MULIB_IMPL_INET6` |
 | Repository-local includes | [mulib-inet4](mulib-inet4.md) |
 | Complete example | [`examples/modules/inet6.c`](../examples/modules/inet6.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inet6.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/inet6.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

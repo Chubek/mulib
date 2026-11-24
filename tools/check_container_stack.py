@@ -39,7 +39,7 @@ def main():
         parser.error('C compiler unavailable')
     have_cxx = bool(cxx and shutil.which(cxx[0]))
     flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(ROOT / 'include')]
+             '-I' + str(ROOT / 'kernels')]
     links = ['-lm'] if os.name != 'nt' else []
     if os.name == 'posix':
         flags += ['-pthread']
@@ -47,17 +47,17 @@ def main():
     if args.sanitizers:
         flags += ['-g', '-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']
-    texts = {p.name: p.read_text() for p in (ROOT / 'include').glob('*.h')}
+    texts = {p.name: p.read_text() for p in (ROOT / 'kernels').glob('*.h')}
     switch_pattern = re.compile(r'^#\s*if(?:def\s+|\s+defined\s*\(\s*)'
                                 r'(MULIB_IMPL_[A-Z0-9_]+)', re.M)
     failures = []
     for name in MODULES:
-        for relative in ('include/mulib-' + name + '.h', 'manual/mulib-' + name + '.md',
+        for relative in ('kernels/mulib-' + name + '.h', 'manual/mulib-' + name + '.md',
                          'examples/modules/' + name + '.c'):
             if not (ROOT / relative).is_file() or not (ROOT / relative).stat().st_size:
                 failures.append((relative, 'missing/empty module artifact'))
     for name in HELPERS:
-        for relative in ('include/include-mulib-' + name + '.h',
+        for relative in ('kernels/include-mulib-' + name + '.h',
                          'manual/include-mulib-' + name + '.md'):
             if not (ROOT / relative).is_file():
                 failures.append((relative, 'missing dependency artifact'))

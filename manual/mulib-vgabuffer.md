@@ -159,9 +159,9 @@ every I/O step. It operates on RAM and mocked registers; physical VGA hardware
 is not required by the example or test.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude tests/test_vgabuffer.c -o /tmp/opencode/test-vgabuffer
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels tests/test_vgabuffer.c -o /tmp/opencode/test-vgabuffer
 /tmp/opencode/test-vgabuffer
-cc -std=c11 -Iinclude examples/modules/vgabuffer.c -o /tmp/opencode/vgabuffer
+cc -std=c11 -Ikernels examples/modules/vgabuffer.c -o /tmp/opencode/vgabuffer
 /tmp/opencode/vgabuffer
 ```
 
@@ -172,7 +172,7 @@ cc -std=c11 -Iinclude examples/modules/vgabuffer.c -o /tmp/opencode/vgabuffer
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vgabuffer.h`](../include/mulib-vgabuffer.h) |
+| Header | [`kernels/mulib-vgabuffer.h`](../kernels/mulib-vgabuffer.h) |
 | Implementation switch | `MULIB_IMPL_VGABUFFER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vgabuffer.c`](../examples/modules/vgabuffer.c) |
@@ -185,6 +185,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vgabuffer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vgabuffer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

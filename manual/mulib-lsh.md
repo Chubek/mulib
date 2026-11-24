@@ -13,7 +13,7 @@ This helper does not store or retrieve candidates itself.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-lsh.h`](../include/mulib-lsh.h).
+Verbatim declaration section from [`kernels/mulib-lsh.h`](../kernels/mulib-lsh.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -49,7 +49,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lsh.h`](../include/mulib-lsh.h) |
+| Header | [`kernels/mulib-lsh.h`](../kernels/mulib-lsh.h) |
 | Implementation switch | `MULIB_IMPL_LSH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lsh.c`](../examples/modules/lsh.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lsh.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lsh.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

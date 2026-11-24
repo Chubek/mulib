@@ -18,7 +18,7 @@ valid readable bytes. Complexity is O(literal length + compared bytes).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lexical-token.h`](../include/mulib-lexical-token.h) |
+| Header | [`kernels/mulib-lexical-token.h`](../kernels/mulib-lexical-token.h) |
 | Implementation switch | `MULIB_IMPL_LEXICAL_TOKEN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lexical-token.c`](../examples/modules/lexical-token.c) |
@@ -31,6 +31,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lexical-token.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lexical-token.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -1,5 +1,5 @@
 /* Optional Clang libFuzzer entry point. No filesystem or unbounded recursion.
- * clang -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude -g -O1 \
+ * clang -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels -g -O1 \
  *   -fsanitize=fuzzer,address,undefined tests/fuzz_media_parsers.c -lm -o fuzz
  * ./fuzz -runs=5000 -max_len=4096 -seed=42 -timeout=2 -rss_limit_mb=256
  */

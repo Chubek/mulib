@@ -10,7 +10,7 @@ from support import NativeTests, run
 
 t = NativeTests()
 root = t.root.parent.resolve()
-if not all((root/'include'/('mulib-'+n+'.h')).is_file() for n in ['json', 'vec', 'parsec', 'mune']):
+if not all((root/'kernels'/('mulib-'+n+'.h')).is_file() for n in ['json', 'vec', 'parsec', 'mune']):
     print('Contract source/semantics tests: SKIP (canonical MuLIB headers absent)')
     sys.exit(77)
 tool = t.root/'tools/on1x-contracts.py'
@@ -33,13 +33,13 @@ registered = {m['header'] for m in modules.values()}
 reserved = set(inventory['reserved_headers'])
 assert not registered & (auxiliary | reserved)
 assert registered | auxiliary | reserved == {
-    p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
+    p.relative_to(root).as_posix() for p in (root/'kernels').glob('mulib-*.h')}
 assert set(coverage) == set(modules) and inventory['safe_export'] is False
 assert {n for n, p in coverage.items() if p['snapshot_profile']} == lint['profiles'].keys()
 assert coverage['clamp']['semantic_sidecar'] == 'clamp.exocontract.json'
 assert coverage['clamp']['sidecar_header_matches'] is True
 pretty = json.loads((t.root/'contracts-exoml/prettysexpr.exocontract.json').read_text())
-pretty_revision = 'sha256:'+hashlib.sha256((root/'include/mulib-prettysexpr.h').read_bytes()).hexdigest()
+pretty_revision = 'sha256:'+hashlib.sha256((root/'kernels/mulib-prettysexpr.h').read_bytes()).hexdigest()
 assert coverage['prettysexpr']['sidecar_header_matches'] is True
 assert pretty['bundle_provenance']['revision'] == pretty_revision
 assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
@@ -145,7 +145,7 @@ if sys.platform.startswith('linux'):
         (work/'mulib.h').write_text('#include "mulib-http3.h"\n')
         binary = work/'consumer'
         p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', *t.flags,
-                 '-I', work, '-I', root/'include', implementation,
+                 '-I', work, '-I', root/'kernels', implementation,
                  t.root/'contracts-exotract/examples/http3.c', '-o', binary])
         assert p.returncode == 0, p.stderr
         p = run([binary])
@@ -158,9 +158,9 @@ for name in ['quic', 'http3']:
     assert entry['static_compile'] == dict(unsafe='unsupported', safe='unsupported')
 with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
     fake = Path(tmp)
-    (fake/'include').mkdir(); (fake/'manual').mkdir()
+    (fake/'kernels').mkdir(); (fake/'manual').mkdir()
     for n in lint['profiles']:
-        for directory, suffix in [('include', '.h'), ('manual', '.md')]:
+        for directory, suffix in [('kernels', '.h'), ('manual', '.md')]:
             shutil.copyfile(root/directory/('mulib-'+n+suffix), fake/directory/('mulib-'+n+suffix))
     profiles = json.loads((t.root/'contracts-exoml/catalog.json').read_text())['profiles']
     evidence = {path:digest for profile in profiles.values() for path,digest in profile.get('evidence_sha256',{}).items()}
@@ -169,8 +169,8 @@ with tempfile.TemporaryDirectory(prefix='contract-root-', dir=t.work) as tmp:
         shutil.copyfile(root/path,fake/path)
     shutil.copyfile(root/'MANIFEST.yaml', fake/'MANIFEST.yaml')
     p = run([sys.executable, tool, '--root', fake, 'lint']); assert p.returncode == 0, p.stderr
-    for path in ['include/mulib-vec.h','include/mulib-mune.h','manual/mulib-mune.md',
-                 'include/mulib-elvi-scrape.h','manual/mulib-elvi-scrape.md',*evidence]:
+    for path in ['kernels/mulib-vec.h','kernels/mulib-mune.h','manual/mulib-mune.md',
+                 'kernels/mulib-elvi-scrape.h','manual/mulib-elvi-scrape.md',*evidence]:
         original = (fake/path).read_bytes(); (fake/path).write_bytes(original+b'\n')
         p = run([sys.executable, tool, '--root', fake, 'lint'])
         assert p.returncode == 3 and not p.stdout and 'fingerprint drift' in p.stderr, p.stderr
@@ -213,13 +213,13 @@ if sys.platform.startswith('linux'):
         assert (source/'marker').read_text() == 'ours' and list(target.iterdir()) == []
 
 native = t.work/'contract_semantics'
-p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root/'include',
+p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root/'kernels',
          t.root/'tests/fixtures/contract_semantics.c', *t.flags, '-lm', '-o', native])
 assert p.returncode == 0, p.stderr
 p = run([native])
 assert p.returncode == 0 and p.stdout == 'Contract semantics: PASS\n', (p.returncode, p.stdout, p.stderr)
 example = t.work/'contract_usage'
-p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root/'include',
+p = run([t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root/'kernels',
          t.root/'examples/contracts/contract_usage.c', *t.flags, '-lm', '-o', example])
 assert p.returncode == 0, p.stderr
 p = run([example]); assert p.returncode == 0 and p.stdout == '[42]\n', (p.returncode, p.stdout, p.stderr)
@@ -229,7 +229,7 @@ implementation = t.work/'mune-implementation.c'
 implementation.write_text(''.join('#define '+m+'\n' for m in mune['implementation_macros'])+
                           ''.join('#include "'+str(root/e['header'])+'"\n' for e in mune['modules']))
 example = t.work/'mune-contract-usage'
-p = run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',root/'include',
+p = run([t.cc,'-std=c11','-Wall','-Wextra','-Wpedantic','-Werror','-I',root/'kernels',
          implementation,t.root/'contracts-exotract/examples/mune.c',*t.flags,'-pthread','-lm','-ldl','-o',example])
 assert p.returncode == 0, p.stderr
 p = run([example]); assert p.returncode == 0 and p.stdout == 'mune: archive OK\n',(p.returncode,p.stdout,p.stderr)

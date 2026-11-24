@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-texinsert.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-texinsert.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-texinsert.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-texinsert.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-texinsert.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-texinsert.h`](../include/mulib-texinsert.h) |
+| Header | [`kernels/mulib-texinsert.h`](../kernels/mulib-texinsert.h) |
 | Implementation switch | `MULIB_IMPL_TEXINSERT` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-texinsert.c`](../examples/mulib-texinsert.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-texinsert.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-texinsert.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

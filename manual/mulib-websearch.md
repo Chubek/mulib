@@ -13,9 +13,9 @@ Define `MULIB_IMPL_WEBSEARCH` in exactly one C11 translation unit. Use `#include
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-websearch.c -o /tmp/test-websearch
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-websearch.c -o /tmp/test-websearch
 /tmp/test-websearch
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/websearch.c -o /tmp/example-websearch
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/websearch.c -o /tmp/example-websearch
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-websearch.h`](../include/mulib-websearch.h) |
+| Header | [`kernels/mulib-websearch.h`](../kernels/mulib-websearch.h) |
 | Implementation switch | `MULIB_IMPL_WEBSEARCH` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/websearch.c`](../examples/modules/websearch.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/websearch.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/websearch.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

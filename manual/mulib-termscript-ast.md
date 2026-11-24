@@ -14,7 +14,7 @@ comma-separated key chords such as `[[ctrl, f1]]`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript-ast.h`](../include/mulib-termscript-ast.h) |
+| Header | [`kernels/mulib-termscript-ast.h`](../kernels/mulib-termscript-ast.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_AST` |
 | Repository-local includes | [mulib-parsec](mulib-parsec.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`library/termscript/main.c`](../library/termscript/main.c) |
@@ -27,6 +27,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude library/termscript/main.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels library/termscript/main.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

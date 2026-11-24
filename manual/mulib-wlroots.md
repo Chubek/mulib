@@ -34,7 +34,7 @@ changing prior entries. `layout_remove` returns 1 if removed, 0 if absent.
 allowed; update preserves order and removal preserves remaining order.
 No pointers to native outputs are retained; caller handles hotplug id lifetimes.
 
-`cc -std=c11 -Iinclude examples/modules/wlroots.c -o wlroots`.
+`cc -std=c11 -Ikernels examples/modules/wlroots.c -o wlroots`.
 Tests exercise all eight transforms, invalid coordinates, boundaries, overlap,
 update, removal and repeated cleanup without starting a desktop session.
 
@@ -45,7 +45,7 @@ update, removal and repeated cleanup without starting a desktop session.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wlroots.h`](../include/mulib-wlroots.h) |
+| Header | [`kernels/mulib-wlroots.h`](../kernels/mulib-wlroots.h) |
 | Implementation switch | `MULIB_IMPL_WLROOTS` |
 | Repository-local includes | [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/wlroots.c`](../examples/modules/wlroots.c) |
@@ -58,6 +58,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wlroots.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wlroots.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

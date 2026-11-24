@@ -97,7 +97,7 @@ operands/types and preserve fault ordering; they are not silently typed MIR.
 asserts rejection of a self reference:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/mir.c -lm -o /tmp/mir
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/mir.c -lm -o /tmp/mir
 /tmp/mir
 ```
 
@@ -281,7 +281,7 @@ does not require high-level input graphs to stay alive after lowering.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mir.h`](../include/mulib-mir.h) |
+| Header | [`kernels/mulib-mir.h`](../kernels/mulib-mir.h) |
 | Implementation switch | `MULIB_IMPL_MIR` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/mir.c`](../examples/modules/mir.c) |
@@ -294,6 +294,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

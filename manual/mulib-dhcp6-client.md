@@ -33,7 +33,7 @@ See `../tests/test_dhcp6-client.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dhcp6-client.h`](../include/mulib-dhcp6-client.h) |
+| Header | [`kernels/mulib-dhcp6-client.h`](../kernels/mulib-dhcp6-client.h) |
 | Implementation switch | `MULIB_IMPL_DHCP6_CLIENT` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/dhcp6-client.c`](../examples/modules/dhcp6-client.c) |
@@ -46,6 +46,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dhcp6-client.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dhcp6-client.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

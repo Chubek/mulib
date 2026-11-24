@@ -142,7 +142,7 @@ for name, sources in [
     executable = t.work / name
     process = run([
         t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-        '-I', t.root.parent / 'include', '-I', t.root / 'stdlib/tty',
+        '-I', t.root.parent / 'kernels', '-I', t.root / 'stdlib/tty',
         *sources, *native_sources, *t.flags, *native_links, '-o', executable,
     ])
     assert process.returncode == 0, (name, process.stderr)
@@ -153,7 +153,7 @@ assert 'MULIB_IMPL_' not in runtime_source
 object_file = t.work / 'tty_runtime_declarations.o'
 process = run([
     t.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
-    '-I', t.root.parent / 'include', '-I', t.root / 'stdlib/tty',
+    '-I', t.root.parent / 'kernels', '-I', t.root / 'stdlib/tty',
     '-c', t.root / 'stdlib/tty/runtime.c', '-o', object_file, *t.flags,
 ])
 assert process.returncode == 0, process.stderr

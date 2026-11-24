@@ -132,7 +132,7 @@ multi-vCPU scheduler. Other host services retain the explicit support matrix.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vmm.h`](../include/mulib-vmm.h) |
+| Header | [`kernels/mulib-vmm.h`](../kernels/mulib-vmm.h) |
 | Implementation switch | `MULIB_IMPL_VMM` |
 | Repository-local includes | [mulib-virtio-os](mulib-virtio-os.md), [mulib-vmm-memory](mulib-vmm-memory.md) |
 | Complete example | [`examples/modules/vmm.c`](../examples/modules/vmm.c) |
@@ -145,6 +145,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vmm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vmm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

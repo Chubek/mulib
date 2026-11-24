@@ -39,7 +39,7 @@ def main():
         parser.error('C compiler not found; set CC to an available compiler')
     have_cxx = bool(cxx and shutil.which(cxx[0]))
     flags = ['-O2', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(root / 'include')]
+             '-I' + str(root / 'kernels')]
     if os.name == 'posix':
         flags += ['-pthread']
     if args.sanitizers:
@@ -48,7 +48,7 @@ def main():
     links = ([] if sys.platform == 'win32' else ['-lm'])
     if sys.platform.startswith(('linux', 'freebsd')):
         links += ['-ldl']
-    headers = sorted((root / 'include').glob('mulib-*.h'))
+    headers = sorted((root / 'kernels').glob('mulib-*.h'))
     texts = {p.name: p.read_text() for p in headers}
     switches, dependencies, extra_switches, failures = {}, {}, {}, []
     reserved = set()
@@ -89,7 +89,7 @@ def main():
     else:
         print(manuals.stdout.strip())
     mull = subprocess.run([sys.executable, str(root / 'mudsl/scripts/check_mulib_inventory.py'),
-                           '--include', str(root / 'include')], capture_output=True, text=True)
+                           '--include', str(root / 'kernels')], capture_output=True, text=True)
     if mull.returncode:
         failures.append(('MuLL bindings', mull.stderr or mull.stdout))
     else:
@@ -107,7 +107,7 @@ def main():
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:
-        header = re.search(r'^  header: include/(mulib-[^\n]+\.h)$', block, re.M)
+        header = re.search(r'^  header: kernels/(mulib-[^\n]+\.h)$', block, re.M)
         if not header:
             failures.append(('MANIFEST.yaml', 'module entry has no header'))
             continue

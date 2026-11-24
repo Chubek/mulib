@@ -1,6 +1,6 @@
 #define MULIB_PARALLEL_SH_NO_MUNE
 #define MULIB_IMPL_PARALLEL_SH
-#include "../include/mulib-parallel-sh.h"
+#include "../kernels/mulib-parallel-sh.h"
 #include <assert.h>
 #include <string.h>
 #include <pthread.h>

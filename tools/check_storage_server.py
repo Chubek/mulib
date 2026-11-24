@@ -30,13 +30,13 @@ def main():
     args = parser.parse_args()
     cc = shlex.split(os.environ.get('CC', 'cc'))
     cxx = shlex.split(os.environ.get('CXX', 'c++'))
-    flags = ['-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'include')]
-    texts = {p.name: p.read_text() for p in (ROOT / 'include').glob('mulib-*.h')}
+    flags = ['-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I' + str(ROOT / 'kernels')]
+    texts = {p.name: p.read_text() for p in (ROOT / 'kernels').glob('mulib-*.h')}
     deps = {name: re.findall(r'^\s*#\s*include\s*"(mulib-[^"]+\.h)"', text, re.M)
             for name, text in texts.items()}
     manifest = (ROOT / 'MANIFEST.yaml').read_text().split('project_files:')[0]
     blocks = re.split(r'^- name: ', manifest, flags=re.M)[1:]
-    entries = {re.search(r'^  header: include/([^\n]+)$', block, re.M).group(1): block
+    entries = {re.search(r'^  header: kernels/([^\n]+)$', block, re.M).group(1): block
                for block in blocks}
     for module in MODULES:
         header = 'mulib-' + module + '.h'

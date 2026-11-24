@@ -13,7 +13,7 @@ signatures are 64 bytes. Private seed storage and cleanup are caller-owned.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ed25519.h`](../include/mulib-ed25519.h) |
+| Header | [`kernels/mulib-ed25519.h`](../kernels/mulib-ed25519.h) |
 | Implementation switch | `MULIB_IMPL_ED25519` |
 | Repository-local includes | None |
 | Complete example | [`examples/ssh/kernels.c`](../examples/ssh/kernels.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/ssh/kernels.c -pthread -lm -ldl -lcrypto -o mulib-example
 ```
 <!-- /manual-reference -->

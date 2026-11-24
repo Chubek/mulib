@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-syscall.h` · **Switch:** `MULIB_IMPL_SYSCALL`  
+**Header:** `kernels/mulib-syscall.h` · **Switch:** `MULIB_IMPL_SYSCALL`  
 **Dependencies:** none; POSIX libc. C11 / C-linkage declarations.
 
 ## Exact native subset
@@ -65,7 +65,7 @@ watches still borrow them. Reads and writes never consume ownership.
 ## Runnable example and tests
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/syscall.c -o /tmp/opencode/syscall-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/syscall.c -o /tmp/opencode/syscall-example
 /tmp/opencode/syscall-example
 ```
 
@@ -82,7 +82,7 @@ loopback sockets, and reactor integration.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-syscall.h`](../include/mulib-syscall.h) |
+| Header | [`kernels/mulib-syscall.h`](../kernels/mulib-syscall.h) |
 | Implementation switch | `MULIB_IMPL_SYSCALL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/syscall.c`](../examples/modules/syscall.c) |
@@ -95,6 +95,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/syscall.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/syscall.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

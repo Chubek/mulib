@@ -57,7 +57,7 @@ Array bounds and valid backing objects remain the C caller's responsibility.
 ## Example and checks
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/superblocks.c -lm -o superblocks
+cc -std=c11 -Ikernels examples/modules/superblocks.c -lm -o superblocks
 ./superblocks
 ```
 
@@ -72,7 +72,7 @@ allocation failures.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-superblocks.h`](../include/mulib-superblocks.h) |
+| Header | [`kernels/mulib-superblocks.h`](../kernels/mulib-superblocks.h) |
 | Implementation switch | `MULIB_IMPL_SUPERBLOCKS` |
 | Repository-local includes | [mulib-gssair](mulib-gssair.md) |
 | Complete example | [`examples/modules/superblocks.c`](../examples/modules/superblocks.c) |
@@ -85,6 +85,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/superblocks.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/superblocks.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

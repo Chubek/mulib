@@ -1,5 +1,5 @@
 # OptML v1 ordered policy. Rule implementations and tree patterns live in
-# include/mulib-peephole.h; mulib_optml_parse loads this catalogue by name.
+# kernels/mulib-peephole.h; mulib_optml_parse loads this catalogue by name.
 fold-add
 fold-sub
 fold-mul

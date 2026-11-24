@@ -1,7 +1,7 @@
 # mulib-spice-op
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-op.h`  
+**Header:** `kernels/mulib-spice-op.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_OP`  
 **Dependencies:** `spice-netlist`, `spice-stamp`, `spice-r`, `spice-independent`, `num-dense`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_OP` defined before in
 `tests/test_spice_op.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_op.c -lm -o /tmp/test_spice_op
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_op.c -lm -o /tmp/test_spice_op
 /tmp/test_spice_op
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-op.h`](../include/mulib-spice-op.h).
+Verbatim declaration section from [`kernels/mulib-spice-op.h`](../kernels/mulib-spice-op.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -84,7 +84,7 @@ int mulib_spice_op_solve(const mulib_spice_netlist_t *net, double *node_voltages
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-op.h`](../include/mulib-spice-op.h) |
+| Header | [`kernels/mulib-spice-op.h`](../kernels/mulib-spice-op.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_OP` |
 | Repository-local includes | [mulib-num-dense](mulib-num-dense.md), [mulib-spice-independent](mulib-spice-independent.md), [mulib-spice-netlist](mulib-spice-netlist.md), [mulib-spice-r](mulib-spice-r.md), [mulib-spice-stamp](mulib-spice-stamp.md) |
 | Complete example | [`examples/modules/spice-op.c`](../examples/modules/spice-op.c) |
@@ -97,6 +97,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-op.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-op.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,7 +31,7 @@ See `../tests/test_conntrack.c` for its compile/link verification. Selected runn
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-conntrack.h`](../include/mulib-conntrack.h) |
+| Header | [`kernels/mulib-conntrack.h`](../kernels/mulib-conntrack.h) |
 | Implementation switch | `MULIB_IMPL_CONNTRACK` |
 | Repository-local includes | [mulib-nfnetlink](mulib-nfnetlink.md) |
 | Complete example | [`examples/modules/conntrack.c`](../examples/modules/conntrack.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/conntrack.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/conntrack.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

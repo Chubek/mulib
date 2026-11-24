@@ -37,7 +37,7 @@ thread per vCPU and coordinate concurrent teardown. No automatic signal handling
 
 ## Example and verification limits
 
-`cc -std=c11 -Iinclude examples/modules/kvm.c -o kvm` is a hardware-free lifetime
+`cc -std=c11 -Ikernels examples/modules/kvm.c -o kvm` is a hardware-free lifetime
 example. Tests cover invalid state and `/dev/null` ioctl failure/cleanup, not
 successful guest execution. Real execution requires hardware virtualization,
 kernel support, permissions and architecture-specific setup supplied by the caller.
@@ -49,7 +49,7 @@ kernel support, permissions and architecture-specific setup supplied by the call
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-kvm.h`](../include/mulib-kvm.h) |
+| Header | [`kernels/mulib-kvm.h`](../kernels/mulib-kvm.h) |
 | Implementation switch | `MULIB_IMPL_KVM` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/kvm.c`](../examples/modules/kvm.c) |
@@ -62,6 +62,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/kvm.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/kvm.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

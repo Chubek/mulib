@@ -169,19 +169,19 @@ int main(void)
 }
 ```
 
-Compile with `cc -std=c11 -Iinclude example.c -lm -o example`.
+Compile with `cc -std=c11 -Ikernels example.c -lm -o example`.
 
 ## Regression tests
 
 From the repository root:
 
 ```sh
-cc -std=c11 -pedantic -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -pedantic -Wall -Wextra -Werror -Ikernels \
   tests/test-gfx-input.c tests/gfx-input-tu.c tests/gfx-input-unix.c \
   tests/gfx-input-evdev.c -lm -ldl -o /tmp/opencode/test-gfx-input
 /tmp/opencode/test-gfx-input
 
-cc -std=c11 -pedantic -Wall -Wextra -Werror -Iinclude \
+cc -std=c11 -pedantic -Wall -Wextra -Werror -Ikernels \
   -fsanitize=address,undefined -fno-omit-frame-pointer -g \
   tests/test-gfx-input.c tests/gfx-input-tu.c tests/gfx-input-unix.c \
   tests/gfx-input-evdev.c -lm -ldl -o /tmp/opencode/test-gfx-input-san

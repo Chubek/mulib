@@ -28,7 +28,7 @@ debug information or signature verification. No external process is launched.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-macho-objdump.h`](../include/mulib-macho-objdump.h).
+Verbatim declaration section from [`kernels/mulib-macho-objdump.h`](../kernels/mulib-macho-objdump.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -63,7 +63,7 @@ int mulib_macho_objdump (const void *data, size_t size, const mulib_objdump_opti
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-macho-objdump.h`](../include/mulib-macho-objdump.h) |
+| Header | [`kernels/mulib-macho-objdump.h`](../kernels/mulib-macho-objdump.h) |
 | Implementation switch | `MULIB_IMPL_MACHO_OBJDUMP` |
 | Repository-local includes | [mulib-macho](mulib-macho.md), [mulib-objdump](mulib-objdump.md) |
 | Complete example | [`examples/modules/macho-objdump.c`](../examples/modules/macho-objdump.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/macho-objdump.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/macho-objdump.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

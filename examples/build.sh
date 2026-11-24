@@ -9,6 +9,6 @@ for name in dhcp4-discover dns-query generic-netlink icmp-echo ip-links \
     network-profile nm-state pcap-write show-route socket-diagnostics \
     udp-packet ustack-demo; do
     src="examples/$name.c"
-    "$CC" ${CFLAGS:-} -std=c11 -pthread -O1 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude "$src" -lm -ldl -o "examples/build/$(basename "$src" .c)"
+    "$CC" ${CFLAGS:-} -std=c11 -pthread -O1 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels "$src" -lm -ldl -o "examples/build/$(basename "$src" .c)"
 done
 printf 'Compiled examples into examples/build/\n'

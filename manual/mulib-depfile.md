@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header:** `include/mulib-depfile.h`  
+**Header:** `kernels/mulib-depfile.h`  
 **Switch:** `MULIB_IMPL_DEPFILE`
 
 Depfile parses the GCC/Ninja dependency-file profile used to communicate
@@ -34,7 +34,7 @@ defaults. All arithmetic and allocations are checked.
 ## Example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
   examples/modules/depfile.c -o /tmp/opencode/depfile
 /tmp/opencode/depfile
 ```
@@ -46,7 +46,7 @@ cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-depfile.h`](../include/mulib-depfile.h) |
+| Header | [`kernels/mulib-depfile.h`](../kernels/mulib-depfile.h) |
 | Implementation switch | `MULIB_IMPL_DEPFILE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/depfile.c`](../examples/modules/depfile.c) |
@@ -59,6 +59,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/depfile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/depfile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -16,7 +16,7 @@ Example: `examples/modules/ocicontainervolume.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-ocicontainervolume.h`](../include/mulib-ocicontainervolume.h).
+Verbatim declaration section from [`kernels/mulib-ocicontainervolume.h`](../kernels/mulib-ocicontainervolume.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -44,7 +44,7 @@ Include the header in application code; dependency types come from its includes.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-ocicontainervolume.h`](../include/mulib-ocicontainervolume.h) |
+| Header | [`kernels/mulib-ocicontainervolume.h`](../kernels/mulib-ocicontainervolume.h) |
 | Implementation switch | `MULIB_IMPL_OCICONTAINERVOLUME` |
 | Repository-local includes | [`.deprecated/mulib-ocicontainervolume.h`](../.deprecated/mulib-ocicontainervolume.h), [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/ocicontainervolume.c`](../examples/modules/ocicontainervolume.c) |
@@ -57,6 +57,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/ocicontainervolume.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/ocicontainervolume.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

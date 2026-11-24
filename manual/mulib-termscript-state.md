@@ -16,7 +16,7 @@ performed by an action are not rolled back.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-termscript-state.h`](../include/mulib-termscript-state.h) |
+| Header | [`kernels/mulib-termscript-state.h`](../kernels/mulib-termscript-state.h) |
 | Implementation switch | `MULIB_IMPL_TERMSCRIPT_STATE` |
 | Repository-local includes | None |
 | Complete example | [`examples/termscript/support.c`](../examples/termscript/support.c) |
@@ -29,6 +29,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/termscript/support.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/termscript/support.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

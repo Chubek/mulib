@@ -13,9 +13,9 @@ Define `MULIB_IMPL_SEARCH_RANK` in exactly one C11 translation unit. Use `#inclu
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-search-rank.c -o /tmp/test-search-rank
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-search-rank.c -o /tmp/test-search-rank
 /tmp/test-search-rank
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/search-rank.c -o /tmp/example-search-rank
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/search-rank.c -o /tmp/example-search-rank
 ```
 
 ## API
@@ -42,7 +42,7 @@ yield NaN. No Unicode folding or stemming occurs. Regression:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-search-rank.h`](../include/mulib-search-rank.h).
+Verbatim declaration section from [`kernels/mulib-search-rank.h`](../kernels/mulib-search-rank.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -86,7 +86,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-search-rank.h`](../include/mulib-search-rank.h) |
+| Header | [`kernels/mulib-search-rank.h`](../kernels/mulib-search-rank.h) |
 | Implementation switch | `MULIB_IMPL_SEARCH_RANK` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/search-rank.c`](../examples/modules/search-rank.c) |
@@ -99,6 +99,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/search-rank.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/search-rank.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -185,7 +185,7 @@ including allocation failures, do not alter the destination.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vizigen.h`](../include/mulib-vizigen.h) |
+| Header | [`kernels/mulib-vizigen.h`](../kernels/mulib-vizigen.h) |
 | Implementation switch | `MULIB_IMPL_VIZIGEN` |
 | Repository-local includes | [mulib-asdl](mulib-asdl.md), [mulib-binfilereader](mulib-binfilereader.md), [mulib-binfilewriter](mulib-binfilewriter.md), [mulib-mmfile](mulib-mmfile.md), [mulib-walker](mulib-walker.md) |
 | Complete example | [`examples/modules/vizigen.c`](../examples/modules/vizigen.c) |
@@ -198,6 +198,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vizigen.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vizigen.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

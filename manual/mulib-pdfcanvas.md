@@ -28,14 +28,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-pdfcanvas.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-pdfcanvas.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-pdfcanvas.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-pdfcanvas.c -lm -o test
 ./test
 ```
 
@@ -54,7 +54,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-pdfcanvas.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pdfcanvas.h`](../include/mulib-pdfcanvas.h) |
+| Header | [`kernels/mulib-pdfcanvas.h`](../kernels/mulib-pdfcanvas.h) |
 | Implementation switch | `MULIB_IMPL_PDFCANVAS` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-pdfcanvas.c`](../examples/mulib-pdfcanvas.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-pdfcanvas.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-pdfcanvas.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -21,7 +21,7 @@ to work around a rejected target.
 
 ## Integration and ownership
 
-Include `include/mulib-fetch-policy.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-fetch-policy.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -45,7 +45,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fetch-policy.h`](../include/mulib-fetch-policy.h).
+Verbatim declaration section from [`kernels/mulib-fetch-policy.h`](../kernels/mulib-fetch-policy.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -93,7 +93,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fetch-policy.h`](../include/mulib-fetch-policy.h) |
+| Header | [`kernels/mulib-fetch-policy.h`](../kernels/mulib-fetch-policy.h) |
 | Implementation switch | `MULIB_IMPL_FETCH_POLICY` |
 | Repository-local includes | [mulib-browser-origin](mulib-browser-origin.md) |
 | Complete example | [`examples/modules/fetch-policy.c`](../examples/modules/fetch-policy.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fetch-policy.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fetch-policy.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

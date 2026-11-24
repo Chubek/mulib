@@ -42,7 +42,7 @@ MIDI files describe performance events; they do not contain synthesized audio.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-midi.h`](../include/mulib-midi.h) |
+| Header | [`kernels/mulib-midi.h`](../kernels/mulib-midi.h) |
 | Implementation switch | `MULIB_IMPL_MIDI` |
 | Repository-local includes | [mulib-audio](mulib-audio.md) |
 | Complete example | [`examples/modules/midi.c`](../examples/modules/midi.c) |
@@ -55,6 +55,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/midi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/midi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

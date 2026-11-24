@@ -25,7 +25,7 @@ def load(name, path):
 house = load('registration_house', t.root/'stdlib/mulib/housekeeping.py')
 exo = load('registration_exo', t.root/'tools/on1x-exotract.py')
 contracts = house.contracts
-headers = {p.relative_to(root).as_posix() for p in (root/'include').glob('mulib-*.h')}
+headers = {p.relative_to(root).as_posix() for p in (root/'kernels').glob('mulib-*.h')}
 assert headers
 inventory = contracts.inventory(root)
 modules = inventory['modules']

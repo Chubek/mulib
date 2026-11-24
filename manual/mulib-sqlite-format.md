@@ -93,7 +93,7 @@ independent SQLite engine. The format specification is
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sqlite-format.h`](../include/mulib-sqlite-format.h) |
+| Header | [`kernels/mulib-sqlite-format.h`](../kernels/mulib-sqlite-format.h) |
 | Implementation switch | `MULIB_IMPL_SQLITE_FORMAT` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-endian](mulib-endian.md) |
 | Complete example | [`examples/modules/sqlite-format.c`](../examples/modules/sqlite-format.c) |
@@ -106,6 +106,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sqlite-format.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sqlite-format.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -14,7 +14,7 @@ keys/tombstones. Switches: `MULIB_IMPL_DBINDEX`, `MULIB_IMPL_MEMTABLE`,
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-dbindex.h`](../include/mulib-dbindex.h).
+Verbatim declaration section from [`kernels/mulib-dbindex.h`](../kernels/mulib-dbindex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -62,7 +62,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-dbindex.h`](../include/mulib-dbindex.h) |
+| Header | [`kernels/mulib-dbindex.h`](../kernels/mulib-dbindex.h) |
 | Implementation switch | `MULIB_IMPL_DBINDEX` |
 | Repository-local includes | [mulib-bycutils](mulib-bycutils.md), [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/dbindex.c`](../examples/modules/dbindex.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/dbindex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/dbindex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

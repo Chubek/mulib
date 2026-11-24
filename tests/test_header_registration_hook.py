@@ -11,9 +11,9 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 CATALOG = 'on1x/contracts-exotract/kernel-auto.json'
-HEADER = 'include/mulib-added.h'
+HEADER = 'kernels/mulib-added.h'
 MANUAL = 'manual/mulib-added.md'
-OLD_HEADER = 'include/mulib-base.h'
+OLD_HEADER = 'kernels/mulib-base.h'
 OLD_MANUAL = 'manual/mulib-base.md'
 NEW_API = ('/** @brief The added public API. */\n'
            '#include "mulib-base.h"\n'
@@ -51,7 +51,7 @@ class HeaderRegistrationHook(unittest.TestCase):
         self.put(OLD_MANUAL, '# Base API\n\nBase module contract.\n')
         self.put('MANIFEST.yaml',
                  'module_count: 1\nimplemented_module_count: 1\nbounded_module_count: 0\n'
-                 'modules:\n- name: base\n  header: include/mulib-base.h\n'
+                 'modules:\n- name: base\n  header: kernels/mulib-base.h\n'
                  '  macro: MULIB_IMPL_BASE\n  status: implemented\n'
                  '  purpose: Base module.\n  manual: manual/mulib-base.md\n  dependencies: []\n'
                  'project_files:\n')
@@ -99,7 +99,7 @@ class HeaderRegistrationHook(unittest.TestCase):
     def verify_registration(self, extra=()):
         self.assertEqual(self.changed(), {HEADER, MANUAL, 'MANIFEST.yaml', CATALOG, *extra})
         manifest = self.git('show', 'HEAD:MANIFEST.yaml').stdout
-        self.assertIn('- name: added\n  header: include/mulib-added.h\n', manifest)
+        self.assertIn('- name: added\n  header: kernels/mulib-added.h\n', manifest)
         self.assertIn('  dependencies: [base]\n', manifest)
         catalog = json.loads(self.git('show', f'HEAD:{CATALOG}').stdout)
         self.assertEqual(catalog['modules']['added']['macro'], 'MULIB_IMPL_ADDED')
@@ -115,7 +115,7 @@ class HeaderRegistrationHook(unittest.TestCase):
             'notes.txt': 'unrelated unstaged notes\n',
             IMPLEMENTATION: 'local implementation fixture\n',
             DECLARATIONS: 'local declarations fixture\n',
-            'include/mulib-untracked.h': 'untracked header with no implementation metadata\n',
+            'kernels/mulib-untracked.h': 'untracked header with no implementation metadata\n',
             'MANIFEST.yaml.additions': 'untracked fragment, not generator input\n',
         }
         for path, content in local.items():
@@ -190,15 +190,15 @@ class HeaderRegistrationHook(unittest.TestCase):
             ('added-inline', 'static-inline', 'static inline int added(void) { return 1; }\n'),
             ('added-data', 'static-data', 'static const int added = 1;\n'),
         ):
-            self.put(f'include/mulib-{name}.h', content)
+            self.put(f'kernels/mulib-{name}.h', content)
             self.put(f'manual/mulib-{name}.md', '# Bounded header\n')
-            entry = (f'- name: {name}\n  header: include/mulib-{name}.h\n'
+            entry = (f'- name: {name}\n  header: kernels/mulib-{name}.h\n'
                      f'  manual: manual/mulib-{name}.md\n  status: bounded\n'
                      f'  implementation: {implementation}\n  dependencies: []\n')
             self.put('MANIFEST.yaml', self.read('MANIFEST.yaml').replace(
                 'project_files:', entry + 'project_files:'))
-            self.git('add', '--', f'include/mulib-{name}.h', f'manual/mulib-{name}.md')
-        placeholder = 'include/mulib-added-reservation.h'
+            self.git('add', '--', f'kernels/mulib-{name}.h', f'manual/mulib-{name}.md')
+        placeholder = 'kernels/mulib-added-reservation.h'
         self.put(placeholder, '/* No API yet. */\n')
         self.git('add', '--', 'MANIFEST.yaml', placeholder)
         self.git('commit', '--quiet', '-m', 'add internal linkage headers and reservation')

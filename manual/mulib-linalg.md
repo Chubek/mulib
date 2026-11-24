@@ -48,7 +48,7 @@ vertex = mulib_linalg_mat4_transform(model, vertex); /* {3,3,4,1} */
 ```
 
 Build `examples/modules/linalg.c` with
-`cc -std=c11 -Iinclude examples/modules/linalg.c -lm -o linalg`.
+`cc -std=c11 -Ikernels examples/modules/linalg.c -lm -o linalg`.
 `tests/test_graphics_math.c` checks inverse roundtrips, projection endpoints,
 quaternion rotations and normalization extremes. No hidden state or allocations.
 
@@ -59,7 +59,7 @@ quaternion rotations and normalization extremes. No hidden state or allocations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-linalg.h`](../include/mulib-linalg.h) |
+| Header | [`kernels/mulib-linalg.h`](../kernels/mulib-linalg.h) |
 | Implementation switch | `MULIB_IMPL_LINALG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/linalg.c`](../examples/modules/linalg.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/linalg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/linalg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -43,7 +43,7 @@ and calls add. There are no hidden threads, background daemons or DNS. See
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-mumq-server.h`](../include/mulib-mumq-server.h) |
+| Header | [`kernels/mulib-mumq-server.h`](../kernels/mulib-mumq-server.h) |
 | Implementation switch | `MULIB_IMPL_MUMQ_SERVER` |
 | Repository-local includes | [mulib-mumq](mulib-mumq.md) |
 | Complete example | [`examples/modules/mumq-server.c`](../examples/modules/mumq-server.c) |
@@ -56,6 +56,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/mumq-server.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/mumq-server.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

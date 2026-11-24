@@ -40,7 +40,7 @@ See `../tests/test_uip-arp-cache.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uip-arp-cache.h`](../include/mulib-uip-arp-cache.h) |
+| Header | [`kernels/mulib-uip-arp-cache.h`](../kernels/mulib-uip-arp-cache.h) |
 | Implementation switch | `MULIB_IMPL_UIP_ARP_CACHE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uip-arp-cache.c`](../examples/modules/uip-arp-cache.c) |
@@ -53,6 +53,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uip-arp-cache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uip-arp-cache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

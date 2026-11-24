@@ -118,7 +118,7 @@ class LanguageTests(unittest.TestCase):
         self.assertIsNone(self.server.hover(doc, text.index('"hi"') + 1))
         native = Document("file:///example.c", "mulib_vec_init(&values, sizeof(int));", "c")
         location = self.server.definition(native, 2)
-        self.assertTrue(location["uri"].endswith("/include/mulib-vec.h"))
+        self.assertTrue(location["uri"].endswith("/kernels/mulib-vec.h"))
         self.assertGreater(location["range"]["start"]["line"], 0)
         self.assertIn("module manual", self.server.hover(native, 2)["contents"]["value"])
 

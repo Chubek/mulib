@@ -75,7 +75,7 @@ writer inputs.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
   examples/modules/toml.c -o ./mulib-toml
 ./mulib-toml
 ```
@@ -102,7 +102,7 @@ malformed/conflicting definitions, depth bounds, and generated roundtrips.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-toml.h`](../include/mulib-toml.h) |
+| Header | [`kernels/mulib-toml.h`](../kernels/mulib-toml.h) |
 | Implementation switch | `MULIB_IMPL_TOML` |
 | Repository-local includes | [mulib-json](mulib-json.md), [mulib-strbuf](mulib-strbuf.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/toml.c`](../examples/modules/toml.c) |
@@ -115,6 +115,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/toml.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/toml.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

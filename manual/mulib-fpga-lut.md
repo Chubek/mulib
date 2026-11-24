@@ -1,7 +1,7 @@
 # mulib-fpga-lut
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-fpga-lut.h`  
+**Header:** `kernels/mulib-fpga-lut.h`  
 **Implementation switch:** `MULIB_IMPL_FPGA_LUT`  
 **Dependencies:** `synth-truthtable`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FPGA_LUT` defined before in
 `tests/test_fpga_lut.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_fpga_lut.c -lm -o /tmp/test_fpga_lut
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_fpga_lut.c -lm -o /tmp/test_fpga_lut
 /tmp/test_fpga_lut
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fpga-lut.h`](../include/mulib-fpga-lut.h).
+Verbatim declaration section from [`kernels/mulib-fpga-lut.h`](../kernels/mulib-fpga-lut.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -85,7 +85,7 @@ int mulib_fpga_lut_from_truth(mulib_synth_truth_t truth, mulib_fpga_lut_t *out);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fpga-lut.h`](../include/mulib-fpga-lut.h) |
+| Header | [`kernels/mulib-fpga-lut.h`](../kernels/mulib-fpga-lut.h) |
 | Implementation switch | `MULIB_IMPL_FPGA_LUT` |
 | Repository-local includes | [mulib-synth-truthtable](mulib-synth-truthtable.md) |
 | Complete example | [`examples/modules/fpga-lut.c`](../examples/modules/fpga-lut.c) |
@@ -98,6 +98,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fpga-lut.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fpga-lut.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

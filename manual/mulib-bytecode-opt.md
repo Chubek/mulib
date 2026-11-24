@@ -20,9 +20,9 @@ arithmetic is supplied by an internal header, not another translation unit.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode-opt.h`](../include/mulib-bytecode-opt.h) |
+| Header | [`kernels/mulib-bytecode-opt.h`](../kernels/mulib-bytecode-opt.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE_OPT` |
-| Repository-local includes | [`include/detail/mulib-compiler-integer.h`](../include/detail/mulib-compiler-integer.h), [mulib-bytecode](mulib-bytecode.md) |
+| Repository-local includes | [`kernels/detail/mulib-compiler-integer.h`](../kernels/detail/mulib-compiler-integer.h), [mulib-bytecode](mulib-bytecode.md) |
 | Complete example | [`examples/modules/bytecode-opt.c`](../examples/modules/bytecode-opt.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode-opt.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode-opt.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

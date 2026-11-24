@@ -20,9 +20,9 @@ or retain disjoint ranges. Operations have O(1) time/space and no allocations.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-range-analysis.h`](../include/mulib-range-analysis.h) |
+| Header | [`kernels/mulib-range-analysis.h`](../kernels/mulib-range-analysis.h) |
 | Implementation switch | `MULIB_IMPL_RANGE_ANALYSIS` |
-| Repository-local includes | [`include/detail/mulib-compiler-integer.h`](../include/detail/mulib-compiler-integer.h) |
+| Repository-local includes | [`kernels/detail/mulib-compiler-integer.h`](../kernels/detail/mulib-compiler-integer.h) |
 | Complete example | [`examples/modules/range-analysis.c`](../examples/modules/range-analysis.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/range-analysis.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/range-analysis.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

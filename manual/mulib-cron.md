@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-**Header/switch:** `include/mulib-cron.h` / `MULIB_IMPL_CRON`  
+**Header/switch:** `kernels/mulib-cron.h` / `MULIB_IMPL_CRON`  
 **Dependencies:** standard C11 integer/time declarations only. C++17-linkable
 declarations; no allocation, external process, clock access or threads.
 
@@ -81,7 +81,7 @@ the callback context. Cron itself does not own or depend on a pool.
 ## Runnable example and tests
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/cron.c -o /tmp/cron
 /tmp/cron
 ```
@@ -98,7 +98,7 @@ validation, invalid civil fields, unmatched dispatch and pool callback compositi
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cron.h`](../include/mulib-cron.h) |
+| Header | [`kernels/mulib-cron.h`](../kernels/mulib-cron.h) |
 | Implementation switch | `MULIB_IMPL_CRON` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cron.c`](../examples/modules/cron.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cron.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cron.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

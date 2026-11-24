@@ -1,7 +1,7 @@
 # mulib-rf-smith
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-rf-smith.h`  
+**Header:** `kernels/mulib-rf-smith.h`  
 **Implementation switch:** `MULIB_IMPL_RF_SMITH`  
 **Dependencies:** `rf-sparams`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_RF_SMITH` defined before in
 `tests/test_rf_smith.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_rf_smith.c -lm -o /tmp/test_rf_smith
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_rf_smith.c -lm -o /tmp/test_rf_smith
 /tmp/test_rf_smith
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-rf-smith.h`](../include/mulib-rf-smith.h).
+Verbatim declaration section from [`kernels/mulib-rf-smith.h`](../kernels/mulib-rf-smith.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -80,7 +80,7 @@ int mulib_rf_smith_xy(mulib_rf_complex_t impedance, double z0, double *x, double
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-rf-smith.h`](../include/mulib-rf-smith.h) |
+| Header | [`kernels/mulib-rf-smith.h`](../kernels/mulib-rf-smith.h) |
 | Implementation switch | `MULIB_IMPL_RF_SMITH` |
 | Repository-local includes | [mulib-rf-sparams](mulib-rf-sparams.md) |
 | Complete example | [`examples/modules/rf-smith.c`](../examples/modules/rf-smith.c) |
@@ -93,6 +93,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/rf-smith.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/rf-smith.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

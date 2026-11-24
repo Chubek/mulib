@@ -25,7 +25,7 @@ Memory is O(locals + stack limit), time O(executed steps).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-bytecode.h`](../include/mulib-bytecode.h) |
+| Header | [`kernels/mulib-bytecode.h`](../kernels/mulib-bytecode.h) |
 | Implementation switch | `MULIB_IMPL_BYTECODE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/bytecode.c`](../examples/modules/bytecode.c) |
@@ -38,6 +38,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/bytecode.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/bytecode.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

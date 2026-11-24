@@ -56,7 +56,7 @@ See [`examples/modules/orhoconv.c`](../examples/modules/orhoconv.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-orhoconv.h`](../include/mulib-orhoconv.h) |
+| Header | [`kernels/mulib-orhoconv.h`](../kernels/mulib-orhoconv.h) |
 | Implementation switch | `MULIB_IMPL_ORHOCONV` |
 | Repository-local includes | [mulib-endian](mulib-endian.md), [mulib-kvdb](mulib-kvdb.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/modules/orhoconv.c`](../examples/modules/orhoconv.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/orhoconv.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/orhoconv.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

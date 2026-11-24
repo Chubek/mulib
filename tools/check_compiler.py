@@ -43,7 +43,7 @@ def main():
         parser.error('--jobs must be positive')
     cc, cxx = shlex.split(args.cc), shlex.split(args.cxx)
     flags = ['-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(ROOT / 'include'), '-O1', '-g']
+             '-I' + str(ROOT / 'kernels'), '-O1', '-g']
     if args.sanitizers:
         flags += ['-fsanitize=address,undefined', '-fno-sanitize-recover=all',
                   '-fno-omit-frame-pointer']
@@ -55,7 +55,7 @@ def main():
     assert int(re.search(r'^implemented_module_count: (\d+)$', manifest, re.M)[1]) == implemented
     for name in MODULES:
         assert name in names, 'missing manifest entry: ' + name
-        for directory, filename in [('include', 'mulib-' + name + '.h'),
+        for directory, filename in [('kernels', 'mulib-' + name + '.h'),
                                     ('manual', 'mulib-' + name + '.md'),
                                     ('examples/modules', name + '.c')]:
             assert (ROOT / directory / filename).is_file(), 'missing ' + filename

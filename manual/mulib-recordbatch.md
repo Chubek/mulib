@@ -13,7 +13,7 @@ and zeros the owner; callers must not shallow-copy batch records out as owners.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-recordbatch.h`](../include/mulib-recordbatch.h).
+Verbatim declaration section from [`kernels/mulib-recordbatch.h`](../kernels/mulib-recordbatch.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -54,7 +54,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-recordbatch.h`](../include/mulib-recordbatch.h) |
+| Header | [`kernels/mulib-recordbatch.h`](../kernels/mulib-recordbatch.h) |
 | Implementation switch | `MULIB_IMPL_RECORDBATCH` |
 | Repository-local includes | [mulib-record](mulib-record.md) |
 | Complete example | [`examples/modules/recordbatch.c`](../examples/modules/recordbatch.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/recordbatch.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/recordbatch.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

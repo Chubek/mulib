@@ -282,7 +282,7 @@ The checkout, including allowlisted docs/catalogs, must remain available.
 | `explain_feature` | `query`, optional `limit` | Evidence for an explanation, not generated prose |
 | `search_kernels` | `query`, optional `limit` | Canonical manifest names/purposes |
 | `inspect_kernel` | exact `name` | Manifest entry, switch, dependencies, header/manual/contract excerpts, independent status fields |
-| `list_headers` | optional `query`, `offset`, `limit` | Paginated `include/mulib-*.h` paths, file hashes and optional manifest names |
+| `list_headers` | optional `query`, `offset`, `limit` | Paginated `kernels/mulib-*.h` paths, file hashes and optional manifest names |
 | `inspect_header` | exact `path`, optional `query` or `line` | Cited source excerpts restricted to that header |
 | `inspect_capability` | `query`, optional `limit` | Scoped status/verification/blocker records |
 

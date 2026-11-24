@@ -13,9 +13,9 @@ Define `MULIB_IMPL_WEBARCHIVE` in exactly one C11 translation unit. Use `#includ
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-webarchive.c -o /tmp/test-webarchive
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-webarchive.c -o /tmp/test-webarchive
 /tmp/test-webarchive
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/webarchive.c -o /tmp/example-webarchive
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/webarchive.c -o /tmp/example-webarchive
 ```
 
 ## API
@@ -41,7 +41,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webarchive.h`](../include/mulib-webarchive.h) |
+| Header | [`kernels/mulib-webarchive.h`](../kernels/mulib-webarchive.h) |
 | Implementation switch | `MULIB_IMPL_WEBARCHIVE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/webarchive.c`](../examples/modules/webarchive.c) |
@@ -54,6 +54,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webarchive.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webarchive.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

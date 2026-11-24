@@ -25,7 +25,7 @@ portable. Keep configuration consistent between translation units.
 On POSIX, for example:
 
 ```
-cc -std=c11 -D_POSIX_C_SOURCE=200809L -Iinclude examples/modules/getaddr.c -o getaddr
+cc -std=c11 -D_POSIX_C_SOURCE=200809L -Ikernels examples/modules/getaddr.c -o getaddr
 ```
 
 Windows applications must initialize Winsock themselves and link `ws2_32`.
@@ -98,7 +98,7 @@ strict C11 and with POSIX feature macros, covering both platform branches.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-getaddr.h`](../include/mulib-getaddr.h) |
+| Header | [`kernels/mulib-getaddr.h`](../kernels/mulib-getaddr.h) |
 | Implementation switch | `MULIB_IMPL_GETADDR` |
 | Repository-local includes | [mulib-inet6](mulib-inet6.md) |
 | Complete example | [`examples/modules/getaddr.c`](../examples/modules/getaddr.c) |
@@ -111,6 +111,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/getaddr.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/getaddr.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

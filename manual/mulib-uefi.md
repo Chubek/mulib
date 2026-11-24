@@ -87,7 +87,7 @@ firmware SDK or a claim of firmware conformance certification.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-uefi.h`](../include/mulib-uefi.h) |
+| Header | [`kernels/mulib-uefi.h`](../kernels/mulib-uefi.h) |
 | Implementation switch | `MULIB_IMPL_UEFI` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/uefi.c`](../examples/modules/uefi.c) |
@@ -100,6 +100,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/uefi.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/uefi.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

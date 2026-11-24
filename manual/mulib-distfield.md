@@ -63,7 +63,7 @@ coverage is in `tests/test_text_allocations.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-distfield.h`](../include/mulib-distfield.h) |
+| Header | [`kernels/mulib-distfield.h`](../kernels/mulib-distfield.h) |
 | Implementation switch | `MULIB_IMPL_DISTFIELD` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/distfield.c`](../examples/modules/distfield.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/distfield.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/distfield.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

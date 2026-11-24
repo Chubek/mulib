@@ -1,4 +1,4 @@
-/* Build: cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-diagram.c -lm -o demo */
+/* Build: cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-diagram.c -lm -o demo */
 #define MULIB_IMPL_TYPECORE
 #define MULIB_IMPL_DIAGRAM
 #include "mulib-diagram.h"

@@ -2,7 +2,7 @@
 
 [Manuals](README.md) · [Library index](index.md)
 
-`include/mulib-tui.h` is a small immediate-mode UI and double-buffered terminal
+`kernels/mulib-tui.h` is a small immediate-mode UI and double-buffered terminal
 renderer. It provides clipped text, boxes, buttons, row/column splits, event
 activation helpers and transactional changed-cell output. Applications own I/O,
 terminal modes, the event loop, widget identity/focus and resize notification.
@@ -172,9 +172,9 @@ int main(void) {
 ```
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/tui.c -o ./tui-example
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/tui.c -o ./tui-example
 ./tui-example
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test_terminal.c -o ./test-terminal
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test_terminal.c -o ./test-terminal
 ./test-terminal
 ```
 
@@ -191,7 +191,7 @@ resize and layout-overflow checks. No interactive terminal is required.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tui.h`](../include/mulib-tui.h) |
+| Header | [`kernels/mulib-tui.h`](../kernels/mulib-tui.h) |
 | Implementation switch | `MULIB_IMPL_TUI` |
 | Repository-local includes | [mulib-terminfo](mulib-terminfo.md), [mulib-termkey](mulib-termkey.md), [mulib-vterm](mulib-vterm.md) |
 | Complete example | [`examples/modules/tui.c`](../examples/modules/tui.c) |
@@ -204,6 +204,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tui.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tui.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

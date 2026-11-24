@@ -1,4 +1,4 @@
-/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/glr.c -o ./glr */
+/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/glr.c -o ./glr */
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_BITSET
 #define MULIB_IMPL_ATN

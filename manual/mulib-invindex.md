@@ -23,7 +23,7 @@ lookups while walking postings. Regression: `tests/test_data_patches.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-invindex.h`](../include/mulib-invindex.h).
+Verbatim declaration section from [`kernels/mulib-invindex.h`](../kernels/mulib-invindex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -75,7 +75,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-invindex.h`](../include/mulib-invindex.h) |
+| Header | [`kernels/mulib-invindex.h`](../kernels/mulib-invindex.h) |
 | Implementation switch | `MULIB_IMPL_INVINDEX` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md), [mulib-memtable](mulib-memtable.md) |
 | Complete example | [`examples/modules/invindex.c`](../examples/modules/invindex.c) |
@@ -88,6 +88,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/invindex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/invindex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

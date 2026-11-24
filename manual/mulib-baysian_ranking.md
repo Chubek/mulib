@@ -17,7 +17,7 @@ input fails before mutation. Empty arrays may be NULL. O(n²) time, no allocatio
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-baysian_ranking.h`](../include/mulib-baysian_ranking.h).
+Verbatim declaration section from [`kernels/mulib-baysian_ranking.h`](../kernels/mulib-baysian_ranking.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ int mulib_bayesian_rank(const double *scores, size_t n, size_t *indices);
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-baysian_ranking.h`](../include/mulib-baysian_ranking.h) |
+| Header | [`kernels/mulib-baysian_ranking.h`](../kernels/mulib-baysian_ranking.h) |
 | Implementation switch | `MULIB_IMPL_BAYSIAN_RANKING` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/baysian_ranking.c`](../examples/modules/baysian_ranking.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/baysian_ranking.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/baysian_ranking.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

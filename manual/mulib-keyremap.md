@@ -31,14 +31,14 @@ SYN_REPORT passes through even for an empty mapped frame. SYN_DROPPED is not
 automatically recoverable: stop forwarding, reconcile native held state and
 release/reset downstream state before resuming. No callback failures to roll back.
 
-`cc -std=c11 -Iinclude examples/modules/keyremap.c -o keyremap`.
+`cc -std=c11 -Ikernels examples/modules/keyremap.c -o keyremap`.
 `tests/test_devices.c` checks many-to-one balancing, remapping while held,
 suppression, aliasing, drops and malformed events.
 
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-keyremap.h`](../include/mulib-keyremap.h).
+Verbatim declaration section from [`kernels/mulib-keyremap.h`](../kernels/mulib-keyremap.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -97,7 +97,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-keyremap.h`](../include/mulib-keyremap.h) |
+| Header | [`kernels/mulib-keyremap.h`](../kernels/mulib-keyremap.h) |
 | Implementation switch | `MULIB_IMPL_KEYREMAP` |
 | Repository-local includes | [mulib-input](mulib-input.md) |
 | Complete example | [`examples/modules/keyremap.c`](../examples/modules/keyremap.c) |
@@ -110,6 +110,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/keyremap.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/keyremap.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

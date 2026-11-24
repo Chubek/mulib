@@ -32,7 +32,7 @@ See `../tests/test_wifi-monitor.c` for its compile/link verification. Selected r
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wifi-monitor.h`](../include/mulib-wifi-monitor.h) |
+| Header | [`kernels/mulib-wifi-monitor.h`](../kernels/mulib-wifi-monitor.h) |
 | Implementation switch | `MULIB_IMPL_WIFI_MONITOR` |
 | Repository-local includes | [mulib-netlink](mulib-netlink.md) |
 | Complete example | [`examples/modules/wifi-monitor.c`](../examples/modules/wifi-monitor.c) |
@@ -45,6 +45,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wifi-monitor.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wifi-monitor.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

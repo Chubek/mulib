@@ -33,14 +33,14 @@ The header includes `mulib-typecore.h`, which provides allocation-checked byte b
 Build the standalone example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude examples/mulib-texmark.c -lm -o demo
+cc -std=c11 -Wall -Wextra -Ikernels examples/mulib-texmark.c -lm -o demo
 ./demo
 ```
 
 Run its test:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Iinclude tests/test-texmark.c -lm -o test
+cc -std=c11 -Wall -Wextra -Ikernels tests/test-texmark.c -lm -o test
 ./test
 ```
 
@@ -59,7 +59,7 @@ cc -std=c11 -Wall -Wextra -Iinclude tests/test-texmark.c -lm -o test
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-texmark.h`](../include/mulib-texmark.h) |
+| Header | [`kernels/mulib-texmark.h`](../kernels/mulib-texmark.h) |
 | Implementation switch | `MULIB_IMPL_TEXMARK` |
 | Repository-local includes | [mulib-typecore](mulib-typecore.md) |
 | Complete example | [`examples/mulib-texmark.c`](../examples/mulib-texmark.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-texmark.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-texmark.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

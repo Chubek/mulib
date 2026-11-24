@@ -2,7 +2,7 @@
 
 LuaEmbed is an **On1x-authored native PPX**, using the existing PPX, visitor,
 S-expression and schema libraries. A trusted C11 build-host bridge executes Lua
-with canonical [`mulib-mune.h`](../../../../include/mulib-mune.h). It is not a
+with canonical [`mulib-mune.h`](../../../kernels/mulib-mune.h). It is not a
 second On1x parser, a Python processor, stock Lua, or a safe-FFI admission.
 
 ## Build and activate

@@ -1,4 +1,4 @@
-/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude examples/modules/atn.c -o ./atn */
+/* cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels examples/modules/atn.c -o ./atn */
 #define MULIB_IMPL_VEC
 #define MULIB_IMPL_BITSET
 #define MULIB_IMPL_ATN

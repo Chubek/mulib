@@ -62,7 +62,7 @@ The compact formatting still present in untouched headers requires the narrow
 Run the example without any display server, device access, fonts, or GPU:
 
 ```sh
-cc -std=c11 -Iinclude -Wno-misleading-indentation examples/gfx-headless.c -lm -ldl -o /tmp/opencode/gfx-demo
+cc -std=c11 -Ikernels -Wno-misleading-indentation examples/gfx-headless.c -lm -ldl -o /tmp/opencode/gfx-demo
 /tmp/opencode/gfx-demo /tmp/opencode/gfx-demo.ppm
 ```
 

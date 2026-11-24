@@ -13,7 +13,7 @@ pre-trade simulation, or trading authority. See [FinPRED verification and limits
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-risk.h`](../include/mulib-risk.h) |
+| Header | [`kernels/mulib-risk.h`](../kernels/mulib-risk.h) |
 | Implementation switch | `MULIB_IMPL_RISK` |
 | Repository-local includes | [mulib-portfolio](mulib-portfolio.md) |
 | Complete example | [`examples/finpred_market.c`](../examples/finpred_market.c) |
@@ -26,6 +26,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/finpred_market.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/finpred_market.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

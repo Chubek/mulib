@@ -1,7 +1,7 @@
 # mulib-spice-measure
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-spice-measure.h`  
+**Header:** `kernels/mulib-spice-measure.h`  
 **Implementation switch:** `MULIB_IMPL_SPICE_MEASURE`  
 **Dependencies:** `wave-measure`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_SPICE_MEASURE` defined befo
 `tests/test_spice_measure.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_spice_measure.c -lm -o /tmp/test_spice_measure
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_spice_measure.c -lm -o /tmp/test_spice_measure
 /tmp/test_spice_measure
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-spice-measure.h`](../include/mulib-spice-measure.h).
+Verbatim declaration section from [`kernels/mulib-spice-measure.h`](../kernels/mulib-spice-measure.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_spice_measure_peaks(const mulib_wave_signal_t *samples, double *minimu
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-spice-measure.h`](../include/mulib-spice-measure.h) |
+| Header | [`kernels/mulib-spice-measure.h`](../kernels/mulib-spice-measure.h) |
 | Implementation switch | `MULIB_IMPL_SPICE_MEASURE` |
 | Repository-local includes | [mulib-wave-measure](mulib-wave-measure.md) |
 | Complete example | [`examples/modules/spice-measure.c`](../examples/modules/spice-measure.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/spice-measure.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/spice-measure.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -12,7 +12,7 @@ Text entry does not interpret input as terminal escape sequences.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-edit.h`](../include/mulib-imtui-edit.h) |
+| Header | [`kernels/mulib-imtui-edit.h`](../kernels/mulib-imtui-edit.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_EDIT` |
 | Repository-local includes | [mulib-imtui-draw](mulib-imtui-draw.md), [mulib-utf8](mulib-utf8.md) |
 | Complete example | [`examples/imtui/composites.c`](../examples/imtui/composites.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/composites.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

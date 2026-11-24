@@ -17,7 +17,7 @@ unchanged on failure. No exchange-rate or ISO currency registry is implied.
 
 ## Integration and ownership
 
-Include `include/mulib-money.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-money.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -45,7 +45,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-money.h`](../include/mulib-money.h).
+Verbatim declaration section from [`kernels/mulib-money.h`](../kernels/mulib-money.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -106,7 +106,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-money.h`](../include/mulib-money.h) |
+| Header | [`kernels/mulib-money.h`](../kernels/mulib-money.h) |
 | Implementation switch | `MULIB_IMPL_MONEY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/money.c`](../examples/modules/money.c) |
@@ -119,6 +119,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/money.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/money.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

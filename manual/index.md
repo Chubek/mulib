@@ -14,2186 +14,2186 @@ canonical entry points and compatibility behavior.
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [2dgeom](mulib-2dgeom.md) | Double-precision Bezier/path geometry and parsec-backed vector path DSL. | [header](../include/mulib-2dgeom.h) · [example](../examples/modules/2dgeom.c) |
+| [2dgeom](mulib-2dgeom.md) | Double-precision Bezier/path geometry and parsec-backed vector path DSL. | [header](../kernels/mulib-2dgeom.h) · [example](../examples/modules/2dgeom.c) |
 
 ## A
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [aarch64](mulib-aarch64.md) | Owned AArch64 profile implementing the MPU contract. | [header](../include/mulib-aarch64.h) · [example](../examples/modules/aarch64.c) |
-| [abstun](mulib-abstun.md) | Abstract packet tunnel with checked MTU and packet-atomic callbacks. | [header](../include/mulib-abstun.h) · [example](../examples/modules/abstun.c) |
-| [acl](mulib-acl.md) | Validated first-match IPv4/IPv6 CIDR policy with strict parsers and match diagnostics. | [header](../include/mulib-acl.h) · [example](../examples/modules/acl.c) |
-| [acpi](mulib-acpi.md) | Bounded ACPI RSDP and SDT validation and root address iteration. | [header](../include/mulib-acpi.h) · [example](../examples/modules/acpi.c) |
-| [adler32](mulib-adler32.md) | Adler-32 checksum with streaming seed support. | [header](../include/mulib-adler32.h) · [example](../examples/modules/adler32.c) |
-| [aes](mulib-aes.md) | AES-256 block/CTR and encrypt-then-HMAC-SHA256 authenticated messages. | [header](../include/mulib-aes.h) · [example](../examples/modules/aes.c) |
-| [aes-gcm](mulib-aes-gcm.md) | AES-128-GCM authenticated encryption with portable and AES-NI paths. | [header](../include/mulib-aes-gcm.h) · [example](../examples/modules/aes-gcm.c) |
-| [alloc](mulib-alloc.md) | Per-instance allocators with checked allocation and array resizing. | [header](../include/mulib-alloc.h) · [example](../examples/modules/alloc.c) |
-| [amd64](mulib-amd64.md) | Owned AMD64 typed assembler and enriched MPU architecture context. | [header](../include/mulib-amd64.h) · [example](../examples/modules/amd64.c) |
-| [amdgpu](mulib-amdgpu.md) | Owned AMDGPU gfx600 wave64 SALU GPU implementation. | [header](../include/mulib-amdgpu.h) · [example](../examples/modules/amdgpu.c) |
-| [androidlibs](mulib-androidlibs.md) | Android public native-library catalogue and checked framework services. | [header](../include/mulib-androidlibs.h) · [example](../examples/modules/androidlibs.c) |
-| [anfir](mulib-anfir.md) | A-normal let bindings with literal atoms and native MIR lowering. | [header](../include/mulib-anfir.h) · [example](../examples/modules/anfir.c) |
-| [anim-bake](mulib-anim-bake.md) | Bake a scalar curve into uniform integer-tick samples. Limit: Partial output on error. | [header](../include/mulib-anim-bake.h) · [example](../examples/media-pipeline.c) |
-| [anim-blend](mulib-anim-blend.md) | Normalized weighted scalar blending. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-anim-blend.h) · [example](../examples/media-pipeline.c) |
-| [anim-channel](mulib-anim-channel.md) | Evaluate multiple scalar animation property channels. Limit: Partial output on invalid later channel. | [header](../include/mulib-anim-channel.h) · [example](../examples/media-pipeline.c) |
-| [anim-curve](mulib-anim-curve.md) | Step, linear and cubic Hermite animation interpolation. Limit: Tangents in value per tick. | [header](../include/mulib-anim-curve.h) · [example](../examples/media-pipeline.c) |
-| [anim-driver](mulib-anim-driver.md) | Ordered, acyclic scalar dependency execution. Limit: Caller supplies topology and expression engine. | [header](../include/mulib-anim-driver.h) · [example](../examples/media-pipeline.c) |
-| [anim-easing](mulib-anim-easing.md) | Six bounded easing functions. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-anim-easing.h) · [example](../examples/media-pipeline.c) |
-| [anim-exposure](mulib-anim-exposure.md) | Midpoint stratified shutter-time samples. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-anim-exposure.h) · [example](../examples/media-pipeline.c) |
-| [anim-ik](mulib-anim-ik.md) | FABRIK position-chain inverse kinematics. Limit: False may still return best-effort pose; no joint limits. | [header](../include/mulib-anim-ik.h) · [example](../examples/media-pipeline.c) |
-| [anim-keyframe](mulib-anim-keyframe.md) | Sorted integer-time scalar keyframes and insertion. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-anim-keyframe.h) · [example](../examples/media-pipeline.c) |
-| [anim-morph](mulib-anim-morph.md) | Weighted blend-shape delta application. Limit: Caller guarantees nonoverlapping delta/output arrays. | [header](../include/mulib-anim-morph.h) · [example](../examples/media-pipeline.c) |
-| [anim-quaternion](mulib-anim-quaternion.md) | Quaternion normalization, multiplication, shortest-path SLERP and vector rotation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-anim-quaternion.h) · [example](../examples/media-pipeline.c) |
-| [anim-skeleton](mulib-anim-skeleton.md) | Parent-ordered skeleton forward point transformation. Limit: No matrix palette generation. | [header](../include/mulib-anim-skeleton.h) · [example](../examples/media-pipeline.c) |
-| [anim-transform](mulib-anim-transform.md) | TRS point transformation and animation interpolation. Limit: No matrix/shear decomposition. | [header](../include/mulib-anim-transform.h) · [example](../examples/media-pipeline.c) |
-| [anomaly-detection](mulib-anomaly-detection.md) | Univariate streaming z-score anomaly detection over Welford statistics. | [header](../include/mulib-anomaly-detection.h) · [example](../examples/modules/anomaly-detection.c) |
-| [archive](mulib-archive.md) | Bounds-checked USTAR archive reading and writing. | [header](../include/mulib-archive.h) · [example](../examples/modules/archive.c) |
-| [archml](mulib-archml.md) | Validated architecture descriptions, P-code and bit-scattered encodings. | [header](../include/mulib-archml.h) · [example](../examples/modules/archml.c) |
-| [arena](mulib-arena.md) | Bump allocator with expandable allocation blocks. | [header](../include/mulib-arena.h) · [example](../examples/modules/arena.c) |
-| [argparse](mulib-argparse.md) | Lightweight GNU-style options and positional arguments parser. | [header](../include/mulib-argparse.h) · [example](../examples/modules/argparse.c) |
-| [art](mulib-art.md) | Small verified DEX integer-method runtime through ClickIR, with JIT/AOT. | [header](../include/mulib-art.h) · [example](../examples/modules/art.c) |
-| [artifact](mulib-artifact.md) | Immutable reference-counted byte values, references and application objects. | [header](../include/mulib-artifact.h) · [example](../examples/modules/artifact.c) |
-| [asdl](mulib-asdl.md) | Zephyr ASDL schemas, parsec parser and S-expression/YANTLR/C99 emitters. | [header](../include/mulib-asdl.h) · [example](../examples/modules/asdl.c) |
-| [asic-floorplan](mulib-asic-floorplan.md) | Flat rectangular cell overlap test and deterministic single-row placement with spacing and height validation. | [header](../include/mulib-asic-floorplan.h) · [example](../examples/modules/asic-floorplan.c) |
-| [asic-sta](mulib-asic-sta.md) | Arrival-time max-plus propagation on a topologically ordered timing DAG with up to eight predecessors per node, plus slack against a common deadline. | [header](../include/mulib-asic-sta.h) · [example](../examples/modules/asic-sta.c) |
-| [asof](mulib-asof.md) | Bitemporal joins and replay snapshots with revisions and withdrawals. | [header](../include/mulib-asof.h) · [example](../examples/hospitality_demo.c) |
-| [assembler](mulib-assembler.md) | Metadata-backed focused instruction encoding with explicit unsupported diagnostics. | [header](../include/mulib-assembler.h) · [example](../examples/modules/assembler.c) |
-| [asset-cache](mulib-asset-cache.md) | Digest- and variant-keyed non-owning asset cache. Limit: Caller computes SHA-256; no eviction or persistent store. | [header](../include/mulib-asset-cache.h) · [example](../examples/media-pipeline.c) |
-| [asset-catalog](mulib-asset-catalog.md) | Caller-backed asset catalogue with identity and substring query. Limit: Linear, case-sensitive search; strings borrowed. | [header](../include/mulib-asset-catalog.h) · [example](../examples/media-pipeline.c) |
-| [asset-core](mulib-asset-core.md) | Stable 128-bit identity and borrowed asset metadata. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-asset-core.h) · [example](../examples/media-pipeline.c) |
-| [asset-dependency](mulib-asset-dependency.md) | Transitive dependent-asset invalidation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-asset-dependency.h) · [example](../examples/media-pipeline.c) |
-| [asset-thumbnail](mulib-asset-thumbnail.md) | Aspect-preserving thumbnail from an RGBA8 frame. Limit: Nearest-neighbor; no video seek or cache. | [header](../include/mulib-asset-thumbnail.h) · [example](../examples/media-pipeline.c) |
-| [ast](mulib-ast.md) | Owned production trees with S-expression, JSON and YAML serialization. | [header](../include/mulib-ast.h) · [example](../examples/modules/ast.c) |
-| [asyncio](mulib-asyncio.md) | Bounded readiness-driven callback event loop. | [header](../include/mulib-asyncio.h) · [example](../examples/modules/asyncio.c) |
-| [atn](mulib-atn.md) | Epsilon and token-range transition networks and matching. | [header](../include/mulib-atn.h) · [example](../examples/modules/atn.c) |
-| [audio](mulib-audio.md) | Owned interleaved PCM, codec limits and binary file buffers. | [header](../include/mulib-audio.h) · [example](../examples/modules/audio.c) |
-| [audio-channelmap](mulib-audio-channelmap.md) | Arbitrary interleaved channel mixing matrix. Limit: Caller specifies layout matrix; disjoint input/output. | [header](../include/mulib-audio-channelmap.h) · [example](../examples/media-pipeline.c) |
-| [audio-core](mulib-audio-core.md) | Checked borrowed PCM byte extents, finite-sample scans and conservative alias helpers. Limit: Low-level caller-backed helpers; no audio allocation, device, codec or safe On1x admission. | [header](../include/mulib-audio-core.h) · [example](../examples/media-pipeline.c) |
-| [audio-delay](mulib-audio-delay.md) | Allocation-free feedback delay ring. Limit: Initialize state before per-sample call. | [header](../include/mulib-audio-delay.h) · [example](../examples/media-pipeline.c) |
-| [audio-device](mulib-audio-device.md) | Audio provider lifecycle and partial-frame writes. Limit: No native device provider; bridge existing miniaudio or platform audio. | [header](../include/mulib-audio-device.h) · [example](../examples/media-pipeline.c) |
-| [audio-dynamics](mulib-audio-dynamics.md) | Peak envelope compressor and hard limiter. Limit: No lookahead, RMS detection, gate or linked channels. | [header](../include/mulib-audio-dynamics.h) · [example](../examples/media-pipeline.c) |
-| [audio-envelope](mulib-audio-envelope.md) | Linear or power-interpolated per-frame gain envelope. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-audio-envelope.h) · [example](../examples/media-pipeline.c) |
-| [audio-eq](mulib-audio-eq.md) | RBJ peaking EQ design and cascaded mono processing. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-audio-eq.h) · [example](../examples/media-pipeline.c) |
-| [audio-filter](mulib-audio-filter.md) | Stateful DF-II transposed biquad, lowpass design and causal FIR. Limit: FIR zero initial history; one biquad state per channel. | [header](../include/mulib-audio-filter.h) · [example](../examples/media-pipeline.c) |
-| [audio-loudness](mulib-audio-loudness.md) | Streaming RMS dBFS and sample-peak measurement. Limit: Not LUFS/ITU BS.1770 or oversampled true peak. | [header](../include/mulib-audio-loudness.h) · [example](../examples/media-pipeline.c) |
-| [audio-mixer](mulib-audio-mixer.md) | Allocation-free multitrack mono/stereo mixing with pan and gain. Limit: Inputs must not overlap output; no limiter or solo handling. | [header](../include/mulib-audio-mixer.h) · [example](../examples/media-pipeline.c) |
-| [audio-resample](mulib-audio-resample.md) | Interleaved linear sample-rate conversion; ratio=input/output rate. Limit: No anti-alias filter, streaming phase history or sinc quality. | [header](../include/mulib-audio-resample.h) · [example](../examples/media-pipeline.c) |
-| [audio-reverb](mulib-audio-reverb.md) | Parallel feedback comb reverb. Limit: Set comb wet=1; no diffusion allpass or damping filter. | [header](../include/mulib-audio-reverb.h) · [example](../examples/media-pipeline.c) |
-| [audio-timestretch](mulib-audio-timestretch.md) | Offline windowed overlap-add time stretching. Limit: No WSOLA alignment or phase vocoder; pitch preservation is approximate, mono only. | [header](../include/mulib-audio-timestretch.h) · [example](../examples/media-pipeline.c) |
-| [audrey](mulib-audrey.md) | Offline editing, track mixing, native/Lua filters and Lua-to-MIDI scores. | [header](../include/mulib-audrey.h) · [example](../examples/modules/audrey.c) |
-| [auth](mulib-auth.md) | Bounded Basic/Bearer parsing and verifier adapters with opaque API-key comparison. | [header](../include/mulib-auth.h) · [example](../examples/modules/auth.c) |
-| [authcrypto](mulib-authcrypto.md) | SHA-1/SHA-256, HMAC and PBKDF2-SHA-256 authentication primitives. | [header](../include/mulib-authcrypto.h) · [example](../examples/modules/authcrypto.c) |
-| [automata-levenshtein](mulib-automata-levenshtein.md) | Streaming Levenshtein recognizer using capped dynamic-programming states. | [header](../include/mulib-automata-levenshtein.h) · [example](../examples/modules/automata-levenshtein.c) |
-| [autonumber](mulib-autonumber.md) | Monotonic hierarchical document numbering. | [header](../include/mulib-autonumber.h) · [example](../examples/mulib-autonumber.c) |
-| [auxhash](mulib-auxhash.md) | Portable noncryptographic byte, integer and rolling hashes. | [header](../include/mulib-auxhash.h) · [example](../examples/modules/auxhash.c) |
-| [avl](mulib-avl.md) | Height-balanced AVL ordered maps with insertion and deletion. | [header](../include/mulib-avl.h) · [example](../examples/modules/avl.c) |
-| [avr32](mulib-avr32.md) | Owned big-endian AVR32A selected-form MCU implementation. | [header](../include/mulib-avr32.h) · [example](../examples/modules/avr32.c) |
-| [azw3](mulib-azw3.md) | Unencrypted KF8/AZW3 section selection and checked FDST flow access. | [header](../include/mulib-azw3.h) · [example](../examples/modules/azw3.c) |
+| [aarch64](mulib-aarch64.md) | Owned AArch64 profile implementing the MPU contract. | [header](../kernels/mulib-aarch64.h) · [example](../examples/modules/aarch64.c) |
+| [abstun](mulib-abstun.md) | Abstract packet tunnel with checked MTU and packet-atomic callbacks. | [header](../kernels/mulib-abstun.h) · [example](../examples/modules/abstun.c) |
+| [acl](mulib-acl.md) | Validated first-match IPv4/IPv6 CIDR policy with strict parsers and match diagnostics. | [header](../kernels/mulib-acl.h) · [example](../examples/modules/acl.c) |
+| [acpi](mulib-acpi.md) | Bounded ACPI RSDP and SDT validation and root address iteration. | [header](../kernels/mulib-acpi.h) · [example](../examples/modules/acpi.c) |
+| [adler32](mulib-adler32.md) | Adler-32 checksum with streaming seed support. | [header](../kernels/mulib-adler32.h) · [example](../examples/modules/adler32.c) |
+| [aes](mulib-aes.md) | AES-256 block/CTR and encrypt-then-HMAC-SHA256 authenticated messages. | [header](../kernels/mulib-aes.h) · [example](../examples/modules/aes.c) |
+| [aes-gcm](mulib-aes-gcm.md) | AES-128-GCM authenticated encryption with portable and AES-NI paths. | [header](../kernels/mulib-aes-gcm.h) · [example](../examples/modules/aes-gcm.c) |
+| [alloc](mulib-alloc.md) | Per-instance allocators with checked allocation and array resizing. | [header](../kernels/mulib-alloc.h) · [example](../examples/modules/alloc.c) |
+| [amd64](mulib-amd64.md) | Owned AMD64 typed assembler and enriched MPU architecture context. | [header](../kernels/mulib-amd64.h) · [example](../examples/modules/amd64.c) |
+| [amdgpu](mulib-amdgpu.md) | Owned AMDGPU gfx600 wave64 SALU GPU implementation. | [header](../kernels/mulib-amdgpu.h) · [example](../examples/modules/amdgpu.c) |
+| [androidlibs](mulib-androidlibs.md) | Android public native-library catalogue and checked framework services. | [header](../kernels/mulib-androidlibs.h) · [example](../examples/modules/androidlibs.c) |
+| [anfir](mulib-anfir.md) | A-normal let bindings with literal atoms and native MIR lowering. | [header](../kernels/mulib-anfir.h) · [example](../examples/modules/anfir.c) |
+| [anim-bake](mulib-anim-bake.md) | Bake a scalar curve into uniform integer-tick samples. Limit: Partial output on error. | [header](../kernels/mulib-anim-bake.h) · [example](../examples/media-pipeline.c) |
+| [anim-blend](mulib-anim-blend.md) | Normalized weighted scalar blending. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-anim-blend.h) · [example](../examples/media-pipeline.c) |
+| [anim-channel](mulib-anim-channel.md) | Evaluate multiple scalar animation property channels. Limit: Partial output on invalid later channel. | [header](../kernels/mulib-anim-channel.h) · [example](../examples/media-pipeline.c) |
+| [anim-curve](mulib-anim-curve.md) | Step, linear and cubic Hermite animation interpolation. Limit: Tangents in value per tick. | [header](../kernels/mulib-anim-curve.h) · [example](../examples/media-pipeline.c) |
+| [anim-driver](mulib-anim-driver.md) | Ordered, acyclic scalar dependency execution. Limit: Caller supplies topology and expression engine. | [header](../kernels/mulib-anim-driver.h) · [example](../examples/media-pipeline.c) |
+| [anim-easing](mulib-anim-easing.md) | Six bounded easing functions. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-anim-easing.h) · [example](../examples/media-pipeline.c) |
+| [anim-exposure](mulib-anim-exposure.md) | Midpoint stratified shutter-time samples. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-anim-exposure.h) · [example](../examples/media-pipeline.c) |
+| [anim-ik](mulib-anim-ik.md) | FABRIK position-chain inverse kinematics. Limit: False may still return best-effort pose; no joint limits. | [header](../kernels/mulib-anim-ik.h) · [example](../examples/media-pipeline.c) |
+| [anim-keyframe](mulib-anim-keyframe.md) | Sorted integer-time scalar keyframes and insertion. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-anim-keyframe.h) · [example](../examples/media-pipeline.c) |
+| [anim-morph](mulib-anim-morph.md) | Weighted blend-shape delta application. Limit: Caller guarantees nonoverlapping delta/output arrays. | [header](../kernels/mulib-anim-morph.h) · [example](../examples/media-pipeline.c) |
+| [anim-quaternion](mulib-anim-quaternion.md) | Quaternion normalization, multiplication, shortest-path SLERP and vector rotation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-anim-quaternion.h) · [example](../examples/media-pipeline.c) |
+| [anim-skeleton](mulib-anim-skeleton.md) | Parent-ordered skeleton forward point transformation. Limit: No matrix palette generation. | [header](../kernels/mulib-anim-skeleton.h) · [example](../examples/media-pipeline.c) |
+| [anim-transform](mulib-anim-transform.md) | TRS point transformation and animation interpolation. Limit: No matrix/shear decomposition. | [header](../kernels/mulib-anim-transform.h) · [example](../examples/media-pipeline.c) |
+| [anomaly-detection](mulib-anomaly-detection.md) | Univariate streaming z-score anomaly detection over Welford statistics. | [header](../kernels/mulib-anomaly-detection.h) · [example](../examples/modules/anomaly-detection.c) |
+| [archive](mulib-archive.md) | Bounds-checked USTAR archive reading and writing. | [header](../kernels/mulib-archive.h) · [example](../examples/modules/archive.c) |
+| [archml](mulib-archml.md) | Validated architecture descriptions, P-code and bit-scattered encodings. | [header](../kernels/mulib-archml.h) · [example](../examples/modules/archml.c) |
+| [arena](mulib-arena.md) | Bump allocator with expandable allocation blocks. | [header](../kernels/mulib-arena.h) · [example](../examples/modules/arena.c) |
+| [argparse](mulib-argparse.md) | Lightweight GNU-style options and positional arguments parser. | [header](../kernels/mulib-argparse.h) · [example](../examples/modules/argparse.c) |
+| [art](mulib-art.md) | Small verified DEX integer-method runtime through ClickIR, with JIT/AOT. | [header](../kernels/mulib-art.h) · [example](../examples/modules/art.c) |
+| [artifact](mulib-artifact.md) | Immutable reference-counted byte values, references and application objects. | [header](../kernels/mulib-artifact.h) · [example](../examples/modules/artifact.c) |
+| [asdl](mulib-asdl.md) | Zephyr ASDL schemas, parsec parser and S-expression/YANTLR/C99 emitters. | [header](../kernels/mulib-asdl.h) · [example](../examples/modules/asdl.c) |
+| [asic-floorplan](mulib-asic-floorplan.md) | Flat rectangular cell overlap test and deterministic single-row placement with spacing and height validation. | [header](../kernels/mulib-asic-floorplan.h) · [example](../examples/modules/asic-floorplan.c) |
+| [asic-sta](mulib-asic-sta.md) | Arrival-time max-plus propagation on a topologically ordered timing DAG with up to eight predecessors per node, plus slack against a common deadline. | [header](../kernels/mulib-asic-sta.h) · [example](../examples/modules/asic-sta.c) |
+| [asof](mulib-asof.md) | Bitemporal joins and replay snapshots with revisions and withdrawals. | [header](../kernels/mulib-asof.h) · [example](../examples/hospitality_demo.c) |
+| [assembler](mulib-assembler.md) | Metadata-backed focused instruction encoding with explicit unsupported diagnostics. | [header](../kernels/mulib-assembler.h) · [example](../examples/modules/assembler.c) |
+| [asset-cache](mulib-asset-cache.md) | Digest- and variant-keyed non-owning asset cache. Limit: Caller computes SHA-256; no eviction or persistent store. | [header](../kernels/mulib-asset-cache.h) · [example](../examples/media-pipeline.c) |
+| [asset-catalog](mulib-asset-catalog.md) | Caller-backed asset catalogue with identity and substring query. Limit: Linear, case-sensitive search; strings borrowed. | [header](../kernels/mulib-asset-catalog.h) · [example](../examples/media-pipeline.c) |
+| [asset-core](mulib-asset-core.md) | Stable 128-bit identity and borrowed asset metadata. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-asset-core.h) · [example](../examples/media-pipeline.c) |
+| [asset-dependency](mulib-asset-dependency.md) | Transitive dependent-asset invalidation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-asset-dependency.h) · [example](../examples/media-pipeline.c) |
+| [asset-thumbnail](mulib-asset-thumbnail.md) | Aspect-preserving thumbnail from an RGBA8 frame. Limit: Nearest-neighbor; no video seek or cache. | [header](../kernels/mulib-asset-thumbnail.h) · [example](../examples/media-pipeline.c) |
+| [ast](mulib-ast.md) | Owned production trees with S-expression, JSON and YAML serialization. | [header](../kernels/mulib-ast.h) · [example](../examples/modules/ast.c) |
+| [asyncio](mulib-asyncio.md) | Bounded readiness-driven callback event loop. | [header](../kernels/mulib-asyncio.h) · [example](../examples/modules/asyncio.c) |
+| [atn](mulib-atn.md) | Epsilon and token-range transition networks and matching. | [header](../kernels/mulib-atn.h) · [example](../examples/modules/atn.c) |
+| [audio](mulib-audio.md) | Owned interleaved PCM, codec limits and binary file buffers. | [header](../kernels/mulib-audio.h) · [example](../examples/modules/audio.c) |
+| [audio-channelmap](mulib-audio-channelmap.md) | Arbitrary interleaved channel mixing matrix. Limit: Caller specifies layout matrix; disjoint input/output. | [header](../kernels/mulib-audio-channelmap.h) · [example](../examples/media-pipeline.c) |
+| [audio-core](mulib-audio-core.md) | Checked borrowed PCM byte extents, finite-sample scans and conservative alias helpers. Limit: Low-level caller-backed helpers; no audio allocation, device, codec or safe On1x admission. | [header](../kernels/mulib-audio-core.h) · [example](../examples/media-pipeline.c) |
+| [audio-delay](mulib-audio-delay.md) | Allocation-free feedback delay ring. Limit: Initialize state before per-sample call. | [header](../kernels/mulib-audio-delay.h) · [example](../examples/media-pipeline.c) |
+| [audio-device](mulib-audio-device.md) | Audio provider lifecycle and partial-frame writes. Limit: No native device provider; bridge existing miniaudio or platform audio. | [header](../kernels/mulib-audio-device.h) · [example](../examples/media-pipeline.c) |
+| [audio-dynamics](mulib-audio-dynamics.md) | Peak envelope compressor and hard limiter. Limit: No lookahead, RMS detection, gate or linked channels. | [header](../kernels/mulib-audio-dynamics.h) · [example](../examples/media-pipeline.c) |
+| [audio-envelope](mulib-audio-envelope.md) | Linear or power-interpolated per-frame gain envelope. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-audio-envelope.h) · [example](../examples/media-pipeline.c) |
+| [audio-eq](mulib-audio-eq.md) | RBJ peaking EQ design and cascaded mono processing. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-audio-eq.h) · [example](../examples/media-pipeline.c) |
+| [audio-filter](mulib-audio-filter.md) | Stateful DF-II transposed biquad, lowpass design and causal FIR. Limit: FIR zero initial history; one biquad state per channel. | [header](../kernels/mulib-audio-filter.h) · [example](../examples/media-pipeline.c) |
+| [audio-loudness](mulib-audio-loudness.md) | Streaming RMS dBFS and sample-peak measurement. Limit: Not LUFS/ITU BS.1770 or oversampled true peak. | [header](../kernels/mulib-audio-loudness.h) · [example](../examples/media-pipeline.c) |
+| [audio-mixer](mulib-audio-mixer.md) | Allocation-free multitrack mono/stereo mixing with pan and gain. Limit: Inputs must not overlap output; no limiter or solo handling. | [header](../kernels/mulib-audio-mixer.h) · [example](../examples/media-pipeline.c) |
+| [audio-resample](mulib-audio-resample.md) | Interleaved linear sample-rate conversion; ratio=input/output rate. Limit: No anti-alias filter, streaming phase history or sinc quality. | [header](../kernels/mulib-audio-resample.h) · [example](../examples/media-pipeline.c) |
+| [audio-reverb](mulib-audio-reverb.md) | Parallel feedback comb reverb. Limit: Set comb wet=1; no diffusion allpass or damping filter. | [header](../kernels/mulib-audio-reverb.h) · [example](../examples/media-pipeline.c) |
+| [audio-timestretch](mulib-audio-timestretch.md) | Offline windowed overlap-add time stretching. Limit: No WSOLA alignment or phase vocoder; pitch preservation is approximate, mono only. | [header](../kernels/mulib-audio-timestretch.h) · [example](../examples/media-pipeline.c) |
+| [audrey](mulib-audrey.md) | Offline editing, track mixing, native/Lua filters and Lua-to-MIDI scores. | [header](../kernels/mulib-audrey.h) · [example](../examples/modules/audrey.c) |
+| [auth](mulib-auth.md) | Bounded Basic/Bearer parsing and verifier adapters with opaque API-key comparison. | [header](../kernels/mulib-auth.h) · [example](../examples/modules/auth.c) |
+| [authcrypto](mulib-authcrypto.md) | SHA-1/SHA-256, HMAC and PBKDF2-SHA-256 authentication primitives. | [header](../kernels/mulib-authcrypto.h) · [example](../examples/modules/authcrypto.c) |
+| [automata-levenshtein](mulib-automata-levenshtein.md) | Streaming Levenshtein recognizer using capped dynamic-programming states. | [header](../kernels/mulib-automata-levenshtein.h) · [example](../examples/modules/automata-levenshtein.c) |
+| [autonumber](mulib-autonumber.md) | Monotonic hierarchical document numbering. | [header](../kernels/mulib-autonumber.h) · [example](../examples/mulib-autonumber.c) |
+| [auxhash](mulib-auxhash.md) | Portable noncryptographic byte, integer and rolling hashes. | [header](../kernels/mulib-auxhash.h) · [example](../examples/modules/auxhash.c) |
+| [avl](mulib-avl.md) | Height-balanced AVL ordered maps with insertion and deletion. | [header](../kernels/mulib-avl.h) · [example](../examples/modules/avl.c) |
+| [avr32](mulib-avr32.md) | Owned big-endian AVR32A selected-form MCU implementation. | [header](../kernels/mulib-avr32.h) · [example](../examples/modules/avr32.c) |
+| [azw3](mulib-azw3.md) | Unencrypted KF8/AZW3 section selection and checked FDST flow access. | [header](../kernels/mulib-azw3.h) · [example](../examples/modules/azw3.c) |
 
 ## B
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [b+tree](mulib-b+tree.md) | B+ tree ordered storage with linked leaves and range traversal. | [header](../include/mulib-b+tree.h) · [example](../examples/modules/b+tree.c) |
-| [backtest](mulib-backtest.md) | Holdout point-forecast metrics with knowledge-time checks. | [header](../include/mulib-backtest.h) · [example](../examples/finpred_market.c) |
-| [base64](mulib-base64.md) | RFC 4648 padded Base64 encoder and strict decoder. | [header](../include/mulib-base64.h) · [example](../examples/modules/base64.c) |
-| [bayesian_methods](mulib-bayesian_methods.md) | Stable finite-hypothesis Bayesian updating using log likelihoods. | [header](../include/mulib-bayesian_methods.h) · [example](../examples/modules/bayesian_methods.c) |
-| [baysian_ranking](mulib-baysian_ranking.md) | Beta-Bernoulli posterior-mean scores and deterministic ranking. | [header](../include/mulib-baysian_ranking.h) · [example](../examples/modules/baysian_ranking.c) |
-| [bcj](mulib-bcj.md) | Reversible XZ branch/call filters for x86, PowerPC, IA64, ARM, Thumb, SPARC. | [header](../include/mulib-bcj.h) · [example](../examples/modules/bcj.c) |
-| [beam_search](mulib-beam_search.md) | State-pruned beam search over discrete HMM trellises. | [header](../include/mulib-beam_search.h) · [example](../examples/modules/beam_search.c) |
-| [bibstyle](mulib-bibstyle.md) | Owned bounded registry of bibliography style overrides; replace, lookup and remove by name. | [header](../include/mulib-bibstyle.h) · [example](../examples/mulib-bibstyle.c) |
-| [bibtex](mulib-bibtex.md) | Simple BibTeX entry type and citation-key extraction. | [header](../include/mulib-bibtex.h) · [example](../examples/mulib-bibtex.c) |
-| [bidi](mulib-bidi.md) | Unicode bidirectional paragraph resolution and visual runs through runtime ICU. | [header](../include/mulib-bidi.h) · [example](../examples/modules/bidi.c) |
-| [binfile](mulib-binfile.md) | Borrowed binary file spans and format identification, without I/O. | [header](../include/mulib-binfile.h) · [example](../examples/modules/binfile.c) |
-| [binfilebuilder](mulib-binfilebuilder.md) | Transactional fixed-schema record encoding into shared byte buffers. | [header](../include/mulib-binfilebuilder.h) · [example](../examples/modules/binfilebuilder.c) |
-| [binfilereader](mulib-binfilereader.md) | Bounds-checked cursor over borrowed binary bytes. | [header](../include/mulib-binfilereader.h) · [example](../examples/modules/binfilereader.c) |
-| [binfileschema](mulib-binfileschema.md) | Fixed-record schemas for named 1..8 byte little-endian integer fields. | [header](../include/mulib-binfileschema.h) · [example](../examples/modules/binfileschema.c) |
-| [binfilewriter](mulib-binfilewriter.md) | Binary integer and zero-padding writer over MuLIB buffers. | [header](../include/mulib-binfilewriter.h) · [example](../examples/modules/binfilewriter.c) |
-| [bios](mulib-bios.md) | PC BIOS thunk interface, E820 records, EDD packets and MBR partitions. | [header](../include/mulib-bios.h) · [example](../examples/modules/bios.c) |
-| [bitmap](mulib-bitmap.md) | Packed one-bit raster image with per-pixel access. | [header](../include/mulib-bitmap.h) · [example](../examples/modules/bitmap.c) |
-| [bitpack](mulib-bitpack.md) | Pack/unpack unsigned fixed-width values 1..32 bits with explicit byte bounds | [header](../include/mulib-bitpack.h) · [example](../examples/modules/bitpack.c) |
-| [bitset](mulib-bitset.md) | Fixed-size allocated bit-array with test, set, clear, and population count. | [header](../include/mulib-bitset.h) · [example](../examples/modules/bitset.c) |
-| [bittorrent](mulib-bittorrent.md) | BitTorrent v1 peer handshake, bounded peer-wire messages and piece | [header](../include/mulib-bittorrent.h) · [example](../examples/modules/bittorrent.c) |
-| [bk-trees](mulib-bk-trees.md) | Owned BK tree for byte-string Levenshtein radius queries. | [header](../include/mulib-bk-trees.h) · [example](../examples/modules/bk-trees.c) |
-| [bktree](mulib-bktree.md) | Canonical BK-tree interface reusing MuLIB's metric-pruned byte BK tree. | [header](../include/mulib-bktree.h) · [example](../examples/modules/bktree.c) |
-| [blockcache](mulib-blockcache.md) | Bounded, owning LRU cache for binary blocks keyed by uint64_t. | [header](../include/mulib-blockcache.h) · [example](../examples/modules/blockcache.c) |
-| [blockdev](mulib-blockdev.md) | Application-supplied fixed-size block device with checked I/O callbacks | [header](../include/mulib-blockdev.h) · [example](../examples/modules/blockdev.c) |
-| [blockidx](mulib-blockidx.md) | Sparse sorted binary fence keys to 64-bit block offsets. | [header](../include/mulib-blockidx.h) · [example](../examples/modules/blockidx.c) |
-| [bloom](mulib-bloom.md) | Bit-packed Bloom filter with configurable hash rounds. | [header](../include/mulib-bloom.h) · [example](../examples/modules/bloom.c) |
-| [bm25](mulib-bm25.md) | Okapi BM25 and BM25F field scoring; finite checked inputs | [header](../include/mulib-bm25.h) · [example](../examples/modules/bm25.c) |
-| [booknav](mulib-booknav.md) | Owned bounded registry of ebook navigation labels; replace, lookup and remove by name. | [header](../include/mulib-booknav.h) · [example](../examples/mulib-booknav.c) |
-| [booleanquery](mulib-booleanquery.md) | Linear-time postings intersection/union/difference on sorted documents | [header](../include/mulib-booleanquery.h) · [example](../examples/modules/booleanquery.c) |
-| [bootmgr](mulib-bootmgr.md) | Firmware-aware BIOS/UEFI boot selection, application launch, chainload handoff and ELF loading. | [header](../include/mulib-bootmgr.h) · [example](../examples/modules/bootmgr.c) |
-| [bounded-text](mulib-bounded-text.md) | Bounded owned byte buffers, slices, validated parsing, hashing and serialization helpers. | [header](../include/mulib-bounded-text.h) · [example](../examples/modules/bounded-text.c) |
-| [bounds](mulib-bounds.md) | Axis-aligned bounding boxes and intersection utilities. | [header](../include/mulib-bounds.h) · [example](../examples/modules/bounds.c) |
-| [bpf-kernel](mulib-bpf-kernel.md) | Invoke Linux BPF_MAP_CREATE for an ARRAY map using the kernel bpf syscall | [header](../include/mulib-bpf-kernel.h) · [example](../examples/modules/bpf-kernel.c) |
-| [branch-layout](mulib-branch-layout.md) | Fixed-point short/near branch relaxation with checked signed displacements. | [header](../include/mulib-branch-layout.h) · [example](../examples/modules/branch-layout.c) |
-| [browser-cache](mulib-browser-cache.md) | Aggregate-byte-bounded URL response cache with expiry pruning and ETag metadata. | [header](../include/mulib-browser-cache.h) · [example](../examples/modules/browser-cache.c) |
-| [browser-cookiejar](mulib-browser-cookiejar.md) | Validated host/domain/path/secure-aware pre-parsed cookie storage. | [header](../include/mulib-browser-cookiejar.h) · [example](../examples/modules/browser-cookiejar.c) |
-| [browser-documentload](mulib-browser-documentload.md) | Synchronous document fetch and HTML tree creation orchestration. | [header](../include/mulib-browser-documentload.h) · [example](../examples/modules/browser-documentload.c) |
-| [browser-domstream](mulib-browser-domstream.md) | DOM mutation and node event publishing. | [header](../include/mulib-browser-domstream.h) · [example](../examples/modules/browser-domstream.c) |
-| [browser-engine](mulib-browser-engine.md) | Transactional static-HTML document loading with enforced byte/tree/history limits and events. | [header](../include/mulib-browser-engine.h) · [example](../examples/modules/browser-engine.c) |
-| [browser-eventloop](mulib-browser-eventloop.md) | Deterministic bounded FIFO tasks and run-to-completion microtask checkpoints. | [header](../include/mulib-browser-eventloop.h) · [example](../examples/modules/browser-eventloop.c) |
-| [browser-executionstream](mulib-browser-executionstream.md) | Script execution and lifecycle diagnostic event publishing. | [header](../include/mulib-browser-executionstream.h) · [example](../examples/modules/browser-executionstream.c) |
-| [browser-fetch](mulib-browser-fetch.md) | Browser fetch request adapter with origin and security policy checks. | [header](../include/mulib-browser-fetch.h) · [example](../examples/modules/browser-fetch.c) |
-| [browser-layoutstream](mulib-browser-layoutstream.md) | Box geometry layout event publishing. | [header](../include/mulib-browser-layoutstream.h) · [example](../examples/modules/browser-layoutstream.c) |
-| [browser-limits](mulib-browser-limits.md) | Validated resource limits for untrusted document execution. | [header](../include/mulib-browser-limits.h) · [example](../examples/modules/browser-limits.c) |
-| [browser-navigation](mulib-browser-navigation.md) | Owned bounded navigation history and back/forward traversal. | [header](../include/mulib-browser-navigation.h) · [example](../examples/modules/browser-navigation.c) |
-| [browser-networkstream](mulib-browser-networkstream.md) | Resource request and response event publishing. | [header](../include/mulib-browser-networkstream.h) · [example](../examples/modules/browser-networkstream.c) |
-| [browser-origin](mulib-browser-origin.md) | Normalized HTTP(S) origin parsing and same-origin checks. | [header](../include/mulib-browser-origin.h) · [example](../examples/modules/browser-origin.c) |
-| [browser-permissions](mulib-browser-permissions.md) | Explicit bitmask permissions for browser capabilities. | [header](../include/mulib-browser-permissions.h) · [example](../examples/modules/browser-permissions.c) |
-| [browser-realm](mulib-browser-realm.md) | Browser realm IDs with immutable origin metadata and isolation keys. | [header](../include/mulib-browser-realm.h) · [example](../examples/modules/browser-realm.c) |
-| [browser-resource](mulib-browser-resource.md) | Deduplicated resource registry with load state and content type. | [header](../include/mulib-browser-resource.h) · [example](../examples/modules/browser-resource.c) |
-| [browser-sandbox](mulib-browser-sandbox.md) | Deterministic resource-budget accounting and abort flags for browser tasks. | [header](../include/mulib-browser-sandbox.h) · [example](../examples/modules/browser-sandbox.c) |
-| [browser-snapshot](mulib-browser-snapshot.md) | Owned immutable byte snapshots with content fingerprint and document version. | [header](../include/mulib-browser-snapshot.h) · [example](../examples/modules/browser-snapshot.c) |
-| [browser-stream](mulib-browser-stream.md) | Typed bounded event stream with channel-based observer dispatch. | [header](../include/mulib-browser-stream.h) · [example](../examples/modules/browser-stream.c) |
-| [browser-tokenstream](mulib-browser-tokenstream.md) | HTML and CSS token event publishing. | [header](../include/mulib-browser-tokenstream.h) · [example](../examples/modules/browser-tokenstream.c) |
-| [browsercontext](mulib-browsercontext.md) | Caller-assigned browser context identifier and private-mode metadata. | [header](../include/mulib-browsercontext.h) · [example](../examples/modules/browsercontext.c) |
-| [browserlocator](mulib-browserlocator.md) | Typed, owned browser locator definitions for CSS, XPath, text, and role queries. | [header](../include/mulib-browserlocator.h) · [example](../examples/modules/browserlocator.c) |
-| [browserscreenshot](mulib-browserscreenshot.md) | Validate screenshot dimensions and output raster buffer size. | [header](../include/mulib-browserscreenshot.h) · [example](../examples/modules/browserscreenshot.c) |
-| [browsersnapshot](mulib-browsersnapshot.md) | Owned immutable byte snapshot with FNV-1a change fingerprint. | [header](../include/mulib-browsersnapshot.h) · [example](../examples/modules/browsersnapshot.c) |
-| [browsertools](mulib-browsertools.md) | Browser protocol requests and response correlation over caller-owned transport. | [header](../include/mulib-browsertools.h) · [example](../examples/modules/browsertools.c) |
-| [browsertrace](mulib-browsertrace.md) | Caller-owned ring buffer of timestamped browser action events. | [header](../include/mulib-browsertrace.h) · [example](../examples/modules/browsertrace.c) |
-| [browserwait](mulib-browserwait.md) | Caller-clocked deterministic browser condition timeout helper. | [header](../include/mulib-browserwait.h) · [example](../examples/modules/browserwait.c) |
-| [bson](mulib-bson.md) | Bounded BSON JSON-profile document codec. | [header](../include/mulib-bson.h) · [example](../examples/modules/bson.c) |
-| [buffer](mulib-buffer.md) | Dynamically growing binary byte buffer. | [header](../include/mulib-buffer.h) · [example](../examples/modules/buffer.c) |
-| [buildgraph](mulib-buildgraph.md) | Declared-input/output artifact and opaque Action DAG with execution and translation walkers. | [header](../include/mulib-buildgraph.h) · [example](../examples/modules/buildgraph.c) |
-| [buildparse](mulib-buildparse.md) | Bounded Make, Ninja, CMake, Meson and Bazel dependency extractors. | [header](../include/mulib-buildparse.h) · [example](../examples/modules/buildparse.c) |
-| [buildplan](mulib-buildplan.md) | Bounded owned target DAG resolution, resource waves and critical-path planning. | [header](../include/mulib-buildplan.h) · [example](../examples/modules/buildplan.c) |
-| [buildstate](mulib-buildstate.md) | Canonical SHA-256 action provenance and injected invalidation policy. | [header](../include/mulib-buildstate.h) · [example](../examples/modules/buildstate.c) |
-| [buildvm](mulib-buildvm.md) | Hermetic bounded artifact-register VM for build DAG tasks. | [header](../include/mulib-buildvm.h) · [example](../examples/modules/buildvm.c) |
-| [bycutils](mulib-bycutils.md) | Checked byte-code arithmetic and unaligned little-endian integers. | [header](../include/mulib-bycutils.h) · [example](../examples/modules/bycutils.c) |
-| [bytecode](mulib-bytecode.md) | Checked signed-64 stack interpreter with local, stack and instruction budgets. | [header](../include/mulib-bytecode.h) · [example](../examples/modules/bytecode.c) |
-| [bytecode-builder](mulib-bytecode-builder.md) | Owned append and operand-patch builder for stack bytecode. | [header](../include/mulib-bytecode-builder.h) · [example](../examples/modules/bytecode-builder.c) |
-| [bytecode-disasm](mulib-bytecode-disasm.md) | Bounded textual disassembly of stack bytecode. | [header](../include/mulib-bytecode-disasm.h) · [example](../examples/modules/bytecode-disasm.c) |
-| [bytecode-eval](mulib-bytecode-eval.md) | Verify and execute stack bytecode with explicit execution results and budgets. | [header](../include/mulib-bytecode-eval.h) · [example](../examples/modules/bytecode-eval.c) |
-| [bytecode-opt](mulib-bytecode-opt.md) | Jump-free constant folding preserving checked signed arithmetic faults. | [header](../include/mulib-bytecode-opt.h) · [example](../examples/modules/bytecode-opt.c) |
-| [bytecode-serialize](mulib-bytecode-serialize.md) | Exact portable MBC1 bytecode encoding with little-endian operands and FNV checksum. | [header](../include/mulib-bytecode-serialize.h) · [example](../examples/modules/bytecode-serialize.c) |
-| [bytecode-verify](mulib-bytecode-verify.md) | Full instruction validation and reachable stack-height analysis with branch-join checks. | [header](../include/mulib-bytecode-verify.h) · [example](../examples/modules/bytecode-verify.c) |
-| [bzip2](mulib-bzip2.md) | Dependency-free bzip2 BWT/MTF/RLE/Huffman compression and decompression. | [header](../include/mulib-bzip2.h) · [example](../examples/modules/bzip2.c) |
+| [b+tree](mulib-b+tree.md) | B+ tree ordered storage with linked leaves and range traversal. | [header](../kernels/mulib-b+tree.h) · [example](../examples/modules/b+tree.c) |
+| [backtest](mulib-backtest.md) | Holdout point-forecast metrics with knowledge-time checks. | [header](../kernels/mulib-backtest.h) · [example](../examples/finpred_market.c) |
+| [base64](mulib-base64.md) | RFC 4648 padded Base64 encoder and strict decoder. | [header](../kernels/mulib-base64.h) · [example](../examples/modules/base64.c) |
+| [bayesian_methods](mulib-bayesian_methods.md) | Stable finite-hypothesis Bayesian updating using log likelihoods. | [header](../kernels/mulib-bayesian_methods.h) · [example](../examples/modules/bayesian_methods.c) |
+| [baysian_ranking](mulib-baysian_ranking.md) | Beta-Bernoulli posterior-mean scores and deterministic ranking. | [header](../kernels/mulib-baysian_ranking.h) · [example](../examples/modules/baysian_ranking.c) |
+| [bcj](mulib-bcj.md) | Reversible XZ branch/call filters for x86, PowerPC, IA64, ARM, Thumb, SPARC. | [header](../kernels/mulib-bcj.h) · [example](../examples/modules/bcj.c) |
+| [beam_search](mulib-beam_search.md) | State-pruned beam search over discrete HMM trellises. | [header](../kernels/mulib-beam_search.h) · [example](../examples/modules/beam_search.c) |
+| [bibstyle](mulib-bibstyle.md) | Owned bounded registry of bibliography style overrides; replace, lookup and remove by name. | [header](../kernels/mulib-bibstyle.h) · [example](../examples/mulib-bibstyle.c) |
+| [bibtex](mulib-bibtex.md) | Simple BibTeX entry type and citation-key extraction. | [header](../kernels/mulib-bibtex.h) · [example](../examples/mulib-bibtex.c) |
+| [bidi](mulib-bidi.md) | Unicode bidirectional paragraph resolution and visual runs through runtime ICU. | [header](../kernels/mulib-bidi.h) · [example](../examples/modules/bidi.c) |
+| [binfile](mulib-binfile.md) | Borrowed binary file spans and format identification, without I/O. | [header](../kernels/mulib-binfile.h) · [example](../examples/modules/binfile.c) |
+| [binfilebuilder](mulib-binfilebuilder.md) | Transactional fixed-schema record encoding into shared byte buffers. | [header](../kernels/mulib-binfilebuilder.h) · [example](../examples/modules/binfilebuilder.c) |
+| [binfilereader](mulib-binfilereader.md) | Bounds-checked cursor over borrowed binary bytes. | [header](../kernels/mulib-binfilereader.h) · [example](../examples/modules/binfilereader.c) |
+| [binfileschema](mulib-binfileschema.md) | Fixed-record schemas for named 1..8 byte little-endian integer fields. | [header](../kernels/mulib-binfileschema.h) · [example](../examples/modules/binfileschema.c) |
+| [binfilewriter](mulib-binfilewriter.md) | Binary integer and zero-padding writer over MuLIB buffers. | [header](../kernels/mulib-binfilewriter.h) · [example](../examples/modules/binfilewriter.c) |
+| [bios](mulib-bios.md) | PC BIOS thunk interface, E820 records, EDD packets and MBR partitions. | [header](../kernels/mulib-bios.h) · [example](../examples/modules/bios.c) |
+| [bitmap](mulib-bitmap.md) | Packed one-bit raster image with per-pixel access. | [header](../kernels/mulib-bitmap.h) · [example](../examples/modules/bitmap.c) |
+| [bitpack](mulib-bitpack.md) | Pack/unpack unsigned fixed-width values 1..32 bits with explicit byte bounds | [header](../kernels/mulib-bitpack.h) · [example](../examples/modules/bitpack.c) |
+| [bitset](mulib-bitset.md) | Fixed-size allocated bit-array with test, set, clear, and population count. | [header](../kernels/mulib-bitset.h) · [example](../examples/modules/bitset.c) |
+| [bittorrent](mulib-bittorrent.md) | BitTorrent v1 peer handshake, bounded peer-wire messages and piece | [header](../kernels/mulib-bittorrent.h) · [example](../examples/modules/bittorrent.c) |
+| [bk-trees](mulib-bk-trees.md) | Owned BK tree for byte-string Levenshtein radius queries. | [header](../kernels/mulib-bk-trees.h) · [example](../examples/modules/bk-trees.c) |
+| [bktree](mulib-bktree.md) | Canonical BK-tree interface reusing MuLIB's metric-pruned byte BK tree. | [header](../kernels/mulib-bktree.h) · [example](../examples/modules/bktree.c) |
+| [blockcache](mulib-blockcache.md) | Bounded, owning LRU cache for binary blocks keyed by uint64_t. | [header](../kernels/mulib-blockcache.h) · [example](../examples/modules/blockcache.c) |
+| [blockdev](mulib-blockdev.md) | Application-supplied fixed-size block device with checked I/O callbacks | [header](../kernels/mulib-blockdev.h) · [example](../examples/modules/blockdev.c) |
+| [blockidx](mulib-blockidx.md) | Sparse sorted binary fence keys to 64-bit block offsets. | [header](../kernels/mulib-blockidx.h) · [example](../examples/modules/blockidx.c) |
+| [bloom](mulib-bloom.md) | Bit-packed Bloom filter with configurable hash rounds. | [header](../kernels/mulib-bloom.h) · [example](../examples/modules/bloom.c) |
+| [bm25](mulib-bm25.md) | Okapi BM25 and BM25F field scoring; finite checked inputs | [header](../kernels/mulib-bm25.h) · [example](../examples/modules/bm25.c) |
+| [booknav](mulib-booknav.md) | Owned bounded registry of ebook navigation labels; replace, lookup and remove by name. | [header](../kernels/mulib-booknav.h) · [example](../examples/mulib-booknav.c) |
+| [booleanquery](mulib-booleanquery.md) | Linear-time postings intersection/union/difference on sorted documents | [header](../kernels/mulib-booleanquery.h) · [example](../examples/modules/booleanquery.c) |
+| [bootmgr](mulib-bootmgr.md) | Firmware-aware BIOS/UEFI boot selection, application launch, chainload handoff and ELF loading. | [header](../kernels/mulib-bootmgr.h) · [example](../examples/modules/bootmgr.c) |
+| [bounded-text](mulib-bounded-text.md) | Bounded owned byte buffers, slices, validated parsing, hashing and serialization helpers. | [header](../kernels/mulib-bounded-text.h) · [example](../examples/modules/bounded-text.c) |
+| [bounds](mulib-bounds.md) | Axis-aligned bounding boxes and intersection utilities. | [header](../kernels/mulib-bounds.h) · [example](../examples/modules/bounds.c) |
+| [bpf-kernel](mulib-bpf-kernel.md) | Invoke Linux BPF_MAP_CREATE for an ARRAY map using the kernel bpf syscall | [header](../kernels/mulib-bpf-kernel.h) · [example](../examples/modules/bpf-kernel.c) |
+| [branch-layout](mulib-branch-layout.md) | Fixed-point short/near branch relaxation with checked signed displacements. | [header](../kernels/mulib-branch-layout.h) · [example](../examples/modules/branch-layout.c) |
+| [browser-cache](mulib-browser-cache.md) | Aggregate-byte-bounded URL response cache with expiry pruning and ETag metadata. | [header](../kernels/mulib-browser-cache.h) · [example](../examples/modules/browser-cache.c) |
+| [browser-cookiejar](mulib-browser-cookiejar.md) | Validated host/domain/path/secure-aware pre-parsed cookie storage. | [header](../kernels/mulib-browser-cookiejar.h) · [example](../examples/modules/browser-cookiejar.c) |
+| [browser-documentload](mulib-browser-documentload.md) | Synchronous document fetch and HTML tree creation orchestration. | [header](../kernels/mulib-browser-documentload.h) · [example](../examples/modules/browser-documentload.c) |
+| [browser-domstream](mulib-browser-domstream.md) | DOM mutation and node event publishing. | [header](../kernels/mulib-browser-domstream.h) · [example](../examples/modules/browser-domstream.c) |
+| [browser-engine](mulib-browser-engine.md) | Transactional static-HTML document loading with enforced byte/tree/history limits and events. | [header](../kernels/mulib-browser-engine.h) · [example](../examples/modules/browser-engine.c) |
+| [browser-eventloop](mulib-browser-eventloop.md) | Deterministic bounded FIFO tasks and run-to-completion microtask checkpoints. | [header](../kernels/mulib-browser-eventloop.h) · [example](../examples/modules/browser-eventloop.c) |
+| [browser-executionstream](mulib-browser-executionstream.md) | Script execution and lifecycle diagnostic event publishing. | [header](../kernels/mulib-browser-executionstream.h) · [example](../examples/modules/browser-executionstream.c) |
+| [browser-fetch](mulib-browser-fetch.md) | Browser fetch request adapter with origin and security policy checks. | [header](../kernels/mulib-browser-fetch.h) · [example](../examples/modules/browser-fetch.c) |
+| [browser-layoutstream](mulib-browser-layoutstream.md) | Box geometry layout event publishing. | [header](../kernels/mulib-browser-layoutstream.h) · [example](../examples/modules/browser-layoutstream.c) |
+| [browser-limits](mulib-browser-limits.md) | Validated resource limits for untrusted document execution. | [header](../kernels/mulib-browser-limits.h) · [example](../examples/modules/browser-limits.c) |
+| [browser-navigation](mulib-browser-navigation.md) | Owned bounded navigation history and back/forward traversal. | [header](../kernels/mulib-browser-navigation.h) · [example](../examples/modules/browser-navigation.c) |
+| [browser-networkstream](mulib-browser-networkstream.md) | Resource request and response event publishing. | [header](../kernels/mulib-browser-networkstream.h) · [example](../examples/modules/browser-networkstream.c) |
+| [browser-origin](mulib-browser-origin.md) | Normalized HTTP(S) origin parsing and same-origin checks. | [header](../kernels/mulib-browser-origin.h) · [example](../examples/modules/browser-origin.c) |
+| [browser-permissions](mulib-browser-permissions.md) | Explicit bitmask permissions for browser capabilities. | [header](../kernels/mulib-browser-permissions.h) · [example](../examples/modules/browser-permissions.c) |
+| [browser-realm](mulib-browser-realm.md) | Browser realm IDs with immutable origin metadata and isolation keys. | [header](../kernels/mulib-browser-realm.h) · [example](../examples/modules/browser-realm.c) |
+| [browser-resource](mulib-browser-resource.md) | Deduplicated resource registry with load state and content type. | [header](../kernels/mulib-browser-resource.h) · [example](../examples/modules/browser-resource.c) |
+| [browser-sandbox](mulib-browser-sandbox.md) | Deterministic resource-budget accounting and abort flags for browser tasks. | [header](../kernels/mulib-browser-sandbox.h) · [example](../examples/modules/browser-sandbox.c) |
+| [browser-snapshot](mulib-browser-snapshot.md) | Owned immutable byte snapshots with content fingerprint and document version. | [header](../kernels/mulib-browser-snapshot.h) · [example](../examples/modules/browser-snapshot.c) |
+| [browser-stream](mulib-browser-stream.md) | Typed bounded event stream with channel-based observer dispatch. | [header](../kernels/mulib-browser-stream.h) · [example](../examples/modules/browser-stream.c) |
+| [browser-tokenstream](mulib-browser-tokenstream.md) | HTML and CSS token event publishing. | [header](../kernels/mulib-browser-tokenstream.h) · [example](../examples/modules/browser-tokenstream.c) |
+| [browsercontext](mulib-browsercontext.md) | Caller-assigned browser context identifier and private-mode metadata. | [header](../kernels/mulib-browsercontext.h) · [example](../examples/modules/browsercontext.c) |
+| [browserlocator](mulib-browserlocator.md) | Typed, owned browser locator definitions for CSS, XPath, text, and role queries. | [header](../kernels/mulib-browserlocator.h) · [example](../examples/modules/browserlocator.c) |
+| [browserscreenshot](mulib-browserscreenshot.md) | Validate screenshot dimensions and output raster buffer size. | [header](../kernels/mulib-browserscreenshot.h) · [example](../examples/modules/browserscreenshot.c) |
+| [browsersnapshot](mulib-browsersnapshot.md) | Owned immutable byte snapshot with FNV-1a change fingerprint. | [header](../kernels/mulib-browsersnapshot.h) · [example](../examples/modules/browsersnapshot.c) |
+| [browsertools](mulib-browsertools.md) | Browser protocol requests and response correlation over caller-owned transport. | [header](../kernels/mulib-browsertools.h) · [example](../examples/modules/browsertools.c) |
+| [browsertrace](mulib-browsertrace.md) | Caller-owned ring buffer of timestamped browser action events. | [header](../kernels/mulib-browsertrace.h) · [example](../examples/modules/browsertrace.c) |
+| [browserwait](mulib-browserwait.md) | Caller-clocked deterministic browser condition timeout helper. | [header](../kernels/mulib-browserwait.h) · [example](../examples/modules/browserwait.c) |
+| [bson](mulib-bson.md) | Bounded BSON JSON-profile document codec. | [header](../kernels/mulib-bson.h) · [example](../examples/modules/bson.c) |
+| [buffer](mulib-buffer.md) | Dynamically growing binary byte buffer. | [header](../kernels/mulib-buffer.h) · [example](../examples/modules/buffer.c) |
+| [buildgraph](mulib-buildgraph.md) | Declared-input/output artifact and opaque Action DAG with execution and translation walkers. | [header](../kernels/mulib-buildgraph.h) · [example](../examples/modules/buildgraph.c) |
+| [buildparse](mulib-buildparse.md) | Bounded Make, Ninja, CMake, Meson and Bazel dependency extractors. | [header](../kernels/mulib-buildparse.h) · [example](../examples/modules/buildparse.c) |
+| [buildplan](mulib-buildplan.md) | Bounded owned target DAG resolution, resource waves and critical-path planning. | [header](../kernels/mulib-buildplan.h) · [example](../examples/modules/buildplan.c) |
+| [buildstate](mulib-buildstate.md) | Canonical SHA-256 action provenance and injected invalidation policy. | [header](../kernels/mulib-buildstate.h) · [example](../examples/modules/buildstate.c) |
+| [buildvm](mulib-buildvm.md) | Hermetic bounded artifact-register VM for build DAG tasks. | [header](../kernels/mulib-buildvm.h) · [example](../examples/modules/buildvm.c) |
+| [bycutils](mulib-bycutils.md) | Checked byte-code arithmetic and unaligned little-endian integers. | [header](../kernels/mulib-bycutils.h) · [example](../examples/modules/bycutils.c) |
+| [bytecode](mulib-bytecode.md) | Checked signed-64 stack interpreter with local, stack and instruction budgets. | [header](../kernels/mulib-bytecode.h) · [example](../examples/modules/bytecode.c) |
+| [bytecode-builder](mulib-bytecode-builder.md) | Owned append and operand-patch builder for stack bytecode. | [header](../kernels/mulib-bytecode-builder.h) · [example](../examples/modules/bytecode-builder.c) |
+| [bytecode-disasm](mulib-bytecode-disasm.md) | Bounded textual disassembly of stack bytecode. | [header](../kernels/mulib-bytecode-disasm.h) · [example](../examples/modules/bytecode-disasm.c) |
+| [bytecode-eval](mulib-bytecode-eval.md) | Verify and execute stack bytecode with explicit execution results and budgets. | [header](../kernels/mulib-bytecode-eval.h) · [example](../examples/modules/bytecode-eval.c) |
+| [bytecode-opt](mulib-bytecode-opt.md) | Jump-free constant folding preserving checked signed arithmetic faults. | [header](../kernels/mulib-bytecode-opt.h) · [example](../examples/modules/bytecode-opt.c) |
+| [bytecode-serialize](mulib-bytecode-serialize.md) | Exact portable MBC1 bytecode encoding with little-endian operands and FNV checksum. | [header](../kernels/mulib-bytecode-serialize.h) · [example](../examples/modules/bytecode-serialize.c) |
+| [bytecode-verify](mulib-bytecode-verify.md) | Full instruction validation and reachable stack-height analysis with branch-join checks. | [header](../kernels/mulib-bytecode-verify.h) · [example](../examples/modules/bytecode-verify.c) |
+| [bzip2](mulib-bzip2.md) | Dependency-free bzip2 BWT/MTF/RLE/Huffman compression and decompression. | [header](../kernels/mulib-bzip2.h) · [example](../examples/modules/bzip2.c) |
 
 ## C
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [cache](mulib-cache.md) | Explicit disk snapshots with selectable sorted KVDB, HAT-trie or trie indexes. | [header](../include/mulib-cache.h) · [example](../examples/modules/cache.c) |
-| [callconv](mulib-callconv.md) | Eight-byte integer/pointer argument placement for AMD64 SysV and RV64 LP64. | [header](../include/mulib-callconv.h) · [example](../examples/modules/callconv.c) |
-| [canvas-camera](engineering-kernels.md) | World-to-screen transforms, inverse mapping, and anchored zoom. | [header](../include/mulib-canvas-camera.h) |
-| [canvas-command](engineering-kernels.md) | Owned drawing command list with ordered callback playback. | [header](../include/mulib-canvas-command.h) |
-| [canvas-gizmo](engineering-kernels.md) | Point rotation and axis-wise scaling about an anchor. | [header](../include/mulib-canvas-gizmo.h) |
-| [canvas-grid](engineering-kernels.md) | Zoom-dependent 1-2-5 grid spacing and visible line coordinates. | [header](../include/mulib-canvas-grid.h) |
-| [canvas-hittest](engineering-kernels.md) | Reverse-order point hit testing against axis-aligned boxes with tolerance. | [header](../include/mulib-canvas-hittest.h) |
-| [canvas-layer](engineering-kernels.md) | Stable z-order sorting of visible canvas layers. | [header](../include/mulib-canvas-layer.h) |
-| [canvas-lod](engineering-kernels.md) | Level-of-detail selection from projected size and pixel thresholds. | [header](../include/mulib-canvas-lod.h) |
-| [canvas-selection](engineering-kernels.md) | Rectangular selection by box overlap or containment. | [header](../include/mulib-canvas-selection.h) |
-| [canvas-tile](engineering-kernels.md) | Integer tile index bounds for a rectangular viewport. | [header](../include/mulib-canvas-tile.h) |
-| [canvas-viewport](engineering-kernels.md) | Line segment clipping against an axis-aligned viewport. | [header](../include/mulib-canvas-viewport.h) |
-| [capasm](mulib-capasm.md) | Compile bounded XMacIR to portable ANSI C, with explicitly selected rewrite and tool stages. | [header](../include/mulib-capasm.h) · [example](../examples/modules/capasm.c) |
-| [capbroker](mulib-capbroker.md) | Host-owned capability grants, quota-checked dispatch and transaction hooks. | [header](../include/mulib-capbroker.h) · [example](../examples/modules/capbroker.c) |
-| [cassowary-solver](mulib-cassowary-solver.md) | Cassowary slack/error tableau simplex for prioritized linear constraints. | [header](../include/mulib-cassowary-solver.h) · [example](../examples/modules/cassowary-solver.c) |
-| [cbor](mulib-cbor.md) | Bounded RFC 8949 JSON-profile CBOR codec. | [header](../include/mulib-cbor.h) · [example](../examples/modules/cbor.c) |
-| [ccweave](mulib-ccweave.md) | Checked MIR to C source generation. | [header](../include/mulib-ccweave.h) · [example](../examples/modules/ccweave.c) |
-| [cdd-catalogue](mulib-cdd-catalogue.md) | Versioned capability descriptors, typed metadata and structural validation. | [header](../include/mulib-cdd-catalogue.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-diff](mulib-cdd-diff.md) | Identity-based catalogue structural differences. | [header](../include/mulib-cdd-diff.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-execute](mulib-cdd-execute.md) | Validated host callback dispatch with reverse compensation. | [header](../include/mulib-cdd-execute.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-plan](mulib-cdd-plan.md) | Planning problems and independent sequential plan validation. | [header](../include/mulib-cdd-plan.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-query](mulib-cdd-query.md) | Capability and typed predicate filtering with deterministic cost ranking. | [header](../include/mulib-cdd-query.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-registry](mulib-cdd-registry.md) | Bounded registry of borrowed immutable descriptors. | [header](../include/mulib-cdd-registry.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-resolve](mulib-cdd-resolve.md) | Bounded exact dependency resolution with cost minimization and subset memoization. | [header](../include/mulib-cdd-resolve.h) · [example](../examples/cdd-pipeline.c) |
-| [cdd-schema](mulib-cdd-schema.md) | Category-aware required metadata, types and bounds. | [header](../include/mulib-cdd-schema.h) · [example](../examples/cdd-pipeline.c) |
-| [cff](mulib-cff.md) | Bounds-checked font and unicode cff structures binary inspection and record access. | [header](../include/mulib-cff.h) · [example](../examples/mulib-cff.c) |
-| [cff2](mulib-cff2.md) | Bounds-checked font and unicode cff2 structures binary inspection and record access. | [header](../include/mulib-cff2.h) · [example](../examples/mulib-cff2.c) |
-| [cfg](mulib-cfg.md) | Owned control-flow edges with validation, 64-block reachability and atomic postorder. | [header](../include/mulib-cfg.h) · [example](../examples/modules/cfg.c) |
-| [cgeom](mulib-cgeom.md) | Computational geometry, convex hulls and SIMD point distances. | [header](../include/mulib-cgeom.h) · [example](../examples/modules/cgeom.c) |
-| [cgroup2](mulib-cgroup2.md) | Delegated cgroup v2 lifecycle and verified resource limits. | [header](../include/mulib-cgroup2.h) · [example](../examples/modules/sandbox-process.c) |
-| [channel](mulib-channel.md) | CSP buffered/rendezvous channels, directional views and atomic select. | [header](../include/mulib-channel.h) · [example](../examples/modules/channel.c) |
-| [charset](mulib-charset.md) | Bounded charset parameter extraction from Content-Type headers. | [header](../include/mulib-charset.h) · [example](../examples/modules/charset.c) |
-| [chart](mulib-chart.md) | Extensible Lua-driven SVG charts, with automatically loaded lcharts. | [header](../include/mulib-chart.h) · [example](../examples/modules/chart.c) |
-| [checksum](mulib-checksum.md) | Streaming Adler, Fletcher, Internet, BSD, System V, sum and XOR checksums. | [header](../include/mulib-checksum.h) · [example](../examples/modules/checksum.c) |
-| [chem](mulib-chem.md) | Chemical formula composition, approximate molar masses, notation and | [header](../include/mulib-chem.h) · [example](../examples/modules/chem.c) |
-| [chemical](mulib-chemical.md) | Owned ordered collection for graphics chemical rectangles and records; insertion, indexing, removal. | [header](../include/mulib-chemical.h) · [example](../examples/mulib-chemical.c) |
-| [clamp](mulib-clamp.md) | Saturating arithmetic and interval clamping for signed integers. | [header](../include/mulib-clamp.h) · [example](../examples/modules/clamp.c) |
-| [classic-bpf](mulib-classic-bpf.md) | Attach Linux classic socket BPF instruction arrays to an existing socket | [header](../include/mulib-classic-bpf.h) · [example](../examples/modules/classic-bpf.c) |
-| [clickir](mulib-clickir.md) | Block-pinned Sea of Nodes with explicit data and memory dependencies. | [header](../include/mulib-clickir.h) · [example](../examples/modules/clickir.c) |
-| [closeditemset](mulib-closeditemset.md) | Frequent closed intents of an FCA context with minimum support | [header](../include/mulib-closeditemset.h) · [example](../examples/modules/closeditemset.c) |
-| [cmachine](mulib-cmachine.md) | Checked execution of the shared machine intermediate representation. | [header](../include/mulib-cmachine.h) · [example](../examples/modules/cmachine.c) |
-| [codec-core](mulib-codec-core.md) | Checked storage, bit I/O and wire integers shared by compression codecs. | [header](../include/mulib-codec-core.h) · [example](../examples/modules/codec-core.c) |
-| [coff](mulib-coff.md) | Checked little-endian Microsoft COFF sections, symbols and names. | [header](../include/mulib-coff.h) · [example](../examples/modules/coff.c) |
-| [coff-objdump](mulib-coff-objdump.md) | COFF metadata, symbols and section hex dumps using shared objdump tools. | [header](../include/mulib-coff-objdump.h) · [example](../examples/modules/coff-objdump.c) |
-| [coffbuilder](mulib-coffbuilder.md) | Deterministic AMD64 COFF object text-section writer. | [header](../include/mulib-coffbuilder.h) · [example](../examples/modules/coffbuilder.c) |
-| [coffutils](mulib-coffutils.md) | Exact section and defined-primary-symbol lookup over checked COFF. | [header](../include/mulib-coffutils.h) · [example](../examples/modules/coffutils.c) |
-| [collision](mulib-collision.md) | Primitive overlap contacts, convex SAT and ray intersection queries. | [header](../include/mulib-collision.h) · [example](../examples/modules/collision.c) |
-| [color](mulib-color.md) | RGB to HSV and HSV to RGB color-model conversion. | [header](../include/mulib-color.h) · [example](../examples/modules/color.c) |
-| [color-adaptation](mulib-color-adaptation.md) | Bradford XYZ white-point adaptation. Limit: Supply normalized XYZ white points. | [header](../include/mulib-color-adaptation.h) · [example](../examples/media-pipeline.c) |
-| [color-cube](mulib-color-cube.md) | Read standard unit-domain 3D .cube LUTs. Limit: No combined 1D/3D or arbitrary domains; partial scratch on failure. | [header](../include/mulib-color-cube.h) · [example](../examples/media-pipeline.c) |
-| [color-curves](mulib-color-curves.md) | Validated piecewise-linear grading curves. Limit: No monotone cubic or cyclic hue interpolation. | [header](../include/mulib-color-curves.h) · [example](../examples/media-pipeline.c) |
-| [color-gamut](mulib-color-gamut.md) | Neutral-axis gamut compression into bounded RGB. Limit: Simple RGB heuristic, not perceptually uniform. | [header](../include/mulib-color-gamut.h) · [example](../examples/media-pipeline.c) |
-| [color-grade](mulib-color-grade.md) | ASC-CDL-style slope, offset, power and saturation. Limit: Unclamped positive output; specify CDL clamp mode for interchange. | [header](../include/mulib-color-grade.h) · [example](../examples/media-pipeline.c) |
-| [color-lut1d](mulib-color-lut1d.md) | Clamped linear 1D LUT interpolation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-color-lut1d.h) · [example](../examples/media-pipeline.c) |
-| [color-lut3d](mulib-color-lut3d.md) | Trilinear and tetrahedral 3D LUT evaluation, red-fastest order. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-color-lut3d.h) · [example](../examples/media-pipeline.c) |
-| [color-pipeline](mulib-color-pipeline.md) | Fused per-pixel pipeline of caller-supplied color stages. Limit: Callbacks trusted and synchronous. | [header](../include/mulib-color-pipeline.h) · [example](../examples/media-pipeline.c) |
-| [color-primaries](mulib-color-primaries.md) | 3x3 color matrices and D65 Rec.709/Rec.2020/P3 matrices. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-color-primaries.h) · [example](../examples/media-pipeline.c) |
-| [color-qualifier](mulib-color-qualifier.md) | Soft luminance/saturation selection mask. Limit: Hue and spatial cleanup not implemented. | [header](../include/mulib-color-qualifier.h) · [example](../examples/media-pipeline.c) |
-| [color-tonemap](mulib-color-tonemap.md) | Reinhard and ACES-inspired fitted filmic curves. Limit: Not an official ACES rendering transform. | [header](../include/mulib-color-tonemap.h) · [example](../examples/media-pipeline.c) |
-| [color-transfer](mulib-color-transfer.md) | Linear/sRGB/Rec.709/PQ/HLG transfer functions. Limit: PQ uses normalized 10000-nit luminance; HLG is scene OETF, no OOTF. | [header](../include/mulib-color-transfer.h) · [example](../examples/media-pipeline.c) |
-| [color-vectorscope](mulib-color-vectorscope.md) | BT.709 Cb/Cr density histogram to caller-owned square bins. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-color-vectorscope.h) · [example](../examples/media-pipeline.c) |
-| [color-waveform](mulib-color-waveform.md) | Luma or RGB waveform density bins. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-color-waveform.h) · [example](../examples/media-pipeline.c) |
-| [color-wheels](mulib-color-wheels.md) | Luminance-weighted three-way grading offsets. Limit: Simple overlapping weights, not a Resolve-compatible wheel model. | [header](../include/mulib-color-wheels.h) · [example](../examples/media-pipeline.c) |
-| [colorconvert](mulib-colorconvert.md) | Convert normalized linear intensity to gamma-adjusted intensity. Finite numeric inputs and documented scalar | [header](../include/mulib-colorconvert.h) · [example](../examples/mulib-colorconvert.c) |
-| [colormodel](mulib-colormodel.md) | Blend numeric color-channel values using supplied opacity. Finite numeric inputs and documented scalar | [header](../include/mulib-colormodel.h) · [example](../examples/mulib-colormodel.c) |
-| [colorprofile](mulib-colorprofile.md) | Owned bounded registry of ICC profile names and identifiers; replace, lookup and remove by name. | [header](../include/mulib-colorprofile.h) · [example](../examples/mulib-colorprofile.c) |
-| [column-rdbms](mulib-column-rdbms.md) | Dense finite-double column table with atomic row append. | [header](../include/mulib-column-rdbms.h) · [example](../examples/modules/column-rdbms.c) |
-| [columnar](mulib-columnar.md) | Nullable column-major finite double vectors with atomic append | [header](../include/mulib-columnar.h) · [example](../examples/modules/columnar.c) |
-| [columnstats](mulib-columnstats.md) | Min/max/null statistics for numeric column pruning | [header](../include/mulib-columnstats.h) · [example](../examples/modules/columnstats.c) |
-| [competprice](mulib-competprice.md) | Competitive benchmark and quality-adjusted position-based pricing with hard bounds. | [header](../include/mulib-competprice.h) · [example](../examples/modules/competprice.c) |
-| [compiler-cache](mulib-compiler-cache.md) | Binary-safe owned artifact cache keyed by caller-provided fingerprints. | [header](../include/mulib-compiler-cache.h) · [example](../examples/modules/compiler-cache.c) |
-| [compiler-driver](mulib-compiler-driver.md) | Ordered named compiler-stage pipeline with stop-on-error dispatch. | [header](../include/mulib-compiler-driver.h) · [example](../examples/modules/compiler-driver.c) |
-| [compiler-scope](mulib-compiler-scope.md) | Scope-oriented binding and resolution facade for lexical symbol tables. | [header](../include/mulib-compiler-scope.h) · [example](../examples/modules/compiler-scope.c) |
-| [compiler-test](mulib-compiler-test.md) | Named compiler-test checks with bounded counters and last-failure tracking. | [header](../include/mulib-compiler-test.h) · [example](../examples/modules/compiler-test.c) |
-| [complex](mulib-complex.md) | Complex arithmetic for double precision real and imaginary components. | [header](../include/mulib-complex.h) · [example](../examples/modules/complex.c) |
-| [compression](mulib-compression.md) | Explicit bounded identity and RLE buffer transforms. | [header](../include/mulib-compression.h) · [example](../examples/modules/compression.c) |
-| [compset](mulib-compset.md) | Point-in-time comparable price selection, deduplication and diagnostics. | [header](../include/mulib-compset.h) · [example](../examples/hospitality_demo.c) |
-| [compute-buffer](mulib-compute-buffer.md) | Checked host buffer allocation and staging copies. Limit: CPU memory only, not device allocation. | [header](../include/mulib-compute-buffer.h) · [example](../examples/media-pipeline.c) |
-| [compute-cache](mulib-compute-cache.md) | Device/revision-keyed bounded pipeline handle cache. Limit: No eviction or handle ownership. | [header](../include/mulib-compute-cache.h) · [example](../examples/media-pipeline.c) |
-| [compute-core](mulib-compute-core.md) | Device-neutral dispatch and fence contract. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-compute-core.h) · [example](../examples/media-pipeline.c) |
-| [compute-cpu](mulib-compute-cpu.md) | Bounded deterministic CPU workgroup dispatch. Limit: Serial; use taskpool for parallelism. | [header](../include/mulib-compute-cpu.h) · [example](../examples/media-pipeline.c) |
-| [compute-d3d12](mulib-compute-d3d12.md) | Checked D3D12 command queue provider attachment and dispatch. Limit: Adapter only; no native d3d12 device, command creation or driver code. Wire a native backend before advertising support. | [header](../include/mulib-compute-d3d12.h) · [example](../examples/media-pipeline.c) |
-| [compute-device](mulib-compute-device.md) | Select from real provider-supplied device capability descriptors. Limit: No platform enumeration. | [header](../include/mulib-compute-device.h) · [example](../examples/media-pipeline.c) |
-| [compute-dispatch](mulib-compute-dispatch.md) | Validated dispatch to provider and ceil-division workgroup sizing. Limit: Actual execution delegated. | [header](../include/mulib-compute-dispatch.h) · [example](../examples/media-pipeline.c) |
-| [compute-image](mulib-compute-image.md) | Aligned-row host storage image allocation. Limit: No GPU texture memory. | [header](../include/mulib-compute-image.h) · [example](../examples/media-pipeline.c) |
-| [compute-memory](mulib-compute-memory.md) | Aligned suballocation offsets for a preallocated staging arena. Limit: Not device memory allocation; fence before reuse. | [header](../include/mulib-compute-memory.h) · [example](../examples/media-pipeline.c) |
-| [compute-metal](mulib-compute-metal.md) | Checked Metal command queue provider attachment and dispatch. Limit: Adapter only; no native metal device, command creation or driver code. Wire a native backend before advertising support. | [header](../include/mulib-compute-metal.h) · [example](../examples/media-pipeline.c) |
-| [compute-pipeline](mulib-compute-pipeline.md) | Pipeline binding layout validation. Limit: Provider owns actual pipeline creation. | [header](../include/mulib-compute-pipeline.h) · [example](../examples/media-pipeline.c) |
-| [compute-spirv](mulib-compute-spirv.md) | SPIR-V header/instruction framing validator and instruction emitter. Limit: Structural only; not semantic verification or compiler. | [header](../include/mulib-compute-spirv.h) · [example](../examples/media-pipeline.c) |
-| [compute-sync](mulib-compute-sync.md) | Fence provider wait and monotonic software timeline accounting. Limit: Caller serializes operations; no native barriers. | [header](../include/mulib-compute-sync.h) · [example](../examples/media-pipeline.c) |
-| [compute-vulkan](mulib-compute-vulkan.md) | Checked Vulkan queue provider attachment and dispatch. Limit: Adapter only; no native vulkan device, command creation or driver code. Wire a native backend before advertising support. | [header](../include/mulib-compute-vulkan.h) · [example](../examples/media-pipeline.c) |
-| [compute-webgpu](mulib-compute-webgpu.md) | Checked WebGPU queue provider attachment and dispatch. Limit: Adapter only; no native webgpu device, command creation or driver code. Wire a native backend before advertising support. | [header](../include/mulib-compute-webgpu.h) · [example](../examples/media-pipeline.c) |
-| [conainerd-ipc](mulib-conainerd-ipc.md) | Canonical daemon lifecycle command and status wire records. | [header](../include/mulib-conainerd-ipc.h) · [example](../examples/modules/conainerd-ipc.c) |
-| [conceptlattice](mulib-conceptlattice.md) | Enumerate exact FCA concept intent/extent pairs with bounded capacity | [header](../include/mulib-conceptlattice.h) · [example](../examples/modules/conceptlattice.c) |
-| [concurrency-prim](mulib-concurrency-prim.md) | Fiber-aware mutexes, semaphores, wait groups, events and reader/writer locks. | [header](../include/mulib-concurrency-prim.h) · [example](../examples/modules/concurrency-prim.c) |
-| [conditional_probablity](mulib-conditional_probablity.md) | Conditional probability and Bayes' rule for scalar events. | [header](../include/mulib-conditional_probablity.h) · [example](../examples/modules/conditional_probablity.c) |
-| [confuse](mulib-confuse.md) | PEG-backed libconfuse-style configuration trees. | [header](../include/mulib-confuse.h) · [example](../examples/modules/confuse.c) |
-| [conntrack](mulib-conntrack.md) | Dump conntrack table entries through netfilter conntrack Netlink subsystem | [header](../include/mulib-conntrack.h) · [example](../examples/modules/conntrack.c) |
-| [consteval](mulib-consteval.md) | Checked signed-64 Pratt expression evaluation with lexical symbol values. | [header](../include/mulib-consteval.h) · [example](../examples/modules/consteval.c) |
-| [constraints](mulib-constraints.md) | Union-find type constraints with conflict-preserving concrete bindings. | [header](../include/mulib-constraints.h) · [example](../examples/modules/constraints.c) |
-| [container](mulib-container.md) | Owned process specifications and generation-tracked container lifecycle. | [header](../include/mulib-container.h) · [example](../examples/modules/container.c) |
-| [container-core](mulib-container-core.md) | Shared checked storage, wire primitives and errors for containers. | [header](../include/mulib-container-core.h) · [example](../examples/modules/container-core.c) |
-| [container-ipc](mulib-container-ipc.md) | Checksummed bounded IPC framing and incremental stream assembly. | [header](../include/mulib-container-ipc.h) · [example](../examples/modules/container-ipc.c) |
-| [container-jitboost](mulib-container-jitboost.md) | Native MIR execution with instruction quotas and host-call suspension. | [header](../include/mulib-container-jitboost.h) · [example](../examples/modules/container-jitboost.c) |
-| [container-kvmboost](mulib-container-kvmboost.md) | Owning KVM execution adapter with guest and device callbacks. | [header](../include/mulib-container-kvmboost.h) · [example](../examples/modules/container-kvmboost.c) |
-| [container-log](mulib-container-log.md) | Bounded binary log ring with sequence cursors and loss accounting. | [header](../include/mulib-container-log.h) · [example](../examples/modules/container-log.c) |
-| [container-netdev](mulib-container-netdev.md) | Bounded virtual packet queues, transport callbacks and link metrics. | [header](../include/mulib-container-netdev.h) · [example](../examples/modules/container-netdev.c) |
-| [container-network](mulib-container-network.md) | IPv4/IPv6 routing and packet policy over virtual endpoints. | [header](../include/mulib-container-network.h) · [example](../examples/modules/container-network.c) |
-| [container-oixboost](mulib-container-oixboost.md) | Rootfs-to-OIX compilation and native guest execution adapter. | [header](../include/mulib-container-oixboost.h) · [example](../examples/modules/container-oixboost.c) |
-| [container-packcoff](mulib-container-packcoff.md) | COFF image objects and checksummed non-destructive file overlays. | [header](../include/mulib-container-packcoff.h) · [example](../examples/modules/container-packcoff.c) |
-| [container-packelf](mulib-container-packelf.md) | ELF64 image objects and byte-preserving ELF image overlays. | [header](../include/mulib-container-packelf.h) · [example](../examples/modules/container-packelf.c) |
-| [container-packmacho](mulib-container-packmacho.md) | Mach-O64 image objects and non-destructive unsigned Mach-O overlays. | [header](../include/mulib-container-packmacho.h) · [example](../examples/modules/container-packmacho.c) |
-| [container-packpe](mulib-container-packpe.md) | PE32+ data-image packing and non-destructive unsigned PE overlays. | [header](../include/mulib-container-packpe.h) · [example](../examples/modules/container-packpe.c) |
-| [container-packzstd](mulib-container-packzstd.md) | Standard Zstandard raw/RLE image packaging and explicit codec integration. | [header](../include/mulib-container-packzstd.h) · [example](../examples/modules/container-packzstd.c) |
-| [container-qvmboost](mulib-container-qvmboost.md) | Resumable portable quota-VM execution backend. | [header](../include/mulib-container-qvmboost.h) · [example](../examples/modules/container-qvmboost.c) |
-| [container-runtime](mulib-container-runtime.md) | Backend-driven lifecycle execution and cooperative budgeted polling. | [header](../include/mulib-container-runtime.h) · [example](../examples/modules/container-runtime.c) |
-| [container-stub](mulib-container-stub.md) | Nonblocking lifecycle client with partial I/O and reply correlation. | [header](../include/mulib-container-stub.h) · [example](../examples/modules/container-stub.c) |
-| [container-vfs](mulib-container-vfs.md) | Per-container routing, read-only bindings and root checkpoints. | [header](../include/mulib-container-vfs.h) · [example](../examples/modules/container-vfs.c) |
-| [container2daemonproto](mulib-container2daemonproto.md) | Bounded versioned CRC framing for caller-transported container messages. | [header](../include/mulib-container2daemonproto.h) · [example](../examples/modules/container2daemonproto.c) |
-| [containerboost](mulib-containerboost.md) | Explicit execution backend registration and capability selection. | [header](../include/mulib-containerboost.h) · [example](../examples/modules/containerboost.c) |
-| [containerd](mulib-containerd.md) | Embeddable daemon composing runtime pools, cache, exports and logs. | [header](../include/mulib-containerd.h) · [example](../examples/modules/containerd.c) |
-| [containerd-accessstub](mulib-containerd-accessstub.md) | Ordered authenticated-principal command authorization. | [header](../include/mulib-containerd-accessstub.h) · [example](../examples/modules/containerd-accessstub.c) |
-| [containerd-cache](mulib-containerd-cache.md) | Validated image cache with atomic LRU eviction, expiry and pinned leases. | [header](../include/mulib-containerd-cache.h) · [example](../examples/modules/containerd-cache.c) |
-| [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | Authorized incremental control connection with backpressure and replay handling. | [header](../include/mulib-containerd-ctrlbridge.h) · [example](../examples/modules/containerd-ctrlbridge.c) |
-| [containerd-mount](mulib-containerd-mount.md) | Stable VFS exports with generation leases and bounded FUSE sessions. | [header](../include/mulib-containerd-mount.h) · [example](../examples/modules/containerd-mount.c) |
-| [containerinjector](mulib-containerinjector.md) | Bounded file insertion into the memory rootfs, not process-code injection. | [header](../include/mulib-containerinjector.h) · [example](../examples/modules/containerinjector.c) |
-| [containerserverd](mulib-containerserverd.md) | Single-container request dispatcher; no listener, threads or implicit daemon. | [header](../include/mulib-containerserverd.h) · [example](../examples/modules/containerserverd.c) |
-| [containerstub](mulib-containerstub.md) | Client-side lifecycle-request encoder, with caller-supplied transport. | [header](../include/mulib-containerstub.h) · [example](../examples/modules/containerstub.c) |
-| [containterpool](mulib-containterpool.md) | Stable owned container slots, generation handles and fair polling. | [header](../include/mulib-containterpool.h) · [example](../examples/modules/containterpool.c) |
-| [contract](mulib-contract.md) | Borrowed versioned data envelopes and canonical content digests. | [header](../include/mulib-contract.h) · [example](../examples/hospitality_demo.c) |
-| [cookie](mulib-cookie.md) | HTTP Set-Cookie name/value validation and extraction. | [header](../include/mulib-cookie.h) · [example](../examples/modules/cookie.c) |
-| [cookiejar](mulib-cookiejar.md) | Owned in-memory cookie-pair store with name replacement. | [header](../include/mulib-cookiejar.h) · [example](../examples/modules/cookiejar.c) |
-| [corporate-actions](mulib-corporate-actions.md) | Exact integer split shares and checked rounded price and cash calculations. | [header](../include/mulib-corporate-actions.h) · [example](../examples/finpred_market.c) |
-| [corpus](mulib-corpus.md) | Owned token-frequency corpus backed by the MuLIB byte trie. | [header](../include/mulib-corpus.h) · [example](../examples/modules/corpus.c) |
-| [cosine_similarity](mulib-cosine_similarity.md) | Scale-safe cosine similarity of finite double vectors. | [header](../include/mulib-cosine_similarity.h) · [example](../examples/modules/cosine_similarity.c) |
-| [countmin](mulib-countmin.md) | Deterministic Count-Min Sketch for estimated frequencies | [header](../include/mulib-countmin.h) · [example](../examples/modules/countmin.c) |
-| [cowb+tree](mulib-cowb+tree.md) | Reference-counted B+ tree snapshots with whole-tree copy on first write. | [header](../include/mulib-cowb+tree.h) · [example](../examples/modules/cowb+tree.c) |
-| [cpio](mulib-cpio.md) | Bounded newc/crc CPIO reading and deterministic archive construction. | [header](../include/mulib-cpio.h) · [example](../examples/modules/cpio.c) |
-| [crawlarchive](mulib-crawlarchive.md) | Owned replayable crawl records with content hashes and bounded payloads. | [header](../include/mulib-crawlarchive.h) · [example](../examples/modules/crawlarchive.c) |
-| [crawler](mulib-crawler.md) | Bounded crawl frontier with retry scheduling and URL deduplication. | [header](../include/mulib-crawler.h) · [example](../examples/modules/crawler.c) |
-| [crawlqueue](mulib-crawlqueue.md) | Owned bounded FIFO frontier with URL deduplication and resumable cursor controls. | [header](../include/mulib-crawlqueue.h) · [example](../examples/modules/crawlqueue.c) |
-| [crc](mulib-crc.md) | Parameterized 1..128-bit CRCs and all 113 CRC RevEng presets. | [header](../include/mulib-crc.h) · [example](../examples/modules/crc.c) |
-| [crc32](mulib-crc32.md) | IEEE CRC-32 checksum with incremental updates. | [header](../include/mulib-crc32.h) · [example](../examples/modules/crc32.c) |
-| [cron](mulib-cron.md) | Bounded five-field cron schedules and calendar matching. | [header](../include/mulib-cron.h) · [example](../examples/modules/cron.c) |
-| [crossref](mulib-crossref.md) | Owned bounded registry of named cross-references; replace, lookup and remove by name. | [header](../include/mulib-crossref.h) · [example](../examples/mulib-crossref.c) |
-| [cryptohash](mulib-cryptohash.md) | BLAKE2, BLAKE3, KMAC, SipHash and AES-PMAC with intrinsic alternatives. | [header](../include/mulib-cryptohash.h) · [example](../examples/modules/cryptohash.c) |
-| [csl](mulib-csl.md) | Owned bounded registry of CSL-like formatting properties; replace, lookup and remove by name. | [header](../include/mulib-csl.h) · [example](../examples/mulib-csl.c) |
-| [css](mulib-css.md) | CSS declarations, selectors, author cascade and explicit length conversion. | [header](../include/mulib-css.h) · [example](../examples/modules/css.c) |
-| [css-box](mulib-css-box.md) | Backend-neutral block box geometry and vertical flow placement. | [header](../include/mulib-css-box.h) · [example](../examples/modules/css-box.c) |
-| [css-cascade](mulib-css-cascade.md) | Deterministic selected-property cascade with basic specificity and source ordering. | [header](../include/mulib-css-cascade.h) · [example](../examples/modules/css-cascade.c) |
-| [css-computed](mulib-css-computed.md) | Selected CSS declaration lookup with inherited color and font-size fields. | [header](../include/mulib-css-computed.h) · [example](../examples/modules/css-computed.c) |
-| [css-flex](mulib-css-flex.md) | Checked weighted one-axis flex distribution with gaps. | [header](../include/mulib-css-flex.h) · [example](../examples/modules/css-flex.c) |
-| [css-grid](mulib-css-grid.md) | Checked uniform grid cell geometry generator. | [header](../include/mulib-css-grid.h) · [example](../examples/modules/css-grid.c) |
-| [css-layoutstream](mulib-css-layoutstream.md) | Callback emission of calculated box geometry with stable node indexes. | [header](../include/mulib-css-layoutstream.h) · [example](../examples/modules/css-layoutstream.c) |
-| [css-parser](mulib-css-parser.md) | Owned bounded CSS stylesheet rules with selector/declaration spans. | [header](../include/mulib-css-parser.h) · [example](../examples/modules/css-parser.c) |
-| [css-selector](mulib-css-selector.md) | Simple type, ID, class and universal selector matching for HTML tree nodes. | [header](../include/mulib-css-selector.h) · [example](../examples/modules/css-selector.c) |
-| [css-tokenizer](mulib-css-tokenizer.md) | Length-aware CSS identifiers, signed numbers, strings and symbols with comment skipping. | [header](../include/mulib-css-tokenizer.h) · [example](../examples/modules/css-tokenizer.c) |
-| [csswriter](mulib-csswriter.md) | Checked output csswriter text emission into an owned byte buffer. | [header](../include/mulib-csswriter.h) · [example](../examples/mulib-csswriter.c) |
-| [csv](mulib-csv.md) | Streaming CSV row parser for quoted comma-separated fields. | [header](../include/mulib-csv.h) · [example](../examples/modules/csv.c) |
-| [curses](mulib-curses.md) | Retained curses-style windows, staged composition and differential refresh. | [header](../include/mulib-curses.h) · [example](../examples/modules/curses.c) |
+| [cache](mulib-cache.md) | Explicit disk snapshots with selectable sorted KVDB, HAT-trie or trie indexes. | [header](../kernels/mulib-cache.h) · [example](../examples/modules/cache.c) |
+| [callconv](mulib-callconv.md) | Eight-byte integer/pointer argument placement for AMD64 SysV and RV64 LP64. | [header](../kernels/mulib-callconv.h) · [example](../examples/modules/callconv.c) |
+| [canvas-camera](engineering-kernels.md) | World-to-screen transforms, inverse mapping, and anchored zoom. | [header](../kernels/mulib-canvas-camera.h) |
+| [canvas-command](engineering-kernels.md) | Owned drawing command list with ordered callback playback. | [header](../kernels/mulib-canvas-command.h) |
+| [canvas-gizmo](engineering-kernels.md) | Point rotation and axis-wise scaling about an anchor. | [header](../kernels/mulib-canvas-gizmo.h) |
+| [canvas-grid](engineering-kernels.md) | Zoom-dependent 1-2-5 grid spacing and visible line coordinates. | [header](../kernels/mulib-canvas-grid.h) |
+| [canvas-hittest](engineering-kernels.md) | Reverse-order point hit testing against axis-aligned boxes with tolerance. | [header](../kernels/mulib-canvas-hittest.h) |
+| [canvas-layer](engineering-kernels.md) | Stable z-order sorting of visible canvas layers. | [header](../kernels/mulib-canvas-layer.h) |
+| [canvas-lod](engineering-kernels.md) | Level-of-detail selection from projected size and pixel thresholds. | [header](../kernels/mulib-canvas-lod.h) |
+| [canvas-selection](engineering-kernels.md) | Rectangular selection by box overlap or containment. | [header](../kernels/mulib-canvas-selection.h) |
+| [canvas-tile](engineering-kernels.md) | Integer tile index bounds for a rectangular viewport. | [header](../kernels/mulib-canvas-tile.h) |
+| [canvas-viewport](engineering-kernels.md) | Line segment clipping against an axis-aligned viewport. | [header](../kernels/mulib-canvas-viewport.h) |
+| [capasm](mulib-capasm.md) | Compile bounded XMacIR to portable ANSI C, with explicitly selected rewrite and tool stages. | [header](../kernels/mulib-capasm.h) · [example](../examples/modules/capasm.c) |
+| [capbroker](mulib-capbroker.md) | Host-owned capability grants, quota-checked dispatch and transaction hooks. | [header](../kernels/mulib-capbroker.h) · [example](../examples/modules/capbroker.c) |
+| [cassowary-solver](mulib-cassowary-solver.md) | Cassowary slack/error tableau simplex for prioritized linear constraints. | [header](../kernels/mulib-cassowary-solver.h) · [example](../examples/modules/cassowary-solver.c) |
+| [cbor](mulib-cbor.md) | Bounded RFC 8949 JSON-profile CBOR codec. | [header](../kernels/mulib-cbor.h) · [example](../examples/modules/cbor.c) |
+| [ccweave](mulib-ccweave.md) | Checked MIR to C source generation. | [header](../kernels/mulib-ccweave.h) · [example](../examples/modules/ccweave.c) |
+| [cdd-catalogue](mulib-cdd-catalogue.md) | Versioned capability descriptors, typed metadata and structural validation. | [header](../kernels/mulib-cdd-catalogue.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-diff](mulib-cdd-diff.md) | Identity-based catalogue structural differences. | [header](../kernels/mulib-cdd-diff.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-execute](mulib-cdd-execute.md) | Validated host callback dispatch with reverse compensation. | [header](../kernels/mulib-cdd-execute.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-plan](mulib-cdd-plan.md) | Planning problems and independent sequential plan validation. | [header](../kernels/mulib-cdd-plan.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-query](mulib-cdd-query.md) | Capability and typed predicate filtering with deterministic cost ranking. | [header](../kernels/mulib-cdd-query.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-registry](mulib-cdd-registry.md) | Bounded registry of borrowed immutable descriptors. | [header](../kernels/mulib-cdd-registry.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-resolve](mulib-cdd-resolve.md) | Bounded exact dependency resolution with cost minimization and subset memoization. | [header](../kernels/mulib-cdd-resolve.h) · [example](../examples/cdd-pipeline.c) |
+| [cdd-schema](mulib-cdd-schema.md) | Category-aware required metadata, types and bounds. | [header](../kernels/mulib-cdd-schema.h) · [example](../examples/cdd-pipeline.c) |
+| [cff](mulib-cff.md) | Bounds-checked font and unicode cff structures binary inspection and record access. | [header](../kernels/mulib-cff.h) · [example](../examples/mulib-cff.c) |
+| [cff2](mulib-cff2.md) | Bounds-checked font and unicode cff2 structures binary inspection and record access. | [header](../kernels/mulib-cff2.h) · [example](../examples/mulib-cff2.c) |
+| [cfg](mulib-cfg.md) | Owned control-flow edges with validation, 64-block reachability and atomic postorder. | [header](../kernels/mulib-cfg.h) · [example](../examples/modules/cfg.c) |
+| [cgeom](mulib-cgeom.md) | Computational geometry, convex hulls and SIMD point distances. | [header](../kernels/mulib-cgeom.h) · [example](../examples/modules/cgeom.c) |
+| [cgroup2](mulib-cgroup2.md) | Delegated cgroup v2 lifecycle and verified resource limits. | [header](../kernels/mulib-cgroup2.h) · [example](../examples/modules/sandbox-process.c) |
+| [channel](mulib-channel.md) | CSP buffered/rendezvous channels, directional views and atomic select. | [header](../kernels/mulib-channel.h) · [example](../examples/modules/channel.c) |
+| [charset](mulib-charset.md) | Bounded charset parameter extraction from Content-Type headers. | [header](../kernels/mulib-charset.h) · [example](../examples/modules/charset.c) |
+| [chart](mulib-chart.md) | Extensible Lua-driven SVG charts, with automatically loaded lcharts. | [header](../kernels/mulib-chart.h) · [example](../examples/modules/chart.c) |
+| [checksum](mulib-checksum.md) | Streaming Adler, Fletcher, Internet, BSD, System V, sum and XOR checksums. | [header](../kernels/mulib-checksum.h) · [example](../examples/modules/checksum.c) |
+| [chem](mulib-chem.md) | Chemical formula composition, approximate molar masses, notation and | [header](../kernels/mulib-chem.h) · [example](../examples/modules/chem.c) |
+| [chemical](mulib-chemical.md) | Owned ordered collection for graphics chemical rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-chemical.h) · [example](../examples/mulib-chemical.c) |
+| [clamp](mulib-clamp.md) | Saturating arithmetic and interval clamping for signed integers. | [header](../kernels/mulib-clamp.h) · [example](../examples/modules/clamp.c) |
+| [classic-bpf](mulib-classic-bpf.md) | Attach Linux classic socket BPF instruction arrays to an existing socket | [header](../kernels/mulib-classic-bpf.h) · [example](../examples/modules/classic-bpf.c) |
+| [clickir](mulib-clickir.md) | Block-pinned Sea of Nodes with explicit data and memory dependencies. | [header](../kernels/mulib-clickir.h) · [example](../examples/modules/clickir.c) |
+| [closeditemset](mulib-closeditemset.md) | Frequent closed intents of an FCA context with minimum support | [header](../kernels/mulib-closeditemset.h) · [example](../examples/modules/closeditemset.c) |
+| [cmachine](mulib-cmachine.md) | Checked execution of the shared machine intermediate representation. | [header](../kernels/mulib-cmachine.h) · [example](../examples/modules/cmachine.c) |
+| [codec-core](mulib-codec-core.md) | Checked storage, bit I/O and wire integers shared by compression codecs. | [header](../kernels/mulib-codec-core.h) · [example](../examples/modules/codec-core.c) |
+| [coff](mulib-coff.md) | Checked little-endian Microsoft COFF sections, symbols and names. | [header](../kernels/mulib-coff.h) · [example](../examples/modules/coff.c) |
+| [coff-objdump](mulib-coff-objdump.md) | COFF metadata, symbols and section hex dumps using shared objdump tools. | [header](../kernels/mulib-coff-objdump.h) · [example](../examples/modules/coff-objdump.c) |
+| [coffbuilder](mulib-coffbuilder.md) | Deterministic AMD64 COFF object text-section writer. | [header](../kernels/mulib-coffbuilder.h) · [example](../examples/modules/coffbuilder.c) |
+| [coffutils](mulib-coffutils.md) | Exact section and defined-primary-symbol lookup over checked COFF. | [header](../kernels/mulib-coffutils.h) · [example](../examples/modules/coffutils.c) |
+| [collision](mulib-collision.md) | Primitive overlap contacts, convex SAT and ray intersection queries. | [header](../kernels/mulib-collision.h) · [example](../examples/modules/collision.c) |
+| [color](mulib-color.md) | RGB to HSV and HSV to RGB color-model conversion. | [header](../kernels/mulib-color.h) · [example](../examples/modules/color.c) |
+| [color-adaptation](mulib-color-adaptation.md) | Bradford XYZ white-point adaptation. Limit: Supply normalized XYZ white points. | [header](../kernels/mulib-color-adaptation.h) · [example](../examples/media-pipeline.c) |
+| [color-cube](mulib-color-cube.md) | Read standard unit-domain 3D .cube LUTs. Limit: No combined 1D/3D or arbitrary domains; partial scratch on failure. | [header](../kernels/mulib-color-cube.h) · [example](../examples/media-pipeline.c) |
+| [color-curves](mulib-color-curves.md) | Validated piecewise-linear grading curves. Limit: No monotone cubic or cyclic hue interpolation. | [header](../kernels/mulib-color-curves.h) · [example](../examples/media-pipeline.c) |
+| [color-gamut](mulib-color-gamut.md) | Neutral-axis gamut compression into bounded RGB. Limit: Simple RGB heuristic, not perceptually uniform. | [header](../kernels/mulib-color-gamut.h) · [example](../examples/media-pipeline.c) |
+| [color-grade](mulib-color-grade.md) | ASC-CDL-style slope, offset, power and saturation. Limit: Unclamped positive output; specify CDL clamp mode for interchange. | [header](../kernels/mulib-color-grade.h) · [example](../examples/media-pipeline.c) |
+| [color-lut1d](mulib-color-lut1d.md) | Clamped linear 1D LUT interpolation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-color-lut1d.h) · [example](../examples/media-pipeline.c) |
+| [color-lut3d](mulib-color-lut3d.md) | Trilinear and tetrahedral 3D LUT evaluation, red-fastest order. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-color-lut3d.h) · [example](../examples/media-pipeline.c) |
+| [color-pipeline](mulib-color-pipeline.md) | Fused per-pixel pipeline of caller-supplied color stages. Limit: Callbacks trusted and synchronous. | [header](../kernels/mulib-color-pipeline.h) · [example](../examples/media-pipeline.c) |
+| [color-primaries](mulib-color-primaries.md) | 3x3 color matrices and D65 Rec.709/Rec.2020/P3 matrices. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-color-primaries.h) · [example](../examples/media-pipeline.c) |
+| [color-qualifier](mulib-color-qualifier.md) | Soft luminance/saturation selection mask. Limit: Hue and spatial cleanup not implemented. | [header](../kernels/mulib-color-qualifier.h) · [example](../examples/media-pipeline.c) |
+| [color-tonemap](mulib-color-tonemap.md) | Reinhard and ACES-inspired fitted filmic curves. Limit: Not an official ACES rendering transform. | [header](../kernels/mulib-color-tonemap.h) · [example](../examples/media-pipeline.c) |
+| [color-transfer](mulib-color-transfer.md) | Linear/sRGB/Rec.709/PQ/HLG transfer functions. Limit: PQ uses normalized 10000-nit luminance; HLG is scene OETF, no OOTF. | [header](../kernels/mulib-color-transfer.h) · [example](../examples/media-pipeline.c) |
+| [color-vectorscope](mulib-color-vectorscope.md) | BT.709 Cb/Cr density histogram to caller-owned square bins. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-color-vectorscope.h) · [example](../examples/media-pipeline.c) |
+| [color-waveform](mulib-color-waveform.md) | Luma or RGB waveform density bins. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-color-waveform.h) · [example](../examples/media-pipeline.c) |
+| [color-wheels](mulib-color-wheels.md) | Luminance-weighted three-way grading offsets. Limit: Simple overlapping weights, not a Resolve-compatible wheel model. | [header](../kernels/mulib-color-wheels.h) · [example](../examples/media-pipeline.c) |
+| [colorconvert](mulib-colorconvert.md) | Convert normalized linear intensity to gamma-adjusted intensity. Finite numeric inputs and documented scalar | [header](../kernels/mulib-colorconvert.h) · [example](../examples/mulib-colorconvert.c) |
+| [colormodel](mulib-colormodel.md) | Blend numeric color-channel values using supplied opacity. Finite numeric inputs and documented scalar | [header](../kernels/mulib-colormodel.h) · [example](../examples/mulib-colormodel.c) |
+| [colorprofile](mulib-colorprofile.md) | Owned bounded registry of ICC profile names and identifiers; replace, lookup and remove by name. | [header](../kernels/mulib-colorprofile.h) · [example](../examples/mulib-colorprofile.c) |
+| [column-rdbms](mulib-column-rdbms.md) | Dense finite-double column table with atomic row append. | [header](../kernels/mulib-column-rdbms.h) · [example](../examples/modules/column-rdbms.c) |
+| [columnar](mulib-columnar.md) | Nullable column-major finite double vectors with atomic append | [header](../kernels/mulib-columnar.h) · [example](../examples/modules/columnar.c) |
+| [columnstats](mulib-columnstats.md) | Min/max/null statistics for numeric column pruning | [header](../kernels/mulib-columnstats.h) · [example](../examples/modules/columnstats.c) |
+| [competprice](mulib-competprice.md) | Competitive benchmark and quality-adjusted position-based pricing with hard bounds. | [header](../kernels/mulib-competprice.h) · [example](../examples/modules/competprice.c) |
+| [compiler-cache](mulib-compiler-cache.md) | Binary-safe owned artifact cache keyed by caller-provided fingerprints. | [header](../kernels/mulib-compiler-cache.h) · [example](../examples/modules/compiler-cache.c) |
+| [compiler-driver](mulib-compiler-driver.md) | Ordered named compiler-stage pipeline with stop-on-error dispatch. | [header](../kernels/mulib-compiler-driver.h) · [example](../examples/modules/compiler-driver.c) |
+| [compiler-scope](mulib-compiler-scope.md) | Scope-oriented binding and resolution facade for lexical symbol tables. | [header](../kernels/mulib-compiler-scope.h) · [example](../examples/modules/compiler-scope.c) |
+| [compiler-test](mulib-compiler-test.md) | Named compiler-test checks with bounded counters and last-failure tracking. | [header](../kernels/mulib-compiler-test.h) · [example](../examples/modules/compiler-test.c) |
+| [complex](mulib-complex.md) | Complex arithmetic for double precision real and imaginary components. | [header](../kernels/mulib-complex.h) · [example](../examples/modules/complex.c) |
+| [compression](mulib-compression.md) | Explicit bounded identity and RLE buffer transforms. | [header](../kernels/mulib-compression.h) · [example](../examples/modules/compression.c) |
+| [compset](mulib-compset.md) | Point-in-time comparable price selection, deduplication and diagnostics. | [header](../kernels/mulib-compset.h) · [example](../examples/hospitality_demo.c) |
+| [compute-buffer](mulib-compute-buffer.md) | Checked host buffer allocation and staging copies. Limit: CPU memory only, not device allocation. | [header](../kernels/mulib-compute-buffer.h) · [example](../examples/media-pipeline.c) |
+| [compute-cache](mulib-compute-cache.md) | Device/revision-keyed bounded pipeline handle cache. Limit: No eviction or handle ownership. | [header](../kernels/mulib-compute-cache.h) · [example](../examples/media-pipeline.c) |
+| [compute-core](mulib-compute-core.md) | Device-neutral dispatch and fence contract. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-compute-core.h) · [example](../examples/media-pipeline.c) |
+| [compute-cpu](mulib-compute-cpu.md) | Bounded deterministic CPU workgroup dispatch. Limit: Serial; use taskpool for parallelism. | [header](../kernels/mulib-compute-cpu.h) · [example](../examples/media-pipeline.c) |
+| [compute-d3d12](mulib-compute-d3d12.md) | Checked D3D12 command queue provider attachment and dispatch. Limit: Adapter only; no native d3d12 device, command creation or driver code. Wire a native backend before advertising support. | [header](../kernels/mulib-compute-d3d12.h) · [example](../examples/media-pipeline.c) |
+| [compute-device](mulib-compute-device.md) | Select from real provider-supplied device capability descriptors. Limit: No platform enumeration. | [header](../kernels/mulib-compute-device.h) · [example](../examples/media-pipeline.c) |
+| [compute-dispatch](mulib-compute-dispatch.md) | Validated dispatch to provider and ceil-division workgroup sizing. Limit: Actual execution delegated. | [header](../kernels/mulib-compute-dispatch.h) · [example](../examples/media-pipeline.c) |
+| [compute-image](mulib-compute-image.md) | Aligned-row host storage image allocation. Limit: No GPU texture memory. | [header](../kernels/mulib-compute-image.h) · [example](../examples/media-pipeline.c) |
+| [compute-memory](mulib-compute-memory.md) | Aligned suballocation offsets for a preallocated staging arena. Limit: Not device memory allocation; fence before reuse. | [header](../kernels/mulib-compute-memory.h) · [example](../examples/media-pipeline.c) |
+| [compute-metal](mulib-compute-metal.md) | Checked Metal command queue provider attachment and dispatch. Limit: Adapter only; no native metal device, command creation or driver code. Wire a native backend before advertising support. | [header](../kernels/mulib-compute-metal.h) · [example](../examples/media-pipeline.c) |
+| [compute-pipeline](mulib-compute-pipeline.md) | Pipeline binding layout validation. Limit: Provider owns actual pipeline creation. | [header](../kernels/mulib-compute-pipeline.h) · [example](../examples/media-pipeline.c) |
+| [compute-spirv](mulib-compute-spirv.md) | SPIR-V header/instruction framing validator and instruction emitter. Limit: Structural only; not semantic verification or compiler. | [header](../kernels/mulib-compute-spirv.h) · [example](../examples/media-pipeline.c) |
+| [compute-sync](mulib-compute-sync.md) | Fence provider wait and monotonic software timeline accounting. Limit: Caller serializes operations; no native barriers. | [header](../kernels/mulib-compute-sync.h) · [example](../examples/media-pipeline.c) |
+| [compute-vulkan](mulib-compute-vulkan.md) | Checked Vulkan queue provider attachment and dispatch. Limit: Adapter only; no native vulkan device, command creation or driver code. Wire a native backend before advertising support. | [header](../kernels/mulib-compute-vulkan.h) · [example](../examples/media-pipeline.c) |
+| [compute-webgpu](mulib-compute-webgpu.md) | Checked WebGPU queue provider attachment and dispatch. Limit: Adapter only; no native webgpu device, command creation or driver code. Wire a native backend before advertising support. | [header](../kernels/mulib-compute-webgpu.h) · [example](../examples/media-pipeline.c) |
+| [conainerd-ipc](mulib-conainerd-ipc.md) | Canonical daemon lifecycle command and status wire records. | [header](../kernels/mulib-conainerd-ipc.h) · [example](../examples/modules/conainerd-ipc.c) |
+| [conceptlattice](mulib-conceptlattice.md) | Enumerate exact FCA concept intent/extent pairs with bounded capacity | [header](../kernels/mulib-conceptlattice.h) · [example](../examples/modules/conceptlattice.c) |
+| [concurrency-prim](mulib-concurrency-prim.md) | Fiber-aware mutexes, semaphores, wait groups, events and reader/writer locks. | [header](../kernels/mulib-concurrency-prim.h) · [example](../examples/modules/concurrency-prim.c) |
+| [conditional_probablity](mulib-conditional_probablity.md) | Conditional probability and Bayes' rule for scalar events. | [header](../kernels/mulib-conditional_probablity.h) · [example](../examples/modules/conditional_probablity.c) |
+| [confuse](mulib-confuse.md) | PEG-backed libconfuse-style configuration trees. | [header](../kernels/mulib-confuse.h) · [example](../examples/modules/confuse.c) |
+| [conntrack](mulib-conntrack.md) | Dump conntrack table entries through netfilter conntrack Netlink subsystem | [header](../kernels/mulib-conntrack.h) · [example](../examples/modules/conntrack.c) |
+| [consteval](mulib-consteval.md) | Checked signed-64 Pratt expression evaluation with lexical symbol values. | [header](../kernels/mulib-consteval.h) · [example](../examples/modules/consteval.c) |
+| [constraints](mulib-constraints.md) | Union-find type constraints with conflict-preserving concrete bindings. | [header](../kernels/mulib-constraints.h) · [example](../examples/modules/constraints.c) |
+| [container](mulib-container.md) | Owned process specifications and generation-tracked container lifecycle. | [header](../kernels/mulib-container.h) · [example](../examples/modules/container.c) |
+| [container-core](mulib-container-core.md) | Shared checked storage, wire primitives and errors for containers. | [header](../kernels/mulib-container-core.h) · [example](../examples/modules/container-core.c) |
+| [container-ipc](mulib-container-ipc.md) | Checksummed bounded IPC framing and incremental stream assembly. | [header](../kernels/mulib-container-ipc.h) · [example](../examples/modules/container-ipc.c) |
+| [container-jitboost](mulib-container-jitboost.md) | Native MIR execution with instruction quotas and host-call suspension. | [header](../kernels/mulib-container-jitboost.h) · [example](../examples/modules/container-jitboost.c) |
+| [container-kvmboost](mulib-container-kvmboost.md) | Owning KVM execution adapter with guest and device callbacks. | [header](../kernels/mulib-container-kvmboost.h) · [example](../examples/modules/container-kvmboost.c) |
+| [container-log](mulib-container-log.md) | Bounded binary log ring with sequence cursors and loss accounting. | [header](../kernels/mulib-container-log.h) · [example](../examples/modules/container-log.c) |
+| [container-netdev](mulib-container-netdev.md) | Bounded virtual packet queues, transport callbacks and link metrics. | [header](../kernels/mulib-container-netdev.h) · [example](../examples/modules/container-netdev.c) |
+| [container-network](mulib-container-network.md) | IPv4/IPv6 routing and packet policy over virtual endpoints. | [header](../kernels/mulib-container-network.h) · [example](../examples/modules/container-network.c) |
+| [container-oixboost](mulib-container-oixboost.md) | Rootfs-to-OIX compilation and native guest execution adapter. | [header](../kernels/mulib-container-oixboost.h) · [example](../examples/modules/container-oixboost.c) |
+| [container-packcoff](mulib-container-packcoff.md) | COFF image objects and checksummed non-destructive file overlays. | [header](../kernels/mulib-container-packcoff.h) · [example](../examples/modules/container-packcoff.c) |
+| [container-packelf](mulib-container-packelf.md) | ELF64 image objects and byte-preserving ELF image overlays. | [header](../kernels/mulib-container-packelf.h) · [example](../examples/modules/container-packelf.c) |
+| [container-packmacho](mulib-container-packmacho.md) | Mach-O64 image objects and non-destructive unsigned Mach-O overlays. | [header](../kernels/mulib-container-packmacho.h) · [example](../examples/modules/container-packmacho.c) |
+| [container-packpe](mulib-container-packpe.md) | PE32+ data-image packing and non-destructive unsigned PE overlays. | [header](../kernels/mulib-container-packpe.h) · [example](../examples/modules/container-packpe.c) |
+| [container-packzstd](mulib-container-packzstd.md) | Standard Zstandard raw/RLE image packaging and explicit codec integration. | [header](../kernels/mulib-container-packzstd.h) · [example](../examples/modules/container-packzstd.c) |
+| [container-qvmboost](mulib-container-qvmboost.md) | Resumable portable quota-VM execution backend. | [header](../kernels/mulib-container-qvmboost.h) · [example](../examples/modules/container-qvmboost.c) |
+| [container-runtime](mulib-container-runtime.md) | Backend-driven lifecycle execution and cooperative budgeted polling. | [header](../kernels/mulib-container-runtime.h) · [example](../examples/modules/container-runtime.c) |
+| [container-stub](mulib-container-stub.md) | Nonblocking lifecycle client with partial I/O and reply correlation. | [header](../kernels/mulib-container-stub.h) · [example](../examples/modules/container-stub.c) |
+| [container-vfs](mulib-container-vfs.md) | Per-container routing, read-only bindings and root checkpoints. | [header](../kernels/mulib-container-vfs.h) · [example](../examples/modules/container-vfs.c) |
+| [container2daemonproto](mulib-container2daemonproto.md) | Bounded versioned CRC framing for caller-transported container messages. | [header](../kernels/mulib-container2daemonproto.h) · [example](../examples/modules/container2daemonproto.c) |
+| [containerboost](mulib-containerboost.md) | Explicit execution backend registration and capability selection. | [header](../kernels/mulib-containerboost.h) · [example](../examples/modules/containerboost.c) |
+| [containerd](mulib-containerd.md) | Embeddable daemon composing runtime pools, cache, exports and logs. | [header](../kernels/mulib-containerd.h) · [example](../examples/modules/containerd.c) |
+| [containerd-accessstub](mulib-containerd-accessstub.md) | Ordered authenticated-principal command authorization. | [header](../kernels/mulib-containerd-accessstub.h) · [example](../examples/modules/containerd-accessstub.c) |
+| [containerd-cache](mulib-containerd-cache.md) | Validated image cache with atomic LRU eviction, expiry and pinned leases. | [header](../kernels/mulib-containerd-cache.h) · [example](../examples/modules/containerd-cache.c) |
+| [containerd-ctrlbridge](mulib-containerd-ctrlbridge.md) | Authorized incremental control connection with backpressure and replay handling. | [header](../kernels/mulib-containerd-ctrlbridge.h) · [example](../examples/modules/containerd-ctrlbridge.c) |
+| [containerd-mount](mulib-containerd-mount.md) | Stable VFS exports with generation leases and bounded FUSE sessions. | [header](../kernels/mulib-containerd-mount.h) · [example](../examples/modules/containerd-mount.c) |
+| [containerinjector](mulib-containerinjector.md) | Bounded file insertion into the memory rootfs, not process-code injection. | [header](../kernels/mulib-containerinjector.h) · [example](../examples/modules/containerinjector.c) |
+| [containerserverd](mulib-containerserverd.md) | Single-container request dispatcher; no listener, threads or implicit daemon. | [header](../kernels/mulib-containerserverd.h) · [example](../examples/modules/containerserverd.c) |
+| [containerstub](mulib-containerstub.md) | Client-side lifecycle-request encoder, with caller-supplied transport. | [header](../kernels/mulib-containerstub.h) · [example](../examples/modules/containerstub.c) |
+| [containterpool](mulib-containterpool.md) | Stable owned container slots, generation handles and fair polling. | [header](../kernels/mulib-containterpool.h) · [example](../examples/modules/containterpool.c) |
+| [contract](mulib-contract.md) | Borrowed versioned data envelopes and canonical content digests. | [header](../kernels/mulib-contract.h) · [example](../examples/hospitality_demo.c) |
+| [cookie](mulib-cookie.md) | HTTP Set-Cookie name/value validation and extraction. | [header](../kernels/mulib-cookie.h) · [example](../examples/modules/cookie.c) |
+| [cookiejar](mulib-cookiejar.md) | Owned in-memory cookie-pair store with name replacement. | [header](../kernels/mulib-cookiejar.h) · [example](../examples/modules/cookiejar.c) |
+| [corporate-actions](mulib-corporate-actions.md) | Exact integer split shares and checked rounded price and cash calculations. | [header](../kernels/mulib-corporate-actions.h) · [example](../examples/finpred_market.c) |
+| [corpus](mulib-corpus.md) | Owned token-frequency corpus backed by the MuLIB byte trie. | [header](../kernels/mulib-corpus.h) · [example](../examples/modules/corpus.c) |
+| [cosine_similarity](mulib-cosine_similarity.md) | Scale-safe cosine similarity of finite double vectors. | [header](../kernels/mulib-cosine_similarity.h) · [example](../examples/modules/cosine_similarity.c) |
+| [countmin](mulib-countmin.md) | Deterministic Count-Min Sketch for estimated frequencies | [header](../kernels/mulib-countmin.h) · [example](../examples/modules/countmin.c) |
+| [cowb+tree](mulib-cowb+tree.md) | Reference-counted B+ tree snapshots with whole-tree copy on first write. | [header](../kernels/mulib-cowb+tree.h) · [example](../examples/modules/cowb+tree.c) |
+| [cpio](mulib-cpio.md) | Bounded newc/crc CPIO reading and deterministic archive construction. | [header](../kernels/mulib-cpio.h) · [example](../examples/modules/cpio.c) |
+| [crawlarchive](mulib-crawlarchive.md) | Owned replayable crawl records with content hashes and bounded payloads. | [header](../kernels/mulib-crawlarchive.h) · [example](../examples/modules/crawlarchive.c) |
+| [crawler](mulib-crawler.md) | Bounded crawl frontier with retry scheduling and URL deduplication. | [header](../kernels/mulib-crawler.h) · [example](../examples/modules/crawler.c) |
+| [crawlqueue](mulib-crawlqueue.md) | Owned bounded FIFO frontier with URL deduplication and resumable cursor controls. | [header](../kernels/mulib-crawlqueue.h) · [example](../examples/modules/crawlqueue.c) |
+| [crc](mulib-crc.md) | Parameterized 1..128-bit CRCs and all 113 CRC RevEng presets. | [header](../kernels/mulib-crc.h) · [example](../examples/modules/crc.c) |
+| [crc32](mulib-crc32.md) | IEEE CRC-32 checksum with incremental updates. | [header](../kernels/mulib-crc32.h) · [example](../examples/modules/crc32.c) |
+| [cron](mulib-cron.md) | Bounded five-field cron schedules and calendar matching. | [header](../kernels/mulib-cron.h) · [example](../examples/modules/cron.c) |
+| [crossref](mulib-crossref.md) | Owned bounded registry of named cross-references; replace, lookup and remove by name. | [header](../kernels/mulib-crossref.h) · [example](../examples/mulib-crossref.c) |
+| [cryptohash](mulib-cryptohash.md) | BLAKE2, BLAKE3, KMAC, SipHash and AES-PMAC with intrinsic alternatives. | [header](../kernels/mulib-cryptohash.h) · [example](../examples/modules/cryptohash.c) |
+| [csl](mulib-csl.md) | Owned bounded registry of CSL-like formatting properties; replace, lookup and remove by name. | [header](../kernels/mulib-csl.h) · [example](../examples/mulib-csl.c) |
+| [css](mulib-css.md) | CSS declarations, selectors, author cascade and explicit length conversion. | [header](../kernels/mulib-css.h) · [example](../examples/modules/css.c) |
+| [css-box](mulib-css-box.md) | Backend-neutral block box geometry and vertical flow placement. | [header](../kernels/mulib-css-box.h) · [example](../examples/modules/css-box.c) |
+| [css-cascade](mulib-css-cascade.md) | Deterministic selected-property cascade with basic specificity and source ordering. | [header](../kernels/mulib-css-cascade.h) · [example](../examples/modules/css-cascade.c) |
+| [css-computed](mulib-css-computed.md) | Selected CSS declaration lookup with inherited color and font-size fields. | [header](../kernels/mulib-css-computed.h) · [example](../examples/modules/css-computed.c) |
+| [css-flex](mulib-css-flex.md) | Checked weighted one-axis flex distribution with gaps. | [header](../kernels/mulib-css-flex.h) · [example](../examples/modules/css-flex.c) |
+| [css-grid](mulib-css-grid.md) | Checked uniform grid cell geometry generator. | [header](../kernels/mulib-css-grid.h) · [example](../examples/modules/css-grid.c) |
+| [css-layoutstream](mulib-css-layoutstream.md) | Callback emission of calculated box geometry with stable node indexes. | [header](../kernels/mulib-css-layoutstream.h) · [example](../examples/modules/css-layoutstream.c) |
+| [css-parser](mulib-css-parser.md) | Owned bounded CSS stylesheet rules with selector/declaration spans. | [header](../kernels/mulib-css-parser.h) · [example](../examples/modules/css-parser.c) |
+| [css-selector](mulib-css-selector.md) | Simple type, ID, class and universal selector matching for HTML tree nodes. | [header](../kernels/mulib-css-selector.h) · [example](../examples/modules/css-selector.c) |
+| [css-tokenizer](mulib-css-tokenizer.md) | Length-aware CSS identifiers, signed numbers, strings and symbols with comment skipping. | [header](../kernels/mulib-css-tokenizer.h) · [example](../examples/modules/css-tokenizer.c) |
+| [csswriter](mulib-csswriter.md) | Checked output csswriter text emission into an owned byte buffer. | [header](../kernels/mulib-csswriter.h) · [example](../examples/mulib-csswriter.c) |
+| [csv](mulib-csv.md) | Streaming CSV row parser for quoted comma-separated fields. | [header](../kernels/mulib-csv.h) · [example](../examples/modules/csv.c) |
+| [curses](mulib-curses.md) | Retained curses-style windows, staged composition and differential refresh. | [header](../kernels/mulib-curses.h) · [example](../examples/modules/curses.c) |
 
 ## D
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [daemon](mulib-daemon.md) | Owned daemon specifications, Mune configuration and profiles, POSIX launch and lifecycle. | [header](../include/mulib-daemon.h) · [example](../examples/modules/daemon.c) |
-| [datagram](mulib-datagram.md) | IPv4/IPv6 UDP sockets with explicit truncation and address metadata. | [header](../include/mulib-datagram.h) · [example](../examples/modules/datagram.c) |
-| [datalog](mulib-datalog.md) | Bounded positive Datalog facts, rules, fixed-point evaluation and queries. | [header](../include/mulib-datalog.h) · [example](../examples/modules/datalog.c) |
-| [date](mulib-date.md) | Gregorian leap-year and calendar-days arithmetic. | [header](../include/mulib-date.h) · [example](../examples/modules/date.c) |
-| [datum](mulib-datum.md) | Owned typed scalar values with binary-safe strings, deep-copy semantics and NULL | [header](../include/mulib-datum.h) · [example](../examples/modules/datum.c) |
-| [dbdesializer](mulib-dbdesializer.md) | Exact owned JSON BSON MessagePack and CBOR value decoding. | [header](../include/mulib-dbdesializer.h) · [example](../examples/modules/dbdesializer.c) |
-| [dbindex](mulib-dbindex.md) | Binary database key to row-ID index, sharing the memtable model. | [header](../include/mulib-dbindex.h) · [example](../examples/modules/dbindex.c) |
-| [dbquery](mulib-dbquery.md) | Ordered half-open binary key scans with optional predicate filtering over live memtable records. | [header](../include/mulib-dbquery.h) · [example](../examples/modules/dbquery.c) |
-| [dbschema](mulib-dbschema.md) | Borrowed flat record schemas over shared JSON values. | [header](../include/mulib-dbschema.h) · [example](../examples/modules/dbschema.c) |
-| [dbserializer](mulib-dbserializer.md) | Explicit JSON BSON MessagePack and CBOR value serialization. | [header](../include/mulib-dbserializer.h) · [example](../examples/modules/dbserializer.c) |
-| [dbsummary](mulib-dbsummary.md) | Checked record/byte/sequence statistics for shared database tables. | [header](../include/mulib-dbsummary.h) · [example](../examples/modules/dbsummary.c) |
-| [dbtransaction](mulib-dbtransaction.md) | Optimistic single-table snapshot transactions, no implicit disk commit. | [header](../include/mulib-dbtransaction.h) · [example](../examples/modules/dbtransaction.c) |
-| [dbus](mulib-dbus.md) | Focused endian-aware DBus binary wire encoding and validation. | [header](../include/mulib-dbus.h) · [example](../examples/modules/dbus.c) |
-| [dbus-auth](mulib-dbus-auth.md) | Authenticate to the system D-Bus socket using EXTERNAL peer credentials | [header](../include/mulib-dbus-auth.h) · [example](../examples/modules/dbus-auth.c) |
-| [dbus-client](mulib-dbus-client.md) | Minimal system D-Bus method-call client with zero, one, or two string arguments | [header](../include/mulib-dbus-client.h) · [example](../examples/modules/dbus-client.c) |
-| [dbus-properties](mulib-dbus-properties.md) | Call D-Bus Properties.Get and decode uint32 or string variant replies | [header](../include/mulib-dbus-properties.h) · [example](../examples/modules/dbus-properties.c) |
-| [dbus-transport](mulib-dbus-transport.md) | Connect to and read/write a framed D-Bus UNIX system-bus connection | [header](../include/mulib-dbus-transport.h) · [example](../examples/modules/dbus-transport.c) |
-| [dce](mulib-dce.md) | Failure-atomic effect-aware linear dead-code marking for 64 registers. | [header](../include/mulib-dce.h) · [example](../examples/modules/dce.c) |
-| [decisiontrace](mulib-decisiontrace.md) | Bounded structured decision tracing and versioned field encoding. | [header](../include/mulib-decisiontrace.h) · [example](../examples/hospitality_demo.c) |
-| [deflate](mulib-deflate.md) | Bounded RFC 1951 raw DEFLATE compression and decompression. | [header](../include/mulib-deflate.h) · [example](../examples/modules/deflate.c) |
-| [defuse](mulib-defuse.md) | First-definition and use-occurrence counting for linear register instructions. | [header](../include/mulib-defuse.h) · [example](../examples/modules/defuse.c) |
-| [deltacodec](mulib-deltacodec.md) | Monotone uint64 delta encoding and decoding with overflow checks | [header](../include/mulib-deltacodec.h) · [example](../examples/modules/deltacodec.c) |
-| [depfile](mulib-depfile.md) | Bounded GCC and Ninja dependency-file parsing with streaming rule callbacks. | [header](../include/mulib-depfile.h) · [example](../examples/modules/depfile.c) |
-| [depir](mulib-depir.md) | Entity and dependence graph deriving executable compiler IRs. | [header](../include/mulib-depir.h) · [example](../examples/modules/depir.c) |
-| [deque](mulib-deque.md) | Double-ended FIFO container with a circular array. | [header](../include/mulib-deque.h) · [example](../examples/modules/deque.c) |
-| [der](mulib-der.md) | Bounded canonical ASN.1 DER TLV and unsigned INTEGER decoding. | [header](../include/mulib-der.h) · [example](../examples/modules/der.c) |
-| [descritors](mulib-descritors.md) | x86-64 GDT, IDT, TSS and descriptor pointer encoders. | [header](../include/mulib-descritors.h) · [example](../examples/modules/descritors.c) |
-| [devlink](mulib-devlink.md) | Discover the Linux devlink Generic Netlink family ID | [header](../include/mulib-devlink.h) · [example](../examples/modules/devlink.c) |
-| [dexcc](mulib-dexcc.md) | IR-neutral verified integer DEX assembler, decoder and DEX035 writer. | [header](../include/mulib-dexcc.h) · [example](../examples/modules/dexcc.c) |
-| [dfa](mulib-dfa.md) | Range DFAs and bounded epsilon-NFA subset construction over uint32 symbols. | [header](../include/mulib-dfa.h) · [example](../examples/modules/dfa.c) |
-| [dhcp4-client](mulib-dhcp4-client.md) | Build DHCPv4 DISCOVER messages and decode DHCP message type options | [header](../include/mulib-dhcp4-client.h) · [example](../examples/modules/dhcp4-client.c) |
-| [dhcp6-client](mulib-dhcp6-client.md) | Build a DHCPv6 SOLICIT and parse a DHCPv6 option TLV | [header](../include/mulib-dhcp6-client.h) · [example](../examples/modules/dhcp6-client.c) |
-| [diag](mulib-diag.md) | Small status-code-to-text mapping for library diagnostics. | [header](../include/mulib-diag.h) · [example](../examples/modules/diag.c) |
-| [diagnostic](mulib-diagnostic.md) | Owned ordered compiler diagnostics with checked spans, severities and error counts. | [header](../include/mulib-diagnostic.h) · [example](../examples/modules/diagnostic.c) |
-| [diagram](mulib-diagram.md) | Owned ordered collection for graphics diagram rectangles and records; insertion, indexing, removal. | [header](../include/mulib-diagram.h) · [example](../examples/mulib-diagram.c) |
-| [distfield](mulib-distfield.md) | Linear-time Euclidean signed distance fields from alpha masks. | [header](../include/mulib-distfield.h) · [example](../examples/modules/distfield.c) |
-| [distribcluster](mulib-distribcluster.md) | Allowlisted distributed container, OCI lifecycle and VMM worker actions. | [header](../include/mulib-distribcluster.h) · [example](../examples/modules/distribcluster.c) |
-| [distribcomp](mulib-distribcomp.md) | Lease-based MuMQ DAG orchestration, bounded workers and daemon control. | [header](../include/mulib-distribcomp.h) · [example](../examples/modules/distribcomp.c) |
-| [distribtask](mulib-distribtask.md) | Owned DAG tasks compiled from Mune plus required JSON/YAML configuration. | [header](../include/mulib-distribtask.h) · [example](../examples/modules/distribtask.c) |
-| [dmabuf](notebook-desktop.md) | Owned DMA-BUF plane descriptors, validation and FD duplication. | [header](../include/mulib-dmabuf.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [dns](mulib-dns.md) | Bounds-checked DNS wire names, questions and resource records. | [header](../include/mulib-dns.h) · [example](../examples/modules/dns.c) |
-| [dns-manager](mulib-dns-manager.md) | Read first nameserver IP literal from resolv.conf without changing system DNS | [header](../include/mulib-dns-manager.h) · [example](../examples/modules/dns-manager.c) |
-| [dnscache](mulib-dnscache.md) | Bounded DNS response cache with caller-supplied time and TTL expiry. | [header](../include/mulib-dnscache.h) · [example](../examples/modules/dnscache.c) |
-| [dnsclient](mulib-dnsclient.md) | DNS query construction and matched reply validation. | [header](../include/mulib-dnsclient.h) · [example](../examples/modules/dnsclient.c) |
-| [dnsnmeserver](mulib-dnsnmeserver.md) | Historical-spelling facade for the authoritative nameserver. | [header](../include/mulib-dnsnmeserver.h) · [example](../examples/modules/dnsnmeserver.c) |
-| [dnsresolver](mulib-dnsresolver.md) | Cache-backed DNS resolution through a bounded exchange callback. | [header](../include/mulib-dnsresolver.h) · [example](../examples/modules/dnsresolver.c) |
-| [docdiff](mulib-docdiff.md) | Owned ordered collection for document ir docdiff rectangles and records; insertion, indexing, removal. | [header](../include/mulib-docdiff.h) · [example](../examples/mulib-docdiff.c) |
-| [docid](mulib-docid.md) | Stable unsigned 64-bit document IDs and order-preserving big-endian serialization | [header](../include/mulib-docid.h) · [example](../examples/modules/docid.c) |
-| [docincremental](mulib-docincremental.md) | Configurable execution policy and accounting for document ir docincremental. | [header](../include/mulib-docincremental.h) · [example](../examples/mulib-docincremental.c) |
-| [docir](mulib-docir.md) | ABI-preserving owned semantic trees, source/style snapshots, checked math and atomic HTML/LaTeX export. | [header](../include/mulib-docir.h) · [example](../examples/mulib-docir.c) |
-| [doclength](mulib-doclength.md) | Convert document lengths among CSS px, PDF pt, inch and mm. | [header](../include/mulib-doclength.h) · [example](../examples/mulib-doclength.c) |
-| [docmetadata](mulib-docmetadata.md) | Owned bounded registry of document metadata properties; replace, lookup and remove by name. | [header](../include/mulib-docmetadata.h) · [example](../examples/mulib-docmetadata.c) |
-| [docnode](mulib-docnode.md) | Owned ordered collection for document ir docnode rectangles and records; insertion, indexing, removal. | [header](../include/mulib-docnode.h) · [example](../examples/mulib-docnode.c) |
-| [docnormalize](mulib-docnormalize.md) | Legacy byte emission and opt-in owned DocIR text-node normalization. | [header](../include/mulib-docnormalize.h) · [example](../examples/mulib-docnormalize.c) |
-| [docquery](mulib-docquery.md) | Owned bounded registry of saved semantic queries; replace, lookup and remove by name. | [header](../include/mulib-docquery.h) · [example](../examples/mulib-docquery.c) |
-| [docresource](mulib-docresource.md) | Owned bounded registry of assets and resource identifiers; replace, lookup and remove by name. | [header](../include/mulib-docresource.h) · [example](../examples/mulib-docresource.c) |
-| [docsemantic](mulib-docsemantic.md) | Owned bounded registry of accessible semantic role names; replace, lookup and remove by name. | [header](../include/mulib-docsemantic.h) · [example](../examples/mulib-docsemantic.c) |
-| [docserialize](mulib-docserialize.md) | Legacy JSON escaping and opt-in versioned semantic DocIR serialization. | [header](../include/mulib-docserialize.h) · [example](../examples/mulib-docserialize.c) |
-| [docsource](mulib-docsource.md) | Source-origin registry and opt-in checked DocIR byte-span annotations. | [header](../include/mulib-docsource.h) · [example](../examples/mulib-docsource.c) |
-| [docstring](mulib-docstring.md) | Rich documentation DSL, DocstrIL compiler, Mune Lua extensions/filters | [header](../include/mulib-docstring.h) · [example](../examples/modules/docstring.c) |
-| [docstyle](mulib-docstyle.md) | Owned bounded registry of document style properties; replace, lookup and remove by name. | [header](../include/mulib-docstyle.h) · [example](../examples/mulib-docstyle.c) |
-| [documentdb](mulib-documentdb.md) | Binary-keyed JSON document records over memtable. | [header](../include/mulib-documentdb.h) · [example](../examples/modules/documentdb.c) |
-| [docvalidate](mulib-docvalidate.md) | Legacy budget accounting and opt-in complete semantic DocIR validation. | [header](../include/mulib-docvalidate.h) · [example](../examples/mulib-docvalidate.c) |
-| [dom](mulib-dom.md) | Native DOM trees, UTF-16 character data, namespace-aware attributes and event dispatch. | [header](../include/mulib-dom.h) · [example](../examples/modules/dom.c) |
-| [dom-mutation](mulib-dom-mutation.md) | Bounded record journal for DOM mutation events. | [header](../include/mulib-dom-mutation.h) · [example](../examples/modules/dom-mutation.c) |
-| [dom-query](mulib-dom-query.md) | Bounded tag, ID, and class lookups over owned HTML tree nodes. | [header](../include/mulib-dom-query.h) · [example](../examples/modules/dom-query.c) |
-| [dom-range](mulib-dom-range.md) | Validated immutable text/document offsets and range intersections. | [header](../include/mulib-dom-range.h) · [example](../examples/modules/dom-range.c) |
-| [dominance](mulib-dominance.md) | Reachable dominance sets and immediate dominators for up to 64 CFG blocks. | [header](../include/mulib-dominance.h) · [example](../examples/modules/dominance.c) |
-| [domserialize](mulib-domserialize.md) | HTML text escaping into caller-owned output buffer. | [header](../include/mulib-domserialize.h) · [example](../examples/modules/domserialize.c) |
-| [drm](mulib-drm.md) | Linux Direct Rendering Manager capability and dumb-buffer helpers. | [header](../include/mulib-drm.h) · [example](../examples/modules/drm.c) |
-| [drm-atomic](mulib-gfx-drm.md) | Bounded drm-atomic API; see documented scope and acceptance gates. | [header](../include/mulib-drm-atomic.h) · [example](../examples/gfx-headless.c) |
-| [drm-framebuffer](mulib-gfx-drm.md) | Bounded drm-framebuffer API; see documented scope and acceptance gates. | [header](../include/mulib-drm-framebuffer.h) · [example](../examples/gfx-headless.c) |
-| [drm-gem](mulib-gfx-drm.md) | Bounded drm-gem API; see documented scope and acceptance gates. | [header](../include/mulib-drm-gem.h) · [example](../examples/gfx-headless.c) |
-| [drm-kms](mulib-gfx-drm.md) | Bounded drm-kms API; see documented scope and acceptance gates. | [header](../include/mulib-drm-kms.h) · [example](../examples/gfx-headless.c) |
-| [drm-output](mulib-gfx-drm.md) | Bounded drm-output API; see documented scope and acceptance gates. | [header](../include/mulib-drm-output.h) · [example](../examples/gfx-headless.c) |
-| [drm-pageflip](mulib-gfx-drm.md) | Bounded drm-pageflip API; see documented scope and acceptance gates. | [header](../include/mulib-drm-pageflip.h) · [example](../examples/gfx-headless.c) |
-| [drm-prime](mulib-gfx-drm.md) | Bounded drm-prime API; see documented scope and acceptance gates. | [header](../include/mulib-drm-prime.h) · [example](../examples/gfx-headless.c) |
-| [drm-session](mulib-gfx-drm.md) | Bounded drm-session API; see documented scope and acceptance gates. | [header](../include/mulib-drm-session.h) · [example](../examples/gfx-headless.c) |
-| [drm-syncobj](mulib-gfx-drm.md) | Bounded drm-syncobj API; see documented scope and acceptance gates. | [header](../include/mulib-drm-syncobj.h) · [example](../examples/gfx-headless.c) |
-| [dsdom](mulib-dsdom.md) | Documentation DOM utilities over MuLIB's owned UTF-8 XML tree. | [header](../include/mulib-dsdom.h) · [example](../examples/modules/dsdom.c) |
-| [dsim-bitvec](mulib-dsim-bitvec.md) | Four-state vectors of 1..64 bits with string parsing/formatting, extraction, bitwise AND/OR/XOR/NOT, zero-filled logical shifts, concatenation and modular addition. | [header](../include/mulib-dsim-bitvec.h) · [example](../examples/modules/dsim-bitvec.c) |
-| [dsim-bytecode](engineering-kernels.md) | Four-state register bytecode for literals and basic logic operators. | [header](../include/mulib-dsim-bytecode.h) |
-| [dsim-clock](engineering-kernels.md) | Periodic rising and falling event generation for a simulation signal. | [header](../include/mulib-dsim-clock.h) |
-| [dsim-cosim](engineering-kernels.md) | Budgeted analog and digital callbacks over fixed-maximum-step intervals. | [header](../include/mulib-dsim-cosim.h) |
-| [dsim-coverage](engineering-kernels.md) | Four-state sample counts, change counts, and binary value coverage. | [header](../include/mulib-dsim-coverage.h) |
-| [dsim-delay](engineering-kernels.md) | Transport-delay scheduling and single-signal inertial replacement. | [header](../include/mulib-dsim-delay.h) |
-| [dsim-delta](engineering-kernels.md) | Callback-driven delta-cycle iteration to a fixed point within a limit. | [header](../include/mulib-dsim-delta.h) |
-| [dsim-driver](engineering-kernels.md) | Indexed update and strength-based re-resolution of four-state signal drivers. | [header](../include/mulib-dsim-driver.h) |
-| [dsim-engine](engineering-kernels.md) | Stable single-signal event queue ordered by time, delta, and region. | [header](../include/mulib-dsim-engine.h) |
-| [dsim-logic4](mulib-dsim-logic4.md) | Scalar 4-state 0/1/X/Z Boolean truth tables and simple two-driver resolution without drive strengths. | [header](../include/mulib-dsim-logic4.h) · [example](../examples/modules/dsim-logic4.c) |
-| [dsim-memory](engineering-kernels.md) | Addressable four-state simulation memory with word widths up to 64 bits. | [header](../include/mulib-dsim-memory.h) |
-| [dsim-process](engineering-kernels.md) | Sensitivity-list dispatch of simulation process callbacks. | [header](../include/mulib-dsim-process.h) |
-| [dsim-region](engineering-kernels.md) | Delta-cycle rollover when scheduling into an earlier simulation region. | [header](../include/mulib-dsim-region.h) |
-| [dsim-resolve](engineering-kernels.md) | Four-state signal resolution by driver strength and equal-strength conflicts. | [header](../include/mulib-dsim-resolve.h) |
-| [dsim-scheduler](mulib-dsim-scheduler.md) | Stable min-heap event ordering by time, delta, region and insertion order, with peek and cancellation by signal. | [header](../include/mulib-dsim-scheduler.h) · [example](../examples/modules/dsim-scheduler.c) |
-| [dsim-sequential](engineering-kernels.md) | Basic four-state rising-edge flip-flop and level-sensitive latch behavior. | [header](../include/mulib-dsim-sequential.h) |
-| [dsim-signal](engineering-kernels.md) | Four-state signal updates with previous value, timestamp, and change count. | [header](../include/mulib-dsim-signal.h) |
-| [dsim-testbench](engineering-kernels.md) | Four-state sample comparison with wildcard expectations and first mismatch reporting. | [header](../include/mulib-dsim-testbench.h) |
-| [dsim-trigger](engineering-kernels.md) | Four-state transition classification with change, rising, and falling flags. | [header](../include/mulib-dsim-trigger.h) |
-| [dsu](mulib-dsu.md) | Union-find disjoint-set forest with path compression and union by rank. | [header](../include/mulib-dsu.h) · [example](../examples/modules/dsu.c) |
-| [dsymspec](mulib-dsymspec.md) | Assembler-facing architecture metadata from the supplied dsymspec database. | [header](../include/mulib-dsymspec.h) · [example](../examples/modules/dsymspec.c) |
-| [dvi](mulib-dvi.md) | DVI ID=2 file writer for empty pages and rectangular rules. | [header](../include/mulib-dvi.h) · [example](../examples/mulib-dvi.c) |
-| [dvifont](mulib-dvifont.md) | Bounds-checked output dvifont structures binary inspection and record access. | [header](../include/mulib-dvifont.h) · [example](../examples/mulib-dvifont.c) |
-| [dviread](mulib-dviread.md) | Bounds-checked output dviread structures binary inspection and record access. | [header](../include/mulib-dviread.h) · [example](../examples/mulib-dviread.c) |
-| [dyegram](mulib-dyegram.md) | Native SVG sequence diagrams using labelled graph message order. | [header](../include/mulib-dyegram.h) · [example](../examples/modules/dyegram.c) |
-| [dynbox](mulib-dynbox.md) | Native runtime-typed calls, variadics, structures and callback closures. | [header](../include/mulib-dynbox.h) · [example](../examples/modules/dynbox.c) |
-| [dyncall](mulib-dyncall.md) | Explicitly typed bounded dynamic invocation without incompatible ABI casts. | [header](../include/mulib-dyncall.h) · [example](../examples/modules/dyncall.c) |
-| [dynload](mulib-dynload.md) | Native dynamic libraries, typed symbol lookup, platform filenames and export helpers. | [header](../include/mulib-dynload.h) · [example](../examples/modules/dynload.c) |
+| [daemon](mulib-daemon.md) | Owned daemon specifications, Mune configuration and profiles, POSIX launch and lifecycle. | [header](../kernels/mulib-daemon.h) · [example](../examples/modules/daemon.c) |
+| [datagram](mulib-datagram.md) | IPv4/IPv6 UDP sockets with explicit truncation and address metadata. | [header](../kernels/mulib-datagram.h) · [example](../examples/modules/datagram.c) |
+| [datalog](mulib-datalog.md) | Bounded positive Datalog facts, rules, fixed-point evaluation and queries. | [header](../kernels/mulib-datalog.h) · [example](../examples/modules/datalog.c) |
+| [date](mulib-date.md) | Gregorian leap-year and calendar-days arithmetic. | [header](../kernels/mulib-date.h) · [example](../examples/modules/date.c) |
+| [datum](mulib-datum.md) | Owned typed scalar values with binary-safe strings, deep-copy semantics and NULL | [header](../kernels/mulib-datum.h) · [example](../examples/modules/datum.c) |
+| [dbdesializer](mulib-dbdesializer.md) | Exact owned JSON BSON MessagePack and CBOR value decoding. | [header](../kernels/mulib-dbdesializer.h) · [example](../examples/modules/dbdesializer.c) |
+| [dbindex](mulib-dbindex.md) | Binary database key to row-ID index, sharing the memtable model. | [header](../kernels/mulib-dbindex.h) · [example](../examples/modules/dbindex.c) |
+| [dbquery](mulib-dbquery.md) | Ordered half-open binary key scans with optional predicate filtering over live memtable records. | [header](../kernels/mulib-dbquery.h) · [example](../examples/modules/dbquery.c) |
+| [dbschema](mulib-dbschema.md) | Borrowed flat record schemas over shared JSON values. | [header](../kernels/mulib-dbschema.h) · [example](../examples/modules/dbschema.c) |
+| [dbserializer](mulib-dbserializer.md) | Explicit JSON BSON MessagePack and CBOR value serialization. | [header](../kernels/mulib-dbserializer.h) · [example](../examples/modules/dbserializer.c) |
+| [dbsummary](mulib-dbsummary.md) | Checked record/byte/sequence statistics for shared database tables. | [header](../kernels/mulib-dbsummary.h) · [example](../examples/modules/dbsummary.c) |
+| [dbtransaction](mulib-dbtransaction.md) | Optimistic single-table snapshot transactions, no implicit disk commit. | [header](../kernels/mulib-dbtransaction.h) · [example](../examples/modules/dbtransaction.c) |
+| [dbus](mulib-dbus.md) | Focused endian-aware DBus binary wire encoding and validation. | [header](../kernels/mulib-dbus.h) · [example](../examples/modules/dbus.c) |
+| [dbus-auth](mulib-dbus-auth.md) | Authenticate to the system D-Bus socket using EXTERNAL peer credentials | [header](../kernels/mulib-dbus-auth.h) · [example](../examples/modules/dbus-auth.c) |
+| [dbus-client](mulib-dbus-client.md) | Minimal system D-Bus method-call client with zero, one, or two string arguments | [header](../kernels/mulib-dbus-client.h) · [example](../examples/modules/dbus-client.c) |
+| [dbus-properties](mulib-dbus-properties.md) | Call D-Bus Properties.Get and decode uint32 or string variant replies | [header](../kernels/mulib-dbus-properties.h) · [example](../examples/modules/dbus-properties.c) |
+| [dbus-transport](mulib-dbus-transport.md) | Connect to and read/write a framed D-Bus UNIX system-bus connection | [header](../kernels/mulib-dbus-transport.h) · [example](../examples/modules/dbus-transport.c) |
+| [dce](mulib-dce.md) | Failure-atomic effect-aware linear dead-code marking for 64 registers. | [header](../kernels/mulib-dce.h) · [example](../examples/modules/dce.c) |
+| [decisiontrace](mulib-decisiontrace.md) | Bounded structured decision tracing and versioned field encoding. | [header](../kernels/mulib-decisiontrace.h) · [example](../examples/hospitality_demo.c) |
+| [deflate](mulib-deflate.md) | Bounded RFC 1951 raw DEFLATE compression and decompression. | [header](../kernels/mulib-deflate.h) · [example](../examples/modules/deflate.c) |
+| [defuse](mulib-defuse.md) | First-definition and use-occurrence counting for linear register instructions. | [header](../kernels/mulib-defuse.h) · [example](../examples/modules/defuse.c) |
+| [deltacodec](mulib-deltacodec.md) | Monotone uint64 delta encoding and decoding with overflow checks | [header](../kernels/mulib-deltacodec.h) · [example](../examples/modules/deltacodec.c) |
+| [depfile](mulib-depfile.md) | Bounded GCC and Ninja dependency-file parsing with streaming rule callbacks. | [header](../kernels/mulib-depfile.h) · [example](../examples/modules/depfile.c) |
+| [depir](mulib-depir.md) | Entity and dependence graph deriving executable compiler IRs. | [header](../kernels/mulib-depir.h) · [example](../examples/modules/depir.c) |
+| [deque](mulib-deque.md) | Double-ended FIFO container with a circular array. | [header](../kernels/mulib-deque.h) · [example](../examples/modules/deque.c) |
+| [der](mulib-der.md) | Bounded canonical ASN.1 DER TLV and unsigned INTEGER decoding. | [header](../kernels/mulib-der.h) · [example](../examples/modules/der.c) |
+| [descritors](mulib-descritors.md) | x86-64 GDT, IDT, TSS and descriptor pointer encoders. | [header](../kernels/mulib-descritors.h) · [example](../examples/modules/descritors.c) |
+| [devlink](mulib-devlink.md) | Discover the Linux devlink Generic Netlink family ID | [header](../kernels/mulib-devlink.h) · [example](../examples/modules/devlink.c) |
+| [dexcc](mulib-dexcc.md) | IR-neutral verified integer DEX assembler, decoder and DEX035 writer. | [header](../kernels/mulib-dexcc.h) · [example](../examples/modules/dexcc.c) |
+| [dfa](mulib-dfa.md) | Range DFAs and bounded epsilon-NFA subset construction over uint32 symbols. | [header](../kernels/mulib-dfa.h) · [example](../examples/modules/dfa.c) |
+| [dhcp4-client](mulib-dhcp4-client.md) | Build DHCPv4 DISCOVER messages and decode DHCP message type options | [header](../kernels/mulib-dhcp4-client.h) · [example](../examples/modules/dhcp4-client.c) |
+| [dhcp6-client](mulib-dhcp6-client.md) | Build a DHCPv6 SOLICIT and parse a DHCPv6 option TLV | [header](../kernels/mulib-dhcp6-client.h) · [example](../examples/modules/dhcp6-client.c) |
+| [diag](mulib-diag.md) | Small status-code-to-text mapping for library diagnostics. | [header](../kernels/mulib-diag.h) · [example](../examples/modules/diag.c) |
+| [diagnostic](mulib-diagnostic.md) | Owned ordered compiler diagnostics with checked spans, severities and error counts. | [header](../kernels/mulib-diagnostic.h) · [example](../examples/modules/diagnostic.c) |
+| [diagram](mulib-diagram.md) | Owned ordered collection for graphics diagram rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-diagram.h) · [example](../examples/mulib-diagram.c) |
+| [distfield](mulib-distfield.md) | Linear-time Euclidean signed distance fields from alpha masks. | [header](../kernels/mulib-distfield.h) · [example](../examples/modules/distfield.c) |
+| [distribcluster](mulib-distribcluster.md) | Allowlisted distributed container, OCI lifecycle and VMM worker actions. | [header](../kernels/mulib-distribcluster.h) · [example](../examples/modules/distribcluster.c) |
+| [distribcomp](mulib-distribcomp.md) | Lease-based MuMQ DAG orchestration, bounded workers and daemon control. | [header](../kernels/mulib-distribcomp.h) · [example](../examples/modules/distribcomp.c) |
+| [distribtask](mulib-distribtask.md) | Owned DAG tasks compiled from Mune plus required JSON/YAML configuration. | [header](../kernels/mulib-distribtask.h) · [example](../examples/modules/distribtask.c) |
+| [dmabuf](notebook-desktop.md) | Owned DMA-BUF plane descriptors, validation and FD duplication. | [header](../kernels/mulib-dmabuf.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [dns](mulib-dns.md) | Bounds-checked DNS wire names, questions and resource records. | [header](../kernels/mulib-dns.h) · [example](../examples/modules/dns.c) |
+| [dns-manager](mulib-dns-manager.md) | Read first nameserver IP literal from resolv.conf without changing system DNS | [header](../kernels/mulib-dns-manager.h) · [example](../examples/modules/dns-manager.c) |
+| [dnscache](mulib-dnscache.md) | Bounded DNS response cache with caller-supplied time and TTL expiry. | [header](../kernels/mulib-dnscache.h) · [example](../examples/modules/dnscache.c) |
+| [dnsclient](mulib-dnsclient.md) | DNS query construction and matched reply validation. | [header](../kernels/mulib-dnsclient.h) · [example](../examples/modules/dnsclient.c) |
+| [dnsnmeserver](mulib-dnsnmeserver.md) | Historical-spelling facade for the authoritative nameserver. | [header](../kernels/mulib-dnsnmeserver.h) · [example](../examples/modules/dnsnmeserver.c) |
+| [dnsresolver](mulib-dnsresolver.md) | Cache-backed DNS resolution through a bounded exchange callback. | [header](../kernels/mulib-dnsresolver.h) · [example](../examples/modules/dnsresolver.c) |
+| [docdiff](mulib-docdiff.md) | Owned ordered collection for document ir docdiff rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-docdiff.h) · [example](../examples/mulib-docdiff.c) |
+| [docid](mulib-docid.md) | Stable unsigned 64-bit document IDs and order-preserving big-endian serialization | [header](../kernels/mulib-docid.h) · [example](../examples/modules/docid.c) |
+| [docincremental](mulib-docincremental.md) | Configurable execution policy and accounting for document ir docincremental. | [header](../kernels/mulib-docincremental.h) · [example](../examples/mulib-docincremental.c) |
+| [docir](mulib-docir.md) | ABI-preserving owned semantic trees, source/style snapshots, checked math and atomic HTML/LaTeX export. | [header](../kernels/mulib-docir.h) · [example](../examples/mulib-docir.c) |
+| [doclength](mulib-doclength.md) | Convert document lengths among CSS px, PDF pt, inch and mm. | [header](../kernels/mulib-doclength.h) · [example](../examples/mulib-doclength.c) |
+| [docmetadata](mulib-docmetadata.md) | Owned bounded registry of document metadata properties; replace, lookup and remove by name. | [header](../kernels/mulib-docmetadata.h) · [example](../examples/mulib-docmetadata.c) |
+| [docnode](mulib-docnode.md) | Owned ordered collection for document ir docnode rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-docnode.h) · [example](../examples/mulib-docnode.c) |
+| [docnormalize](mulib-docnormalize.md) | Legacy byte emission and opt-in owned DocIR text-node normalization. | [header](../kernels/mulib-docnormalize.h) · [example](../examples/mulib-docnormalize.c) |
+| [docquery](mulib-docquery.md) | Owned bounded registry of saved semantic queries; replace, lookup and remove by name. | [header](../kernels/mulib-docquery.h) · [example](../examples/mulib-docquery.c) |
+| [docresource](mulib-docresource.md) | Owned bounded registry of assets and resource identifiers; replace, lookup and remove by name. | [header](../kernels/mulib-docresource.h) · [example](../examples/mulib-docresource.c) |
+| [docsemantic](mulib-docsemantic.md) | Owned bounded registry of accessible semantic role names; replace, lookup and remove by name. | [header](../kernels/mulib-docsemantic.h) · [example](../examples/mulib-docsemantic.c) |
+| [docserialize](mulib-docserialize.md) | Legacy JSON escaping and opt-in versioned semantic DocIR serialization. | [header](../kernels/mulib-docserialize.h) · [example](../examples/mulib-docserialize.c) |
+| [docsource](mulib-docsource.md) | Source-origin registry and opt-in checked DocIR byte-span annotations. | [header](../kernels/mulib-docsource.h) · [example](../examples/mulib-docsource.c) |
+| [docstring](mulib-docstring.md) | Rich documentation DSL, DocstrIL compiler, Mune Lua extensions/filters | [header](../kernels/mulib-docstring.h) · [example](../examples/modules/docstring.c) |
+| [docstyle](mulib-docstyle.md) | Owned bounded registry of document style properties; replace, lookup and remove by name. | [header](../kernels/mulib-docstyle.h) · [example](../examples/mulib-docstyle.c) |
+| [documentdb](mulib-documentdb.md) | Binary-keyed JSON document records over memtable. | [header](../kernels/mulib-documentdb.h) · [example](../examples/modules/documentdb.c) |
+| [docvalidate](mulib-docvalidate.md) | Legacy budget accounting and opt-in complete semantic DocIR validation. | [header](../kernels/mulib-docvalidate.h) · [example](../examples/mulib-docvalidate.c) |
+| [dom](mulib-dom.md) | Native DOM trees, UTF-16 character data, namespace-aware attributes and event dispatch. | [header](../kernels/mulib-dom.h) · [example](../examples/modules/dom.c) |
+| [dom-mutation](mulib-dom-mutation.md) | Bounded record journal for DOM mutation events. | [header](../kernels/mulib-dom-mutation.h) · [example](../examples/modules/dom-mutation.c) |
+| [dom-query](mulib-dom-query.md) | Bounded tag, ID, and class lookups over owned HTML tree nodes. | [header](../kernels/mulib-dom-query.h) · [example](../examples/modules/dom-query.c) |
+| [dom-range](mulib-dom-range.md) | Validated immutable text/document offsets and range intersections. | [header](../kernels/mulib-dom-range.h) · [example](../examples/modules/dom-range.c) |
+| [dominance](mulib-dominance.md) | Reachable dominance sets and immediate dominators for up to 64 CFG blocks. | [header](../kernels/mulib-dominance.h) · [example](../examples/modules/dominance.c) |
+| [domserialize](mulib-domserialize.md) | HTML text escaping into caller-owned output buffer. | [header](../kernels/mulib-domserialize.h) · [example](../examples/modules/domserialize.c) |
+| [drm](mulib-drm.md) | Linux Direct Rendering Manager capability and dumb-buffer helpers. | [header](../kernels/mulib-drm.h) · [example](../examples/modules/drm.c) |
+| [drm-atomic](mulib-gfx-drm.md) | Bounded drm-atomic API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-atomic.h) · [example](../examples/gfx-headless.c) |
+| [drm-framebuffer](mulib-gfx-drm.md) | Bounded drm-framebuffer API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-framebuffer.h) · [example](../examples/gfx-headless.c) |
+| [drm-gem](mulib-gfx-drm.md) | Bounded drm-gem API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-gem.h) · [example](../examples/gfx-headless.c) |
+| [drm-kms](mulib-gfx-drm.md) | Bounded drm-kms API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-kms.h) · [example](../examples/gfx-headless.c) |
+| [drm-output](mulib-gfx-drm.md) | Bounded drm-output API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-output.h) · [example](../examples/gfx-headless.c) |
+| [drm-pageflip](mulib-gfx-drm.md) | Bounded drm-pageflip API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-pageflip.h) · [example](../examples/gfx-headless.c) |
+| [drm-prime](mulib-gfx-drm.md) | Bounded drm-prime API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-prime.h) · [example](../examples/gfx-headless.c) |
+| [drm-session](mulib-gfx-drm.md) | Bounded drm-session API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-session.h) · [example](../examples/gfx-headless.c) |
+| [drm-syncobj](mulib-gfx-drm.md) | Bounded drm-syncobj API; see documented scope and acceptance gates. | [header](../kernels/mulib-drm-syncobj.h) · [example](../examples/gfx-headless.c) |
+| [dsdom](mulib-dsdom.md) | Documentation DOM utilities over MuLIB's owned UTF-8 XML tree. | [header](../kernels/mulib-dsdom.h) · [example](../examples/modules/dsdom.c) |
+| [dsim-bitvec](mulib-dsim-bitvec.md) | Four-state vectors of 1..64 bits with string parsing/formatting, extraction, bitwise AND/OR/XOR/NOT, zero-filled logical shifts, concatenation and modular addition. | [header](../kernels/mulib-dsim-bitvec.h) · [example](../examples/modules/dsim-bitvec.c) |
+| [dsim-bytecode](engineering-kernels.md) | Four-state register bytecode for literals and basic logic operators. | [header](../kernels/mulib-dsim-bytecode.h) |
+| [dsim-clock](engineering-kernels.md) | Periodic rising and falling event generation for a simulation signal. | [header](../kernels/mulib-dsim-clock.h) |
+| [dsim-cosim](engineering-kernels.md) | Budgeted analog and digital callbacks over fixed-maximum-step intervals. | [header](../kernels/mulib-dsim-cosim.h) |
+| [dsim-coverage](engineering-kernels.md) | Four-state sample counts, change counts, and binary value coverage. | [header](../kernels/mulib-dsim-coverage.h) |
+| [dsim-delay](engineering-kernels.md) | Transport-delay scheduling and single-signal inertial replacement. | [header](../kernels/mulib-dsim-delay.h) |
+| [dsim-delta](engineering-kernels.md) | Callback-driven delta-cycle iteration to a fixed point within a limit. | [header](../kernels/mulib-dsim-delta.h) |
+| [dsim-driver](engineering-kernels.md) | Indexed update and strength-based re-resolution of four-state signal drivers. | [header](../kernels/mulib-dsim-driver.h) |
+| [dsim-engine](engineering-kernels.md) | Stable single-signal event queue ordered by time, delta, and region. | [header](../kernels/mulib-dsim-engine.h) |
+| [dsim-logic4](mulib-dsim-logic4.md) | Scalar 4-state 0/1/X/Z Boolean truth tables and simple two-driver resolution without drive strengths. | [header](../kernels/mulib-dsim-logic4.h) · [example](../examples/modules/dsim-logic4.c) |
+| [dsim-memory](engineering-kernels.md) | Addressable four-state simulation memory with word widths up to 64 bits. | [header](../kernels/mulib-dsim-memory.h) |
+| [dsim-process](engineering-kernels.md) | Sensitivity-list dispatch of simulation process callbacks. | [header](../kernels/mulib-dsim-process.h) |
+| [dsim-region](engineering-kernels.md) | Delta-cycle rollover when scheduling into an earlier simulation region. | [header](../kernels/mulib-dsim-region.h) |
+| [dsim-resolve](engineering-kernels.md) | Four-state signal resolution by driver strength and equal-strength conflicts. | [header](../kernels/mulib-dsim-resolve.h) |
+| [dsim-scheduler](mulib-dsim-scheduler.md) | Stable min-heap event ordering by time, delta, region and insertion order, with peek and cancellation by signal. | [header](../kernels/mulib-dsim-scheduler.h) · [example](../examples/modules/dsim-scheduler.c) |
+| [dsim-sequential](engineering-kernels.md) | Basic four-state rising-edge flip-flop and level-sensitive latch behavior. | [header](../kernels/mulib-dsim-sequential.h) |
+| [dsim-signal](engineering-kernels.md) | Four-state signal updates with previous value, timestamp, and change count. | [header](../kernels/mulib-dsim-signal.h) |
+| [dsim-testbench](engineering-kernels.md) | Four-state sample comparison with wildcard expectations and first mismatch reporting. | [header](../kernels/mulib-dsim-testbench.h) |
+| [dsim-trigger](engineering-kernels.md) | Four-state transition classification with change, rising, and falling flags. | [header](../kernels/mulib-dsim-trigger.h) |
+| [dsu](mulib-dsu.md) | Union-find disjoint-set forest with path compression and union by rank. | [header](../kernels/mulib-dsu.h) · [example](../examples/modules/dsu.c) |
+| [dsymspec](mulib-dsymspec.md) | Assembler-facing architecture metadata from the supplied dsymspec database. | [header](../kernels/mulib-dsymspec.h) · [example](../examples/modules/dsymspec.c) |
+| [dvi](mulib-dvi.md) | DVI ID=2 file writer for empty pages and rectangular rules. | [header](../kernels/mulib-dvi.h) · [example](../examples/mulib-dvi.c) |
+| [dvifont](mulib-dvifont.md) | Bounds-checked output dvifont structures binary inspection and record access. | [header](../kernels/mulib-dvifont.h) · [example](../examples/mulib-dvifont.c) |
+| [dviread](mulib-dviread.md) | Bounds-checked output dviread structures binary inspection and record access. | [header](../kernels/mulib-dviread.h) · [example](../examples/mulib-dviread.c) |
+| [dyegram](mulib-dyegram.md) | Native SVG sequence diagrams using labelled graph message order. | [header](../kernels/mulib-dyegram.h) · [example](../examples/modules/dyegram.c) |
+| [dynbox](mulib-dynbox.md) | Native runtime-typed calls, variadics, structures and callback closures. | [header](../kernels/mulib-dynbox.h) · [example](../examples/modules/dynbox.c) |
+| [dyncall](mulib-dyncall.md) | Explicitly typed bounded dynamic invocation without incompatible ABI casts. | [header](../kernels/mulib-dyncall.h) · [example](../examples/modules/dyncall.c) |
+| [dynload](mulib-dynload.md) | Native dynamic libraries, typed symbol lookup, platform filenames and export helpers. | [header](../kernels/mulib-dynload.h) · [example](../examples/modules/dynload.c) |
 
 ## E
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [ebpf](mulib-ebpf.md) | Bounded register-only eBPF instruction subset interpreter, not kernel BPF. | [header](../include/mulib-ebpf.h) · [example](../examples/modules/ebpf.c) |
-| [ecad-annotation](engineering-kernels.md) | Allocation of the first unused prefixed numeric reference designator. | [header](../include/mulib-ecad-annotation.h) |
-| [ecad-bus](engineering-kernels.md) | Parsing inclusive bus index ranges and computing their widths. | [header](../include/mulib-ecad-bus.h) |
-| [ecad-connect](mulib-ecad-connect.md) | Name-based connectivity count for flat two-terminal schematic, with literal ground name 0. | [header](../include/mulib-ecad-connect.h) · [example](../examples/modules/ecad-connect.c) |
-| [ecad-elaborate](engineering-kernels.md) | Canonical net IDs from explicit pairwise connections. | [header](../include/mulib-ecad-elaborate.h) |
-| [ecad-erc](mulib-ecad-erc.md) | Flat schematic ERC diagnostics: self-shorted components, single-use (dangling) named terminals, and missing ground node. | [header](../include/mulib-ecad-erc.h) · [example](../examples/modules/ecad-erc.c) |
-| [ecad-flatten](engineering-kernels.md) | Slash-delimited sheet paths from a parent-linked hierarchy. | [header](../include/mulib-ecad-flatten.h) |
-| [ecad-hittest](engineering-kernels.md) | Reverse-order schematic box hit testing with point tolerance. | [header](../include/mulib-ecad-hittest.h) |
-| [ecad-instance](engineering-kernels.md) | Forward and inverse instance transforms using translation, mirroring, and quarter turns. | [header](../include/mulib-ecad-instance.h) |
-| [ecad-kicad](engineering-kernels.md) | KiCad-style S-expression token scanning and parenthesis balance checks. | [header](../include/mulib-ecad-kicad.h) |
-| [ecad-netlist](mulib-ecad-netlist.md) | Deterministic SPICE-card export from supported flat R/C/I/V schematic, retaining names and double values, with bounded caller buffer. | [header](../include/mulib-ecad-netlist.h) · [example](../examples/modules/ecad-netlist.c) |
-| [ecad-pcb-sync](mulib-ecad-pcb-sync.md) | Stable bijective object-ID lookup between 256 schematic and PCB objects; no object model introspection, reconciliation or automatic synchronization. | [header](../include/mulib-ecad-pcb-sync.h) · [example](../examples/modules/ecad-pcb-sync.c) |
-| [ecad-pin](engineering-kernels.md) | Pin metadata validation and simple output-driver conflict checks. | [header](../include/mulib-ecad-pin.h) |
-| [ecad-port](engineering-kernels.md) | Port compatibility checks by name, width, and direction. | [header](../include/mulib-ecad-port.h) |
-| [ecad-power](engineering-kernels.md) | Checks for a source on each load's net within its voltage tolerance. | [header](../include/mulib-ecad-power.h) |
-| [ecad-schematic](mulib-ecad-schematic.md) | Bounded 256-component flat schematic for R/C/I/V 2-terminal devices, duplicate reference detection and fixed 32-byte names. | [header](../include/mulib-ecad-schematic.h) · [example](../examples/modules/ecad-schematic.c) |
-| [ecad-sheet](engineering-kernels.md) | Parent-first sheet ordering with ID, parent, and cycle checks. | [header](../include/mulib-ecad-sheet.h) |
-| [ecad-snap](engineering-kernels.md) | Point snapping to nearby targets or a regular grid. | [header](../include/mulib-ecad-snap.h) |
-| [ecad-symbol](mulib-ecad-symbol.md) | Bounded symbol metadata with 32 typed pins and integer drawing-space anchor positions. | [header](../include/mulib-ecad-symbol.h) · [example](../examples/modules/ecad-symbol.c) |
-| [ecad-wire](engineering-kernels.md) | One-bend orthogonal paths and point-to-segment proximity checks. | [header](../include/mulib-ecad-wire.h) |
-| [ecad-wire-route](engineering-kernels.md) | Four-neighbor, unit-cost A* wire routing over a blocked grid. | [header](../include/mulib-ecad-wire-route.h) |
-| [ed25519](mulib-ed25519.md) | OpenSSL EVP adapter for raw Ed25519 public keys, signatures and verification. | [header](../include/mulib-ed25519.h) · [example](../examples/ssh/kernels.c) |
-| [eda-attributes](mulib-eda-attributes.md) | Owned typed attribute table with integer, finite real and bounded byte-string values, replacement, lookup and removal. | [header](../include/mulib-eda-attributes.h) · [example](../examples/modules/eda-attributes.c) |
-| [eda-catalogue](engineering-kernels.md) | In-memory catalogue resolving exact or latest versions by identifier. | [header](../include/mulib-eda-catalogue.h) |
-| [eda-changeset](engineering-kernels.md) | Revision-checked batches of scalar record updates and removals applied through a snapshot. | [header](../include/mulib-eda-changeset.h) |
-| [eda-constraints](mulib-eda-constraints.md) | Evaluates equality, minimum and maximum scalar constraints with absolute tolerance, returning nonnegative violation magnitudes. | [header](../include/mulib-eda-constraints.h) · [example](../examples/modules/eda-constraints.c) |
-| [eda-dependency](engineering-kernels.md) | Dependency graph topological ordering and downstream dirty marking. | [header](../include/mulib-eda-dependency.h) |
-| [eda-design-db](mulib-eda-design-db.md) | Flat revisioned design store keyed by nonzero external IDs, with typed finite scalar values and independent owned snapshot cloning. | [header](../include/mulib-eda-design-db.h) · [example](../examples/modules/eda-design-db.c) |
-| [eda-diagnostics](engineering-kernels.md) | Owned diagnostic messages with severity, code, and object ID. | [header](../include/mulib-eda-diagnostics.h) |
-| [eda-diff](engineering-kernels.md) | Record equality and ID-based changesets between design snapshots. | [header](../include/mulib-eda-diff.h) |
-| [eda-handles](engineering-kernels.md) | Pool-local generation-checked handle allocation, validation, and release. | [header](../include/mulib-eda-handles.h) |
-| [eda-hierarchy](mulib-eda-hierarchy.md) | Append-only hierarchy with unique sibling names and slash-separated paths. | [header](../include/mulib-eda-hierarchy.h) · [example](../examples/modules/eda-hierarchy.c) |
-| [eda-ids](mulib-eda-ids.md) | Typed 64-bit IDs: 8-bit kind, 24-bit generation and 32-bit index plus one; stale generations are rejected. | [header](../include/mulib-eda-ids.h) · [example](../examples/modules/eda-ids.c) |
-| [eda-incremental](mulib-eda-incremental.md) | Dense adjacency invalidation propagation including cyclic dependencies; intended for small incremental graphs (O(n²) memory), not the final million-node build graph. | [header](../include/mulib-eda-incremental.h) · [example](../examples/modules/eda-incremental.c) |
-| [eda-job](engineering-kernels.md) | Job lifecycle transition checks and monotonic progress tracking. | [header](../include/mulib-eda-job.h) |
-| [eda-journal](engineering-kernels.md) | Length-framed design snapshots on caller-owned streams; not a crash-atomic log. | [header](../include/mulib-eda-journal.h) |
-| [eda-library](mulib-eda-library.md) | In-memory part definition catalog with immutable key, description and pin count. | [header](../include/mulib-eda-library.h) · [example](../examples/modules/eda-library.c) |
-| [eda-merge](engineering-kernels.md) | Three-way scalar record merge with same-record conflict reporting. | [header](../include/mulib-eda-merge.h) |
-| [eda-netgraph](mulib-eda-netgraph.md) | Append-only connectivity hypergraph with indexed nets, terminals, explicit disconnection, net merging and deterministic degrees. | [header](../include/mulib-eda-netgraph.h) · [example](../examples/modules/eda-netgraph.c) |
-| [eda-object](mulib-eda-object.md) | Small immutable-ID object header with checked type/name, monotonic revision on rename; object persistence and schema registry are outside scope. | [header](../include/mulib-eda-object.h) · [example](../examples/modules/eda-object.c) |
-| [eda-parametric](engineering-kernels.md) | Stack-based evaluation of scalar arithmetic with literal and parameter operands. | [header](../include/mulib-eda-parametric.h) |
-| [eda-project](mulib-eda-project.md) | Validated in-memory project identity, revision, variant count and reproducible seed. | [header](../include/mulib-eda-project.h) · [example](../examples/modules/eda-project.c) |
-| [eda-properties](engineering-kernels.md) | Owned integer, real, and text properties keyed by object ID and name. | [header](../include/mulib-eda-properties.h) |
-| [eda-quantity](mulib-eda-quantity.md) | First-order uncertainty propagation for independent unit-tagged quantities with addition, multiplication and division. | [header](../include/mulib-eda-quantity.h) · [example](../examples/modules/eda-quantity.c) |
-| [eda-query](engineering-kernels.md) | Linear design record filtering by kind, parent ID, and rectangular bounds. | [header](../include/mulib-eda-query.h) |
-| [eda-revision](engineering-kernels.md) | Owned design store snapshots tagged with the source revision. | [header](../include/mulib-eda-revision.h) |
-| [eda-selection](engineering-kernels.md) | Owned, duplicate-free selection list of object IDs. | [header](../include/mulib-eda-selection.h) |
-| [eda-serialize](engineering-kernels.md) | Versioned binary encoding and decoding of scalar design store snapshots. | [header](../include/mulib-eda-serialize.h) |
-| [eda-status](mulib-eda-status.md) | Shared status names and bounded diagnostic record with line/column context. | [header](../include/mulib-eda-status.h) · [example](../examples/modules/eda-status.c) |
-| [eda-store](engineering-kernels.md) | ID-sorted in-memory scalar design records with revision tracking and snapshot cloning. | [header](../include/mulib-eda-store.h) |
-| [eda-transaction](mulib-eda-transaction.md) | Optimistic owned-snapshot transaction over eda-design-db. | [header](../include/mulib-eda-transaction.h) · [example](../examples/modules/eda-transaction.c) |
-| [eda-undo](mulib-eda-undo.md) | Bounded 256-command reversible scalar-field journal over eda-design-db. | [header](../include/mulib-eda-undo.h) · [example](../examples/modules/eda-undo.c) |
-| [eda-units](mulib-eda-units.md) | SI base dimensions and a deliberately scoped engineering unit set (m, kg, s, A, K, mol, cd, Hz, V, Ohm, F, H, W, C, degC, rad, deg). | [header](../include/mulib-eda-units.h) · [example](../examples/modules/eda-units.c) |
-| [eda-validate](engineering-kernels.md) | Design store record and parent-chain checks, including missing parents and cycles. | [header](../include/mulib-eda-validate.h) |
-| [eda-variants](engineering-kernels.md) | Per-variant component substitution and population lookup. | [header](../include/mulib-eda-variants.h) |
-| [edbuf](mulib-edbuf.md) | Transactional editor buffers: gap, persistent AVL rope and piece table. | [header](../include/mulib-edbuf.h) · [example](../examples/modules/edbuf.c) |
-| [edit_distance](mulib-edit_distance.md) | Unit-cost byte edit distance for binary buffers and C strings. | [header](../include/mulib-edit_distance.h) · [example](../examples/modules/edit_distance.c) |
-| [efi](mulib-efi.md) | Checked PE/COFF EFI application and driver files, entry points and certificate framing. | [header](../include/mulib-efi.h) · [example](../examples/modules/efi.c) |
-| [egraph](mulib-egraph.md) | Bounded congruence classes, hash-consing, union and costed extraction. | [header](../include/mulib-egraph.h) · [example](../examples/modules/egraph.c) |
-| [elf](mulib-elf.md) | Bounds-checked endian-aware ELF32 and ELF64 binary inspection. | [header](../include/mulib-elf.h) · [example](../examples/modules/elf.c) |
-| [elf-objdump](mulib-elf-objdump.md) | ELF32/64 program, section, symbol and hex dumps using shared objdump. | [header](../include/mulib-elf-objdump.h) · [example](../examples/modules/elf-objdump.c) |
-| [elfbuilder](mulib-elfbuilder.md) | Owned ELF64 relocatable section builder reusing objfilebuilder. | [header](../include/mulib-elfbuilder.h) · [example](../examples/modules/elfbuilder.c) |
-| [elfutils](mulib-elfutils.md) | Named ELF section/symbol lookup over the checked ELF reader. | [header](../include/mulib-elfutils.h) · [example](../examples/modules/elfutils.c) |
-| [elvi-scrape](mulib-elvi-scrape.md) | Declarative search URL generation and bounded HTML/JSON title/link extraction from .elvs providers. | [header](../include/mulib-elvi-scrape.h) · [example](../examples/elvi-scrape.c) |
-| [embeddingsdb](mulib-embeddingsdb.md) | Exact Euclidean nearest neighbor and metric-aware cosine/dot-product top-k over owned vectors. | [header](../include/mulib-embeddingsdb.h) · [example](../examples/modules/embeddingsdb.c) |
-| [emitter](mulib-emitter.md) | Checked binary instruction emission and endian-aware patching. | [header](../include/mulib-emitter.h) · [example](../examples/modules/emitter.c) |
-| [encoding](mulib-encoding.md) | Checked ULEB128 and ZigZag codecs for portable signed/unsigned record storage | [header](../include/mulib-encoding.h) · [example](../examples/modules/encoding.c) |
-| [endian](mulib-endian.md) | Explicit little- and big-endian primitive load/store helpers. | [header](../include/mulib-endian.h) · [example](../examples/modules/endian.c) |
-| [entropy](mulib-entropy.md) | Operating-system cryptographic entropy, secret wiping and comparison. | [header](../include/mulib-entropy.h) · [example](../examples/modules/entropy.c) |
-| [env](mulib-env.md) | Environment variable inspection and bounded fallback copy. | [header](../include/mulib-env.h) · [example](../examples/modules/env.c) |
-| [epoll](mulib-epoll.md) | Owned Linux epoll registration and bounded readiness waits. | [header](../include/mulib-epoll.h) · [example](../examples/modules/epoll.c) |
-| [epub](mulib-epub.md) | EPUB 3 packaging/read access with opt-in semantic DocIR chapter adaptation. | [header](../include/mulib-epub.h) · [example](../examples/modules/epub.c) |
-| [epubcheck](mulib-epubcheck.md) | Bounds-checked output epubcheck structures binary inspection and record access. | [header](../include/mulib-epubcheck.h) · [example](../examples/mulib-epubcheck.c) |
-| [epubwriter](mulib-epubwriter.md) | 'Minimal EPUB 3.0 writer: valid stored ZIP, mimetype, container, package, nav and one XHTML chapter.' | [header](../include/mulib-epubwriter.h) · [example](../examples/mulib-epubwriter.c) |
-| [eqn](mulib-eqn.md) | Bounded mathematical/logic expression trees, MathML, LaTeX and evaluation. | [header](../include/mulib-eqn.h) · [example](../examples/modules/eqn.c) |
-| [escape](mulib-escape.md) | C-style escaping and unescaping of byte strings. | [header](../include/mulib-escape.h) · [example](../examples/modules/escape.c) |
-| [ethtool-features](mulib-ethtool-features.md) | Read an actual 32-bit block of kernel ethtool available/requested/active feature bits | [header](../include/mulib-ethtool-features.h) · [example](../examples/modules/ethtool-features.c) |
-| [ethtool-module](mulib-ethtool-module.md) | Retrieve transceiver SFP/module EEPROM type and size via real ETHTOOL_GMODULEINFO ioctl | [header](../include/mulib-ethtool-module.h) · [example](../examples/modules/ethtool-module.c) |
-| [ethtool-netlink](mulib-ethtool-netlink.md) | Discover the Linux ethtool Generic Netlink family ID | [header](../include/mulib-ethtool-netlink.h) · [example](../examples/modules/ethtool-netlink.c) |
-| [ethtool-stats](mulib-ethtool-stats.md) | Read interface receive byte statistics from sysfs (not complete driver ethtool counters) | [header](../include/mulib-ethtool-stats.h) · [example](../examples/modules/ethtool-stats.c) |
-| [etl-transform](mulib-etl-transform.md) | Composable pull-based ETL record filtering and transformation callbacks | [header](../include/mulib-etl-transform.h) · [example](../examples/modules/etl-transform.c) |
-| [euclidean_distance](mulib-euclidean_distance.md) | Euclidean distance with hypot accumulation. | [header](../include/mulib-euclidean_distance.h) · [example](../examples/modules/euclidean_distance.c) |
-| [eventfd](mulib-eventfd.md) | Linux eventfd counters with explicit descriptor ownership. | [header](../include/mulib-eventfd.h) · [example](../examples/modules/eventfd.c) |
-| [evtlistener](mulib-evtlistener.md) | Callback listeners for event streams and parser-produced events. | [header](../include/mulib-evtlistener.h) · [example](../examples/modules/evtlistener.c) |
-| [evtloop](mulib-evtloop.md) | Cooperative caller-clocked one-shot task and timer queue. | [header](../include/mulib-evtloop.h) · [example](../examples/modules/evtloop.c) |
-| [evtstream](mulib-evtstream.md) | Allocation-free balanced AST event streams with retryable depth bounds. | [header](../include/mulib-evtstream.h) · [example](../examples/modules/evtstream.c) |
-| [exec](mulib-exec.md) | POSIX command execution, concurrent pipelines and a documented Mune DSL. | [header](../include/mulib-exec.h) · [example](../examples/modules/exec.c) |
-| [ezjni](mulib-ezjni.md) | Checked JNI scopes, cached methods, references and UTF-16/byte copies. | [header](../include/mulib-ezjni.h) · [example](../examples/modules/ezjni.c) |
-| [ezndk](mulib-ezndk.md) | Owned Android assets/windows, looper helpers and safe logcat messages. | [header](../include/mulib-ezndk.h) · [example](../examples/modules/ezndk.c) |
+| [ebpf](mulib-ebpf.md) | Bounded register-only eBPF instruction subset interpreter, not kernel BPF. | [header](../kernels/mulib-ebpf.h) · [example](../examples/modules/ebpf.c) |
+| [ecad-annotation](engineering-kernels.md) | Allocation of the first unused prefixed numeric reference designator. | [header](../kernels/mulib-ecad-annotation.h) |
+| [ecad-bus](engineering-kernels.md) | Parsing inclusive bus index ranges and computing their widths. | [header](../kernels/mulib-ecad-bus.h) |
+| [ecad-connect](mulib-ecad-connect.md) | Name-based connectivity count for flat two-terminal schematic, with literal ground name 0. | [header](../kernels/mulib-ecad-connect.h) · [example](../examples/modules/ecad-connect.c) |
+| [ecad-elaborate](engineering-kernels.md) | Canonical net IDs from explicit pairwise connections. | [header](../kernels/mulib-ecad-elaborate.h) |
+| [ecad-erc](mulib-ecad-erc.md) | Flat schematic ERC diagnostics: self-shorted components, single-use (dangling) named terminals, and missing ground node. | [header](../kernels/mulib-ecad-erc.h) · [example](../examples/modules/ecad-erc.c) |
+| [ecad-flatten](engineering-kernels.md) | Slash-delimited sheet paths from a parent-linked hierarchy. | [header](../kernels/mulib-ecad-flatten.h) |
+| [ecad-hittest](engineering-kernels.md) | Reverse-order schematic box hit testing with point tolerance. | [header](../kernels/mulib-ecad-hittest.h) |
+| [ecad-instance](engineering-kernels.md) | Forward and inverse instance transforms using translation, mirroring, and quarter turns. | [header](../kernels/mulib-ecad-instance.h) |
+| [ecad-kicad](engineering-kernels.md) | KiCad-style S-expression token scanning and parenthesis balance checks. | [header](../kernels/mulib-ecad-kicad.h) |
+| [ecad-netlist](mulib-ecad-netlist.md) | Deterministic SPICE-card export from supported flat R/C/I/V schematic, retaining names and double values, with bounded caller buffer. | [header](../kernels/mulib-ecad-netlist.h) · [example](../examples/modules/ecad-netlist.c) |
+| [ecad-pcb-sync](mulib-ecad-pcb-sync.md) | Stable bijective object-ID lookup between 256 schematic and PCB objects; no object model introspection, reconciliation or automatic synchronization. | [header](../kernels/mulib-ecad-pcb-sync.h) · [example](../examples/modules/ecad-pcb-sync.c) |
+| [ecad-pin](engineering-kernels.md) | Pin metadata validation and simple output-driver conflict checks. | [header](../kernels/mulib-ecad-pin.h) |
+| [ecad-port](engineering-kernels.md) | Port compatibility checks by name, width, and direction. | [header](../kernels/mulib-ecad-port.h) |
+| [ecad-power](engineering-kernels.md) | Checks for a source on each load's net within its voltage tolerance. | [header](../kernels/mulib-ecad-power.h) |
+| [ecad-schematic](mulib-ecad-schematic.md) | Bounded 256-component flat schematic for R/C/I/V 2-terminal devices, duplicate reference detection and fixed 32-byte names. | [header](../kernels/mulib-ecad-schematic.h) · [example](../examples/modules/ecad-schematic.c) |
+| [ecad-sheet](engineering-kernels.md) | Parent-first sheet ordering with ID, parent, and cycle checks. | [header](../kernels/mulib-ecad-sheet.h) |
+| [ecad-snap](engineering-kernels.md) | Point snapping to nearby targets or a regular grid. | [header](../kernels/mulib-ecad-snap.h) |
+| [ecad-symbol](mulib-ecad-symbol.md) | Bounded symbol metadata with 32 typed pins and integer drawing-space anchor positions. | [header](../kernels/mulib-ecad-symbol.h) · [example](../examples/modules/ecad-symbol.c) |
+| [ecad-wire](engineering-kernels.md) | One-bend orthogonal paths and point-to-segment proximity checks. | [header](../kernels/mulib-ecad-wire.h) |
+| [ecad-wire-route](engineering-kernels.md) | Four-neighbor, unit-cost A* wire routing over a blocked grid. | [header](../kernels/mulib-ecad-wire-route.h) |
+| [ed25519](mulib-ed25519.md) | OpenSSL EVP adapter for raw Ed25519 public keys, signatures and verification. | [header](../kernels/mulib-ed25519.h) · [example](../examples/ssh/kernels.c) |
+| [eda-attributes](mulib-eda-attributes.md) | Owned typed attribute table with integer, finite real and bounded byte-string values, replacement, lookup and removal. | [header](../kernels/mulib-eda-attributes.h) · [example](../examples/modules/eda-attributes.c) |
+| [eda-catalogue](engineering-kernels.md) | In-memory catalogue resolving exact or latest versions by identifier. | [header](../kernels/mulib-eda-catalogue.h) |
+| [eda-changeset](engineering-kernels.md) | Revision-checked batches of scalar record updates and removals applied through a snapshot. | [header](../kernels/mulib-eda-changeset.h) |
+| [eda-constraints](mulib-eda-constraints.md) | Evaluates equality, minimum and maximum scalar constraints with absolute tolerance, returning nonnegative violation magnitudes. | [header](../kernels/mulib-eda-constraints.h) · [example](../examples/modules/eda-constraints.c) |
+| [eda-dependency](engineering-kernels.md) | Dependency graph topological ordering and downstream dirty marking. | [header](../kernels/mulib-eda-dependency.h) |
+| [eda-design-db](mulib-eda-design-db.md) | Flat revisioned design store keyed by nonzero external IDs, with typed finite scalar values and independent owned snapshot cloning. | [header](../kernels/mulib-eda-design-db.h) · [example](../examples/modules/eda-design-db.c) |
+| [eda-diagnostics](engineering-kernels.md) | Owned diagnostic messages with severity, code, and object ID. | [header](../kernels/mulib-eda-diagnostics.h) |
+| [eda-diff](engineering-kernels.md) | Record equality and ID-based changesets between design snapshots. | [header](../kernels/mulib-eda-diff.h) |
+| [eda-handles](engineering-kernels.md) | Pool-local generation-checked handle allocation, validation, and release. | [header](../kernels/mulib-eda-handles.h) |
+| [eda-hierarchy](mulib-eda-hierarchy.md) | Append-only hierarchy with unique sibling names and slash-separated paths. | [header](../kernels/mulib-eda-hierarchy.h) · [example](../examples/modules/eda-hierarchy.c) |
+| [eda-ids](mulib-eda-ids.md) | Typed 64-bit IDs: 8-bit kind, 24-bit generation and 32-bit index plus one; stale generations are rejected. | [header](../kernels/mulib-eda-ids.h) · [example](../examples/modules/eda-ids.c) |
+| [eda-incremental](mulib-eda-incremental.md) | Dense adjacency invalidation propagation including cyclic dependencies; intended for small incremental graphs (O(n²) memory), not the final million-node build graph. | [header](../kernels/mulib-eda-incremental.h) · [example](../examples/modules/eda-incremental.c) |
+| [eda-job](engineering-kernels.md) | Job lifecycle transition checks and monotonic progress tracking. | [header](../kernels/mulib-eda-job.h) |
+| [eda-journal](engineering-kernels.md) | Length-framed design snapshots on caller-owned streams; not a crash-atomic log. | [header](../kernels/mulib-eda-journal.h) |
+| [eda-library](mulib-eda-library.md) | In-memory part definition catalog with immutable key, description and pin count. | [header](../kernels/mulib-eda-library.h) · [example](../examples/modules/eda-library.c) |
+| [eda-merge](engineering-kernels.md) | Three-way scalar record merge with same-record conflict reporting. | [header](../kernels/mulib-eda-merge.h) |
+| [eda-netgraph](mulib-eda-netgraph.md) | Append-only connectivity hypergraph with indexed nets, terminals, explicit disconnection, net merging and deterministic degrees. | [header](../kernels/mulib-eda-netgraph.h) · [example](../examples/modules/eda-netgraph.c) |
+| [eda-object](mulib-eda-object.md) | Small immutable-ID object header with checked type/name, monotonic revision on rename; object persistence and schema registry are outside scope. | [header](../kernels/mulib-eda-object.h) · [example](../examples/modules/eda-object.c) |
+| [eda-parametric](engineering-kernels.md) | Stack-based evaluation of scalar arithmetic with literal and parameter operands. | [header](../kernels/mulib-eda-parametric.h) |
+| [eda-project](mulib-eda-project.md) | Validated in-memory project identity, revision, variant count and reproducible seed. | [header](../kernels/mulib-eda-project.h) · [example](../examples/modules/eda-project.c) |
+| [eda-properties](engineering-kernels.md) | Owned integer, real, and text properties keyed by object ID and name. | [header](../kernels/mulib-eda-properties.h) |
+| [eda-quantity](mulib-eda-quantity.md) | First-order uncertainty propagation for independent unit-tagged quantities with addition, multiplication and division. | [header](../kernels/mulib-eda-quantity.h) · [example](../examples/modules/eda-quantity.c) |
+| [eda-query](engineering-kernels.md) | Linear design record filtering by kind, parent ID, and rectangular bounds. | [header](../kernels/mulib-eda-query.h) |
+| [eda-revision](engineering-kernels.md) | Owned design store snapshots tagged with the source revision. | [header](../kernels/mulib-eda-revision.h) |
+| [eda-selection](engineering-kernels.md) | Owned, duplicate-free selection list of object IDs. | [header](../kernels/mulib-eda-selection.h) |
+| [eda-serialize](engineering-kernels.md) | Versioned binary encoding and decoding of scalar design store snapshots. | [header](../kernels/mulib-eda-serialize.h) |
+| [eda-status](mulib-eda-status.md) | Shared status names and bounded diagnostic record with line/column context. | [header](../kernels/mulib-eda-status.h) · [example](../examples/modules/eda-status.c) |
+| [eda-store](engineering-kernels.md) | ID-sorted in-memory scalar design records with revision tracking and snapshot cloning. | [header](../kernels/mulib-eda-store.h) |
+| [eda-transaction](mulib-eda-transaction.md) | Optimistic owned-snapshot transaction over eda-design-db. | [header](../kernels/mulib-eda-transaction.h) · [example](../examples/modules/eda-transaction.c) |
+| [eda-undo](mulib-eda-undo.md) | Bounded 256-command reversible scalar-field journal over eda-design-db. | [header](../kernels/mulib-eda-undo.h) · [example](../examples/modules/eda-undo.c) |
+| [eda-units](mulib-eda-units.md) | SI base dimensions and a deliberately scoped engineering unit set (m, kg, s, A, K, mol, cd, Hz, V, Ohm, F, H, W, C, degC, rad, deg). | [header](../kernels/mulib-eda-units.h) · [example](../examples/modules/eda-units.c) |
+| [eda-validate](engineering-kernels.md) | Design store record and parent-chain checks, including missing parents and cycles. | [header](../kernels/mulib-eda-validate.h) |
+| [eda-variants](engineering-kernels.md) | Per-variant component substitution and population lookup. | [header](../kernels/mulib-eda-variants.h) |
+| [edbuf](mulib-edbuf.md) | Transactional editor buffers: gap, persistent AVL rope and piece table. | [header](../kernels/mulib-edbuf.h) · [example](../examples/modules/edbuf.c) |
+| [edit_distance](mulib-edit_distance.md) | Unit-cost byte edit distance for binary buffers and C strings. | [header](../kernels/mulib-edit_distance.h) · [example](../examples/modules/edit_distance.c) |
+| [efi](mulib-efi.md) | Checked PE/COFF EFI application and driver files, entry points and certificate framing. | [header](../kernels/mulib-efi.h) · [example](../examples/modules/efi.c) |
+| [egraph](mulib-egraph.md) | Bounded congruence classes, hash-consing, union and costed extraction. | [header](../kernels/mulib-egraph.h) · [example](../examples/modules/egraph.c) |
+| [elf](mulib-elf.md) | Bounds-checked endian-aware ELF32 and ELF64 binary inspection. | [header](../kernels/mulib-elf.h) · [example](../examples/modules/elf.c) |
+| [elf-objdump](mulib-elf-objdump.md) | ELF32/64 program, section, symbol and hex dumps using shared objdump. | [header](../kernels/mulib-elf-objdump.h) · [example](../examples/modules/elf-objdump.c) |
+| [elfbuilder](mulib-elfbuilder.md) | Owned ELF64 relocatable section builder reusing objfilebuilder. | [header](../kernels/mulib-elfbuilder.h) · [example](../examples/modules/elfbuilder.c) |
+| [elfutils](mulib-elfutils.md) | Named ELF section/symbol lookup over the checked ELF reader. | [header](../kernels/mulib-elfutils.h) · [example](../examples/modules/elfutils.c) |
+| [elvi-scrape](mulib-elvi-scrape.md) | Declarative search URL generation and bounded HTML/JSON title/link extraction from .elvs providers. | [header](../kernels/mulib-elvi-scrape.h) · [example](../examples/elvi-scrape.c) |
+| [embeddingsdb](mulib-embeddingsdb.md) | Exact Euclidean nearest neighbor and metric-aware cosine/dot-product top-k over owned vectors. | [header](../kernels/mulib-embeddingsdb.h) · [example](../examples/modules/embeddingsdb.c) |
+| [emitter](mulib-emitter.md) | Checked binary instruction emission and endian-aware patching. | [header](../kernels/mulib-emitter.h) · [example](../examples/modules/emitter.c) |
+| [encoding](mulib-encoding.md) | Checked ULEB128 and ZigZag codecs for portable signed/unsigned record storage | [header](../kernels/mulib-encoding.h) · [example](../examples/modules/encoding.c) |
+| [endian](mulib-endian.md) | Explicit little- and big-endian primitive load/store helpers. | [header](../kernels/mulib-endian.h) · [example](../examples/modules/endian.c) |
+| [entropy](mulib-entropy.md) | Operating-system cryptographic entropy, secret wiping and comparison. | [header](../kernels/mulib-entropy.h) · [example](../examples/modules/entropy.c) |
+| [env](mulib-env.md) | Environment variable inspection and bounded fallback copy. | [header](../kernels/mulib-env.h) · [example](../examples/modules/env.c) |
+| [epoll](mulib-epoll.md) | Owned Linux epoll registration and bounded readiness waits. | [header](../kernels/mulib-epoll.h) · [example](../examples/modules/epoll.c) |
+| [epub](mulib-epub.md) | EPUB 3 packaging/read access with opt-in semantic DocIR chapter adaptation. | [header](../kernels/mulib-epub.h) · [example](../examples/modules/epub.c) |
+| [epubcheck](mulib-epubcheck.md) | Bounds-checked output epubcheck structures binary inspection and record access. | [header](../kernels/mulib-epubcheck.h) · [example](../examples/mulib-epubcheck.c) |
+| [epubwriter](mulib-epubwriter.md) | 'Minimal EPUB 3.0 writer: valid stored ZIP, mimetype, container, package, nav and one XHTML chapter.' | [header](../kernels/mulib-epubwriter.h) · [example](../examples/mulib-epubwriter.c) |
+| [eqn](mulib-eqn.md) | Bounded mathematical/logic expression trees, MathML, LaTeX and evaluation. | [header](../kernels/mulib-eqn.h) · [example](../examples/modules/eqn.c) |
+| [escape](mulib-escape.md) | C-style escaping and unescaping of byte strings. | [header](../kernels/mulib-escape.h) · [example](../examples/modules/escape.c) |
+| [ethtool-features](mulib-ethtool-features.md) | Read an actual 32-bit block of kernel ethtool available/requested/active feature bits | [header](../kernels/mulib-ethtool-features.h) · [example](../examples/modules/ethtool-features.c) |
+| [ethtool-module](mulib-ethtool-module.md) | Retrieve transceiver SFP/module EEPROM type and size via real ETHTOOL_GMODULEINFO ioctl | [header](../kernels/mulib-ethtool-module.h) · [example](../examples/modules/ethtool-module.c) |
+| [ethtool-netlink](mulib-ethtool-netlink.md) | Discover the Linux ethtool Generic Netlink family ID | [header](../kernels/mulib-ethtool-netlink.h) · [example](../examples/modules/ethtool-netlink.c) |
+| [ethtool-stats](mulib-ethtool-stats.md) | Read interface receive byte statistics from sysfs (not complete driver ethtool counters) | [header](../kernels/mulib-ethtool-stats.h) · [example](../examples/modules/ethtool-stats.c) |
+| [etl-transform](mulib-etl-transform.md) | Composable pull-based ETL record filtering and transformation callbacks | [header](../kernels/mulib-etl-transform.h) · [example](../examples/modules/etl-transform.c) |
+| [euclidean_distance](mulib-euclidean_distance.md) | Euclidean distance with hypot accumulation. | [header](../kernels/mulib-euclidean_distance.h) · [example](../examples/modules/euclidean_distance.c) |
+| [eventfd](mulib-eventfd.md) | Linux eventfd counters with explicit descriptor ownership. | [header](../kernels/mulib-eventfd.h) · [example](../examples/modules/eventfd.c) |
+| [evtlistener](mulib-evtlistener.md) | Callback listeners for event streams and parser-produced events. | [header](../kernels/mulib-evtlistener.h) · [example](../examples/modules/evtlistener.c) |
+| [evtloop](mulib-evtloop.md) | Cooperative caller-clocked one-shot task and timer queue. | [header](../kernels/mulib-evtloop.h) · [example](../examples/modules/evtloop.c) |
+| [evtstream](mulib-evtstream.md) | Allocation-free balanced AST event streams with retryable depth bounds. | [header](../kernels/mulib-evtstream.h) · [example](../examples/modules/evtstream.c) |
+| [exec](mulib-exec.md) | POSIX command execution, concurrent pipelines and a documented Mune DSL. | [header](../kernels/mulib-exec.h) · [example](../examples/modules/exec.c) |
+| [ezjni](mulib-ezjni.md) | Checked JNI scopes, cached methods, references and UTF-16/byte copies. | [header](../kernels/mulib-ezjni.h) · [example](../examples/modules/ezjni.c) |
+| [ezndk](mulib-ezndk.md) | Owned Android assets/windows, looper helpers and safe logcat messages. | [header](../kernels/mulib-ezndk.h) · [example](../examples/modules/ezndk.c) |
 
 ## F
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [fca](mulib-fca.md) | Formal Concept Analysis binary contexts up to 64 objects and 64 attributes | [header](../include/mulib-fca.h) · [example](../examples/modules/fca.c) |
-| [fetch](mulib-fetch.md) | Transport-agnostic bounded HTTP retrieval with explicit policy enforcement. | [header](../include/mulib-fetch.h) · [example](../examples/modules/fetch.c) |
-| [fetch-policy](mulib-fetch-policy.md) | Conservative outbound URL security checks and restricted fetch policy. | [header](../include/mulib-fetch-policy.h) · [example](../examples/modules/fetch-policy.c) |
-| [fft](mulib-fft.md) | In-place radix-2 complex Fourier transforms. | [header](../include/mulib-fft.h) · [example](../examples/modules/fft.c) |
-| [fiber](mulib-fiber.md) | Stackful cooperative fibers with parking, wakeups and timed sleep. | [header](../include/mulib-fiber.h) · [example](../examples/modules/fiber.c) |
-| [field-boundary](engineering-kernels.md) | Dirichlet boundary constraints by elimination in a dense linear system. | [header](../include/mulib-field-boundary.h) |
-| [field-capacitance](engineering-kernels.md) | Capacitance from stored energy or an ideal parallel-plate model. | [header](../include/mulib-field-capacitance.h) |
-| [field-current](engineering-kernels.md) | Ohmic current density and power density from sampled electric fields. | [header](../include/mulib-field-current.h) |
-| [field-electrostatic](engineering-kernels.md) | 2-D finite-difference electrostatic potential and field for uniform permittivity. | [header](../include/mulib-field-electrostatic.h) |
-| [field-electrothermal](engineering-kernels.md) | Explicit temperature and power step for a lumped resistor thermal model. | [header](../include/mulib-field-electrothermal.h) |
-| [field-fdm](engineering-kernels.md) | Iteration-limited 2-D Gauss-Seidel Poisson solve on a rectangular grid with fixed boundaries. | [header](../include/mulib-field-fdm.h) |
-| [field-fdtd](engineering-kernels.md) | 1-D Yee time step with uniform material and perfectly conducting boundaries. | [header](../include/mulib-field-fdtd.h) |
-| [field-fem](engineering-kernels.md) | Dense scalar diffusion assembly on 2-D linear triangular elements. | [header](../include/mulib-field-fem.h) |
-| [field-inductance](engineering-kernels.md) | Inductance from stored energy or an ideal solenoid model. | [header](../include/mulib-field-inductance.h) |
-| [field-magnetostatic](engineering-kernels.md) | 2-D scalar magnetic vector potential and flux for uniform permeability. | [header](../include/mulib-field-magnetostatic.h) |
-| [field-material](engineering-kernels.md) | Material parameter validation and thermal diffusivity calculation. | [header](../include/mulib-field-material.h) |
-| [field-mesh](engineering-kernels.md) | Validation and total area of a caller-supplied 2-D triangular mesh. | [header](../include/mulib-field-mesh.h) |
-| [field-poisson](mulib-field-poisson.md) | Closed-form homogeneous 1D electrostatic potential and electric field with uniform free charge and fixed boundary potentials. | [header](../include/mulib-field-poisson.h) · [example](../examples/modules/field-poisson.c) |
-| [field-thermal](mulib-field-thermal.md) | Closed-form homogeneous 1D steady conduction with uniform heat generation and fixed boundary temperatures, plus heat flux. | [header](../include/mulib-field-thermal.h) · [example](../examples/modules/field-thermal.c) |
-| [figurelayout](mulib-figurelayout.md) | Owned ordered collection for graphics figurelayout rectangles and records; insertion, indexing, removal. | [header](../include/mulib-figurelayout.h) · [example](../examples/mulib-figurelayout.c) |
-| [filectl](mulib-filectl.md) | POSIX descriptor flags and advisory whole-file record locks. | [header](../include/mulib-filectl.h) · [example](../examples/modules/filectl.c) |
-| [fileserver](mulib-fileserver.md) | Bounded static-file HTTP responses with explicit path confinement policy. | [header](../include/mulib-fileserver.h) · [example](../examples/modules/fileserver.c) |
-| [flatbuffers](mulib-flatbuffers.md) | Bounds-checked FlatBuffers table/scalar/string views, not a schema compiler. | [header](../include/mulib-flatbuffers.h) · [example](../examples/modules/flatbuffers.c) |
-| [floatgraphics](mulib-floatgraphics.md) | Owned ordered collection for graphics floatgraphics rectangles and records; insertion, indexing, removal. | [header](../include/mulib-floatgraphics.h) · [example](../examples/mulib-floatgraphics.c) |
-| [flow-graph](mulib-flow-graph.md) | Deterministic topological sort and cycle detection on up to 64 jobs with dense adjacency. | [header](../include/mulib-flow-graph.h) · [example](../examples/modules/flow-graph.c) |
-| [fmt-aiger](mulib-fmt-aiger.md) | ASCII AIGER AAG writer for a single-output combinational AIG where primary inputs occur before all AND nodes; sequential and symbol extensions are excluded. | [header](../include/mulib-fmt-aiger.h) · [example](../examples/modules/fmt-aiger.c) |
-| [fmt-sv](mulib-fmt-sv.md) | Structural synthesizable Verilog module emitter for one-bit HWIL combinational nodes, one output and generated port names. | [header](../include/mulib-fmt-sv.h) · [example](../examples/modules/fmt-sv.c) |
-| [fontcatalog](mulib-fontcatalog.md) | Owned bounded registry of font discovery metadata; replace, lookup and remove by name. | [header](../include/mulib-fontcatalog.h) · [example](../examples/mulib-fontcatalog.c) |
-| [fontcmap](mulib-fontcmap.md) | Checked Unicode cmap formats 4, 6, 10, 12, 13 and format 14 variation sequences. | [header](../include/mulib-fontcmap.h) · [example](../examples/mulib-fontcmap.c) |
-| [fontdraw](mulib-fontdraw.md) | Runtime FreeType font loading, outline extraction and glyph rasterization. | [header](../include/mulib-fontdraw.h) · [example](../examples/modules/fontdraw.c) |
-| [fontembed](mulib-fontembed.md) | Bounds-checked font and unicode fontembed structures binary inspection and record access. | [header](../include/mulib-fontembed.h) · [example](../examples/mulib-fontembed.c) |
-| [fontfallback](mulib-fontfallback.md) | Owned bounded registry of font family fallback chains; replace, lookup and remove by name. | [header](../include/mulib-fontfallback.h) · [example](../examples/mulib-fontfallback.c) |
-| [fontgdef](mulib-fontgdef.md) | Checked GDEF views and glyph class definition lookup. | [header](../include/mulib-fontgdef.h) · [example](../examples/mulib-fontgdef.c) |
-| [fontgpos](mulib-fontgpos.md) | Checked GPOS views and explicit/class pair positioning execution. | [header](../include/mulib-fontgpos.h) · [example](../examples/mulib-fontgpos.c) |
-| [fontgsub](mulib-fontgsub.md) | Checked GSUB views and bounded single/ligature lookup execution. | [header](../include/mulib-fontgsub.h) · [example](../examples/mulib-fontgsub.c) |
-| [fontkern](mulib-fontkern.md) | Simple legacy TrueType kern format 0 pair lookup. | [header](../include/mulib-fontkern.h) · [example](../examples/mulib-fontkern.c) |
-| [fontmetrics](mulib-fontmetrics.md) | HMetrics width lookup from caller-extracted hmtx table and hhea count. | [header](../include/mulib-fontmetrics.h) · [example](../examples/mulib-fontmetrics.c) |
-| [fontraster](mulib-fontraster.md) | Bounds-checked font and unicode fontraster structures binary inspection and record access. | [header](../include/mulib-fontraster.h) · [example](../examples/mulib-fontraster.c) |
-| [fontshape](mulib-fontshape.md) | HarfBuzz shaping plus opt-in bounded native Latin GSUB/GPOS execution with byte clusters. | [header](../include/mulib-fontshape.h) · [example](../examples/modules/fontshape.c) |
-| [fontsubset](mulib-fontsubset.md) | Owned ordered collection for font and unicode fontsubset rectangles and records; insertion, indexing, removal. | [header](../include/mulib-fontsubset.h) · [example](../examples/mulib-fontsubset.c) |
-| [fontvar](mulib-fontvar.md) | Bounds-checked font and unicode fontvar structures binary inspection and record access. | [header](../include/mulib-fontvar.h) · [example](../examples/mulib-fontvar.c) |
-| [formal-aig-cnf](engineering-kernels.md) | Tseitin CNF encoding for the engineering and-inverter graph representation. | [header](../include/mulib-formal-aig-cnf.h) |
-| [formal-assertion](engineering-kernels.md) | Sampled implication checks with bounded response windows and pending status. | [header](../include/mulib-formal-assertion.h) |
-| [formal-assume](engineering-kernels.md) | Guarantee checking on explicit-state paths restricted by a state predicate. | [header](../include/mulib-formal-assume.h) |
-| [formal-bmc](engineering-kernels.md) | Explicit-state safety checking up to a step bound, with shortest witnesses. | [header](../include/mulib-formal-bmc.h) |
-| [formal-cdc](engineering-kernels.md) | Reports unsynchronized crossings in caller-declared clock-domain metadata. | [header](../include/mulib-formal-cdc.h) |
-| [formal-cec](mulib-formal-cec.md) | Exact combinational equivalence for explicit truth tables with at most six inputs. | [header](../include/mulib-formal-cec.h) · [example](../examples/modules/formal-cec.c) |
-| [formal-cnf](mulib-formal-cnf.md) | Bounded CNF storage for 32 variables, 512 clauses and 16 literals per clause, with structural validation and an AND-gate Tseitin encoder. | [header](../include/mulib-formal-cnf.h) · [example](../examples/modules/formal-cnf.c) |
-| [formal-counterexample](engineering-kernels.md) | Bounded witness path reconstruction from predecessor links. | [header](../include/mulib-formal-counterexample.h) |
-| [formal-ctl](engineering-kernels.md) | Explicit-state CTL next, until, and globally operators. | [header](../include/mulib-formal-ctl.h) |
-| [formal-kinduction](engineering-kernels.md) | Explicit-state k-induction step checking without a base-case check. | [header](../include/mulib-formal-kinduction.h) |
-| [formal-ltl](engineering-kernels.md) | Next, eventually, globally, and until on a supplied lasso trace. | [header](../include/mulib-formal-ltl.h) |
-| [formal-miter](engineering-kernels.md) | Combinational and-inverter graph miter over pairs of output literals. | [header](../include/mulib-formal-miter.h) |
-| [formal-pdr](engineering-kernels.md) | Explicit predecessor closure for an inductive safety invariant, not symbolic PDR. | [header](../include/mulib-formal-pdr.h) |
-| [formal-proof](engineering-kernels.md) | Single-clause reverse unit propagation checking over CNF. | [header](../include/mulib-formal-proof.h) |
-| [formal-rdc](engineering-kernels.md) | Reports unsynchronized crossings in caller-declared reset-domain metadata. | [header](../include/mulib-formal-rdc.h) |
-| [formal-sat](mulib-formal-sat.md) | Correct bounded DPLL SAT solver with repeated unit propagation, chronological branching and branch-budget UNKNOWN. | [header](../include/mulib-formal-sat.h) · [example](../examples/modules/formal-sat.c) |
-| [formal-sec](engineering-kernels.md) | Product-state equivalence checks for explicit deterministic machines with per-transition outputs. | [header](../include/mulib-formal-sec.h) |
-| [formal-transition](engineering-kernels.md) | Explicit transition graph validation and breadth-first distances and predecessors. | [header](../include/mulib-formal-transition.h) |
-| [fpga-architecture](engineering-kernels.md) | Validation of a rectangular tile, LUT, and routing-track configuration. | [header](../include/mulib-fpga-architecture.h) |
-| [fpga-bitstream](engineering-kernels.md) | Architecture-neutral packing and unpacking of bit fields up to 64 bits. | [header](../include/mulib-fpga-bitstream.h) |
-| [fpga-constraints](engineering-kernels.md) | Pin assignment range and uniqueness checks for signals and pins. | [header](../include/mulib-fpga-constraints.h) |
-| [fpga-fasm](engineering-kernels.md) | Parsing and writing single scalar FASM feature assignments. | [header](../include/mulib-fpga-fasm.h) |
-| [fpga-grid](engineering-kernels.md) | Rectangular tile indexing and four-neighbor enumeration. | [header](../include/mulib-fpga-grid.h) |
-| [fpga-lut](mulib-fpga-lut.md) | Pure combinational lookup-table element evaluator and truth-table mapping for up to six inputs. | [header](../include/mulib-fpga-lut.h) · [example](../examples/modules/fpga-lut.c) |
-| [fpga-pack](engineering-kernels.md) | First-fit decreasing packing of scalar demands into fixed-capacity tiles. | [header](../include/mulib-fpga-pack.h) |
-| [fpga-pathfinder](engineering-kernels.md) | Round-limited negotiated-congestion routing for two-terminal nets on a supplied graph. | [header](../include/mulib-fpga-pathfinder.h) |
-| [fpga-place](engineering-kernels.md) | Grid-site placement legalization with optional blocked sites. | [header](../include/mulib-fpga-place.h) |
-| [fpga-route](mulib-fpga-route.md) | Shortest Manhattan four-neighbour path on a rectangular 2D obstacle grid, BFS with deterministic neighbour ordering. | [header](../include/mulib-fpga-route.h) · [example](../examples/modules/fpga-route.c) |
-| [fpga-rrgraph](engineering-kernels.md) | Uniform-cost directed routing graph for a four-neighbor rectangular grid. | [header](../include/mulib-fpga-rrgraph.h) |
-| [fpga-timing](engineering-kernels.md) | Summing supplied cell and wire delays along a path. | [header](../include/mulib-fpga-timing.h) |
-| [fraction](mulib-fraction.md) | Normalized signed rational numbers with checked arithmetic. | [header](../include/mulib-fraction.h) · [example](../examples/modules/fraction.c) |
-| [frame-layout](mulib-frame-layout.md) | Checked power-of-two aligned frame slots and final frame size rounding. | [header](../include/mulib-frame-layout.h) · [example](../examples/modules/frame-layout.c) |
-| [framebuffer](mulib-framebuffer.md) | Pitch-aware CPU framebuffer pattern fill and readback. | [header](../include/mulib-framebuffer.h) · [example](../examples/modules/framebuffer.c) |
-| [fs](mulib-fs.md) | Whole-file read and write helpers with explicit byte length. | [header](../include/mulib-fs.h) · [example](../examples/modules/fs.c) |
-| [fst](mulib-fst.md) | Deterministic range finite-state transducers over uint32_t symbols. | [header](../include/mulib-fst.h) · [example](../examples/modules/fst.c) |
-| [fswatch](mulib-fswatch.md) | Native events, filesystem-neutral watch DSL, snapshot diffing and daemon execution. | [header](../include/mulib-fswatch.h) · [example](../examples/modules/fswatch.c) |
-| [ftpclient](mulib-ftpclient.md) | Bounded FTP client commands, replies and session transitions. | [header](../include/mulib-ftpclient.h) · [example](../examples/modules/ftpclient.c) |
-| [ftpserver](mulib-ftpserver.md) | Callback-backed focused FTP server session state machine. | [header](../include/mulib-ftpserver.h) · [example](../examples/modules/ftpserver.c) |
-| [fuse](mulib-fuse.md) | Userspace filesystem request dispatch over the shared VFS model. | [header](../include/mulib-fuse.h) · [example](../examples/modules/fuse.c) |
-| [fuzzyquery](mulib-fuzzyquery.md) | Levenshtein bounded byte edit-distance with O(min(n,m)) memory | [header](../include/mulib-fuzzyquery.h) · [example](../examples/modules/fuzzyquery.c) |
-| [fxrate](mulib-fxrate.md) | Rational minor-unit FX conversion with rate observation and availability. | [header](../include/mulib-fxrate.h) · [example](../examples/finpred_market.c) |
+| [fca](mulib-fca.md) | Formal Concept Analysis binary contexts up to 64 objects and 64 attributes | [header](../kernels/mulib-fca.h) · [example](../examples/modules/fca.c) |
+| [fetch](mulib-fetch.md) | Transport-agnostic bounded HTTP retrieval with explicit policy enforcement. | [header](../kernels/mulib-fetch.h) · [example](../examples/modules/fetch.c) |
+| [fetch-policy](mulib-fetch-policy.md) | Conservative outbound URL security checks and restricted fetch policy. | [header](../kernels/mulib-fetch-policy.h) · [example](../examples/modules/fetch-policy.c) |
+| [fft](mulib-fft.md) | In-place radix-2 complex Fourier transforms. | [header](../kernels/mulib-fft.h) · [example](../examples/modules/fft.c) |
+| [fiber](mulib-fiber.md) | Stackful cooperative fibers with parking, wakeups and timed sleep. | [header](../kernels/mulib-fiber.h) · [example](../examples/modules/fiber.c) |
+| [field-boundary](engineering-kernels.md) | Dirichlet boundary constraints by elimination in a dense linear system. | [header](../kernels/mulib-field-boundary.h) |
+| [field-capacitance](engineering-kernels.md) | Capacitance from stored energy or an ideal parallel-plate model. | [header](../kernels/mulib-field-capacitance.h) |
+| [field-current](engineering-kernels.md) | Ohmic current density and power density from sampled electric fields. | [header](../kernels/mulib-field-current.h) |
+| [field-electrostatic](engineering-kernels.md) | 2-D finite-difference electrostatic potential and field for uniform permittivity. | [header](../kernels/mulib-field-electrostatic.h) |
+| [field-electrothermal](engineering-kernels.md) | Explicit temperature and power step for a lumped resistor thermal model. | [header](../kernels/mulib-field-electrothermal.h) |
+| [field-fdm](engineering-kernels.md) | Iteration-limited 2-D Gauss-Seidel Poisson solve on a rectangular grid with fixed boundaries. | [header](../kernels/mulib-field-fdm.h) |
+| [field-fdtd](engineering-kernels.md) | 1-D Yee time step with uniform material and perfectly conducting boundaries. | [header](../kernels/mulib-field-fdtd.h) |
+| [field-fem](engineering-kernels.md) | Dense scalar diffusion assembly on 2-D linear triangular elements. | [header](../kernels/mulib-field-fem.h) |
+| [field-inductance](engineering-kernels.md) | Inductance from stored energy or an ideal solenoid model. | [header](../kernels/mulib-field-inductance.h) |
+| [field-magnetostatic](engineering-kernels.md) | 2-D scalar magnetic vector potential and flux for uniform permeability. | [header](../kernels/mulib-field-magnetostatic.h) |
+| [field-material](engineering-kernels.md) | Material parameter validation and thermal diffusivity calculation. | [header](../kernels/mulib-field-material.h) |
+| [field-mesh](engineering-kernels.md) | Validation and total area of a caller-supplied 2-D triangular mesh. | [header](../kernels/mulib-field-mesh.h) |
+| [field-poisson](mulib-field-poisson.md) | Closed-form homogeneous 1D electrostatic potential and electric field with uniform free charge and fixed boundary potentials. | [header](../kernels/mulib-field-poisson.h) · [example](../examples/modules/field-poisson.c) |
+| [field-thermal](mulib-field-thermal.md) | Closed-form homogeneous 1D steady conduction with uniform heat generation and fixed boundary temperatures, plus heat flux. | [header](../kernels/mulib-field-thermal.h) · [example](../examples/modules/field-thermal.c) |
+| [figurelayout](mulib-figurelayout.md) | Owned ordered collection for graphics figurelayout rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-figurelayout.h) · [example](../examples/mulib-figurelayout.c) |
+| [filectl](mulib-filectl.md) | POSIX descriptor flags and advisory whole-file record locks. | [header](../kernels/mulib-filectl.h) · [example](../examples/modules/filectl.c) |
+| [fileserver](mulib-fileserver.md) | Bounded static-file HTTP responses with explicit path confinement policy. | [header](../kernels/mulib-fileserver.h) · [example](../examples/modules/fileserver.c) |
+| [flatbuffers](mulib-flatbuffers.md) | Bounds-checked FlatBuffers table/scalar/string views, not a schema compiler. | [header](../kernels/mulib-flatbuffers.h) · [example](../examples/modules/flatbuffers.c) |
+| [floatgraphics](mulib-floatgraphics.md) | Owned ordered collection for graphics floatgraphics rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-floatgraphics.h) · [example](../examples/mulib-floatgraphics.c) |
+| [flow-graph](mulib-flow-graph.md) | Deterministic topological sort and cycle detection on up to 64 jobs with dense adjacency. | [header](../kernels/mulib-flow-graph.h) · [example](../examples/modules/flow-graph.c) |
+| [fmt-aiger](mulib-fmt-aiger.md) | ASCII AIGER AAG writer for a single-output combinational AIG where primary inputs occur before all AND nodes; sequential and symbol extensions are excluded. | [header](../kernels/mulib-fmt-aiger.h) · [example](../examples/modules/fmt-aiger.c) |
+| [fmt-sv](mulib-fmt-sv.md) | Structural synthesizable Verilog module emitter for one-bit HWIL combinational nodes, one output and generated port names. | [header](../kernels/mulib-fmt-sv.h) · [example](../examples/modules/fmt-sv.c) |
+| [fontcatalog](mulib-fontcatalog.md) | Owned bounded registry of font discovery metadata; replace, lookup and remove by name. | [header](../kernels/mulib-fontcatalog.h) · [example](../examples/mulib-fontcatalog.c) |
+| [fontcmap](mulib-fontcmap.md) | Checked Unicode cmap formats 4, 6, 10, 12, 13 and format 14 variation sequences. | [header](../kernels/mulib-fontcmap.h) · [example](../examples/mulib-fontcmap.c) |
+| [fontdraw](mulib-fontdraw.md) | Runtime FreeType font loading, outline extraction and glyph rasterization. | [header](../kernels/mulib-fontdraw.h) · [example](../examples/modules/fontdraw.c) |
+| [fontembed](mulib-fontembed.md) | Bounds-checked font and unicode fontembed structures binary inspection and record access. | [header](../kernels/mulib-fontembed.h) · [example](../examples/mulib-fontembed.c) |
+| [fontfallback](mulib-fontfallback.md) | Owned bounded registry of font family fallback chains; replace, lookup and remove by name. | [header](../kernels/mulib-fontfallback.h) · [example](../examples/mulib-fontfallback.c) |
+| [fontgdef](mulib-fontgdef.md) | Checked GDEF views and glyph class definition lookup. | [header](../kernels/mulib-fontgdef.h) · [example](../examples/mulib-fontgdef.c) |
+| [fontgpos](mulib-fontgpos.md) | Checked GPOS views and explicit/class pair positioning execution. | [header](../kernels/mulib-fontgpos.h) · [example](../examples/mulib-fontgpos.c) |
+| [fontgsub](mulib-fontgsub.md) | Checked GSUB views and bounded single/ligature lookup execution. | [header](../kernels/mulib-fontgsub.h) · [example](../examples/mulib-fontgsub.c) |
+| [fontkern](mulib-fontkern.md) | Simple legacy TrueType kern format 0 pair lookup. | [header](../kernels/mulib-fontkern.h) · [example](../examples/mulib-fontkern.c) |
+| [fontmetrics](mulib-fontmetrics.md) | HMetrics width lookup from caller-extracted hmtx table and hhea count. | [header](../kernels/mulib-fontmetrics.h) · [example](../examples/mulib-fontmetrics.c) |
+| [fontraster](mulib-fontraster.md) | Bounds-checked font and unicode fontraster structures binary inspection and record access. | [header](../kernels/mulib-fontraster.h) · [example](../examples/mulib-fontraster.c) |
+| [fontshape](mulib-fontshape.md) | HarfBuzz shaping plus opt-in bounded native Latin GSUB/GPOS execution with byte clusters. | [header](../kernels/mulib-fontshape.h) · [example](../examples/modules/fontshape.c) |
+| [fontsubset](mulib-fontsubset.md) | Owned ordered collection for font and unicode fontsubset rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-fontsubset.h) · [example](../examples/mulib-fontsubset.c) |
+| [fontvar](mulib-fontvar.md) | Bounds-checked font and unicode fontvar structures binary inspection and record access. | [header](../kernels/mulib-fontvar.h) · [example](../examples/mulib-fontvar.c) |
+| [formal-aig-cnf](engineering-kernels.md) | Tseitin CNF encoding for the engineering and-inverter graph representation. | [header](../kernels/mulib-formal-aig-cnf.h) |
+| [formal-assertion](engineering-kernels.md) | Sampled implication checks with bounded response windows and pending status. | [header](../kernels/mulib-formal-assertion.h) |
+| [formal-assume](engineering-kernels.md) | Guarantee checking on explicit-state paths restricted by a state predicate. | [header](../kernels/mulib-formal-assume.h) |
+| [formal-bmc](engineering-kernels.md) | Explicit-state safety checking up to a step bound, with shortest witnesses. | [header](../kernels/mulib-formal-bmc.h) |
+| [formal-cdc](engineering-kernels.md) | Reports unsynchronized crossings in caller-declared clock-domain metadata. | [header](../kernels/mulib-formal-cdc.h) |
+| [formal-cec](mulib-formal-cec.md) | Exact combinational equivalence for explicit truth tables with at most six inputs. | [header](../kernels/mulib-formal-cec.h) · [example](../examples/modules/formal-cec.c) |
+| [formal-cnf](mulib-formal-cnf.md) | Bounded CNF storage for 32 variables, 512 clauses and 16 literals per clause, with structural validation and an AND-gate Tseitin encoder. | [header](../kernels/mulib-formal-cnf.h) · [example](../examples/modules/formal-cnf.c) |
+| [formal-counterexample](engineering-kernels.md) | Bounded witness path reconstruction from predecessor links. | [header](../kernels/mulib-formal-counterexample.h) |
+| [formal-ctl](engineering-kernels.md) | Explicit-state CTL next, until, and globally operators. | [header](../kernels/mulib-formal-ctl.h) |
+| [formal-kinduction](engineering-kernels.md) | Explicit-state k-induction step checking without a base-case check. | [header](../kernels/mulib-formal-kinduction.h) |
+| [formal-ltl](engineering-kernels.md) | Next, eventually, globally, and until on a supplied lasso trace. | [header](../kernels/mulib-formal-ltl.h) |
+| [formal-miter](engineering-kernels.md) | Combinational and-inverter graph miter over pairs of output literals. | [header](../kernels/mulib-formal-miter.h) |
+| [formal-pdr](engineering-kernels.md) | Explicit predecessor closure for an inductive safety invariant, not symbolic PDR. | [header](../kernels/mulib-formal-pdr.h) |
+| [formal-proof](engineering-kernels.md) | Single-clause reverse unit propagation checking over CNF. | [header](../kernels/mulib-formal-proof.h) |
+| [formal-rdc](engineering-kernels.md) | Reports unsynchronized crossings in caller-declared reset-domain metadata. | [header](../kernels/mulib-formal-rdc.h) |
+| [formal-sat](mulib-formal-sat.md) | Correct bounded DPLL SAT solver with repeated unit propagation, chronological branching and branch-budget UNKNOWN. | [header](../kernels/mulib-formal-sat.h) · [example](../examples/modules/formal-sat.c) |
+| [formal-sec](engineering-kernels.md) | Product-state equivalence checks for explicit deterministic machines with per-transition outputs. | [header](../kernels/mulib-formal-sec.h) |
+| [formal-transition](engineering-kernels.md) | Explicit transition graph validation and breadth-first distances and predecessors. | [header](../kernels/mulib-formal-transition.h) |
+| [fpga-architecture](engineering-kernels.md) | Validation of a rectangular tile, LUT, and routing-track configuration. | [header](../kernels/mulib-fpga-architecture.h) |
+| [fpga-bitstream](engineering-kernels.md) | Architecture-neutral packing and unpacking of bit fields up to 64 bits. | [header](../kernels/mulib-fpga-bitstream.h) |
+| [fpga-constraints](engineering-kernels.md) | Pin assignment range and uniqueness checks for signals and pins. | [header](../kernels/mulib-fpga-constraints.h) |
+| [fpga-fasm](engineering-kernels.md) | Parsing and writing single scalar FASM feature assignments. | [header](../kernels/mulib-fpga-fasm.h) |
+| [fpga-grid](engineering-kernels.md) | Rectangular tile indexing and four-neighbor enumeration. | [header](../kernels/mulib-fpga-grid.h) |
+| [fpga-lut](mulib-fpga-lut.md) | Pure combinational lookup-table element evaluator and truth-table mapping for up to six inputs. | [header](../kernels/mulib-fpga-lut.h) · [example](../examples/modules/fpga-lut.c) |
+| [fpga-pack](engineering-kernels.md) | First-fit decreasing packing of scalar demands into fixed-capacity tiles. | [header](../kernels/mulib-fpga-pack.h) |
+| [fpga-pathfinder](engineering-kernels.md) | Round-limited negotiated-congestion routing for two-terminal nets on a supplied graph. | [header](../kernels/mulib-fpga-pathfinder.h) |
+| [fpga-place](engineering-kernels.md) | Grid-site placement legalization with optional blocked sites. | [header](../kernels/mulib-fpga-place.h) |
+| [fpga-route](mulib-fpga-route.md) | Shortest Manhattan four-neighbour path on a rectangular 2D obstacle grid, BFS with deterministic neighbour ordering. | [header](../kernels/mulib-fpga-route.h) · [example](../examples/modules/fpga-route.c) |
+| [fpga-rrgraph](engineering-kernels.md) | Uniform-cost directed routing graph for a four-neighbor rectangular grid. | [header](../kernels/mulib-fpga-rrgraph.h) |
+| [fpga-timing](engineering-kernels.md) | Summing supplied cell and wire delays along a path. | [header](../kernels/mulib-fpga-timing.h) |
+| [fraction](mulib-fraction.md) | Normalized signed rational numbers with checked arithmetic. | [header](../kernels/mulib-fraction.h) · [example](../examples/modules/fraction.c) |
+| [frame-layout](mulib-frame-layout.md) | Checked power-of-two aligned frame slots and final frame size rounding. | [header](../kernels/mulib-frame-layout.h) · [example](../examples/modules/frame-layout.c) |
+| [framebuffer](mulib-framebuffer.md) | Pitch-aware CPU framebuffer pattern fill and readback. | [header](../kernels/mulib-framebuffer.h) · [example](../examples/modules/framebuffer.c) |
+| [fs](mulib-fs.md) | Whole-file read and write helpers with explicit byte length. | [header](../kernels/mulib-fs.h) · [example](../examples/modules/fs.c) |
+| [fst](mulib-fst.md) | Deterministic range finite-state transducers over uint32_t symbols. | [header](../kernels/mulib-fst.h) · [example](../examples/modules/fst.c) |
+| [fswatch](mulib-fswatch.md) | Native events, filesystem-neutral watch DSL, snapshot diffing and daemon execution. | [header](../kernels/mulib-fswatch.h) · [example](../examples/modules/fswatch.c) |
+| [ftpclient](mulib-ftpclient.md) | Bounded FTP client commands, replies and session transitions. | [header](../kernels/mulib-ftpclient.h) · [example](../examples/modules/ftpclient.c) |
+| [ftpserver](mulib-ftpserver.md) | Callback-backed focused FTP server session state machine. | [header](../kernels/mulib-ftpserver.h) · [example](../examples/modules/ftpserver.c) |
+| [fuse](mulib-fuse.md) | Userspace filesystem request dispatch over the shared VFS model. | [header](../kernels/mulib-fuse.h) · [example](../examples/modules/fuse.c) |
+| [fuzzyquery](mulib-fuzzyquery.md) | Levenshtein bounded byte edit-distance with O(min(n,m)) memory | [header](../kernels/mulib-fuzzyquery.h) · [example](../examples/modules/fuzzyquery.c) |
+| [fxrate](mulib-fxrate.md) | Rational minor-unit FX conversion with rate observation and availability. | [header](../kernels/mulib-fxrate.h) · [example](../examples/finpred_market.c) |
 
 ## G
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [galois](mulib-galois.md) | FCA Galois derivation aliases with extent and intent closure | [header](../include/mulib-galois.h) · [example](../examples/modules/galois.c) |
-| [gbm](notebook-desktop.md) | Optional runtime GBM device, buffer allocation and single-plane export. | [header](../include/mulib-gbm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [gc](mulib-gc.md) | Explicit stop-the-world mark-and-sweep reference heap with iterative tracing. | [header](../include/mulib-gc.h) · [example](../examples/modules/gc.c) |
-| [gc-roots](mulib-gc-roots.md) | Deduplicated borrowed GC root set and explicit collection adapter. | [header](../include/mulib-gc-roots.h) · [example](../examples/modules/gc-roots.c) |
-| [geoindex](mulib-geoindex.md) | Exact spherical great-circle distance and radius search over owned geographic points | [header](../include/mulib-geoindex.h) · [example](../examples/modules/geoindex.c) |
-| [geom-bezier](mulib-geom-bezier.md) | Arbitrary-degree de Casteljau curve evaluation. Limit: Scratch must have n elements; no surface API. | [header](../include/mulib-geom-bezier.h) · [example](../examples/media-pipeline.c) |
-| [geom-bspline](mulib-geom-bspline.md) | De Boor B-spline curve evaluation and span search. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-geom-bspline.h) · [example](../examples/media-pipeline.c) |
-| [geom-cloner](mulib-geom-cloner.md) | Grid and radial instance positions; linear is grid with two dimensions =1. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-geom-cloner.h) · [example](../examples/media-pipeline.c) |
-| [geom-csg](mulib-geom-csg.md) | Implicit-field CSG union, intersection and difference. Limit: Not exact boundary-representation CSG. | [header](../include/mulib-geom-csg.h) · [example](../examples/media-pipeline.c) |
-| [geom-deform](mulib-geom-deform.md) | Twist, taper and cylindrical bend point deformation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-geom-deform.h) · [example](../examples/media-pipeline.c) |
-| [geom-isosurface](mulib-geom-isosurface.md) | Marching tetrahedron cell polygonization. Limit: Requires grid traversal, consistent winding and vertex welding. | [header](../include/mulib-geom-isosurface.h) · [example](../examples/media-pipeline.c) |
-| [geom-metaball](mulib-geom-metaball.md) | Compact-support polynomial metaball field. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-geom-metaball.h) · [example](../examples/media-pipeline.c) |
-| [geom-nurbs](mulib-geom-nurbs.md) | Rational B-spline curve evaluation using homogeneous coordinates. Limit: Positive weights, degree <=32; no tensor-product surface yet. | [header](../include/mulib-geom-nurbs.h) · [example](../examples/media-pipeline.c) |
-| [geom-sdf](mulib-geom-sdf.md) | Sphere, box and smooth-union signed distance functions. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-geom-sdf.h) · [example](../examples/media-pipeline.c) |
-| [geom-tessellate](mulib-geom-tessellate.md) | Regular parametric surface tessellation via callback. Limit: Not adaptive; add curvature-based refinement and crack prevention. | [header](../include/mulib-geom-tessellate.h) · [example](../examples/media-pipeline.c) |
-| [geom2-core](engineering-kernels.md) | Double-precision planar points, boxes and floating-point polygon predicates; not exact geometry. | [header](../include/mulib-geom2-core.h) · [example](../examples/kernel-substrates.c) |
-| [geometry](mulib-geometry.md) | Basic planar point geometry including distances and orientation. | [header](../include/mulib-geometry.h) · [example](../examples/modules/geometry.c) |
-| [geosolve](mulib-geosolve.md) | Extensible 2D/3D geometric constraint solving and analytic constructions. | [header](../include/mulib-geosolve.h) · [example](../examples/modules/geosolve.c) |
-| [getaddr](mulib-getaddr.md) | Bounded literal and native hostname address lookup. | [header](../include/mulib-getaddr.h) · [example](../examples/modules/getaddr.c) |
-| [git](mulib-git.md) | Git command execution and documented Mune workflows, SHA-1 object identities and pkt-line framing. | [header](../include/mulib-git.h) · [example](../examples/modules/git.c) |
-| [glob](mulib-glob.md) | Portable glob pattern matching with star and question-mark wildcards. | [header](../include/mulib-glob.h) · [example](../examples/modules/glob.c) |
-| [glossary](mulib-glossary.md) | Owned bounded registry of glossary terms and definitions; replace, lookup and remove by name. | [header](../include/mulib-glossary.h) · [example](../examples/mulib-glossary.c) |
-| [glr](mulib-glr.md) | Generalized context-free parsing with shared stacks and parse forests. | [header](../include/mulib-glr.h) · [example](../examples/modules/glr.c) |
-| [glx](mulib-glx.md) | Software graphics surfaces backed by memory or MuLIB DRM dumb buffers. | [header](../include/mulib-glx.h) · [example](../examples/modules/glx.c) |
-| [glx-antialias](mulib-gfx-path.md) | Bounded glx-antialias API; see documented scope and acceptance gates. | [header](../include/mulib-glx-antialias.h) · [example](../examples/gfx-headless.c) |
-| [glx-atlas](mulib-gfx-font-image.md) | Bounded glx-atlas API; see documented scope and acceptance gates. | [header](../include/mulib-glx-atlas.h) · [example](../examples/gfx-headless.c) |
-| [glx-backend-drm](mulib-gfx-drm.md) | Bounded glx-backend-drm API; see documented scope and acceptance gates. | [header](../include/mulib-glx-backend-drm.h) · [example](../examples/gfx-headless.c) |
-| [glx-backend-wayland](mulib-gfx-wire.md) | Bounded glx-backend-wayland API; see documented scope and acceptance gates. | [header](../include/mulib-glx-backend-wayland.h) · [example](../examples/gfx-headless.c) |
-| [glx-backend-x11](mulib-gfx-wire.md) | Bounded glx-backend-x11 API; see documented scope and acceptance gates. | [header](../include/mulib-glx-backend-x11.h) · [example](../examples/gfx-headless.c) |
-| [glx-blend](mulib-gfx-raster.md) | Bounded glx-blend API; see documented scope and acceptance gates. | [header](../include/mulib-glx-blend.h) · [example](../examples/gfx-headless.c) |
-| [glx-clientbuffer](notebook-desktop.md) | Reference-counted CPU ARGB8888 pixel view. | [header](../include/mulib-glx-clientbuffer.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-clip](mulib-gfx-raster.md) | Bounded glx-clip API; see documented scope and acceptance gates. | [header](../include/mulib-glx-clip.h) · [example](../examples/gfx-headless.c) |
-| [glx-compositor](mulib-gfx-raster.md) | Bounded glx-compositor API; see documented scope and acceptance gates. | [header](../include/mulib-glx-compositor.h) · [example](../examples/gfx-headless.c) |
-| [glx-core](mulib-gfx-raster.md) | Bounded glx-core API; see documented scope and acceptance gates. | [header](../include/mulib-glx-core.h) · [example](../examples/gfx-headless.c) |
-| [glx-cursor](graphics-overlay.md) | Bounded glx-cursor API; see documented scope and acceptance gates. | [header](../include/mulib-glx-cursor.h) · [example](../examples/gfx-headless.c) |
-| [glx-damage](notebook-desktop.md) | Clipped damage rectangles with full-damage fallback. | [header](../include/mulib-glx-damage.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-display](graphics-overlay.md) | Bounded glx-display API; see documented scope and acceptance gates. | [header](../include/mulib-glx-display.h) · [example](../examples/gfx-headless.c) |
-| [glx-drawlist](mulib-gfx-raster.md) | Bounded glx-drawlist API; see documented scope and acceptance gates. | [header](../include/mulib-glx-drawlist.h) · [example](../examples/gfx-headless.c) |
-| [glx-egl](graphics-overlay.md) | Bounded glx-egl API; see documented scope and acceptance gates. | [header](../include/mulib-glx-egl.h) · [example](../examples/gfx-headless.c) |
-| [glx-event](mulib-gfx-input.md) | Bounded glx-event API; see documented scope and acceptance gates. | [header](../include/mulib-glx-event.h) · [example](../examples/gfx-headless.c) |
-| [glx-eventloop](mulib-gfx-input.md) | Bounded glx-eventloop API; see documented scope and acceptance gates. | [header](../include/mulib-glx-eventloop.h) · [example](../examples/gfx-headless.c) |
-| [glx-filter](mulib-gfx-path.md) | Bounded glx-filter API; see documented scope and acceptance gates. | [header](../include/mulib-glx-filter.h) · [example](../examples/gfx-headless.c) |
-| [glx-font](mulib-gfx-font-image.md) | Bounded glx-font API; see documented scope and acceptance gates. | [header](../include/mulib-glx-font.h) · [example](../examples/gfx-headless.c) |
-| [glx-fontscan](mulib-gfx-font-image.md) | Bounded glx-fontscan API; see documented scope and acceptance gates. | [header](../include/mulib-glx-fontscan.h) · [example](../examples/gfx-headless.c) |
-| [glx-frameclock](notebook-desktop.md) | Monotonic deadline tracking with one outstanding frame. | [header](../include/mulib-glx-frameclock.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-glyphcache](mulib-gfx-font-image.md) | Bounded glx-glyphcache API; see documented scope and acceptance gates. | [header](../include/mulib-glx-glyphcache.h) · [example](../examples/gfx-headless.c) |
-| [glx-gpu](graphics-overlay.md) | Bounded glx-gpu API; see documented scope and acceptance gates. | [header](../include/mulib-glx-gpu.h) · [example](../examples/gfx-headless.c) |
-| [glx-gradient](mulib-gfx-path.md) | Bounded glx-gradient API; see documented scope and acceptance gates. | [header](../include/mulib-glx-gradient.h) · [example](../examples/gfx-headless.c) |
-| [glx-hittest](notebook-desktop.md) | Topmost scene hit and inverse-transformed coordinates. | [header](../include/mulib-glx-hittest.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-icon](mulib-gfx-font-image.md) | Bounded glx-icon API; see documented scope and acceptance gates. | [header](../include/mulib-glx-icon.h) · [example](../examples/gfx-headless.c) |
-| [glx-imagedecode](mulib-gfx-font-image.md) | Bounded glx-imagedecode API; see documented scope and acceptance gates. | [header](../include/mulib-glx-imagedecode.h) · [example](../examples/gfx-headless.c) |
-| [glx-legacy-bridge](graphics-overlay.md) | Bounded glx-legacy-bridge API; see documented scope and acceptance gates. | [header](../include/mulib-glx-legacy-bridge.h) · [example](../examples/gfx-headless.c) |
-| [glx-mesh](mulib-gfx-path.md) | Bounded glx-mesh API; see documented scope and acceptance gates. | [header](../include/mulib-glx-mesh.h) · [example](../examples/gfx-headless.c) |
-| [glx-occlusion](notebook-desktop.md) | Rectangular subtraction for verified opaque regions. | [header](../include/mulib-glx-occlusion.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-opengl](graphics-overlay.md) | Bounded glx-opengl API; see documented scope and acceptance gates. | [header](../include/mulib-glx-opengl.h) · [example](../examples/gfx-headless.c) |
-| [glx-outputlayout](notebook-desktop.md) | Named logical displays with scale and transform metadata. | [header](../include/mulib-glx-outputlayout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-paint](mulib-gfx-path.md) | Bounded glx-paint API; see documented scope and acceptance gates. | [header](../include/mulib-glx-paint.h) · [example](../examples/gfx-headless.c) |
-| [glx-path](mulib-gfx-path.md) | Bounded glx-path API; see documented scope and acceptance gates. | [header](../include/mulib-glx-path.h) · [example](../examples/gfx-headless.c) |
-| [glx-pixelformat](mulib-gfx-raster.md) | Bounded glx-pixelformat API; see documented scope and acceptance gates. | [header](../include/mulib-glx-pixelformat.h) · [example](../examples/gfx-headless.c) |
-| [glx-platform](mulib-gfx-present.md) | Bounded glx-platform API; see documented scope and acceptance gates. | [header](../include/mulib-glx-platform.h) · [example](../examples/gfx-headless.c) |
-| [glx-present](mulib-gfx-present.md) | Bounded glx-present API; see documented scope and acceptance gates. | [header](../include/mulib-glx-present.h) · [example](../examples/gfx-headless.c) |
-| [glx-raster](mulib-gfx-path.md) | Bounded glx-raster API; see documented scope and acceptance gates. | [header](../include/mulib-glx-raster.h) · [example](../examples/gfx-headless.c) |
-| [glx-region](mulib-gfx-raster.md) | Bounded glx-region API; see documented scope and acceptance gates. | [header](../include/mulib-glx-region.h) · [example](../examples/gfx-headless.c) |
-| [glx-rendercache](graphics-overlay.md) | Bounded glx-rendercache API; see documented scope and acceptance gates. | [header](../include/mulib-glx-rendercache.h) · [example](../examples/gfx-headless.c) |
-| [glx-renderqueue](mulib-gfx-raster.md) | Bounded glx-renderqueue API; see documented scope and acceptance gates. | [header](../include/mulib-glx-renderqueue.h) · [example](../examples/gfx-headless.c) |
-| [glx-scene](notebook-desktop.md) | Ordered scene tree, traversal and CPU scaled alpha composition. | [header](../include/mulib-glx-scene.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-scenenode](notebook-desktop.md) | Parent, transform, clip, visibility, opacity and buffer ownership. | [header](../include/mulib-glx-scenenode.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [glx-shaderir](mulib-gfx-shader.md) | Bounded glx-shaderir API; see documented scope and acceptance gates. | [header](../include/mulib-glx-shaderir.h) · [example](../examples/gfx-headless.c) |
-| [glx-shaderjit](mulib-gfx-shader.md) | Bounded glx-shaderjit API; see documented scope and acceptance gates. | [header](../include/mulib-glx-shaderjit.h) · [example](../examples/gfx-headless.c) |
-| [glx-shadervm](mulib-gfx-shader.md) | Bounded glx-shadervm API; see documented scope and acceptance gates. | [header](../include/mulib-glx-shadervm.h) · [example](../examples/gfx-headless.c) |
-| [glx-shape](mulib-gfx-path.md) | Bounded glx-shape API; see documented scope and acceptance gates. | [header](../include/mulib-glx-shape.h) · [example](../examples/gfx-headless.c) |
-| [glx-simd](graphics-overlay.md) | Bounded glx-simd API; see documented scope and acceptance gates. | [header](../include/mulib-glx-simd.h) · [example](../examples/gfx-headless.c) |
-| [glx-stroke](mulib-gfx-path.md) | Bounded glx-stroke API; see documented scope and acceptance gates. | [header](../include/mulib-glx-stroke.h) · [example](../examples/gfx-headless.c) |
-| [glx-surface](mulib-gfx-raster.md) | Bounded glx-surface API; see documented scope and acceptance gates. | [header](../include/mulib-glx-surface.h) · [example](../examples/gfx-headless.c) |
-| [glx-svg](mulib-gfx-path.md) | Bounded glx-svg API; see documented scope and acceptance gates. | [header](../include/mulib-glx-svg.h) · [example](../examples/gfx-headless.c) |
-| [glx-swapchain](mulib-gfx-present.md) | Bounded glx-swapchain API; see documented scope and acceptance gates. | [header](../include/mulib-glx-swapchain.h) · [example](../examples/gfx-headless.c) |
-| [glx-tessellate](mulib-gfx-path.md) | Bounded glx-tessellate API; see documented scope and acceptance gates. | [header](../include/mulib-glx-tessellate.h) · [example](../examples/gfx-headless.c) |
-| [glx-text](mulib-gfx-font-image.md) | Bounded glx-text API; see documented scope and acceptance gates. | [header](../include/mulib-glx-text.h) · [example](../examples/gfx-headless.c) |
-| [glx-textatlas](mulib-gfx-font-image.md) | Bounded glx-textatlas API; see documented scope and acceptance gates. | [header](../include/mulib-glx-textatlas.h) · [example](../examples/gfx-headless.c) |
-| [glx-texture](mulib-gfx-font-image.md) | Bounded glx-texture API; see documented scope and acceptance gates. | [header](../include/mulib-glx-texture.h) · [example](../examples/gfx-headless.c) |
-| [glx-tiledraster](graphics-overlay.md) | Bounded glx-tiledraster API; see documented scope and acceptance gates. | [header](../include/mulib-glx-tiledraster.h) · [example](../examples/gfx-headless.c) |
-| [glx-transform](mulib-gfx-path.md) | Bounded glx-transform API; see documented scope and acceptance gates. | [header](../include/mulib-glx-transform.h) · [example](../examples/gfx-headless.c) |
-| [glx-unix](mulib-gfx-input.md) | Bounded glx-unix API; see documented scope and acceptance gates. | [header](../include/mulib-glx-unix.h) · [example](../examples/gfx-headless.c) |
-| [glx-vulkan](mulib-glx-vulkan.md) | Optional native Vulkan devices and headless command submission. | [header](../include/mulib-glx-vulkan.h) · [example](../examples/gfx-headless.c) |
-| [glx-window](mulib-gfx-present.md) | Bounded glx-window API; see documented scope and acceptance gates. | [header](../include/mulib-glx-window.h) · [example](../examples/gfx-headless.c) |
-| [glyph](mulib-glyph.md) | Paired shaping/raster fonts and renderer-neutral positioned glyphs. | [header](../include/mulib-glyph.h) · [example](../examples/modules/glyph.c) |
-| [gpu](mulib-gpu.md) | GPU binary-profile and virtual-ISA text emission contract. | [header](../include/mulib-gpu.h) · [example](../examples/modules/gpu.c) |
-| [gputest](mulib-gputest.md) | Bounded driver-backed GPU stress orchestration and thermal checks. | [header](../include/mulib-gputest.h) · [example](../examples/modules/gputest.c) |
-| [graph](mulib-graph.md) | Dense directed graphs with BFS, deterministic topological sorting and reversal. | [header](../include/mulib-graph.h) · [example](../examples/modules/graph.c) |
-| [graph-core](engineering-kernels.md) | Weighted edge lists, disjoint sets, bounded routing and topological traversal; caller validates array capacities. | [header](../include/mulib-graph-core.h) · [example](../examples/kernel-substrates.c) |
-| [graphdb](mulib-graphdb.md) | Directed labelled triples with sequence ordering and tombstones. | [header](../include/mulib-graphdb.h) · [example](../examples/modules/graphdb.c) |
-| [graphql](mulib-graphql.md) | Bounded GraphQL-over-HTTP request and response envelopes. | [header](../include/mulib-graphql.h) · [example](../examples/modules/graphql.c) |
-| [graphviz](mulib-graphviz.md) | Quoted DOT graph rendering from shared graph data. | [header](../include/mulib-graphviz.h) · [example](../examples/modules/graphviz.c) |
-| [grid](mulib-grid.md) | Two-dimensional packed grid of uniform-sized cells. | [header](../include/mulib-grid.h) · [example](../examples/modules/grid.c) |
-| [grpc](mulib-grpc.md) | Bounded gRPC message framing and binary unary gRPC-Web. | [header](../include/mulib-grpc.h) · [example](../examples/modules/grpc.c) |
-| [gss](mulib-gss.md) | Graph-structured stacks with shared nodes and predecessor edges. | [header](../include/mulib-gss.h) · [example](../examples/modules/gss.c) |
-| [gssair](mulib-gssair.md) | Gated memory-aware SSA with dominance checks and parallel-copy lowering. | [header](../include/mulib-gssair.h) · [example](../examples/modules/gssair.c) |
-| [gui-accessibility](mulib-gfx-gui.md) | Bounded gui-accessibility API; see documented scope and acceptance gates. | [header](../include/mulib-gui-accessibility.h) · [example](../examples/gfx-headless.c) |
-| [gui-animation](mulib-gfx-gui.md) | Bounded gui-animation API; see documented scope and acceptance gates. | [header](../include/mulib-gui-animation.h) · [example](../examples/gfx-headless.c) |
-| [gui-app](mulib-gfx-gui.md) | Bounded gui-app API; see documented scope and acceptance gates. | [header](../include/mulib-gui-app.h) · [example](../examples/gfx-headless.c) |
-| [gui-atspi](mulib-gfx-gui.md) | Bounded gui-atspi API; see documented scope and acceptance gates. | [header](../include/mulib-gui-atspi.h) · [example](../examples/gfx-headless.c) |
-| [gui-clipboard](mulib-gfx-gui.md) | Bounded gui-clipboard API; see documented scope and acceptance gates. | [header](../include/mulib-gui-clipboard.h) · [example](../examples/gfx-headless.c) |
-| [gui-command](mulib-gfx-gui.md) | Bounded gui-command API; see documented scope and acceptance gates. | [header](../include/mulib-gui-command.h) · [example](../examples/gfx-headless.c) |
-| [gui-core](mulib-gfx-gui.md) | Bounded gui-core API; see documented scope and acceptance gates. | [header](../include/mulib-gui-core.h) · [example](../examples/gfx-headless.c) |
-| [gui-desktop](mulib-gfx-gui.md) | Bounded gui-desktop API; see documented scope and acceptance gates. | [header](../include/mulib-gui-desktop.h) · [example](../examples/gfx-headless.c) |
-| [gui-dispatch](mulib-gfx-gui.md) | Bounded gui-dispatch API; see documented scope and acceptance gates. | [header](../include/mulib-gui-dispatch.h) · [example](../examples/gfx-headless.c) |
-| [gui-dragdrop](mulib-gfx-gui.md) | Bounded gui-dragdrop API; see documented scope and acceptance gates. | [header](../include/mulib-gui-dragdrop.h) · [example](../examples/gfx-headless.c) |
-| [gui-filedialog](mulib-gfx-gui.md) | Bounded gui-filedialog API; see documented scope and acceptance gates. | [header](../include/mulib-gui-filedialog.h) · [example](../examples/gfx-headless.c) |
-| [gui-focus](mulib-gfx-gui.md) | Bounded gui-focus API; see documented scope and acceptance gates. | [header](../include/mulib-gui-focus.h) · [example](../examples/gfx-headless.c) |
-| [gui-hitest](mulib-gfx-gui.md) | Bounded gui-hitest API; see documented scope and acceptance gates. | [header](../include/mulib-gui-hitest.h) · [example](../examples/gfx-headless.c) |
-| [gui-ime](mulib-gfx-gui.md) | Bounded gui-ime API; see documented scope and acceptance gates. | [header](../include/mulib-gui-ime.h) · [example](../examples/gfx-headless.c) |
-| [gui-locale](mulib-gfx-gui.md) | Bounded gui-locale API; see documented scope and acceptance gates. | [header](../include/mulib-gui-locale.h) · [example](../examples/gfx-headless.c) |
-| [gui-mime](mulib-gfx-gui.md) | Bounded gui-mime API; see documented scope and acceptance gates. | [header](../include/mulib-gui-mime.h) · [example](../examples/gfx-headless.c) |
-| [gui-notification](mulib-gfx-gui.md) | Bounded gui-notification API; see documented scope and acceptance gates. | [header](../include/mulib-gui-notification.h) · [example](../examples/gfx-headless.c) |
-| [gui-portal](mulib-gfx-gui.md) | Bounded gui-portal API; see documented scope and acceptance gates. | [header](../include/mulib-gui-portal.h) · [example](../examples/gfx-headless.c) |
-| [gui-resource](mulib-gfx-gui.md) | Bounded gui-resource API; see documented scope and acceptance gates. | [header](../include/mulib-gui-resource.h) · [example](../examples/gfx-headless.c) |
-| [gui-settings](mulib-gfx-gui.md) | Bounded gui-settings API; see documented scope and acceptance gates. | [header](../include/mulib-gui-settings.h) · [example](../examples/gfx-headless.c) |
-| [gui-shortcut](mulib-gfx-gui.md) | Bounded gui-shortcut API; see documented scope and acceptance gates. | [header](../include/mulib-gui-shortcut.h) · [example](../examples/gfx-headless.c) |
-| [gui-style](mulib-gfx-gui.md) | Bounded gui-style API; see documented scope and acceptance gates. | [header](../include/mulib-gui-style.h) · [example](../examples/gfx-headless.c) |
-| [gui-theme](mulib-gfx-gui.md) | Bounded gui-theme API; see documented scope and acceptance gates. | [header](../include/mulib-gui-theme.h) · [example](../examples/gfx-headless.c) |
-| [gui-tray](mulib-gfx-gui.md) | Bounded gui-tray API; see documented scope and acceptance gates. | [header](../include/mulib-gui-tray.h) · [example](../examples/gfx-headless.c) |
-| [gui-undo](mulib-gfx-text.md) | Bounded gui-undo API; see documented scope and acceptance gates. | [header](../include/mulib-gui-undo.h) · [example](../examples/gfx-headless.c) |
-| [gvizz](mulib-gvizz.md) | Small directed labelled graphs and deterministic native SVG rendering. | [header](../include/mulib-gvizz.h) · [example](../examples/modules/gvizz.c) |
-| [gvn](mulib-gvn.md) | Pure expression key interning with optional commutative canonicalization. | [header](../include/mulib-gvn.h) · [example](../examples/modules/gvn.c) |
-| [gzip](mulib-gzip.md) | RFC 1952 gzip compression, concatenated members and integrity checks. | [header](../include/mulib-gzip.h) · [example](../examples/modules/gzip.c) |
+| [galois](mulib-galois.md) | FCA Galois derivation aliases with extent and intent closure | [header](../kernels/mulib-galois.h) · [example](../examples/modules/galois.c) |
+| [gbm](notebook-desktop.md) | Optional runtime GBM device, buffer allocation and single-plane export. | [header](../kernels/mulib-gbm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [gc](mulib-gc.md) | Explicit stop-the-world mark-and-sweep reference heap with iterative tracing. | [header](../kernels/mulib-gc.h) · [example](../examples/modules/gc.c) |
+| [gc-roots](mulib-gc-roots.md) | Deduplicated borrowed GC root set and explicit collection adapter. | [header](../kernels/mulib-gc-roots.h) · [example](../examples/modules/gc-roots.c) |
+| [geoindex](mulib-geoindex.md) | Exact spherical great-circle distance and radius search over owned geographic points | [header](../kernels/mulib-geoindex.h) · [example](../examples/modules/geoindex.c) |
+| [geom-bezier](mulib-geom-bezier.md) | Arbitrary-degree de Casteljau curve evaluation. Limit: Scratch must have n elements; no surface API. | [header](../kernels/mulib-geom-bezier.h) · [example](../examples/media-pipeline.c) |
+| [geom-bspline](mulib-geom-bspline.md) | De Boor B-spline curve evaluation and span search. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-geom-bspline.h) · [example](../examples/media-pipeline.c) |
+| [geom-cloner](mulib-geom-cloner.md) | Grid and radial instance positions; linear is grid with two dimensions =1. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-geom-cloner.h) · [example](../examples/media-pipeline.c) |
+| [geom-csg](mulib-geom-csg.md) | Implicit-field CSG union, intersection and difference. Limit: Not exact boundary-representation CSG. | [header](../kernels/mulib-geom-csg.h) · [example](../examples/media-pipeline.c) |
+| [geom-deform](mulib-geom-deform.md) | Twist, taper and cylindrical bend point deformation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-geom-deform.h) · [example](../examples/media-pipeline.c) |
+| [geom-isosurface](mulib-geom-isosurface.md) | Marching tetrahedron cell polygonization. Limit: Requires grid traversal, consistent winding and vertex welding. | [header](../kernels/mulib-geom-isosurface.h) · [example](../examples/media-pipeline.c) |
+| [geom-metaball](mulib-geom-metaball.md) | Compact-support polynomial metaball field. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-geom-metaball.h) · [example](../examples/media-pipeline.c) |
+| [geom-nurbs](mulib-geom-nurbs.md) | Rational B-spline curve evaluation using homogeneous coordinates. Limit: Positive weights, degree <=32; no tensor-product surface yet. | [header](../kernels/mulib-geom-nurbs.h) · [example](../examples/media-pipeline.c) |
+| [geom-sdf](mulib-geom-sdf.md) | Sphere, box and smooth-union signed distance functions. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-geom-sdf.h) · [example](../examples/media-pipeline.c) |
+| [geom-tessellate](mulib-geom-tessellate.md) | Regular parametric surface tessellation via callback. Limit: Not adaptive; add curvature-based refinement and crack prevention. | [header](../kernels/mulib-geom-tessellate.h) · [example](../examples/media-pipeline.c) |
+| [geom2-core](engineering-kernels.md) | Double-precision planar points, boxes and floating-point polygon predicates; not exact geometry. | [header](../kernels/mulib-geom2-core.h) · [example](../examples/kernel-substrates.c) |
+| [geometry](mulib-geometry.md) | Basic planar point geometry including distances and orientation. | [header](../kernels/mulib-geometry.h) · [example](../examples/modules/geometry.c) |
+| [geosolve](mulib-geosolve.md) | Extensible 2D/3D geometric constraint solving and analytic constructions. | [header](../kernels/mulib-geosolve.h) · [example](../examples/modules/geosolve.c) |
+| [getaddr](mulib-getaddr.md) | Bounded literal and native hostname address lookup. | [header](../kernels/mulib-getaddr.h) · [example](../examples/modules/getaddr.c) |
+| [git](mulib-git.md) | Git command execution and documented Mune workflows, SHA-1 object identities and pkt-line framing. | [header](../kernels/mulib-git.h) · [example](../examples/modules/git.c) |
+| [glob](mulib-glob.md) | Portable glob pattern matching with star and question-mark wildcards. | [header](../kernels/mulib-glob.h) · [example](../examples/modules/glob.c) |
+| [glossary](mulib-glossary.md) | Owned bounded registry of glossary terms and definitions; replace, lookup and remove by name. | [header](../kernels/mulib-glossary.h) · [example](../examples/mulib-glossary.c) |
+| [glr](mulib-glr.md) | Generalized context-free parsing with shared stacks and parse forests. | [header](../kernels/mulib-glr.h) · [example](../examples/modules/glr.c) |
+| [glx](mulib-glx.md) | Software graphics surfaces backed by memory or MuLIB DRM dumb buffers. | [header](../kernels/mulib-glx.h) · [example](../examples/modules/glx.c) |
+| [glx-antialias](mulib-gfx-path.md) | Bounded glx-antialias API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-antialias.h) · [example](../examples/gfx-headless.c) |
+| [glx-atlas](mulib-gfx-font-image.md) | Bounded glx-atlas API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-atlas.h) · [example](../examples/gfx-headless.c) |
+| [glx-backend-drm](mulib-gfx-drm.md) | Bounded glx-backend-drm API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-backend-drm.h) · [example](../examples/gfx-headless.c) |
+| [glx-backend-wayland](mulib-gfx-wire.md) | Bounded glx-backend-wayland API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-backend-wayland.h) · [example](../examples/gfx-headless.c) |
+| [glx-backend-x11](mulib-gfx-wire.md) | Bounded glx-backend-x11 API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-backend-x11.h) · [example](../examples/gfx-headless.c) |
+| [glx-blend](mulib-gfx-raster.md) | Bounded glx-blend API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-blend.h) · [example](../examples/gfx-headless.c) |
+| [glx-clientbuffer](notebook-desktop.md) | Reference-counted CPU ARGB8888 pixel view. | [header](../kernels/mulib-glx-clientbuffer.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-clip](mulib-gfx-raster.md) | Bounded glx-clip API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-clip.h) · [example](../examples/gfx-headless.c) |
+| [glx-compositor](mulib-gfx-raster.md) | Bounded glx-compositor API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-compositor.h) · [example](../examples/gfx-headless.c) |
+| [glx-core](mulib-gfx-raster.md) | Bounded glx-core API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-core.h) · [example](../examples/gfx-headless.c) |
+| [glx-cursor](graphics-overlay.md) | Bounded glx-cursor API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-cursor.h) · [example](../examples/gfx-headless.c) |
+| [glx-damage](notebook-desktop.md) | Clipped damage rectangles with full-damage fallback. | [header](../kernels/mulib-glx-damage.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-display](graphics-overlay.md) | Bounded glx-display API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-display.h) · [example](../examples/gfx-headless.c) |
+| [glx-drawlist](mulib-gfx-raster.md) | Bounded glx-drawlist API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-drawlist.h) · [example](../examples/gfx-headless.c) |
+| [glx-egl](graphics-overlay.md) | Bounded glx-egl API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-egl.h) · [example](../examples/gfx-headless.c) |
+| [glx-event](mulib-gfx-input.md) | Bounded glx-event API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-event.h) · [example](../examples/gfx-headless.c) |
+| [glx-eventloop](mulib-gfx-input.md) | Bounded glx-eventloop API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-eventloop.h) · [example](../examples/gfx-headless.c) |
+| [glx-filter](mulib-gfx-path.md) | Bounded glx-filter API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-filter.h) · [example](../examples/gfx-headless.c) |
+| [glx-font](mulib-gfx-font-image.md) | Bounded glx-font API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-font.h) · [example](../examples/gfx-headless.c) |
+| [glx-fontscan](mulib-gfx-font-image.md) | Bounded glx-fontscan API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-fontscan.h) · [example](../examples/gfx-headless.c) |
+| [glx-frameclock](notebook-desktop.md) | Monotonic deadline tracking with one outstanding frame. | [header](../kernels/mulib-glx-frameclock.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-glyphcache](mulib-gfx-font-image.md) | Bounded glx-glyphcache API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-glyphcache.h) · [example](../examples/gfx-headless.c) |
+| [glx-gpu](graphics-overlay.md) | Bounded glx-gpu API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-gpu.h) · [example](../examples/gfx-headless.c) |
+| [glx-gradient](mulib-gfx-path.md) | Bounded glx-gradient API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-gradient.h) · [example](../examples/gfx-headless.c) |
+| [glx-hittest](notebook-desktop.md) | Topmost scene hit and inverse-transformed coordinates. | [header](../kernels/mulib-glx-hittest.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-icon](mulib-gfx-font-image.md) | Bounded glx-icon API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-icon.h) · [example](../examples/gfx-headless.c) |
+| [glx-imagedecode](mulib-gfx-font-image.md) | Bounded glx-imagedecode API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-imagedecode.h) · [example](../examples/gfx-headless.c) |
+| [glx-legacy-bridge](graphics-overlay.md) | Bounded glx-legacy-bridge API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-legacy-bridge.h) · [example](../examples/gfx-headless.c) |
+| [glx-mesh](mulib-gfx-path.md) | Bounded glx-mesh API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-mesh.h) · [example](../examples/gfx-headless.c) |
+| [glx-occlusion](notebook-desktop.md) | Rectangular subtraction for verified opaque regions. | [header](../kernels/mulib-glx-occlusion.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-opengl](graphics-overlay.md) | Bounded glx-opengl API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-opengl.h) · [example](../examples/gfx-headless.c) |
+| [glx-outputlayout](notebook-desktop.md) | Named logical displays with scale and transform metadata. | [header](../kernels/mulib-glx-outputlayout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-paint](mulib-gfx-path.md) | Bounded glx-paint API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-paint.h) · [example](../examples/gfx-headless.c) |
+| [glx-path](mulib-gfx-path.md) | Bounded glx-path API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-path.h) · [example](../examples/gfx-headless.c) |
+| [glx-pixelformat](mulib-gfx-raster.md) | Bounded glx-pixelformat API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-pixelformat.h) · [example](../examples/gfx-headless.c) |
+| [glx-platform](mulib-gfx-present.md) | Bounded glx-platform API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-platform.h) · [example](../examples/gfx-headless.c) |
+| [glx-present](mulib-gfx-present.md) | Bounded glx-present API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-present.h) · [example](../examples/gfx-headless.c) |
+| [glx-raster](mulib-gfx-path.md) | Bounded glx-raster API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-raster.h) · [example](../examples/gfx-headless.c) |
+| [glx-region](mulib-gfx-raster.md) | Bounded glx-region API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-region.h) · [example](../examples/gfx-headless.c) |
+| [glx-rendercache](graphics-overlay.md) | Bounded glx-rendercache API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-rendercache.h) · [example](../examples/gfx-headless.c) |
+| [glx-renderqueue](mulib-gfx-raster.md) | Bounded glx-renderqueue API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-renderqueue.h) · [example](../examples/gfx-headless.c) |
+| [glx-scene](notebook-desktop.md) | Ordered scene tree, traversal and CPU scaled alpha composition. | [header](../kernels/mulib-glx-scene.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-scenenode](notebook-desktop.md) | Parent, transform, clip, visibility, opacity and buffer ownership. | [header](../kernels/mulib-glx-scenenode.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [glx-shaderir](mulib-gfx-shader.md) | Bounded glx-shaderir API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-shaderir.h) · [example](../examples/gfx-headless.c) |
+| [glx-shaderjit](mulib-gfx-shader.md) | Bounded glx-shaderjit API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-shaderjit.h) · [example](../examples/gfx-headless.c) |
+| [glx-shadervm](mulib-gfx-shader.md) | Bounded glx-shadervm API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-shadervm.h) · [example](../examples/gfx-headless.c) |
+| [glx-shape](mulib-gfx-path.md) | Bounded glx-shape API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-shape.h) · [example](../examples/gfx-headless.c) |
+| [glx-simd](graphics-overlay.md) | Bounded glx-simd API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-simd.h) · [example](../examples/gfx-headless.c) |
+| [glx-stroke](mulib-gfx-path.md) | Bounded glx-stroke API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-stroke.h) · [example](../examples/gfx-headless.c) |
+| [glx-surface](mulib-gfx-raster.md) | Bounded glx-surface API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-surface.h) · [example](../examples/gfx-headless.c) |
+| [glx-svg](mulib-gfx-path.md) | Bounded glx-svg API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-svg.h) · [example](../examples/gfx-headless.c) |
+| [glx-swapchain](mulib-gfx-present.md) | Bounded glx-swapchain API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-swapchain.h) · [example](../examples/gfx-headless.c) |
+| [glx-tessellate](mulib-gfx-path.md) | Bounded glx-tessellate API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-tessellate.h) · [example](../examples/gfx-headless.c) |
+| [glx-text](mulib-gfx-font-image.md) | Bounded glx-text API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-text.h) · [example](../examples/gfx-headless.c) |
+| [glx-textatlas](mulib-gfx-font-image.md) | Bounded glx-textatlas API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-textatlas.h) · [example](../examples/gfx-headless.c) |
+| [glx-texture](mulib-gfx-font-image.md) | Bounded glx-texture API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-texture.h) · [example](../examples/gfx-headless.c) |
+| [glx-tiledraster](graphics-overlay.md) | Bounded glx-tiledraster API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-tiledraster.h) · [example](../examples/gfx-headless.c) |
+| [glx-transform](mulib-gfx-path.md) | Bounded glx-transform API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-transform.h) · [example](../examples/gfx-headless.c) |
+| [glx-unix](mulib-gfx-input.md) | Bounded glx-unix API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-unix.h) · [example](../examples/gfx-headless.c) |
+| [glx-vulkan](mulib-glx-vulkan.md) | Optional native Vulkan devices and headless command submission. | [header](../kernels/mulib-glx-vulkan.h) · [example](../examples/gfx-headless.c) |
+| [glx-window](mulib-gfx-present.md) | Bounded glx-window API; see documented scope and acceptance gates. | [header](../kernels/mulib-glx-window.h) · [example](../examples/gfx-headless.c) |
+| [glyph](mulib-glyph.md) | Paired shaping/raster fonts and renderer-neutral positioned glyphs. | [header](../kernels/mulib-glyph.h) · [example](../examples/modules/glyph.c) |
+| [gpu](mulib-gpu.md) | GPU binary-profile and virtual-ISA text emission contract. | [header](../kernels/mulib-gpu.h) · [example](../examples/modules/gpu.c) |
+| [gputest](mulib-gputest.md) | Bounded driver-backed GPU stress orchestration and thermal checks. | [header](../kernels/mulib-gputest.h) · [example](../examples/modules/gputest.c) |
+| [graph](mulib-graph.md) | Dense directed graphs with BFS, deterministic topological sorting and reversal. | [header](../kernels/mulib-graph.h) · [example](../examples/modules/graph.c) |
+| [graph-core](engineering-kernels.md) | Weighted edge lists, disjoint sets, bounded routing and topological traversal; caller validates array capacities. | [header](../kernels/mulib-graph-core.h) · [example](../examples/kernel-substrates.c) |
+| [graphdb](mulib-graphdb.md) | Directed labelled triples with sequence ordering and tombstones. | [header](../kernels/mulib-graphdb.h) · [example](../examples/modules/graphdb.c) |
+| [graphql](mulib-graphql.md) | Bounded GraphQL-over-HTTP request and response envelopes. | [header](../kernels/mulib-graphql.h) · [example](../examples/modules/graphql.c) |
+| [graphviz](mulib-graphviz.md) | Quoted DOT graph rendering from shared graph data. | [header](../kernels/mulib-graphviz.h) · [example](../examples/modules/graphviz.c) |
+| [grid](mulib-grid.md) | Two-dimensional packed grid of uniform-sized cells. | [header](../kernels/mulib-grid.h) · [example](../examples/modules/grid.c) |
+| [grpc](mulib-grpc.md) | Bounded gRPC message framing and binary unary gRPC-Web. | [header](../kernels/mulib-grpc.h) · [example](../examples/modules/grpc.c) |
+| [gss](mulib-gss.md) | Graph-structured stacks with shared nodes and predecessor edges. | [header](../kernels/mulib-gss.h) · [example](../examples/modules/gss.c) |
+| [gssair](mulib-gssair.md) | Gated memory-aware SSA with dominance checks and parallel-copy lowering. | [header](../kernels/mulib-gssair.h) · [example](../examples/modules/gssair.c) |
+| [gui-accessibility](mulib-gfx-gui.md) | Bounded gui-accessibility API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-accessibility.h) · [example](../examples/gfx-headless.c) |
+| [gui-animation](mulib-gfx-gui.md) | Bounded gui-animation API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-animation.h) · [example](../examples/gfx-headless.c) |
+| [gui-app](mulib-gfx-gui.md) | Bounded gui-app API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-app.h) · [example](../examples/gfx-headless.c) |
+| [gui-atspi](mulib-gfx-gui.md) | Bounded gui-atspi API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-atspi.h) · [example](../examples/gfx-headless.c) |
+| [gui-clipboard](mulib-gfx-gui.md) | Bounded gui-clipboard API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-clipboard.h) · [example](../examples/gfx-headless.c) |
+| [gui-command](mulib-gfx-gui.md) | Bounded gui-command API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-command.h) · [example](../examples/gfx-headless.c) |
+| [gui-core](mulib-gfx-gui.md) | Bounded gui-core API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-core.h) · [example](../examples/gfx-headless.c) |
+| [gui-desktop](mulib-gfx-gui.md) | Bounded gui-desktop API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-desktop.h) · [example](../examples/gfx-headless.c) |
+| [gui-dispatch](mulib-gfx-gui.md) | Bounded gui-dispatch API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-dispatch.h) · [example](../examples/gfx-headless.c) |
+| [gui-dragdrop](mulib-gfx-gui.md) | Bounded gui-dragdrop API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-dragdrop.h) · [example](../examples/gfx-headless.c) |
+| [gui-filedialog](mulib-gfx-gui.md) | Bounded gui-filedialog API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-filedialog.h) · [example](../examples/gfx-headless.c) |
+| [gui-focus](mulib-gfx-gui.md) | Bounded gui-focus API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-focus.h) · [example](../examples/gfx-headless.c) |
+| [gui-hitest](mulib-gfx-gui.md) | Bounded gui-hitest API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-hitest.h) · [example](../examples/gfx-headless.c) |
+| [gui-ime](mulib-gfx-gui.md) | Bounded gui-ime API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-ime.h) · [example](../examples/gfx-headless.c) |
+| [gui-locale](mulib-gfx-gui.md) | Bounded gui-locale API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-locale.h) · [example](../examples/gfx-headless.c) |
+| [gui-mime](mulib-gfx-gui.md) | Bounded gui-mime API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-mime.h) · [example](../examples/gfx-headless.c) |
+| [gui-notification](mulib-gfx-gui.md) | Bounded gui-notification API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-notification.h) · [example](../examples/gfx-headless.c) |
+| [gui-portal](mulib-gfx-gui.md) | Bounded gui-portal API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-portal.h) · [example](../examples/gfx-headless.c) |
+| [gui-resource](mulib-gfx-gui.md) | Bounded gui-resource API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-resource.h) · [example](../examples/gfx-headless.c) |
+| [gui-settings](mulib-gfx-gui.md) | Bounded gui-settings API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-settings.h) · [example](../examples/gfx-headless.c) |
+| [gui-shortcut](mulib-gfx-gui.md) | Bounded gui-shortcut API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-shortcut.h) · [example](../examples/gfx-headless.c) |
+| [gui-style](mulib-gfx-gui.md) | Bounded gui-style API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-style.h) · [example](../examples/gfx-headless.c) |
+| [gui-theme](mulib-gfx-gui.md) | Bounded gui-theme API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-theme.h) · [example](../examples/gfx-headless.c) |
+| [gui-tray](mulib-gfx-gui.md) | Bounded gui-tray API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-tray.h) · [example](../examples/gfx-headless.c) |
+| [gui-undo](mulib-gfx-text.md) | Bounded gui-undo API; see documented scope and acceptance gates. | [header](../kernels/mulib-gui-undo.h) · [example](../examples/gfx-headless.c) |
+| [gvizz](mulib-gvizz.md) | Small directed labelled graphs and deterministic native SVG rendering. | [header](../kernels/mulib-gvizz.h) · [example](../examples/modules/gvizz.c) |
+| [gvn](mulib-gvn.md) | Pure expression key interning with optional commutative canonicalization. | [header](../kernels/mulib-gvn.h) · [example](../examples/modules/gvn.c) |
+| [gzip](mulib-gzip.md) | RFC 1952 gzip compression, concatenated members and integrity checks. | [header](../kernels/mulib-gzip.h) · [example](../examples/modules/gzip.c) |
 
 ## H
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [hamming_distance](mulib-hamming_distance.md) | Equal-length byte and bit Hamming distances. | [header](../include/mulib-hamming_distance.h) · [example](../examples/modules/hamming_distance.c) |
-| [hash](mulib-hash.md) | Fast non-cryptographic FNV-1a hashing for raw buffers and text. | [header](../include/mulib-hash.h) · [example](../examples/modules/hash.c) |
-| [hattrie](mulib-hattrie.md) | Hash-bucket trie string indexing and prefix enumeration. | [header](../include/mulib-hattrie.h) · [example](../examples/modules/hattrie.c) |
-| [hdl-ast](engineering-kernels.md) | Owned source-span nodes with up to four previously added children. | [header](../include/mulib-hdl-ast.h) |
-| [hdl-consteval](engineering-kernels.md) | Selected unsigned fixed-width arithmetic, bitwise operations, and shifts up to 64 bits. | [header](../include/mulib-hdl-consteval.h) |
-| [hdl-elaborate](engineering-kernels.md) | Module dependency ordering and bounded enumeration of integer generate-loop indices. | [header](../include/mulib-hdl-elaborate.h) |
-| [hdl-liberty](engineering-kernels.md) | Bilinear interpolation within supplied timing tables; no Liberty parsing. | [header](../include/mulib-hdl-liberty.h) |
-| [hdl-preprocessor](engineering-kernels.md) | Single-pass expansion of object-like backtick macros from a supplied table. | [header](../include/mulib-hdl-preprocessor.h) |
-| [hdl-sdc](engineering-kernels.md) | Writes a subset of SDC clock and input/output delay commands. | [header](../include/mulib-hdl-sdc.h) |
-| [hdl-sdf](engineering-kernels.md) | Parsing finite, ordered min/typ/max delay triplets. | [header](../include/mulib-hdl-sdf.h) |
-| [hdl-source](mulib-hdl-source.md) | Borrowed HDL source bytes and byte-offset to 1-based line/column mapping. | [header](../include/mulib-hdl-source.h) · [example](../examples/modules/hdl-source.c) |
-| [hdl-symboltable](engineering-kernels.md) | Nested symbol scopes with shadowing and local duplicate rejection. | [header](../include/mulib-hdl-symboltable.h) |
-| [hdl-systemverilog-lex](engineering-kernels.md) | Basic SystemVerilog token span scanning with comment skipping. | [header](../include/mulib-hdl-systemverilog-lex.h) |
-| [hdl-timescale](engineering-kernels.md) | Parsing 1, 10, or 100 time-unit scales and exact tick conversion. | [header](../include/mulib-hdl-timescale.h) |
-| [hdl-verilog-lex](mulib-hdl-verilog-lex.md) | Source-offset tokens for identifiers, escaped identifiers, decimal/based-number-like spans, punctuation and line/block comments. | [header](../include/mulib-hdl-verilog-lex.h) · [example](../examples/modules/hdl-verilog-lex.c) |
-| [hdl-vhdl-lex](engineering-kernels.md) | Basic VHDL token span scanning with line-comment skipping. | [header](../include/mulib-hdl-vhdl-lex.h) |
-| [hdl-width](engineering-kernels.md) | Selected expression width rules and fixed-width bit extension or truncation. | [header](../include/mulib-hdl-width.h) |
-| [health_checker](mulib-health_checker.md) | Consecutive-result upstream health hysteresis. | [header](../include/mulib-health_checker.h) · [example](../examples/modules/health_checker.c) |
-| [heap](mulib-heap.md) | A binary min-heap of signed 64-bit integers. | [header](../include/mulib-heap.h) · [example](../examples/modules/heap.c) |
-| [heaptable](mulib-heaptable.md) | Append-ID binary row storage over the shared memtable. | [header](../include/mulib-heaptable.h) · [example](../examples/modules/heaptable.c) |
-| [hex](mulib-hex.md) | Lowercase hexadecimal encoding and case-insensitive decoding. | [header](../include/mulib-hex.h) · [example](../examples/modules/hex.c) |
-| [hidden_markov_chain](mulib-hidden_markov_chain.md) | Discrete-emission hidden Markov models with scaled forward inference. | [header](../include/mulib-hidden_markov_chain.h) · [example](../examples/modules/hidden_markov_chain.c) |
-| [histogram](mulib-histogram.md) | Histogram accumulation over a fixed numeric range. | [header](../include/mulib-histogram.h) · [example](../examples/modules/histogram.c) |
-| [histprice](mulib-histprice.md) | Price time-series forecasts with EMA, Holt, additive seasons, Kalman and robust trend. | [header](../include/mulib-histprice.h) · [example](../examples/modules/histprice.c) |
-| [hkdf](mulib-hkdf.md) | HMAC and HKDF SHA256/384/512 with TLS 1.3 Expand-Label. | [header](../include/mulib-hkdf.h) · [example](../examples/modules/hkdf.c) |
-| [hll](mulib-hll.md) | HyperLogLog cardinality sketch with 64-bit hashing and small-range correction | [header](../include/mulib-hll.h) · [example](../examples/modules/hll.c) |
-| [hls-schedule](mulib-hls-schedule.md) | Resource-unconstrained ASAP scheduling of a topologically sorted operation DAG with integral cycle latencies and up to eight dependencies. | [header](../include/mulib-hls-schedule.h) · [example](../examples/modules/hls-schedule.c) |
-| [html](mulib-html.md) | Bounded HTML parsing/DOM construction plus opt-in safe semantic DocIR HTML/MathML export. | [header](../include/mulib-html.h) · [example](../examples/modules/html.c) |
-| [html-dombridge](mulib-html-dombridge.md) | Tree walker with caller-provided native DOM construction callbacks. | [header](../include/mulib-html-dombridge.h) · [example](../examples/modules/html-dombridge.c) |
-| [html-jsonld](mulib-html-jsonld.md) | Locate multiple application/ld+json script bodies as borrowed spans. | [header](../include/mulib-html-jsonld.h) · [example](../examples/modules/html-jsonld.c) |
-| [html-textstream](mulib-html-textstream.md) | Length-aware tokenizer-style HTML tag/text/comment callbacks with source offsets. | [header](../include/mulib-html-textstream.h) · [example](../examples/modules/html-textstream.c) |
-| [html-tokenizer](mulib-html-tokenizer.md) | Length-aware HTML lexical tokens with tag-name and attribute spans. | [header](../include/mulib-html-tokenizer.h) · [example](../examples/modules/html-tokenizer.c) |
-| [html-treebuilder](mulib-html-treebuilder.md) | Owned bounded HTML element/text tree with basic optional-end-tag recovery. | [header](../include/mulib-html-treebuilder.h) · [example](../examples/modules/html-treebuilder.c) |
-| [htmlwriter](mulib-htmlwriter.md) | Self-contained semantic HTML5 document writer. | [header](../include/mulib-htmlwriter.h) · [example](../examples/mulib-htmlwriter.c) |
-| [http](mulib-http.md) | Length-aware HTTP/1.1 message parsing and serialization. | [header](../include/mulib-http.h) · [example](../examples/modules/http.c) |
-| [http1](mulib-http1.md) | Explicit HTTP/1.1 entry point reusing shared strict framing. | [header](../include/mulib-http1.h) · [example](../examples/modules/http1.c) |
-| [http2](mulib-http2.md) | Bounded HTTP/2 frames with payload, priority and SETTINGS validation. | [header](../include/mulib-http2.h) · [example](../examples/modules/http2.c) |
-| [http3](mulib-http3.md) | Bounded HTTP/3 frames, stream and QPACK helpers, and an opt-in native HTTP/3 GET client. | [header](../include/mulib-http3.h) · [example](../examples/modules/http3.c) |
-| [http_request](mulib-http_request.md) | Owned request construction through shared HTTP validation. | [header](../include/mulib-http_request.h) · [example](../examples/modules/http_request.c) |
-| [http_response](mulib-http_response.md) | Owned response construction through webframework. | [header](../include/mulib-http_response.h) · [example](../examples/modules/http_response.c) |
-| [https](mulib-https.md) | HTTPS transactions composing HTTP webclient with verified TLS. | [header](../include/mulib-https.h) · [example](../examples/modules/https.c) |
-| [httpserver_config](mulib-httpserver_config.md) | Transport-independent HTTP server resource configuration. | [header](../include/mulib-httpserver_config.h) · [example](../examples/modules/httpserver_config.c) |
-| [hwil-attribute](engineering-kernels.md) | Typed property lookup and assignment keyed by HWIL node index. | [header](../include/mulib-hwil-attribute.h) |
-| [hwil-builder](engineering-kernels.md) | Construction of validated nodes for the engineering HWIL graph. | [header](../include/mulib-hwil-builder.h) |
-| [hwil-cell](engineering-kernels.md) | Width-masked evaluation of a small set of two-state combinational cells. | [header](../include/mulib-hwil-cell.h) |
-| [hwil-clock](engineering-kernels.md) | Next periodic clock-edge calculation with phase offset. | [header](../include/mulib-hwil-clock.h) |
-| [hwil-context](engineering-kernels.md) | Dynamic engineering hardware node graph with widths from 1 to 64 bits. | [header](../include/mulib-hwil-context.h) |
-| [hwil-elaborate](engineering-kernels.md) | Copying a prebuilt module graph into a destination with input-node substitution. | [header](../include/mulib-hwil-elaborate.h) |
-| [hwil-flatten](engineering-kernels.md) | Batch flattening of prebuilt module graphs with explicit input bindings. | [header](../include/mulib-hwil-flatten.h) |
-| [hwil-instance](engineering-kernels.md) | Binding instance ports by name and width to actual node indices. | [header](../include/mulib-hwil-instance.h) |
-| [hwil-lower](engineering-kernels.md) | Lowering a ripple-carry adder into one-bit logic nodes. | [header](../include/mulib-hwil-lower.h) |
-| [hwil-memory](engineering-kernels.md) | Fixed-width word memory with bit-masked writes. | [header](../include/mulib-hwil-memory.h) |
-| [hwil-module](mulib-hwil-module.md) | Append-only combinational, single-bit HWIL netlist with forward-referenced DAG disallowed by construction; 512-node bound. | [header](../include/mulib-hwil-module.h) · [example](../examples/modules/hwil-module.c) |
-| [hwil-pass](engineering-kernels.md) | Runs transformation callbacks against copies and validates each result before committing it. | [header](../include/mulib-hwil-pass.h) |
-| [hwil-port](engineering-kernels.md) | Validation of unique named ports, directions, node references, and widths. | [header](../include/mulib-hwil-port.h) |
-| [hwil-process](engineering-kernels.md) | Evaluation of a hardware node graph with supplied inputs and register state. | [header](../include/mulib-hwil-process.h) |
-| [hwil-region](engineering-kernels.md) | Topological ordering and entry reachability for a block graph. | [header](../include/mulib-hwil-region.h) |
-| [hwil-register](engineering-kernels.md) | Next-state updates for HWIL register nodes from evaluated operands. | [header](../include/mulib-hwil-register.h) |
-| [hwil-reset](engineering-kernels.md) | Width-masked selection of previous, data, or reset values at a clock edge or asynchronous reset. | [header](../include/mulib-hwil-reset.h) |
-| [hwil-rewrite](engineering-kernels.md) | In-place constant folding for combinational nodes with constant operands. | [header](../include/mulib-hwil-rewrite.h) |
-| [hwil-serialize](engineering-kernels.md) | Private AHW1 binary encoding and decoding of the engineering HWIL node graph. | [header](../include/mulib-hwil-serialize.h) |
-| [hwil-text](engineering-kernels.md) | Private HWIL1 numeric text encoding and decoding with a read limit. | [header](../include/mulib-hwil-text.h) |
-| [hwil-types](mulib-hwil-types.md) | Validation and exact matching of bit-vector and single-bit clock types. | [header](../include/mulib-hwil-types.h) · [example](../examples/modules/hwil-types.c) |
-| [hwil-use-def](engineering-kernels.md) | Linear scan of operand references to find users of a node. | [header](../include/mulib-hwil-use-def.h) |
-| [hwil-value](engineering-kernels.md) | Up to 64-bit four-state values with known and high-impedance masks and bitwise logic. | [header](../include/mulib-hwil-value.h) |
-| [hwil-verify](mulib-hwil-verify.md) | Deterministic structural verification for bounded combinational HWIL modules; checks opcode validity, input references and topological order. | [header](../include/mulib-hwil-verify.h) · [example](../examples/modules/hwil-verify.c) |
-| [hwil-wire](engineering-kernels.md) | Width-checked driver attachment and removal on a single-driver wire. | [header](../include/mulib-hwil-wire.h) |
-| [hwinfo](mulib-hwinfo.md) | Native or injectable x86 CPUID inventory. | [header](../include/mulib-hwinfo.h) · [example](../examples/modules/hwinfo.c) |
-| [hybridsearch](mulib-hybridsearch.md) | Reciprocal rank fusion of two ranked ID arrays | [header](../include/mulib-hybridsearch.h) · [example](../examples/modules/hybridsearch.c) |
-| [hyphen](mulib-hyphen.md) | Dictionary, orthographic, Liang, morphology, FST/DFA and syllable hyphenation. | [header](../include/mulib-hyphen.h) · [example](../examples/modules/hyphen.c) |
+| [hamming_distance](mulib-hamming_distance.md) | Equal-length byte and bit Hamming distances. | [header](../kernels/mulib-hamming_distance.h) · [example](../examples/modules/hamming_distance.c) |
+| [hash](mulib-hash.md) | Fast non-cryptographic FNV-1a hashing for raw buffers and text. | [header](../kernels/mulib-hash.h) · [example](../examples/modules/hash.c) |
+| [hattrie](mulib-hattrie.md) | Hash-bucket trie string indexing and prefix enumeration. | [header](../kernels/mulib-hattrie.h) · [example](../examples/modules/hattrie.c) |
+| [hdl-ast](engineering-kernels.md) | Owned source-span nodes with up to four previously added children. | [header](../kernels/mulib-hdl-ast.h) |
+| [hdl-consteval](engineering-kernels.md) | Selected unsigned fixed-width arithmetic, bitwise operations, and shifts up to 64 bits. | [header](../kernels/mulib-hdl-consteval.h) |
+| [hdl-elaborate](engineering-kernels.md) | Module dependency ordering and bounded enumeration of integer generate-loop indices. | [header](../kernels/mulib-hdl-elaborate.h) |
+| [hdl-liberty](engineering-kernels.md) | Bilinear interpolation within supplied timing tables; no Liberty parsing. | [header](../kernels/mulib-hdl-liberty.h) |
+| [hdl-preprocessor](engineering-kernels.md) | Single-pass expansion of object-like backtick macros from a supplied table. | [header](../kernels/mulib-hdl-preprocessor.h) |
+| [hdl-sdc](engineering-kernels.md) | Writes a subset of SDC clock and input/output delay commands. | [header](../kernels/mulib-hdl-sdc.h) |
+| [hdl-sdf](engineering-kernels.md) | Parsing finite, ordered min/typ/max delay triplets. | [header](../kernels/mulib-hdl-sdf.h) |
+| [hdl-source](mulib-hdl-source.md) | Borrowed HDL source bytes and byte-offset to 1-based line/column mapping. | [header](../kernels/mulib-hdl-source.h) · [example](../examples/modules/hdl-source.c) |
+| [hdl-symboltable](engineering-kernels.md) | Nested symbol scopes with shadowing and local duplicate rejection. | [header](../kernels/mulib-hdl-symboltable.h) |
+| [hdl-systemverilog-lex](engineering-kernels.md) | Basic SystemVerilog token span scanning with comment skipping. | [header](../kernels/mulib-hdl-systemverilog-lex.h) |
+| [hdl-timescale](engineering-kernels.md) | Parsing 1, 10, or 100 time-unit scales and exact tick conversion. | [header](../kernels/mulib-hdl-timescale.h) |
+| [hdl-verilog-lex](mulib-hdl-verilog-lex.md) | Source-offset tokens for identifiers, escaped identifiers, decimal/based-number-like spans, punctuation and line/block comments. | [header](../kernels/mulib-hdl-verilog-lex.h) · [example](../examples/modules/hdl-verilog-lex.c) |
+| [hdl-vhdl-lex](engineering-kernels.md) | Basic VHDL token span scanning with line-comment skipping. | [header](../kernels/mulib-hdl-vhdl-lex.h) |
+| [hdl-width](engineering-kernels.md) | Selected expression width rules and fixed-width bit extension or truncation. | [header](../kernels/mulib-hdl-width.h) |
+| [health_checker](mulib-health_checker.md) | Consecutive-result upstream health hysteresis. | [header](../kernels/mulib-health_checker.h) · [example](../examples/modules/health_checker.c) |
+| [heap](mulib-heap.md) | A binary min-heap of signed 64-bit integers. | [header](../kernels/mulib-heap.h) · [example](../examples/modules/heap.c) |
+| [heaptable](mulib-heaptable.md) | Append-ID binary row storage over the shared memtable. | [header](../kernels/mulib-heaptable.h) · [example](../examples/modules/heaptable.c) |
+| [hex](mulib-hex.md) | Lowercase hexadecimal encoding and case-insensitive decoding. | [header](../kernels/mulib-hex.h) · [example](../examples/modules/hex.c) |
+| [hidden_markov_chain](mulib-hidden_markov_chain.md) | Discrete-emission hidden Markov models with scaled forward inference. | [header](../kernels/mulib-hidden_markov_chain.h) · [example](../examples/modules/hidden_markov_chain.c) |
+| [histogram](mulib-histogram.md) | Histogram accumulation over a fixed numeric range. | [header](../kernels/mulib-histogram.h) · [example](../examples/modules/histogram.c) |
+| [histprice](mulib-histprice.md) | Price time-series forecasts with EMA, Holt, additive seasons, Kalman and robust trend. | [header](../kernels/mulib-histprice.h) · [example](../examples/modules/histprice.c) |
+| [hkdf](mulib-hkdf.md) | HMAC and HKDF SHA256/384/512 with TLS 1.3 Expand-Label. | [header](../kernels/mulib-hkdf.h) · [example](../examples/modules/hkdf.c) |
+| [hll](mulib-hll.md) | HyperLogLog cardinality sketch with 64-bit hashing and small-range correction | [header](../kernels/mulib-hll.h) · [example](../examples/modules/hll.c) |
+| [hls-schedule](mulib-hls-schedule.md) | Resource-unconstrained ASAP scheduling of a topologically sorted operation DAG with integral cycle latencies and up to eight dependencies. | [header](../kernels/mulib-hls-schedule.h) · [example](../examples/modules/hls-schedule.c) |
+| [html](mulib-html.md) | Bounded HTML parsing/DOM construction plus opt-in safe semantic DocIR HTML/MathML export. | [header](../kernels/mulib-html.h) · [example](../examples/modules/html.c) |
+| [html-dombridge](mulib-html-dombridge.md) | Tree walker with caller-provided native DOM construction callbacks. | [header](../kernels/mulib-html-dombridge.h) · [example](../examples/modules/html-dombridge.c) |
+| [html-jsonld](mulib-html-jsonld.md) | Locate multiple application/ld+json script bodies as borrowed spans. | [header](../kernels/mulib-html-jsonld.h) · [example](../examples/modules/html-jsonld.c) |
+| [html-textstream](mulib-html-textstream.md) | Length-aware tokenizer-style HTML tag/text/comment callbacks with source offsets. | [header](../kernels/mulib-html-textstream.h) · [example](../examples/modules/html-textstream.c) |
+| [html-tokenizer](mulib-html-tokenizer.md) | Length-aware HTML lexical tokens with tag-name and attribute spans. | [header](../kernels/mulib-html-tokenizer.h) · [example](../examples/modules/html-tokenizer.c) |
+| [html-treebuilder](mulib-html-treebuilder.md) | Owned bounded HTML element/text tree with basic optional-end-tag recovery. | [header](../kernels/mulib-html-treebuilder.h) · [example](../examples/modules/html-treebuilder.c) |
+| [htmlwriter](mulib-htmlwriter.md) | Self-contained semantic HTML5 document writer. | [header](../kernels/mulib-htmlwriter.h) · [example](../examples/mulib-htmlwriter.c) |
+| [http](mulib-http.md) | Length-aware HTTP/1.1 message parsing and serialization. | [header](../kernels/mulib-http.h) · [example](../examples/modules/http.c) |
+| [http1](mulib-http1.md) | Explicit HTTP/1.1 entry point reusing shared strict framing. | [header](../kernels/mulib-http1.h) · [example](../examples/modules/http1.c) |
+| [http2](mulib-http2.md) | Bounded HTTP/2 frames with payload, priority and SETTINGS validation. | [header](../kernels/mulib-http2.h) · [example](../examples/modules/http2.c) |
+| [http3](mulib-http3.md) | Bounded HTTP/3 frames, stream and QPACK helpers, and an opt-in native HTTP/3 GET client. | [header](../kernels/mulib-http3.h) · [example](../examples/modules/http3.c) |
+| [http_request](mulib-http_request.md) | Owned request construction through shared HTTP validation. | [header](../kernels/mulib-http_request.h) · [example](../examples/modules/http_request.c) |
+| [http_response](mulib-http_response.md) | Owned response construction through webframework. | [header](../kernels/mulib-http_response.h) · [example](../examples/modules/http_response.c) |
+| [https](mulib-https.md) | HTTPS transactions composing HTTP webclient with verified TLS. | [header](../kernels/mulib-https.h) · [example](../examples/modules/https.c) |
+| [httpserver_config](mulib-httpserver_config.md) | Transport-independent HTTP server resource configuration. | [header](../kernels/mulib-httpserver_config.h) · [example](../examples/modules/httpserver_config.c) |
+| [hwil-attribute](engineering-kernels.md) | Typed property lookup and assignment keyed by HWIL node index. | [header](../kernels/mulib-hwil-attribute.h) |
+| [hwil-builder](engineering-kernels.md) | Construction of validated nodes for the engineering HWIL graph. | [header](../kernels/mulib-hwil-builder.h) |
+| [hwil-cell](engineering-kernels.md) | Width-masked evaluation of a small set of two-state combinational cells. | [header](../kernels/mulib-hwil-cell.h) |
+| [hwil-clock](engineering-kernels.md) | Next periodic clock-edge calculation with phase offset. | [header](../kernels/mulib-hwil-clock.h) |
+| [hwil-context](engineering-kernels.md) | Dynamic engineering hardware node graph with widths from 1 to 64 bits. | [header](../kernels/mulib-hwil-context.h) |
+| [hwil-elaborate](engineering-kernels.md) | Copying a prebuilt module graph into a destination with input-node substitution. | [header](../kernels/mulib-hwil-elaborate.h) |
+| [hwil-flatten](engineering-kernels.md) | Batch flattening of prebuilt module graphs with explicit input bindings. | [header](../kernels/mulib-hwil-flatten.h) |
+| [hwil-instance](engineering-kernels.md) | Binding instance ports by name and width to actual node indices. | [header](../kernels/mulib-hwil-instance.h) |
+| [hwil-lower](engineering-kernels.md) | Lowering a ripple-carry adder into one-bit logic nodes. | [header](../kernels/mulib-hwil-lower.h) |
+| [hwil-memory](engineering-kernels.md) | Fixed-width word memory with bit-masked writes. | [header](../kernels/mulib-hwil-memory.h) |
+| [hwil-module](mulib-hwil-module.md) | Append-only combinational, single-bit HWIL netlist with forward-referenced DAG disallowed by construction; 512-node bound. | [header](../kernels/mulib-hwil-module.h) · [example](../examples/modules/hwil-module.c) |
+| [hwil-pass](engineering-kernels.md) | Runs transformation callbacks against copies and validates each result before committing it. | [header](../kernels/mulib-hwil-pass.h) |
+| [hwil-port](engineering-kernels.md) | Validation of unique named ports, directions, node references, and widths. | [header](../kernels/mulib-hwil-port.h) |
+| [hwil-process](engineering-kernels.md) | Evaluation of a hardware node graph with supplied inputs and register state. | [header](../kernels/mulib-hwil-process.h) |
+| [hwil-region](engineering-kernels.md) | Topological ordering and entry reachability for a block graph. | [header](../kernels/mulib-hwil-region.h) |
+| [hwil-register](engineering-kernels.md) | Next-state updates for HWIL register nodes from evaluated operands. | [header](../kernels/mulib-hwil-register.h) |
+| [hwil-reset](engineering-kernels.md) | Width-masked selection of previous, data, or reset values at a clock edge or asynchronous reset. | [header](../kernels/mulib-hwil-reset.h) |
+| [hwil-rewrite](engineering-kernels.md) | In-place constant folding for combinational nodes with constant operands. | [header](../kernels/mulib-hwil-rewrite.h) |
+| [hwil-serialize](engineering-kernels.md) | Private AHW1 binary encoding and decoding of the engineering HWIL node graph. | [header](../kernels/mulib-hwil-serialize.h) |
+| [hwil-text](engineering-kernels.md) | Private HWIL1 numeric text encoding and decoding with a read limit. | [header](../kernels/mulib-hwil-text.h) |
+| [hwil-types](mulib-hwil-types.md) | Validation and exact matching of bit-vector and single-bit clock types. | [header](../kernels/mulib-hwil-types.h) · [example](../examples/modules/hwil-types.c) |
+| [hwil-use-def](engineering-kernels.md) | Linear scan of operand references to find users of a node. | [header](../kernels/mulib-hwil-use-def.h) |
+| [hwil-value](engineering-kernels.md) | Up to 64-bit four-state values with known and high-impedance masks and bitwise logic. | [header](../kernels/mulib-hwil-value.h) |
+| [hwil-verify](mulib-hwil-verify.md) | Deterministic structural verification for bounded combinational HWIL modules; checks opcode validity, input references and topological order. | [header](../kernels/mulib-hwil-verify.h) · [example](../examples/modules/hwil-verify.c) |
+| [hwil-wire](engineering-kernels.md) | Width-checked driver attachment and removal on a single-driver wire. | [header](../kernels/mulib-hwil-wire.h) |
+| [hwinfo](mulib-hwinfo.md) | Native or injectable x86 CPUID inventory. | [header](../kernels/mulib-hwinfo.h) · [example](../examples/modules/hwinfo.c) |
+| [hybridsearch](mulib-hybridsearch.md) | Reciprocal rank fusion of two ranked ID arrays | [header](../kernels/mulib-hybridsearch.h) · [example](../examples/modules/hybridsearch.c) |
+| [hyphen](mulib-hyphen.md) | Dictionary, orthographic, Liang, morphology, FST/DFA and syllable hyphenation. | [header](../kernels/mulib-hyphen.h) · [example](../examples/modules/hyphen.c) |
 
 ## I
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [icmp](mulib-icmp.md) | Compose and verify ICMP echo packets, with ones-complement checksum | [header](../include/mulib-icmp.h) · [example](../examples/modules/icmp.c) |
-| [ifft](mulib-ifft.md) | Normalized inverse radix-2 Fourier transform. | [header](../include/mulib-ifft.h) · [example](../examples/modules/ifft.c) |
-| [image2container](mulib-image2container.md) | Atomic image materialization into owned container and rootfs records. | [header](../include/mulib-image2container.h) · [example](../examples/modules/image2container.c) |
-| [imageconvert](mulib-imageconvert.md) | Bounds-checked graphics imageconvert structures binary inspection and record access. | [header](../include/mulib-imageconvert.h) · [example](../examples/mulib-imageconvert.c) |
-| [imagejpeg](mulib-imagejpeg.md) | Bounds-checked baseline JPEG marker inspection and image dimensions from SOF segments. | [header](../include/mulib-imagejpeg.h) · [example](../examples/mulib-imagejpeg.c) |
-| [imagepng](mulib-imagepng.md) | RGB PNG encoding and bounded noninterlaced 8-bit PNG decoding without color conversion. | [header](../include/mulib-imagepng.h) · [example](../examples/mulib-imagepng.c) |
-| [imagewebp](mulib-imagewebp.md) | Bounds-checked graphics imagewebp structures binary inspection and record access. | [header](../include/mulib-imagewebp.h) · [example](../examples/mulib-imagewebp.c) |
-| [imapserver](mulib-imapserver.md) | Focused tagged IMAP server commands and mailbox session state. | [header](../include/mulib-imapserver.h) · [example](../examples/modules/imapserver.c) |
-| [img-blend](mulib-img-blend.md) | Straight-alpha source-over compositing and blend modes. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-img-blend.h) · [example](../examples/media-pipeline.c) |
-| [img-blur](mulib-img-blur.md) | Separable Gaussian blur with caller-provided scratch. Limit: Scratch must not overlap either image. | [header](../include/mulib-img-blur.h) · [example](../examples/media-pipeline.c) |
-| [img-convolve](mulib-img-convolve.md) | General odd-kernel correlation with clamped boundaries. Limit: Disjoint buffers; flip weights for true convolution. | [header](../include/mulib-img-convolve.h) · [example](../examples/media-pipeline.c) |
-| [img-core](mulib-img-core.md) | Float RGBA strided image view and pixel math. Limit: get/put are unchecked internal primitives; validate and bound indices first. Linear light, straight alpha by convention. | [header](../include/mulib-img-core.h) · [example](../examples/media-pipeline.c) |
-| [img-denoise](mulib-img-denoise.md) | Spatial bilateral RGB denoising. Limit: No temporal denoise. | [header](../include/mulib-img-denoise.h) · [example](../examples/media-pipeline.c) |
-| [img-edge](mulib-img-edge.md) | Sobel gradient magnitude image. Limit: No Canny hysteresis or Laplacian. | [header](../include/mulib-img-edge.h) · [example](../examples/media-pipeline.c) |
-| [img-keying](mulib-img-keying.md) | Soft chroma-distance alpha key. Limit: No spill suppression or foreground color recovery. | [header](../include/mulib-img-keying.h) · [example](../examples/media-pipeline.c) |
-| [img-matte](mulib-img-matte.md) | Luminance-derived soft alpha matte. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-img-matte.h) · [example](../examples/media-pipeline.c) |
-| [img-morphology](mulib-img-morphology.md) | Square alpha erosion and dilation. Limit: Disjoint buffers. | [header](../include/mulib-img-morphology.h) · [example](../examples/media-pipeline.c) |
-| [img-motionblur](mulib-img-motionblur.md) | Velocity-map shutter integration. Limit: No occlusion handling. | [header](../include/mulib-img-motionblur.h) · [example](../examples/media-pipeline.c) |
-| [img-opticalflow](mulib-img-opticalflow.md) | Exhaustive local motion estimation by block matching. Limit: Integer displacement only; no dense multiscale flow. | [header](../include/mulib-img-opticalflow.h) · [example](../examples/media-pipeline.c) |
-| [img-pyramid](mulib-img-pyramid.md) | Half-resolution box-filter pyramid level. Limit: Not a Gaussian/Laplacian reconstruction pyramid. | [header](../include/mulib-img-pyramid.h) · [example](../examples/media-pipeline.c) |
-| [img-resample](mulib-img-resample.md) | Center-aligned image reconstruction. Limit: Disjoint buffers; no scale-dependent antialiasing for strong minification. | [header](../include/mulib-img-resample.h) · [example](../examples/media-pipeline.c) |
-| [img-sampler](mulib-img-sampler.md) | Nearest, bilinear, Catmull-Rom and Lanczos3 samplers. Limit: Clamp borders; straight alpha interpolation, premultiply if filtering transparent images. | [header](../include/mulib-img-sampler.h) · [example](../examples/media-pipeline.c) |
-| [img-tile](mulib-img-tile.md) | Zero-copy tile views and row-major tile enumeration. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-img-tile.h) · [example](../examples/media-pipeline.c) |
-| [img-tracking](mulib-img-tracking.md) | Track a set of points by block matching with confidence rejection. Limit: No feature detection or subpixel refinement. | [header](../include/mulib-img-tracking.h) · [example](../examples/media-pipeline.c) |
-| [img-transform](mulib-img-transform.md) | Inverse homography image transformation with transparent exterior. Limit: Disjoint buffers. | [header](../include/mulib-img-transform.h) · [example](../examples/media-pipeline.c) |
-| [img-warp](mulib-img-warp.md) | Displacement map warp; field R/G are source offsets in pixels. Limit: Clamp border; disjoint buffers. | [header](../include/mulib-img-warp.h) · [example](../examples/media-pipeline.c) |
-| [imgbuilder](mulib-imgbuilder.md) | Deterministic transactional rootfs image construction. | [header](../include/mulib-imgbuilder.h) · [example](../examples/modules/imgbuilder.c) |
-| [imgbuildspec](mulib-imgbuildspec.md) | Owned image recipes combining process configuration and filesystem steps. | [header](../include/mulib-imgbuildspec.h) · [example](../examples/modules/imgbuildspec.c) |
-| [imgformat](mulib-imgformat.md) | Versioned checksummed image envelopes and process-spec wire codecs. | [header](../include/mulib-imgformat.h) · [example](../examples/modules/imgformat.c) |
-| [imgtrackerd](mulib-imgtrackerd.md) | In-memory reference counts for OCI sha256 image digests, not a daemon. | [header](../include/mulib-imgtrackerd.h) · [example](../examples/modules/imgtrackerd.c) |
-| [immgtk](mulib-immgtk.md) | Immediate-mode GUI with Mune-written widgets and GLX drawing primitives. | [header](../include/mulib-immgtk.h) · [example](../examples/modules/immgtk.c) |
-| [immgtk-canvas](mulib-immgtk-canvas.md) | GUI-backend-neutral 2D pan/zoom transforms with cursor-centered zoom and reciprocal coordinate mapping. | [header](../include/mulib-immgtk-canvas.h) · [example](../examples/modules/immgtk-canvas.c) |
-| [immgtk-clipper](mulib-gfx-immgtk.md) | Bounded immgtk-clipper API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-clipper.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-codeeditor](mulib-gfx-immgtk.md) | Bounded immgtk-codeeditor API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-codeeditor.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-colorpicker](mulib-gfx-immgtk.md) | Bounded immgtk-colorpicker API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-colorpicker.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-commandpalette](mulib-gfx-immgtk.md) | Bounded immgtk-commandpalette API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-commandpalette.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-curveeditor](mulib-gfx-immgtk.md) | Bounded immgtk-curveeditor API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-curveeditor.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-dnd](mulib-gfx-immgtk.md) | Bounded immgtk-dnd API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-dnd.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-dock](mulib-gfx-immgtk.md) | Bounded immgtk-dock API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-dock.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-drawlist](mulib-immgtk-drawlist.md) | Backend-neutral owned draw-command array for lines, rectangles and circles; renderer retains clipping and rasterization responsibilities. | [header](../include/mulib-immgtk-drawlist.h) · [example](../examples/modules/immgtk-drawlist.c) |
-| [immgtk-drawlist-bridge](mulib-gfx-immgtk.md) | Bounded immgtk-drawlist-bridge API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-drawlist-bridge.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-extensions](mulib-gfx-immgtk.md) | Bounded immgtk-extensions API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-extensions.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-filebrowser](mulib-gfx-immgtk.md) | Bounded immgtk-filebrowser API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-filebrowser.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-gizmo](mulib-gfx-immgtk.md) | Bounded immgtk-gizmo API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-gizmo.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-hexeditor](mulib-gfx-immgtk.md) | Bounded immgtk-hexeditor API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-hexeditor.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-id](mulib-gfx-immgtk.md) | Bounded immgtk-id API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-id.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-io](mulib-gfx-immgtk.md) | Bounded immgtk-io API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-io.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-layout](mulib-gfx-immgtk.md) | Bounded immgtk-layout API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-layout.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-menu](mulib-gfx-immgtk.md) | Bounded immgtk-menu API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-menu.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-mune-bridge](mulib-gfx-immgtk.md) | Bounded immgtk-mune-bridge API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-mune-bridge.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-native](mulib-gfx-immgtk.md) | Bounded immgtk-native API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-native.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-nav](mulib-gfx-immgtk.md) | Bounded immgtk-nav API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-nav.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-nodeeditor](mulib-gfx-immgtk.md) | Bounded immgtk-nodeeditor API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-nodeeditor.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot](mulib-immgtk-plot.md) | Engineering plot autoscaling bounds and logarithmic axis transformation helpers. | [header](../include/mulib-immgtk-plot.h) · [example](../examples/modules/immgtk-plot.c) |
-| [immgtk-plot-3d](mulib-gfx-immgtk.md) | Bounded immgtk-plot-3d API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-3d.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-axis](mulib-gfx-immgtk.md) | Bounded immgtk-plot-axis API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-axis.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-contour](mulib-gfx-immgtk.md) | Bounded immgtk-plot-contour API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-contour.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-heatmap](mulib-gfx-immgtk.md) | Bounded immgtk-plot-heatmap API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-heatmap.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-interact](mulib-gfx-immgtk.md) | Bounded immgtk-plot-interact API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-interact.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-legend](mulib-gfx-immgtk.md) | Bounded immgtk-plot-legend API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-legend.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-series](mulib-gfx-immgtk.md) | Bounded immgtk-plot-series API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-series.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-plot-stream](mulib-gfx-immgtk.md) | Bounded immgtk-plot-stream API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-plot-stream.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-popup](mulib-gfx-immgtk.md) | Bounded immgtk-popup API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-popup.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-profiler](mulib-gfx-immgtk.md) | Bounded immgtk-profiler API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-profiler.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-propertygrid](mulib-gfx-immgtk.md) | Bounded immgtk-propertygrid API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-propertygrid.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-scroll](mulib-gfx-immgtk.md) | Bounded immgtk-scroll API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-scroll.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-sequencer](mulib-gfx-immgtk.md) | Bounded immgtk-sequencer API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-sequencer.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-settings](mulib-gfx-immgtk.md) | Bounded immgtk-settings API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-settings.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-state](mulib-gfx-immgtk.md) | Bounded immgtk-state API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-state.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-style](mulib-gfx-immgtk.md) | Bounded immgtk-style API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-style.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-table](mulib-gfx-immgtk.md) | Bounded immgtk-table API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-table.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-tabs](mulib-gfx-immgtk.md) | Bounded immgtk-tabs API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-tabs.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-terminal](mulib-gfx-immgtk.md) | Bounded immgtk-terminal API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-terminal.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-textedit](mulib-gfx-immgtk.md) | Bounded immgtk-textedit API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-textedit.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-timeline](mulib-gfx-immgtk.md) | Bounded immgtk-timeline API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-timeline.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-viewport](mulib-gfx-immgtk.md) | Bounded immgtk-viewport API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-viewport.h) · [example](../examples/gfx-headless.c) |
-| [immgtk-window](mulib-gfx-immgtk.md) | Bounded immgtk-window API; see documented scope and acceptance gates. | [header](../include/mulib-immgtk-window.h) · [example](../examples/gfx-headless.c) |
-| [impaclient](mulib-impaclient.md) | Historical-spelling IMAP client with tagged response matching. | [header](../include/mulib-impaclient.h) · [example](../examples/modules/impaclient.c) |
-| [importgraph](mulib-importgraph.md) | Dependency-first deterministic topological ordering with cycle detection. | [header](../include/mulib-importgraph.h) · [example](../examples/modules/importgraph.c) |
-| [imtui](mulib-imtui.md) | Immediate-mode terminal UI suite and plain cell snapshots. | [header](../include/mulib-imtui.h) · [example](../examples/imtui/headless.c) |
-| [imtui-core](mulib-imtui-core.md) | Terminal cell frames, scoped IDs, interaction, focus and clipping. | [header](../include/mulib-imtui-core.h) · [example](../examples/imtui/headless.c) |
-| [imtui-draw](mulib-imtui-draw.md) | Clipped cell fills, lines, borders and safe UTF-8 labels. | [header](../include/mulib-imtui-draw.h) · [example](../examples/imtui/headless.c) |
-| [imtui-edit](mulib-imtui-edit.md) | UTF-8 single-line editing, selection and bounded paste. | [header](../include/mulib-imtui-edit.h) · [example](../examples/imtui/composites.c) |
-| [imtui-layout](mulib-imtui-layout.md) | Integer row, column, grid, split, alignment and weighted track layouts. | [header](../include/mulib-imtui-layout.h) · [example](../examples/imtui/headless.c) |
-| [imtui-list](mulib-imtui-list.md) | Virtualized list with viewport and keyboard selection. | [header](../include/mulib-imtui-list.h) · [example](../examples/imtui/composites.c) |
-| [imtui-mune](mulib-imtui-mune.md) | Frame-scoped native terminal layout, drawing and widgets for Mune. | [header](../include/mulib-imtui-mune.h) · [example](../tests/test_imtui_mune.c) |
-| [imtui-render](mulib-imtui-render.md) | Differential terminfo rendering and escape-free snapshots. | [header](../include/mulib-imtui-render.h) · [example](../examples/imtui/terminal.c) |
-| [imtui-scroll](mulib-imtui-scroll.md) | Clipped viewports with saturating scroll offsets. | [header](../include/mulib-imtui-scroll.h) · [example](../examples/imtui/composites.c) |
-| [imtui-syntax](mulib-imtui-syntax.md) | Clipped syntax-highlighted editor preview. | [header](../include/mulib-imtui-syntax.h) · [example](../tests/test_imtui_mune.c) |
-| [imtui-table](mulib-imtui-table.md) | Virtualized terminal tables backed by caller row and cell providers. | [header](../include/mulib-imtui-table.h) · [example](../examples/imtui/composites.c) |
-| [imtui-tabs](mulib-imtui-tabs.md) | Keyboard-navigable terminal tab strip. | [header](../include/mulib-imtui-tabs.h) · [example](../examples/imtui/composites.c) |
-| [imtui-terminal](mulib-imtui-terminal.md) | POSIX tty modes, fragmented input decoding and partial output writes. | [header](../include/mulib-imtui-terminal.h) · [example](../examples/imtui/terminal.c) |
-| [imtui-widgets](mulib-imtui-widgets.md) | Themeable immediate-mode buttons, toggles, progress and sliders. | [header](../include/mulib-imtui-widgets.h) · [example](../examples/imtui/headless.c) |
-| [index](mulib-index.md) | Unique ordered integer-to-row-ID secondary index using the B+ tree. | [header](../include/mulib-index.h) · [example](../examples/modules/index.c) |
-| [indexer](mulib-indexer.md) | Owned bounded registry of term-to-location mappings; replace, lookup and remove by name. | [header](../include/mulib-indexer.h) · [example](../examples/mulib-indexer.c) |
-| [inet-diag](mulib-inet-diag.md) | Decode a Linux inet_diag_msg reply into a concise socket record | [header](../include/mulib-inet-diag.h) · [example](../examples/modules/inet-diag.c) |
-| [inet4](mulib-inet4.md) | Strict parser-backed IPv4 literals and prefix operations. | [header](../include/mulib-inet4.h) · [example](../examples/modules/inet4.c) |
-| [inet6](mulib-inet6.md) | Canonical IPv6 literals, formatting and network-prefix operations. | [header](../include/mulib-inet6.h) · [example](../examples/modules/inet6.c) |
-| [ingest-stream](mulib-ingest-stream.md) | Bounded chunk accumulation and newline record streaming with callback | [header](../include/mulib-ingest-stream.h) · [example](../examples/modules/ingest-stream.c) |
-| [ini](mulib-ini.md) | Callback-based INI section and key-value line parser. | [header](../include/mulib-ini.h) · [example](../examples/modules/ini.c) |
-| [initproc](mulib-initproc.md) | POSIX child-reaping primitive for caller-owned init/supervisor loops. | [header](../include/mulib-initproc.h) · [example](../examples/modules/initproc.c) |
-| [initsys](mulib-initsys.md) | Dependency-ordered service startup and reverse-order shutdown. | [header](../include/mulib-initsys.h) · [example](../examples/modules/initsys.c) |
-| [initsysutils](mulib-initsysutils.md) | Linux initramfs inspection/building and explicit initialization steps. | [header](../include/mulib-initsysutils.h) · [example](../examples/modules/initsysutils.c) |
-| [input](mulib-input.md) | Shared input events and nonblocking Linux evdev reading. | [header](../include/mulib-input.h) · [example](../examples/modules/input.c) |
-| [input-compose](mulib-gfx-input.md) | Bounded input-compose API; see documented scope and acceptance gates. | [header](../include/mulib-input-compose.h) · [example](../examples/gfx-headless.c) |
-| [input-gamepad](mulib-gfx-input.md) | Bounded input-gamepad API; see documented scope and acceptance gates. | [header](../include/mulib-input-gamepad.h) · [example](../examples/gfx-headless.c) |
-| [input-gesture](mulib-gfx-input.md) | Bounded input-gesture API; see documented scope and acceptance gates. | [header](../include/mulib-input-gesture.h) · [example](../examples/gfx-headless.c) |
-| [input-keyboard](mulib-gfx-input.md) | Bounded input-keyboard API; see documented scope and acceptance gates. | [header](../include/mulib-input-keyboard.h) · [example](../examples/gfx-headless.c) |
-| [input-keymap](mulib-gfx-input.md) | Bounded input-keymap API; see documented scope and acceptance gates. | [header](../include/mulib-input-keymap.h) · [example](../examples/gfx-headless.c) |
-| [input-mouse](mulib-gfx-input.md) | Bounded input-mouse API; see documented scope and acceptance gates. | [header](../include/mulib-input-mouse.h) · [example](../examples/gfx-headless.c) |
-| [input-seat](mulib-gfx-input.md) | Bounded input-seat API; see documented scope and acceptance gates. | [header](../include/mulib-input-seat.h) · [example](../examples/gfx-headless.c) |
-| [input-tablet](mulib-gfx-input.md) | Bounded input-tablet API; see documented scope and acceptance gates. | [header](../include/mulib-input-tablet.h) · [example](../examples/gfx-headless.c) |
-| [input-touch](mulib-gfx-input.md) | Bounded input-touch API; see documented scope and acceptance gates. | [header](../include/mulib-input-touch.h) · [example](../examples/gfx-headless.c) |
-| [instrument-scpi](engineering-kernels.md) | SCPI command and line-query helpers plus definite-length binary block reads over a supplied transport. | [header](../include/mulib-instrument-scpi.h) |
-| [instrument-transport](engineering-kernels.md) | Instrument I/O callbacks with partial-transfer loops for exact reads and writes and bounded line input. | [header](../include/mulib-instrument-transport.h) |
-| [inte6](mulib-inte6.md) | Historical-spelling compatibility header for canonical IPv6 APIs. | [header](../include/mulib-inte6.h) · [example](../examples/modules/inte6.c) |
-| [interpolate](mulib-interpolate.md) | Scalar linear interpolation and clamped interpolation. | [header](../include/mulib-interpolate.h) · [example](../examples/modules/interpolate.c) |
-| [invindex](mulib-invindex.md) | Owned sorted unique document postings with counts and capacity-checked term intersections. | [header](../include/mulib-invindex.h) · [example](../examples/modules/invindex.c) |
-| [io](mulib-io.md) | Explicit opt-in privileged x86 port I/O and table loads. | [header](../include/mulib-io.h) · [example](../examples/modules/io.c) |
-| [ipc-framed](mulib-ipc-framed.md) | Bounded deadline-aware binary framing over connected stream sockets. | [header](../include/mulib-ipc-framed.h) · [example](../examples/modules/sandbox-process.c) |
-| [ipfs](mulib-ipfs.md) | IPFS CIDv1 raw/dag-pb SHA-256 identifiers and verified block | [header](../include/mulib-ipfs.h) · [example](../examples/modules/ipfs.c) |
-| [ipv6-ndp](mulib-ipv6-ndp.md) | Parse a bounded IPv6 Neighbor Solicitation or Advertisement header | [header](../include/mulib-ipv6-ndp.h) · [example](../examples/modules/ipv6-ndp.c) |
-| [ipv6-ra](mulib-ipv6-ra.md) | Parse ICMPv6 Router Advertisement header and a prefix-information option | [header](../include/mulib-ipv6-ra.h) · [example](../examples/modules/ipv6-ra.c) |
-| [ir-print](mulib-ir-print.md) | Bounded textual rendering of compact register IR instructions. | [header](../include/mulib-ir-print.h) · [example](../examples/modules/ir-print.c) |
-| [ir-verify](mulib-ir-verify.md) | Linear single-assignment register IR verification with definition ordering. | [header](../include/mulib-ir-verify.h) · [example](../examples/modules/ir-verify.c) |
-| [isched](mulib-isched.md) | Dependency-aware latency scheduling with cycle diagnostics. | [header](../include/mulib-isched.h) · [example](../examples/modules/isched.c) |
-| [isel](mulib-isel.md) | Demand-driven memoized tree covering and native MIR to annotated LIR. | [header](../include/mulib-isel.h) · [example](../examples/modules/isel.c) |
-| [iterator](mulib-iterator.md) | Opaque cursor protocol with explicit error and borrowed-item semantics | [header](../include/mulib-iterator.h) · [example](../examples/modules/iterator.c) |
-| [iwd-client](mulib-iwd-client.md) | Read iwd object hierarchy through ObjectManager.GetManagedObjects | [header](../include/mulib-iwd-client.h) · [example](../examples/modules/iwd-client.c) |
+| [icmp](mulib-icmp.md) | Compose and verify ICMP echo packets, with ones-complement checksum | [header](../kernels/mulib-icmp.h) · [example](../examples/modules/icmp.c) |
+| [ifft](mulib-ifft.md) | Normalized inverse radix-2 Fourier transform. | [header](../kernels/mulib-ifft.h) · [example](../examples/modules/ifft.c) |
+| [image2container](mulib-image2container.md) | Atomic image materialization into owned container and rootfs records. | [header](../kernels/mulib-image2container.h) · [example](../examples/modules/image2container.c) |
+| [imageconvert](mulib-imageconvert.md) | Bounds-checked graphics imageconvert structures binary inspection and record access. | [header](../kernels/mulib-imageconvert.h) · [example](../examples/mulib-imageconvert.c) |
+| [imagejpeg](mulib-imagejpeg.md) | Bounds-checked baseline JPEG marker inspection and image dimensions from SOF segments. | [header](../kernels/mulib-imagejpeg.h) · [example](../examples/mulib-imagejpeg.c) |
+| [imagepng](mulib-imagepng.md) | RGB PNG encoding and bounded noninterlaced 8-bit PNG decoding without color conversion. | [header](../kernels/mulib-imagepng.h) · [example](../examples/mulib-imagepng.c) |
+| [imagewebp](mulib-imagewebp.md) | Bounds-checked graphics imagewebp structures binary inspection and record access. | [header](../kernels/mulib-imagewebp.h) · [example](../examples/mulib-imagewebp.c) |
+| [imapserver](mulib-imapserver.md) | Focused tagged IMAP server commands and mailbox session state. | [header](../kernels/mulib-imapserver.h) · [example](../examples/modules/imapserver.c) |
+| [img-blend](mulib-img-blend.md) | Straight-alpha source-over compositing and blend modes. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-img-blend.h) · [example](../examples/media-pipeline.c) |
+| [img-blur](mulib-img-blur.md) | Separable Gaussian blur with caller-provided scratch. Limit: Scratch must not overlap either image. | [header](../kernels/mulib-img-blur.h) · [example](../examples/media-pipeline.c) |
+| [img-convolve](mulib-img-convolve.md) | General odd-kernel correlation with clamped boundaries. Limit: Disjoint buffers; flip weights for true convolution. | [header](../kernels/mulib-img-convolve.h) · [example](../examples/media-pipeline.c) |
+| [img-core](mulib-img-core.md) | Float RGBA strided image view and pixel math. Limit: get/put are unchecked internal primitives; validate and bound indices first. Linear light, straight alpha by convention. | [header](../kernels/mulib-img-core.h) · [example](../examples/media-pipeline.c) |
+| [img-denoise](mulib-img-denoise.md) | Spatial bilateral RGB denoising. Limit: No temporal denoise. | [header](../kernels/mulib-img-denoise.h) · [example](../examples/media-pipeline.c) |
+| [img-edge](mulib-img-edge.md) | Sobel gradient magnitude image. Limit: No Canny hysteresis or Laplacian. | [header](../kernels/mulib-img-edge.h) · [example](../examples/media-pipeline.c) |
+| [img-keying](mulib-img-keying.md) | Soft chroma-distance alpha key. Limit: No spill suppression or foreground color recovery. | [header](../kernels/mulib-img-keying.h) · [example](../examples/media-pipeline.c) |
+| [img-matte](mulib-img-matte.md) | Luminance-derived soft alpha matte. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-img-matte.h) · [example](../examples/media-pipeline.c) |
+| [img-morphology](mulib-img-morphology.md) | Square alpha erosion and dilation. Limit: Disjoint buffers. | [header](../kernels/mulib-img-morphology.h) · [example](../examples/media-pipeline.c) |
+| [img-motionblur](mulib-img-motionblur.md) | Velocity-map shutter integration. Limit: No occlusion handling. | [header](../kernels/mulib-img-motionblur.h) · [example](../examples/media-pipeline.c) |
+| [img-opticalflow](mulib-img-opticalflow.md) | Exhaustive local motion estimation by block matching. Limit: Integer displacement only; no dense multiscale flow. | [header](../kernels/mulib-img-opticalflow.h) · [example](../examples/media-pipeline.c) |
+| [img-pyramid](mulib-img-pyramid.md) | Half-resolution box-filter pyramid level. Limit: Not a Gaussian/Laplacian reconstruction pyramid. | [header](../kernels/mulib-img-pyramid.h) · [example](../examples/media-pipeline.c) |
+| [img-resample](mulib-img-resample.md) | Center-aligned image reconstruction. Limit: Disjoint buffers; no scale-dependent antialiasing for strong minification. | [header](../kernels/mulib-img-resample.h) · [example](../examples/media-pipeline.c) |
+| [img-sampler](mulib-img-sampler.md) | Nearest, bilinear, Catmull-Rom and Lanczos3 samplers. Limit: Clamp borders; straight alpha interpolation, premultiply if filtering transparent images. | [header](../kernels/mulib-img-sampler.h) · [example](../examples/media-pipeline.c) |
+| [img-tile](mulib-img-tile.md) | Zero-copy tile views and row-major tile enumeration. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-img-tile.h) · [example](../examples/media-pipeline.c) |
+| [img-tracking](mulib-img-tracking.md) | Track a set of points by block matching with confidence rejection. Limit: No feature detection or subpixel refinement. | [header](../kernels/mulib-img-tracking.h) · [example](../examples/media-pipeline.c) |
+| [img-transform](mulib-img-transform.md) | Inverse homography image transformation with transparent exterior. Limit: Disjoint buffers. | [header](../kernels/mulib-img-transform.h) · [example](../examples/media-pipeline.c) |
+| [img-warp](mulib-img-warp.md) | Displacement map warp; field R/G are source offsets in pixels. Limit: Clamp border; disjoint buffers. | [header](../kernels/mulib-img-warp.h) · [example](../examples/media-pipeline.c) |
+| [imgbuilder](mulib-imgbuilder.md) | Deterministic transactional rootfs image construction. | [header](../kernels/mulib-imgbuilder.h) · [example](../examples/modules/imgbuilder.c) |
+| [imgbuildspec](mulib-imgbuildspec.md) | Owned image recipes combining process configuration and filesystem steps. | [header](../kernels/mulib-imgbuildspec.h) · [example](../examples/modules/imgbuildspec.c) |
+| [imgformat](mulib-imgformat.md) | Versioned checksummed image envelopes and process-spec wire codecs. | [header](../kernels/mulib-imgformat.h) · [example](../examples/modules/imgformat.c) |
+| [imgtrackerd](mulib-imgtrackerd.md) | In-memory reference counts for OCI sha256 image digests, not a daemon. | [header](../kernels/mulib-imgtrackerd.h) · [example](../examples/modules/imgtrackerd.c) |
+| [immgtk](mulib-immgtk.md) | Immediate-mode GUI with Mune-written widgets and GLX drawing primitives. | [header](../kernels/mulib-immgtk.h) · [example](../examples/modules/immgtk.c) |
+| [immgtk-canvas](mulib-immgtk-canvas.md) | GUI-backend-neutral 2D pan/zoom transforms with cursor-centered zoom and reciprocal coordinate mapping. | [header](../kernels/mulib-immgtk-canvas.h) · [example](../examples/modules/immgtk-canvas.c) |
+| [immgtk-clipper](mulib-gfx-immgtk.md) | Bounded immgtk-clipper API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-clipper.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-codeeditor](mulib-gfx-immgtk.md) | Bounded immgtk-codeeditor API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-codeeditor.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-colorpicker](mulib-gfx-immgtk.md) | Bounded immgtk-colorpicker API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-colorpicker.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-commandpalette](mulib-gfx-immgtk.md) | Bounded immgtk-commandpalette API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-commandpalette.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-curveeditor](mulib-gfx-immgtk.md) | Bounded immgtk-curveeditor API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-curveeditor.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-dnd](mulib-gfx-immgtk.md) | Bounded immgtk-dnd API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-dnd.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-dock](mulib-gfx-immgtk.md) | Bounded immgtk-dock API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-dock.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-drawlist](mulib-immgtk-drawlist.md) | Backend-neutral owned draw-command array for lines, rectangles and circles; renderer retains clipping and rasterization responsibilities. | [header](../kernels/mulib-immgtk-drawlist.h) · [example](../examples/modules/immgtk-drawlist.c) |
+| [immgtk-drawlist-bridge](mulib-gfx-immgtk.md) | Bounded immgtk-drawlist-bridge API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-drawlist-bridge.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-extensions](mulib-gfx-immgtk.md) | Bounded immgtk-extensions API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-extensions.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-filebrowser](mulib-gfx-immgtk.md) | Bounded immgtk-filebrowser API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-filebrowser.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-gizmo](mulib-gfx-immgtk.md) | Bounded immgtk-gizmo API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-gizmo.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-hexeditor](mulib-gfx-immgtk.md) | Bounded immgtk-hexeditor API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-hexeditor.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-id](mulib-gfx-immgtk.md) | Bounded immgtk-id API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-id.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-io](mulib-gfx-immgtk.md) | Bounded immgtk-io API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-io.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-layout](mulib-gfx-immgtk.md) | Bounded immgtk-layout API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-layout.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-menu](mulib-gfx-immgtk.md) | Bounded immgtk-menu API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-menu.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-mune-bridge](mulib-gfx-immgtk.md) | Bounded immgtk-mune-bridge API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-mune-bridge.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-native](mulib-gfx-immgtk.md) | Bounded immgtk-native API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-native.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-nav](mulib-gfx-immgtk.md) | Bounded immgtk-nav API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-nav.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-nodeeditor](mulib-gfx-immgtk.md) | Bounded immgtk-nodeeditor API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-nodeeditor.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot](mulib-immgtk-plot.md) | Engineering plot autoscaling bounds and logarithmic axis transformation helpers. | [header](../kernels/mulib-immgtk-plot.h) · [example](../examples/modules/immgtk-plot.c) |
+| [immgtk-plot-3d](mulib-gfx-immgtk.md) | Bounded immgtk-plot-3d API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-3d.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-axis](mulib-gfx-immgtk.md) | Bounded immgtk-plot-axis API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-axis.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-contour](mulib-gfx-immgtk.md) | Bounded immgtk-plot-contour API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-contour.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-heatmap](mulib-gfx-immgtk.md) | Bounded immgtk-plot-heatmap API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-heatmap.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-interact](mulib-gfx-immgtk.md) | Bounded immgtk-plot-interact API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-interact.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-legend](mulib-gfx-immgtk.md) | Bounded immgtk-plot-legend API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-legend.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-series](mulib-gfx-immgtk.md) | Bounded immgtk-plot-series API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-series.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-plot-stream](mulib-gfx-immgtk.md) | Bounded immgtk-plot-stream API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-plot-stream.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-popup](mulib-gfx-immgtk.md) | Bounded immgtk-popup API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-popup.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-profiler](mulib-gfx-immgtk.md) | Bounded immgtk-profiler API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-profiler.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-propertygrid](mulib-gfx-immgtk.md) | Bounded immgtk-propertygrid API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-propertygrid.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-scroll](mulib-gfx-immgtk.md) | Bounded immgtk-scroll API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-scroll.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-sequencer](mulib-gfx-immgtk.md) | Bounded immgtk-sequencer API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-sequencer.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-settings](mulib-gfx-immgtk.md) | Bounded immgtk-settings API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-settings.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-state](mulib-gfx-immgtk.md) | Bounded immgtk-state API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-state.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-style](mulib-gfx-immgtk.md) | Bounded immgtk-style API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-style.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-table](mulib-gfx-immgtk.md) | Bounded immgtk-table API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-table.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-tabs](mulib-gfx-immgtk.md) | Bounded immgtk-tabs API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-tabs.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-terminal](mulib-gfx-immgtk.md) | Bounded immgtk-terminal API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-terminal.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-textedit](mulib-gfx-immgtk.md) | Bounded immgtk-textedit API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-textedit.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-timeline](mulib-gfx-immgtk.md) | Bounded immgtk-timeline API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-timeline.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-viewport](mulib-gfx-immgtk.md) | Bounded immgtk-viewport API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-viewport.h) · [example](../examples/gfx-headless.c) |
+| [immgtk-window](mulib-gfx-immgtk.md) | Bounded immgtk-window API; see documented scope and acceptance gates. | [header](../kernels/mulib-immgtk-window.h) · [example](../examples/gfx-headless.c) |
+| [impaclient](mulib-impaclient.md) | Historical-spelling IMAP client with tagged response matching. | [header](../kernels/mulib-impaclient.h) · [example](../examples/modules/impaclient.c) |
+| [importgraph](mulib-importgraph.md) | Dependency-first deterministic topological ordering with cycle detection. | [header](../kernels/mulib-importgraph.h) · [example](../examples/modules/importgraph.c) |
+| [imtui](mulib-imtui.md) | Immediate-mode terminal UI suite and plain cell snapshots. | [header](../kernels/mulib-imtui.h) · [example](../examples/imtui/headless.c) |
+| [imtui-core](mulib-imtui-core.md) | Terminal cell frames, scoped IDs, interaction, focus and clipping. | [header](../kernels/mulib-imtui-core.h) · [example](../examples/imtui/headless.c) |
+| [imtui-draw](mulib-imtui-draw.md) | Clipped cell fills, lines, borders and safe UTF-8 labels. | [header](../kernels/mulib-imtui-draw.h) · [example](../examples/imtui/headless.c) |
+| [imtui-edit](mulib-imtui-edit.md) | UTF-8 single-line editing, selection and bounded paste. | [header](../kernels/mulib-imtui-edit.h) · [example](../examples/imtui/composites.c) |
+| [imtui-layout](mulib-imtui-layout.md) | Integer row, column, grid, split, alignment and weighted track layouts. | [header](../kernels/mulib-imtui-layout.h) · [example](../examples/imtui/headless.c) |
+| [imtui-list](mulib-imtui-list.md) | Virtualized list with viewport and keyboard selection. | [header](../kernels/mulib-imtui-list.h) · [example](../examples/imtui/composites.c) |
+| [imtui-mune](mulib-imtui-mune.md) | Frame-scoped native terminal layout, drawing and widgets for Mune. | [header](../kernels/mulib-imtui-mune.h) · [example](../tests/test_imtui_mune.c) |
+| [imtui-render](mulib-imtui-render.md) | Differential terminfo rendering and escape-free snapshots. | [header](../kernels/mulib-imtui-render.h) · [example](../examples/imtui/terminal.c) |
+| [imtui-scroll](mulib-imtui-scroll.md) | Clipped viewports with saturating scroll offsets. | [header](../kernels/mulib-imtui-scroll.h) · [example](../examples/imtui/composites.c) |
+| [imtui-syntax](mulib-imtui-syntax.md) | Clipped syntax-highlighted editor preview. | [header](../kernels/mulib-imtui-syntax.h) · [example](../tests/test_imtui_mune.c) |
+| [imtui-table](mulib-imtui-table.md) | Virtualized terminal tables backed by caller row and cell providers. | [header](../kernels/mulib-imtui-table.h) · [example](../examples/imtui/composites.c) |
+| [imtui-tabs](mulib-imtui-tabs.md) | Keyboard-navigable terminal tab strip. | [header](../kernels/mulib-imtui-tabs.h) · [example](../examples/imtui/composites.c) |
+| [imtui-terminal](mulib-imtui-terminal.md) | POSIX tty modes, fragmented input decoding and partial output writes. | [header](../kernels/mulib-imtui-terminal.h) · [example](../examples/imtui/terminal.c) |
+| [imtui-widgets](mulib-imtui-widgets.md) | Themeable immediate-mode buttons, toggles, progress and sliders. | [header](../kernels/mulib-imtui-widgets.h) · [example](../examples/imtui/headless.c) |
+| [index](mulib-index.md) | Unique ordered integer-to-row-ID secondary index using the B+ tree. | [header](../kernels/mulib-index.h) · [example](../examples/modules/index.c) |
+| [indexer](mulib-indexer.md) | Owned bounded registry of term-to-location mappings; replace, lookup and remove by name. | [header](../kernels/mulib-indexer.h) · [example](../examples/mulib-indexer.c) |
+| [inet-diag](mulib-inet-diag.md) | Decode a Linux inet_diag_msg reply into a concise socket record | [header](../kernels/mulib-inet-diag.h) · [example](../examples/modules/inet-diag.c) |
+| [inet4](mulib-inet4.md) | Strict parser-backed IPv4 literals and prefix operations. | [header](../kernels/mulib-inet4.h) · [example](../examples/modules/inet4.c) |
+| [inet6](mulib-inet6.md) | Canonical IPv6 literals, formatting and network-prefix operations. | [header](../kernels/mulib-inet6.h) · [example](../examples/modules/inet6.c) |
+| [ingest-stream](mulib-ingest-stream.md) | Bounded chunk accumulation and newline record streaming with callback | [header](../kernels/mulib-ingest-stream.h) · [example](../examples/modules/ingest-stream.c) |
+| [ini](mulib-ini.md) | Callback-based INI section and key-value line parser. | [header](../kernels/mulib-ini.h) · [example](../examples/modules/ini.c) |
+| [initproc](mulib-initproc.md) | POSIX child-reaping primitive for caller-owned init/supervisor loops. | [header](../kernels/mulib-initproc.h) · [example](../examples/modules/initproc.c) |
+| [initsys](mulib-initsys.md) | Dependency-ordered service startup and reverse-order shutdown. | [header](../kernels/mulib-initsys.h) · [example](../examples/modules/initsys.c) |
+| [initsysutils](mulib-initsysutils.md) | Linux initramfs inspection/building and explicit initialization steps. | [header](../kernels/mulib-initsysutils.h) · [example](../examples/modules/initsysutils.c) |
+| [input](mulib-input.md) | Shared input events and nonblocking Linux evdev reading. | [header](../kernels/mulib-input.h) · [example](../examples/modules/input.c) |
+| [input-compose](mulib-gfx-input.md) | Bounded input-compose API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-compose.h) · [example](../examples/gfx-headless.c) |
+| [input-gamepad](mulib-gfx-input.md) | Bounded input-gamepad API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-gamepad.h) · [example](../examples/gfx-headless.c) |
+| [input-gesture](mulib-gfx-input.md) | Bounded input-gesture API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-gesture.h) · [example](../examples/gfx-headless.c) |
+| [input-keyboard](mulib-gfx-input.md) | Bounded input-keyboard API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-keyboard.h) · [example](../examples/gfx-headless.c) |
+| [input-keymap](mulib-gfx-input.md) | Bounded input-keymap API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-keymap.h) · [example](../examples/gfx-headless.c) |
+| [input-mouse](mulib-gfx-input.md) | Bounded input-mouse API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-mouse.h) · [example](../examples/gfx-headless.c) |
+| [input-seat](mulib-gfx-input.md) | Bounded input-seat API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-seat.h) · [example](../examples/gfx-headless.c) |
+| [input-tablet](mulib-gfx-input.md) | Bounded input-tablet API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-tablet.h) · [example](../examples/gfx-headless.c) |
+| [input-touch](mulib-gfx-input.md) | Bounded input-touch API; see documented scope and acceptance gates. | [header](../kernels/mulib-input-touch.h) · [example](../examples/gfx-headless.c) |
+| [instrument-scpi](engineering-kernels.md) | SCPI command and line-query helpers plus definite-length binary block reads over a supplied transport. | [header](../kernels/mulib-instrument-scpi.h) |
+| [instrument-transport](engineering-kernels.md) | Instrument I/O callbacks with partial-transfer loops for exact reads and writes and bounded line input. | [header](../kernels/mulib-instrument-transport.h) |
+| [inte6](mulib-inte6.md) | Historical-spelling compatibility header for canonical IPv6 APIs. | [header](../kernels/mulib-inte6.h) · [example](../examples/modules/inte6.c) |
+| [interpolate](mulib-interpolate.md) | Scalar linear interpolation and clamped interpolation. | [header](../kernels/mulib-interpolate.h) · [example](../examples/modules/interpolate.c) |
+| [invindex](mulib-invindex.md) | Owned sorted unique document postings with counts and capacity-checked term intersections. | [header](../kernels/mulib-invindex.h) · [example](../examples/modules/invindex.c) |
+| [io](mulib-io.md) | Explicit opt-in privileged x86 port I/O and table loads. | [header](../kernels/mulib-io.h) · [example](../examples/modules/io.c) |
+| [ipc-framed](mulib-ipc-framed.md) | Bounded deadline-aware binary framing over connected stream sockets. | [header](../kernels/mulib-ipc-framed.h) · [example](../examples/modules/sandbox-process.c) |
+| [ipfs](mulib-ipfs.md) | IPFS CIDv1 raw/dag-pb SHA-256 identifiers and verified block | [header](../kernels/mulib-ipfs.h) · [example](../examples/modules/ipfs.c) |
+| [ipv6-ndp](mulib-ipv6-ndp.md) | Parse a bounded IPv6 Neighbor Solicitation or Advertisement header | [header](../kernels/mulib-ipv6-ndp.h) · [example](../examples/modules/ipv6-ndp.c) |
+| [ipv6-ra](mulib-ipv6-ra.md) | Parse ICMPv6 Router Advertisement header and a prefix-information option | [header](../kernels/mulib-ipv6-ra.h) · [example](../examples/modules/ipv6-ra.c) |
+| [ir-print](mulib-ir-print.md) | Bounded textual rendering of compact register IR instructions. | [header](../kernels/mulib-ir-print.h) · [example](../examples/modules/ir-print.c) |
+| [ir-verify](mulib-ir-verify.md) | Linear single-assignment register IR verification with definition ordering. | [header](../kernels/mulib-ir-verify.h) · [example](../examples/modules/ir-verify.c) |
+| [isched](mulib-isched.md) | Dependency-aware latency scheduling with cycle diagnostics. | [header](../kernels/mulib-isched.h) · [example](../examples/modules/isched.c) |
+| [isel](mulib-isel.md) | Demand-driven memoized tree covering and native MIR to annotated LIR. | [header](../kernels/mulib-isel.h) · [example](../examples/modules/isel.c) |
+| [iterator](mulib-iterator.md) | Opaque cursor protocol with explicit error and borrowed-item semantics | [header](../kernels/mulib-iterator.h) · [example](../examples/modules/iterator.c) |
+| [iwd-client](mulib-iwd-client.md) | Read iwd object hierarchy through ObjectManager.GetManagedObjects | [header](../kernels/mulib-iwd-client.h) · [example](../examples/modules/iwd-client.c) |
 
 ## J
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [jaccard_similarity](mulib-jaccard_similarity.md) | Jaccard similarity of uint64 sets, ignoring repeated elements. | [header](../include/mulib-jaccard_similarity.h) · [example](../examples/modules/jaccard_similarity.c) |
-| [jit](mulib-jit.md) | Native write-then-execute memory and a baseline MIR control-flow compiler. | [header](../include/mulib-jit.h) · [example](../examples/modules/jit.c) |
-| [joinfilter](mulib-joinfilter.md) | Bounded Bloom join filter with no false negatives for inserted keys | [header](../include/mulib-joinfilter.h) · [example](../examples/modules/joinfilter.c) |
-| [jsdom](mulib-jsdom.md) | Native callback bridge for script-visible DOM object/property operations. | [header](../include/mulib-jsdom.h) · [example](../examples/modules/jsdom.c) |
-| [json](mulib-json.md) | Owned JSON values with parser-combinator-based parsing and serialization. | [header](../include/mulib-json.h) · [example](../examples/modules/json.c) |
-| [jsonrpc](mulib-jsonrpc.md) | JSON-RPC 2.0 envelope validation and HTTP transactions. | [header](../include/mulib-jsonrpc.h) · [example](../examples/modules/jsonrpc.c) |
-| [jupyter-wire](notebook-desktop.md) | Signed multipart envelope with HMAC-SHA256 and bounded JSON object decode. | [header](../include/mulib-jupyter-wire.h) · [example](../tests/test-jupyter-envelope.c) |
-| [jvm](mulib-jvm.md) | Verified JVM integer-method frontend to ClickIR, with shared JIT/AOT. | [header](../include/mulib-jvm.h) · [example](../examples/modules/jvm.c) |
+| [jaccard_similarity](mulib-jaccard_similarity.md) | Jaccard similarity of uint64 sets, ignoring repeated elements. | [header](../kernels/mulib-jaccard_similarity.h) · [example](../examples/modules/jaccard_similarity.c) |
+| [jit](mulib-jit.md) | Native write-then-execute memory and a baseline MIR control-flow compiler. | [header](../kernels/mulib-jit.h) · [example](../examples/modules/jit.c) |
+| [joinfilter](mulib-joinfilter.md) | Bounded Bloom join filter with no false negatives for inserted keys | [header](../kernels/mulib-joinfilter.h) · [example](../examples/modules/joinfilter.c) |
+| [jsdom](mulib-jsdom.md) | Native callback bridge for script-visible DOM object/property operations. | [header](../kernels/mulib-jsdom.h) · [example](../examples/modules/jsdom.c) |
+| [json](mulib-json.md) | Owned JSON values with parser-combinator-based parsing and serialization. | [header](../kernels/mulib-json.h) · [example](../examples/modules/json.c) |
+| [jsonrpc](mulib-jsonrpc.md) | JSON-RPC 2.0 envelope validation and HTTP transactions. | [header](../kernels/mulib-jsonrpc.h) · [example](../examples/modules/jsonrpc.c) |
+| [jupyter-wire](notebook-desktop.md) | Signed multipart envelope with HMAC-SHA256 and bounded JSON object decode. | [header](../kernels/mulib-jupyter-wire.h) · [example](../tests/test-jupyter-envelope.c) |
+| [jvm](mulib-jvm.md) | Verified JVM integer-method frontend to ClickIR, with shared JIT/AOT. | [header](../kernels/mulib-jvm.h) · [example](../examples/modules/jvm.c) |
 
 ## K
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [kernel-fusion](mulib-kernel-fusion.md) | Fuse two pure SSA expressions by parameter substitution and ID remapping. Limit: Out and map require disjoint buffers; no side-effect semantics. | [header](../include/mulib-kernel-fusion.h) · [example](../examples/media-pipeline.c) |
-| [kernel-glsl](mulib-kernel-glsl.md) | Emit GLSL scalar function from validated SSA. Limit: No compute entry point, descriptors or driver compilation; locale must be C. | [header](../include/mulib-kernel-glsl.h) · [example](../examples/media-pipeline.c) |
-| [kernel-ir](mulib-kernel-ir.md) | Typed straight-line SSA expression IR with explicit result. Limit: Executable subset is f32 and bool; no CFG, memory instructions or vector values. | [header](../include/mulib-kernel-ir.h) · [example](../examples/media-pipeline.c) |
-| [kernel-legalize](mulib-kernel-legalize.md) | Finite constant folding as a first legalization pass. Limit: No backend-specific capability lowering; verify float semantic parity. | [header](../include/mulib-kernel-legalize.h) · [example](../examples/media-pipeline.c) |
-| [kernel-memory](mulib-kernel-memory.md) | Overflow-safe interval bounds and alias checks for allocation IDs. Limit: No pointer provenance inference or address-space lowering. | [header](../include/mulib-kernel-memory.h) · [example](../examples/media-pipeline.c) |
-| [kernel-substrates](engineering-kernels.md) | Optional aggregate of independent storage, numerical, planar-geometry and weighted-graph substrates; domain kernels use narrower dependencies. | [header](../include/mulib-kernel-substrates.h) · [example](../examples/kernel-substrates.c) |
-| [kernel-types](mulib-kernel-types.md) | Scalar type and packed vector byte-size helpers. Limit: GPU alignment is backend dependent; no matrix/image types. | [header](../include/mulib-kernel-types.h) · [example](../examples/media-pipeline.c) |
-| [kernel-uniformity](mulib-kernel-uniformity.md) | Conservative SSA uniformity propagation from parameter annotations. Limit: No divergent control-flow or barrier analysis. | [header](../include/mulib-kernel-uniformity.h) · [example](../examples/media-pipeline.c) |
-| [kernel-validate](mulib-kernel-validate.md) | Validate SSA dominance/types and interpret scalar expressions. Limit: No execution budgets beyond bounded instruction count; callers enforce finite input if needed. | [header](../include/mulib-kernel-validate.h) · [example](../examples/media-pipeline.c) |
-| [kernel-vectorize](mulib-kernel-vectorize.md) | Portable lane-wise batched SSA execution. Limit: Scalar loop, not actual SIMD code generation. | [header](../include/mulib-kernel-vectorize.h) · [example](../examples/media-pipeline.c) |
-| [kernel-wgsl](mulib-kernel-wgsl.md) | Emit WGSL scalar function with typed let bindings. Limit: No entry point, resources, or shader validation by native compiler. | [header](../include/mulib-kernel-wgsl.h) · [example](../examples/media-pipeline.c) |
-| [keyremap](mulib-keyremap.md) | Stateful key remapping with balanced many-to-one releases. | [header](../include/mulib-keyremap.h) · [example](../examples/modules/keyremap.c) |
-| [kf8write](mulib-kf8write.md) | KF8 FDST flow table construction (building block, not an AZW3 ebook writer). | [header](../include/mulib-kf8write.h) · [example](../examples/mulib-kf8write.c) |
-| [kmm](mulib-kmm.md) | Kernel mean matching by projected gradient on a capped simplex. | [header](../include/mulib-kmm.h) · [example](../examples/modules/kmm.c) |
-| [kvdb](mulib-kvdb.md) | Persistent binary-safe key-value storage with integrity validation. | [header](../include/mulib-kvdb.h) · [example](../examples/modules/kvdb.c) |
-| [kvm](mulib-kvm.md) | Linux KVM device, VM, memory-slot and vCPU lifetime helpers. | [header](../include/mulib-kvm.h) · [example](../examples/modules/kvm.c) |
-| [kvmcontainer](mulib-kvmcontainer.md) | Owning Linux KVM device/VM/single-vCPU bundle, not a guest OS runtime. | [header](../include/mulib-kvmcontainer.h) · [example](../examples/modules/kvmcontainer.c) |
+| [kernel-fusion](mulib-kernel-fusion.md) | Fuse two pure SSA expressions by parameter substitution and ID remapping. Limit: Out and map require disjoint buffers; no side-effect semantics. | [header](../kernels/mulib-kernel-fusion.h) · [example](../examples/media-pipeline.c) |
+| [kernel-glsl](mulib-kernel-glsl.md) | Emit GLSL scalar function from validated SSA. Limit: No compute entry point, descriptors or driver compilation; locale must be C. | [header](../kernels/mulib-kernel-glsl.h) · [example](../examples/media-pipeline.c) |
+| [kernel-ir](mulib-kernel-ir.md) | Typed straight-line SSA expression IR with explicit result. Limit: Executable subset is f32 and bool; no CFG, memory instructions or vector values. | [header](../kernels/mulib-kernel-ir.h) · [example](../examples/media-pipeline.c) |
+| [kernel-legalize](mulib-kernel-legalize.md) | Finite constant folding as a first legalization pass. Limit: No backend-specific capability lowering; verify float semantic parity. | [header](../kernels/mulib-kernel-legalize.h) · [example](../examples/media-pipeline.c) |
+| [kernel-memory](mulib-kernel-memory.md) | Overflow-safe interval bounds and alias checks for allocation IDs. Limit: No pointer provenance inference or address-space lowering. | [header](../kernels/mulib-kernel-memory.h) · [example](../examples/media-pipeline.c) |
+| [kernel-substrates](engineering-kernels.md) | Optional aggregate of independent storage, numerical, planar-geometry and weighted-graph substrates; domain kernels use narrower dependencies. | [header](../kernels/mulib-kernel-substrates.h) · [example](../examples/kernel-substrates.c) |
+| [kernel-types](mulib-kernel-types.md) | Scalar type and packed vector byte-size helpers. Limit: GPU alignment is backend dependent; no matrix/image types. | [header](../kernels/mulib-kernel-types.h) · [example](../examples/media-pipeline.c) |
+| [kernel-uniformity](mulib-kernel-uniformity.md) | Conservative SSA uniformity propagation from parameter annotations. Limit: No divergent control-flow or barrier analysis. | [header](../kernels/mulib-kernel-uniformity.h) · [example](../examples/media-pipeline.c) |
+| [kernel-validate](mulib-kernel-validate.md) | Validate SSA dominance/types and interpret scalar expressions. Limit: No execution budgets beyond bounded instruction count; callers enforce finite input if needed. | [header](../kernels/mulib-kernel-validate.h) · [example](../examples/media-pipeline.c) |
+| [kernel-vectorize](mulib-kernel-vectorize.md) | Portable lane-wise batched SSA execution. Limit: Scalar loop, not actual SIMD code generation. | [header](../kernels/mulib-kernel-vectorize.h) · [example](../examples/media-pipeline.c) |
+| [kernel-wgsl](mulib-kernel-wgsl.md) | Emit WGSL scalar function with typed let bindings. Limit: No entry point, resources, or shader validation by native compiler. | [header](../kernels/mulib-kernel-wgsl.h) · [example](../examples/media-pipeline.c) |
+| [keyremap](mulib-keyremap.md) | Stateful key remapping with balanced many-to-one releases. | [header](../kernels/mulib-keyremap.h) · [example](../examples/modules/keyremap.c) |
+| [kf8write](mulib-kf8write.md) | KF8 FDST flow table construction (building block, not an AZW3 ebook writer). | [header](../kernels/mulib-kf8write.h) · [example](../examples/mulib-kf8write.c) |
+| [kmm](mulib-kmm.md) | Kernel mean matching by projected gradient on a capped simplex. | [header](../kernels/mulib-kmm.h) · [example](../examples/modules/kmm.c) |
+| [kvdb](mulib-kvdb.md) | Persistent binary-safe key-value storage with integrity validation. | [header](../kernels/mulib-kvdb.h) · [example](../examples/modules/kvdb.c) |
+| [kvm](mulib-kvm.md) | Linux KVM device, VM, memory-slot and vCPU lifetime helpers. | [header](../kernels/mulib-kvm.h) · [example](../examples/modules/kvm.c) |
+| [kvmcontainer](mulib-kvmcontainer.md) | Owning Linux KVM device/VM/single-vCPU bundle, not a guest OS runtime. | [header](../kernels/mulib-kvmcontainer.h) · [example](../examples/modules/kvmcontainer.c) |
 
 ## L
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [landlock](mulib-landlock.md) | Linux filesystem Landlock ABI and fd allowlist enforcement. | [header](../include/mulib-landlock.h) · [example](../examples/modules/sandbox-process.c) |
-| [latex](mulib-latex.md) | Escaped LaTeX article lifecycle and opt-in semantic DocIR article export. | [header](../include/mulib-latex.h) · [example](../examples/modules/latex.c) |
-| [latexwriter](mulib-latexwriter.md) | Escaped LaTeX article source generator. | [header](../include/mulib-latexwriter.h) · [example](../examples/mulib-latexwriter.c) |
-| [lattice](mulib-lattice.md) | Finite 64-attribute implication closure lattice with join/meet of closed sets | [header](../include/mulib-lattice.h) · [example](../examples/modules/lattice.c) |
-| [latticequery](mulib-latticequery.md) | Attribute/extent predicate enumeration over concept-lattice results | [header](../include/mulib-latticequery.h) · [example](../examples/modules/latticequery.c) |
-| [layout](mulib-layout.md) | Unicode paragraph layout, positioned glyphs and weighted rectangles. | [header](../include/mulib-layout.h) · [example](../examples/modules/layout.c) |
-| [layoutml](mulib-layoutml.md) | Strict XML layout profile: flat weighted items in a row/column. | [header](../include/mulib-layoutml.h) · [example](../examples/modules/layoutml.c) |
-| [lazystream](mulib-lazystream.md) | Lazy single-pass functional streams of borrowed values. | [header](../include/mulib-lazystream.h) · [example](../examples/modules/lazystream.c) |
-| [levenshtein](mulib-levenshtein.md) | Levenshtein byte-string distance with two-row dynamic programming. | [header](../include/mulib-levenshtein.h) · [example](../examples/modules/levenshtein.c) |
-| [lexer](mulib-lexer.md) | Byte-offset ASCII lexer for identifiers, decimal integers, strings and comments. | [header](../include/mulib-lexer.h) · [example](../examples/modules/lexer.c) |
-| [lexgen](mulib-lexgen.md) | Ordered longest-match literal and ASCII byte-class lexer rules. | [header](../include/mulib-lexgen.h) · [example](../examples/modules/lexgen.c) |
-| [lexical-token](mulib-lexical-token.md) | Explicit-length borrowed tokens and exact lexeme comparisons. | [header](../include/mulib-lexical-token.h) · [example](../examples/modules/lexical-token.c) |
-| [lexographic_sort](mulib-lexographic_sort.md) | Locale-independent unsigned-byte lexicographic string sorting. | [header](../include/mulib-lexographic_sort.h) · [example](../examples/modules/lexographic_sort.c) |
-| [ligature](mulib-ligature.md) | OpenType ligature controls and lossless UTF-8 cluster maps. | [header](../include/mulib-ligature.h) · [example](../examples/modules/ligature.c) |
-| [linalg](mulib-linalg.md) | Float vectors, column-major transforms and quaternions for graphics. | [header](../include/mulib-linalg.h) · [example](../examples/modules/linalg.c) |
-| [linebreak](mulib-linebreak.md) | Seven UTF-8 wrapping strategies, including Knuth-Plass and Unicode. | [header](../include/mulib-linebreak.h) · [example](../examples/modules/linebreak.c) |
-| [liner_regression](mulib-liner_regression.md) | Ordinary least-squares regression of one predictor with an intercept. | [header](../include/mulib-liner_regression.h) · [example](../examples/modules/liner_regression.c) |
-| [linker](mulib-linker.md) | Checked symbol resolution and bounded relocations over emitted bytes. | [header](../include/mulib-linker.h) · [example](../examples/modules/linker.c) |
-| [lir](mulib-lir.md) | Owned terse register LIR with selection, semantic and scheduling annotations. | [header](../include/mulib-lir.h) · [example](../examples/modules/lir.c) |
-| [list](mulib-list.md) | Intrusive doubly linked circular list with sentinel. | [header](../include/mulib-list.h) · [example](../examples/modules/list.c) |
-| [listener](mulib-listener.md) | Production-specific AST enter and leave callbacks with event budgets. | [header](../include/mulib-listener.h) · [example](../examples/modules/listener.c) |
-| [liveintervals](mulib-liveintervals.md) | Inclusive live-interval validation and overlap predicates. | [header](../include/mulib-liveintervals.h) · [example](../examples/modules/liveintervals.c) |
-| [liveness](mulib-liveness.md) | Fixed-point backward liveness for 64 CFG blocks and 64 register bits. | [header](../include/mulib-liveness.h) · [example](../examples/modules/liveness.c) |
-| [lldp](mulib-lldp.md) | Decode bounds-checked Ethernet LLDP TLVs | [header](../include/mulib-lldp.h) · [example](../examples/modules/lldp.c) |
-| [load_balancer](mulib-load_balancer.md) | Round-robin and least-connections upstream selection. | [header](../include/mulib-load_balancer.h) · [example](../examples/modules/load_balancer.c) |
-| [locale](mulib-locale.md) | Owned bounded registry of localized terminology; replace, lookup and remove by name. | [header](../include/mulib-locale.h) · [example](../examples/mulib-locale.c) |
-| [logger](mulib-logger.md) | Simple callback-driven logging with message severity filtering. | [header](../include/mulib-logger.h) · [example](../examples/modules/logger.c) |
-| [loops](mulib-loops.md) | Reachability-aware natural-loop membership per dominance backedge. | [header](../include/mulib-loops.h) · [example](../examples/modules/loops.c) |
-| [lowopt](mulib-lowopt.md) | Native MIR constant folding, local simplification and conservative dead writes. | [header](../include/mulib-lowopt.h) · [example](../examples/modules/lowopt.c) |
-| [lprowse](mulib-lprowse.md) | Generated embedded Lua source data for the Prowse host; no C function API. | [header](../include/mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
-| [lsh](mulib-lsh.md) | Band-key construction for locality-sensitive MinHash candidate retrieval | [header](../include/mulib-lsh.h) · [example](../examples/modules/lsh.c) |
-| [lsmtree](mulib-lsmtree.md) | Memory-backed LSM runs with WAL-before-publication and atomic compaction. | [header](../include/mulib-lsmtree.h) · [example](../examples/modules/lsmtree.c) |
-| [lzf](mulib-lzf.md) | Dependency-free LZF blocks and standard ZV-framed .lzf streams. | [header](../include/mulib-lzf.h) · [example](../examples/modules/lzf.c) |
-| [lzip](mulib-lzip.md) | Lzip v1 members with LZMA-302, CRC32 and 64-bit size verification. | [header](../include/mulib-lzip.h) · [example](../examples/modules/lzip.c) |
-| [lzma](mulib-lzma.md) | Dependency-free LZMA1 and LZMA2 range/LZ codecs and LZMA-alone files. | [header](../include/mulib-lzma.h) · [example](../examples/modules/lzma.c) |
-| [lzo](mulib-lzo.md) | Dependency-free LZO1X bytecode compressor/decompressor shared by lzop. | [header](../include/mulib-lzo.h) · [example](../examples/modules/lzo.c) |
-| [lzop](mulib-lzop.md) | Dependency-free lzop container and LZO1X block compression. | [header](../include/mulib-lzop.h) · [example](../examples/modules/lzop.c) |
+| [landlock](mulib-landlock.md) | Linux filesystem Landlock ABI and fd allowlist enforcement. | [header](../kernels/mulib-landlock.h) · [example](../examples/modules/sandbox-process.c) |
+| [latex](mulib-latex.md) | Escaped LaTeX article lifecycle and opt-in semantic DocIR article export. | [header](../kernels/mulib-latex.h) · [example](../examples/modules/latex.c) |
+| [latexwriter](mulib-latexwriter.md) | Escaped LaTeX article source generator. | [header](../kernels/mulib-latexwriter.h) · [example](../examples/mulib-latexwriter.c) |
+| [lattice](mulib-lattice.md) | Finite 64-attribute implication closure lattice with join/meet of closed sets | [header](../kernels/mulib-lattice.h) · [example](../examples/modules/lattice.c) |
+| [latticequery](mulib-latticequery.md) | Attribute/extent predicate enumeration over concept-lattice results | [header](../kernels/mulib-latticequery.h) · [example](../examples/modules/latticequery.c) |
+| [layout](mulib-layout.md) | Unicode paragraph layout, positioned glyphs and weighted rectangles. | [header](../kernels/mulib-layout.h) · [example](../examples/modules/layout.c) |
+| [layoutml](mulib-layoutml.md) | Strict XML layout profile: flat weighted items in a row/column. | [header](../kernels/mulib-layoutml.h) · [example](../examples/modules/layoutml.c) |
+| [lazystream](mulib-lazystream.md) | Lazy single-pass functional streams of borrowed values. | [header](../kernels/mulib-lazystream.h) · [example](../examples/modules/lazystream.c) |
+| [levenshtein](mulib-levenshtein.md) | Levenshtein byte-string distance with two-row dynamic programming. | [header](../kernels/mulib-levenshtein.h) · [example](../examples/modules/levenshtein.c) |
+| [lexer](mulib-lexer.md) | Byte-offset ASCII lexer for identifiers, decimal integers, strings and comments. | [header](../kernels/mulib-lexer.h) · [example](../examples/modules/lexer.c) |
+| [lexgen](mulib-lexgen.md) | Ordered longest-match literal and ASCII byte-class lexer rules. | [header](../kernels/mulib-lexgen.h) · [example](../examples/modules/lexgen.c) |
+| [lexical-token](mulib-lexical-token.md) | Explicit-length borrowed tokens and exact lexeme comparisons. | [header](../kernels/mulib-lexical-token.h) · [example](../examples/modules/lexical-token.c) |
+| [lexographic_sort](mulib-lexographic_sort.md) | Locale-independent unsigned-byte lexicographic string sorting. | [header](../kernels/mulib-lexographic_sort.h) · [example](../examples/modules/lexographic_sort.c) |
+| [ligature](mulib-ligature.md) | OpenType ligature controls and lossless UTF-8 cluster maps. | [header](../kernels/mulib-ligature.h) · [example](../examples/modules/ligature.c) |
+| [linalg](mulib-linalg.md) | Float vectors, column-major transforms and quaternions for graphics. | [header](../kernels/mulib-linalg.h) · [example](../examples/modules/linalg.c) |
+| [linebreak](mulib-linebreak.md) | Seven UTF-8 wrapping strategies, including Knuth-Plass and Unicode. | [header](../kernels/mulib-linebreak.h) · [example](../examples/modules/linebreak.c) |
+| [liner_regression](mulib-liner_regression.md) | Ordinary least-squares regression of one predictor with an intercept. | [header](../kernels/mulib-liner_regression.h) · [example](../examples/modules/liner_regression.c) |
+| [linker](mulib-linker.md) | Checked symbol resolution and bounded relocations over emitted bytes. | [header](../kernels/mulib-linker.h) · [example](../examples/modules/linker.c) |
+| [lir](mulib-lir.md) | Owned terse register LIR with selection, semantic and scheduling annotations. | [header](../kernels/mulib-lir.h) · [example](../examples/modules/lir.c) |
+| [list](mulib-list.md) | Intrusive doubly linked circular list with sentinel. | [header](../kernels/mulib-list.h) · [example](../examples/modules/list.c) |
+| [listener](mulib-listener.md) | Production-specific AST enter and leave callbacks with event budgets. | [header](../kernels/mulib-listener.h) · [example](../examples/modules/listener.c) |
+| [liveintervals](mulib-liveintervals.md) | Inclusive live-interval validation and overlap predicates. | [header](../kernels/mulib-liveintervals.h) · [example](../examples/modules/liveintervals.c) |
+| [liveness](mulib-liveness.md) | Fixed-point backward liveness for 64 CFG blocks and 64 register bits. | [header](../kernels/mulib-liveness.h) · [example](../examples/modules/liveness.c) |
+| [lldp](mulib-lldp.md) | Decode bounds-checked Ethernet LLDP TLVs | [header](../kernels/mulib-lldp.h) · [example](../examples/modules/lldp.c) |
+| [load_balancer](mulib-load_balancer.md) | Round-robin and least-connections upstream selection. | [header](../kernels/mulib-load_balancer.h) · [example](../examples/modules/load_balancer.c) |
+| [locale](mulib-locale.md) | Owned bounded registry of localized terminology; replace, lookup and remove by name. | [header](../kernels/mulib-locale.h) · [example](../examples/mulib-locale.c) |
+| [logger](mulib-logger.md) | Simple callback-driven logging with message severity filtering. | [header](../kernels/mulib-logger.h) · [example](../examples/modules/logger.c) |
+| [loops](mulib-loops.md) | Reachability-aware natural-loop membership per dominance backedge. | [header](../kernels/mulib-loops.h) · [example](../examples/modules/loops.c) |
+| [lowopt](mulib-lowopt.md) | Native MIR constant folding, local simplification and conservative dead writes. | [header](../kernels/mulib-lowopt.h) · [example](../examples/modules/lowopt.c) |
+| [lprowse](mulib-lprowse.md) | Generated embedded Lua source data for the Prowse host; no C function API. | [header](../kernels/mulib-lprowse.h) · [example](../examples/modules/prowse-control.c) |
+| [lsh](mulib-lsh.md) | Band-key construction for locality-sensitive MinHash candidate retrieval | [header](../kernels/mulib-lsh.h) · [example](../examples/modules/lsh.c) |
+| [lsmtree](mulib-lsmtree.md) | Memory-backed LSM runs with WAL-before-publication and atomic compaction. | [header](../kernels/mulib-lsmtree.h) · [example](../examples/modules/lsmtree.c) |
+| [lzf](mulib-lzf.md) | Dependency-free LZF blocks and standard ZV-framed .lzf streams. | [header](../kernels/mulib-lzf.h) · [example](../examples/modules/lzf.c) |
+| [lzip](mulib-lzip.md) | Lzip v1 members with LZMA-302, CRC32 and 64-bit size verification. | [header](../kernels/mulib-lzip.h) · [example](../examples/modules/lzip.c) |
+| [lzma](mulib-lzma.md) | Dependency-free LZMA1 and LZMA2 range/LZ codecs and LZMA-alone files. | [header](../kernels/mulib-lzma.h) · [example](../examples/modules/lzma.c) |
+| [lzo](mulib-lzo.md) | Dependency-free LZO1X bytecode compressor/decompressor shared by lzop. | [header](../kernels/mulib-lzo.h) · [example](../examples/modules/lzo.c) |
+| [lzop](mulib-lzop.md) | Dependency-free lzop container and LZO1X block compression. | [header](../kernels/mulib-lzop.h) · [example](../examples/modules/lzop.c) |
 
 ## M
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [machine](mulib-machine.md) | Retargetable instruction grammars and ELF x86-64 and RV64IM assembly emission. | [header](../include/mulib-machine.h) · [example](../examples/modules/machine.c) |
-| [machinebuild](mulib-machinebuild.md) | Parse a bounded automaton DSL and generate standalone JavaScript. | [header](../include/mulib-machinebuild.h) · [example](../examples/modules/machinebuild.c) |
-| [macho](mulib-macho.md) | Checked thin Mach-O 32/64-bit views in either byte order. | [header](../include/mulib-macho.h) · [example](../examples/modules/macho.c) |
-| [macho-objdump](mulib-macho-objdump.md) | Thin Mach-O command, section, symbol and hex dumps using shared objdump. | [header](../include/mulib-macho-objdump.h) · [example](../examples/modules/macho-objdump.c) |
-| [machobuidler](mulib-machobuidler.md) | Deterministic x86-64 Mach-O object text-section writer. | [header](../include/mulib-machobuidler.h) · [example](../examples/modules/machobuidler.c) |
-| [machobuilder](mulib-machobuilder.md) | Owned multi-section little-endian Mach-O64 MH_OBJECT builder. | [header](../include/mulib-machobuilder.h) · [example](../examples/modules/machobuilder.c) |
-| [machoutils](mulib-machoutils.md) | Exact Mach-O section and defined non-debug symbol lookup. | [header](../include/mulib-machoutils.h) · [example](../examples/modules/machoutils.c) |
-| [manpage](mulib-manpage.md) | An owned Linux roff manpage authoring object and section emitter. | [header](../include/mulib-manpage.h) · [example](../examples/modules/manpage.c) |
-| [map](mulib-map.md) | String-keyed dictionary with owning keys and borrowed values. | [header](../include/mulib-map.h) · [example](../examples/modules/map.c) |
-| [marionette](mulib-marionette.md) | Caller-clocked bounded input recording and callback playback. | [header](../include/mulib-marionette.h) · [example](../examples/modules/marionette.c) |
-| [markdown](mulib-markdown.md) | Focused Markdown rendering through shared HTML-building utilities. | [header](../include/mulib-markdown.h) · [example](../examples/modules/markdown.c) |
-| [marketquote](mulib-marketquote.md) | Checked level-one quote freshness, ticks, spread and midpoint. | [header](../include/mulib-marketquote.h) · [example](../examples/finpred_market.c) |
-| [markov_chain](mulib-markov_chain.md) | Dense finite-state Markov chains and smoothed transition estimation. | [header](../include/mulib-markov_chain.h) · [example](../examples/modules/markov_chain.c) |
-| [markup-bridge](mulib-markup-bridge.md) | Checked tree, range, graph, and hybrid markup conversions. | [header](../include/mulib-markup-bridge.h) · [example](../examples/markup-ir.c) |
-| [markup-graph](mulib-markup-graph.md) | Typed markup graph links, hyperedges, properties, and DAG traversal. | [header](../include/mulib-markup-graph.h) · [example](../examples/markup-ir.c) |
-| [markup-spans](mulib-markup-spans.md) | Owned byte text, overlapping annotations, and attributed run partitioning. | [header](../include/mulib-markup-spans.h) · [example](../examples/markup-ir.c) |
-| [markup-stream](mulib-markup-stream.md) | Length-delimited markup scanning, CST snapshots, and tree events. | [header](../include/mulib-markup-stream.h) · [example](../examples/markup-ir.c) |
-| [markup-tree](mulib-markup-tree.md) | Owned ordered markup tree, stable node IDs, and SXML export. | [header](../include/mulib-markup-tree.h) · [example](../examples/markup-ir.c) |
-| [math](mulib-math.md) | 'Integer arithmetic utilities: GCD, LCM and bounded integer power.' | [header](../include/mulib-math.h) · [example](../examples/modules/math.c) |
-| [mathaccent](mulib-mathaccent.md) | Owned ordered collection for math mathaccent rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathaccent.h) · [example](../examples/mulib-mathaccent.c) |
-| [mathatom](mulib-mathatom.md) | Owned ordered collection for math mathatom rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathatom.h) · [example](../examples/mulib-mathatom.c) |
-| [mathdelimiter](mulib-mathdelimiter.md) | Owned ordered collection for math mathdelimiter rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathdelimiter.h) · [example](../examples/mulib-mathdelimiter.c) |
-| [mathfont](mulib-mathfont.md) | Owned bounded registry of math font parameters; replace, lookup and remove by name. | [header](../include/mulib-mathfont.h) · [example](../examples/mulib-mathfont.c) |
-| [mathfraction](mulib-mathfraction.md) | Compute stacked fraction baseline metrics from numerator and denominator boxes. | [header](../include/mulib-mathfraction.h) · [example](../examples/mulib-mathfraction.c) |
-| [mathir](mulib-mathir.md) | Owned ordered collection for math mathir rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathir.h) · [example](../examples/mulib-mathir.c) |
-| [mathlayout](mulib-mathlayout.md) | Owned ordered collection for math mathlayout rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathlayout.h) · [example](../examples/mulib-mathlayout.c) |
-| [mathmatrix](mulib-mathmatrix.md) | Owned ordered collection for math mathmatrix rectangles and records; insertion, indexing, removal. | [header](../include/mulib-mathmatrix.h) · [example](../examples/mulib-mathmatrix.c) |
-| [mathml](mulib-mathml.md) | Presentation MathML DOM construction, structural validation and XML serialization. | [header](../include/mulib-mathml.h) · [example](../examples/modules/mathml.c) |
-| [mathnumber](mulib-mathnumber.md) | Owned bounded registry of named equation numbers; replace, lookup and remove by name. | [header](../include/mulib-mathnumber.h) · [example](../examples/mulib-mathnumber.c) |
-| [mathoperator](mulib-mathoperator.md) | Owned bounded registry of operator classification tables; replace, lookup and remove by name. | [header](../include/mulib-mathoperator.h) · [example](../examples/mulib-mathoperator.c) |
-| [mathparse](mulib-mathparse.md) | Math-brace and superscript/subscript token validation. | [header](../include/mulib-mathparse.h) · [example](../examples/mulib-mathparse.c) |
-| [mathradical](mulib-mathradical.md) | Calculate radical clearance and total ascent. | [header](../include/mulib-mathradical.h) · [example](../examples/mulib-mathradical.c) |
-| [mathscript](mulib-mathscript.md) | Scripted baseline offset calculations. | [header](../include/mulib-mathscript.h) · [example](../examples/mulib-mathscript.c) |
-| [mathspacing](mulib-mathspacing.md) | Add mathematical spacing to a measured advance. Finite numeric inputs and documented scalar result. | [header](../include/mulib-mathspacing.h) · [example](../examples/mulib-mathspacing.c) |
-| [mathspeech](mulib-mathspeech.md) | Checked math mathspeech text emission into an owned byte buffer. | [header](../include/mulib-mathspeech.h) · [example](../examples/mulib-mathspeech.c) |
-| [matrix](mulib-matrix.md) | Heap-allocated row-major matrix of double precision numbers. | [header](../include/mulib-matrix.h) · [example](../examples/modules/matrix.c) |
-| [matview](mulib-matview.md) | Incrementally maintained count/sum materialized numeric aggregate view | [header](../include/mulib-matview.h) · [example](../examples/modules/matview.c) |
-| [mcp-broadcast](mulib-mcp-broadcast.md) | Authenticated public HTTPS endpoint adapter for MCP JSON-RPC with optional OAuth resource metadata. | [header](../include/mulib-mcp-broadcast.h) · [example](../examples/modules/mcp-broadcast.c) |
-| [mcp-client](mulib-mcp-client.md) | Bounded MCP client for discovery, tools, resources, prompts, and completion. | [header](../include/mulib-mcp-client.h) · [example](../examples/modules/mcp-client.c) |
-| [mcp-http](mulib-mcp-http.md) | Bounded Streamable HTTP/1.1 framing for current MCP requests and responses. | [header](../include/mulib-mcp-http.h) · [example](../examples/modules/mcp-http.c) |
-| [mcp-server](mulib-mcp-server.md) | Stateless MCP and legacy stdio dispatch to host-approved catalogues and handlers. | [header](../include/mulib-mcp-server.h) · [example](../examples/modules/mcp-server.c) |
-| [mcu](mulib-mcu.md) | Extensible microcontroller architecture and encoding contract. | [header](../include/mulib-mcu.h) · [example](../examples/modules/mcu.c) |
-| [media-av1](mulib-media-av1.md) | AV1 low-overhead OBU framing and LEB128 sizes. Limit: No AV1 encoder/decoder. | [header](../include/mulib-media-av1.h) · [example](../examples/media-pipeline.c) |
-| [media-bufferpool](mulib-media-bufferpool.md) | Fixed-size reusable frame pool. Limit: Single-threaded; all leases must be returned before destruction. | [header](../include/mulib-media-bufferpool.h) · [example](../examples/media-pipeline.c) |
-| [media-clock](mulib-media-clock.md) | Anchored monotonic host-clock mapping (rate in ticks/ns). Limit: Caller supplies monotonic timestamps; no audio PLL. | [header](../include/mulib-media-clock.h) · [example](../examples/media-pipeline.c) |
-| [media-codec](mulib-media-codec.md) | Send/receive codec provider contract with explicit draining (NULL input). Limit: No bundled codec provider. | [header](../include/mulib-media-codec.h) · [example](../examples/media-pipeline.c) |
-| [media-convert](mulib-media-convert.md) | RGB, gray, float and limited-range BT.709 YUV420 to RGBA8. Limit: Disjoint source/destination; no transfer conversion. | [header](../include/mulib-media-convert.h) · [example](../examples/media-pipeline.c) |
-| [media-core](mulib-media-core.md) | Common checked arithmetic, status and byte views. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-media-core.h) · [example](../examples/media-pipeline.c) |
-| [media-demux](mulib-media-demux.md) | Demux provider lifecycle and checked dispatch. Limit: Needs caller-supplied demux implementation (e.g. FFmpeg bridge). | [header](../include/mulib-media-demux.h) · [example](../examples/media-pipeline.c) |
-| [media-export](mulib-media-export.md) | Cancellable packet remux loop with release and finalization. Limit: Provider callbacks must be blocking; no encode or atomic filesystem commit. | [header](../include/mulib-media-export.h) · [example](../examples/media-pipeline.c) |
-| [media-frame](mulib-media-frame.md) | Checked strided frame views, heap allocation and row copying. Limit: Copy requires disjoint frames or identical layout. Owned and borrowed frames share layout; caller tracks ownership. | [header](../include/mulib-media-frame.h) · [example](../examples/media-pipeline.c) |
-| [media-h264](mulib-media-h264.md) | Annex B NAL iterator and emulation-prevention removal. Limit: Bitstream tooling only; no H.264 encoder/decoder. | [header](../include/mulib-media-h264.h) · [example](../examples/media-pipeline.c) |
-| [media-h265](mulib-media-h265.md) | Annex B HEVC NAL header extraction. Limit: No HEVC encoder/decoder. | [header](../include/mulib-media-h265.h) · [example](../examples/media-pipeline.c) |
-| [media-isobmff](mulib-media-isobmff.md) | Bounds-checked ISO BMFF box traversal including extended sizes. Limit: No sample tables, timestamps or container writing. | [header](../include/mulib-media-isobmff.h) · [example](../examples/media-pipeline.c) |
-| [media-matroska](mulib-media-matroska.md) | EBML variable integers and bounded element traversal. Limit: Unknown-sized element consumes remaining caller-supplied scope; no block/lacing support. | [header](../include/mulib-media-matroska.h) · [example](../examples/media-pipeline.c) |
-| [media-metadata](mulib-media-metadata.md) | Borrowed key/value metadata with checked capacity. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-media-metadata.h) · [example](../examples/media-pipeline.c) |
-| [media-mpegts](mulib-media-mpegts.md) | 188-byte transport packet header and adaptation-field parsing. Limit: No PES assembly, PAT/PMT or muxing. | [header](../include/mulib-media-mpegts.h) · [example](../examples/media-pipeline.c) |
-| [media-mux](mulib-media-mux.md) | Mux provider lifecycle with finalization guard. Limit: Provider required. | [header](../include/mulib-media-mux.h) · [example](../examples/media-pipeline.c) |
-| [media-packet](mulib-media-packet.md) | Deep copy and release of encoded packets. Limit: Release only cloned packets. | [header](../include/mulib-media-packet.h) · [example](../examples/media-pipeline.c) |
-| [media-pixelformat](mulib-media-pixelformat.md) | Plane layout for packed and subsampled images. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-media-pixelformat.h) · [example](../examples/media-pipeline.c) |
-| [media-proxy](mulib-media-proxy.md) | Aspect-preserving in-memory proxy frame generation. Limit: No proxy media files or cache. | [header](../include/mulib-media-proxy.h) · [example](../examples/media-pipeline.c) |
-| [media-scale](mulib-media-scale.md) | Nearest-neighbor RGBA8 scale. Limit: Requires disjoint buffers; use img-resample for high quality. | [header](../include/mulib-media-scale.h) · [example](../examples/media-pipeline.c) |
-| [media-seek](mulib-media-seek.md) | Binary timestamp seek followed by keyframe backtracking. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-media-seek.h) · [example](../examples/media-pipeline.c) |
-| [media-stream](mulib-media-stream.md) | Short-read and short-write handling for blocking streams. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-media-stream.h) · [example](../examples/media-pipeline.c) |
-| [media-timebase](mulib-media-timebase.md) | Exact rational timebase normalization and checked rescaling. Limit: May reject very large intermediate products even if final quotient would fit. | [header](../include/mulib-media-timebase.h) · [example](../examples/media-pipeline.c) |
-| [media-vp9](mulib-media-vp9.md) | VP9 uncompressed frame prefix parsing. Limit: Does not validate full frame or decode pixels. | [header](../include/mulib-media-vp9.h) · [example](../examples/media-pipeline.c) |
-| [memfd](notebook-desktop.md) | Anonymous file creation, checked sizing and mapping. | [header](../include/mulib-memfd.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [mempool](mulib-mempool.md) | Aligned fixed-size object pools with validated slot release. | [header](../include/mulib-mempool.h) · [example](../examples/modules/mempool.c) |
-| [memtable](mulib-memtable.md) | Owned sorted binary records with sequence numbers and tombstones. | [header](../include/mulib-memtable.h) · [example](../examples/modules/memtable.c) |
-| [memtest](mulib-memtest.md) | Destructive volatile RAM pattern tests on caller-owned regions. | [header](../include/mulib-memtest.h) · [example](../examples/modules/memtest.c) |
-| [memtkx](mulib-memtkx.md) | Tracking allocators with statistics, live-byte limits, and checkpoints. | [header](../include/mulib-memtkx.h) · [example](../examples/modules/memtkx.c) |
-| [mesh-adjacency](mulib-mesh-adjacency.md) | Vertex-to-face incidence query. Limit: Linear scan; add CSR adjacency. | [header](../include/mulib-mesh-adjacency.h) · [example](../examples/media-pipeline.c) |
-| [mesh-attributes](mulib-mesh-attributes.md) | Checked dense per-element attribute channels. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-mesh-attributes.h) · [example](../examples/media-pipeline.c) |
-| [mesh-boolean](mulib-mesh-boolean.md) | Point-in-closed-mesh parity classification, a boolean building block. Limit: No mesh boolean output; edge degeneracies and robust intersections unresolved. | [header](../include/mulib-mesh-boolean.h) · [example](../examples/media-pipeline.c) |
-| [mesh-core](mulib-mesh-core.md) | Caller-owned indexed triangle mesh and vector math. Limit: Triangle-only initial model; integrate canonical cgeom/linalg types later. | [header](../include/mulib-mesh-core.h) · [example](../examples/media-pipeline.c) |
-| [mesh-decimate](mulib-mesh-decimate.md) | Shortest-edge selection and index collapse with degenerate face removal. Limit: Not QEM; may change topology; leaves unused vertices. | [header](../include/mulib-mesh-decimate.h) · [example](../examples/media-pipeline.c) |
-| [mesh-edit](mulib-mesh-edit.md) | Single-face extrusion with cap and side walls. Limit: No region extrusion, bevel or inset. | [header](../include/mulib-mesh-edit.h) · [example](../examples/media-pipeline.c) |
-| [mesh-gltf](mulib-mesh-gltf.md) | GLB 2.0 JSON and BIN chunk extraction. Limit: No glTF JSON/accessor/material import or export. | [header](../include/mulib-mesh-gltf.h) · [example](../examples/media-pipeline.c) |
-| [mesh-halfedge](mulib-mesh-halfedge.md) | Triangle half-edge construction and nonmanifold edge rejection. Limit: O(E²), no nonmanifold vertex detection. | [header](../include/mulib-mesh-halfedge.h) · [example](../examples/media-pipeline.c) |
-| [mesh-normals](mulib-mesh-normals.md) | Area-weighted smooth vertex normals. Limit: No tangent frames or split normals. | [header](../include/mulib-mesh-normals.h) · [example](../examples/media-pipeline.c) |
-| [mesh-obj](mulib-mesh-obj.md) | Wavefront OBJ position and triangle export. Limit: No import, material, normal or UV records. | [header](../include/mulib-mesh-obj.h) · [example](../examples/media-pipeline.c) |
-| [mesh-ply](mulib-mesh-ply.md) | ASCII PLY positions and triangle export. Limit: No binary PLY or import. | [header](../include/mulib-mesh-ply.h) · [example](../examples/media-pipeline.c) |
-| [mesh-primitives](mulib-mesh-primitives.md) | Box and regular grid primitive generation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-mesh-primitives.h) · [example](../examples/media-pipeline.c) |
-| [mesh-remesh](mulib-mesh-remesh.md) | Jacobi Laplacian smoothing with fixed vertices. Limit: Face-weighted neighbors; no isotropic split/collapse/flip remeshing. | [header](../include/mulib-mesh-remesh.h) · [example](../examples/media-pipeline.c) |
-| [mesh-repair](mulib-mesh-repair.md) | Remove zero-area or below-threshold triangles. Limit: No hole filling, welding or orientation repair. | [header](../include/mulib-mesh-repair.h) · [example](../examples/media-pipeline.c) |
-| [mesh-skin](mulib-mesh-skin.md) | Four-weight normalized linear blend skinning. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-mesh-skin.h) · [example](../examples/media-pipeline.c) |
-| [mesh-subdivide](mulib-mesh-subdivide.md) | Shared-edge linear triangle subdivision. Limit: Not Loop or Catmull-Clark smoothing; disjoint meshes. | [header](../include/mulib-mesh-subdivide.h) · [example](../examples/media-pipeline.c) |
-| [mesh-triangulate](mulib-mesh-triangulate.md) | Ear clipping for simple planar polygons. Limit: No exact predicates or holes; assumes non-self-intersection. | [header](../include/mulib-mesh-triangulate.h) · [example](../examples/media-pipeline.c) |
-| [mesh-uv](mulib-mesh-uv.md) | Normalized planar UV projection. Limit: No seam generation, LSCM or atlas packing. | [header](../include/mulib-mesh-uv.h) · [example](../examples/media-pipeline.c) |
-| [messagepack](mulib-messagepack.md) | Bounded MessagePack JSON-profile codec. | [header](../include/mulib-messagepack.h) · [example](../examples/modules/messagepack.c) |
-| [metapp](mulib-metapp.md) | C/C++ preprocessing, entry-independent include graphs and MuLIB-linked native extensions. | [header](../include/mulib-metapp.h) · [example](../examples/modules/metapp.c) |
-| [metrics](mulib-metrics.md) | Saturating HTTP counters and caller-supplied latency totals. | [header](../include/mulib-metrics.h) · [example](../examples/modules/metrics.c) |
-| [microaudio](mulib-microaudio.md) | Portable bounded PCM and WAV audio utilities. | [header](../include/mulib-microaudio.h) · [example](../examples/modules/microaudio.c) |
-| [microcc](mulib-microcc.md) | High-level IR to native MIR, optimization, selection, scheduling and assembly pipeline. | [header](../include/mulib-microcc.h) · [example](../examples/modules/microcc.c) |
-| [microchan](mulib-microchan.md) | Checksummed local publish/subscribe protocol, client and bounded broker. | [header](../include/mulib-microchan.h) · [example](../examples/modules/microchan.c) |
-| [microjs](mulib-microjs.md) | Embeddable JavaScript core with MiniVM bytecode, closures, UTF-16 strings, host callbacks, and traced garbage collection; partial ECMAScript 2025. | [header](../include/mulib-microjs.h) · [example](../examples/modules/microjs.c) |
-| [microjs-module](mulib-microjs-module.md) | Owned source-module registry with immutable lookup by specifier. | [header](../include/mulib-microjs-module.h) · [example](../examples/modules/microjs-module.c) |
-| [microjs-promise](mulib-microjs-promise.md) | Native deferred-job queues and one-shot promise-like settlement. | [header](../include/mulib-microjs-promise.h) · [example](../examples/modules/microjs-promise.c) |
-| [microtcl](mulib-microtcl.md) | An embeddable Tcl-inspired command interpreter with a documented small builtin set. | [header](../include/mulib-microtcl.h) · [example](../examples/modules/microtcl.c) |
-| [microtype](mulib-microtype.md) | Apply bounded protrusion offset to an advance. Finite numeric inputs and documented scalar result. | [header](../include/mulib-microtype.h) · [example](../examples/mulib-microtype.c) |
-| [midi](mulib-midi.md) | Owned MIDI events and Standard MIDI File type 0/1 IO. | [header](../include/mulib-midi.h) · [example](../examples/modules/midi.c) |
-| [mime](mulib-mime.md) | Filename-extension MIME lookup and bounded Content-Type normalization. | [header](../include/mulib-mime.h) · [example](../examples/modules/mime.c) |
-| [minhash](mulib-minhash.md) | Seeded MinHash signatures for Jaccard similarity estimation | [header](../include/mulib-minhash.h) · [example](../examples/modules/minhash.c) |
-| [minicurl](mulib-minicurl.md) | Focused HTTP request convenience layer over webclient. | [header](../include/mulib-minicurl.h) · [example](../examples/modules/minicurl.c) |
-| [miniflac](mulib-miniflac.md) | Native FLAC predictor decoder and verbatim-subframe encoder. | [header](../include/mulib-miniflac.h) · [example](../examples/modules/miniflac.c) |
-| [minimpeg](mulib-minimpeg.md) | Original MP3 codec and opt-in MPEG-1 video encoding and decoding. | [header](../include/mulib-minimpeg.h) · [example](../examples/modules/minimpeg.c) |
-| [minincat](mulib-minincat.md) | Bounded binary stream relay through explicit I/O callbacks. | [header](../include/mulib-minincat.h) · [example](../examples/modules/minincat.c) |
-| [minish](mulib-minish.md) | Focused shell tokenization, expansion, builtins, and command dispatch. | [header](../include/mulib-minish.h) · [example](../examples/modules/minish.c) |
-| [minivm](mulib-minivm.md) | Checked stack bytecode execution with bounded resources and faults. | [header](../include/mulib-minivm.h) · [example](../examples/modules/minivm.c) |
-| [minivorbis](mulib-minivorbis.md) | Original fixed-block Ogg/Vorbis encoder and matching-profile decoder. | [header](../include/mulib-minivorbis.h) · [example](../examples/modules/minivorbis.c) |
-| [miniwav](mulib-miniwav.md) | RIFF/WAVE PCM and IEEE float encoder/decoder. | [header](../include/mulib-miniwav.h) · [example](../examples/modules/miniwav.c) |
-| [miniwget](mulib-miniwget.md) | Bounded HTTP downloads through webclient into caller-owned memory. | [header](../include/mulib-miniwget.h) · [example](../examples/modules/miniwget.c) |
-| [mir](mulib-mir.md) | Shared validated machine intermediate representation. | [header](../include/mulib-mir.h) · [example](../examples/modules/mir.c) |
-| [mmdiff](mulib-mmdiff.md) | Binary memory copy-insert differences and checked patch application. | [header](../include/mulib-mmdiff.h) · [example](../examples/modules/mmdiff.c) |
-| [mmfile](mulib-mmfile.md) | Native memory-mapped file ownership and synchronization. | [header](../include/mulib-mmfile.h) · [example](../examples/modules/mmfile.c) |
-| [mobi](mulib-mobi.md) | PalmDB/PalmDOC and MOBI 6/7/8 inspection and bounded text decoding. | [header](../include/mulib-mobi.h) · [example](../examples/modules/mobi.c) |
-| [mobiwrite](mulib-mobiwrite.md) | PalmDOC type TEXt/REAd writer with uncompressed text record, via palmdb. | [header](../include/mulib-mobiwrite.h) · [example](../examples/mulib-mobiwrite.c) |
-| [module-resolver](mulib-module-resolver.md) | Owned exact module-name to source-path registry. | [header](../include/mulib-module-resolver.h) · [example](../examples/modules/module-resolver.c) |
-| [money](mulib-money.md) | Checked integer-minor-unit monetary arithmetic and rational conversions. | [header](../include/mulib-money.h) · [example](../examples/modules/money.c) |
-| [mop](mulib-mop.md) | Borrowed class reflection and inherited method dispatch. | [header](../include/mulib-mop.h) · [example](../examples/modules/mop.c) |
-| [movingavg](mulib-movingavg.md) | Constant-memory fixed-window moving average over doubles. | [header](../include/mulib-movingavg.h) · [example](../examples/modules/movingavg.c) |
-| [mpu](mulib-mpu.md) | Extensible microprocessor profile, query and code emission contract. | [header](../include/mulib-mpu.h) · [example](../examples/modules/mpu.c) |
-| [mqueue](mulib-mqueue.md) | System V typed, nonblocking interprocess message queues. | [header](../include/mulib-mqueue.h) · [example](../examples/modules/mqueue.c) |
-| [muburg](mulib-muburg.md) | Costed bottom-up tree-pattern instruction selection. | [header](../include/mulib-muburg.h) · [example](../examples/modules/muburg.c) |
-| [muidl](mulib-muidl.md) | MuIDL flat-record schema source generation. | [header](../include/mulib-muidl.h) · [example](../examples/modules/muidl.c) |
-| [mulib](mulib-mulib.md) | Small core umbrella and library version. | [header](../include/mulib-mulib.h) · [example](../examples/modules/mulib.c) |
-| [multipart](mulib-multipart.md) | Binary-safe multipart/form-data encoding, bounded part parsing and text fields. | [header](../include/mulib-multipart.h) · [example](../examples/modules/multipart.c) |
-| [mumq](mulib-mumq.md) | Bounded nonblocking MuMQ v1 topic frames over owned stream sockets. | [header](../include/mulib-mumq.h) · [example](../examples/modules/mumq.c) |
-| [mumq-publisher](mulib-mumq-publisher.md) | MuMQ exact-topic publisher convenience API. | [header](../include/mulib-mumq-publisher.h) · [example](../examples/modules/mumq-publisher.c) |
-| [mumq-server](mulib-mumq-server.md) | Bounded, backpressured in-memory MuMQ topic broker. | [header](../include/mulib-mumq-server.h) · [example](../examples/modules/mumq-server.c) |
-| [mumq-subscriber](mulib-mumq-subscriber.md) | Acknowledged exact-topic MuMQ subscriptions. | [header](../include/mulib-mumq-subscriber.h) · [example](../examples/modules/mumq-subscriber.c) |
-| [mune](mulib-mune.md) | Independent Lua runtime, parser-backed AST, tree/VM/JIT/C-AOT execution and module bundles. | [header](../include/mulib-mune.h) · [example](../examples/modules/mune.c) |
-| [musicnotation](mulib-musicnotation.md) | Owned ordered collection for graphics musicnotation rectangles and records; insertion, indexing, removal. | [header](../include/mulib-musicnotation.h) · [example](../examples/mulib-musicnotation.c) |
-| [muw3](mulib-muw3.md) | Bounded HTTP/HTTPS client with native TLS 1.3, redirects and forms. | [header](../include/mulib-muw3.h) · [example](../examples/modules/muw3.c) |
-| [muw3-mune](mulib-muw3-mune.md) | Embedded Mune Weblet engine with lmuw3 workflows, JSON/YAML and MicroChan. | [header](../include/mulib-muw3-mune.h) · [example](../examples/modules/muw3-mune.c) |
+| [machine](mulib-machine.md) | Retargetable instruction grammars and ELF x86-64 and RV64IM assembly emission. | [header](../kernels/mulib-machine.h) · [example](../examples/modules/machine.c) |
+| [machinebuild](mulib-machinebuild.md) | Parse a bounded automaton DSL and generate standalone JavaScript. | [header](../kernels/mulib-machinebuild.h) · [example](../examples/modules/machinebuild.c) |
+| [macho](mulib-macho.md) | Checked thin Mach-O 32/64-bit views in either byte order. | [header](../kernels/mulib-macho.h) · [example](../examples/modules/macho.c) |
+| [macho-objdump](mulib-macho-objdump.md) | Thin Mach-O command, section, symbol and hex dumps using shared objdump. | [header](../kernels/mulib-macho-objdump.h) · [example](../examples/modules/macho-objdump.c) |
+| [machobuidler](mulib-machobuidler.md) | Deterministic x86-64 Mach-O object text-section writer. | [header](../kernels/mulib-machobuidler.h) · [example](../examples/modules/machobuidler.c) |
+| [machobuilder](mulib-machobuilder.md) | Owned multi-section little-endian Mach-O64 MH_OBJECT builder. | [header](../kernels/mulib-machobuilder.h) · [example](../examples/modules/machobuilder.c) |
+| [machoutils](mulib-machoutils.md) | Exact Mach-O section and defined non-debug symbol lookup. | [header](../kernels/mulib-machoutils.h) · [example](../examples/modules/machoutils.c) |
+| [manpage](mulib-manpage.md) | An owned Linux roff manpage authoring object and section emitter. | [header](../kernels/mulib-manpage.h) · [example](../examples/modules/manpage.c) |
+| [map](mulib-map.md) | String-keyed dictionary with owning keys and borrowed values. | [header](../kernels/mulib-map.h) · [example](../examples/modules/map.c) |
+| [marionette](mulib-marionette.md) | Caller-clocked bounded input recording and callback playback. | [header](../kernels/mulib-marionette.h) · [example](../examples/modules/marionette.c) |
+| [markdown](mulib-markdown.md) | Focused Markdown rendering through shared HTML-building utilities. | [header](../kernels/mulib-markdown.h) · [example](../examples/modules/markdown.c) |
+| [marketquote](mulib-marketquote.md) | Checked level-one quote freshness, ticks, spread and midpoint. | [header](../kernels/mulib-marketquote.h) · [example](../examples/finpred_market.c) |
+| [markov_chain](mulib-markov_chain.md) | Dense finite-state Markov chains and smoothed transition estimation. | [header](../kernels/mulib-markov_chain.h) · [example](../examples/modules/markov_chain.c) |
+| [markup-bridge](mulib-markup-bridge.md) | Checked tree, range, graph, and hybrid markup conversions. | [header](../kernels/mulib-markup-bridge.h) · [example](../examples/markup-ir.c) |
+| [markup-graph](mulib-markup-graph.md) | Typed markup graph links, hyperedges, properties, and DAG traversal. | [header](../kernels/mulib-markup-graph.h) · [example](../examples/markup-ir.c) |
+| [markup-spans](mulib-markup-spans.md) | Owned byte text, overlapping annotations, and attributed run partitioning. | [header](../kernels/mulib-markup-spans.h) · [example](../examples/markup-ir.c) |
+| [markup-stream](mulib-markup-stream.md) | Length-delimited markup scanning, CST snapshots, and tree events. | [header](../kernels/mulib-markup-stream.h) · [example](../examples/markup-ir.c) |
+| [markup-tree](mulib-markup-tree.md) | Owned ordered markup tree, stable node IDs, and SXML export. | [header](../kernels/mulib-markup-tree.h) · [example](../examples/markup-ir.c) |
+| [math](mulib-math.md) | 'Integer arithmetic utilities: GCD, LCM and bounded integer power.' | [header](../kernels/mulib-math.h) · [example](../examples/modules/math.c) |
+| [mathaccent](mulib-mathaccent.md) | Owned ordered collection for math mathaccent rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathaccent.h) · [example](../examples/mulib-mathaccent.c) |
+| [mathatom](mulib-mathatom.md) | Owned ordered collection for math mathatom rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathatom.h) · [example](../examples/mulib-mathatom.c) |
+| [mathdelimiter](mulib-mathdelimiter.md) | Owned ordered collection for math mathdelimiter rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathdelimiter.h) · [example](../examples/mulib-mathdelimiter.c) |
+| [mathfont](mulib-mathfont.md) | Owned bounded registry of math font parameters; replace, lookup and remove by name. | [header](../kernels/mulib-mathfont.h) · [example](../examples/mulib-mathfont.c) |
+| [mathfraction](mulib-mathfraction.md) | Compute stacked fraction baseline metrics from numerator and denominator boxes. | [header](../kernels/mulib-mathfraction.h) · [example](../examples/mulib-mathfraction.c) |
+| [mathir](mulib-mathir.md) | Owned ordered collection for math mathir rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathir.h) · [example](../examples/mulib-mathir.c) |
+| [mathlayout](mulib-mathlayout.md) | Owned ordered collection for math mathlayout rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathlayout.h) · [example](../examples/mulib-mathlayout.c) |
+| [mathmatrix](mulib-mathmatrix.md) | Owned ordered collection for math mathmatrix rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-mathmatrix.h) · [example](../examples/mulib-mathmatrix.c) |
+| [mathml](mulib-mathml.md) | Presentation MathML DOM construction, structural validation and XML serialization. | [header](../kernels/mulib-mathml.h) · [example](../examples/modules/mathml.c) |
+| [mathnumber](mulib-mathnumber.md) | Owned bounded registry of named equation numbers; replace, lookup and remove by name. | [header](../kernels/mulib-mathnumber.h) · [example](../examples/mulib-mathnumber.c) |
+| [mathoperator](mulib-mathoperator.md) | Owned bounded registry of operator classification tables; replace, lookup and remove by name. | [header](../kernels/mulib-mathoperator.h) · [example](../examples/mulib-mathoperator.c) |
+| [mathparse](mulib-mathparse.md) | Math-brace and superscript/subscript token validation. | [header](../kernels/mulib-mathparse.h) · [example](../examples/mulib-mathparse.c) |
+| [mathradical](mulib-mathradical.md) | Calculate radical clearance and total ascent. | [header](../kernels/mulib-mathradical.h) · [example](../examples/mulib-mathradical.c) |
+| [mathscript](mulib-mathscript.md) | Scripted baseline offset calculations. | [header](../kernels/mulib-mathscript.h) · [example](../examples/mulib-mathscript.c) |
+| [mathspacing](mulib-mathspacing.md) | Add mathematical spacing to a measured advance. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-mathspacing.h) · [example](../examples/mulib-mathspacing.c) |
+| [mathspeech](mulib-mathspeech.md) | Checked math mathspeech text emission into an owned byte buffer. | [header](../kernels/mulib-mathspeech.h) · [example](../examples/mulib-mathspeech.c) |
+| [matrix](mulib-matrix.md) | Heap-allocated row-major matrix of double precision numbers. | [header](../kernels/mulib-matrix.h) · [example](../examples/modules/matrix.c) |
+| [matview](mulib-matview.md) | Incrementally maintained count/sum materialized numeric aggregate view | [header](../kernels/mulib-matview.h) · [example](../examples/modules/matview.c) |
+| [mcp-broadcast](mulib-mcp-broadcast.md) | Authenticated public HTTPS endpoint adapter for MCP JSON-RPC with optional OAuth resource metadata. | [header](../kernels/mulib-mcp-broadcast.h) · [example](../examples/modules/mcp-broadcast.c) |
+| [mcp-client](mulib-mcp-client.md) | Bounded MCP client for discovery, tools, resources, prompts, and completion. | [header](../kernels/mulib-mcp-client.h) · [example](../examples/modules/mcp-client.c) |
+| [mcp-http](mulib-mcp-http.md) | Bounded Streamable HTTP/1.1 framing for current MCP requests and responses. | [header](../kernels/mulib-mcp-http.h) · [example](../examples/modules/mcp-http.c) |
+| [mcp-server](mulib-mcp-server.md) | Stateless MCP and legacy stdio dispatch to host-approved catalogues and handlers. | [header](../kernels/mulib-mcp-server.h) · [example](../examples/modules/mcp-server.c) |
+| [mcu](mulib-mcu.md) | Extensible microcontroller architecture and encoding contract. | [header](../kernels/mulib-mcu.h) · [example](../examples/modules/mcu.c) |
+| [media-av1](mulib-media-av1.md) | AV1 low-overhead OBU framing and LEB128 sizes. Limit: No AV1 encoder/decoder. | [header](../kernels/mulib-media-av1.h) · [example](../examples/media-pipeline.c) |
+| [media-bufferpool](mulib-media-bufferpool.md) | Fixed-size reusable frame pool. Limit: Single-threaded; all leases must be returned before destruction. | [header](../kernels/mulib-media-bufferpool.h) · [example](../examples/media-pipeline.c) |
+| [media-clock](mulib-media-clock.md) | Anchored monotonic host-clock mapping (rate in ticks/ns). Limit: Caller supplies monotonic timestamps; no audio PLL. | [header](../kernels/mulib-media-clock.h) · [example](../examples/media-pipeline.c) |
+| [media-codec](mulib-media-codec.md) | Send/receive codec provider contract with explicit draining (NULL input). Limit: No bundled codec provider. | [header](../kernels/mulib-media-codec.h) · [example](../examples/media-pipeline.c) |
+| [media-convert](mulib-media-convert.md) | RGB, gray, float and limited-range BT.709 YUV420 to RGBA8. Limit: Disjoint source/destination; no transfer conversion. | [header](../kernels/mulib-media-convert.h) · [example](../examples/media-pipeline.c) |
+| [media-core](mulib-media-core.md) | Common checked arithmetic, status and byte views. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-media-core.h) · [example](../examples/media-pipeline.c) |
+| [media-demux](mulib-media-demux.md) | Demux provider lifecycle and checked dispatch. Limit: Needs caller-supplied demux implementation (e.g. FFmpeg bridge). | [header](../kernels/mulib-media-demux.h) · [example](../examples/media-pipeline.c) |
+| [media-export](mulib-media-export.md) | Cancellable packet remux loop with release and finalization. Limit: Provider callbacks must be blocking; no encode or atomic filesystem commit. | [header](../kernels/mulib-media-export.h) · [example](../examples/media-pipeline.c) |
+| [media-frame](mulib-media-frame.md) | Checked strided frame views, heap allocation and row copying. Limit: Copy requires disjoint frames or identical layout. Owned and borrowed frames share layout; caller tracks ownership. | [header](../kernels/mulib-media-frame.h) · [example](../examples/media-pipeline.c) |
+| [media-h264](mulib-media-h264.md) | Annex B NAL iterator and emulation-prevention removal. Limit: Bitstream tooling only; no H.264 encoder/decoder. | [header](../kernels/mulib-media-h264.h) · [example](../examples/media-pipeline.c) |
+| [media-h265](mulib-media-h265.md) | Annex B HEVC NAL header extraction. Limit: No HEVC encoder/decoder. | [header](../kernels/mulib-media-h265.h) · [example](../examples/media-pipeline.c) |
+| [media-isobmff](mulib-media-isobmff.md) | Bounds-checked ISO BMFF box traversal including extended sizes. Limit: No sample tables, timestamps or container writing. | [header](../kernels/mulib-media-isobmff.h) · [example](../examples/media-pipeline.c) |
+| [media-matroska](mulib-media-matroska.md) | EBML variable integers and bounded element traversal. Limit: Unknown-sized element consumes remaining caller-supplied scope; no block/lacing support. | [header](../kernels/mulib-media-matroska.h) · [example](../examples/media-pipeline.c) |
+| [media-metadata](mulib-media-metadata.md) | Borrowed key/value metadata with checked capacity. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-media-metadata.h) · [example](../examples/media-pipeline.c) |
+| [media-mpegts](mulib-media-mpegts.md) | 188-byte transport packet header and adaptation-field parsing. Limit: No PES assembly, PAT/PMT or muxing. | [header](../kernels/mulib-media-mpegts.h) · [example](../examples/media-pipeline.c) |
+| [media-mux](mulib-media-mux.md) | Mux provider lifecycle with finalization guard. Limit: Provider required. | [header](../kernels/mulib-media-mux.h) · [example](../examples/media-pipeline.c) |
+| [media-packet](mulib-media-packet.md) | Deep copy and release of encoded packets. Limit: Release only cloned packets. | [header](../kernels/mulib-media-packet.h) · [example](../examples/media-pipeline.c) |
+| [media-pixelformat](mulib-media-pixelformat.md) | Plane layout for packed and subsampled images. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-media-pixelformat.h) · [example](../examples/media-pipeline.c) |
+| [media-proxy](mulib-media-proxy.md) | Aspect-preserving in-memory proxy frame generation. Limit: No proxy media files or cache. | [header](../kernels/mulib-media-proxy.h) · [example](../examples/media-pipeline.c) |
+| [media-scale](mulib-media-scale.md) | Nearest-neighbor RGBA8 scale. Limit: Requires disjoint buffers; use img-resample for high quality. | [header](../kernels/mulib-media-scale.h) · [example](../examples/media-pipeline.c) |
+| [media-seek](mulib-media-seek.md) | Binary timestamp seek followed by keyframe backtracking. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-media-seek.h) · [example](../examples/media-pipeline.c) |
+| [media-stream](mulib-media-stream.md) | Short-read and short-write handling for blocking streams. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-media-stream.h) · [example](../examples/media-pipeline.c) |
+| [media-timebase](mulib-media-timebase.md) | Exact rational timebase normalization and checked rescaling. Limit: May reject very large intermediate products even if final quotient would fit. | [header](../kernels/mulib-media-timebase.h) · [example](../examples/media-pipeline.c) |
+| [media-vp9](mulib-media-vp9.md) | VP9 uncompressed frame prefix parsing. Limit: Does not validate full frame or decode pixels. | [header](../kernels/mulib-media-vp9.h) · [example](../examples/media-pipeline.c) |
+| [memfd](notebook-desktop.md) | Anonymous file creation, checked sizing and mapping. | [header](../kernels/mulib-memfd.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [mempool](mulib-mempool.md) | Aligned fixed-size object pools with validated slot release. | [header](../kernels/mulib-mempool.h) · [example](../examples/modules/mempool.c) |
+| [memtable](mulib-memtable.md) | Owned sorted binary records with sequence numbers and tombstones. | [header](../kernels/mulib-memtable.h) · [example](../examples/modules/memtable.c) |
+| [memtest](mulib-memtest.md) | Destructive volatile RAM pattern tests on caller-owned regions. | [header](../kernels/mulib-memtest.h) · [example](../examples/modules/memtest.c) |
+| [memtkx](mulib-memtkx.md) | Tracking allocators with statistics, live-byte limits, and checkpoints. | [header](../kernels/mulib-memtkx.h) · [example](../examples/modules/memtkx.c) |
+| [mesh-adjacency](mulib-mesh-adjacency.md) | Vertex-to-face incidence query. Limit: Linear scan; add CSR adjacency. | [header](../kernels/mulib-mesh-adjacency.h) · [example](../examples/media-pipeline.c) |
+| [mesh-attributes](mulib-mesh-attributes.md) | Checked dense per-element attribute channels. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-mesh-attributes.h) · [example](../examples/media-pipeline.c) |
+| [mesh-boolean](mulib-mesh-boolean.md) | Point-in-closed-mesh parity classification, a boolean building block. Limit: No mesh boolean output; edge degeneracies and robust intersections unresolved. | [header](../kernels/mulib-mesh-boolean.h) · [example](../examples/media-pipeline.c) |
+| [mesh-core](mulib-mesh-core.md) | Caller-owned indexed triangle mesh and vector math. Limit: Triangle-only initial model; integrate canonical cgeom/linalg types later. | [header](../kernels/mulib-mesh-core.h) · [example](../examples/media-pipeline.c) |
+| [mesh-decimate](mulib-mesh-decimate.md) | Shortest-edge selection and index collapse with degenerate face removal. Limit: Not QEM; may change topology; leaves unused vertices. | [header](../kernels/mulib-mesh-decimate.h) · [example](../examples/media-pipeline.c) |
+| [mesh-edit](mulib-mesh-edit.md) | Single-face extrusion with cap and side walls. Limit: No region extrusion, bevel or inset. | [header](../kernels/mulib-mesh-edit.h) · [example](../examples/media-pipeline.c) |
+| [mesh-gltf](mulib-mesh-gltf.md) | GLB 2.0 JSON and BIN chunk extraction. Limit: No glTF JSON/accessor/material import or export. | [header](../kernels/mulib-mesh-gltf.h) · [example](../examples/media-pipeline.c) |
+| [mesh-halfedge](mulib-mesh-halfedge.md) | Triangle half-edge construction and nonmanifold edge rejection. Limit: O(E²), no nonmanifold vertex detection. | [header](../kernels/mulib-mesh-halfedge.h) · [example](../examples/media-pipeline.c) |
+| [mesh-normals](mulib-mesh-normals.md) | Area-weighted smooth vertex normals. Limit: No tangent frames or split normals. | [header](../kernels/mulib-mesh-normals.h) · [example](../examples/media-pipeline.c) |
+| [mesh-obj](mulib-mesh-obj.md) | Wavefront OBJ position and triangle export. Limit: No import, material, normal or UV records. | [header](../kernels/mulib-mesh-obj.h) · [example](../examples/media-pipeline.c) |
+| [mesh-ply](mulib-mesh-ply.md) | ASCII PLY positions and triangle export. Limit: No binary PLY or import. | [header](../kernels/mulib-mesh-ply.h) · [example](../examples/media-pipeline.c) |
+| [mesh-primitives](mulib-mesh-primitives.md) | Box and regular grid primitive generation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-mesh-primitives.h) · [example](../examples/media-pipeline.c) |
+| [mesh-remesh](mulib-mesh-remesh.md) | Jacobi Laplacian smoothing with fixed vertices. Limit: Face-weighted neighbors; no isotropic split/collapse/flip remeshing. | [header](../kernels/mulib-mesh-remesh.h) · [example](../examples/media-pipeline.c) |
+| [mesh-repair](mulib-mesh-repair.md) | Remove zero-area or below-threshold triangles. Limit: No hole filling, welding or orientation repair. | [header](../kernels/mulib-mesh-repair.h) · [example](../examples/media-pipeline.c) |
+| [mesh-skin](mulib-mesh-skin.md) | Four-weight normalized linear blend skinning. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-mesh-skin.h) · [example](../examples/media-pipeline.c) |
+| [mesh-subdivide](mulib-mesh-subdivide.md) | Shared-edge linear triangle subdivision. Limit: Not Loop or Catmull-Clark smoothing; disjoint meshes. | [header](../kernels/mulib-mesh-subdivide.h) · [example](../examples/media-pipeline.c) |
+| [mesh-triangulate](mulib-mesh-triangulate.md) | Ear clipping for simple planar polygons. Limit: No exact predicates or holes; assumes non-self-intersection. | [header](../kernels/mulib-mesh-triangulate.h) · [example](../examples/media-pipeline.c) |
+| [mesh-uv](mulib-mesh-uv.md) | Normalized planar UV projection. Limit: No seam generation, LSCM or atlas packing. | [header](../kernels/mulib-mesh-uv.h) · [example](../examples/media-pipeline.c) |
+| [messagepack](mulib-messagepack.md) | Bounded MessagePack JSON-profile codec. | [header](../kernels/mulib-messagepack.h) · [example](../examples/modules/messagepack.c) |
+| [metapp](mulib-metapp.md) | C/C++ preprocessing, entry-independent include graphs and MuLIB-linked native extensions. | [header](../kernels/mulib-metapp.h) · [example](../examples/modules/metapp.c) |
+| [metrics](mulib-metrics.md) | Saturating HTTP counters and caller-supplied latency totals. | [header](../kernels/mulib-metrics.h) · [example](../examples/modules/metrics.c) |
+| [microaudio](mulib-microaudio.md) | Portable bounded PCM and WAV audio utilities. | [header](../kernels/mulib-microaudio.h) · [example](../examples/modules/microaudio.c) |
+| [microcc](mulib-microcc.md) | High-level IR to native MIR, optimization, selection, scheduling and assembly pipeline. | [header](../kernels/mulib-microcc.h) · [example](../examples/modules/microcc.c) |
+| [microchan](mulib-microchan.md) | Checksummed local publish/subscribe protocol, client and bounded broker. | [header](../kernels/mulib-microchan.h) · [example](../examples/modules/microchan.c) |
+| [microjs](mulib-microjs.md) | Embeddable JavaScript core with MiniVM bytecode, closures, UTF-16 strings, host callbacks, and traced garbage collection; partial ECMAScript 2025. | [header](../kernels/mulib-microjs.h) · [example](../examples/modules/microjs.c) |
+| [microjs-module](mulib-microjs-module.md) | Owned source-module registry with immutable lookup by specifier. | [header](../kernels/mulib-microjs-module.h) · [example](../examples/modules/microjs-module.c) |
+| [microjs-promise](mulib-microjs-promise.md) | Native deferred-job queues and one-shot promise-like settlement. | [header](../kernels/mulib-microjs-promise.h) · [example](../examples/modules/microjs-promise.c) |
+| [microtcl](mulib-microtcl.md) | An embeddable Tcl-inspired command interpreter with a documented small builtin set. | [header](../kernels/mulib-microtcl.h) · [example](../examples/modules/microtcl.c) |
+| [microtype](mulib-microtype.md) | Apply bounded protrusion offset to an advance. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-microtype.h) · [example](../examples/mulib-microtype.c) |
+| [midi](mulib-midi.md) | Owned MIDI events and Standard MIDI File type 0/1 IO. | [header](../kernels/mulib-midi.h) · [example](../examples/modules/midi.c) |
+| [mime](mulib-mime.md) | Filename-extension MIME lookup and bounded Content-Type normalization. | [header](../kernels/mulib-mime.h) · [example](../examples/modules/mime.c) |
+| [minhash](mulib-minhash.md) | Seeded MinHash signatures for Jaccard similarity estimation | [header](../kernels/mulib-minhash.h) · [example](../examples/modules/minhash.c) |
+| [minicurl](mulib-minicurl.md) | Focused HTTP request convenience layer over webclient. | [header](../kernels/mulib-minicurl.h) · [example](../examples/modules/minicurl.c) |
+| [miniflac](mulib-miniflac.md) | Native FLAC predictor decoder and verbatim-subframe encoder. | [header](../kernels/mulib-miniflac.h) · [example](../examples/modules/miniflac.c) |
+| [minimpeg](mulib-minimpeg.md) | Original MP3 codec and opt-in MPEG-1 video encoding and decoding. | [header](../kernels/mulib-minimpeg.h) · [example](../examples/modules/minimpeg.c) |
+| [minincat](mulib-minincat.md) | Bounded binary stream relay through explicit I/O callbacks. | [header](../kernels/mulib-minincat.h) · [example](../examples/modules/minincat.c) |
+| [minish](mulib-minish.md) | Focused shell tokenization, expansion, builtins, and command dispatch. | [header](../kernels/mulib-minish.h) · [example](../examples/modules/minish.c) |
+| [minivm](mulib-minivm.md) | Checked stack bytecode execution with bounded resources and faults. | [header](../kernels/mulib-minivm.h) · [example](../examples/modules/minivm.c) |
+| [minivorbis](mulib-minivorbis.md) | Original fixed-block Ogg/Vorbis encoder and matching-profile decoder. | [header](../kernels/mulib-minivorbis.h) · [example](../examples/modules/minivorbis.c) |
+| [miniwav](mulib-miniwav.md) | RIFF/WAVE PCM and IEEE float encoder/decoder. | [header](../kernels/mulib-miniwav.h) · [example](../examples/modules/miniwav.c) |
+| [miniwget](mulib-miniwget.md) | Bounded HTTP downloads through webclient into caller-owned memory. | [header](../kernels/mulib-miniwget.h) · [example](../examples/modules/miniwget.c) |
+| [mir](mulib-mir.md) | Shared validated machine intermediate representation. | [header](../kernels/mulib-mir.h) · [example](../examples/modules/mir.c) |
+| [mmdiff](mulib-mmdiff.md) | Binary memory copy-insert differences and checked patch application. | [header](../kernels/mulib-mmdiff.h) · [example](../examples/modules/mmdiff.c) |
+| [mmfile](mulib-mmfile.md) | Native memory-mapped file ownership and synchronization. | [header](../kernels/mulib-mmfile.h) · [example](../examples/modules/mmfile.c) |
+| [mobi](mulib-mobi.md) | PalmDB/PalmDOC and MOBI 6/7/8 inspection and bounded text decoding. | [header](../kernels/mulib-mobi.h) · [example](../examples/modules/mobi.c) |
+| [mobiwrite](mulib-mobiwrite.md) | PalmDOC type TEXt/REAd writer with uncompressed text record, via palmdb. | [header](../kernels/mulib-mobiwrite.h) · [example](../examples/mulib-mobiwrite.c) |
+| [module-resolver](mulib-module-resolver.md) | Owned exact module-name to source-path registry. | [header](../kernels/mulib-module-resolver.h) · [example](../examples/modules/module-resolver.c) |
+| [money](mulib-money.md) | Checked integer-minor-unit monetary arithmetic and rational conversions. | [header](../kernels/mulib-money.h) · [example](../examples/modules/money.c) |
+| [mop](mulib-mop.md) | Borrowed class reflection and inherited method dispatch. | [header](../kernels/mulib-mop.h) · [example](../examples/modules/mop.c) |
+| [movingavg](mulib-movingavg.md) | Constant-memory fixed-window moving average over doubles. | [header](../kernels/mulib-movingavg.h) · [example](../examples/modules/movingavg.c) |
+| [mpu](mulib-mpu.md) | Extensible microprocessor profile, query and code emission contract. | [header](../kernels/mulib-mpu.h) · [example](../examples/modules/mpu.c) |
+| [mqueue](mulib-mqueue.md) | System V typed, nonblocking interprocess message queues. | [header](../kernels/mulib-mqueue.h) · [example](../examples/modules/mqueue.c) |
+| [muburg](mulib-muburg.md) | Costed bottom-up tree-pattern instruction selection. | [header](../kernels/mulib-muburg.h) · [example](../examples/modules/muburg.c) |
+| [muidl](mulib-muidl.md) | MuIDL flat-record schema source generation. | [header](../kernels/mulib-muidl.h) · [example](../examples/modules/muidl.c) |
+| [mulib](mulib-mulib.md) | Small core umbrella and library version. | [header](../kernels/mulib-mulib.h) · [example](../examples/modules/mulib.c) |
+| [multipart](mulib-multipart.md) | Binary-safe multipart/form-data encoding, bounded part parsing and text fields. | [header](../kernels/mulib-multipart.h) · [example](../examples/modules/multipart.c) |
+| [mumq](mulib-mumq.md) | Bounded nonblocking MuMQ v1 topic frames over owned stream sockets. | [header](../kernels/mulib-mumq.h) · [example](../examples/modules/mumq.c) |
+| [mumq-publisher](mulib-mumq-publisher.md) | MuMQ exact-topic publisher convenience API. | [header](../kernels/mulib-mumq-publisher.h) · [example](../examples/modules/mumq-publisher.c) |
+| [mumq-server](mulib-mumq-server.md) | Bounded, backpressured in-memory MuMQ topic broker. | [header](../kernels/mulib-mumq-server.h) · [example](../examples/modules/mumq-server.c) |
+| [mumq-subscriber](mulib-mumq-subscriber.md) | Acknowledged exact-topic MuMQ subscriptions. | [header](../kernels/mulib-mumq-subscriber.h) · [example](../examples/modules/mumq-subscriber.c) |
+| [mune](mulib-mune.md) | Independent Lua runtime, parser-backed AST, tree/VM/JIT/C-AOT execution and module bundles. | [header](../kernels/mulib-mune.h) · [example](../examples/modules/mune.c) |
+| [musicnotation](mulib-musicnotation.md) | Owned ordered collection for graphics musicnotation rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-musicnotation.h) · [example](../examples/mulib-musicnotation.c) |
+| [muw3](mulib-muw3.md) | Bounded HTTP/HTTPS client with native TLS 1.3, redirects and forms. | [header](../kernels/mulib-muw3.h) · [example](../examples/modules/muw3.c) |
+| [muw3-mune](mulib-muw3-mune.md) | Embedded Mune Weblet engine with lmuw3 workflows, JSON/YAML and MicroChan. | [header](../kernels/mulib-muw3-mune.h) · [example](../examples/modules/muw3-mune.c) |
 
 ## N
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [n-grams](mulib-n-grams.md) | Borrowed sliding byte n-gram enumeration. | [header](../include/mulib-n-grams.h) · [example](../examples/modules/n-grams.c) |
-| [name-resolution](mulib-name-resolution.md) | Atomic Pratt identifier resolution to caller-provided lexical symbol IDs. | [header](../include/mulib-name-resolution.h) · [example](../examples/modules/name-resolution.c) |
-| [nameserver](mulib-nameserver.md) | Bounded authoritative DNS answers from caller-supplied records. | [header](../include/mulib-nameserver.h) · [example](../examples/modules/nameserver.c) |
-| [namespace](mulib-namespace.md) | Linux user mappings and namespace isolation primitives. | [header](../include/mulib-namespace.h) · [example](../examples/modules/sandbox-process.c) |
-| [nb-cell](notebook-desktop.md) | Typed cells with owned source, language and revision. | [header](../include/mulib-nb-cell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-completion](notebook-desktop.md) | ASCII identifier-prefix completion from caller-supplied symbols. | [header](../include/mulib-nb-completion.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-core](notebook-desktop.md) | Owned ordered notebook with stable document-local cell IDs. | [header](../include/mulib-nb-core.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-display](notebook-desktop.md) | Display payload replacement keyed by cell, display and MIME. | [header](../include/mulib-nb-display.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-execgraph](notebook-desktop.md) | Execution DAG with cycle rejection and topological sorting. | [header](../include/mulib-nb-execgraph.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-execute](notebook-desktop.md) | Authorized revision-aware execution and interrupt state. | [header](../include/mulib-nb-execute.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-history](notebook-desktop.md) | Bounded snapshot-based notebook undo and redo. | [header](../include/mulib-nb-history.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-inspect](notebook-desktop.md) | Exact and prefix lookup of caller-supplied symbol metadata. | [header](../include/mulib-nb-inspect.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-ipynb](notebook-desktop.md) | Notebook text, code and raw cell JSON export. | [header](../include/mulib-nb-ipynb.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-layout](notebook-desktop.md) | Fenwick height index with prefix sums and offset lookup. | [header](../include/mulib-nb-layout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-message](notebook-desktop.md) | Bounded binary execution envelope encoder and decoder. | [header](../include/mulib-nb-message.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-metadata](notebook-desktop.md) | Owned per-cell string key/value metadata. | [header](../include/mulib-nb-metadata.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-mime](notebook-desktop.md) | MIME handler registry with caller-owned trust policy. | [header](../include/mulib-nb-mime.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-order](notebook-desktop.md) | Move cells while preserving their document-local IDs. | [header](../include/mulib-nb-order.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-output](notebook-desktop.md) | Owned notebook output payloads with a byte budget. | [header](../include/mulib-nb-output.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-runtime](notebook-desktop.md) | Language runtime callback registry. | [header](../include/mulib-nb-runtime.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-scheduler](notebook-desktop.md) | Ready-job scheduling with dependency failure propagation. | [header](../include/mulib-nb-scheduler.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-serialize](notebook-desktop.md) | Bounded MNB1 binary document codec with graph validation. | [header](../include/mulib-nb-serialize.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-store](notebook-desktop.md) | File-synced same-directory temporary writes with atomic rename. | [header](../include/mulib-nb-store.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-stream](notebook-desktop.md) | Bounded binary ring for output backpressure. | [header](../include/mulib-nb-stream.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-tree](notebook-desktop.md) | Group hierarchy, cycle rejection and inherited visibility. | [header](../include/mulib-nb-tree.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-viewport](notebook-desktop.md) | Clamped scroll and zoom with reveal and inverse mapping. | [header](../include/mulib-nb-viewport.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-virtualize](notebook-desktop.md) | Variable-height visible cell range with overscan. | [header](../include/mulib-nb-virtualize.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-window](notebook-desktop.md) | Bidirectional single-window association for a notebook cell. | [header](../include/mulib-nb-window.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [nb-worker](notebook-desktop.md) | Trusted executable launch with nonblocking stdout/stderr and reaping. | [header](../include/mulib-nb-worker.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [ndjson](mulib-ndjson.md) | Bounded borrowed line iteration over newline-delimited JSON source bytes | [header](../include/mulib-ndjson.h) · [example](../examples/modules/ndjson.c) |
-| [net-cap](mulib-net-cap.md) | Inspect effective Linux capability bits without changing credentials | [header](../include/mulib-net-cap.h) · [example](../examples/modules/net-cap.c) |
-| [net-cli-format](mulib-net-cli-format.md) | Format IPv4 and JSON-escaped interface names without third-party libraries | [header](../include/mulib-net-cli-format.h) · [example](../examples/modules/net-cli-format.c) |
-| [net-monitor](mulib-net-monitor.md) | Subscribe to link, IPv4/IPv6 address and route multicast Netlink events | [header](../include/mulib-net-monitor.h) · [example](../examples/modules/net-monitor.c) |
-| [net-profile](mulib-net-profile.md) | Parse a bounded flat INI-style network profile with interface, IPv4 address and gateway fields | [header](../include/mulib-net-profile.h) · [example](../examples/modules/net-profile.c) |
-| [net-reconcile](mulib-net-reconcile.md) | Read-only desired-versus-observed interface activation comparison | [header](../include/mulib-net-reconcile.h) · [example](../examples/modules/net-reconcile.c) |
-| [net-state](mulib-net-state.md) | Snapshot interface state from sysfs without modifying the network | [header](../include/mulib-net-state.h) · [example](../examples/modules/net-state.c) |
-| [net-stats](mulib-net-stats.md) | Read rx/tx packet and byte counters from /sys/class/net/<interface>/statistics | [header](../include/mulib-net-stats.h) · [example](../examples/modules/net-stats.c) |
-| [netdevice](mulib-netdevice.md) | POSIX network-interface enumeration and address snapshots. | [header](../include/mulib-netdevice.h) · [example](../examples/modules/netdevice.c) |
-| [netfilter-log](mulib-netfilter-log.md) | Subscribe to a Linux NFLOG group with a raw NETLINK_NETFILTER socket | [header](../include/mulib-netfilter-log.h) · [example](../examples/modules/netfilter-log.c) |
-| [netfilter-queue](mulib-netfilter-queue.md) | Construct NFQUEUE queue-bind commands and open a bound Netfilter queue socket | [header](../include/mulib-netfilter-queue.h) · [example](../examples/modules/netfilter-queue.c) |
-| [netfs](mulib-netfs.md) | Network filesystem: bounded wire RPC to mulib-fuse and remote VFS | [header](../include/mulib-netfs.h) · [example](../examples/modules/netfs.c) |
-| [netlink](mulib-netlink.md) | Linux NETLINK_ROUTE/Generic Netlink socket, bounded request/response transactions and message iteration | [header](../include/mulib-netlink.h) · [example](../examples/modules/netlink.c) |
-| [netlink-async](mulib-netlink-async.md) | poll-based bounded readiness and a single pending request completion primitive | [header](../include/mulib-netlink-async.h) · [example](../examples/modules/netlink-async.c) |
-| [netlink-attr](mulib-netlink-attr.md) | Bounded aligned RTATTR and NLA encode/decode helpers | [header](../include/mulib-netlink-attr.h) · [example](../examples/modules/netlink-attr.c) |
-| [netlink-extack](mulib-netlink-extack.md) | Decode NLMSG_ERROR and kernel extended acknowledgment attributes | [header](../include/mulib-netlink-extack.h) · [example](../examples/modules/netlink-extack.c) |
-| [netlink-genl](mulib-netlink-genl.md) | Resolve Generic Netlink family IDs through the kernel control family | [header](../include/mulib-netlink-genl.h) · [example](../examples/modules/netlink-genl.c) |
-| [netlink-schema](mulib-netlink-schema.md) | Typed fixed-width policy checks for a collection of parsed Netlink attributes | [header](../include/mulib-netlink-schema.h) · [example](../examples/modules/netlink-schema.c) |
-| [netns](mulib-netns.md) | Open and enter Linux network namespaces explicitly | [header](../include/mulib-netns.h) · [example](../examples/modules/netns.c) |
-| [netpolicy](mulib-netpolicy.md) | URL scheme and obvious loopback/private-host denial policy. | [header](../include/mulib-netpolicy.h) · [example](../examples/modules/netpolicy.c) |
-| [networkd-client](mulib-networkd-client.md) | Read systemd-networkd managed link list as a raw D-Bus reply | [header](../include/mulib-networkd-client.h) · [example](../examples/modules/networkd-client.c) |
-| [nextclosure](mulib-nextclosure.md) | Ganter NextClosure canonical enumeration of closed formal concepts | [header](../include/mulib-nextclosure.h) · [example](../examples/modules/nextclosure.c) |
-| [nfnetlink](mulib-nfnetlink.md) | Open Linux NETLINK_NETFILTER and send bounded netfilter messages | [header](../include/mulib-nfnetlink.h) · [example](../examples/modules/nfnetlink.c) |
-| [nftables](mulib-nftables.md) | Dump kernel nftables tables through NFNETLINK_SUBSYS_NFTABLES | [header](../include/mulib-nftables.h) · [example](../examples/modules/nftables.c) |
-| [nl80211](mulib-nl80211.md) | Generic Netlink nl80211 request helper for wireless devices | [header](../include/mulib-nl80211.h) · [example](../examples/modules/nl80211.c) |
-| [nle-clip](mulib-nle-clip.md) | Clip source mapping and bounded slip. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-clip.h) · [example](../examples/media-pipeline.c) |
-| [nle-edit](mulib-nle-edit.md) | Split, trim and atomic adjacent roll editing. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-edit.h) · [example](../examples/media-pipeline.c) |
-| [nle-edl](mulib-nle-edl.md) | Write lossless neutral tab-separated edit list. Limit: Not CMX3600; implement SMPTE/drop-frame interchange separately. | [header](../include/mulib-nle-edl.h) · [example](../examples/media-pipeline.c) |
-| [nle-evaluate](mulib-nle-evaluate.md) | Visit active clips at a timeline tick. Limit: Track compositing order is caller policy. | [header](../include/mulib-nle-evaluate.h) · [example](../examples/media-pipeline.c) |
-| [nle-interval](mulib-nle-interval.md) | Half-open range intersection and bounded output query. Limit: Linear scan; replace with augmented interval index for large timelines. | [header](../include/mulib-nle-interval.h) · [example](../examples/media-pipeline.c) |
-| [nle-otio](mulib-nle-otio.md) | OpenTimelineIO RationalTime numeric bridge. Limit: No OTIO JSON schema serialization. | [header](../include/mulib-nle-otio.h) · [example](../examples/media-pipeline.c) |
-| [nle-retime](mulib-nle-retime.md) | Piecewise-linear source-time mapping, including reverse and hold. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-retime.h) · [example](../examples/media-pipeline.c) |
-| [nle-ripple](mulib-nle-ripple.md) | Validate-then-apply ripple shift. Limit: Caller resolves overlaps and locked tracks. | [header](../include/mulib-nle-ripple.h) · [example](../examples/media-pipeline.c) |
-| [nle-snap](mulib-nle-snap.md) | Nearest clip boundary snapping with deterministic ties. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-snap.h) · [example](../examples/media-pipeline.c) |
-| [nle-timeline](mulib-nle-timeline.md) | Caller-backed timeline with exact integer ticks and unique clip IDs. Limit: No automatic overlap policy; source and sequence use same tick units. | [header](../include/mulib-nle-timeline.h) · [example](../examples/media-pipeline.c) |
-| [nle-track](mulib-nle-track.md) | Track lookup and mute/solo policy. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-track.h) · [example](../examples/media-pipeline.c) |
-| [nle-transition](mulib-nle-transition.md) | Linear and smooth crossfade weights. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nle-transition.h) · [example](../examples/media-pipeline.c) |
-| [nm-client](mulib-nm-client.md) | Read NetworkManager global state and device object-path reply | [header](../include/mulib-nm-client.h) · [example](../examples/modules/nm-client.c) |
-| [nm-connection](mulib-nm-connection.md) | List NetworkManager Settings connection object-paths as raw D-Bus frames | [header](../include/mulib-nm-connection.h) · [example](../examples/modules/nm-connection.c) |
-| [nm-device](mulib-nm-device.md) | Read a NetworkManager device Interface string via D-Bus Properties.Get | [header](../include/mulib-nm-device.h) · [example](../examples/modules/nm-device.c) |
-| [nm-secret-agent](mulib-nm-secret-agent.md) | Explicitly unregister a NetworkManager secret agent already registered by the caller | [header](../include/mulib-nm-secret-agent.h) · [example](../examples/modules/nm-secret-agent.c) |
-| [nm-wifi](mulib-nm-wifi.md) | Query NetworkManager Wi-Fi access point object paths as raw D-Bus reply | [header](../include/mulib-nm-wifi.h) · [example](../examples/modules/nm-wifi.c) |
-| [nodegraph-cache](mulib-nodegraph-cache.md) | Revision-keyed non-owning intermediate result cache. Limit: No eviction; caller releases values. | [header](../include/mulib-nodegraph-cache.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-compile](mulib-nodegraph-compile.md) | Kahn topological ordering and cycle detection. Limit: O(VE) traversal; add adjacency index. | [header](../include/mulib-nodegraph-compile.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-core](mulib-nodegraph-core.md) | Borrowed graph topology with indexed edges and typed single outputs. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nodegraph-core.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-dirty](mulib-nodegraph-dirty.md) | Propagate invalidation downstream to fixed point. Limit: Quadratic worst case; use adjacency and queue. | [header](../include/mulib-nodegraph-dirty.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-eval](mulib-nodegraph-eval.md) | Execute a topologically ordered graph through an operation provider. Limit: Callback manages values and cleanup; no parallel execution. | [header](../include/mulib-nodegraph-eval.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-fusion](mulib-nodegraph-fusion.md) | Conservative candidate detection for unary operator fusion. Limit: Does not rewrite graph; verify execution semantic compatibility. | [header](../include/mulib-nodegraph-fusion.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-layout](mulib-nodegraph-layout.md) | Layered DAG layout with deterministic rows. Limit: Valid topological order required; no crossing minimization. | [header](../include/mulib-nodegraph-layout.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-region](mulib-nodegraph-region.md) | Backward ROI union with per-node filter halo. Limit: Requires valid topological order; transform-specific ROI mapping remains. | [header](../include/mulib-nodegraph-region.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-serialize](mulib-nodegraph-serialize.md) | Versioned textual graph topology writer. Limit: No reader or node properties. | [header](../include/mulib-nodegraph-serialize.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-temporal](mulib-nodegraph-temporal.md) | Checked temporal dependency window expansion. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nodegraph-temporal.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-types](mulib-nodegraph-types.md) | Exact port-type equality and edge validation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-nodegraph-types.h) · [example](../examples/media-pipeline.c) |
-| [nodegraph-validate](mulib-nodegraph-validate.md) | Validate node identity, port types and unique incoming edges. Limit: Cycle rejection is in nodegraph-compile; unconnected ports allowed. | [header](../include/mulib-nodegraph-validate.h) · [example](../examples/media-pipeline.c) |
-| [num-adaptive](engineering-kernels.md) | Tolerance-scaled RMS error and bounded timestep suggestions for adaptive integration. | [header](../include/mulib-num-adaptive.h) |
-| [num-amd](engineering-kernels.md) | Minimum-degree ordering of an explicit symmetric fill graph from square CSR; not SuiteSparse AMD. | [header](../include/mulib-num-amd.h) |
-| [num-autodiff](engineering-kernels.md) | Scalar forward-mode differentiation with dual-number arithmetic and selected elementary functions. | [header](../include/mulib-num-autodiff.h) |
-| [num-bdf](engineering-kernels.md) | Constant-step BDF coefficients for orders one through six and differentiation of supplied history. | [header](../include/mulib-num-bdf.h) |
-| [num-bicgstab](engineering-kernels.md) | Unpreconditioned BiCGSTAB solve for square real CSR systems with an iteration limit. | [header](../include/mulib-num-bicgstab.h) |
-| [num-cholesky](engineering-kernels.md) | Dense real Cholesky factorization and triangular solves for symmetric positive-definite systems. | [header](../include/mulib-num-cholesky.h) |
-| [num-colamd](engineering-kernels.md) | Minimum-degree ordering on an explicit column-intersection fill graph; not quotient-graph COLAMD. | [header](../include/mulib-num-colamd.h) |
-| [num-complex-lu](engineering-kernels.md) | Dense complex linear solve by Gaussian elimination with partial row pivoting. | [header](../include/mulib-num-complex-lu.h) |
-| [num-condition](engineering-kernels.md) | CSR residual two-norm and dense infinity-norm condition estimate from unit-vector solves. | [header](../include/mulib-num-condition.h) |
-| [num-core](engineering-kernels.md) | Double vector, complex, borrowed CSR and reference dense-solve primitives; not a production sparse solver. | [header](../include/mulib-num-core.h) · [example](../examples/kernel-substrates.c) |
-| [num-csc](mulib-num-csc.md) | Compressed sparse column conversion, validation and matvec. | [header](../include/mulib-num-csc.h) · [example](../examples/modules/num-csc.c) |
-| [num-csr](mulib-num-csr.md) | Compressed sparse row conversion, validation, matvec and transpose. | [header](../include/mulib-num-csr.h) · [example](../examples/modules/num-csr.c) |
-| [num-dae](engineering-kernels.md) | One backward-Euler step for constant linear differential-algebraic systems in mass/stiffness form. | [header](../include/mulib-num-dae.h) |
-| [num-dense](mulib-num-dense.md) | Dense double matrices and Gaussian elimination with partial row pivoting. | [header](../include/mulib-num-dense.h) · [example](../examples/modules/num-dense.c) |
-| [num-eigensolver](engineering-kernels.md) | Power iteration for a dominant eigenpair of a real square CSR matrix. | [header](../include/mulib-num-eigensolver.h) |
-| [num-gmres](engineering-kernels.md) | Restarted unpreconditioned GMRES for square real CSR systems with an iteration limit. | [header](../include/mulib-num-gmres.h) |
-| [num-integration](mulib-num-integration.md) | Composite trapezoid and Simpson quadrature, plus adaptive trapezoids using a Richardson error estimate and at most 30 refinement rounds. | [header](../include/mulib-num-integration.h) · [example](../examples/modules/num-integration.c) |
-| [num-jacobian](engineering-kernels.md) | Central finite-difference Jacobian of a caller-supplied vector function. | [header](../include/mulib-num-jacobian.h) |
-| [num-linesearch](engineering-kernels.md) | Bounded Armijo backtracking along a supplied descent direction and slope. | [header](../include/mulib-num-linesearch.h) |
-| [num-newton](engineering-kernels.md) | Damped Newton solve using a caller-supplied residual and dense Jacobian with backtracking. | [header](../include/mulib-num-newton.h) |
-| [num-precondition](engineering-kernels.md) | Jacobi preconditioning from the diagonal of a square CSR matrix, with a vector apply helper. | [header](../include/mulib-num-precondition.h) |
-| [num-rootfind](mulib-num-rootfind.md) | Bracketed scalar bisection and damped Newton iteration with bounded residual-decreasing backtracking. | [header](../include/mulib-num-rootfind.h) · [example](../examples/modules/num-rootfind.c) |
-| [num-sparse](mulib-num-sparse.md) | Owned coordinate-list sparse double matrix with checked assembly, repeated-coordinate accumulation and explicit canonicalization. | [header](../include/mulib-num-sparse.h) · [example](../examples/modules/num-sparse.c) |
-| [num-sparse-ldlt](engineering-kernels.md) | Unpivoted symmetric LDLT factorization from CSR lower-triangle entries, with a solve helper. | [header](../include/mulib-num-sparse-ldlt.h) |
-| [num-sparse-lu](engineering-kernels.md) | Row-based sparse LU factorization of square CSR with partial pivoting and reusable solves. | [header](../include/mulib-num-sparse-lu.h) |
-| [num-statistics](mulib-num-statistics.md) | Streaming Welford mean, sample variance and extrema, with checked count growth and merging of independent summaries. | [header](../include/mulib-num-statistics.h) · [example](../examples/modules/num-statistics.c) |
-| [num-symbolic](engineering-kernels.md) | Symbolic LU fill counts for fixed row and column order without numeric pivoting. | [header](../include/mulib-num-symbolic.h) |
-| [num-trapezoid](engineering-kernels.md) | One implicit trapezoidal step for a constant linear mass/stiffness system with endpoint sources. | [header](../include/mulib-num-trapezoid.h) |
-| [nvptx](mulib-nvptx.md) | Owned NVPTX64 virtual-ISA text GPU implementation. | [header](../include/mulib-nvptx.h) · [example](../examples/modules/nvptx.c) |
+| [n-grams](mulib-n-grams.md) | Borrowed sliding byte n-gram enumeration. | [header](../kernels/mulib-n-grams.h) · [example](../examples/modules/n-grams.c) |
+| [name-resolution](mulib-name-resolution.md) | Atomic Pratt identifier resolution to caller-provided lexical symbol IDs. | [header](../kernels/mulib-name-resolution.h) · [example](../examples/modules/name-resolution.c) |
+| [nameserver](mulib-nameserver.md) | Bounded authoritative DNS answers from caller-supplied records. | [header](../kernels/mulib-nameserver.h) · [example](../examples/modules/nameserver.c) |
+| [namespace](mulib-namespace.md) | Linux user mappings and namespace isolation primitives. | [header](../kernels/mulib-namespace.h) · [example](../examples/modules/sandbox-process.c) |
+| [nb-cell](notebook-desktop.md) | Typed cells with owned source, language and revision. | [header](../kernels/mulib-nb-cell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-completion](notebook-desktop.md) | ASCII identifier-prefix completion from caller-supplied symbols. | [header](../kernels/mulib-nb-completion.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-core](notebook-desktop.md) | Owned ordered notebook with stable document-local cell IDs. | [header](../kernels/mulib-nb-core.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-display](notebook-desktop.md) | Display payload replacement keyed by cell, display and MIME. | [header](../kernels/mulib-nb-display.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-execgraph](notebook-desktop.md) | Execution DAG with cycle rejection and topological sorting. | [header](../kernels/mulib-nb-execgraph.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-execute](notebook-desktop.md) | Authorized revision-aware execution and interrupt state. | [header](../kernels/mulib-nb-execute.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-history](notebook-desktop.md) | Bounded snapshot-based notebook undo and redo. | [header](../kernels/mulib-nb-history.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-inspect](notebook-desktop.md) | Exact and prefix lookup of caller-supplied symbol metadata. | [header](../kernels/mulib-nb-inspect.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-ipynb](notebook-desktop.md) | Notebook text, code and raw cell JSON export. | [header](../kernels/mulib-nb-ipynb.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-layout](notebook-desktop.md) | Fenwick height index with prefix sums and offset lookup. | [header](../kernels/mulib-nb-layout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-message](notebook-desktop.md) | Bounded binary execution envelope encoder and decoder. | [header](../kernels/mulib-nb-message.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-metadata](notebook-desktop.md) | Owned per-cell string key/value metadata. | [header](../kernels/mulib-nb-metadata.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-mime](notebook-desktop.md) | MIME handler registry with caller-owned trust policy. | [header](../kernels/mulib-nb-mime.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-order](notebook-desktop.md) | Move cells while preserving their document-local IDs. | [header](../kernels/mulib-nb-order.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-output](notebook-desktop.md) | Owned notebook output payloads with a byte budget. | [header](../kernels/mulib-nb-output.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-runtime](notebook-desktop.md) | Language runtime callback registry. | [header](../kernels/mulib-nb-runtime.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-scheduler](notebook-desktop.md) | Ready-job scheduling with dependency failure propagation. | [header](../kernels/mulib-nb-scheduler.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-serialize](notebook-desktop.md) | Bounded MNB1 binary document codec with graph validation. | [header](../kernels/mulib-nb-serialize.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-store](notebook-desktop.md) | File-synced same-directory temporary writes with atomic rename. | [header](../kernels/mulib-nb-store.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-stream](notebook-desktop.md) | Bounded binary ring for output backpressure. | [header](../kernels/mulib-nb-stream.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-tree](notebook-desktop.md) | Group hierarchy, cycle rejection and inherited visibility. | [header](../kernels/mulib-nb-tree.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-viewport](notebook-desktop.md) | Clamped scroll and zoom with reveal and inverse mapping. | [header](../kernels/mulib-nb-viewport.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-virtualize](notebook-desktop.md) | Variable-height visible cell range with overscan. | [header](../kernels/mulib-nb-virtualize.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-window](notebook-desktop.md) | Bidirectional single-window association for a notebook cell. | [header](../kernels/mulib-nb-window.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [nb-worker](notebook-desktop.md) | Trusted executable launch with nonblocking stdout/stderr and reaping. | [header](../kernels/mulib-nb-worker.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [ndjson](mulib-ndjson.md) | Bounded borrowed line iteration over newline-delimited JSON source bytes | [header](../kernels/mulib-ndjson.h) · [example](../examples/modules/ndjson.c) |
+| [net-cap](mulib-net-cap.md) | Inspect effective Linux capability bits without changing credentials | [header](../kernels/mulib-net-cap.h) · [example](../examples/modules/net-cap.c) |
+| [net-cli-format](mulib-net-cli-format.md) | Format IPv4 and JSON-escaped interface names without third-party libraries | [header](../kernels/mulib-net-cli-format.h) · [example](../examples/modules/net-cli-format.c) |
+| [net-monitor](mulib-net-monitor.md) | Subscribe to link, IPv4/IPv6 address and route multicast Netlink events | [header](../kernels/mulib-net-monitor.h) · [example](../examples/modules/net-monitor.c) |
+| [net-profile](mulib-net-profile.md) | Parse a bounded flat INI-style network profile with interface, IPv4 address and gateway fields | [header](../kernels/mulib-net-profile.h) · [example](../examples/modules/net-profile.c) |
+| [net-reconcile](mulib-net-reconcile.md) | Read-only desired-versus-observed interface activation comparison | [header](../kernels/mulib-net-reconcile.h) · [example](../examples/modules/net-reconcile.c) |
+| [net-state](mulib-net-state.md) | Snapshot interface state from sysfs without modifying the network | [header](../kernels/mulib-net-state.h) · [example](../examples/modules/net-state.c) |
+| [net-stats](mulib-net-stats.md) | Read rx/tx packet and byte counters from /sys/class/net/<interface>/statistics | [header](../kernels/mulib-net-stats.h) · [example](../examples/modules/net-stats.c) |
+| [netdevice](mulib-netdevice.md) | POSIX network-interface enumeration and address snapshots. | [header](../kernels/mulib-netdevice.h) · [example](../examples/modules/netdevice.c) |
+| [netfilter-log](mulib-netfilter-log.md) | Subscribe to a Linux NFLOG group with a raw NETLINK_NETFILTER socket | [header](../kernels/mulib-netfilter-log.h) · [example](../examples/modules/netfilter-log.c) |
+| [netfilter-queue](mulib-netfilter-queue.md) | Construct NFQUEUE queue-bind commands and open a bound Netfilter queue socket | [header](../kernels/mulib-netfilter-queue.h) · [example](../examples/modules/netfilter-queue.c) |
+| [netfs](mulib-netfs.md) | Network filesystem: bounded wire RPC to mulib-fuse and remote VFS | [header](../kernels/mulib-netfs.h) · [example](../examples/modules/netfs.c) |
+| [netlink](mulib-netlink.md) | Linux NETLINK_ROUTE/Generic Netlink socket, bounded request/response transactions and message iteration | [header](../kernels/mulib-netlink.h) · [example](../examples/modules/netlink.c) |
+| [netlink-async](mulib-netlink-async.md) | poll-based bounded readiness and a single pending request completion primitive | [header](../kernels/mulib-netlink-async.h) · [example](../examples/modules/netlink-async.c) |
+| [netlink-attr](mulib-netlink-attr.md) | Bounded aligned RTATTR and NLA encode/decode helpers | [header](../kernels/mulib-netlink-attr.h) · [example](../examples/modules/netlink-attr.c) |
+| [netlink-extack](mulib-netlink-extack.md) | Decode NLMSG_ERROR and kernel extended acknowledgment attributes | [header](../kernels/mulib-netlink-extack.h) · [example](../examples/modules/netlink-extack.c) |
+| [netlink-genl](mulib-netlink-genl.md) | Resolve Generic Netlink family IDs through the kernel control family | [header](../kernels/mulib-netlink-genl.h) · [example](../examples/modules/netlink-genl.c) |
+| [netlink-schema](mulib-netlink-schema.md) | Typed fixed-width policy checks for a collection of parsed Netlink attributes | [header](../kernels/mulib-netlink-schema.h) · [example](../examples/modules/netlink-schema.c) |
+| [netns](mulib-netns.md) | Open and enter Linux network namespaces explicitly | [header](../kernels/mulib-netns.h) · [example](../examples/modules/netns.c) |
+| [netpolicy](mulib-netpolicy.md) | URL scheme and obvious loopback/private-host denial policy. | [header](../kernels/mulib-netpolicy.h) · [example](../examples/modules/netpolicy.c) |
+| [networkd-client](mulib-networkd-client.md) | Read systemd-networkd managed link list as a raw D-Bus reply | [header](../kernels/mulib-networkd-client.h) · [example](../examples/modules/networkd-client.c) |
+| [nextclosure](mulib-nextclosure.md) | Ganter NextClosure canonical enumeration of closed formal concepts | [header](../kernels/mulib-nextclosure.h) · [example](../examples/modules/nextclosure.c) |
+| [nfnetlink](mulib-nfnetlink.md) | Open Linux NETLINK_NETFILTER and send bounded netfilter messages | [header](../kernels/mulib-nfnetlink.h) · [example](../examples/modules/nfnetlink.c) |
+| [nftables](mulib-nftables.md) | Dump kernel nftables tables through NFNETLINK_SUBSYS_NFTABLES | [header](../kernels/mulib-nftables.h) · [example](../examples/modules/nftables.c) |
+| [nl80211](mulib-nl80211.md) | Generic Netlink nl80211 request helper for wireless devices | [header](../kernels/mulib-nl80211.h) · [example](../examples/modules/nl80211.c) |
+| [nle-clip](mulib-nle-clip.md) | Clip source mapping and bounded slip. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-clip.h) · [example](../examples/media-pipeline.c) |
+| [nle-edit](mulib-nle-edit.md) | Split, trim and atomic adjacent roll editing. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-edit.h) · [example](../examples/media-pipeline.c) |
+| [nle-edl](mulib-nle-edl.md) | Write lossless neutral tab-separated edit list. Limit: Not CMX3600; implement SMPTE/drop-frame interchange separately. | [header](../kernels/mulib-nle-edl.h) · [example](../examples/media-pipeline.c) |
+| [nle-evaluate](mulib-nle-evaluate.md) | Visit active clips at a timeline tick. Limit: Track compositing order is caller policy. | [header](../kernels/mulib-nle-evaluate.h) · [example](../examples/media-pipeline.c) |
+| [nle-interval](mulib-nle-interval.md) | Half-open range intersection and bounded output query. Limit: Linear scan; replace with augmented interval index for large timelines. | [header](../kernels/mulib-nle-interval.h) · [example](../examples/media-pipeline.c) |
+| [nle-otio](mulib-nle-otio.md) | OpenTimelineIO RationalTime numeric bridge. Limit: No OTIO JSON schema serialization. | [header](../kernels/mulib-nle-otio.h) · [example](../examples/media-pipeline.c) |
+| [nle-retime](mulib-nle-retime.md) | Piecewise-linear source-time mapping, including reverse and hold. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-retime.h) · [example](../examples/media-pipeline.c) |
+| [nle-ripple](mulib-nle-ripple.md) | Validate-then-apply ripple shift. Limit: Caller resolves overlaps and locked tracks. | [header](../kernels/mulib-nle-ripple.h) · [example](../examples/media-pipeline.c) |
+| [nle-snap](mulib-nle-snap.md) | Nearest clip boundary snapping with deterministic ties. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-snap.h) · [example](../examples/media-pipeline.c) |
+| [nle-timeline](mulib-nle-timeline.md) | Caller-backed timeline with exact integer ticks and unique clip IDs. Limit: No automatic overlap policy; source and sequence use same tick units. | [header](../kernels/mulib-nle-timeline.h) · [example](../examples/media-pipeline.c) |
+| [nle-track](mulib-nle-track.md) | Track lookup and mute/solo policy. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-track.h) · [example](../examples/media-pipeline.c) |
+| [nle-transition](mulib-nle-transition.md) | Linear and smooth crossfade weights. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nle-transition.h) · [example](../examples/media-pipeline.c) |
+| [nm-client](mulib-nm-client.md) | Read NetworkManager global state and device object-path reply | [header](../kernels/mulib-nm-client.h) · [example](../examples/modules/nm-client.c) |
+| [nm-connection](mulib-nm-connection.md) | List NetworkManager Settings connection object-paths as raw D-Bus frames | [header](../kernels/mulib-nm-connection.h) · [example](../examples/modules/nm-connection.c) |
+| [nm-device](mulib-nm-device.md) | Read a NetworkManager device Interface string via D-Bus Properties.Get | [header](../kernels/mulib-nm-device.h) · [example](../examples/modules/nm-device.c) |
+| [nm-secret-agent](mulib-nm-secret-agent.md) | Explicitly unregister a NetworkManager secret agent already registered by the caller | [header](../kernels/mulib-nm-secret-agent.h) · [example](../examples/modules/nm-secret-agent.c) |
+| [nm-wifi](mulib-nm-wifi.md) | Query NetworkManager Wi-Fi access point object paths as raw D-Bus reply | [header](../kernels/mulib-nm-wifi.h) · [example](../examples/modules/nm-wifi.c) |
+| [nodegraph-cache](mulib-nodegraph-cache.md) | Revision-keyed non-owning intermediate result cache. Limit: No eviction; caller releases values. | [header](../kernels/mulib-nodegraph-cache.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-compile](mulib-nodegraph-compile.md) | Kahn topological ordering and cycle detection. Limit: O(VE) traversal; add adjacency index. | [header](../kernels/mulib-nodegraph-compile.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-core](mulib-nodegraph-core.md) | Borrowed graph topology with indexed edges and typed single outputs. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nodegraph-core.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-dirty](mulib-nodegraph-dirty.md) | Propagate invalidation downstream to fixed point. Limit: Quadratic worst case; use adjacency and queue. | [header](../kernels/mulib-nodegraph-dirty.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-eval](mulib-nodegraph-eval.md) | Execute a topologically ordered graph through an operation provider. Limit: Callback manages values and cleanup; no parallel execution. | [header](../kernels/mulib-nodegraph-eval.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-fusion](mulib-nodegraph-fusion.md) | Conservative candidate detection for unary operator fusion. Limit: Does not rewrite graph; verify execution semantic compatibility. | [header](../kernels/mulib-nodegraph-fusion.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-layout](mulib-nodegraph-layout.md) | Layered DAG layout with deterministic rows. Limit: Valid topological order required; no crossing minimization. | [header](../kernels/mulib-nodegraph-layout.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-region](mulib-nodegraph-region.md) | Backward ROI union with per-node filter halo. Limit: Requires valid topological order; transform-specific ROI mapping remains. | [header](../kernels/mulib-nodegraph-region.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-serialize](mulib-nodegraph-serialize.md) | Versioned textual graph topology writer. Limit: No reader or node properties. | [header](../kernels/mulib-nodegraph-serialize.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-temporal](mulib-nodegraph-temporal.md) | Checked temporal dependency window expansion. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nodegraph-temporal.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-types](mulib-nodegraph-types.md) | Exact port-type equality and edge validation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-nodegraph-types.h) · [example](../examples/media-pipeline.c) |
+| [nodegraph-validate](mulib-nodegraph-validate.md) | Validate node identity, port types and unique incoming edges. Limit: Cycle rejection is in nodegraph-compile; unconnected ports allowed. | [header](../kernels/mulib-nodegraph-validate.h) · [example](../examples/media-pipeline.c) |
+| [num-adaptive](engineering-kernels.md) | Tolerance-scaled RMS error and bounded timestep suggestions for adaptive integration. | [header](../kernels/mulib-num-adaptive.h) |
+| [num-amd](engineering-kernels.md) | Minimum-degree ordering of an explicit symmetric fill graph from square CSR; not SuiteSparse AMD. | [header](../kernels/mulib-num-amd.h) |
+| [num-autodiff](engineering-kernels.md) | Scalar forward-mode differentiation with dual-number arithmetic and selected elementary functions. | [header](../kernels/mulib-num-autodiff.h) |
+| [num-bdf](engineering-kernels.md) | Constant-step BDF coefficients for orders one through six and differentiation of supplied history. | [header](../kernels/mulib-num-bdf.h) |
+| [num-bicgstab](engineering-kernels.md) | Unpreconditioned BiCGSTAB solve for square real CSR systems with an iteration limit. | [header](../kernels/mulib-num-bicgstab.h) |
+| [num-cholesky](engineering-kernels.md) | Dense real Cholesky factorization and triangular solves for symmetric positive-definite systems. | [header](../kernels/mulib-num-cholesky.h) |
+| [num-colamd](engineering-kernels.md) | Minimum-degree ordering on an explicit column-intersection fill graph; not quotient-graph COLAMD. | [header](../kernels/mulib-num-colamd.h) |
+| [num-complex-lu](engineering-kernels.md) | Dense complex linear solve by Gaussian elimination with partial row pivoting. | [header](../kernels/mulib-num-complex-lu.h) |
+| [num-condition](engineering-kernels.md) | CSR residual two-norm and dense infinity-norm condition estimate from unit-vector solves. | [header](../kernels/mulib-num-condition.h) |
+| [num-core](engineering-kernels.md) | Double vector, complex, borrowed CSR and reference dense-solve primitives; not a production sparse solver. | [header](../kernels/mulib-num-core.h) · [example](../examples/kernel-substrates.c) |
+| [num-csc](mulib-num-csc.md) | Compressed sparse column conversion, validation and matvec. | [header](../kernels/mulib-num-csc.h) · [example](../examples/modules/num-csc.c) |
+| [num-csr](mulib-num-csr.md) | Compressed sparse row conversion, validation, matvec and transpose. | [header](../kernels/mulib-num-csr.h) · [example](../examples/modules/num-csr.c) |
+| [num-dae](engineering-kernels.md) | One backward-Euler step for constant linear differential-algebraic systems in mass/stiffness form. | [header](../kernels/mulib-num-dae.h) |
+| [num-dense](mulib-num-dense.md) | Dense double matrices and Gaussian elimination with partial row pivoting. | [header](../kernels/mulib-num-dense.h) · [example](../examples/modules/num-dense.c) |
+| [num-eigensolver](engineering-kernels.md) | Power iteration for a dominant eigenpair of a real square CSR matrix. | [header](../kernels/mulib-num-eigensolver.h) |
+| [num-gmres](engineering-kernels.md) | Restarted unpreconditioned GMRES for square real CSR systems with an iteration limit. | [header](../kernels/mulib-num-gmres.h) |
+| [num-integration](mulib-num-integration.md) | Composite trapezoid and Simpson quadrature, plus adaptive trapezoids using a Richardson error estimate and at most 30 refinement rounds. | [header](../kernels/mulib-num-integration.h) · [example](../examples/modules/num-integration.c) |
+| [num-jacobian](engineering-kernels.md) | Central finite-difference Jacobian of a caller-supplied vector function. | [header](../kernels/mulib-num-jacobian.h) |
+| [num-linesearch](engineering-kernels.md) | Bounded Armijo backtracking along a supplied descent direction and slope. | [header](../kernels/mulib-num-linesearch.h) |
+| [num-newton](engineering-kernels.md) | Damped Newton solve using a caller-supplied residual and dense Jacobian with backtracking. | [header](../kernels/mulib-num-newton.h) |
+| [num-precondition](engineering-kernels.md) | Jacobi preconditioning from the diagonal of a square CSR matrix, with a vector apply helper. | [header](../kernels/mulib-num-precondition.h) |
+| [num-rootfind](mulib-num-rootfind.md) | Bracketed scalar bisection and damped Newton iteration with bounded residual-decreasing backtracking. | [header](../kernels/mulib-num-rootfind.h) · [example](../examples/modules/num-rootfind.c) |
+| [num-sparse](mulib-num-sparse.md) | Owned coordinate-list sparse double matrix with checked assembly, repeated-coordinate accumulation and explicit canonicalization. | [header](../kernels/mulib-num-sparse.h) · [example](../examples/modules/num-sparse.c) |
+| [num-sparse-ldlt](engineering-kernels.md) | Unpivoted symmetric LDLT factorization from CSR lower-triangle entries, with a solve helper. | [header](../kernels/mulib-num-sparse-ldlt.h) |
+| [num-sparse-lu](engineering-kernels.md) | Row-based sparse LU factorization of square CSR with partial pivoting and reusable solves. | [header](../kernels/mulib-num-sparse-lu.h) |
+| [num-statistics](mulib-num-statistics.md) | Streaming Welford mean, sample variance and extrema, with checked count growth and merging of independent summaries. | [header](../kernels/mulib-num-statistics.h) · [example](../examples/modules/num-statistics.c) |
+| [num-symbolic](engineering-kernels.md) | Symbolic LU fill counts for fixed row and column order without numeric pivoting. | [header](../kernels/mulib-num-symbolic.h) |
+| [num-trapezoid](engineering-kernels.md) | One implicit trapezoidal step for a constant linear mass/stiffness system with endpoint sources. | [header](../kernels/mulib-num-trapezoid.h) |
+| [nvptx](mulib-nvptx.md) | Owned NVPTX64 virtual-ISA text GPU implementation. | [header](../kernels/mulib-nvptx.h) · [example](../examples/modules/nvptx.c) |
 
 ## O
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [oauth](mulib-oauth.md) | OAuth2 convenience facade; not an OAuth 1.0 implementation. | [header](../include/mulib-oauth.h) · [example](../examples/modules/oauth.c) |
-| [oauth2](mulib-oauth2.md) | OAuth2 bearer policy with claim and scope validation, one-use state and S256 PKCE. | [header](../include/mulib-oauth2.h) · [example](../examples/modules/oauth2.c) |
-| [objdump](mulib-objdump.md) | Shared escaped object metadata and bounded binary hex dump rendering. | [header](../include/mulib-objdump.h) · [example](../examples/modules/objdump.c) |
-| [objectdb](mulib-objectdb.md) | Type-tagged opaque object blobs over memtable. | [header](../include/mulib-objectdb.h) · [example](../examples/modules/objectdb.c) |
-| [objfile](mulib-objfile.md) | Borrowed ELF relocatable-object model; other object formats rejected. | [header](../include/mulib-objfile.h) · [example](../examples/modules/objfile.c) |
-| [objfilebuilder](mulib-objfilebuilder.md) | Owned section builder for the focused ELF64 object writer. | [header](../include/mulib-objfilebuilder.h) · [example](../examples/modules/objfilebuilder.c) |
-| [objfileinjector](mulib-objfileinjector.md) | In-place, size-preserving replacement of file-backed ELF sections. | [header](../include/mulib-objfileinjector.h) · [example](../examples/modules/objfileinjector.c) |
-| [objfileleader](mulib-objfileleader.md) | ELF PT_LOAD copy/zero-fill helper (historical filename: leader). | [header](../include/mulib-objfileleader.h) · [example](../examples/modules/objfileleader.c) |
-| [objfilelibsearch](mulib-objfilelibsearch.md) | Checked short-name Unix ar lookup over borrowed bytes. | [header](../include/mulib-objfilelibsearch.h) · [example](../examples/modules/objfilelibsearch.c) |
-| [objfilepacker](mulib-objfilepacker.md) | Deterministic short-name Unix ar member writer (no symbol index). | [header](../include/mulib-objfilepacker.h) · [example](../examples/modules/objfilepacker.c) |
-| [objfileposindep](mulib-objfileposindep.md) | Overflow-checked PC-relative signed 32-bit displacement arithmetic. | [header](../include/mulib-objfileposindep.h) · [example](../examples/modules/objfileposindep.c) |
-| [objfilereloc](mulib-objfilereloc.md) | Checked little-endian ABS32/ABS64/PC32 relocation of byte spans. | [header](../include/mulib-objfilereloc.h) · [example](../examples/modules/objfilereloc.c) |
-| [objfilestub](mulib-objfilestub.md) | Emit an x86-64 absolute indirect-jump thunk as data, never execute it. | [header](../include/mulib-objfilestub.h) · [example](../examples/modules/objfilestub.c) |
-| [objfilesymloc](mulib-objfilesymloc.md) | Resolve a defined ELF symbol's file-backed bytes, not its runtime address. | [header](../include/mulib-objfilesymloc.h) · [example](../examples/modules/objfilesymloc.c) |
-| [objfilewriter](mulib-objfilewriter.md) | Deterministic ELF64 little-endian ET_REL writer for PROGBITS sections. | [header](../include/mulib-objfilewriter.h) · [example](../examples/modules/objfilewriter.c) |
-| [obs4](mulib-obs4.md) | Authenticated obfs4 backend lifecycle and X transport adaptation. | [header](../include/mulib-obs4.h) · [example](../examples/modules/obs4.c) |
-| [ocicontainer](mulib-ocicontainer.md) | OCI-style container identity/lifecycle core, not an isolation engine. | [header](../include/mulib-ocicontainer.h) · [example](../examples/modules/ocicontainer.c) |
-| [ocicontaineripc](mulib-ocicontaineripc.md) | Binary IPC channel messages using the shared container frame protocol. | [header](../include/mulib-ocicontaineripc.h) · [example](../examples/modules/ocicontaineripc.c) |
-| [ocicontainermetadata](mulib-ocicontainermetadata.md) | OCI-style state JSON projection from the lifecycle model. | [header](../include/mulib-ocicontainermetadata.h) · [example](../examples/modules/ocicontainermetadata.c) |
-| [ocicontainernetwork](mulib-ocicontainernetwork.md) | Validated IPv4 container address/prefix/gateway plans, no network changes. | [header](../include/mulib-ocicontainernetwork.h) · [example](../examples/modules/ocicontainernetwork.c) |
-| [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | Compatibility spelling of the container network-plan module. | [header](../include/mulib-ocicontainernetwrork.h) · [example](../examples/modules/ocicontainernetwrork.c) |
-| [ocicontainerruntime](mulib-ocicontainerruntime.md) | Explicit-backend container lifecycle driver, not a bundled OCI runtime. | [header](../include/mulib-ocicontainerruntime.h) · [example](../examples/modules/ocicontainerruntime.c) |
-| [ocicontainervfs](mulib-ocicontainervfs.md) | Mount a memory rootfs into a VFS with explicit read-only policy. | [header](../include/mulib-ocicontainervfs.h) · [example](../examples/modules/ocicontainervfs.c) |
-| [ocicontainervolume](mulib-ocicontainervolume.md) | Validated declarative bind-volume specifications; no host mount calls. | [header](../include/mulib-ocicontainervolume.h) · [example](../examples/modules/ocicontainervolume.c) |
-| [ociimage](mulib-ociimage.md) | OCI image-manifest v1 JSON descriptor validation, not blob transport. | [header](../include/mulib-ociimage.h) · [example](../examples/modules/ociimage.c) |
-| [ociimagebuilder](mulib-ociimagebuilder.md) | Owned OCI manifest construction from externally hashed descriptors. | [header](../include/mulib-ociimagebuilder.h) · [example](../examples/modules/ociimagebuilder.c) |
-| [oix](mulib-oix.md) | Tiny standalone x86 OS image compiler and KVM runner with cooperative tasks. | [header](../include/mulib-oix.h) · [example](../examples/modules/oix.c) |
-| [openai](mulib-openai.md) | OpenAI REST operation catalog, safe routing, JSON envelopes and text extraction. | [header](../include/mulib-openai.h) · [example](../examples/modules/openai.c) |
-| [openai-client](mulib-openai-client.md) | MuW3 OpenAI REST client with live SSE, multipart, pagination and tool workflows. | [header](../include/mulib-openai-client.h) · [example](../examples/modules/openai-client.c) |
-| [openai-server](mulib-openai-server.md) | OpenAI REST dispatch, authentication hooks, JSON errors and live HTTP/SSE output. | [header](../include/mulib-openai-server.h) · [example](../examples/modules/openai-server.c) |
-| [opencode-client](mulib-opencode-client.md) | Pinned OpenCode V2 HTTP and SSE client with a read-only Mune binding. | [header](../include/mulib-opencode-client.h) · [example](../examples/modules/opencode-client.c) |
-| [openvpn](mulib-openvpn.md) | OpenVPN data-channel v1/v2 envelopes and authenticated replay window. | [header](../include/mulib-openvpn.h) · [example](../examples/modules/openvpn.c) |
-| [opticalmargin](mulib-opticalmargin.md) | Calculate optical margin inset. Finite numeric inputs and documented scalar result. | [header](../include/mulib-opticalmargin.h) · [example](../examples/mulib-opticalmargin.c) |
-| [optml](mulib-optml.md) | Annotation-driven LIR tree rewrites, reselection and assembly output. | [header](../include/mulib-optml.h) · [example](../examples/modules/optml.c) |
-| [orderbook](mulib-orderbook.md) | Bounded Level-2 snapshot and atomic sequenced price-level updates. | [header](../include/mulib-orderbook.h) · [example](../examples/finpred_market.c) |
-| [orderintent](mulib-orderintent.md) | Offline side, expiry, tick and notional validation without trade authority. | [header](../include/mulib-orderintent.h) · [example](../examples/finpred_market.c) |
-| [orhoconv](mulib-orhoconv.md) | Configurable UTF-8 orthographic boundary conventions backed by KVDB. | [header](../include/mulib-orhoconv.h) · [example](../examples/modules/orhoconv.c) |
-| [orthographic_rules](mulib-orthographic_rules.md) | Ordered literal prefix/suffix/whole-word orthographic rules. | [header](../include/mulib-orthographic_rules.h) · [example](../examples/modules/orthographic_rules.c) |
-| [otpath](mulib-otpath.md) | Alternate-spelling facade for HOTP/TOTP authentication. | [header](../include/mulib-otpath.h) · [example](../examples/modules/otpath.c) |
-| [otpauth](mulib-otpauth.md) | RFC 4226 HOTP and RFC 6238 TOTP with bounded, replay-aware verification. | [header](../include/mulib-otpauth.h) · [example](../examples/modules/otpauth.c) |
+| [oauth](mulib-oauth.md) | OAuth2 convenience facade; not an OAuth 1.0 implementation. | [header](../kernels/mulib-oauth.h) · [example](../examples/modules/oauth.c) |
+| [oauth2](mulib-oauth2.md) | OAuth2 bearer policy with claim and scope validation, one-use state and S256 PKCE. | [header](../kernels/mulib-oauth2.h) · [example](../examples/modules/oauth2.c) |
+| [objdump](mulib-objdump.md) | Shared escaped object metadata and bounded binary hex dump rendering. | [header](../kernels/mulib-objdump.h) · [example](../examples/modules/objdump.c) |
+| [objectdb](mulib-objectdb.md) | Type-tagged opaque object blobs over memtable. | [header](../kernels/mulib-objectdb.h) · [example](../examples/modules/objectdb.c) |
+| [objfile](mulib-objfile.md) | Borrowed ELF relocatable-object model; other object formats rejected. | [header](../kernels/mulib-objfile.h) · [example](../examples/modules/objfile.c) |
+| [objfilebuilder](mulib-objfilebuilder.md) | Owned section builder for the focused ELF64 object writer. | [header](../kernels/mulib-objfilebuilder.h) · [example](../examples/modules/objfilebuilder.c) |
+| [objfileinjector](mulib-objfileinjector.md) | In-place, size-preserving replacement of file-backed ELF sections. | [header](../kernels/mulib-objfileinjector.h) · [example](../examples/modules/objfileinjector.c) |
+| [objfileleader](mulib-objfileleader.md) | ELF PT_LOAD copy/zero-fill helper (historical filename: leader). | [header](../kernels/mulib-objfileleader.h) · [example](../examples/modules/objfileleader.c) |
+| [objfilelibsearch](mulib-objfilelibsearch.md) | Checked short-name Unix ar lookup over borrowed bytes. | [header](../kernels/mulib-objfilelibsearch.h) · [example](../examples/modules/objfilelibsearch.c) |
+| [objfilepacker](mulib-objfilepacker.md) | Deterministic short-name Unix ar member writer (no symbol index). | [header](../kernels/mulib-objfilepacker.h) · [example](../examples/modules/objfilepacker.c) |
+| [objfileposindep](mulib-objfileposindep.md) | Overflow-checked PC-relative signed 32-bit displacement arithmetic. | [header](../kernels/mulib-objfileposindep.h) · [example](../examples/modules/objfileposindep.c) |
+| [objfilereloc](mulib-objfilereloc.md) | Checked little-endian ABS32/ABS64/PC32 relocation of byte spans. | [header](../kernels/mulib-objfilereloc.h) · [example](../examples/modules/objfilereloc.c) |
+| [objfilestub](mulib-objfilestub.md) | Emit an x86-64 absolute indirect-jump thunk as data, never execute it. | [header](../kernels/mulib-objfilestub.h) · [example](../examples/modules/objfilestub.c) |
+| [objfilesymloc](mulib-objfilesymloc.md) | Resolve a defined ELF symbol's file-backed bytes, not its runtime address. | [header](../kernels/mulib-objfilesymloc.h) · [example](../examples/modules/objfilesymloc.c) |
+| [objfilewriter](mulib-objfilewriter.md) | Deterministic ELF64 little-endian ET_REL writer for PROGBITS sections. | [header](../kernels/mulib-objfilewriter.h) · [example](../examples/modules/objfilewriter.c) |
+| [obs4](mulib-obs4.md) | Authenticated obfs4 backend lifecycle and X transport adaptation. | [header](../kernels/mulib-obs4.h) · [example](../examples/modules/obs4.c) |
+| [ocicontainer](mulib-ocicontainer.md) | OCI-style container identity/lifecycle core, not an isolation engine. | [header](../kernels/mulib-ocicontainer.h) · [example](../examples/modules/ocicontainer.c) |
+| [ocicontaineripc](mulib-ocicontaineripc.md) | Binary IPC channel messages using the shared container frame protocol. | [header](../kernels/mulib-ocicontaineripc.h) · [example](../examples/modules/ocicontaineripc.c) |
+| [ocicontainermetadata](mulib-ocicontainermetadata.md) | OCI-style state JSON projection from the lifecycle model. | [header](../kernels/mulib-ocicontainermetadata.h) · [example](../examples/modules/ocicontainermetadata.c) |
+| [ocicontainernetwork](mulib-ocicontainernetwork.md) | Validated IPv4 container address/prefix/gateway plans, no network changes. | [header](../kernels/mulib-ocicontainernetwork.h) · [example](../examples/modules/ocicontainernetwork.c) |
+| [ocicontainernetwrork](mulib-ocicontainernetwrork.md) | Compatibility spelling of the container network-plan module. | [header](../kernels/mulib-ocicontainernetwrork.h) · [example](../examples/modules/ocicontainernetwrork.c) |
+| [ocicontainerruntime](mulib-ocicontainerruntime.md) | Explicit-backend container lifecycle driver, not a bundled OCI runtime. | [header](../kernels/mulib-ocicontainerruntime.h) · [example](../examples/modules/ocicontainerruntime.c) |
+| [ocicontainervfs](mulib-ocicontainervfs.md) | Mount a memory rootfs into a VFS with explicit read-only policy. | [header](../kernels/mulib-ocicontainervfs.h) · [example](../examples/modules/ocicontainervfs.c) |
+| [ocicontainervolume](mulib-ocicontainervolume.md) | Validated declarative bind-volume specifications; no host mount calls. | [header](../kernels/mulib-ocicontainervolume.h) · [example](../examples/modules/ocicontainervolume.c) |
+| [ociimage](mulib-ociimage.md) | OCI image-manifest v1 JSON descriptor validation, not blob transport. | [header](../kernels/mulib-ociimage.h) · [example](../examples/modules/ociimage.c) |
+| [ociimagebuilder](mulib-ociimagebuilder.md) | Owned OCI manifest construction from externally hashed descriptors. | [header](../kernels/mulib-ociimagebuilder.h) · [example](../examples/modules/ociimagebuilder.c) |
+| [oix](mulib-oix.md) | Tiny standalone x86 OS image compiler and KVM runner with cooperative tasks. | [header](../kernels/mulib-oix.h) · [example](../examples/modules/oix.c) |
+| [openai](mulib-openai.md) | OpenAI REST operation catalog, safe routing, JSON envelopes and text extraction. | [header](../kernels/mulib-openai.h) · [example](../examples/modules/openai.c) |
+| [openai-client](mulib-openai-client.md) | MuW3 OpenAI REST client with live SSE, multipart, pagination and tool workflows. | [header](../kernels/mulib-openai-client.h) · [example](../examples/modules/openai-client.c) |
+| [openai-server](mulib-openai-server.md) | OpenAI REST dispatch, authentication hooks, JSON errors and live HTTP/SSE output. | [header](../kernels/mulib-openai-server.h) · [example](../examples/modules/openai-server.c) |
+| [opencode-client](mulib-opencode-client.md) | Pinned OpenCode V2 HTTP and SSE client with a read-only Mune binding. | [header](../kernels/mulib-opencode-client.h) · [example](../examples/modules/opencode-client.c) |
+| [openvpn](mulib-openvpn.md) | OpenVPN data-channel v1/v2 envelopes and authenticated replay window. | [header](../kernels/mulib-openvpn.h) · [example](../examples/modules/openvpn.c) |
+| [opticalmargin](mulib-opticalmargin.md) | Calculate optical margin inset. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-opticalmargin.h) · [example](../examples/mulib-opticalmargin.c) |
+| [optml](mulib-optml.md) | Annotation-driven LIR tree rewrites, reselection and assembly output. | [header](../kernels/mulib-optml.h) · [example](../examples/modules/optml.c) |
+| [orderbook](mulib-orderbook.md) | Bounded Level-2 snapshot and atomic sequenced price-level updates. | [header](../kernels/mulib-orderbook.h) · [example](../examples/finpred_market.c) |
+| [orderintent](mulib-orderintent.md) | Offline side, expiry, tick and notional validation without trade authority. | [header](../kernels/mulib-orderintent.h) · [example](../examples/finpred_market.c) |
+| [orhoconv](mulib-orhoconv.md) | Configurable UTF-8 orthographic boundary conventions backed by KVDB. | [header](../kernels/mulib-orhoconv.h) · [example](../examples/modules/orhoconv.c) |
+| [orthographic_rules](mulib-orthographic_rules.md) | Ordered literal prefix/suffix/whole-word orthographic rules. | [header](../kernels/mulib-orthographic_rules.h) · [example](../examples/modules/orthographic_rules.c) |
+| [otpath](mulib-otpath.md) | Alternate-spelling facade for HOTP/TOTP authentication. | [header](../kernels/mulib-otpath.h) · [example](../examples/modules/otpath.c) |
+| [otpauth](mulib-otpauth.md) | RFC 4226 HOTP and RFC 6238 TOTP with bounded, replay-aware verification. | [header](../kernels/mulib-otpauth.h) · [example](../examples/modules/otpauth.c) |
 
 ## P
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [p2pproto](mulib-p2pproto.md) | libp2p multistream-select length-delimited protocol negotiation | [header](../include/mulib-p2pproto.h) · [example](../examples/modules/p2pproto.c) |
-| [packet-socket](mulib-packet-socket.md) | Open, bind, and receive Linux AF_PACKET raw Ethernet frames | [header](../include/mulib-packet-socket.h) · [example](../examples/modules/packet-socket.c) |
-| [packetfiter](mulib-packetfiter.md) | Bounds-checked IP packet metadata for filtering (historical | [header](../include/mulib-packetfiter.h) · [example](../examples/modules/packetfiter.c) |
-| [packetrules](mulib-packetrules.md) | Ordered IP-prefix, protocol and port-range packet rules. | [header](../include/mulib-packetrules.h) · [example](../examples/modules/packetrules.c) |
-| [packetstream](mulib-packetstream.md) | Incremental bounded four-byte big-endian length framing. | [header](../include/mulib-packetstream.h) · [example](../examples/modules/packetstream.c) |
-| [packetvm](mulib-packetvm.md) | Bounded, forward-only packet-filter bytecode interpreter. | [header](../include/mulib-packetvm.h) · [example](../examples/modules/packetvm.c) |
-| [pagebalance](mulib-pagebalance.md) | Owned ordered collection for page composition pagebalance rectangles and records; insertion, indexing, | [header](../include/mulib-pagebalance.h) · [example](../examples/mulib-pagebalance.c) |
-| [pagebib](mulib-pagebib.md) | Owned bounded registry of bibliography entry names; replace, lookup and remove by name. | [header](../include/mulib-pagebib.h) · [example](../examples/mulib-pagebib.c) |
-| [pagecolumns](mulib-pagecolumns.md) | Even column rectangles with configurable width and gap. | [header](../include/mulib-pagecolumns.h) · [example](../examples/mulib-pagecolumns.c) |
-| [pagefloat](mulib-pagefloat.md) | Owned ordered collection for page composition pagefloat rectangles and records; insertion, indexing, removal. | [header](../include/mulib-pagefloat.h) · [example](../examples/mulib-pagefloat.c) |
-| [pagefootnote](mulib-pagefootnote.md) | Owned ordered collection for page composition pagefootnote rectangles and records; insertion, indexing, | [header](../include/mulib-pagefootnote.h) · [example](../examples/mulib-pagefootnote.c) |
-| [pageframe](mulib-pageframe.md) | Page margins and usable frame calculation. | [header](../include/mulib-pageframe.h) · [example](../examples/mulib-pageframe.c) |
-| [pagegrid](mulib-pagegrid.md) | Snap a coordinate to the closest grid increment. Finite numeric inputs and documented scalar result. | [header](../include/mulib-pagegrid.h) · [example](../examples/mulib-pagegrid.c) |
-| [pageindex](mulib-pageindex.md) | Owned bounded registry of indexed terms; replace, lookup and remove by name. | [header](../include/mulib-pageindex.h) · [example](../examples/mulib-pageindex.c) |
-| [pagekeep](mulib-pagekeep.md) | Owned ordered collection for page composition pagekeep rectangles and records; insertion, indexing, removal. | [header](../include/mulib-pagekeep.h) · [example](../examples/mulib-pagekeep.c) |
-| [pagemargin](mulib-pagemargin.md) | Owned ordered collection for page composition pagemargin rectangles and records; insertion, indexing, removal. | [header](../include/mulib-pagemargin.h) · [example](../examples/mulib-pagemargin.c) |
-| [pageref](mulib-pageref.md) | Owned bounded registry of reference targets; replace, lookup and remove by name. | [header](../include/mulib-pageref.h) · [example](../examples/mulib-pageref.c) |
-| [pagetemplate](mulib-pagetemplate.md) | Owned bounded registry of page templates and named sizes; replace, lookup and remove by name. | [header](../include/mulib-pagetemplate.h) · [example](../examples/mulib-pagetemplate.c) |
-| [pagetoc](mulib-pagetoc.md) | Owned bounded registry of table-of-contents title/target mappings; replace, lookup and remove by name. | [header](../include/mulib-pagetoc.h) · [example](../examples/mulib-pagetoc.c) |
-| [pagewidow](mulib-pagewidow.md) | Owned ordered collection for page composition pagewidow rectangles and records; insertion, indexing, removal. | [header](../include/mulib-pagewidow.h) · [example](../examples/mulib-pagewidow.c) |
-| [paging](mulib-paging.md) | Canonical x86-64 addresses, table indices and 4 KiB PTE construction. | [header](../include/mulib-paging.h) · [example](../examples/modules/paging.c) |
-| [paleography](mulib-paleography.md) | Native/Lua script profiles, vector glyphs, SVG fonts, CSS and hybrid | [header](../include/mulib-paleography.h) · [example](../examples/modules/paleography.c) |
-| [palmdb](mulib-palmdb.md) | Palm database container writer for fixed records. | [header](../include/mulib-palmdb.h) · [example](../examples/mulib-palmdb.c) |
-| [pandocast](mulib-pandocast.md) | DocstrIL to Pandoc JSON AST 1.23.1, without a Pandoc dependency. | [header](../include/mulib-pandocast.h) · [example](../examples/modules/pandocast.c) |
-| [parallel](mulib-parallel.md) | Bounded parallel work distribution over the shared task pool. | [header](../include/mulib-parallel.h) · [example](../examples/modules/parallel.c) |
-| [parallel-sh](mulib-parallel-sh.md) | Bounded POSIX shell jobs with grouped output, retries, channels and optional Mune programming. | [header](../include/mulib-parallel-sh.h) · [example](../examples/parallel.c) |
-| [parsec](mulib-parsec.md) | Composable parser combinators with backtracking and diagnostics. | [header](../include/mulib-parsec.h) · [example](../examples/modules/parsec.c) |
-| [parser-pratt](mulib-parser-pratt.md) | Bounded owned Pratt expressions with unary signs, arithmetic and comparisons. | [header](../include/mulib-parser-pratt.h) · [example](../examples/modules/parser-pratt.c) |
-| [passmanager](mulib-passmanager.md) | Ordered compiler passes with failure-aware analysis invalidation masks. | [header](../include/mulib-passmanager.h) · [example](../examples/modules/passmanager.c) |
-| [path](mulib-path.md) | Portable lexical path manipulations for slash-separated paths. | [header](../include/mulib-path.h) · [example](../examples/modules/path.c) |
-| [pathdb](mulib-pathdb.md) | Owned path index with bounded prefix lookup. | [header](../include/mulib-pathdb.h) · [example](../examples/modules/pathdb.c) |
-| [pcap](mulib-pcap.md) | Write classic little-endian PCAP stream headers and timestamped capture records | [header](../include/mulib-pcap.h) · [example](../examples/modules/pcap.c) |
-| [pcb-board](mulib-pcb-board.md) | Owned flat straight-track PCB container with 1..64 declared copper layers and validated real geometry. | [header](../include/mulib-pcb-board.h) · [example](../examples/modules/pcb-board.c) |
-| [pcb-bom](mulib-pcb-bom.md) | Deterministic fixed-size BOM aggregator by manufacturer and exact part number, with checked size_t quantity accumulation. | [header](../include/mulib-pcb-bom.h) · [example](../examples/modules/pcb-bom.c) |
-| [pcb-dfm](engineering-kernels.md) | Via manufacturing checks for minimum drill, annular ring, and maximum aspect ratio. | [header](../include/mulib-pcb-dfm.h) |
-| [pcb-dft](engineering-kernels.md) | Find nets without a listed test pad meeting the minimum size in both dimensions. | [header](../include/mulib-pcb-dft.h) |
-| [pcb-diffpair](engineering-kernels.md) | Construct paired offsets from a center polyline without corner-radius or clearance enforcement. | [header](../include/mulib-pcb-diffpair.h) |
-| [pcb-drc](mulib-pcb-drc.md) | All-pairs straight-segment copper clearance checks for distinct nets. | [header](../include/mulib-pcb-drc.h) · [example](../examples/modules/pcb-drc.c) |
-| [pcb-excellon](mulib-pcb-excellon.md) | Minimal Excellon-style metric coordinate drill output, one tool number per hole. | [header](../include/mulib-pcb-excellon.h) · [example](../examples/modules/pcb-excellon.c) |
-| [pcb-footprint](engineering-kernels.md) | Aggregate pad bounds and check pad ID uniqueness and positive finite dimensions. | [header](../include/mulib-pcb-footprint.h) |
-| [pcb-geometry](mulib-pcb-geometry.md) | 2D Euclidean point-to-segment and segment-to-segment distances and centerline clearance for straight copper tracks with width and net IDs. | [header](../include/mulib-pcb-geometry.h) · [example](../examples/modules/pcb-geometry.c) |
-| [pcb-gerber](mulib-pcb-gerber.md) | Restricted RS-274X Gerber trace layer output: millimetres, leading-absolute 4.6 coordinates, circular D-code apertures, straight tracks only. | [header](../include/mulib-pcb-gerber.h) · [example](../examples/modules/pcb-gerber.c) |
-| [pcb-impedance](mulib-pcb-impedance.md) | PCB convenience API for approximate zero-thickness quasi-static microstrip impedance. | [header](../include/mulib-pcb-impedance.h) · [example](../examples/modules/pcb-impedance.c) |
-| [pcb-ipc2581](engineering-kernels.md) | Write an IPC-2581-style layer-stack XML fragment; not a complete exporter. | [header](../include/mulib-pcb-ipc2581.h) |
-| [pcb-kicad](engineering-kernels.md) | Write a minimal two-layer KiCad board with straight copper segments and generated net names. | [header](../include/mulib-pcb-kicad.h) |
-| [pcb-lengthmatch](engineering-kernels.md) | Measure polyline length and generate an unconstrained rectilinear serpentine between two endpoints. | [header](../include/mulib-pcb-lengthmatch.h) |
-| [pcb-netclass](engineering-kernels.md) | Combine two net classes by intersecting track-width limits and retaining stricter clearance and drill minima. | [header](../include/mulib-pcb-netclass.h) |
-| [pcb-pad](engineering-kernels.md) | Point containment for rotated rectangular or elliptical PCB pads and conservative axis-aligned bounds. | [header](../include/mulib-pcb-pad.h) |
-| [pcb-panelize](engineering-kernels.md) | Grid placement of identical rectangular boards within a rectangular panel with fixed gaps. | [header](../include/mulib-pcb-panelize.h) |
-| [pcb-placement](engineering-kernels.md) | Input-order shelf packing of rectangular parts in a fixed-width strip. | [header](../include/mulib-pcb-placement.h) |
-| [pcb-pnp](mulib-pcb-pnp.md) | CSV pick-and-place placement export with millimetre XY, degrees and top/bottom side; no footprint origins/centroid correction, assembly variant or machine-specific profile. | [header](../include/mulib-pcb-pnp.h) · [example](../examples/modules/pcb-pnp.c) |
-| [pcb-pour](engineering-kernels.md) | Grid-sampled polygon copper mask with circular keepouts; not exact polygon clipping. | [header](../include/mulib-pcb-pour.h) |
-| [pcb-ratsnest](engineering-kernels.md) | Greedy Euclidean minimum-spanning connections for points on each nonzero net. | [header](../include/mulib-pcb-ratsnest.h) |
-| [pcb-router](engineering-kernels.md) | Single-layer, four-neighbor A* PCB routing on a caller-supplied obstacle grid. | [header](../include/mulib-pcb-router.h) |
-| [pcb-shove](engineering-kernels.md) | Reference clearance-based shove for axis-aligned boxes along one axis, honoring fixed obstacles. | [header](../include/mulib-pcb-shove.h) |
-| [pcb-spatial](engineering-kernels.md) | X-sorted array of bounding boxes for overlap queries returning original indices. | [header](../include/mulib-pcb-spatial.h) |
-| [pcb-stackup](engineering-kernels.md) | Layer descriptors and total stack thickness with per-layer thickness and permittivity checks. | [header](../include/mulib-pcb-stackup.h) |
-| [pcb-thermal-relief](engineering-kernels.md) | Generate evenly spaced radial spoke centerlines for a pad thermal relief. | [header](../include/mulib-pcb-thermal-relief.h) |
-| [pcb-via](engineering-kernels.md) | Via geometry and layer-span validation plus a plated-barrel DC resistance estimate. | [header](../include/mulib-pcb-via.h) |
-| [pcb-zone](engineering-kernels.md) | Polygon area and point containment helpers for PCB zones. | [header](../include/mulib-pcb-zone.h) |
-| [pci](mulib-pci.md) | Backend-neutral conventional PCI discovery and ECAM offsets. | [header](../include/mulib-pci.h) · [example](../examples/modules/pci.c) |
-| [pdf](mulib-pdf.md) | Deterministic PDF 1.4 generation: pages, Helvetica text and vector paths. | [header](../include/mulib-pdf.h) · [example](../examples/modules/pdf.c) |
-| [pdfannot](mulib-pdfannot.md) | Owned bounded registry of annotations and destinations; replace, lookup and remove by name. | [header](../include/mulib-pdfannot.h) · [example](../examples/mulib-pdfannot.c) |
-| [pdfcanvas](mulib-pdfcanvas.md) | Single-page PDF 1.4 document writer with Helvetica ASCII text. | [header](../include/mulib-pdfcanvas.h) · [example](../examples/mulib-pdfcanvas.c) |
-| [pdffont](mulib-pdffont.md) | Bounds-checked output pdffont structures binary inspection and record access. | [header](../include/mulib-pdffont.h) · [example](../examples/mulib-pdffont.c) |
-| [pdfimage](mulib-pdfimage.md) | Bounds-checked output pdfimage structures binary inspection and record access. | [header](../include/mulib-pdfimage.h) · [example](../examples/mulib-pdfimage.c) |
-| [pdfmetadata](mulib-pdfmetadata.md) | Owned bounded registry of PDF metadata entries; replace, lookup and remove by name. | [header](../include/mulib-pdfmetadata.h) · [example](../examples/mulib-pdfmetadata.c) |
-| [pdfoutline](mulib-pdfoutline.md) | Owned bounded registry of bookmark titles and destinations; replace, lookup and remove by name. | [header](../include/mulib-pdfoutline.h) · [example](../examples/mulib-pdfoutline.c) |
-| [pdfstructure](mulib-pdfstructure.md) | Owned bounded registry of structural role tags; replace, lookup and remove by name. | [header](../include/mulib-pdfstructure.h) · [example](../examples/mulib-pdfstructure.c) |
-| [pe](mulib-pe.md) | Checked PE32/PE32+ headers, sections, directories and RVA mapping. | [header](../include/mulib-pe.h) · [example](../examples/modules/pe.c) |
-| [pe-objdump](mulib-pe-objdump.md) | PE header, section, directory and COFF-symbol dumps over shared objdump. | [header](../include/mulib-pe-objdump.h) · [example](../examples/modules/pe-objdump.c) |
-| [pearson_similarity](mulib-pearson_similarity.md) | Pearson correlation using scaled centered coordinates. | [header](../include/mulib-pearson_similarity.h) · [example](../examples/modules/pearson_similarity.c) |
-| [pebuilder](mulib-pebuilder.md) | Minimal fixed-base AMD64 PE32+ console image writer. | [header](../include/mulib-pebuilder.h) · [example](../examples/modules/pebuilder.c) |
-| [peephole](mulib-peephole.md) | Guarded shallow-tree rewriting for wrapping 64-bit register LIR. | [header](../include/mulib-peephole.h) · [example](../examples/modules/peephole.c) |
-| [peg](mulib-peg.md) | Parsing expression grammar compilation and matching. | [header](../include/mulib-peg.h) · [example](../examples/modules/peg.c) |
-| [perf](mulib-perf.md) | Native performance measurement and elapsed-time helpers. | [header](../include/mulib-perf.h) · [example](../examples/modules/perf.c) |
-| [perlpod](mulib-perlpod.md) | Focused Perl POD parsing and rendering with explicit unsupported syntax. | [header](../include/mulib-perlpod.h) · [example](../examples/modules/perlpod.c) |
-| [peutils](mulib-peutils.md) | PE section and COFF debug-symbol lookup; not export resolution. | [header](../include/mulib-peutils.h) · [example](../examples/modules/peutils.c) |
-| [pglayout](mulib-pglayout.md) | Owned page objects, styled block flow, Unicode wrapping and JSON/YAML persistence. | [header](../include/mulib-pglayout.h) · [example](../examples/modules/pglayout.c) |
-| [phonetic_utils](mulib-phonetic_utils.md) | ASCII English Soundex phonetic keys. | [header](../include/mulib-phonetic_utils.h) · [example](../examples/modules/phonetic_utils.c) |
-| [phrasequery](mulib-phrasequery.md) | Ordered phrase matching over positional posting arrays | [header](../include/mulib-phrasequery.h) · [example](../examples/modules/phrasequery.c) |
-| [physical-def](engineering-kernels.md) | Write a DEF COMPONENTS fragment for explicitly placed components and orientations. | [header](../include/mulib-physical-def.h) |
-| [physical-lef](engineering-kernels.md) | Write a single-layer LEF block-macro fragment with rectangular obstructions. | [header](../include/mulib-physical-lef.h) |
-| [physics-broadphase](mulib-physics-broadphase.md) | Sphere AABB overlap candidate generation. Limit: O(n²); validate bodies before use. | [header](../include/mulib-physics-broadphase.h) · [example](../examples/media-pipeline.c) |
-| [physics-cloth](mulib-physics-cloth.md) | Position-based cloth stretch constraint projection with pinning. Limit: No integration, bending or self-collision. | [header](../include/mulib-physics-cloth.h) · [example](../examples/media-pipeline.c) |
-| [physics-joint](mulib-physics-joint.md) | Position-based distance joint. Limit: Does not update velocities or support angular constraints. | [header](../include/mulib-physics-joint.h) · [example](../examples/media-pipeline.c) |
-| [physics-manifold](mulib-physics-manifold.md) | Match previous sphere contacts by stable body indices and normal. Limit: No manifold points or warm-start application. | [header](../include/mulib-physics-manifold.h) · [example](../examples/media-pipeline.c) |
-| [physics-narrowphase](mulib-physics-narrowphase.md) | Sphere-sphere normal and penetration depth. Limit: No convex or mesh collision. | [header](../include/mulib-physics-narrowphase.h) · [example](../examples/media-pipeline.c) |
-| [physics-particle](mulib-physics-particle.md) | Particle advection, exponential drag and lifetime expiration. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-physics-particle.h) · [example](../examples/media-pipeline.c) |
-| [physics-rigidbody](mulib-physics-rigidbody.md) | Semi-implicit Euler for translational sphere rigid bodies. Limit: No rotation, torque, inertia tensor or angular momentum. | [header](../include/mulib-physics-rigidbody.h) · [example](../examples/media-pipeline.c) |
-| [physics-solver](mulib-physics-solver.md) | Normal collision impulse and positional correction. Limit: Single contact, no friction or angular effects. | [header](../include/mulib-physics-solver.h) · [example](../examples/media-pipeline.c) |
-| [physics-world](mulib-physics-world.md) | Sphere-world integrator with iterative contact resolution. Limit: O(n²), no CCD or persistent broadphase; partial state on numeric failure. | [header](../include/mulib-physics-world.h) · [example](../examples/media-pipeline.c) |
-| [physreg](mulib-physreg.md) | Physical-register mask validation and deterministic lowest-free selection. | [header](../include/mulib-physreg.h) · [example](../examples/modules/physreg.c) |
-| [pipeline](mulib-pipeline.md) | Bounded callback processing stages with explicit failure and ownership rules. | [header](../include/mulib-pipeline.h) · [example](../examples/modules/pipeline.c) |
-| [place-analytical](engineering-kernels.md) | Iterative weighted-centroid placement of movable points among fixed anchors. | [header](../include/mulib-place-analytical.h) |
-| [place-anneal](engineering-kernels.md) | Simulated annealing of one-to-one site assignments using pair swaps and weighted Manhattan wirelength. | [header](../include/mulib-place-anneal.h) |
-| [place-floorplan](engineering-kernels.md) | Estimate floorplan dimensions from rectangle area, target aspect ratio, and utilization. | [header](../include/mulib-place-floorplan.h) |
-| [place-legalize](engineering-kernels.md) | Greedily assign each requested position to its nearest unused, unblocked site. | [header](../include/mulib-place-legalize.h) |
-| [plot2d](mulib-plot2d.md) | Owned ordered collection for graphics plot2d rectangles and records; insertion, indexing, removal. | [header](../include/mulib-plot2d.h) · [example](../examples/mulib-plot2d.c) |
-| [polkit-client](mulib-polkit-client.md) | Check whether the PolicyKit D-Bus service is currently registered | [header](../include/mulib-polkit-client.h) · [example](../examples/modules/polkit-client.c) |
-| [polytask](mulib-polytask.md) | Bounded concurrent native tasks, JSON plans and scheduler adapter. | [header](../include/mulib-polytask.h) · [example](../examples/modules/polytask.c) |
-| [popcount](mulib-popcount.md) | Bit population count, leading zeros, and trailing zeros for 64-bit words. | [header](../include/mulib-popcount.h) · [example](../examples/modules/popcount.c) |
-| [port](mulib-port.md) | Platform identification and checked size arithmetic. | [header](../include/mulib-port.h) · [example](../examples/modules/port.c) |
-| [portfolio](mulib-portfolio.md) | Single-currency snapshot mark-to-market P&L and gross exposure. | [header](../include/mulib-portfolio.h) · [example](../examples/finpred_market.c) |
-| [positions](mulib-positions.md) | Owned sorted per-document token positions for phrase matching | [header](../include/mulib-positions.h) · [example](../examples/modules/positions.c) |
-| [postdominance](mulib-postdominance.md) | Exit-relative postdominance via reversed validated control-flow graphs. | [header](../include/mulib-postdominance.h) · [example](../examples/modules/postdominance.c) |
-| [postings](mulib-postings.md) | Sorted document postings with term frequency, binary search and set-safe updates | [header](../include/mulib-postings.h) · [example](../examples/modules/postings.c) |
-| [prettydoc](mulib-prettydoc.md) | Owned structural source-code document algebra and bounded layout strategies. | [header](../include/mulib-prettydoc.h) · [example](../examples/prettyprint-demo.c) |
-| [prettyemit](mulib-prettyemit.md) | Escaped plain, HTML/MathML, LaTeX and troff emitters for code layouts. | [header](../include/mulib-prettyemit.h) · [example](../examples/prettyprint-demo.c) |
-| [prettysexpr](mulib-prettysexpr.md) | Bounded language-independent S-expression documents and renderer entry point. | [header](../include/mulib-prettysexpr.h) · [example](../examples/prettyprint-demo.c) |
-| [price-causal](mulib-price-causal.md) | Difference-in-differences average treatment effect diagnostic. | [header](../include/mulib-price-causal.h) · [example](../examples/modules/price-causal.c) |
-| [price-confidence](mulib-price-confidence.md) | Overflow-aware weighted confidence primitives and median/MAD deviation scores. | [header](../include/mulib-price-confidence.h) · [example](../examples/modules/price-confidence.c) |
-| [price-demand](mulib-price-demand.md) | Bounded linear demand estimation with closed-form ridge regularization. | [header](../include/mulib-price-demand.h) · [example](../examples/modules/price-demand.c) |
-| [price-ensemble](mulib-price-ensemble.md) | Error-weighted forecast blending with intermodel dispersion. | [header](../include/mulib-price-ensemble.h) · [example](../examples/modules/price-ensemble.c) |
-| [price-forecast](mulib-price-forecast.md) | Uniform forecasting API with naive, EMA, drift and seasonal baselines. | [header](../include/mulib-price-forecast.h) · [example](../examples/modules/price-forecast.c) |
-| [price-history](mulib-price-history.md) | Owned ordered and deduplicated price observation history. | [header](../include/mulib-price-history.h) · [example](../examples/modules/price-history.c) |
-| [price-match](mulib-price-match.md) | ASCII-normalized product matching, identifiers and bounded edit similarity. | [header](../include/mulib-price-match.h) · [example](../examples/modules/price-match.c) |
-| [price-monitor](mulib-price-monitor.md) | Thresholded price change and availability event detection. | [header](../include/mulib-price-monitor.h) · [example](../examples/modules/price-monitor.c) |
-| [price-normalize](mulib-price-normalize.md) | Checked tax, discount, shipping and per-unit offer normalization. | [header](../include/mulib-price-normalize.h) · [example](../examples/modules/price-normalize.c) |
-| [price-observation](mulib-price-observation.md) | Validated price, product, merchant, market, time and evidence record. | [header](../include/mulib-price-observation.h) · [example](../examples/modules/price-observation.c) |
-| [price-timeseries](mulib-price-timeseries.md) | Time-bucketed price series with missing-value flags and gap handling. | [header](../include/mulib-price-timeseries.h) · [example](../examples/modules/price-timeseries.c) |
-| [pricecurve](mulib-pricecurve.md) | Bounded monotone percentile curves by time to event. | [header](../include/mulib-pricecurve.h) · [example](../examples/hospitality_demo.c) |
-| [priceopt](mulib-priceopt.md) | Model-based bounded profit or revenue optimization, scenarios and UCB exploration. | [header](../include/mulib-priceopt.h) · [example](../examples/modules/priceopt.c) |
-| [prime](mulib-prime.md) | Primality testing and next-prime search for 64-bit integers. | [header](../include/mulib-prime.h) · [example](../examples/modules/prime.c) |
-| [probability](mulib-probability.md) | Discrete probability validation, normalization, entropy and log sums. | [header](../include/mulib-probability.h) · [example](../examples/modules/probability.c) |
-| [process](mulib-process.md) | Native argv-based process creation, waiting and descriptor plumbing. | [header](../include/mulib-process.h) · [example](../examples/modules/process.c) |
-| [process-stream](mulib-process-stream.md) | Nonblocking subprocess pipes/PTY, cancellation, output limits and monotonic deadlines. | [header](../include/mulib-process-stream.h) · [example](../examples/process_stream.c) |
-| [procfs](mulib-procfs.md) | Bounded Linux process-information parsing and lookup. | [header](../include/mulib-procfs.h) · [example](../examples/modules/procfs.c) |
-| [project-history](mulib-project-history.md) | Bounded command undo/redo history with branching truncation. Limit: In-memory callbacks only; no persistence or cleanup of discarded commands. | [header](../include/mulib-project-history.h) · [example](../examples/media-pipeline.c) |
-| [project-journal](mulib-project-journal.md) | CRC32-framed journal append and valid-prefix recovery. Limit: Memory serialization only; no fsync, atomic commit or transaction markers. | [header](../include/mulib-project-journal.h) · [example](../examples/media-pipeline.c) |
-| [project-migrate](mulib-project-migrate.md) | Ordered monotonic schema migration execution with ambiguity rejection. Limit: Each step must be transactional; earlier successful steps remain committed. | [header](../include/mulib-project-migrate.h) · [example](../examples/media-pipeline.c) |
-| [project-package](mulib-project-package.md) | Portable relative archive path validation and checked writer dispatch. Limit: Not an archive implementation or sufficient extraction security; handle symlinks, DOS reserved names and collisions. | [header](../include/mulib-project-package.h) · [example](../examples/media-pipeline.c) |
-| [project-store](mulib-project-store.md) | Transactional provider interface with lifecycle guards. Limit: Provider supplies durability and recovery, e.g. existing KVDB. | [header](../include/mulib-project-store.h) · [example](../examples/media-pipeline.c) |
-| [protobuf](mulib-protobuf.md) | Schema-free Protobuf varint fixed64 bytes and fixed32 wire fields. | [header](../include/mulib-protobuf.h) · [example](../examples/modules/protobuf.c) |
-| [prowse-control](mulib-prowse-control.md) | Browser automation, scraping, lprowse Lua DSL and a highlighted interactive REPL. | [header](../include/mulib-prowse-control.h) · [example](../examples/modules/prowse-control.c) |
-| [prowse-protocol](mulib-prowse-protocol.md) | CDP WebSocket, W3C WebDriver HTTP and Firefox Marionette browser clients. | [header](../include/mulib-prowse-protocol.h) · [example](../examples/modules/prowse-protocol.c) |
-| [pty](notebook-desktop.md) | POSIX pseudoterminal open, resize and child controlling-terminal setup. | [header](../include/mulib-pty.h) · [example](../tests/test-notebook-pty.c) |
-| [pwdauth](mulib-pwdauth.md) | Salted PBKDF2-SHA-256 password records with bounded verification cost. | [header](../include/mulib-pwdauth.h) · [example](../examples/modules/pwdauth.c) |
-| [pybind](mulib-pybind.md) | Self-contained Python ctypes binding-source generation for C functions. | [header](../include/mulib-pybind.h) · [example](../examples/modules/pybind.c) |
+| [p2pproto](mulib-p2pproto.md) | libp2p multistream-select length-delimited protocol negotiation | [header](../kernels/mulib-p2pproto.h) · [example](../examples/modules/p2pproto.c) |
+| [packet-socket](mulib-packet-socket.md) | Open, bind, and receive Linux AF_PACKET raw Ethernet frames | [header](../kernels/mulib-packet-socket.h) · [example](../examples/modules/packet-socket.c) |
+| [packetfiter](mulib-packetfiter.md) | Bounds-checked IP packet metadata for filtering (historical | [header](../kernels/mulib-packetfiter.h) · [example](../examples/modules/packetfiter.c) |
+| [packetrules](mulib-packetrules.md) | Ordered IP-prefix, protocol and port-range packet rules. | [header](../kernels/mulib-packetrules.h) · [example](../examples/modules/packetrules.c) |
+| [packetstream](mulib-packetstream.md) | Incremental bounded four-byte big-endian length framing. | [header](../kernels/mulib-packetstream.h) · [example](../examples/modules/packetstream.c) |
+| [packetvm](mulib-packetvm.md) | Bounded, forward-only packet-filter bytecode interpreter. | [header](../kernels/mulib-packetvm.h) · [example](../examples/modules/packetvm.c) |
+| [pagebalance](mulib-pagebalance.md) | Owned ordered collection for page composition pagebalance rectangles and records; insertion, indexing, | [header](../kernels/mulib-pagebalance.h) · [example](../examples/mulib-pagebalance.c) |
+| [pagebib](mulib-pagebib.md) | Owned bounded registry of bibliography entry names; replace, lookup and remove by name. | [header](../kernels/mulib-pagebib.h) · [example](../examples/mulib-pagebib.c) |
+| [pagecolumns](mulib-pagecolumns.md) | Even column rectangles with configurable width and gap. | [header](../kernels/mulib-pagecolumns.h) · [example](../examples/mulib-pagecolumns.c) |
+| [pagefloat](mulib-pagefloat.md) | Owned ordered collection for page composition pagefloat rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-pagefloat.h) · [example](../examples/mulib-pagefloat.c) |
+| [pagefootnote](mulib-pagefootnote.md) | Owned ordered collection for page composition pagefootnote rectangles and records; insertion, indexing, | [header](../kernels/mulib-pagefootnote.h) · [example](../examples/mulib-pagefootnote.c) |
+| [pageframe](mulib-pageframe.md) | Page margins and usable frame calculation. | [header](../kernels/mulib-pageframe.h) · [example](../examples/mulib-pageframe.c) |
+| [pagegrid](mulib-pagegrid.md) | Snap a coordinate to the closest grid increment. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-pagegrid.h) · [example](../examples/mulib-pagegrid.c) |
+| [pageindex](mulib-pageindex.md) | Owned bounded registry of indexed terms; replace, lookup and remove by name. | [header](../kernels/mulib-pageindex.h) · [example](../examples/mulib-pageindex.c) |
+| [pagekeep](mulib-pagekeep.md) | Owned ordered collection for page composition pagekeep rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-pagekeep.h) · [example](../examples/mulib-pagekeep.c) |
+| [pagemargin](mulib-pagemargin.md) | Owned ordered collection for page composition pagemargin rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-pagemargin.h) · [example](../examples/mulib-pagemargin.c) |
+| [pageref](mulib-pageref.md) | Owned bounded registry of reference targets; replace, lookup and remove by name. | [header](../kernels/mulib-pageref.h) · [example](../examples/mulib-pageref.c) |
+| [pagetemplate](mulib-pagetemplate.md) | Owned bounded registry of page templates and named sizes; replace, lookup and remove by name. | [header](../kernels/mulib-pagetemplate.h) · [example](../examples/mulib-pagetemplate.c) |
+| [pagetoc](mulib-pagetoc.md) | Owned bounded registry of table-of-contents title/target mappings; replace, lookup and remove by name. | [header](../kernels/mulib-pagetoc.h) · [example](../examples/mulib-pagetoc.c) |
+| [pagewidow](mulib-pagewidow.md) | Owned ordered collection for page composition pagewidow rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-pagewidow.h) · [example](../examples/mulib-pagewidow.c) |
+| [paging](mulib-paging.md) | Canonical x86-64 addresses, table indices and 4 KiB PTE construction. | [header](../kernels/mulib-paging.h) · [example](../examples/modules/paging.c) |
+| [paleography](mulib-paleography.md) | Native/Lua script profiles, vector glyphs, SVG fonts, CSS and hybrid | [header](../kernels/mulib-paleography.h) · [example](../examples/modules/paleography.c) |
+| [palmdb](mulib-palmdb.md) | Palm database container writer for fixed records. | [header](../kernels/mulib-palmdb.h) · [example](../examples/mulib-palmdb.c) |
+| [pandocast](mulib-pandocast.md) | DocstrIL to Pandoc JSON AST 1.23.1, without a Pandoc dependency. | [header](../kernels/mulib-pandocast.h) · [example](../examples/modules/pandocast.c) |
+| [parallel](mulib-parallel.md) | Bounded parallel work distribution over the shared task pool. | [header](../kernels/mulib-parallel.h) · [example](../examples/modules/parallel.c) |
+| [parallel-sh](mulib-parallel-sh.md) | Bounded POSIX shell jobs with grouped output, retries, channels and optional Mune programming. | [header](../kernels/mulib-parallel-sh.h) · [example](../examples/parallel.c) |
+| [parsec](mulib-parsec.md) | Composable parser combinators with backtracking and diagnostics. | [header](../kernels/mulib-parsec.h) · [example](../examples/modules/parsec.c) |
+| [parser-pratt](mulib-parser-pratt.md) | Bounded owned Pratt expressions with unary signs, arithmetic and comparisons. | [header](../kernels/mulib-parser-pratt.h) · [example](../examples/modules/parser-pratt.c) |
+| [passmanager](mulib-passmanager.md) | Ordered compiler passes with failure-aware analysis invalidation masks. | [header](../kernels/mulib-passmanager.h) · [example](../examples/modules/passmanager.c) |
+| [path](mulib-path.md) | Portable lexical path manipulations for slash-separated paths. | [header](../kernels/mulib-path.h) · [example](../examples/modules/path.c) |
+| [pathdb](mulib-pathdb.md) | Owned path index with bounded prefix lookup. | [header](../kernels/mulib-pathdb.h) · [example](../examples/modules/pathdb.c) |
+| [pcap](mulib-pcap.md) | Write classic little-endian PCAP stream headers and timestamped capture records | [header](../kernels/mulib-pcap.h) · [example](../examples/modules/pcap.c) |
+| [pcb-board](mulib-pcb-board.md) | Owned flat straight-track PCB container with 1..64 declared copper layers and validated real geometry. | [header](../kernels/mulib-pcb-board.h) · [example](../examples/modules/pcb-board.c) |
+| [pcb-bom](mulib-pcb-bom.md) | Deterministic fixed-size BOM aggregator by manufacturer and exact part number, with checked size_t quantity accumulation. | [header](../kernels/mulib-pcb-bom.h) · [example](../examples/modules/pcb-bom.c) |
+| [pcb-dfm](engineering-kernels.md) | Via manufacturing checks for minimum drill, annular ring, and maximum aspect ratio. | [header](../kernels/mulib-pcb-dfm.h) |
+| [pcb-dft](engineering-kernels.md) | Find nets without a listed test pad meeting the minimum size in both dimensions. | [header](../kernels/mulib-pcb-dft.h) |
+| [pcb-diffpair](engineering-kernels.md) | Construct paired offsets from a center polyline without corner-radius or clearance enforcement. | [header](../kernels/mulib-pcb-diffpair.h) |
+| [pcb-drc](mulib-pcb-drc.md) | All-pairs straight-segment copper clearance checks for distinct nets. | [header](../kernels/mulib-pcb-drc.h) · [example](../examples/modules/pcb-drc.c) |
+| [pcb-excellon](mulib-pcb-excellon.md) | Minimal Excellon-style metric coordinate drill output, one tool number per hole. | [header](../kernels/mulib-pcb-excellon.h) · [example](../examples/modules/pcb-excellon.c) |
+| [pcb-footprint](engineering-kernels.md) | Aggregate pad bounds and check pad ID uniqueness and positive finite dimensions. | [header](../kernels/mulib-pcb-footprint.h) |
+| [pcb-geometry](mulib-pcb-geometry.md) | 2D Euclidean point-to-segment and segment-to-segment distances and centerline clearance for straight copper tracks with width and net IDs. | [header](../kernels/mulib-pcb-geometry.h) · [example](../examples/modules/pcb-geometry.c) |
+| [pcb-gerber](mulib-pcb-gerber.md) | Restricted RS-274X Gerber trace layer output: millimetres, leading-absolute 4.6 coordinates, circular D-code apertures, straight tracks only. | [header](../kernels/mulib-pcb-gerber.h) · [example](../examples/modules/pcb-gerber.c) |
+| [pcb-impedance](mulib-pcb-impedance.md) | PCB convenience API for approximate zero-thickness quasi-static microstrip impedance. | [header](../kernels/mulib-pcb-impedance.h) · [example](../examples/modules/pcb-impedance.c) |
+| [pcb-ipc2581](engineering-kernels.md) | Write an IPC-2581-style layer-stack XML fragment; not a complete exporter. | [header](../kernels/mulib-pcb-ipc2581.h) |
+| [pcb-kicad](engineering-kernels.md) | Write a minimal two-layer KiCad board with straight copper segments and generated net names. | [header](../kernels/mulib-pcb-kicad.h) |
+| [pcb-lengthmatch](engineering-kernels.md) | Measure polyline length and generate an unconstrained rectilinear serpentine between two endpoints. | [header](../kernels/mulib-pcb-lengthmatch.h) |
+| [pcb-netclass](engineering-kernels.md) | Combine two net classes by intersecting track-width limits and retaining stricter clearance and drill minima. | [header](../kernels/mulib-pcb-netclass.h) |
+| [pcb-pad](engineering-kernels.md) | Point containment for rotated rectangular or elliptical PCB pads and conservative axis-aligned bounds. | [header](../kernels/mulib-pcb-pad.h) |
+| [pcb-panelize](engineering-kernels.md) | Grid placement of identical rectangular boards within a rectangular panel with fixed gaps. | [header](../kernels/mulib-pcb-panelize.h) |
+| [pcb-placement](engineering-kernels.md) | Input-order shelf packing of rectangular parts in a fixed-width strip. | [header](../kernels/mulib-pcb-placement.h) |
+| [pcb-pnp](mulib-pcb-pnp.md) | CSV pick-and-place placement export with millimetre XY, degrees and top/bottom side; no footprint origins/centroid correction, assembly variant or machine-specific profile. | [header](../kernels/mulib-pcb-pnp.h) · [example](../examples/modules/pcb-pnp.c) |
+| [pcb-pour](engineering-kernels.md) | Grid-sampled polygon copper mask with circular keepouts; not exact polygon clipping. | [header](../kernels/mulib-pcb-pour.h) |
+| [pcb-ratsnest](engineering-kernels.md) | Greedy Euclidean minimum-spanning connections for points on each nonzero net. | [header](../kernels/mulib-pcb-ratsnest.h) |
+| [pcb-router](engineering-kernels.md) | Single-layer, four-neighbor A* PCB routing on a caller-supplied obstacle grid. | [header](../kernels/mulib-pcb-router.h) |
+| [pcb-shove](engineering-kernels.md) | Reference clearance-based shove for axis-aligned boxes along one axis, honoring fixed obstacles. | [header](../kernels/mulib-pcb-shove.h) |
+| [pcb-spatial](engineering-kernels.md) | X-sorted array of bounding boxes for overlap queries returning original indices. | [header](../kernels/mulib-pcb-spatial.h) |
+| [pcb-stackup](engineering-kernels.md) | Layer descriptors and total stack thickness with per-layer thickness and permittivity checks. | [header](../kernels/mulib-pcb-stackup.h) |
+| [pcb-thermal-relief](engineering-kernels.md) | Generate evenly spaced radial spoke centerlines for a pad thermal relief. | [header](../kernels/mulib-pcb-thermal-relief.h) |
+| [pcb-via](engineering-kernels.md) | Via geometry and layer-span validation plus a plated-barrel DC resistance estimate. | [header](../kernels/mulib-pcb-via.h) |
+| [pcb-zone](engineering-kernels.md) | Polygon area and point containment helpers for PCB zones. | [header](../kernels/mulib-pcb-zone.h) |
+| [pci](mulib-pci.md) | Backend-neutral conventional PCI discovery and ECAM offsets. | [header](../kernels/mulib-pci.h) · [example](../examples/modules/pci.c) |
+| [pdf](mulib-pdf.md) | Deterministic PDF 1.4 generation: pages, Helvetica text and vector paths. | [header](../kernels/mulib-pdf.h) · [example](../examples/modules/pdf.c) |
+| [pdfannot](mulib-pdfannot.md) | Owned bounded registry of annotations and destinations; replace, lookup and remove by name. | [header](../kernels/mulib-pdfannot.h) · [example](../examples/mulib-pdfannot.c) |
+| [pdfcanvas](mulib-pdfcanvas.md) | Single-page PDF 1.4 document writer with Helvetica ASCII text. | [header](../kernels/mulib-pdfcanvas.h) · [example](../examples/mulib-pdfcanvas.c) |
+| [pdffont](mulib-pdffont.md) | Bounds-checked output pdffont structures binary inspection and record access. | [header](../kernels/mulib-pdffont.h) · [example](../examples/mulib-pdffont.c) |
+| [pdfimage](mulib-pdfimage.md) | Bounds-checked output pdfimage structures binary inspection and record access. | [header](../kernels/mulib-pdfimage.h) · [example](../examples/mulib-pdfimage.c) |
+| [pdfmetadata](mulib-pdfmetadata.md) | Owned bounded registry of PDF metadata entries; replace, lookup and remove by name. | [header](../kernels/mulib-pdfmetadata.h) · [example](../examples/mulib-pdfmetadata.c) |
+| [pdfoutline](mulib-pdfoutline.md) | Owned bounded registry of bookmark titles and destinations; replace, lookup and remove by name. | [header](../kernels/mulib-pdfoutline.h) · [example](../examples/mulib-pdfoutline.c) |
+| [pdfstructure](mulib-pdfstructure.md) | Owned bounded registry of structural role tags; replace, lookup and remove by name. | [header](../kernels/mulib-pdfstructure.h) · [example](../examples/mulib-pdfstructure.c) |
+| [pe](mulib-pe.md) | Checked PE32/PE32+ headers, sections, directories and RVA mapping. | [header](../kernels/mulib-pe.h) · [example](../examples/modules/pe.c) |
+| [pe-objdump](mulib-pe-objdump.md) | PE header, section, directory and COFF-symbol dumps over shared objdump. | [header](../kernels/mulib-pe-objdump.h) · [example](../examples/modules/pe-objdump.c) |
+| [pearson_similarity](mulib-pearson_similarity.md) | Pearson correlation using scaled centered coordinates. | [header](../kernels/mulib-pearson_similarity.h) · [example](../examples/modules/pearson_similarity.c) |
+| [pebuilder](mulib-pebuilder.md) | Minimal fixed-base AMD64 PE32+ console image writer. | [header](../kernels/mulib-pebuilder.h) · [example](../examples/modules/pebuilder.c) |
+| [peephole](mulib-peephole.md) | Guarded shallow-tree rewriting for wrapping 64-bit register LIR. | [header](../kernels/mulib-peephole.h) · [example](../examples/modules/peephole.c) |
+| [peg](mulib-peg.md) | Parsing expression grammar compilation and matching. | [header](../kernels/mulib-peg.h) · [example](../examples/modules/peg.c) |
+| [perf](mulib-perf.md) | Native performance measurement and elapsed-time helpers. | [header](../kernels/mulib-perf.h) · [example](../examples/modules/perf.c) |
+| [perlpod](mulib-perlpod.md) | Focused Perl POD parsing and rendering with explicit unsupported syntax. | [header](../kernels/mulib-perlpod.h) · [example](../examples/modules/perlpod.c) |
+| [peutils](mulib-peutils.md) | PE section and COFF debug-symbol lookup; not export resolution. | [header](../kernels/mulib-peutils.h) · [example](../examples/modules/peutils.c) |
+| [pglayout](mulib-pglayout.md) | Owned page objects, styled block flow, Unicode wrapping and JSON/YAML persistence. | [header](../kernels/mulib-pglayout.h) · [example](../examples/modules/pglayout.c) |
+| [phonetic_utils](mulib-phonetic_utils.md) | ASCII English Soundex phonetic keys. | [header](../kernels/mulib-phonetic_utils.h) · [example](../examples/modules/phonetic_utils.c) |
+| [phrasequery](mulib-phrasequery.md) | Ordered phrase matching over positional posting arrays | [header](../kernels/mulib-phrasequery.h) · [example](../examples/modules/phrasequery.c) |
+| [physical-def](engineering-kernels.md) | Write a DEF COMPONENTS fragment for explicitly placed components and orientations. | [header](../kernels/mulib-physical-def.h) |
+| [physical-lef](engineering-kernels.md) | Write a single-layer LEF block-macro fragment with rectangular obstructions. | [header](../kernels/mulib-physical-lef.h) |
+| [physics-broadphase](mulib-physics-broadphase.md) | Sphere AABB overlap candidate generation. Limit: O(n²); validate bodies before use. | [header](../kernels/mulib-physics-broadphase.h) · [example](../examples/media-pipeline.c) |
+| [physics-cloth](mulib-physics-cloth.md) | Position-based cloth stretch constraint projection with pinning. Limit: No integration, bending or self-collision. | [header](../kernels/mulib-physics-cloth.h) · [example](../examples/media-pipeline.c) |
+| [physics-joint](mulib-physics-joint.md) | Position-based distance joint. Limit: Does not update velocities or support angular constraints. | [header](../kernels/mulib-physics-joint.h) · [example](../examples/media-pipeline.c) |
+| [physics-manifold](mulib-physics-manifold.md) | Match previous sphere contacts by stable body indices and normal. Limit: No manifold points or warm-start application. | [header](../kernels/mulib-physics-manifold.h) · [example](../examples/media-pipeline.c) |
+| [physics-narrowphase](mulib-physics-narrowphase.md) | Sphere-sphere normal and penetration depth. Limit: No convex or mesh collision. | [header](../kernels/mulib-physics-narrowphase.h) · [example](../examples/media-pipeline.c) |
+| [physics-particle](mulib-physics-particle.md) | Particle advection, exponential drag and lifetime expiration. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-physics-particle.h) · [example](../examples/media-pipeline.c) |
+| [physics-rigidbody](mulib-physics-rigidbody.md) | Semi-implicit Euler for translational sphere rigid bodies. Limit: No rotation, torque, inertia tensor or angular momentum. | [header](../kernels/mulib-physics-rigidbody.h) · [example](../examples/media-pipeline.c) |
+| [physics-solver](mulib-physics-solver.md) | Normal collision impulse and positional correction. Limit: Single contact, no friction or angular effects. | [header](../kernels/mulib-physics-solver.h) · [example](../examples/media-pipeline.c) |
+| [physics-world](mulib-physics-world.md) | Sphere-world integrator with iterative contact resolution. Limit: O(n²), no CCD or persistent broadphase; partial state on numeric failure. | [header](../kernels/mulib-physics-world.h) · [example](../examples/media-pipeline.c) |
+| [physreg](mulib-physreg.md) | Physical-register mask validation and deterministic lowest-free selection. | [header](../kernels/mulib-physreg.h) · [example](../examples/modules/physreg.c) |
+| [pipeline](mulib-pipeline.md) | Bounded callback processing stages with explicit failure and ownership rules. | [header](../kernels/mulib-pipeline.h) · [example](../examples/modules/pipeline.c) |
+| [place-analytical](engineering-kernels.md) | Iterative weighted-centroid placement of movable points among fixed anchors. | [header](../kernels/mulib-place-analytical.h) |
+| [place-anneal](engineering-kernels.md) | Simulated annealing of one-to-one site assignments using pair swaps and weighted Manhattan wirelength. | [header](../kernels/mulib-place-anneal.h) |
+| [place-floorplan](engineering-kernels.md) | Estimate floorplan dimensions from rectangle area, target aspect ratio, and utilization. | [header](../kernels/mulib-place-floorplan.h) |
+| [place-legalize](engineering-kernels.md) | Greedily assign each requested position to its nearest unused, unblocked site. | [header](../kernels/mulib-place-legalize.h) |
+| [plot2d](mulib-plot2d.md) | Owned ordered collection for graphics plot2d rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-plot2d.h) · [example](../examples/mulib-plot2d.c) |
+| [polkit-client](mulib-polkit-client.md) | Check whether the PolicyKit D-Bus service is currently registered | [header](../kernels/mulib-polkit-client.h) · [example](../examples/modules/polkit-client.c) |
+| [polytask](mulib-polytask.md) | Bounded concurrent native tasks, JSON plans and scheduler adapter. | [header](../kernels/mulib-polytask.h) · [example](../examples/modules/polytask.c) |
+| [popcount](mulib-popcount.md) | Bit population count, leading zeros, and trailing zeros for 64-bit words. | [header](../kernels/mulib-popcount.h) · [example](../examples/modules/popcount.c) |
+| [port](mulib-port.md) | Platform identification and checked size arithmetic. | [header](../kernels/mulib-port.h) · [example](../examples/modules/port.c) |
+| [portfolio](mulib-portfolio.md) | Single-currency snapshot mark-to-market P&L and gross exposure. | [header](../kernels/mulib-portfolio.h) · [example](../examples/finpred_market.c) |
+| [positions](mulib-positions.md) | Owned sorted per-document token positions for phrase matching | [header](../kernels/mulib-positions.h) · [example](../examples/modules/positions.c) |
+| [postdominance](mulib-postdominance.md) | Exit-relative postdominance via reversed validated control-flow graphs. | [header](../kernels/mulib-postdominance.h) · [example](../examples/modules/postdominance.c) |
+| [postings](mulib-postings.md) | Sorted document postings with term frequency, binary search and set-safe updates | [header](../kernels/mulib-postings.h) · [example](../examples/modules/postings.c) |
+| [prettydoc](mulib-prettydoc.md) | Owned structural source-code document algebra and bounded layout strategies. | [header](../kernels/mulib-prettydoc.h) · [example](../examples/prettyprint-demo.c) |
+| [prettyemit](mulib-prettyemit.md) | Escaped plain, HTML/MathML, LaTeX and troff emitters for code layouts. | [header](../kernels/mulib-prettyemit.h) · [example](../examples/prettyprint-demo.c) |
+| [prettysexpr](mulib-prettysexpr.md) | Bounded language-independent S-expression documents and renderer entry point. | [header](../kernels/mulib-prettysexpr.h) · [example](../examples/prettyprint-demo.c) |
+| [price-causal](mulib-price-causal.md) | Difference-in-differences average treatment effect diagnostic. | [header](../kernels/mulib-price-causal.h) · [example](../examples/modules/price-causal.c) |
+| [price-confidence](mulib-price-confidence.md) | Overflow-aware weighted confidence primitives and median/MAD deviation scores. | [header](../kernels/mulib-price-confidence.h) · [example](../examples/modules/price-confidence.c) |
+| [price-demand](mulib-price-demand.md) | Bounded linear demand estimation with closed-form ridge regularization. | [header](../kernels/mulib-price-demand.h) · [example](../examples/modules/price-demand.c) |
+| [price-ensemble](mulib-price-ensemble.md) | Error-weighted forecast blending with intermodel dispersion. | [header](../kernels/mulib-price-ensemble.h) · [example](../examples/modules/price-ensemble.c) |
+| [price-forecast](mulib-price-forecast.md) | Uniform forecasting API with naive, EMA, drift and seasonal baselines. | [header](../kernels/mulib-price-forecast.h) · [example](../examples/modules/price-forecast.c) |
+| [price-history](mulib-price-history.md) | Owned ordered and deduplicated price observation history. | [header](../kernels/mulib-price-history.h) · [example](../examples/modules/price-history.c) |
+| [price-match](mulib-price-match.md) | ASCII-normalized product matching, identifiers and bounded edit similarity. | [header](../kernels/mulib-price-match.h) · [example](../examples/modules/price-match.c) |
+| [price-monitor](mulib-price-monitor.md) | Thresholded price change and availability event detection. | [header](../kernels/mulib-price-monitor.h) · [example](../examples/modules/price-monitor.c) |
+| [price-normalize](mulib-price-normalize.md) | Checked tax, discount, shipping and per-unit offer normalization. | [header](../kernels/mulib-price-normalize.h) · [example](../examples/modules/price-normalize.c) |
+| [price-observation](mulib-price-observation.md) | Validated price, product, merchant, market, time and evidence record. | [header](../kernels/mulib-price-observation.h) · [example](../examples/modules/price-observation.c) |
+| [price-timeseries](mulib-price-timeseries.md) | Time-bucketed price series with missing-value flags and gap handling. | [header](../kernels/mulib-price-timeseries.h) · [example](../examples/modules/price-timeseries.c) |
+| [pricecurve](mulib-pricecurve.md) | Bounded monotone percentile curves by time to event. | [header](../kernels/mulib-pricecurve.h) · [example](../examples/hospitality_demo.c) |
+| [priceopt](mulib-priceopt.md) | Model-based bounded profit or revenue optimization, scenarios and UCB exploration. | [header](../kernels/mulib-priceopt.h) · [example](../examples/modules/priceopt.c) |
+| [prime](mulib-prime.md) | Primality testing and next-prime search for 64-bit integers. | [header](../kernels/mulib-prime.h) · [example](../examples/modules/prime.c) |
+| [probability](mulib-probability.md) | Discrete probability validation, normalization, entropy and log sums. | [header](../kernels/mulib-probability.h) · [example](../examples/modules/probability.c) |
+| [process](mulib-process.md) | Native argv-based process creation, waiting and descriptor plumbing. | [header](../kernels/mulib-process.h) · [example](../examples/modules/process.c) |
+| [process-stream](mulib-process-stream.md) | Nonblocking subprocess pipes/PTY, cancellation, output limits and monotonic deadlines. | [header](../kernels/mulib-process-stream.h) · [example](../examples/process_stream.c) |
+| [procfs](mulib-procfs.md) | Bounded Linux process-information parsing and lookup. | [header](../kernels/mulib-procfs.h) · [example](../examples/modules/procfs.c) |
+| [project-history](mulib-project-history.md) | Bounded command undo/redo history with branching truncation. Limit: In-memory callbacks only; no persistence or cleanup of discarded commands. | [header](../kernels/mulib-project-history.h) · [example](../examples/media-pipeline.c) |
+| [project-journal](mulib-project-journal.md) | CRC32-framed journal append and valid-prefix recovery. Limit: Memory serialization only; no fsync, atomic commit or transaction markers. | [header](../kernels/mulib-project-journal.h) · [example](../examples/media-pipeline.c) |
+| [project-migrate](mulib-project-migrate.md) | Ordered monotonic schema migration execution with ambiguity rejection. Limit: Each step must be transactional; earlier successful steps remain committed. | [header](../kernels/mulib-project-migrate.h) · [example](../examples/media-pipeline.c) |
+| [project-package](mulib-project-package.md) | Portable relative archive path validation and checked writer dispatch. Limit: Not an archive implementation or sufficient extraction security; handle symlinks, DOS reserved names and collisions. | [header](../kernels/mulib-project-package.h) · [example](../examples/media-pipeline.c) |
+| [project-store](mulib-project-store.md) | Transactional provider interface with lifecycle guards. Limit: Provider supplies durability and recovery, e.g. existing KVDB. | [header](../kernels/mulib-project-store.h) · [example](../examples/media-pipeline.c) |
+| [protobuf](mulib-protobuf.md) | Schema-free Protobuf varint fixed64 bytes and fixed32 wire fields. | [header](../kernels/mulib-protobuf.h) · [example](../examples/modules/protobuf.c) |
+| [prowse-control](mulib-prowse-control.md) | Browser automation, scraping, lprowse Lua DSL and a highlighted interactive REPL. | [header](../kernels/mulib-prowse-control.h) · [example](../examples/modules/prowse-control.c) |
+| [prowse-protocol](mulib-prowse-protocol.md) | CDP WebSocket, W3C WebDriver HTTP and Firefox Marionette browser clients. | [header](../kernels/mulib-prowse-protocol.h) · [example](../examples/modules/prowse-protocol.c) |
+| [pty](notebook-desktop.md) | POSIX pseudoterminal open, resize and child controlling-terminal setup. | [header](../kernels/mulib-pty.h) · [example](../tests/test-notebook-pty.c) |
+| [pwdauth](mulib-pwdauth.md) | Salted PBKDF2-SHA-256 password records with bounded verification cost. | [header](../kernels/mulib-pwdauth.h) · [example](../examples/modules/pwdauth.c) |
+| [pybind](mulib-pybind.md) | Self-contained Python ctypes binding-source generation for C functions. | [header](../kernels/mulib-pybind.h) · [example](../examples/modules/pybind.c) |
 
 ## Q
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [qa-corpus](mulib-qa-corpus.md) | Bounded 256-entry registry of golden fixture identifiers, input fingerprints and expected statuses. | [header](../include/mulib-qa-corpus.h) · [example](../examples/modules/qa-corpus.c) |
-| [qa-repro](mulib-qa-repro.md) | Platform-independent FNV-1a fingerprint for a reproducibility record (seed, feature mask, compiler and target strings). | [header](../include/mulib-qa-repro.h) · [example](../examples/modules/qa-repro.c) |
-| [queryaggregate](mulib-queryaggregate.md) | Streaming count/sum/min/max/mean aggregates on finite double inputs | [header](../include/mulib-queryaggregate.h) · [example](../examples/modules/queryaggregate.c) |
-| [queryexpr](mulib-queryexpr.md) | Typed equality and ordering of MuLIB datum scalar values | [header](../include/mulib-queryexpr.h) · [example](../examples/modules/queryexpr.c) |
-| [queryjoin](mulib-queryjoin.md) | Sorted equi-join pairs over uint64 keys and original row IDs | [header](../include/mulib-queryjoin.h) · [example](../examples/modules/queryjoin.c) |
-| [queue](mulib-queue.md) | A dynamically growing FIFO queue implemented with a circular buffer. | [header](../include/mulib-queue.h) · [example](../examples/modules/queue.c) |
-| [quic](mulib-quic.md) | QUIC v1 wire codecs and an opt-in bounded native UDP/TLS client. | [header](../include/mulib-quic.h) · [example](../examples/modules/quic.c) |
-| [qvm](mulib-qvm.md) | Resumable quota-limited bytecode engine with owned code and RAM. | [header](../include/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
+| [qa-corpus](mulib-qa-corpus.md) | Bounded 256-entry registry of golden fixture identifiers, input fingerprints and expected statuses. | [header](../kernels/mulib-qa-corpus.h) · [example](../examples/modules/qa-corpus.c) |
+| [qa-repro](mulib-qa-repro.md) | Platform-independent FNV-1a fingerprint for a reproducibility record (seed, feature mask, compiler and target strings). | [header](../kernels/mulib-qa-repro.h) · [example](../examples/modules/qa-repro.c) |
+| [queryaggregate](mulib-queryaggregate.md) | Streaming count/sum/min/max/mean aggregates on finite double inputs | [header](../kernels/mulib-queryaggregate.h) · [example](../examples/modules/queryaggregate.c) |
+| [queryexpr](mulib-queryexpr.md) | Typed equality and ordering of MuLIB datum scalar values | [header](../kernels/mulib-queryexpr.h) · [example](../examples/modules/queryexpr.c) |
+| [queryjoin](mulib-queryjoin.md) | Sorted equi-join pairs over uint64 keys and original row IDs | [header](../kernels/mulib-queryjoin.h) · [example](../examples/modules/queryjoin.c) |
+| [queue](mulib-queue.md) | A dynamically growing FIFO queue implemented with a circular buffer. | [header](../kernels/mulib-queue.h) · [example](../examples/modules/queue.c) |
+| [quic](mulib-quic.md) | QUIC v1 wire codecs and an opt-in bounded native UDP/TLS client. | [header](../kernels/mulib-quic.h) · [example](../examples/modules/quic.c) |
+| [qvm](mulib-qvm.md) | Resumable quota-limited bytecode engine with owned code and RAM. | [header](../kernels/mulib-qvm.h) · [example](../examples/modules/qvm-core.c) |
 
 ## R
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [range-analysis](mulib-range-analysis.md) | Conservative checked signed-64 interval joins, addition, subtraction and multiplication. | [header](../include/mulib-range-analysis.h) · [example](../examples/modules/range-analysis.c) |
-| [rangeindex](mulib-rangeindex.md) | Mutable interval index with exact inclusive point and overlap queries | [header](../include/mulib-rangeindex.h) · [example](../examples/modules/rangeindex.c) |
-| [rate_limit](mulib-rate_limit.md) | Caller-clocked finite-double token bucket. | [header](../include/mulib-rate_limit.h) · [example](../examples/modules/rate_limit.c) |
-| [ratequote](mulib-ratequote.md) | Exact full-stay Money quote normalization and dated terms. | [header](../include/mulib-ratequote.h) · [example](../examples/hospitality_demo.c) |
-| [raytracing](mulib-raytracing.md) | CPU ray renderer with deterministic and seeded stochastic path integration. | [header](../include/mulib-raytracing.h) · [example](../examples/modules/raytracing.c) |
-| [readability](mulib-readability.md) | Bounded semantic plain-text extraction from HTML with basic entity decoding. | [header](../include/mulib-readability.h) · [example](../examples/modules/readability.c) |
-| [readline](mulib-readline.md) | UTF-8 line editing, syntax highlighting, completion, history and declarative profiles. | [header](../include/mulib-readline.h) · [example](../examples/modules/readline.c) |
-| [record](mulib-record.md) | Owned named record fields with deep-copied datum values | [header](../include/mulib-record.h) · [example](../examples/modules/record.c) |
-| [recordbatch](mulib-recordbatch.md) | Owned growable batch of deep-copied records | [header](../include/mulib-recordbatch.h) · [example](../examples/modules/recordbatch.c) |
-| [redirect](mulib-redirect.md) | HTTP redirect status classification and method rewriting. | [header](../include/mulib-redirect.h) · [example](../examples/modules/redirect.c) |
-| [regalloc](mulib-regalloc.md) | Unified linear-scan and interference-graph allocation with explicit spill locations. | [header](../include/mulib-regalloc.h) · [example](../examples/modules/regalloc.c) |
-| [regalloc-graph](mulib-regalloc-graph.md) | Deterministic degree-first greedy coloring of validated 64-node interference graphs. | [header](../include/mulib-regalloc-graph.h) · [example](../examples/modules/regalloc-graph.c) |
-| [regalloc-linear](mulib-regalloc-linear.md) | Inclusive linear-scan allocation with longest-end eviction and stable spill slots. | [header](../include/mulib-regalloc-linear.h) · [example](../examples/modules/regalloc-linear.c) |
-| [regex](mulib-regex.md) | Self-contained regular-expression compilation and matching. | [header](../include/mulib-regex.h) · [example](../examples/modules/regex.c) |
-| [regpressure](mulib-regpressure.md) | Exact peak simultaneous inclusive live-interval count. | [header](../include/mulib-regpressure.h) · [example](../examples/modules/regpressure.c) |
-| [render-bsdf](mulib-render-bsdf.md) | Lambert BRDF, GGX normal distribution and Schlick Fresnel primitives. Limit: No full GGX sampling, masking term or transmission. | [header](../include/mulib-render-bsdf.h) · [example](../examples/media-pipeline.c) |
-| [render-bvh](mulib-render-bvh.md) | AABB slab intersection and caller-stack BVH traversal. Limit: False conflates miss and invalid traversal; builder-generated tree assumed. | [header](../include/mulib-render-bvh.h) · [example](../examples/media-pipeline.c) |
-| [render-bvhbuild](mulib-render-bvhbuild.md) | Balanced centroid-partition BVH builder. Limit: Not SAH or Morton LBVH; caller provides 2N-1 nodes. | [header](../include/mulib-render-bvhbuild.h) · [example](../examples/media-pipeline.c) |
-| [render-camera](mulib-render-camera.md) | Pinhole look-at camera with normalized pixel rays. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-render-camera.h) · [example](../examples/media-pipeline.c) |
-| [render-denoise](mulib-render-denoise.md) | Normal-guided 5x5 bilateral render denoising. Limit: Normals in signed RGB, no temporal accumulation. | [header](../include/mulib-render-denoise.h) · [example](../examples/media-pipeline.c) |
-| [render-film](mulib-render-film.md) | HDR sample accumulation and resolve. Limit: No AOV multiplexing; not thread-safe. | [header](../include/mulib-render-film.h) · [example](../examples/media-pipeline.c) |
-| [render-integrator](mulib-render-integrator.md) | Direct Lambert illumination from point lights with visibility. Limit: Validated scene required; no specular direct lighting. | [header](../include/mulib-render-integrator.h) · [example](../examples/media-pipeline.c) |
-| [render-light](mulib-render-light.md) | Inverse-square point-light evaluation. Limit: No area-light sampling. | [header](../include/mulib-render-light.h) · [example](../examples/media-pipeline.c) |
-| [render-material](mulib-render-material.md) | Validated linear-light PBR material parameter representation. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-render-material.h) · [example](../examples/media-pipeline.c) |
-| [render-pathtrace](mulib-render-pathtrace.md) | Diffuse multi-bounce stochastic path tracing. Limit: Validated scene required; no MIS, specular BSDF, Russian roulette or BVH integration. | [header](../include/mulib-render-pathtrace.h) · [example](../examples/media-pipeline.c) |
-| [render-raster](mulib-render-raster.md) | Screen-space Gouraud triangle rasterization with depth test. Limit: No clip space, perspective correction or top-left fill rule. | [header](../include/mulib-render-raster.h) · [example](../examples/media-pipeline.c) |
-| [render-sampling](mulib-render-sampling.md) | Deterministic RNG, radical inverse and cosine-weighted hemisphere samples. Bounded review candidate; no safe On1x admission. | [header](../include/mulib-render-sampling.h) · [example](../examples/media-pipeline.c) |
-| [render-scene](mulib-render-scene.md) | Triangle scene, material table and Moller-Trumbore closest-hit traversal. Limit: Brute-force scene hit; validate scene once before render. | [header](../include/mulib-render-scene.h) · [example](../examples/media-pipeline.c) |
-| [render-shadow](mulib-render-shadow.md) | Ray-tested visibility to a point on a light. Limit: No shadow maps; requires validated scene. | [header](../include/mulib-render-shadow.h) · [example](../examples/media-pipeline.c) |
-| [render-texture](mulib-render-texture.md) | Bilinear sampling with mip-level interpolation and repeat coordinates. Limit: Caller generates mip levels; repeat seams use clamped bilinear. | [header](../include/mulib-render-texture.h) · [example](../examples/media-pipeline.c) |
-| [replace](mulib-replace.md) | Allocate a string with every nonoverlapping occurrence replaced. | [header](../include/mulib-replace.h) · [example](../examples/modules/replace.c) |
-| [resolved-client](mulib-resolved-client.md) | Request systemd-resolved Manager DNS property using raw D-Bus reply | [header](../include/mulib-resolved-client.h) · [example](../examples/modules/resolved-client.c) |
-| [rest](mulib-rest.md) | Status-aware HTTP JSON requests and bounded query construction over MuW3. | [header](../include/mulib-rest.h) · [example](../examples/modules/rest.c) |
-| [retgtk](graphics-overlay.md) | Bounded retgtk API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-anchor](graphics-overlay.md) | Bounded retgtk-anchor API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-anchor.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-binding](graphics-overlay.md) | Bounded retgtk-binding API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-binding.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-box](graphics-overlay.md) | Bounded retgtk-box API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-box.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-builder](graphics-overlay.md) | Bounded retgtk-builder API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-builder.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-button](graphics-overlay.md) | Bounded retgtk-button API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-button.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-calendar](graphics-overlay.md) | Bounded retgtk-calendar API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-calendar.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-canvas](graphics-overlay.md) | Bounded retgtk-canvas API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-canvas.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-choice](graphics-overlay.md) | Bounded retgtk-choice API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-choice.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-color](graphics-overlay.md) | Bounded retgtk-color API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-color.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-constraint](graphics-overlay.md) | Bounded retgtk-constraint API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-constraint.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-container](graphics-overlay.md) | Bounded retgtk-container API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-container.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-delegate](graphics-overlay.md) | Bounded retgtk-delegate API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-delegate.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-dialog](graphics-overlay.md) | Bounded retgtk-dialog API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-dialog.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-entry](graphics-overlay.md) | Bounded retgtk-entry API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-entry.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-event](graphics-overlay.md) | Bounded retgtk-event API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-event.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-flex](graphics-overlay.md) | Bounded retgtk-flex API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-flex.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-flow](graphics-overlay.md) | Bounded retgtk-flow API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-flow.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-grid](graphics-overlay.md) | Bounded retgtk-grid API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-grid.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-hotreload](graphics-overlay.md) | Bounded retgtk-hotreload API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-hotreload.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-image](graphics-overlay.md) | Bounded retgtk-image API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-image.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-inspector](graphics-overlay.md) | Bounded retgtk-inspector API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-inspector.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-invalidate](graphics-overlay.md) | Bounded retgtk-invalidate API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-invalidate.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-kind](graphics-overlay.md) | Bounded retgtk-kind API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-kind.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-label](graphics-overlay.md) | Bounded retgtk-label API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-label.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-layout](graphics-overlay.md) | Bounded retgtk-layout API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-layout.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-list](graphics-overlay.md) | Bounded retgtk-list API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-list.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-listmodel](graphics-overlay.md) | Bounded retgtk-listmodel API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-listmodel.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-menu](graphics-overlay.md) | Bounded retgtk-menu API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-menu.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-model](graphics-overlay.md) | Bounded retgtk-model API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-model.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-mune](graphics-overlay.md) | Bounded retgtk-mune API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-mune.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-notebook](graphics-overlay.md) | Bounded retgtk-notebook API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-notebook.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-object](graphics-overlay.md) | Bounded retgtk-object API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-object.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-painter](graphics-overlay.md) | Bounded retgtk-painter API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-painter.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-progress](graphics-overlay.md) | Bounded retgtk-progress API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-progress.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-property](graphics-overlay.md) | Bounded retgtk-property API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-property.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-proxymodel](graphics-overlay.md) | Bounded retgtk-proxymodel API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-proxymodel.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-reactive](graphics-overlay.md) | Bounded retgtk-reactive API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-reactive.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-scene](graphics-overlay.md) | Bounded retgtk-scene API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-scene.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-scroll](graphics-overlay.md) | Bounded retgtk-scroll API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-scroll.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-selection](graphics-overlay.md) | Bounded retgtk-selection API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-selection.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-signal](graphics-overlay.md) | Bounded retgtk-signal API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-signal.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-slider](graphics-overlay.md) | Bounded retgtk-slider API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-slider.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-split](graphics-overlay.md) | Bounded retgtk-split API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-split.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-stack](graphics-overlay.md) | Bounded retgtk-stack API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-stack.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-statusbar](graphics-overlay.md) | Bounded retgtk-statusbar API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-statusbar.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-tablemodel](graphics-overlay.md) | Bounded retgtk-tablemodel API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-tablemodel.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-tableview](graphics-overlay.md) | Bounded retgtk-tableview API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-tableview.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-template](graphics-overlay.md) | Bounded retgtk-template API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-template.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-textview](graphics-overlay.md) | Bounded retgtk-textview API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-textview.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-toolbar](graphics-overlay.md) | Bounded retgtk-toolbar API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-toolbar.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-tree](graphics-overlay.md) | Bounded retgtk-tree API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-tree.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-treemodel](graphics-overlay.md) | Bounded retgtk-treemodel API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-treemodel.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-treeview](graphics-overlay.md) | Bounded retgtk-treeview API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-treeview.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-type](graphics-overlay.md) | Bounded retgtk-type API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-type.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-uiml](graphics-overlay.md) | Bounded retgtk-uiml API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-uiml.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-widget](graphics-overlay.md) | Bounded retgtk-widget API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-widget.h) · [example](../examples/gfx-headless.c) |
-| [retgtk-window](graphics-overlay.md) | Bounded retgtk-window API; see documented scope and acceptance gates. | [header](../include/mulib-retgtk-window.h) · [example](../examples/gfx-headless.c) |
-| [revproxy](mulib-revproxy.md) | HTTP forwarding with hop-by-hop header filtering over webclient. | [header](../include/mulib-revproxy.h) · [example](../examples/modules/revproxy.c) |
-| [rewrite](mulib-rewrite.md) | Resource-bounded equality rewrite saturation over egraphs. | [header](../include/mulib-rewrite.h) · [example](../examples/modules/rewrite.c) |
-| [rewrite_url](mulib-rewrite_url.md) | Component-prefix origin-path rewrite preserving a raw query. | [header](../include/mulib-rewrite_url.h) · [example](../examples/modules/rewrite_url.c) |
-| [rf-matching](engineering-kernels.md) | Compute high- or low-pass L-section reactances for two positive real impedances. | [header](../include/mulib-rf-matching.h) |
-| [rf-microstrip](mulib-rf-microstrip.md) | Quasi-static zero-thickness microstrip impedance estimate for width/substrate thickness ratio and dielectric constant. | [header](../include/mulib-rf-microstrip.h) · [example](../examples/modules/rf-microstrip.c) |
-| [rf-network](engineering-kernels.md) | Convert equal-reference two-port S parameters to ABCD and cascade ABCD matrices. | [header](../include/mulib-rf-network.h) |
-| [rf-smith](mulib-rf-smith.md) | Smith chart Cartesian coordinates from normalized single-port impedance using the S11 transform. | [header](../include/mulib-rf-smith.h) · [example](../examples/modules/rf-smith.c) |
-| [rf-sparams](mulib-rf-sparams.md) | Single-port complex impedance/S11 conversion with scaled arithmetic and VSWR for reflection magnitude below one. | [header](../include/mulib-rf-sparams.h) · [example](../examples/modules/rf-sparams.c) |
-| [rf-tolerance](engineering-kernels.md) | First-order worst-case and root-sum-square tolerance estimates from supplied sensitivities. | [header](../include/mulib-rf-tolerance.h) |
-| [rf-touchstone](engineering-kernels.md) | Read line-oriented Touchstone 1 two-port S-parameters in RI, MA, or DB form. | [header](../include/mulib-rf-touchstone.h) |
-| [rf-transmission](engineering-kernels.md) | Lossless line input impedance and wave velocity from dielectric permittivity. | [header](../include/mulib-rf-transmission.h) |
-| [richtext](mulib-gfx-text.md) | Bounded richtext API; see documented scope and acceptance gates. | [header](../include/mulib-richtext.h) · [example](../examples/gfx-headless.c) |
-| [ring](mulib-ring.md) | Fixed-capacity circular buffer which refuses to overwrite unread items. | [header](../include/mulib-ring.h) · [example](../examples/modules/ring.c) |
-| [riscv64](mulib-riscv64.md) | Owned RV64 profile implementing the MPU contract. | [header](../include/mulib-riscv64.h) · [example](../examples/modules/riscv64.c) |
-| [risk](mulib-risk.md) | Deterministic portfolio gross, position-count and concentration limits. | [header](../include/mulib-risk.h) · [example](../examples/finpred_market.c) |
-| [rle](mulib-rle.md) | Byte run-length encoding and bounded decoding. | [header](../include/mulib-rle.h) · [example](../examples/modules/rle.c) |
-| [rlecol](mulib-rlecol.md) | Run-length encoding of unsigned 64-bit column values | [header](../include/mulib-rlecol.h) · [example](../examples/modules/rlecol.c) |
-| [rng](mulib-rng.md) | Deterministic 64-bit SplitMix generator; not cryptographic. | [header](../include/mulib-rng.h) · [example](../examples/modules/rng.c) |
-| [robots](mulib-robots.md) | Simple robots.txt User-agent and Disallow matcher for a selected bot. | [header](../include/mulib-robots.h) · [example](../examples/modules/robots.c) |
-| [roman](mulib-roman.md) | Roman numeral formatting and a simple validity-checked parser. | [header](../include/mulib-roman.h) · [example](../examples/modules/roman.c) |
-| [rootfs](mulib-rootfs.md) | Bounded memory root filesystem imported from the supported USTAR profile. | [header](../include/mulib-rootfs.h) · [example](../examples/modules/rootfs.c) |
-| [rootfs-buildspec](mulib-rootfs-buildspec.md) | Owned filesystem recipes with transactional application and quotas. | [header](../include/mulib-rootfs-buildspec.h) · [example](../examples/modules/rootfs-buildspec.c) |
-| [rootfsbuilder](mulib-rootfsbuilder.md) | Deterministic USTAR export from the bounded memory root filesystem. | [header](../include/mulib-rootfsbuilder.h) · [example](../examples/modules/rootfsbuilder.c) |
-| [route-detailed](engineering-kernels.md) | Single-path four-neighbor A* detailed routing on a rectangular obstacle grid. | [header](../include/mulib-route-detailed.h) |
-| [route-global](engineering-kernels.md) | Dijkstra shortest-path routing between one source and target on a nonnegative weighted directed graph. | [header](../include/mulib-route-global.h) |
-| [route-negotiated](engineering-kernels.md) | One source-to-target route with edge costs adjusted by supplied usage, capacity, and congestion history. | [header](../include/mulib-route-negotiated.h) |
-| [row-rdbms](mulib-row-rdbms.md) | Schema-checked in-memory row table over documentdb. | [header](../include/mulib-row-rdbms.h) · [example](../examples/modules/row-rdbms.c) |
-| [rpc](mulib-rpc.md) | Transport-independent JSON-RPC 2.0 dispatch and response construction. | [header](../include/mulib-rpc.h) · [example](../examples/modules/rpc.c) |
-| [rtnl](mulib-rtnl.md) | NETLINK_ROUTE request builder and bounded synchronous kernel dumps | [header](../include/mulib-rtnl.h) · [example](../examples/modules/rtnl.c) |
-| [rtnl-address](mulib-rtnl-address.md) | Enumerate or assign IPv4/IPv6 interface addresses over rtnetlink | [header](../include/mulib-rtnl-address.h) · [example](../examples/modules/rtnl-address.c) |
-| [rtnl-bridge](mulib-rtnl-bridge.md) | Discover Linux bridge link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../include/mulib-rtnl-bridge.h) · [example](../examples/modules/rtnl-bridge.c) |
-| [rtnl-link](mulib-rtnl-link.md) | Inspect and administratively bring interfaces up/down via RTM_NEWLINK | [header](../include/mulib-rtnl-link.h) · [example](../examples/modules/rtnl-link.c) |
-| [rtnl-neighbor](mulib-rtnl-neighbor.md) | Dump kernel ARP/NDP neighbor entries and add or remove static neighbors | [header](../include/mulib-rtnl-neighbor.h) · [example](../examples/modules/rtnl-neighbor.c) |
-| [rtnl-nexthop](mulib-rtnl-nexthop.md) | Dump kernel nexthop objects via RTM_GETNEXTHOP | [header](../include/mulib-rtnl-nexthop.h) · [example](../examples/modules/rtnl-nexthop.c) |
-| [rtnl-nsid](mulib-rtnl-nsid.md) | Dump kernel nsid objects via RTM_GETNSID | [header](../include/mulib-rtnl-nsid.h) · [example](../examples/modules/rtnl-nsid.c) |
-| [rtnl-qdisc](mulib-rtnl-qdisc.md) | Dump kernel qdisc objects via RTM_GETQDISC | [header](../include/mulib-rtnl-qdisc.h) · [example](../examples/modules/rtnl-qdisc.c) |
-| [rtnl-route](mulib-rtnl-route.md) | Query IPv4/IPv6 routing tables and add or remove an ordinary unicast route | [header](../include/mulib-rtnl-route.h) · [example](../examples/modules/rtnl-route.c) |
-| [rtnl-rule](mulib-rtnl-rule.md) | Dump kernel rule objects via RTM_GETRULE | [header](../include/mulib-rtnl-rule.h) · [example](../examples/modules/rtnl-rule.c) |
-| [rtnl-tc](mulib-rtnl-tc.md) | Dump kernel tc objects via RTM_GETTFILTER | [header](../include/mulib-rtnl-tc.h) · [example](../examples/modules/rtnl-tc.c) |
-| [rtnl-tunnel](mulib-rtnl-tunnel.md) | Discover Linux tunnel link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../include/mulib-rtnl-tunnel.h) · [example](../examples/modules/rtnl-tunnel.c) |
-| [rtnl-veth](mulib-rtnl-veth.md) | Discover Linux veth link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../include/mulib-rtnl-veth.h) · [example](../examples/modules/rtnl-veth.c) |
-| [rtnl-vlan](mulib-rtnl-vlan.md) | Discover Linux vlan link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../include/mulib-rtnl-vlan.h) · [example](../examples/modules/rtnl-vlan.c) |
-| [rtnl-vrf](mulib-rtnl-vrf.md) | Discover Linux vrf link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../include/mulib-rtnl-vrf.h) · [example](../examples/modules/rtnl-vrf.c) |
-| [rubybind](mulib-rubybind.md) | Self-contained Ruby Fiddle binding-source generation for C functions. | [header](../include/mulib-rubybind.h) · [example](../examples/modules/rubybind.c) |
-| [ruleeval](mulib-ruleeval.md) | Exact minor-unit percentile shortcut, guardrails and tick rules. | [header](../include/mulib-ruleeval.h) · [example](../examples/hospitality_demo.c) |
+| [range-analysis](mulib-range-analysis.md) | Conservative checked signed-64 interval joins, addition, subtraction and multiplication. | [header](../kernels/mulib-range-analysis.h) · [example](../examples/modules/range-analysis.c) |
+| [rangeindex](mulib-rangeindex.md) | Mutable interval index with exact inclusive point and overlap queries | [header](../kernels/mulib-rangeindex.h) · [example](../examples/modules/rangeindex.c) |
+| [rate_limit](mulib-rate_limit.md) | Caller-clocked finite-double token bucket. | [header](../kernels/mulib-rate_limit.h) · [example](../examples/modules/rate_limit.c) |
+| [ratequote](mulib-ratequote.md) | Exact full-stay Money quote normalization and dated terms. | [header](../kernels/mulib-ratequote.h) · [example](../examples/hospitality_demo.c) |
+| [raytracing](mulib-raytracing.md) | CPU ray renderer with deterministic and seeded stochastic path integration. | [header](../kernels/mulib-raytracing.h) · [example](../examples/modules/raytracing.c) |
+| [readability](mulib-readability.md) | Bounded semantic plain-text extraction from HTML with basic entity decoding. | [header](../kernels/mulib-readability.h) · [example](../examples/modules/readability.c) |
+| [readline](mulib-readline.md) | UTF-8 line editing, syntax highlighting, completion, history and declarative profiles. | [header](../kernels/mulib-readline.h) · [example](../examples/modules/readline.c) |
+| [record](mulib-record.md) | Owned named record fields with deep-copied datum values | [header](../kernels/mulib-record.h) · [example](../examples/modules/record.c) |
+| [recordbatch](mulib-recordbatch.md) | Owned growable batch of deep-copied records | [header](../kernels/mulib-recordbatch.h) · [example](../examples/modules/recordbatch.c) |
+| [redirect](mulib-redirect.md) | HTTP redirect status classification and method rewriting. | [header](../kernels/mulib-redirect.h) · [example](../examples/modules/redirect.c) |
+| [regalloc](mulib-regalloc.md) | Unified linear-scan and interference-graph allocation with explicit spill locations. | [header](../kernels/mulib-regalloc.h) · [example](../examples/modules/regalloc.c) |
+| [regalloc-graph](mulib-regalloc-graph.md) | Deterministic degree-first greedy coloring of validated 64-node interference graphs. | [header](../kernels/mulib-regalloc-graph.h) · [example](../examples/modules/regalloc-graph.c) |
+| [regalloc-linear](mulib-regalloc-linear.md) | Inclusive linear-scan allocation with longest-end eviction and stable spill slots. | [header](../kernels/mulib-regalloc-linear.h) · [example](../examples/modules/regalloc-linear.c) |
+| [regex](mulib-regex.md) | Self-contained regular-expression compilation and matching. | [header](../kernels/mulib-regex.h) · [example](../examples/modules/regex.c) |
+| [regpressure](mulib-regpressure.md) | Exact peak simultaneous inclusive live-interval count. | [header](../kernels/mulib-regpressure.h) · [example](../examples/modules/regpressure.c) |
+| [render-bsdf](mulib-render-bsdf.md) | Lambert BRDF, GGX normal distribution and Schlick Fresnel primitives. Limit: No full GGX sampling, masking term or transmission. | [header](../kernels/mulib-render-bsdf.h) · [example](../examples/media-pipeline.c) |
+| [render-bvh](mulib-render-bvh.md) | AABB slab intersection and caller-stack BVH traversal. Limit: False conflates miss and invalid traversal; builder-generated tree assumed. | [header](../kernels/mulib-render-bvh.h) · [example](../examples/media-pipeline.c) |
+| [render-bvhbuild](mulib-render-bvhbuild.md) | Balanced centroid-partition BVH builder. Limit: Not SAH or Morton LBVH; caller provides 2N-1 nodes. | [header](../kernels/mulib-render-bvhbuild.h) · [example](../examples/media-pipeline.c) |
+| [render-camera](mulib-render-camera.md) | Pinhole look-at camera with normalized pixel rays. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-render-camera.h) · [example](../examples/media-pipeline.c) |
+| [render-denoise](mulib-render-denoise.md) | Normal-guided 5x5 bilateral render denoising. Limit: Normals in signed RGB, no temporal accumulation. | [header](../kernels/mulib-render-denoise.h) · [example](../examples/media-pipeline.c) |
+| [render-film](mulib-render-film.md) | HDR sample accumulation and resolve. Limit: No AOV multiplexing; not thread-safe. | [header](../kernels/mulib-render-film.h) · [example](../examples/media-pipeline.c) |
+| [render-integrator](mulib-render-integrator.md) | Direct Lambert illumination from point lights with visibility. Limit: Validated scene required; no specular direct lighting. | [header](../kernels/mulib-render-integrator.h) · [example](../examples/media-pipeline.c) |
+| [render-light](mulib-render-light.md) | Inverse-square point-light evaluation. Limit: No area-light sampling. | [header](../kernels/mulib-render-light.h) · [example](../examples/media-pipeline.c) |
+| [render-material](mulib-render-material.md) | Validated linear-light PBR material parameter representation. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-render-material.h) · [example](../examples/media-pipeline.c) |
+| [render-pathtrace](mulib-render-pathtrace.md) | Diffuse multi-bounce stochastic path tracing. Limit: Validated scene required; no MIS, specular BSDF, Russian roulette or BVH integration. | [header](../kernels/mulib-render-pathtrace.h) · [example](../examples/media-pipeline.c) |
+| [render-raster](mulib-render-raster.md) | Screen-space Gouraud triangle rasterization with depth test. Limit: No clip space, perspective correction or top-left fill rule. | [header](../kernels/mulib-render-raster.h) · [example](../examples/media-pipeline.c) |
+| [render-sampling](mulib-render-sampling.md) | Deterministic RNG, radical inverse and cosine-weighted hemisphere samples. Bounded review candidate; no safe On1x admission. | [header](../kernels/mulib-render-sampling.h) · [example](../examples/media-pipeline.c) |
+| [render-scene](mulib-render-scene.md) | Triangle scene, material table and Moller-Trumbore closest-hit traversal. Limit: Brute-force scene hit; validate scene once before render. | [header](../kernels/mulib-render-scene.h) · [example](../examples/media-pipeline.c) |
+| [render-shadow](mulib-render-shadow.md) | Ray-tested visibility to a point on a light. Limit: No shadow maps; requires validated scene. | [header](../kernels/mulib-render-shadow.h) · [example](../examples/media-pipeline.c) |
+| [render-texture](mulib-render-texture.md) | Bilinear sampling with mip-level interpolation and repeat coordinates. Limit: Caller generates mip levels; repeat seams use clamped bilinear. | [header](../kernels/mulib-render-texture.h) · [example](../examples/media-pipeline.c) |
+| [replace](mulib-replace.md) | Allocate a string with every nonoverlapping occurrence replaced. | [header](../kernels/mulib-replace.h) · [example](../examples/modules/replace.c) |
+| [resolved-client](mulib-resolved-client.md) | Request systemd-resolved Manager DNS property using raw D-Bus reply | [header](../kernels/mulib-resolved-client.h) · [example](../examples/modules/resolved-client.c) |
+| [rest](mulib-rest.md) | Status-aware HTTP JSON requests and bounded query construction over MuW3. | [header](../kernels/mulib-rest.h) · [example](../examples/modules/rest.c) |
+| [retgtk](graphics-overlay.md) | Bounded retgtk API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-anchor](graphics-overlay.md) | Bounded retgtk-anchor API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-anchor.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-binding](graphics-overlay.md) | Bounded retgtk-binding API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-binding.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-box](graphics-overlay.md) | Bounded retgtk-box API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-box.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-builder](graphics-overlay.md) | Bounded retgtk-builder API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-builder.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-button](graphics-overlay.md) | Bounded retgtk-button API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-button.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-calendar](graphics-overlay.md) | Bounded retgtk-calendar API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-calendar.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-canvas](graphics-overlay.md) | Bounded retgtk-canvas API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-canvas.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-choice](graphics-overlay.md) | Bounded retgtk-choice API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-choice.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-color](graphics-overlay.md) | Bounded retgtk-color API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-color.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-constraint](graphics-overlay.md) | Bounded retgtk-constraint API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-constraint.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-container](graphics-overlay.md) | Bounded retgtk-container API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-container.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-delegate](graphics-overlay.md) | Bounded retgtk-delegate API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-delegate.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-dialog](graphics-overlay.md) | Bounded retgtk-dialog API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-dialog.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-entry](graphics-overlay.md) | Bounded retgtk-entry API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-entry.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-event](graphics-overlay.md) | Bounded retgtk-event API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-event.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-flex](graphics-overlay.md) | Bounded retgtk-flex API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-flex.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-flow](graphics-overlay.md) | Bounded retgtk-flow API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-flow.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-grid](graphics-overlay.md) | Bounded retgtk-grid API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-grid.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-hotreload](graphics-overlay.md) | Bounded retgtk-hotreload API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-hotreload.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-image](graphics-overlay.md) | Bounded retgtk-image API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-image.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-inspector](graphics-overlay.md) | Bounded retgtk-inspector API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-inspector.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-invalidate](graphics-overlay.md) | Bounded retgtk-invalidate API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-invalidate.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-kind](graphics-overlay.md) | Bounded retgtk-kind API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-kind.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-label](graphics-overlay.md) | Bounded retgtk-label API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-label.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-layout](graphics-overlay.md) | Bounded retgtk-layout API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-layout.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-list](graphics-overlay.md) | Bounded retgtk-list API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-list.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-listmodel](graphics-overlay.md) | Bounded retgtk-listmodel API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-listmodel.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-menu](graphics-overlay.md) | Bounded retgtk-menu API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-menu.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-model](graphics-overlay.md) | Bounded retgtk-model API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-model.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-mune](graphics-overlay.md) | Bounded retgtk-mune API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-mune.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-notebook](graphics-overlay.md) | Bounded retgtk-notebook API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-notebook.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-object](graphics-overlay.md) | Bounded retgtk-object API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-object.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-painter](graphics-overlay.md) | Bounded retgtk-painter API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-painter.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-progress](graphics-overlay.md) | Bounded retgtk-progress API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-progress.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-property](graphics-overlay.md) | Bounded retgtk-property API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-property.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-proxymodel](graphics-overlay.md) | Bounded retgtk-proxymodel API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-proxymodel.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-reactive](graphics-overlay.md) | Bounded retgtk-reactive API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-reactive.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-scene](graphics-overlay.md) | Bounded retgtk-scene API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-scene.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-scroll](graphics-overlay.md) | Bounded retgtk-scroll API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-scroll.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-selection](graphics-overlay.md) | Bounded retgtk-selection API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-selection.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-signal](graphics-overlay.md) | Bounded retgtk-signal API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-signal.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-slider](graphics-overlay.md) | Bounded retgtk-slider API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-slider.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-split](graphics-overlay.md) | Bounded retgtk-split API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-split.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-stack](graphics-overlay.md) | Bounded retgtk-stack API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-stack.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-statusbar](graphics-overlay.md) | Bounded retgtk-statusbar API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-statusbar.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-tablemodel](graphics-overlay.md) | Bounded retgtk-tablemodel API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-tablemodel.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-tableview](graphics-overlay.md) | Bounded retgtk-tableview API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-tableview.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-template](graphics-overlay.md) | Bounded retgtk-template API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-template.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-textview](graphics-overlay.md) | Bounded retgtk-textview API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-textview.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-toolbar](graphics-overlay.md) | Bounded retgtk-toolbar API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-toolbar.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-tree](graphics-overlay.md) | Bounded retgtk-tree API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-tree.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-treemodel](graphics-overlay.md) | Bounded retgtk-treemodel API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-treemodel.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-treeview](graphics-overlay.md) | Bounded retgtk-treeview API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-treeview.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-type](graphics-overlay.md) | Bounded retgtk-type API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-type.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-uiml](graphics-overlay.md) | Bounded retgtk-uiml API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-uiml.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-widget](graphics-overlay.md) | Bounded retgtk-widget API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-widget.h) · [example](../examples/gfx-headless.c) |
+| [retgtk-window](graphics-overlay.md) | Bounded retgtk-window API; see documented scope and acceptance gates. | [header](../kernels/mulib-retgtk-window.h) · [example](../examples/gfx-headless.c) |
+| [revproxy](mulib-revproxy.md) | HTTP forwarding with hop-by-hop header filtering over webclient. | [header](../kernels/mulib-revproxy.h) · [example](../examples/modules/revproxy.c) |
+| [rewrite](mulib-rewrite.md) | Resource-bounded equality rewrite saturation over egraphs. | [header](../kernels/mulib-rewrite.h) · [example](../examples/modules/rewrite.c) |
+| [rewrite_url](mulib-rewrite_url.md) | Component-prefix origin-path rewrite preserving a raw query. | [header](../kernels/mulib-rewrite_url.h) · [example](../examples/modules/rewrite_url.c) |
+| [rf-matching](engineering-kernels.md) | Compute high- or low-pass L-section reactances for two positive real impedances. | [header](../kernels/mulib-rf-matching.h) |
+| [rf-microstrip](mulib-rf-microstrip.md) | Quasi-static zero-thickness microstrip impedance estimate for width/substrate thickness ratio and dielectric constant. | [header](../kernels/mulib-rf-microstrip.h) · [example](../examples/modules/rf-microstrip.c) |
+| [rf-network](engineering-kernels.md) | Convert equal-reference two-port S parameters to ABCD and cascade ABCD matrices. | [header](../kernels/mulib-rf-network.h) |
+| [rf-smith](mulib-rf-smith.md) | Smith chart Cartesian coordinates from normalized single-port impedance using the S11 transform. | [header](../kernels/mulib-rf-smith.h) · [example](../examples/modules/rf-smith.c) |
+| [rf-sparams](mulib-rf-sparams.md) | Single-port complex impedance/S11 conversion with scaled arithmetic and VSWR for reflection magnitude below one. | [header](../kernels/mulib-rf-sparams.h) · [example](../examples/modules/rf-sparams.c) |
+| [rf-tolerance](engineering-kernels.md) | First-order worst-case and root-sum-square tolerance estimates from supplied sensitivities. | [header](../kernels/mulib-rf-tolerance.h) |
+| [rf-touchstone](engineering-kernels.md) | Read line-oriented Touchstone 1 two-port S-parameters in RI, MA, or DB form. | [header](../kernels/mulib-rf-touchstone.h) |
+| [rf-transmission](engineering-kernels.md) | Lossless line input impedance and wave velocity from dielectric permittivity. | [header](../kernels/mulib-rf-transmission.h) |
+| [richtext](mulib-gfx-text.md) | Bounded richtext API; see documented scope and acceptance gates. | [header](../kernels/mulib-richtext.h) · [example](../examples/gfx-headless.c) |
+| [ring](mulib-ring.md) | Fixed-capacity circular buffer which refuses to overwrite unread items. | [header](../kernels/mulib-ring.h) · [example](../examples/modules/ring.c) |
+| [riscv64](mulib-riscv64.md) | Owned RV64 profile implementing the MPU contract. | [header](../kernels/mulib-riscv64.h) · [example](../examples/modules/riscv64.c) |
+| [risk](mulib-risk.md) | Deterministic portfolio gross, position-count and concentration limits. | [header](../kernels/mulib-risk.h) · [example](../examples/finpred_market.c) |
+| [rle](mulib-rle.md) | Byte run-length encoding and bounded decoding. | [header](../kernels/mulib-rle.h) · [example](../examples/modules/rle.c) |
+| [rlecol](mulib-rlecol.md) | Run-length encoding of unsigned 64-bit column values | [header](../kernels/mulib-rlecol.h) · [example](../examples/modules/rlecol.c) |
+| [rng](mulib-rng.md) | Deterministic 64-bit SplitMix generator; not cryptographic. | [header](../kernels/mulib-rng.h) · [example](../examples/modules/rng.c) |
+| [robots](mulib-robots.md) | Simple robots.txt User-agent and Disallow matcher for a selected bot. | [header](../kernels/mulib-robots.h) · [example](../examples/modules/robots.c) |
+| [roman](mulib-roman.md) | Roman numeral formatting and a simple validity-checked parser. | [header](../kernels/mulib-roman.h) · [example](../examples/modules/roman.c) |
+| [rootfs](mulib-rootfs.md) | Bounded memory root filesystem imported from the supported USTAR profile. | [header](../kernels/mulib-rootfs.h) · [example](../examples/modules/rootfs.c) |
+| [rootfs-buildspec](mulib-rootfs-buildspec.md) | Owned filesystem recipes with transactional application and quotas. | [header](../kernels/mulib-rootfs-buildspec.h) · [example](../examples/modules/rootfs-buildspec.c) |
+| [rootfsbuilder](mulib-rootfsbuilder.md) | Deterministic USTAR export from the bounded memory root filesystem. | [header](../kernels/mulib-rootfsbuilder.h) · [example](../examples/modules/rootfsbuilder.c) |
+| [route-detailed](engineering-kernels.md) | Single-path four-neighbor A* detailed routing on a rectangular obstacle grid. | [header](../kernels/mulib-route-detailed.h) |
+| [route-global](engineering-kernels.md) | Dijkstra shortest-path routing between one source and target on a nonnegative weighted directed graph. | [header](../kernels/mulib-route-global.h) |
+| [route-negotiated](engineering-kernels.md) | One source-to-target route with edge costs adjusted by supplied usage, capacity, and congestion history. | [header](../kernels/mulib-route-negotiated.h) |
+| [row-rdbms](mulib-row-rdbms.md) | Schema-checked in-memory row table over documentdb. | [header](../kernels/mulib-row-rdbms.h) · [example](../examples/modules/row-rdbms.c) |
+| [rpc](mulib-rpc.md) | Transport-independent JSON-RPC 2.0 dispatch and response construction. | [header](../kernels/mulib-rpc.h) · [example](../examples/modules/rpc.c) |
+| [rtnl](mulib-rtnl.md) | NETLINK_ROUTE request builder and bounded synchronous kernel dumps | [header](../kernels/mulib-rtnl.h) · [example](../examples/modules/rtnl.c) |
+| [rtnl-address](mulib-rtnl-address.md) | Enumerate or assign IPv4/IPv6 interface addresses over rtnetlink | [header](../kernels/mulib-rtnl-address.h) · [example](../examples/modules/rtnl-address.c) |
+| [rtnl-bridge](mulib-rtnl-bridge.md) | Discover Linux bridge link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../kernels/mulib-rtnl-bridge.h) · [example](../examples/modules/rtnl-bridge.c) |
+| [rtnl-link](mulib-rtnl-link.md) | Inspect and administratively bring interfaces up/down via RTM_NEWLINK | [header](../kernels/mulib-rtnl-link.h) · [example](../examples/modules/rtnl-link.c) |
+| [rtnl-neighbor](mulib-rtnl-neighbor.md) | Dump kernel ARP/NDP neighbor entries and add or remove static neighbors | [header](../kernels/mulib-rtnl-neighbor.h) · [example](../examples/modules/rtnl-neighbor.c) |
+| [rtnl-nexthop](mulib-rtnl-nexthop.md) | Dump kernel nexthop objects via RTM_GETNEXTHOP | [header](../kernels/mulib-rtnl-nexthop.h) · [example](../examples/modules/rtnl-nexthop.c) |
+| [rtnl-nsid](mulib-rtnl-nsid.md) | Dump kernel nsid objects via RTM_GETNSID | [header](../kernels/mulib-rtnl-nsid.h) · [example](../examples/modules/rtnl-nsid.c) |
+| [rtnl-qdisc](mulib-rtnl-qdisc.md) | Dump kernel qdisc objects via RTM_GETQDISC | [header](../kernels/mulib-rtnl-qdisc.h) · [example](../examples/modules/rtnl-qdisc.c) |
+| [rtnl-route](mulib-rtnl-route.md) | Query IPv4/IPv6 routing tables and add or remove an ordinary unicast route | [header](../kernels/mulib-rtnl-route.h) · [example](../examples/modules/rtnl-route.c) |
+| [rtnl-rule](mulib-rtnl-rule.md) | Dump kernel rule objects via RTM_GETRULE | [header](../kernels/mulib-rtnl-rule.h) · [example](../examples/modules/rtnl-rule.c) |
+| [rtnl-tc](mulib-rtnl-tc.md) | Dump kernel tc objects via RTM_GETTFILTER | [header](../kernels/mulib-rtnl-tc.h) · [example](../examples/modules/rtnl-tc.c) |
+| [rtnl-tunnel](mulib-rtnl-tunnel.md) | Discover Linux tunnel link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../kernels/mulib-rtnl-tunnel.h) · [example](../examples/modules/rtnl-tunnel.c) |
+| [rtnl-veth](mulib-rtnl-veth.md) | Discover Linux veth link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../kernels/mulib-rtnl-veth.h) · [example](../examples/modules/rtnl-veth.c) |
+| [rtnl-vlan](mulib-rtnl-vlan.md) | Discover Linux vlan link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../kernels/mulib-rtnl-vlan.h) · [example](../examples/modules/rtnl-vlan.c) |
+| [rtnl-vrf](mulib-rtnl-vrf.md) | Discover Linux vrf link-kind interfaces using RTM_GETLINK linkinfo filtering | [header](../kernels/mulib-rtnl-vrf.h) · [example](../examples/modules/rtnl-vrf.c) |
+| [rubybind](mulib-rubybind.md) | Self-contained Ruby Fiddle binding-source generation for C functions. | [header](../kernels/mulib-rubybind.h) · [example](../examples/modules/rubybind.c) |
+| [ruleeval](mulib-ruleeval.md) | Exact minor-unit percentile shortcut, guardrails and tick rules. | [header](../kernels/mulib-ruleeval.h) · [example](../examples/hospitality_demo.c) |
 
 ## S
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [sandbox-process](mulib-sandbox-process.md) | Trusted-bootstrap Linux worker launch, strict seccomp, resource controls and supervision. | [header](../include/mulib-sandbox-process.h) · [example](../examples/modules/sandbox-process.c) |
-| [sandbox-profile](mulib-sandbox-profile.md) | Versioned sandbox limits and enforcement policy validation. | [header](../include/mulib-sandbox-profile.h) · [example](../examples/modules/sandbox-process.c) |
-| [sat](mulib-sat.md) | Bounded complete DPLL SAT solver for CNF and temporary assumptions. | [header](../include/mulib-sat.h) · [example](../examples/modules/sat.c) |
-| [scanvec](mulib-scanvec.md) | Selection-vector numeric predicates with explicit per-call capacity | [header](../include/mulib-scanvec.h) · [example](../examples/modules/scanvec.c) |
-| [schedutils](mulib-schedutils.md) | Scheduler inspection, cooperative yield and checked periodic | [header](../include/mulib-schedutils.h) · [example](../examples/modules/schedutils.c) |
-| [schemaorg](mulib-schemaorg.md) | Bounded extraction of plain Product/Offer JSON-LD scalar fields. | [header](../include/mulib-schemaorg.h) · [example](../examples/modules/schemaorg.c) |
-| [scrape](mulib-scrape.md) | Simple query-free HTML text extraction orchestrator. | [header](../include/mulib-scrape.h) · [example](../examples/modules/scrape.c) |
-| [scrape-metadata](mulib-scrape-metadata.md) | Extract bounded HTML meta content attributes by name. | [header](../include/mulib-scrape-metadata.h) · [example](../examples/modules/scrape-metadata.c) |
-| [scrape-readable](mulib-scrape-readable.md) | Remove markup and collapse HTML whitespace into readable text (basic subset). | [header](../include/mulib-scrape-readable.h) · [example](../examples/modules/scrape-readable.c) |
-| [scrape-rule](mulib-scrape-rule.md) | Owned declarative selector/property pair for extraction rules. | [header](../include/mulib-scrape-rule.h) · [example](../examples/modules/scrape-rule.c) |
-| [scrape-schema](mulib-scrape-schema.md) | Required string and bounded integer, real and boolean validation for extracted fields. | [header](../include/mulib-scrape-schema.h) · [example](../examples/modules/scrape-schema.c) |
-| [scrape-table](mulib-scrape-table.md) | Simple HTML table cell counting for static document inspection. | [header](../include/mulib-scrape-table.h) · [example](../examples/modules/scrape-table.c) |
-| [search](mulib-search.md) | Byte KMP search and callback enumeration of overlapping matches. | [header](../include/mulib-search.h) · [example](../examples/modules/search.c) |
-| [search-query](mulib-search-query.md) | Percent-encoded form query builder and Google/Bing URL construction. | [header](../include/mulib-search-query.h) · [example](../examples/modules/search-query.c) |
-| [search-rank](mulib-search-rank.md) | ASCII lexical substring and whole-word matching with checked weighted field scoring. | [header](../include/mulib-search-rank.h) · [example](../examples/modules/search-rank.c) |
-| [search-serp](mulib-search-serp.md) | Extract href attributes from simple quoted HTML anchor markup. | [header](../include/mulib-search-serp.h) · [example](../examples/modules/search-serp.c) |
-| [search-session](mulib-search-session.md) | Bounded paginated search offset and page-size tracking. | [header](../include/mulib-search-session.h) · [example](../examples/modules/search-session.c) |
-| [seat](notebook-desktop.md) | Caller-supplied seat broker interface and device lifetime bookkeeping. | [header](../include/mulib-seat.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [seccomp](mulib-seccomp.md) | Architecture-checked Linux seccomp BPF compilation and strict worker policies. | [header](../include/mulib-seccomp.h) · [example](../examples/modules/sandbox-process.c) |
-| [secret-audit](mulib-secret-audit.md) | HMAC-chained fixed-format audit records; the host supplies a trusted anchor. | [header](../include/mulib-secret-audit.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-aws](mulib-secret-aws.md) | AWS SigV4 signing-key derivation and canonical request signature primitive. | [header](../include/mulib-secret-aws.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-catalog](mulib-secret-catalog.md) | Canonical catalogue serialization and optimistic record revision management. | [header](../include/mulib-secret-catalog.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-codec](mulib-secret-codec.md) | Canonical unpadded Base64url/Base32 and lowercase hexadecimal encoding. | [header](../include/mulib-secret-codec.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-core](mulib-secret-core.md) | Shared status, byte spans, checked arithmetic, endian and wipe helpers. | [header](../include/mulib-secret-core.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-crypto](mulib-secret-crypto.md) | Versioned crypto provider ABI, checked RNG, HMAC, HKDF, KDF and AEAD dispatch. | [header](../include/mulib-secret-crypto.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-crypto-native](mulib-secret-crypto-native.md) | Adapter for existing MuLIB crypto primitives; no new external dependency. | [header](../include/mulib-secret-crypto-native.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-crypto-openssl](mulib-secret-crypto-openssl.md) | Optional OpenSSL EVP provider for differential testing and deployments allowing external crypto. | [header](../include/mulib-secret-crypto-openssl.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-jose](mulib-secret-jose.md) | HS256 compact JWS signing and signature verification with fixed protected header. | [header](../include/mulib-secret-jose.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-key-agreement](mulib-secret-key-agreement.md) | Native X25519 key generation and domain-separated shared-key derivation. | [header](../include/mulib-secret-key-agreement.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-lease](mulib-secret-lease.md) | Broker-owned one-shot operation approvals with random tokens. | [header](../include/mulib-secret-lease.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-memory](mulib-secret-memory.md) | Owning secret buffer with guard pages, lock policy and full-capacity erase. | [header](../include/mulib-secret-memory.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-oauth](mulib-secret-oauth.md) | OAuth PKCE S256, random state and token lease decisions; no network side effects. | [header](../include/mulib-secret-oauth.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-otp](mulib-secret-otp.md) | HOTP/TOTP SHA-1/256/512, Steam format, and HOTP counter reservation via host CAS. | [header](../include/mulib-secret-otp.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-otp-uri](mulib-secret-otp-uri.md) | Bounded otpauth URI import for Google Authenticator compatible secrets. | [header](../include/mulib-secret-otp-uri.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-passphrase](mulib-secret-passphrase.md) | Word-list passphrases and high-entropy recovery-code verifiers. | [header](../include/mulib-secret-passphrase.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-policy](mulib-secret-policy.md) | Fail-closed authorization, exact subjects, operation masks, expiry and consent. | [header](../include/mulib-secret-policy.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-provider](mulib-secret-provider.md) | Versioned provider catalogue and policy-mediated operation dispatch. | [header](../include/mulib-secret-provider.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-random](mulib-secret-random.md) | Unbiased random selections, identifiers, recovery codes, password policies. | [header](../include/mulib-secret-random.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-rate](mulib-secret-rate.md) | Bounded exponential authentication backoff using trusted monotonic time. | [header](../include/mulib-secret-rate.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-record](mulib-secret-record.md) | Authenticated encrypted record envelope with per-write HKDF key and random nonce. | [header](../include/mulib-secret-record.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-recovery](mulib-secret-recovery.md) | Shamir GF(256) threshold secret sharing with strict share identifiers. | [header](../include/mulib-secret-recovery.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-selftest](mulib-secret-selftest.md) | Backend conformance smoke tests with RFC vectors and authenticated storage rejection tests. | [header](../include/mulib-secret-selftest.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-sign](mulib-secret-sign.md) | Opaque signing/key-agreement backend contract and algorithm-pinned dispatch. | [header](../include/mulib-secret-sign.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-spec](mulib-secret-spec.md) | Credential kind catalogue and intended operation metadata, not runtime capabilities. | [header](../include/mulib-secret-spec.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-ssh](mulib-secret-ssh.md) | Bounded SSH agent sign-request parser and RFC 4251 string framing. | [header](../include/mulib-secret-ssh.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-state](mulib-secret-state.md) | Monotonic counter reservation and optimistic persistent transition contract. | [header](../include/mulib-secret-state.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-store](mulib-secret-store.md) | Durable encrypted blob storage using a trusted private POSIX directory descriptor. | [header](../include/mulib-secret-store.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-vault](mulib-secret-vault.md) | Password-wrapped random vault root, lock/unlock and authenticated profile. | [header](../include/mulib-secret-vault.h) · [example](../examples/mulib-secret-kernels.c) |
-| [secret-webauthn](mulib-secret-webauthn.md) | Basic WebAuthn assertion data and signing input; not an authenticator or origin verifier. | [header](../include/mulib-secret-webauthn.h) · [example](../examples/mulib-secret-kernels.c) |
-| [select](mulib-select.md) | Bounds-checked native descriptor readiness selection. | [header](../include/mulib-select.h) · [example](../examples/modules/select.c) |
-| [semilattice](mulib-semilattice.md) | Grow-only 64-bit-set join/meet semilattice and partial-order tests | [header](../include/mulib-semilattice.h) · [example](../examples/modules/semilattice.c) |
-| [semiring](mulib-semiring.md) | Boolean, natural-number and tropical semiring operations | [header](../include/mulib-semiring.h) · [example](../examples/modules/semiring.c) |
-| [semver](mulib-semver.md) | Semantic version triplet parsing and numeric precedence comparison. | [header](../include/mulib-semver.h) · [example](../examples/modules/semver.c) |
-| [set](mulib-set.md) | Unique set of signed 64-bit integers. | [header](../include/mulib-set.h) · [example](../examples/modules/set.c) |
-| [seurity](mulib-seurity.md) | Security-oriented byte comparison tokens and strict paths. | [header](../include/mulib-seurity.h) · [example](../examples/modules/seurity.c) |
-| [sexpr](mulib-sexpr.md) | A tree-based S-expression parser with atoms, lists, and deterministic rendering. | [header](../include/mulib-sexpr.h) · [example](../examples/modules/sexpr.c) |
-| [sfnt](mulib-sfnt.md) | Checked SFNT/TTC face directories, table ranges and overlap defense. | [header](../include/mulib-sfnt.h) · [example](../examples/mulib-sfnt.c) |
-| [sha](mulib-sha.md) | SHA-0/1/2/3 and SHAKE with streaming contexts and SIMD alternatives. | [header](../include/mulib-sha.h) · [example](../examples/modules/sha.c) |
-| [shaderx](mulib-shaderx.md) | Typed shader expression graphs and a Parsec-backed GLSL/HLSL compiler. | [header](../include/mulib-shaderx.h) · [example](../examples/modules/shaderx.c) |
-| [shadowsocks](mulib-shadowsocks.md) | SIP004 Shadowsocks AEAD TCP chunk framing with explicit crypto | [header](../include/mulib-shadowsocks.h) · [example](../examples/modules/shadowsocks.c) |
-| [shebang-sh](mulib-shebang-sh.md) | Bounded line processing with macros, ordered filters, optional Mune callbacks and POSIX shebang execution. | [header](../include/mulib-shebang-sh.h) · [example](../examples/shebang.c) |
-| [shiraz](mulib-shiraz.md) | Shiraz: Windows AMD64 PE/COFF loading, interpretation and helper-based C AOT. | [header](../include/mulib-shiraz.h) · [example](../examples/modules/shiraz.c) |
-| [shm](mulib-shm.md) | System V shared-memory creation, attachment and explicit removal. | [header](../include/mulib-shm.h) · [example](../examples/modules/shm.c) |
-| [shoebox-contract](mulib-shoebox-contract.md) | Versioned Shoebox multicall applet contract, dispatch and bounded I/O. | [header](../include/mulib-shoebox-contract.h) · [example](../examples/modules/shoebox-contract.c) |
-| [signal](mulib-signal.md) | Explicit native signal-handler installation and restoration. | [header](../include/mulib-signal.h) · [example](../examples/modules/signal.c) |
-| [signature](mulib-signature.md) | RSA PKCS1/PSS and ECDSA P-256/P-384 public-key signature verification. | [header](../include/mulib-signature.h) · [example](../examples/modules/signature.c) |
-| [simdmath](mulib-simdmath.md) | Four-lane SIMD arithmetic and batched graphics transforms. | [header](../include/mulib-simdmath.h) · [example](../examples/modules/simdmath.c) |
-| [simhash](mulib-simhash.md) | 64-bit weighted SimHash fingerprints and Hamming distance | [header](../include/mulib-simhash.h) · [example](../examples/modules/simhash.c) |
-| [sitemap](mulib-sitemap.md) | Extract next loc entry from XML sitemap bytes without fetching. | [header](../include/mulib-sitemap.h) · [example](../examples/modules/sitemap.c) |
-| [smt](mulib-smt.md) | Bounded Boolean and real difference-logic satisfiability using SAT and Bellman-Ford. | [header](../include/mulib-smt.h) · [example](../examples/modules/smt.c) |
-| [smtpclient](mulib-smtpclient.md) | Bounded SMTP envelope commands and DATA encoding. | [header](../include/mulib-smtpclient.h) · [example](../examples/modules/smtpclient.c) |
-| [smtpserver](mulib-smtpserver.md) | Callback-backed SMTP envelope and dot-stuffed DATA sessions. | [header](../include/mulib-smtpserver.h) · [example](../examples/modules/smtpserver.c) |
-| [soap](mulib-soap.md) | Checked SOAP 1.1 and 1.2 envelope helpers and HTTP transport. | [header](../include/mulib-soap.h) · [example](../examples/modules/soap.c) |
-| [soc-memorymap](mulib-soc-memorymap.md) | Bounded 128-entry nonoverlapping physical address map with overflow-checked half-open regions, device IDs and offset lookup. | [header](../include/mulib-soc-memorymap.h) · [example](../examples/modules/soc-memorymap.c) |
-| [sock-diag](mulib-sock-diag.md) | Issue a bounded NETLINK_SOCK_DIAG inet socket dump request | [header](../include/mulib-sock-diag.h) · [example](../examples/modules/sock-diag.c) |
-| [socket](mulib-socket.md) | POSIX connected stream descriptor ownership and bounded I/O primitives. | [header](../include/mulib-socket.h) · [example](../examples/modules/socket.c) |
-| [socks5](mulib-socks5.md) | RFC 1928 method negotiation, address and CONNECT/BIND/UDP codecs. | [header](../include/mulib-socks5.h) · [example](../examples/modules/socks5.c) |
-| [sort](mulib-sort.md) | Generic sorting, stable merge sort, binary lookup and heterogeneous lower bounds. | [header](../include/mulib-sort.h) · [example](../examples/modules/sort.c) |
-| [source-manager](mulib-source-manager.md) | Owned binary-safe source bytes with logarithmic byte-offset line/column lookup. | [header](../include/mulib-source-manager.h) · [example](../examples/modules/source-manager.c) |
-| [source-map](mulib-source-map.md) | Ordered nonoverlapping generated-to-original byte-span mappings. | [header](../include/mulib-source-map.h) · [example](../examples/modules/source-map.c) |
-| [spatialtree](mulib-spatialtree.md) | Owned static balanced 2D k-d tree for inclusive rectangle searches. | [header](../include/mulib-spatialtree.h) · [example](../examples/modules/spatialtree.c) |
-| [spellcheck](mulib-spellcheck.md) | Configurable dictionary/affix/compound checking and five suggestion engines. | [header](../include/mulib-spellcheck.h) · [example](../examples/modules/spellcheck.c) |
-| [spice-ac](mulib-spice-ac.md) | Frequency-domain complex MNA for linear R/C/I/V circuits at one nonnegative frequency, interpreting independent DC source magnitudes as AC phasor amplitudes of zero phase for this narrow profile. | [header](../include/mulib-spice-ac.h) · [example](../examples/modules/spice-ac.c) |
-| [spice-behavioral](engineering-kernels.md) | Stamp a linearized behavioral current source into dense MNA from supplied values and derivatives. | [header](../include/mulib-spice-behavioral.h) |
-| [spice-bjt](engineering-kernels.md) | Evaluate terminal currents of a static NPN Ebers-Moll model without charge storage or Early effect. | [header](../include/mulib-spice-bjt.h) |
-| [spice-c](mulib-spice-c.md) | Backward-Euler companion for an ideal linear capacitor: conductance C/dt and equivalent history current. | [header](../include/mulib-spice-c.h) · [example](../examples/modules/spice-c.c) |
-| [spice-checkpoint](engineering-kernels.md) | Save and restore one owned in-memory time and state-vector snapshot. | [header](../include/mulib-spice-checkpoint.h) |
-| [spice-controlled](engineering-kernels.md) | Dense MNA stamps for the four ideal linear controlled current and voltage source types. | [header](../include/mulib-spice-controlled.h) |
-| [spice-convergence](engineering-kernels.md) | Absolute/relative convergence checks, a geometric Gmin schedule, and voltage-increment limiting. | [header](../include/mulib-spice-convergence.h) |
-| [spice-dae](engineering-kernels.md) | Apply one linear backward-Euler step to a dense MNA system. | [header](../include/mulib-spice-dae.h) |
-| [spice-dc](mulib-spice-dc.md) | Linear DC source sweep over a named independent voltage/current source. | [header](../include/mulib-spice-dc.h) · [example](../examples/modules/spice-dc.c) |
-| [spice-device](engineering-kernels.md) | Dispatch caller-supplied MNA device stamp callbacks for a given state and time. | [header](../include/mulib-spice-device.h) |
-| [spice-diode](engineering-kernels.md) | Shockley diode current and slope with a high-bias linear continuation, plus a dense MNA stamp. | [header](../include/mulib-spice-diode.h) |
-| [spice-elaborate](engineering-kernels.md) | Assign compact IDs to a flat list of node names, treating 0 and gnd as ground. | [header](../include/mulib-spice-elaborate.h) |
-| [spice-fourier](engineering-kernels.md) | Direct normalized discrete Fourier coefficients for requested nonnegative harmonics of real samples. | [header](../include/mulib-spice-fourier.h) |
-| [spice-independent](mulib-spice-independent.md) | Time-independent DC current and voltage MNA source stamps. | [header](../include/mulib-spice-independent.h) · [example](../examples/modules/spice-independent.c) |
-| [spice-jfet](engineering-kernels.md) | Static JFET channel current and conductances using a square-law approximation; no junction model. | [header](../include/mulib-spice-jfet.h) |
-| [spice-k](engineering-kernels.md) | Stamp mutual inductance between two inductor branch variables in dense MNA. | [header](../include/mulib-spice-k.h) |
-| [spice-l](engineering-kernels.md) | Dense MNA branch stamp for ideal linear inductance. | [header](../include/mulib-spice-l.h) |
-| [spice-lexer](mulib-spice-lexer.md) | SPICE engineering numeric suffixes (T,G,MEG,K,M,U,N,P,F) and bounded whitespace-line tokenization for basic component records. | [header](../include/mulib-spice-lexer.h) · [example](../examples/modules/spice-lexer.c) |
-| [spice-measure](mulib-spice-measure.md) | SPICE-facing sample-domain RMS and extrema helpers delegated to the existing wave-measure primitive. | [header](../include/mulib-spice-measure.h) · [example](../examples/modules/spice-measure.c) |
-| [spice-mna](engineering-kernels.md) | Dense reference MNA assembly and DC solve, with sparse row assembly and sparse LU for DC or backward Euler. | [header](../include/mulib-spice-mna.h) |
-| [spice-model](engineering-kernels.md) | Look up a named numeric model parameter with a supplied fallback. | [header](../include/mulib-spice-model.h) |
-| [spice-montecarlo](engineering-kernels.md) | Generate independent Gaussian parameter samples from supplied means and deviations. | [header](../include/mulib-spice-montecarlo.h) |
-| [spice-mosfet](engineering-kernels.md) | Static long-channel level-1 NMOS current and small-signal derivatives without body effect or charge storage. | [header](../include/mulib-spice-mosfet.h) |
-| [spice-netlist](mulib-spice-netlist.md) | Transactional parser for four passive/independent-device card types: R, C, V, I with 2 nodes and one numeric DC value. | [header](../include/mulib-spice-netlist.h) · [example](../examples/modules/spice-netlist.c) |
-| [spice-noise](engineering-kernels.md) | Resistor thermal and shot noise density helpers and summation of transferred uncorrelated source densities. | [header](../include/mulib-spice-noise.h) |
-| [spice-nonlinear](engineering-kernels.md) | Bounded damped DC iteration over device callbacks using dense MNA solves; no full convergence ladder. | [header](../include/mulib-spice-nonlinear.h) |
-| [spice-op](mulib-spice-op.md) | DC operating-point solver for linear R/I/V circuits with open capacitors; dense MNA and partial-pivot Gaussian elimination. | [header](../include/mulib-spice-op.h) · [example](../examples/modules/spice-op.c) |
-| [spice-params](engineering-kernels.md) | Parse a finite numeric literal with a supported case-insensitive SPICE scale suffix. | [header](../include/mulib-spice-params.h) |
-| [spice-pz](engineering-kernels.md) | Extract real or complex roots from a supplied linear or quadratic polynomial; not a circuit pole-zero solver. | [header](../include/mulib-spice-pz.h) |
-| [spice-r](mulib-spice-r.md) | Linear DC resistor MNA stamp with strictly positive finite resistance. | [header](../include/mulib-spice-r.h) · [example](../examples/modules/spice-r.c) |
-| [spice-rawfile](engineering-kernels.md) | Write real ASCII transient sample data in SPICE rawfile form; no reader or binary profile. | [header](../include/mulib-spice-rawfile.h) |
-| [spice-sensitivity](engineering-kernels.md) | Compute first-order solution sensitivities of a dense linear system from supplied matrix and RHS derivatives. | [header](../include/mulib-spice-sensitivity.h) |
-| [spice-sourcewave](engineering-kernels.md) | Evaluate pulse, damped sine, piecewise-linear, and exponential source waveforms at a supplied time. | [header](../include/mulib-spice-sourcewave.h) |
-| [spice-stamp](mulib-spice-stamp.md) | MNA matrix and RHS allocation and linear conductance/independent current/ideal voltage-source stamps. | [header](../include/mulib-spice-stamp.h) · [example](../examples/modules/spice-stamp.c) |
-| [spice-subckt](engineering-kernels.md) | Map subcircuit ports to supplied node IDs and assign sequential IDs to local internal nodes. | [header](../include/mulib-spice-subckt.h) |
-| [spice-sweep](engineering-kernels.md) | Generate linear or logarithmic sample values between two endpoints. | [header](../include/mulib-spice-sweep.h) |
-| [spice-switch](engineering-kernels.md) | Update a hysteretic switch state and select its on/off conductance from a control value. | [header](../include/mulib-spice-switch.h) |
-| [spice-temperature](engineering-kernels.md) | Temperature scaling for resistance and saturation current from supplied model coefficients. | [header](../include/mulib-spice-temperature.h) |
-| [spice-timestep](engineering-kernels.md) | Choose an acceptable backward-Euler step for linear MNA using bounded step-doubling retries. | [header](../include/mulib-spice-timestep.h) |
-| [spice-tline](engineering-kernels.md) | Compute a lossless transmission line's two-port ABCD frequency response from impedance and delay. | [header](../include/mulib-spice-tline.h) |
-| [spice-tran](mulib-spice-tran.md) | Fixed-timestep backward-Euler transient for linear R/C/I/V networks, zero initial capacitor voltages, time-invariant DC sources, no inductors. | [header](../include/mulib-spice-tran.h) · [example](../examples/modules/spice-tran.c) |
-| [split](mulib-split.md) | In-place token splitting into an array of field pointers. | [header](../include/mulib-split.h) · [example](../examples/modules/split.c) |
-| [sppf](mulib-sppf.md) | Shared packed parse forests preserving alternative derivations. | [header](../include/mulib-sppf.h) · [example](../examples/modules/sppf.c) |
-| [sql](mulib-sql.md) | Focused SQL key/value statements over a shared memtable, not general SQL. | [header](../include/mulib-sql.h) · [example](../examples/modules/sql.c) |
-| [sqlite](mulib-sqlite.md) | Independent SQLite-file SQL profile using parsec, not full SQLite compatibility. | [header](../include/mulib-sqlite.h) · [example](../examples/modules/sqlite.c) |
-| [sqlite-format](mulib-sqlite-format.md) | Independent SQLite records, varints and bounded table B-tree images. | [header](../include/mulib-sqlite-format.h) · [example](../examples/modules/sqlite-format.c) |
-| [sqlite-pager](mulib-sqlite-pager.md) | SQLite snapshots, POSIX lifetime locks and rollback-journal commits. | [header](../include/mulib-sqlite-pager.h) · [example](../examples/modules/sqlite-pager.c) |
-| [sse](mulib-sse.md) | Bounded incremental UTF-8 server-sent event parsing and encoding. | [header](../include/mulib-sse.h) · [example](../examples/modules/sse.c) |
-| [sse-client](mulib-sse-client.md) | One bounded SSE stream over a caller-configured MuW3 client. | [header](../include/mulib-sse-client.h) · [example](../examples/modules/sse-client.c) |
-| [sshauth](mulib-sshauth.md) | SSH service negotiation and none, password and Ed25519 user-authentication payloads. | [header](../include/mulib-sshauth.h) · [example](../examples/ssh/kernels.c) |
-| [sshchannel](mulib-sshchannel.md) | SSH session-channel payloads, lifecycle and flow control. | [header](../include/mulib-sshchannel.h) · [example](../examples/ssh/kernels.c) |
-| [sshclient](mulib-sshclient.md) | SSH-2 client transport and authentication helpers; legacy cleartext codecs. | [header](../include/mulib-sshclient.h) · [example](../examples/modules/sshclient.c) |
-| [sshconnection](mulib-sshconnection.md) | Socket-independent SSH connection driver with buffered records and authentication sequencing. | [header](../include/mulib-sshconnection.h) · [example](../examples/ssh/connection.c) |
-| [sshcrypto](mulib-sshcrypto.md) | SSH exchange hashing, key derivation and directional AES-128-GCM records. | [header](../include/mulib-sshcrypto.h) · [example](../examples/ssh/kernels.c) |
-| [sshkex](mulib-sshkex.md) | SSH Curve25519 key-exchange negotiation, messages and transcript hashing. | [header](../include/mulib-sshkex.h) · [example](../examples/ssh/kernels.c) |
-| [sshkey](mulib-sshkey.md) | SSH Ed25519 key and signature blob codecs. | [header](../include/mulib-sshkey.h) · [example](../examples/ssh/kernels.c) |
-| [sshpacket](mulib-sshpacket.md) | Bounded SSH binary framing for cleartext and length-authenticated AEAD packets. | [header](../include/mulib-sshpacket.h) · [example](../examples/ssh/kernels.c) |
-| [sshproto](mulib-sshproto.md) | SSH message numbers, KEXINIT payloads and algorithm name lists. | [header](../include/mulib-sshproto.h) · [example](../examples/ssh/kernels.c) |
-| [sshserver](mulib-sshserver.md) | SSH-2 server transport helpers and bounded user-authentication policies. | [header](../include/mulib-sshserver.h) · [example](../examples/modules/sshserver.c) |
-| [sshtransport](mulib-sshtransport.md) | Socket-independent, pinned SSH-2 key exchange and authenticated record transport. | [header](../include/mulib-sshtransport.h) · [example](../examples/ssh/kernels.c) |
-| [sshwire](mulib-sshwire.md) | Transactional SSH-2 wire cursors, strings and nonnegative mpints. | [header](../include/mulib-sshwire.h) · [example](../examples/ssh/kernels.c) |
-| [sstfile](mulib-sstfile.md) | Immutable sorted-table byte snapshots, preserving tombstones/sequences. | [header](../include/mulib-sstfile.h) · [example](../examples/modules/sstfile.c) |
-| [stack](mulib-stack.md) | A last-in-first-out stack of fixed-stride elements. | [header](../include/mulib-stack.h) · [example](../examples/modules/stack.c) |
-| [stackmap](mulib-stackmap.md) | Exact native-PC safepoint maps of pointer register and spill-slot masks. | [header](../include/mulib-stackmap.h) · [example](../examples/modules/stackmap.c) |
-| [static_file](mulib-static_file.md) | Strict virtual-filesystem static-file response helper. | [header](../include/mulib-static_file.h) · [example](../examples/modules/static_file.c) |
-| [stats](mulib-stats.md) | Streaming sample statistics using Welford numerical updates. | [header](../include/mulib-stats.h) · [example](../examples/modules/stats.c) |
-| [statsprice](mulib-statsprice.md) | Robust cross-sectional market price estimates and descriptive snapshots. | [header](../include/mulib-statsprice.h) · [example](../examples/modules/statsprice.c) |
-| [statsproc](mulib-statsproc.md) | Robust generic quantiles, weighted estimators, MAD, Huber, KDE and Theil-Sen fitting. | [header](../include/mulib-statsproc.h) · [example](../examples/modules/statsproc.c) |
-| [staymatch](mulib-staymatch.md) | Bounded exact top-K room bundles with dated occupancy and shared inventory. | [header](../include/mulib-staymatch.h) · [example](../examples/hospitality_demo.c) |
-| [stopwords](mulib-stopwords.md) | Sorted static stopword set lookup for normalized tokens | [header](../include/mulib-stopwords.h) · [example](../examples/modules/stopwords.c) |
-| [storage-core](engineering-kernels.md) | Checked allocation, owned byte buffers, size arithmetic and binary helpers; caller must satisfy pointer, count and nonoverlap contracts. | [header](../include/mulib-storage-core.h) · [example](../examples/kernel-substrates.c) |
-| [strbuf](mulib-strbuf.md) | Dynamically growing NUL-terminated text builder. | [header](../include/mulib-strbuf.h) · [example](../examples/modules/strbuf.c) |
-| [strpool](mulib-strpool.md) | Binary-safe hashed string interning with stable owned storage. | [header](../include/mulib-strpool.h) · [example](../examples/modules/strpool.c) |
-| [stylesheet](mulib-stylesheet.md) | Typed layout styles with inheritance, selector specificity and importance cascading. | [header](../include/mulib-stylesheet.h) · [example](../examples/modules/stylesheet.c) |
-| [superblocks](mulib-superblocks.md) | Single-entry SSA traces with explicit side exits and native MIR lowering. | [header](../include/mulib-superblocks.h) · [example](../examples/modules/superblocks.c) |
-| [superinstr](mulib-superinstr.md) | Exact straight-line assembly superinstructions emitted as GAS macros. | [header](../include/mulib-superinstr.h) · [example](../examples/modules/superinstr.c) |
-| [svg](mulib-svg.md) | Escaped SVG shape and document construction using shared markup. | [header](../include/mulib-svg.h) · [example](../examples/modules/svg.c) |
-| [svgpaint](mulib-svgpaint.md) | Owned ordered collection for graphics svgpaint rectangles and records; insertion, indexing, removal. | [header](../include/mulib-svgpaint.h) · [example](../examples/mulib-svgpaint.c) |
-| [symbol](mulib-symbol.md) | Dependency-free extensible mathematical/logic Unicode and TeX symbols. | [header](../include/mulib-symbol.h) · [example](../examples/modules/symbol.c) |
-| [symboltable](mulib-symboltable.md) | Owned lexical bindings with nested shadowing and scope rollback. | [header](../include/mulib-symboltable.h) · [example](../examples/modules/symboltable.c) |
-| [syntax-tree](mulib-syntax-tree.md) | Owned token-span syntax forests with validated parent/child/sibling links. | [header](../include/mulib-syntax-tree.h) · [example](../examples/modules/syntax-tree.c) |
-| [synth-aig](mulib-synth-aig.md) | Bounded AIG with constant 0/1, complemented edges, structural hashing and simple constant/identity simplification. | [header](../include/mulib-synth-aig.h) · [example](../examples/modules/synth-aig.c) |
-| [synth-aig-balance](engineering-kernels.md) | Build a balanced pairwise conjunction of supplied AND-inverter graph literals. | [header](../include/mulib-synth-aig-balance.h) |
-| [synth-aig-refactor](engineering-kernels.md) | Construct a common-factor Boolean expression in an AIG from three supplied literals. | [header](../include/mulib-synth-aig-refactor.h) |
-| [synth-aig-rewrite](engineering-kernels.md) | Rebuild a dynamic AIG with trivial Boolean reductions, shared identical gates, and a literal remap. | [header](../include/mulib-synth-aig-rewrite.h) |
-| [synth-arithmetic](engineering-kernels.md) | Build a bit-vector ripple-carry adder with carry-in and carry-out in an AIG. | [header](../include/mulib-synth-arithmetic.h) |
-| [synth-bdd](engineering-kernels.md) | Build and evaluate reduced ordered BDDs from truth tables of up to six variables. | [header](../include/mulib-synth-bdd.h) |
-| [synth-cellmap](engineering-kernels.md) | Choose one exact truth-table match of up to six inputs by weighted cell area and delay. | [header](../include/mulib-synth-cellmap.h) |
-| [synth-cost](engineering-kernels.md) | Estimate AIG area and delay from total AND count and maximum AND depth using uniform gate costs. | [header](../include/mulib-synth-cost.h) |
-| [synth-cuts](engineering-kernels.md) | Enumerate distinct AIG cuts from a selected node within an eight-leaf limit and caller capacity. | [header](../include/mulib-synth-cuts.h) |
-| [synth-dce](engineering-kernels.md) | Rebuild an AIG from nodes reachable from supplied output literals and return a remap. | [header](../include/mulib-synth-dce.h) |
-| [synth-egraph](engineering-kernels.md) | Compute congruence closure of commutative AIG AND expressions under caller-supplied equalities. | [header](../include/mulib-synth-egraph.h) |
-| [synth-espresso](engineering-kernels.md) | Greedy two-level Boolean cover with don't-cares for at most six inputs; not full Espresso. | [header](../include/mulib-synth-espresso.h) |
-| [synth-fsm](engineering-kernels.md) | Partition deterministic Moore-machine states by output and transitions until equivalent state classes stabilize. | [header](../include/mulib-synth-fsm.h) |
-| [synth-lutmap](engineering-kernels.md) | Extract LUT truth for a supplied AIG cut of at most six leaves; not global mapping. | [header](../include/mulib-synth-lutmap.h) |
-| [synth-memory](engineering-kernels.md) | Compute address width for a given depth and decode one address to a one-hot row selection. | [header](../include/mulib-synth-memory.h) |
-| [synth-mig](engineering-kernels.md) | Evaluate topologically ordered majority-inverter graphs with constants and complemented inputs. | [header](../include/mulib-synth-mig.h) |
-| [synth-multiplexer](engineering-kernels.md) | Build a two-input selector expression in an AIG. | [header](../include/mulib-synth-multiplexer.h) |
-| [synth-npn](engineering-kernels.md) | Canonicalize up to six-variable Boolean truth tables under input permutation, input negation, and output negation. | [header](../include/mulib-synth-npn.h) |
-| [synth-quinemccluskey](engineering-kernels.md) | Find a minimum-cardinality prime-implicant cover for up to six variables within a search budget. | [header](../include/mulib-synth-quinemccluskey.h) |
-| [synth-register](engineering-kernels.md) | Identify duplicate HWIL registers by width, input operand, and stored constant. | [header](../include/mulib-synth-register.h) |
-| [synth-retime](engineering-kernels.md) | Apply supplied integer retiming labels to edge register counts with range checks; no label search. | [header](../include/mulib-synth-retime.h) |
-| [synth-truthtable](mulib-synth-truthtable.md) | Packed truth tables for zero to six inputs with variable generation, Boolean operations, evaluation and variable-removing cofactors. | [header](../include/mulib-synth-truthtable.h) · [example](../examples/modules/synth-truthtable.c) |
-| [synth-xag](engineering-kernels.md) | Evaluate topologically ordered XOR-AND graphs with constants and complemented inputs. | [header](../include/mulib-synth-xag.h) |
-| [syscall](mulib-syscall.md) | Focused native operations with checked arguments and explicit errors. | [header](../include/mulib-syscall.h) · [example](../examples/modules/syscall.c) |
-| [sysfonts](mulib-sysfonts.md) | Runtime Fontconfig system font enumeration, matching and private application fonts. | [header](../include/mulib-sysfonts.h) · [example](../examples/modules/sysfonts.c) |
-| [sysfs](mulib-sysfs.md) | Bounded sysfs-style attribute access and typed conversion. | [header](../include/mulib-sysfs.h) · [example](../examples/modules/sysfs.c) |
+| [sandbox-process](mulib-sandbox-process.md) | Trusted-bootstrap Linux worker launch, strict seccomp, resource controls and supervision. | [header](../kernels/mulib-sandbox-process.h) · [example](../examples/modules/sandbox-process.c) |
+| [sandbox-profile](mulib-sandbox-profile.md) | Versioned sandbox limits and enforcement policy validation. | [header](../kernels/mulib-sandbox-profile.h) · [example](../examples/modules/sandbox-process.c) |
+| [sat](mulib-sat.md) | Bounded complete DPLL SAT solver for CNF and temporary assumptions. | [header](../kernels/mulib-sat.h) · [example](../examples/modules/sat.c) |
+| [scanvec](mulib-scanvec.md) | Selection-vector numeric predicates with explicit per-call capacity | [header](../kernels/mulib-scanvec.h) · [example](../examples/modules/scanvec.c) |
+| [schedutils](mulib-schedutils.md) | Scheduler inspection, cooperative yield and checked periodic | [header](../kernels/mulib-schedutils.h) · [example](../examples/modules/schedutils.c) |
+| [schemaorg](mulib-schemaorg.md) | Bounded extraction of plain Product/Offer JSON-LD scalar fields. | [header](../kernels/mulib-schemaorg.h) · [example](../examples/modules/schemaorg.c) |
+| [scrape](mulib-scrape.md) | Simple query-free HTML text extraction orchestrator. | [header](../kernels/mulib-scrape.h) · [example](../examples/modules/scrape.c) |
+| [scrape-metadata](mulib-scrape-metadata.md) | Extract bounded HTML meta content attributes by name. | [header](../kernels/mulib-scrape-metadata.h) · [example](../examples/modules/scrape-metadata.c) |
+| [scrape-readable](mulib-scrape-readable.md) | Remove markup and collapse HTML whitespace into readable text (basic subset). | [header](../kernels/mulib-scrape-readable.h) · [example](../examples/modules/scrape-readable.c) |
+| [scrape-rule](mulib-scrape-rule.md) | Owned declarative selector/property pair for extraction rules. | [header](../kernels/mulib-scrape-rule.h) · [example](../examples/modules/scrape-rule.c) |
+| [scrape-schema](mulib-scrape-schema.md) | Required string and bounded integer, real and boolean validation for extracted fields. | [header](../kernels/mulib-scrape-schema.h) · [example](../examples/modules/scrape-schema.c) |
+| [scrape-table](mulib-scrape-table.md) | Simple HTML table cell counting for static document inspection. | [header](../kernels/mulib-scrape-table.h) · [example](../examples/modules/scrape-table.c) |
+| [search](mulib-search.md) | Byte KMP search and callback enumeration of overlapping matches. | [header](../kernels/mulib-search.h) · [example](../examples/modules/search.c) |
+| [search-query](mulib-search-query.md) | Percent-encoded form query builder and Google/Bing URL construction. | [header](../kernels/mulib-search-query.h) · [example](../examples/modules/search-query.c) |
+| [search-rank](mulib-search-rank.md) | ASCII lexical substring and whole-word matching with checked weighted field scoring. | [header](../kernels/mulib-search-rank.h) · [example](../examples/modules/search-rank.c) |
+| [search-serp](mulib-search-serp.md) | Extract href attributes from simple quoted HTML anchor markup. | [header](../kernels/mulib-search-serp.h) · [example](../examples/modules/search-serp.c) |
+| [search-session](mulib-search-session.md) | Bounded paginated search offset and page-size tracking. | [header](../kernels/mulib-search-session.h) · [example](../examples/modules/search-session.c) |
+| [seat](notebook-desktop.md) | Caller-supplied seat broker interface and device lifetime bookkeeping. | [header](../kernels/mulib-seat.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [seccomp](mulib-seccomp.md) | Architecture-checked Linux seccomp BPF compilation and strict worker policies. | [header](../kernels/mulib-seccomp.h) · [example](../examples/modules/sandbox-process.c) |
+| [secret-audit](mulib-secret-audit.md) | HMAC-chained fixed-format audit records; the host supplies a trusted anchor. | [header](../kernels/mulib-secret-audit.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-aws](mulib-secret-aws.md) | AWS SigV4 signing-key derivation and canonical request signature primitive. | [header](../kernels/mulib-secret-aws.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-catalog](mulib-secret-catalog.md) | Canonical catalogue serialization and optimistic record revision management. | [header](../kernels/mulib-secret-catalog.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-codec](mulib-secret-codec.md) | Canonical unpadded Base64url/Base32 and lowercase hexadecimal encoding. | [header](../kernels/mulib-secret-codec.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-core](mulib-secret-core.md) | Shared status, byte spans, checked arithmetic, endian and wipe helpers. | [header](../kernels/mulib-secret-core.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-crypto](mulib-secret-crypto.md) | Versioned crypto provider ABI, checked RNG, HMAC, HKDF, KDF and AEAD dispatch. | [header](../kernels/mulib-secret-crypto.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-crypto-native](mulib-secret-crypto-native.md) | Adapter for existing MuLIB crypto primitives; no new external dependency. | [header](../kernels/mulib-secret-crypto-native.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-crypto-openssl](mulib-secret-crypto-openssl.md) | Optional OpenSSL EVP provider for differential testing and deployments allowing external crypto. | [header](../kernels/mulib-secret-crypto-openssl.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-jose](mulib-secret-jose.md) | HS256 compact JWS signing and signature verification with fixed protected header. | [header](../kernels/mulib-secret-jose.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-key-agreement](mulib-secret-key-agreement.md) | Native X25519 key generation and domain-separated shared-key derivation. | [header](../kernels/mulib-secret-key-agreement.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-lease](mulib-secret-lease.md) | Broker-owned one-shot operation approvals with random tokens. | [header](../kernels/mulib-secret-lease.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-memory](mulib-secret-memory.md) | Owning secret buffer with guard pages, lock policy and full-capacity erase. | [header](../kernels/mulib-secret-memory.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-oauth](mulib-secret-oauth.md) | OAuth PKCE S256, random state and token lease decisions; no network side effects. | [header](../kernels/mulib-secret-oauth.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-otp](mulib-secret-otp.md) | HOTP/TOTP SHA-1/256/512, Steam format, and HOTP counter reservation via host CAS. | [header](../kernels/mulib-secret-otp.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-otp-uri](mulib-secret-otp-uri.md) | Bounded otpauth URI import for Google Authenticator compatible secrets. | [header](../kernels/mulib-secret-otp-uri.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-passphrase](mulib-secret-passphrase.md) | Word-list passphrases and high-entropy recovery-code verifiers. | [header](../kernels/mulib-secret-passphrase.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-policy](mulib-secret-policy.md) | Fail-closed authorization, exact subjects, operation masks, expiry and consent. | [header](../kernels/mulib-secret-policy.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-provider](mulib-secret-provider.md) | Versioned provider catalogue and policy-mediated operation dispatch. | [header](../kernels/mulib-secret-provider.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-random](mulib-secret-random.md) | Unbiased random selections, identifiers, recovery codes, password policies. | [header](../kernels/mulib-secret-random.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-rate](mulib-secret-rate.md) | Bounded exponential authentication backoff using trusted monotonic time. | [header](../kernels/mulib-secret-rate.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-record](mulib-secret-record.md) | Authenticated encrypted record envelope with per-write HKDF key and random nonce. | [header](../kernels/mulib-secret-record.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-recovery](mulib-secret-recovery.md) | Shamir GF(256) threshold secret sharing with strict share identifiers. | [header](../kernels/mulib-secret-recovery.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-selftest](mulib-secret-selftest.md) | Backend conformance smoke tests with RFC vectors and authenticated storage rejection tests. | [header](../kernels/mulib-secret-selftest.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-sign](mulib-secret-sign.md) | Opaque signing/key-agreement backend contract and algorithm-pinned dispatch. | [header](../kernels/mulib-secret-sign.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-spec](mulib-secret-spec.md) | Credential kind catalogue and intended operation metadata, not runtime capabilities. | [header](../kernels/mulib-secret-spec.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-ssh](mulib-secret-ssh.md) | Bounded SSH agent sign-request parser and RFC 4251 string framing. | [header](../kernels/mulib-secret-ssh.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-state](mulib-secret-state.md) | Monotonic counter reservation and optimistic persistent transition contract. | [header](../kernels/mulib-secret-state.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-store](mulib-secret-store.md) | Durable encrypted blob storage using a trusted private POSIX directory descriptor. | [header](../kernels/mulib-secret-store.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-vault](mulib-secret-vault.md) | Password-wrapped random vault root, lock/unlock and authenticated profile. | [header](../kernels/mulib-secret-vault.h) · [example](../examples/mulib-secret-kernels.c) |
+| [secret-webauthn](mulib-secret-webauthn.md) | Basic WebAuthn assertion data and signing input; not an authenticator or origin verifier. | [header](../kernels/mulib-secret-webauthn.h) · [example](../examples/mulib-secret-kernels.c) |
+| [select](mulib-select.md) | Bounds-checked native descriptor readiness selection. | [header](../kernels/mulib-select.h) · [example](../examples/modules/select.c) |
+| [semilattice](mulib-semilattice.md) | Grow-only 64-bit-set join/meet semilattice and partial-order tests | [header](../kernels/mulib-semilattice.h) · [example](../examples/modules/semilattice.c) |
+| [semiring](mulib-semiring.md) | Boolean, natural-number and tropical semiring operations | [header](../kernels/mulib-semiring.h) · [example](../examples/modules/semiring.c) |
+| [semver](mulib-semver.md) | Semantic version triplet parsing and numeric precedence comparison. | [header](../kernels/mulib-semver.h) · [example](../examples/modules/semver.c) |
+| [set](mulib-set.md) | Unique set of signed 64-bit integers. | [header](../kernels/mulib-set.h) · [example](../examples/modules/set.c) |
+| [seurity](mulib-seurity.md) | Security-oriented byte comparison tokens and strict paths. | [header](../kernels/mulib-seurity.h) · [example](../examples/modules/seurity.c) |
+| [sexpr](mulib-sexpr.md) | A tree-based S-expression parser with atoms, lists, and deterministic rendering. | [header](../kernels/mulib-sexpr.h) · [example](../examples/modules/sexpr.c) |
+| [sfnt](mulib-sfnt.md) | Checked SFNT/TTC face directories, table ranges and overlap defense. | [header](../kernels/mulib-sfnt.h) · [example](../examples/mulib-sfnt.c) |
+| [sha](mulib-sha.md) | SHA-0/1/2/3 and SHAKE with streaming contexts and SIMD alternatives. | [header](../kernels/mulib-sha.h) · [example](../examples/modules/sha.c) |
+| [shaderx](mulib-shaderx.md) | Typed shader expression graphs and a Parsec-backed GLSL/HLSL compiler. | [header](../kernels/mulib-shaderx.h) · [example](../examples/modules/shaderx.c) |
+| [shadowsocks](mulib-shadowsocks.md) | SIP004 Shadowsocks AEAD TCP chunk framing with explicit crypto | [header](../kernels/mulib-shadowsocks.h) · [example](../examples/modules/shadowsocks.c) |
+| [shebang-sh](mulib-shebang-sh.md) | Bounded line processing with macros, ordered filters, optional Mune callbacks and POSIX shebang execution. | [header](../kernels/mulib-shebang-sh.h) · [example](../examples/shebang.c) |
+| [shiraz](mulib-shiraz.md) | Shiraz: Windows AMD64 PE/COFF loading, interpretation and helper-based C AOT. | [header](../kernels/mulib-shiraz.h) · [example](../examples/modules/shiraz.c) |
+| [shm](mulib-shm.md) | System V shared-memory creation, attachment and explicit removal. | [header](../kernels/mulib-shm.h) · [example](../examples/modules/shm.c) |
+| [shoebox-contract](mulib-shoebox-contract.md) | Versioned Shoebox multicall applet contract, dispatch and bounded I/O. | [header](../kernels/mulib-shoebox-contract.h) · [example](../examples/modules/shoebox-contract.c) |
+| [signal](mulib-signal.md) | Explicit native signal-handler installation and restoration. | [header](../kernels/mulib-signal.h) · [example](../examples/modules/signal.c) |
+| [signature](mulib-signature.md) | RSA PKCS1/PSS and ECDSA P-256/P-384 public-key signature verification. | [header](../kernels/mulib-signature.h) · [example](../examples/modules/signature.c) |
+| [simdmath](mulib-simdmath.md) | Four-lane SIMD arithmetic and batched graphics transforms. | [header](../kernels/mulib-simdmath.h) · [example](../examples/modules/simdmath.c) |
+| [simhash](mulib-simhash.md) | 64-bit weighted SimHash fingerprints and Hamming distance | [header](../kernels/mulib-simhash.h) · [example](../examples/modules/simhash.c) |
+| [sitemap](mulib-sitemap.md) | Extract next loc entry from XML sitemap bytes without fetching. | [header](../kernels/mulib-sitemap.h) · [example](../examples/modules/sitemap.c) |
+| [smt](mulib-smt.md) | Bounded Boolean and real difference-logic satisfiability using SAT and Bellman-Ford. | [header](../kernels/mulib-smt.h) · [example](../examples/modules/smt.c) |
+| [smtpclient](mulib-smtpclient.md) | Bounded SMTP envelope commands and DATA encoding. | [header](../kernels/mulib-smtpclient.h) · [example](../examples/modules/smtpclient.c) |
+| [smtpserver](mulib-smtpserver.md) | Callback-backed SMTP envelope and dot-stuffed DATA sessions. | [header](../kernels/mulib-smtpserver.h) · [example](../examples/modules/smtpserver.c) |
+| [soap](mulib-soap.md) | Checked SOAP 1.1 and 1.2 envelope helpers and HTTP transport. | [header](../kernels/mulib-soap.h) · [example](../examples/modules/soap.c) |
+| [soc-memorymap](mulib-soc-memorymap.md) | Bounded 128-entry nonoverlapping physical address map with overflow-checked half-open regions, device IDs and offset lookup. | [header](../kernels/mulib-soc-memorymap.h) · [example](../examples/modules/soc-memorymap.c) |
+| [sock-diag](mulib-sock-diag.md) | Issue a bounded NETLINK_SOCK_DIAG inet socket dump request | [header](../kernels/mulib-sock-diag.h) · [example](../examples/modules/sock-diag.c) |
+| [socket](mulib-socket.md) | POSIX connected stream descriptor ownership and bounded I/O primitives. | [header](../kernels/mulib-socket.h) · [example](../examples/modules/socket.c) |
+| [socks5](mulib-socks5.md) | RFC 1928 method negotiation, address and CONNECT/BIND/UDP codecs. | [header](../kernels/mulib-socks5.h) · [example](../examples/modules/socks5.c) |
+| [sort](mulib-sort.md) | Generic sorting, stable merge sort, binary lookup and heterogeneous lower bounds. | [header](../kernels/mulib-sort.h) · [example](../examples/modules/sort.c) |
+| [source-manager](mulib-source-manager.md) | Owned binary-safe source bytes with logarithmic byte-offset line/column lookup. | [header](../kernels/mulib-source-manager.h) · [example](../examples/modules/source-manager.c) |
+| [source-map](mulib-source-map.md) | Ordered nonoverlapping generated-to-original byte-span mappings. | [header](../kernels/mulib-source-map.h) · [example](../examples/modules/source-map.c) |
+| [spatialtree](mulib-spatialtree.md) | Owned static balanced 2D k-d tree for inclusive rectangle searches. | [header](../kernels/mulib-spatialtree.h) · [example](../examples/modules/spatialtree.c) |
+| [spellcheck](mulib-spellcheck.md) | Configurable dictionary/affix/compound checking and five suggestion engines. | [header](../kernels/mulib-spellcheck.h) · [example](../examples/modules/spellcheck.c) |
+| [spice-ac](mulib-spice-ac.md) | Frequency-domain complex MNA for linear R/C/I/V circuits at one nonnegative frequency, interpreting independent DC source magnitudes as AC phasor amplitudes of zero phase for this narrow profile. | [header](../kernels/mulib-spice-ac.h) · [example](../examples/modules/spice-ac.c) |
+| [spice-behavioral](engineering-kernels.md) | Stamp a linearized behavioral current source into dense MNA from supplied values and derivatives. | [header](../kernels/mulib-spice-behavioral.h) |
+| [spice-bjt](engineering-kernels.md) | Evaluate terminal currents of a static NPN Ebers-Moll model without charge storage or Early effect. | [header](../kernels/mulib-spice-bjt.h) |
+| [spice-c](mulib-spice-c.md) | Backward-Euler companion for an ideal linear capacitor: conductance C/dt and equivalent history current. | [header](../kernels/mulib-spice-c.h) · [example](../examples/modules/spice-c.c) |
+| [spice-checkpoint](engineering-kernels.md) | Save and restore one owned in-memory time and state-vector snapshot. | [header](../kernels/mulib-spice-checkpoint.h) |
+| [spice-controlled](engineering-kernels.md) | Dense MNA stamps for the four ideal linear controlled current and voltage source types. | [header](../kernels/mulib-spice-controlled.h) |
+| [spice-convergence](engineering-kernels.md) | Absolute/relative convergence checks, a geometric Gmin schedule, and voltage-increment limiting. | [header](../kernels/mulib-spice-convergence.h) |
+| [spice-dae](engineering-kernels.md) | Apply one linear backward-Euler step to a dense MNA system. | [header](../kernels/mulib-spice-dae.h) |
+| [spice-dc](mulib-spice-dc.md) | Linear DC source sweep over a named independent voltage/current source. | [header](../kernels/mulib-spice-dc.h) · [example](../examples/modules/spice-dc.c) |
+| [spice-device](engineering-kernels.md) | Dispatch caller-supplied MNA device stamp callbacks for a given state and time. | [header](../kernels/mulib-spice-device.h) |
+| [spice-diode](engineering-kernels.md) | Shockley diode current and slope with a high-bias linear continuation, plus a dense MNA stamp. | [header](../kernels/mulib-spice-diode.h) |
+| [spice-elaborate](engineering-kernels.md) | Assign compact IDs to a flat list of node names, treating 0 and gnd as ground. | [header](../kernels/mulib-spice-elaborate.h) |
+| [spice-fourier](engineering-kernels.md) | Direct normalized discrete Fourier coefficients for requested nonnegative harmonics of real samples. | [header](../kernels/mulib-spice-fourier.h) |
+| [spice-independent](mulib-spice-independent.md) | Time-independent DC current and voltage MNA source stamps. | [header](../kernels/mulib-spice-independent.h) · [example](../examples/modules/spice-independent.c) |
+| [spice-jfet](engineering-kernels.md) | Static JFET channel current and conductances using a square-law approximation; no junction model. | [header](../kernels/mulib-spice-jfet.h) |
+| [spice-k](engineering-kernels.md) | Stamp mutual inductance between two inductor branch variables in dense MNA. | [header](../kernels/mulib-spice-k.h) |
+| [spice-l](engineering-kernels.md) | Dense MNA branch stamp for ideal linear inductance. | [header](../kernels/mulib-spice-l.h) |
+| [spice-lexer](mulib-spice-lexer.md) | SPICE engineering numeric suffixes (T,G,MEG,K,M,U,N,P,F) and bounded whitespace-line tokenization for basic component records. | [header](../kernels/mulib-spice-lexer.h) · [example](../examples/modules/spice-lexer.c) |
+| [spice-measure](mulib-spice-measure.md) | SPICE-facing sample-domain RMS and extrema helpers delegated to the existing wave-measure primitive. | [header](../kernels/mulib-spice-measure.h) · [example](../examples/modules/spice-measure.c) |
+| [spice-mna](engineering-kernels.md) | Dense reference MNA assembly and DC solve, with sparse row assembly and sparse LU for DC or backward Euler. | [header](../kernels/mulib-spice-mna.h) |
+| [spice-model](engineering-kernels.md) | Look up a named numeric model parameter with a supplied fallback. | [header](../kernels/mulib-spice-model.h) |
+| [spice-montecarlo](engineering-kernels.md) | Generate independent Gaussian parameter samples from supplied means and deviations. | [header](../kernels/mulib-spice-montecarlo.h) |
+| [spice-mosfet](engineering-kernels.md) | Static long-channel level-1 NMOS current and small-signal derivatives without body effect or charge storage. | [header](../kernels/mulib-spice-mosfet.h) |
+| [spice-netlist](mulib-spice-netlist.md) | Transactional parser for four passive/independent-device card types: R, C, V, I with 2 nodes and one numeric DC value. | [header](../kernels/mulib-spice-netlist.h) · [example](../examples/modules/spice-netlist.c) |
+| [spice-noise](engineering-kernels.md) | Resistor thermal and shot noise density helpers and summation of transferred uncorrelated source densities. | [header](../kernels/mulib-spice-noise.h) |
+| [spice-nonlinear](engineering-kernels.md) | Bounded damped DC iteration over device callbacks using dense MNA solves; no full convergence ladder. | [header](../kernels/mulib-spice-nonlinear.h) |
+| [spice-op](mulib-spice-op.md) | DC operating-point solver for linear R/I/V circuits with open capacitors; dense MNA and partial-pivot Gaussian elimination. | [header](../kernels/mulib-spice-op.h) · [example](../examples/modules/spice-op.c) |
+| [spice-params](engineering-kernels.md) | Parse a finite numeric literal with a supported case-insensitive SPICE scale suffix. | [header](../kernels/mulib-spice-params.h) |
+| [spice-pz](engineering-kernels.md) | Extract real or complex roots from a supplied linear or quadratic polynomial; not a circuit pole-zero solver. | [header](../kernels/mulib-spice-pz.h) |
+| [spice-r](mulib-spice-r.md) | Linear DC resistor MNA stamp with strictly positive finite resistance. | [header](../kernels/mulib-spice-r.h) · [example](../examples/modules/spice-r.c) |
+| [spice-rawfile](engineering-kernels.md) | Write real ASCII transient sample data in SPICE rawfile form; no reader or binary profile. | [header](../kernels/mulib-spice-rawfile.h) |
+| [spice-sensitivity](engineering-kernels.md) | Compute first-order solution sensitivities of a dense linear system from supplied matrix and RHS derivatives. | [header](../kernels/mulib-spice-sensitivity.h) |
+| [spice-sourcewave](engineering-kernels.md) | Evaluate pulse, damped sine, piecewise-linear, and exponential source waveforms at a supplied time. | [header](../kernels/mulib-spice-sourcewave.h) |
+| [spice-stamp](mulib-spice-stamp.md) | MNA matrix and RHS allocation and linear conductance/independent current/ideal voltage-source stamps. | [header](../kernels/mulib-spice-stamp.h) · [example](../examples/modules/spice-stamp.c) |
+| [spice-subckt](engineering-kernels.md) | Map subcircuit ports to supplied node IDs and assign sequential IDs to local internal nodes. | [header](../kernels/mulib-spice-subckt.h) |
+| [spice-sweep](engineering-kernels.md) | Generate linear or logarithmic sample values between two endpoints. | [header](../kernels/mulib-spice-sweep.h) |
+| [spice-switch](engineering-kernels.md) | Update a hysteretic switch state and select its on/off conductance from a control value. | [header](../kernels/mulib-spice-switch.h) |
+| [spice-temperature](engineering-kernels.md) | Temperature scaling for resistance and saturation current from supplied model coefficients. | [header](../kernels/mulib-spice-temperature.h) |
+| [spice-timestep](engineering-kernels.md) | Choose an acceptable backward-Euler step for linear MNA using bounded step-doubling retries. | [header](../kernels/mulib-spice-timestep.h) |
+| [spice-tline](engineering-kernels.md) | Compute a lossless transmission line's two-port ABCD frequency response from impedance and delay. | [header](../kernels/mulib-spice-tline.h) |
+| [spice-tran](mulib-spice-tran.md) | Fixed-timestep backward-Euler transient for linear R/C/I/V networks, zero initial capacitor voltages, time-invariant DC sources, no inductors. | [header](../kernels/mulib-spice-tran.h) · [example](../examples/modules/spice-tran.c) |
+| [split](mulib-split.md) | In-place token splitting into an array of field pointers. | [header](../kernels/mulib-split.h) · [example](../examples/modules/split.c) |
+| [sppf](mulib-sppf.md) | Shared packed parse forests preserving alternative derivations. | [header](../kernels/mulib-sppf.h) · [example](../examples/modules/sppf.c) |
+| [sql](mulib-sql.md) | Focused SQL key/value statements over a shared memtable, not general SQL. | [header](../kernels/mulib-sql.h) · [example](../examples/modules/sql.c) |
+| [sqlite](mulib-sqlite.md) | Independent SQLite-file SQL profile using parsec, not full SQLite compatibility. | [header](../kernels/mulib-sqlite.h) · [example](../examples/modules/sqlite.c) |
+| [sqlite-format](mulib-sqlite-format.md) | Independent SQLite records, varints and bounded table B-tree images. | [header](../kernels/mulib-sqlite-format.h) · [example](../examples/modules/sqlite-format.c) |
+| [sqlite-pager](mulib-sqlite-pager.md) | SQLite snapshots, POSIX lifetime locks and rollback-journal commits. | [header](../kernels/mulib-sqlite-pager.h) · [example](../examples/modules/sqlite-pager.c) |
+| [sse](mulib-sse.md) | Bounded incremental UTF-8 server-sent event parsing and encoding. | [header](../kernels/mulib-sse.h) · [example](../examples/modules/sse.c) |
+| [sse-client](mulib-sse-client.md) | One bounded SSE stream over a caller-configured MuW3 client. | [header](../kernels/mulib-sse-client.h) · [example](../examples/modules/sse-client.c) |
+| [sshauth](mulib-sshauth.md) | SSH service negotiation and none, password and Ed25519 user-authentication payloads. | [header](../kernels/mulib-sshauth.h) · [example](../examples/ssh/kernels.c) |
+| [sshchannel](mulib-sshchannel.md) | SSH session-channel payloads, lifecycle and flow control. | [header](../kernels/mulib-sshchannel.h) · [example](../examples/ssh/kernels.c) |
+| [sshclient](mulib-sshclient.md) | SSH-2 client transport and authentication helpers; legacy cleartext codecs. | [header](../kernels/mulib-sshclient.h) · [example](../examples/modules/sshclient.c) |
+| [sshconnection](mulib-sshconnection.md) | Socket-independent SSH connection driver with buffered records and authentication sequencing. | [header](../kernels/mulib-sshconnection.h) · [example](../examples/ssh/connection.c) |
+| [sshcrypto](mulib-sshcrypto.md) | SSH exchange hashing, key derivation and directional AES-128-GCM records. | [header](../kernels/mulib-sshcrypto.h) · [example](../examples/ssh/kernels.c) |
+| [sshkex](mulib-sshkex.md) | SSH Curve25519 key-exchange negotiation, messages and transcript hashing. | [header](../kernels/mulib-sshkex.h) · [example](../examples/ssh/kernels.c) |
+| [sshkey](mulib-sshkey.md) | SSH Ed25519 key and signature blob codecs. | [header](../kernels/mulib-sshkey.h) · [example](../examples/ssh/kernels.c) |
+| [sshpacket](mulib-sshpacket.md) | Bounded SSH binary framing for cleartext and length-authenticated AEAD packets. | [header](../kernels/mulib-sshpacket.h) · [example](../examples/ssh/kernels.c) |
+| [sshproto](mulib-sshproto.md) | SSH message numbers, KEXINIT payloads and algorithm name lists. | [header](../kernels/mulib-sshproto.h) · [example](../examples/ssh/kernels.c) |
+| [sshserver](mulib-sshserver.md) | SSH-2 server transport helpers and bounded user-authentication policies. | [header](../kernels/mulib-sshserver.h) · [example](../examples/modules/sshserver.c) |
+| [sshtransport](mulib-sshtransport.md) | Socket-independent, pinned SSH-2 key exchange and authenticated record transport. | [header](../kernels/mulib-sshtransport.h) · [example](../examples/ssh/kernels.c) |
+| [sshwire](mulib-sshwire.md) | Transactional SSH-2 wire cursors, strings and nonnegative mpints. | [header](../kernels/mulib-sshwire.h) · [example](../examples/ssh/kernels.c) |
+| [sstfile](mulib-sstfile.md) | Immutable sorted-table byte snapshots, preserving tombstones/sequences. | [header](../kernels/mulib-sstfile.h) · [example](../examples/modules/sstfile.c) |
+| [stack](mulib-stack.md) | A last-in-first-out stack of fixed-stride elements. | [header](../kernels/mulib-stack.h) · [example](../examples/modules/stack.c) |
+| [stackmap](mulib-stackmap.md) | Exact native-PC safepoint maps of pointer register and spill-slot masks. | [header](../kernels/mulib-stackmap.h) · [example](../examples/modules/stackmap.c) |
+| [static_file](mulib-static_file.md) | Strict virtual-filesystem static-file response helper. | [header](../kernels/mulib-static_file.h) · [example](../examples/modules/static_file.c) |
+| [stats](mulib-stats.md) | Streaming sample statistics using Welford numerical updates. | [header](../kernels/mulib-stats.h) · [example](../examples/modules/stats.c) |
+| [statsprice](mulib-statsprice.md) | Robust cross-sectional market price estimates and descriptive snapshots. | [header](../kernels/mulib-statsprice.h) · [example](../examples/modules/statsprice.c) |
+| [statsproc](mulib-statsproc.md) | Robust generic quantiles, weighted estimators, MAD, Huber, KDE and Theil-Sen fitting. | [header](../kernels/mulib-statsproc.h) · [example](../examples/modules/statsproc.c) |
+| [staymatch](mulib-staymatch.md) | Bounded exact top-K room bundles with dated occupancy and shared inventory. | [header](../kernels/mulib-staymatch.h) · [example](../examples/hospitality_demo.c) |
+| [stopwords](mulib-stopwords.md) | Sorted static stopword set lookup for normalized tokens | [header](../kernels/mulib-stopwords.h) · [example](../examples/modules/stopwords.c) |
+| [storage-core](engineering-kernels.md) | Checked allocation, owned byte buffers, size arithmetic and binary helpers; caller must satisfy pointer, count and nonoverlap contracts. | [header](../kernels/mulib-storage-core.h) · [example](../examples/kernel-substrates.c) |
+| [strbuf](mulib-strbuf.md) | Dynamically growing NUL-terminated text builder. | [header](../kernels/mulib-strbuf.h) · [example](../examples/modules/strbuf.c) |
+| [strpool](mulib-strpool.md) | Binary-safe hashed string interning with stable owned storage. | [header](../kernels/mulib-strpool.h) · [example](../examples/modules/strpool.c) |
+| [stylesheet](mulib-stylesheet.md) | Typed layout styles with inheritance, selector specificity and importance cascading. | [header](../kernels/mulib-stylesheet.h) · [example](../examples/modules/stylesheet.c) |
+| [superblocks](mulib-superblocks.md) | Single-entry SSA traces with explicit side exits and native MIR lowering. | [header](../kernels/mulib-superblocks.h) · [example](../examples/modules/superblocks.c) |
+| [superinstr](mulib-superinstr.md) | Exact straight-line assembly superinstructions emitted as GAS macros. | [header](../kernels/mulib-superinstr.h) · [example](../examples/modules/superinstr.c) |
+| [svg](mulib-svg.md) | Escaped SVG shape and document construction using shared markup. | [header](../kernels/mulib-svg.h) · [example](../examples/modules/svg.c) |
+| [svgpaint](mulib-svgpaint.md) | Owned ordered collection for graphics svgpaint rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-svgpaint.h) · [example](../examples/mulib-svgpaint.c) |
+| [symbol](mulib-symbol.md) | Dependency-free extensible mathematical/logic Unicode and TeX symbols. | [header](../kernels/mulib-symbol.h) · [example](../examples/modules/symbol.c) |
+| [symboltable](mulib-symboltable.md) | Owned lexical bindings with nested shadowing and scope rollback. | [header](../kernels/mulib-symboltable.h) · [example](../examples/modules/symboltable.c) |
+| [syntax-tree](mulib-syntax-tree.md) | Owned token-span syntax forests with validated parent/child/sibling links. | [header](../kernels/mulib-syntax-tree.h) · [example](../examples/modules/syntax-tree.c) |
+| [synth-aig](mulib-synth-aig.md) | Bounded AIG with constant 0/1, complemented edges, structural hashing and simple constant/identity simplification. | [header](../kernels/mulib-synth-aig.h) · [example](../examples/modules/synth-aig.c) |
+| [synth-aig-balance](engineering-kernels.md) | Build a balanced pairwise conjunction of supplied AND-inverter graph literals. | [header](../kernels/mulib-synth-aig-balance.h) |
+| [synth-aig-refactor](engineering-kernels.md) | Construct a common-factor Boolean expression in an AIG from three supplied literals. | [header](../kernels/mulib-synth-aig-refactor.h) |
+| [synth-aig-rewrite](engineering-kernels.md) | Rebuild a dynamic AIG with trivial Boolean reductions, shared identical gates, and a literal remap. | [header](../kernels/mulib-synth-aig-rewrite.h) |
+| [synth-arithmetic](engineering-kernels.md) | Build a bit-vector ripple-carry adder with carry-in and carry-out in an AIG. | [header](../kernels/mulib-synth-arithmetic.h) |
+| [synth-bdd](engineering-kernels.md) | Build and evaluate reduced ordered BDDs from truth tables of up to six variables. | [header](../kernels/mulib-synth-bdd.h) |
+| [synth-cellmap](engineering-kernels.md) | Choose one exact truth-table match of up to six inputs by weighted cell area and delay. | [header](../kernels/mulib-synth-cellmap.h) |
+| [synth-cost](engineering-kernels.md) | Estimate AIG area and delay from total AND count and maximum AND depth using uniform gate costs. | [header](../kernels/mulib-synth-cost.h) |
+| [synth-cuts](engineering-kernels.md) | Enumerate distinct AIG cuts from a selected node within an eight-leaf limit and caller capacity. | [header](../kernels/mulib-synth-cuts.h) |
+| [synth-dce](engineering-kernels.md) | Rebuild an AIG from nodes reachable from supplied output literals and return a remap. | [header](../kernels/mulib-synth-dce.h) |
+| [synth-egraph](engineering-kernels.md) | Compute congruence closure of commutative AIG AND expressions under caller-supplied equalities. | [header](../kernels/mulib-synth-egraph.h) |
+| [synth-espresso](engineering-kernels.md) | Greedy two-level Boolean cover with don't-cares for at most six inputs; not full Espresso. | [header](../kernels/mulib-synth-espresso.h) |
+| [synth-fsm](engineering-kernels.md) | Partition deterministic Moore-machine states by output and transitions until equivalent state classes stabilize. | [header](../kernels/mulib-synth-fsm.h) |
+| [synth-lutmap](engineering-kernels.md) | Extract LUT truth for a supplied AIG cut of at most six leaves; not global mapping. | [header](../kernels/mulib-synth-lutmap.h) |
+| [synth-memory](engineering-kernels.md) | Compute address width for a given depth and decode one address to a one-hot row selection. | [header](../kernels/mulib-synth-memory.h) |
+| [synth-mig](engineering-kernels.md) | Evaluate topologically ordered majority-inverter graphs with constants and complemented inputs. | [header](../kernels/mulib-synth-mig.h) |
+| [synth-multiplexer](engineering-kernels.md) | Build a two-input selector expression in an AIG. | [header](../kernels/mulib-synth-multiplexer.h) |
+| [synth-npn](engineering-kernels.md) | Canonicalize up to six-variable Boolean truth tables under input permutation, input negation, and output negation. | [header](../kernels/mulib-synth-npn.h) |
+| [synth-quinemccluskey](engineering-kernels.md) | Find a minimum-cardinality prime-implicant cover for up to six variables within a search budget. | [header](../kernels/mulib-synth-quinemccluskey.h) |
+| [synth-register](engineering-kernels.md) | Identify duplicate HWIL registers by width, input operand, and stored constant. | [header](../kernels/mulib-synth-register.h) |
+| [synth-retime](engineering-kernels.md) | Apply supplied integer retiming labels to edge register counts with range checks; no label search. | [header](../kernels/mulib-synth-retime.h) |
+| [synth-truthtable](mulib-synth-truthtable.md) | Packed truth tables for zero to six inputs with variable generation, Boolean operations, evaluation and variable-removing cofactors. | [header](../kernels/mulib-synth-truthtable.h) · [example](../examples/modules/synth-truthtable.c) |
+| [synth-xag](engineering-kernels.md) | Evaluate topologically ordered XOR-AND graphs with constants and complemented inputs. | [header](../kernels/mulib-synth-xag.h) |
+| [syscall](mulib-syscall.md) | Focused native operations with checked arguments and explicit errors. | [header](../kernels/mulib-syscall.h) · [example](../examples/modules/syscall.c) |
+| [sysfonts](mulib-sysfonts.md) | Runtime Fontconfig system font enumeration, matching and private application fonts. | [header](../kernels/mulib-sysfonts.h) · [example](../examples/modules/sysfonts.c) |
+| [sysfs](mulib-sysfs.md) | Bounded sysfs-style attribute access and typed conversion. | [header](../kernels/mulib-sysfs.h) · [example](../examples/modules/sysfs.c) |
 
 ## T
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [tablelayout](mulib-tablelayout.md) | Owned ordered collection for graphics tablelayout rectangles and records; insertion, indexing, removal. | [header](../include/mulib-tablelayout.h) · [example](../examples/mulib-tablelayout.c) |
-| [tablepaginate](mulib-tablepaginate.md) | Owned ordered collection for graphics tablepaginate rectangles and records; insertion, indexing, removal. | [header](../include/mulib-tablepaginate.h) · [example](../examples/mulib-tablepaginate.c) |
-| [tas](mulib-tas.md) | Owned, lossless element/attribute/text/end documentation token stream. | [header](../include/mulib-tas.h) · [example](../examples/modules/tas.c) |
-| [task](mulib-task.md) | Borrowed native task plans with explicit execution boundaries. | [header](../include/mulib-task.h) · [example](../examples/modules/task.c) |
-| [taskdag](mulib-taskdag.md) | Dependency graph execution with cycle detection and task failure propagation. | [header](../include/mulib-taskdag.h) · [example](../examples/modules/taskdag.c) |
-| [taskpool](mulib-taskpool.md) | Bounded native worker pool with explicit queue and shutdown semantics. | [header](../include/mulib-taskpool.h) · [example](../examples/modules/taskpool.c) |
-| [tbl](mulib-tbl.md) | Rectangular documentation tables, pipe/CSV readers and portable writers. | [header](../include/mulib-tbl.h) · [example](../examples/modules/tbl.c) |
-| [template](mulib-template.md) | JSON-context template rendering with escaped interpolation and control flow. | [header](../include/mulib-template.h) · [example](../examples/modules/template.c) |
-| [term_rewriting](mulib-term_rewriting.md) | Bounded ordered first-order term rewriting on shared MuLIB ASTs. | [header](../include/mulib-term_rewriting.h) · [example](../examples/modules/term_rewriting.c) |
-| [termdb](mulib-termdb.md) | Read-only lookup and bounded parameter expansion from the terminal SQLite database. | [header](../include/mulib-termdb.h) · [example](../library/termscript/main.c) |
-| [termfunc](mulib-termfunc.md) | Semantic terminal functions with trusted terminfo and explicit xterm modes. | [header](../include/mulib-termfunc.h) · [example](../examples/termscript/support.c) |
-| [terminfo](mulib-terminfo.md) | Terminal capability loading and parameter expansion. | [header](../include/mulib-terminfo.h) · [example](../examples/modules/terminfo.c) |
-| [termkey](mulib-termkey.md) | Incremental UTF-8 and terminal escape-sequence key decoding. | [header](../include/mulib-termkey.h) · [example](../examples/modules/termkey.c) |
-| [termscript](mulib-termscript.md) | Stack language for terminal applications and portable CAPASM output. | [header](../include/mulib-termscript.h) · [example](../library/termscript/main.c) |
-| [termscript-ast](mulib-termscript-ast.md) | Parsec-backed Termscript syntax tree, symbolic escapes and tuple key chords. | [header](../include/mulib-termscript-ast.h) · [example](../library/termscript/main.c) |
-| [termscript-capasm](mulib-termscript-capasm.md) | Canonical Termscript AST lowering to XMacIR and portable CAPASM output. | [header](../include/mulib-termscript-capasm.h) · [example](../library/termscript/main.c) |
-| [termscript-host](mulib-termscript-host.md) | Explicit terminal, library, database, termios and state machine intrinsics. | [header](../include/mulib-termscript-host.h) · [example](../library/termscript/main.c) |
-| [termscript-library](mulib-termscript-library.md) | Dotted Termscript modules from explicit roots and TERMSCRIPT_LIBRARY_PATH. | [header](../include/mulib-termscript-library.h) · [example](../library/termscript/main.c) |
-| [termscript-runtime](mulib-termscript-runtime.md) | Bounded typed stack interpreter, closures, modules and mode-aware keys. | [header](../include/mulib-termscript-runtime.h) · [example](../library/termscript/main.c) |
-| [termscript-state](mulib-termscript-state.md) | Deterministic finite-state transition tables. | [header](../include/mulib-termscript-state.h) · [example](../examples/termscript/support.c) |
-| [termscript-terminal](mulib-termscript-terminal.md) | Explicit output, terminal capabilities, VTerm and POSIX termios. | [header](../include/mulib-termscript-terminal.h) · [example](../examples/termscript/support.c) |
-| [termstyle](mulib-termstyle.md) | CSS cascade to shared terminal styles and safe terminfo output, with legacy indexed contexts. | [header](../include/mulib-termstyle.h) · [example](../examples/modules/termstyle.c) |
-| [termsyn](mulib-termsyn.md) | Stateful incremental editor-buffer lexing, CSS themes and terminal output. | [header](../include/mulib-termsyn.h) · [example](../examples/modules/termsyn.c) |
-| [termutils](mulib-termutils.md) | POSIX raw-terminal restoration, sizing and complete writes. | [header](../include/mulib-termutils.h) · [example](../examples/modules/termutils.c) |
-| [tex](mulib-tex.md) | TeX text escaping and a bounded lexical scanner, not a TeX engine. | [header](../include/mulib-tex.h) · [example](../examples/modules/tex.c) |
-| [texalign](mulib-texalign.md) | Owned ordered collection for typesetting texalign rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texalign.h) · [example](../examples/mulib-texalign.c) |
-| [texbox](mulib-texbox.md) | TeX-style horizontal/vertical box dimensions with checked packing. | [header](../include/mulib-texbox.h) · [example](../examples/mulib-texbox.c) |
-| [texbreak](mulib-texbreak.md) | Optimal dynamic-programming line breaks over fixed widths and penalties. | [header](../include/mulib-texbreak.h) · [example](../examples/mulib-texbreak.c) |
-| [texbytecode](mulib-texbytecode.md) | Safe stack-bytecode arithmetic interpreter with bounded instruction steps. | [header](../include/mulib-texbytecode.h) · [example](../examples/mulib-texbytecode.c) |
-| [texcatcode](mulib-texcatcode.md) | Configurable ASCII TeX-like category codes (initialization and assignment). | [header](../include/mulib-texcatcode.h) · [example](../examples/mulib-texcatcode.c) |
-| [texclosure](mulib-texclosure.md) | Owned bounded registry of closure capture bindings; replace, lookup and remove by name. | [header](../include/mulib-texclosure.h) · [example](../examples/mulib-texclosure.c) |
-| [texdebug](mulib-texdebug.md) | Owned bounded registry of breakpoints and diagnostic labels; replace, lookup and remove by name. | [header](../include/mulib-texdebug.h) · [example](../examples/mulib-texdebug.c) |
-| [texdim](mulib-texdim.md) | TeX-compatible scaled-point integer representation and overflow-checked arithmetic. | [header](../include/mulib-texdim.h) · [example](../examples/mulib-texdim.c) |
-| [texexpand](mulib-texexpand.md) | Simple bounded macro-name substitution with single-pass escaped backslash commands. | [header](../include/mulib-texexpand.h) · [example](../examples/mulib-texexpand.c) |
-| [texexpr](mulib-texexpr.md) | Bounded recursive-descent arithmetic expressions with +,-,*,/,unary signs, parentheses. | [header](../include/mulib-texexpr.h) · [example](../examples/mulib-texexpr.c) |
-| [texffi](mulib-texffi.md) | Owned bounded registry of foreign callable symbol registry; replace, lookup and remove by name. | [header](../include/mulib-texffi.h) · [example](../examples/mulib-texffi.c) |
-| [texfunction](mulib-texfunction.md) | Owned bounded registry of named user function declarations; replace, lookup and remove by name. | [header](../include/mulib-texfunction.h) · [example](../examples/mulib-texfunction.c) |
-| [texglue](mulib-texglue.md) | TeX-like natural size, stretch and shrink plus proportional adjustment. | [header](../include/mulib-texglue.h) · [example](../examples/mulib-texglue.c) |
-| [texhlist](mulib-texhlist.md) | Owned ordered collection for typesetting texhlist rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texhlist.h) · [example](../examples/mulib-texhlist.c) |
-| [texinsert](mulib-texinsert.md) | Owned bounded registry of insertion and footnote buckets; replace, lookup and remove by name. | [header](../include/mulib-texinsert.h) · [example](../examples/mulib-texinsert.c) |
-| [texleaders](mulib-texleaders.md) | Owned ordered collection for typesetting texleaders rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texleaders.h) · [example](../examples/mulib-texleaders.c) |
-| [texmark](mulib-texmark.md) | Owned bounded registry of running header and mark values; replace, lookup and remove by name. | [header](../include/mulib-texmark.h) · [example](../examples/mulib-texmark.c) |
-| [texmodule](mulib-texmodule.md) | Owned bounded registry of module names and loaded paths; replace, lookup and remove by name. | [header](../include/mulib-texmodule.h) · [example](../examples/mulib-texmodule.c) |
-| [texmouth](mulib-texmouth.md) | 'TeX-like borrowed token scanning: control words, braces, spaces and comments.' | [header](../include/mulib-texmouth.h) · [example](../examples/mulib-texmouth.c) |
-| [texnode](mulib-texnode.md) | Owned ordered collection for typesetting texnode rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texnode.h) · [example](../examples/mulib-texnode.c) |
-| [texoutput](mulib-texoutput.md) | Owned bounded registry of output callback names; replace, lookup and remove by name. | [header](../include/mulib-texoutput.h) · [example](../examples/mulib-texoutput.c) |
-| [texpack](mulib-texpack.md) | Baseline packed box surplus calculation. Finite numeric inputs and documented scalar result. | [header](../include/mulib-texpack.h) · [example](../examples/mulib-texpack.c) |
-| [texpage](mulib-texpage.md) | Greedy bounded vertical page segmentation over box heights. | [header](../include/mulib-texpage.h) · [example](../examples/mulib-texpage.c) |
-| [texpar](mulib-texpar.md) | Owned ordered collection for typesetting texpar rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texpar.h) · [example](../examples/mulib-texpar.c) |
-| [texpattern](mulib-texpattern.md) | Owned bounded registry of pattern/replacement mappings; replace, lookup and remove by name. | [header](../include/mulib-texpattern.h) · [example](../examples/mulib-texpattern.c) |
-| [texpatternlib](mulib-texpatternlib.md) | Owned bounded registry of hyphenation pattern identifiers; replace, lookup and remove by name. | [header](../include/mulib-texpatternlib.h) · [example](../examples/mulib-texpatternlib.c) |
-| [texpenalty](mulib-texpenalty.md) | Clamp page-break penalties to configured window. Finite numeric inputs and documented scalar result. | [header](../include/mulib-texpenalty.h) · [example](../examples/mulib-texpenalty.c) |
-| [texreflection](mulib-texreflection.md) | Owned bounded registry of document reflection properties; replace, lookup and remove by name. | [header](../include/mulib-texreflection.h) · [example](../examples/mulib-texreflection.c) |
-| [texregister](mulib-texregister.md) | Owned bounded registry of named TeX register values; replace, lookup and remove by name. | [header](../include/mulib-texregister.h) · [example](../examples/mulib-texregister.c) |
-| [texruntime](mulib-texruntime.md) | Bounded interpreted numeric expressions, user-defined recursive functions, comparisons and lazy ternaries. | [header](../include/mulib-texruntime.h) · [example](../examples/mulib-texruntime.c) |
-| [texscope](mulib-texscope.md) | Owned bounded registry of lexical scope bindings; replace, lookup and remove by name. | [header](../include/mulib-texscope.h) · [example](../examples/mulib-texscope.c) |
-| [texshipout](mulib-texshipout.md) | Owned ordered collection for typesetting texshipout rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texshipout.h) · [example](../examples/mulib-texshipout.c) |
-| [text](mulib-text.md) | Locale-sensitive whitespace trim and ASCII case conversion routines. | [header](../include/mulib-text.h) · [example](../examples/modules/text.c) |
-| [textanalyzer](mulib-textanalyzer.md) | Chained tokenization with optional stopword removal | [header](../include/mulib-textanalyzer.h) · [example](../examples/modules/textanalyzer.c) |
-| [textbuffer](mulib-gfx-text.md) | Bounded textbuffer API; see documented scope and acceptance gates. | [header](../include/mulib-textbuffer.h) · [example](../examples/gfx-headless.c) |
-| [textcursor](mulib-gfx-text.md) | Bounded textcursor API; see documented scope and acceptance gates. | [header](../include/mulib-textcursor.h) · [example](../examples/gfx-headless.c) |
-| [texteditor](mulib-gfx-text.md) | Bounded texteditor API; see documented scope and acceptance gates. | [header](../include/mulib-texteditor.h) · [example](../examples/gfx-headless.c) |
-| [texthistory](mulib-gfx-text.md) | Bounded texthistory API; see documented scope and acceptance gates. | [header](../include/mulib-texthistory.h) · [example](../examples/gfx-headless.c) |
-| [textitemize](mulib-textitemize.md) | Bounds-checked font and unicode textitemize structures binary inspection and record access. | [header](../include/mulib-textitemize.h) · [example](../examples/mulib-textitemize.c) |
-| [textrace](mulib-textrace.md) | Owned bounded registry of diagnostic trace messages; replace, lookup and remove by name. | [header](../include/mulib-textrace.h) · [example](../examples/mulib-textrace.c) |
-| [textselection](mulib-gfx-text.md) | Bounded textselection API; see documented scope and acceptance gates. | [header](../include/mulib-textselection.h) · [example](../examples/gfx-headless.c) |
-| [texvalue](mulib-texvalue.md) | Owned number/string value container with safe copy and destruction. | [header](../include/mulib-texvalue.h) · [example](../examples/mulib-texvalue.c) |
-| [texvlist](mulib-texvlist.md) | Owned ordered collection for typesetting texvlist rectangles and records; insertion, indexing, removal. | [header](../include/mulib-texvlist.h) · [example](../examples/mulib-texvlist.c) |
-| [tfidf](mulib-tfidf.md) | TF-IDF classic and sublinear formulas with log-smoothed IDF | [header](../include/mulib-tfidf.h) · [example](../examples/modules/tfidf.c) |
-| [timer](mulib-timer.md) | Portable elapsed-time measurements using C11 timespec_get. | [header](../include/mulib-timer.h) · [example](../examples/modules/timer.c) |
-| [timerfd](mulib-timerfd.md) | Linux timer descriptors with bounded expiration reads. | [header](../include/mulib-timerfd.h) · [example](../examples/modules/timerfd.c) |
-| [timeseries](mulib-timeseries.md) | Time-ordered points with knowledge-filtered averages and latest selection. | [header](../include/mulib-timeseries.h) · [example](../examples/finpred_market.c) |
-| [timing-clock](engineering-kernels.md) | Compute clock arrival spread and scalar setup and hold slack from supplied timing parameters. | [header](../include/mulib-timing-clock.h) |
-| [timing-corner](engineering-kernels.md) | Apply a uniform positive scale to timing-edge delays for a simple corner model. | [header](../include/mulib-timing-corner.h) |
-| [timing-critical](engineering-kernels.md) | Reconstruct a predecessor path to the vertex with the lowest finite slack. | [header](../include/mulib-timing-critical.h) |
-| [timing-elmore](engineering-kernels.md) | Compute Elmore delays on a rooted RC tree using downstream capacitance. | [header](../include/mulib-timing-elmore.h) |
-| [timing-graph](engineering-kernels.md) | Topologically order a timing graph after checking its edge delays. | [header](../include/mulib-timing-graph.h) |
-| [timing-parasitic](engineering-kernels.md) | Estimate lumped resistance and capacitance for a straight wire from supplied geometry and process parameters. | [header](../include/mulib-timing-parasitic.h) |
-| [timing-propagate](engineering-kernels.md) | Propagate latest arrivals forward and earliest required times backward on a timing DAG. | [header](../include/mulib-timing-propagate.h) |
-| [timing-slack](engineering-kernels.md) | Calculate per-node slack, worst slack, and summed negative slack from arrival and required times. | [header](../include/mulib-timing-slack.h) |
-| [timing-spef](engineering-kernels.md) | Write a single SPEF distributed-net fragment with named-node capacitances and branch resistances. | [header](../include/mulib-timing-spef.h) |
-| [timing-sta](engineering-kernels.md) | Combine scalar delay propagation, predecessor tracking, and slack calculation on a single timing DAG. | [header](../include/mulib-timing-sta.h) |
-| [tls](mulib-tls.md) | Native authenticated TLS 1.3 client and HTTPS connector. | [header](../include/mulib-tls.h) · [example](../examples/modules/tls.c) |
-| [toc](mulib-toc.md) | Owned bounded registry of table of contents labels; replace, lookup and remove by name. | [header](../include/mulib-toc.h) · [example](../examples/mulib-toc.c) |
-| [tokenizer](mulib-tokenizer.md) | Length-aware byte tokenizer with ASCII lowercasing into caller-owned buffers | [header](../include/mulib-tokenizer.h) · [example](../examples/modules/tokenizer.c) |
-| [toml](mulib-toml.md) | Focused TOML configuration parsing and emission using the JSON value model. | [header](../include/mulib-toml.h) · [example](../examples/modules/toml.c) |
-| [topk](mulib-topk.md) | Stable deterministic top-k selection of scored identifiers | [header](../include/mulib-topk.h) · [example](../examples/modules/topk.c) |
-| [tracepath](mulib-tracepath.md) | Single-hop UDP TTL probe with Linux IP_RECVERR error-queue response | [header](../include/mulib-tracepath.h) · [example](../examples/modules/tracepath.c) |
-| [tree_parsing](mulib-tree_parsing.md) | Bounded first-order term parsing into the shared MuLIB AST model. | [header](../include/mulib-tree_parsing.h) · [example](../examples/modules/tree_parsing.c) |
-| [trie](mulib-trie.md) | Owned binary-key byte trie with sorted sibling edges and uint64 values. | [header](../include/mulib-trie.h) · [example](../examples/modules/trie.c) |
-| [trie_traversal](mulib-trie_traversal.md) | Allocation-free lexicographic prefix traversal and longest-prefix lookup. | [header](../include/mulib-trie_traversal.h) · [example](../examples/modules/trie_traversal.c) |
-| [tsl](mulib-tsl.md) | Transport-security lifecycle adapter for an application-supplied TLS backend. | [header](../include/mulib-tsl.h) · [example](../examples/modules/tsl.c) |
-| [tsv](mulib-tsv.md) | Borrowed tab-separated field iterator preserving empty fields | [header](../include/mulib-tsv.h) · [example](../examples/modules/tsv.c) |
-| [ttf](mulib-ttf.md) | Bounds-checked font and unicode ttf structures binary inspection and record access. | [header](../include/mulib-ttf.h) · [example](../examples/mulib-ttf.c) |
-| [tui](mulib-tui.md) | Terminal UI rendering built on shared screen and input abstractions. | [header](../include/mulib-tui.h) · [example](../examples/modules/tui.c) |
-| [tunnel](mulib-tunnel.md) | Backpressure-preserving, bounded duplex stream relay. | [header](../include/mulib-tunnel.h) · [example](../examples/modules/tunnel.c) |
-| [tuntap](mulib-tuntap.md) | Linux TUN/TAP descriptors with no packet-information prefix. | [header](../include/mulib-tuntap.h) · [example](../examples/modules/tuntap.c) |
-| [txtdiff](mulib-txtdiff.md) | Line-oriented text edit scripts and checked patch application. | [header](../include/mulib-txtdiff.h) · [example](../examples/modules/txtdiff.c) |
-| [typecache](mulib-typecache.md) | Owned bounded registry of cached resource keys; replace, lookup and remove by name. | [header](../include/mulib-typecache.h) · [example](../examples/mulib-typecache.c) |
-| [typecheck](mulib-typecheck.md) | Pratt integer arithmetic and comparison typing against interned lexical types. | [header](../include/mulib-typecheck.h) · [example](../examples/modules/typecheck.c) |
-| [typeconformance](mulib-typeconformance.md) | Owned bounded registry of conformance checks and labels; replace, lookup and remove by name. | [header](../include/mulib-typeconformance.h) · [example](../examples/mulib-typeconformance.c) |
-| [typecontext](mulib-typecontext.md) | Reusable context owning a document working byte arena. | [header](../include/mulib-typecontext.h) · [example](../examples/mulib-typecontext.c) |
-| [typecore](mulib-typecore.md) | Allocation-checked owned buffers, endian conversion, UTF-8 decoding, CRC32 and escaping. | [header](../include/mulib-typecore.h) · [example](../examples/mulib-typecore.c) |
-| [typefuzz](mulib-typefuzz.md) | Configurable execution policy and accounting for infrastructure typefuzz. | [header](../include/mulib-typefuzz.h) · [example](../examples/mulib-typefuzz.c) |
-| [typeincremental](mulib-typeincremental.md) | Configurable execution policy and accounting for infrastructure typeincremental. | [header](../include/mulib-typeincremental.h) · [example](../examples/mulib-typeincremental.c) |
-| [typeinspect](mulib-typeinspect.md) | Owned bounded registry of inspection labels; replace, lookup and remove by name. | [header](../include/mulib-typeinspect.h) · [example](../examples/mulib-typeinspect.c) |
-| [typeparallel](mulib-typeparallel.md) | Configurable execution policy and accounting for infrastructure typeparallel. | [header](../include/mulib-typeparallel.h) · [example](../examples/mulib-typeparallel.c) |
-| [typeplugin](mulib-typeplugin.md) | Owned bounded registry of registered extension names; replace, lookup and remove by name. | [header](../include/mulib-typeplugin.h) · [example](../examples/mulib-typeplugin.c) |
-| [typeprofile](mulib-typeprofile.md) | Configurable execution policy and accounting for infrastructure typeprofile. | [header](../include/mulib-typeprofile.h) · [example](../examples/mulib-typeprofile.c) |
-| [typesandbox](mulib-typesandbox.md) | Configurable execution policy and accounting for infrastructure typesandbox. | [header](../include/mulib-typesandbox.h) · [example](../examples/mulib-typesandbox.c) |
-| [typesrc](mulib-typesrc.md) | Owned source text with location-aware line and column lookup. | [header](../include/mulib-typesrc.h) · [example](../examples/mulib-typesrc.c) |
-| [typestatus](mulib-typestatus.md) | Stable error codes and human-readable diagnostics for publishing modules. | [header](../include/mulib-typestatus.h) · [example](../examples/mulib-typestatus.c) |
-| [typesystem](mulib-typesystem.md) | Canonical primitive, pointer, array and homogeneous-function type interning. | [header](../include/mulib-typesystem.h) · [example](../examples/modules/typesystem.c) |
-| [typography](mulib-typography.md) | Owned bounded registry of typographic rule preferences; replace, lookup and remove by name. | [header](../include/mulib-typography.h) · [example](../examples/mulib-typography.c) |
+| [tablelayout](mulib-tablelayout.md) | Owned ordered collection for graphics tablelayout rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-tablelayout.h) · [example](../examples/mulib-tablelayout.c) |
+| [tablepaginate](mulib-tablepaginate.md) | Owned ordered collection for graphics tablepaginate rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-tablepaginate.h) · [example](../examples/mulib-tablepaginate.c) |
+| [tas](mulib-tas.md) | Owned, lossless element/attribute/text/end documentation token stream. | [header](../kernels/mulib-tas.h) · [example](../examples/modules/tas.c) |
+| [task](mulib-task.md) | Borrowed native task plans with explicit execution boundaries. | [header](../kernels/mulib-task.h) · [example](../examples/modules/task.c) |
+| [taskdag](mulib-taskdag.md) | Dependency graph execution with cycle detection and task failure propagation. | [header](../kernels/mulib-taskdag.h) · [example](../examples/modules/taskdag.c) |
+| [taskpool](mulib-taskpool.md) | Bounded native worker pool with explicit queue and shutdown semantics. | [header](../kernels/mulib-taskpool.h) · [example](../examples/modules/taskpool.c) |
+| [tbl](mulib-tbl.md) | Rectangular documentation tables, pipe/CSV readers and portable writers. | [header](../kernels/mulib-tbl.h) · [example](../examples/modules/tbl.c) |
+| [template](mulib-template.md) | JSON-context template rendering with escaped interpolation and control flow. | [header](../kernels/mulib-template.h) · [example](../examples/modules/template.c) |
+| [term_rewriting](mulib-term_rewriting.md) | Bounded ordered first-order term rewriting on shared MuLIB ASTs. | [header](../kernels/mulib-term_rewriting.h) · [example](../examples/modules/term_rewriting.c) |
+| [termdb](mulib-termdb.md) | Read-only lookup and bounded parameter expansion from the terminal SQLite database. | [header](../kernels/mulib-termdb.h) · [example](../library/termscript/main.c) |
+| [termfunc](mulib-termfunc.md) | Semantic terminal functions with trusted terminfo and explicit xterm modes. | [header](../kernels/mulib-termfunc.h) · [example](../examples/termscript/support.c) |
+| [terminfo](mulib-terminfo.md) | Terminal capability loading and parameter expansion. | [header](../kernels/mulib-terminfo.h) · [example](../examples/modules/terminfo.c) |
+| [termkey](mulib-termkey.md) | Incremental UTF-8 and terminal escape-sequence key decoding. | [header](../kernels/mulib-termkey.h) · [example](../examples/modules/termkey.c) |
+| [termscript](mulib-termscript.md) | Stack language for terminal applications and portable CAPASM output. | [header](../kernels/mulib-termscript.h) · [example](../library/termscript/main.c) |
+| [termscript-ast](mulib-termscript-ast.md) | Parsec-backed Termscript syntax tree, symbolic escapes and tuple key chords. | [header](../kernels/mulib-termscript-ast.h) · [example](../library/termscript/main.c) |
+| [termscript-capasm](mulib-termscript-capasm.md) | Canonical Termscript AST lowering to XMacIR and portable CAPASM output. | [header](../kernels/mulib-termscript-capasm.h) · [example](../library/termscript/main.c) |
+| [termscript-host](mulib-termscript-host.md) | Explicit terminal, library, database, termios and state machine intrinsics. | [header](../kernels/mulib-termscript-host.h) · [example](../library/termscript/main.c) |
+| [termscript-library](mulib-termscript-library.md) | Dotted Termscript modules from explicit roots and TERMSCRIPT_LIBRARY_PATH. | [header](../kernels/mulib-termscript-library.h) · [example](../library/termscript/main.c) |
+| [termscript-runtime](mulib-termscript-runtime.md) | Bounded typed stack interpreter, closures, modules and mode-aware keys. | [header](../kernels/mulib-termscript-runtime.h) · [example](../library/termscript/main.c) |
+| [termscript-state](mulib-termscript-state.md) | Deterministic finite-state transition tables. | [header](../kernels/mulib-termscript-state.h) · [example](../examples/termscript/support.c) |
+| [termscript-terminal](mulib-termscript-terminal.md) | Explicit output, terminal capabilities, VTerm and POSIX termios. | [header](../kernels/mulib-termscript-terminal.h) · [example](../examples/termscript/support.c) |
+| [termstyle](mulib-termstyle.md) | CSS cascade to shared terminal styles and safe terminfo output, with legacy indexed contexts. | [header](../kernels/mulib-termstyle.h) · [example](../examples/modules/termstyle.c) |
+| [termsyn](mulib-termsyn.md) | Stateful incremental editor-buffer lexing, CSS themes and terminal output. | [header](../kernels/mulib-termsyn.h) · [example](../examples/modules/termsyn.c) |
+| [termutils](mulib-termutils.md) | POSIX raw-terminal restoration, sizing and complete writes. | [header](../kernels/mulib-termutils.h) · [example](../examples/modules/termutils.c) |
+| [tex](mulib-tex.md) | TeX text escaping and a bounded lexical scanner, not a TeX engine. | [header](../kernels/mulib-tex.h) · [example](../examples/modules/tex.c) |
+| [texalign](mulib-texalign.md) | Owned ordered collection for typesetting texalign rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texalign.h) · [example](../examples/mulib-texalign.c) |
+| [texbox](mulib-texbox.md) | TeX-style horizontal/vertical box dimensions with checked packing. | [header](../kernels/mulib-texbox.h) · [example](../examples/mulib-texbox.c) |
+| [texbreak](mulib-texbreak.md) | Optimal dynamic-programming line breaks over fixed widths and penalties. | [header](../kernels/mulib-texbreak.h) · [example](../examples/mulib-texbreak.c) |
+| [texbytecode](mulib-texbytecode.md) | Safe stack-bytecode arithmetic interpreter with bounded instruction steps. | [header](../kernels/mulib-texbytecode.h) · [example](../examples/mulib-texbytecode.c) |
+| [texcatcode](mulib-texcatcode.md) | Configurable ASCII TeX-like category codes (initialization and assignment). | [header](../kernels/mulib-texcatcode.h) · [example](../examples/mulib-texcatcode.c) |
+| [texclosure](mulib-texclosure.md) | Owned bounded registry of closure capture bindings; replace, lookup and remove by name. | [header](../kernels/mulib-texclosure.h) · [example](../examples/mulib-texclosure.c) |
+| [texdebug](mulib-texdebug.md) | Owned bounded registry of breakpoints and diagnostic labels; replace, lookup and remove by name. | [header](../kernels/mulib-texdebug.h) · [example](../examples/mulib-texdebug.c) |
+| [texdim](mulib-texdim.md) | TeX-compatible scaled-point integer representation and overflow-checked arithmetic. | [header](../kernels/mulib-texdim.h) · [example](../examples/mulib-texdim.c) |
+| [texexpand](mulib-texexpand.md) | Simple bounded macro-name substitution with single-pass escaped backslash commands. | [header](../kernels/mulib-texexpand.h) · [example](../examples/mulib-texexpand.c) |
+| [texexpr](mulib-texexpr.md) | Bounded recursive-descent arithmetic expressions with +,-,*,/,unary signs, parentheses. | [header](../kernels/mulib-texexpr.h) · [example](../examples/mulib-texexpr.c) |
+| [texffi](mulib-texffi.md) | Owned bounded registry of foreign callable symbol registry; replace, lookup and remove by name. | [header](../kernels/mulib-texffi.h) · [example](../examples/mulib-texffi.c) |
+| [texfunction](mulib-texfunction.md) | Owned bounded registry of named user function declarations; replace, lookup and remove by name. | [header](../kernels/mulib-texfunction.h) · [example](../examples/mulib-texfunction.c) |
+| [texglue](mulib-texglue.md) | TeX-like natural size, stretch and shrink plus proportional adjustment. | [header](../kernels/mulib-texglue.h) · [example](../examples/mulib-texglue.c) |
+| [texhlist](mulib-texhlist.md) | Owned ordered collection for typesetting texhlist rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texhlist.h) · [example](../examples/mulib-texhlist.c) |
+| [texinsert](mulib-texinsert.md) | Owned bounded registry of insertion and footnote buckets; replace, lookup and remove by name. | [header](../kernels/mulib-texinsert.h) · [example](../examples/mulib-texinsert.c) |
+| [texleaders](mulib-texleaders.md) | Owned ordered collection for typesetting texleaders rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texleaders.h) · [example](../examples/mulib-texleaders.c) |
+| [texmark](mulib-texmark.md) | Owned bounded registry of running header and mark values; replace, lookup and remove by name. | [header](../kernels/mulib-texmark.h) · [example](../examples/mulib-texmark.c) |
+| [texmodule](mulib-texmodule.md) | Owned bounded registry of module names and loaded paths; replace, lookup and remove by name. | [header](../kernels/mulib-texmodule.h) · [example](../examples/mulib-texmodule.c) |
+| [texmouth](mulib-texmouth.md) | 'TeX-like borrowed token scanning: control words, braces, spaces and comments.' | [header](../kernels/mulib-texmouth.h) · [example](../examples/mulib-texmouth.c) |
+| [texnode](mulib-texnode.md) | Owned ordered collection for typesetting texnode rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texnode.h) · [example](../examples/mulib-texnode.c) |
+| [texoutput](mulib-texoutput.md) | Owned bounded registry of output callback names; replace, lookup and remove by name. | [header](../kernels/mulib-texoutput.h) · [example](../examples/mulib-texoutput.c) |
+| [texpack](mulib-texpack.md) | Baseline packed box surplus calculation. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-texpack.h) · [example](../examples/mulib-texpack.c) |
+| [texpage](mulib-texpage.md) | Greedy bounded vertical page segmentation over box heights. | [header](../kernels/mulib-texpage.h) · [example](../examples/mulib-texpage.c) |
+| [texpar](mulib-texpar.md) | Owned ordered collection for typesetting texpar rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texpar.h) · [example](../examples/mulib-texpar.c) |
+| [texpattern](mulib-texpattern.md) | Owned bounded registry of pattern/replacement mappings; replace, lookup and remove by name. | [header](../kernels/mulib-texpattern.h) · [example](../examples/mulib-texpattern.c) |
+| [texpatternlib](mulib-texpatternlib.md) | Owned bounded registry of hyphenation pattern identifiers; replace, lookup and remove by name. | [header](../kernels/mulib-texpatternlib.h) · [example](../examples/mulib-texpatternlib.c) |
+| [texpenalty](mulib-texpenalty.md) | Clamp page-break penalties to configured window. Finite numeric inputs and documented scalar result. | [header](../kernels/mulib-texpenalty.h) · [example](../examples/mulib-texpenalty.c) |
+| [texreflection](mulib-texreflection.md) | Owned bounded registry of document reflection properties; replace, lookup and remove by name. | [header](../kernels/mulib-texreflection.h) · [example](../examples/mulib-texreflection.c) |
+| [texregister](mulib-texregister.md) | Owned bounded registry of named TeX register values; replace, lookup and remove by name. | [header](../kernels/mulib-texregister.h) · [example](../examples/mulib-texregister.c) |
+| [texruntime](mulib-texruntime.md) | Bounded interpreted numeric expressions, user-defined recursive functions, comparisons and lazy ternaries. | [header](../kernels/mulib-texruntime.h) · [example](../examples/mulib-texruntime.c) |
+| [texscope](mulib-texscope.md) | Owned bounded registry of lexical scope bindings; replace, lookup and remove by name. | [header](../kernels/mulib-texscope.h) · [example](../examples/mulib-texscope.c) |
+| [texshipout](mulib-texshipout.md) | Owned ordered collection for typesetting texshipout rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texshipout.h) · [example](../examples/mulib-texshipout.c) |
+| [text](mulib-text.md) | Locale-sensitive whitespace trim and ASCII case conversion routines. | [header](../kernels/mulib-text.h) · [example](../examples/modules/text.c) |
+| [textanalyzer](mulib-textanalyzer.md) | Chained tokenization with optional stopword removal | [header](../kernels/mulib-textanalyzer.h) · [example](../examples/modules/textanalyzer.c) |
+| [textbuffer](mulib-gfx-text.md) | Bounded textbuffer API; see documented scope and acceptance gates. | [header](../kernels/mulib-textbuffer.h) · [example](../examples/gfx-headless.c) |
+| [textcursor](mulib-gfx-text.md) | Bounded textcursor API; see documented scope and acceptance gates. | [header](../kernels/mulib-textcursor.h) · [example](../examples/gfx-headless.c) |
+| [texteditor](mulib-gfx-text.md) | Bounded texteditor API; see documented scope and acceptance gates. | [header](../kernels/mulib-texteditor.h) · [example](../examples/gfx-headless.c) |
+| [texthistory](mulib-gfx-text.md) | Bounded texthistory API; see documented scope and acceptance gates. | [header](../kernels/mulib-texthistory.h) · [example](../examples/gfx-headless.c) |
+| [textitemize](mulib-textitemize.md) | Bounds-checked font and unicode textitemize structures binary inspection and record access. | [header](../kernels/mulib-textitemize.h) · [example](../examples/mulib-textitemize.c) |
+| [textrace](mulib-textrace.md) | Owned bounded registry of diagnostic trace messages; replace, lookup and remove by name. | [header](../kernels/mulib-textrace.h) · [example](../examples/mulib-textrace.c) |
+| [textselection](mulib-gfx-text.md) | Bounded textselection API; see documented scope and acceptance gates. | [header](../kernels/mulib-textselection.h) · [example](../examples/gfx-headless.c) |
+| [texvalue](mulib-texvalue.md) | Owned number/string value container with safe copy and destruction. | [header](../kernels/mulib-texvalue.h) · [example](../examples/mulib-texvalue.c) |
+| [texvlist](mulib-texvlist.md) | Owned ordered collection for typesetting texvlist rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-texvlist.h) · [example](../examples/mulib-texvlist.c) |
+| [tfidf](mulib-tfidf.md) | TF-IDF classic and sublinear formulas with log-smoothed IDF | [header](../kernels/mulib-tfidf.h) · [example](../examples/modules/tfidf.c) |
+| [timer](mulib-timer.md) | Portable elapsed-time measurements using C11 timespec_get. | [header](../kernels/mulib-timer.h) · [example](../examples/modules/timer.c) |
+| [timerfd](mulib-timerfd.md) | Linux timer descriptors with bounded expiration reads. | [header](../kernels/mulib-timerfd.h) · [example](../examples/modules/timerfd.c) |
+| [timeseries](mulib-timeseries.md) | Time-ordered points with knowledge-filtered averages and latest selection. | [header](../kernels/mulib-timeseries.h) · [example](../examples/finpred_market.c) |
+| [timing-clock](engineering-kernels.md) | Compute clock arrival spread and scalar setup and hold slack from supplied timing parameters. | [header](../kernels/mulib-timing-clock.h) |
+| [timing-corner](engineering-kernels.md) | Apply a uniform positive scale to timing-edge delays for a simple corner model. | [header](../kernels/mulib-timing-corner.h) |
+| [timing-critical](engineering-kernels.md) | Reconstruct a predecessor path to the vertex with the lowest finite slack. | [header](../kernels/mulib-timing-critical.h) |
+| [timing-elmore](engineering-kernels.md) | Compute Elmore delays on a rooted RC tree using downstream capacitance. | [header](../kernels/mulib-timing-elmore.h) |
+| [timing-graph](engineering-kernels.md) | Topologically order a timing graph after checking its edge delays. | [header](../kernels/mulib-timing-graph.h) |
+| [timing-parasitic](engineering-kernels.md) | Estimate lumped resistance and capacitance for a straight wire from supplied geometry and process parameters. | [header](../kernels/mulib-timing-parasitic.h) |
+| [timing-propagate](engineering-kernels.md) | Propagate latest arrivals forward and earliest required times backward on a timing DAG. | [header](../kernels/mulib-timing-propagate.h) |
+| [timing-slack](engineering-kernels.md) | Calculate per-node slack, worst slack, and summed negative slack from arrival and required times. | [header](../kernels/mulib-timing-slack.h) |
+| [timing-spef](engineering-kernels.md) | Write a single SPEF distributed-net fragment with named-node capacitances and branch resistances. | [header](../kernels/mulib-timing-spef.h) |
+| [timing-sta](engineering-kernels.md) | Combine scalar delay propagation, predecessor tracking, and slack calculation on a single timing DAG. | [header](../kernels/mulib-timing-sta.h) |
+| [tls](mulib-tls.md) | Native authenticated TLS 1.3 client and HTTPS connector. | [header](../kernels/mulib-tls.h) · [example](../examples/modules/tls.c) |
+| [toc](mulib-toc.md) | Owned bounded registry of table of contents labels; replace, lookup and remove by name. | [header](../kernels/mulib-toc.h) · [example](../examples/mulib-toc.c) |
+| [tokenizer](mulib-tokenizer.md) | Length-aware byte tokenizer with ASCII lowercasing into caller-owned buffers | [header](../kernels/mulib-tokenizer.h) · [example](../examples/modules/tokenizer.c) |
+| [toml](mulib-toml.md) | Focused TOML configuration parsing and emission using the JSON value model. | [header](../kernels/mulib-toml.h) · [example](../examples/modules/toml.c) |
+| [topk](mulib-topk.md) | Stable deterministic top-k selection of scored identifiers | [header](../kernels/mulib-topk.h) · [example](../examples/modules/topk.c) |
+| [tracepath](mulib-tracepath.md) | Single-hop UDP TTL probe with Linux IP_RECVERR error-queue response | [header](../kernels/mulib-tracepath.h) · [example](../examples/modules/tracepath.c) |
+| [tree_parsing](mulib-tree_parsing.md) | Bounded first-order term parsing into the shared MuLIB AST model. | [header](../kernels/mulib-tree_parsing.h) · [example](../examples/modules/tree_parsing.c) |
+| [trie](mulib-trie.md) | Owned binary-key byte trie with sorted sibling edges and uint64 values. | [header](../kernels/mulib-trie.h) · [example](../examples/modules/trie.c) |
+| [trie_traversal](mulib-trie_traversal.md) | Allocation-free lexicographic prefix traversal and longest-prefix lookup. | [header](../kernels/mulib-trie_traversal.h) · [example](../examples/modules/trie_traversal.c) |
+| [tsl](mulib-tsl.md) | Transport-security lifecycle adapter for an application-supplied TLS backend. | [header](../kernels/mulib-tsl.h) · [example](../examples/modules/tsl.c) |
+| [tsv](mulib-tsv.md) | Borrowed tab-separated field iterator preserving empty fields | [header](../kernels/mulib-tsv.h) · [example](../examples/modules/tsv.c) |
+| [ttf](mulib-ttf.md) | Bounds-checked font and unicode ttf structures binary inspection and record access. | [header](../kernels/mulib-ttf.h) · [example](../examples/mulib-ttf.c) |
+| [tui](mulib-tui.md) | Terminal UI rendering built on shared screen and input abstractions. | [header](../kernels/mulib-tui.h) · [example](../examples/modules/tui.c) |
+| [tunnel](mulib-tunnel.md) | Backpressure-preserving, bounded duplex stream relay. | [header](../kernels/mulib-tunnel.h) · [example](../examples/modules/tunnel.c) |
+| [tuntap](mulib-tuntap.md) | Linux TUN/TAP descriptors with no packet-information prefix. | [header](../kernels/mulib-tuntap.h) · [example](../examples/modules/tuntap.c) |
+| [txtdiff](mulib-txtdiff.md) | Line-oriented text edit scripts and checked patch application. | [header](../kernels/mulib-txtdiff.h) · [example](../examples/modules/txtdiff.c) |
+| [typecache](mulib-typecache.md) | Owned bounded registry of cached resource keys; replace, lookup and remove by name. | [header](../kernels/mulib-typecache.h) · [example](../examples/mulib-typecache.c) |
+| [typecheck](mulib-typecheck.md) | Pratt integer arithmetic and comparison typing against interned lexical types. | [header](../kernels/mulib-typecheck.h) · [example](../examples/modules/typecheck.c) |
+| [typeconformance](mulib-typeconformance.md) | Owned bounded registry of conformance checks and labels; replace, lookup and remove by name. | [header](../kernels/mulib-typeconformance.h) · [example](../examples/mulib-typeconformance.c) |
+| [typecontext](mulib-typecontext.md) | Reusable context owning a document working byte arena. | [header](../kernels/mulib-typecontext.h) · [example](../examples/mulib-typecontext.c) |
+| [typecore](mulib-typecore.md) | Allocation-checked owned buffers, endian conversion, UTF-8 decoding, CRC32 and escaping. | [header](../kernels/mulib-typecore.h) · [example](../examples/mulib-typecore.c) |
+| [typefuzz](mulib-typefuzz.md) | Configurable execution policy and accounting for infrastructure typefuzz. | [header](../kernels/mulib-typefuzz.h) · [example](../examples/mulib-typefuzz.c) |
+| [typeincremental](mulib-typeincremental.md) | Configurable execution policy and accounting for infrastructure typeincremental. | [header](../kernels/mulib-typeincremental.h) · [example](../examples/mulib-typeincremental.c) |
+| [typeinspect](mulib-typeinspect.md) | Owned bounded registry of inspection labels; replace, lookup and remove by name. | [header](../kernels/mulib-typeinspect.h) · [example](../examples/mulib-typeinspect.c) |
+| [typeparallel](mulib-typeparallel.md) | Configurable execution policy and accounting for infrastructure typeparallel. | [header](../kernels/mulib-typeparallel.h) · [example](../examples/mulib-typeparallel.c) |
+| [typeplugin](mulib-typeplugin.md) | Owned bounded registry of registered extension names; replace, lookup and remove by name. | [header](../kernels/mulib-typeplugin.h) · [example](../examples/mulib-typeplugin.c) |
+| [typeprofile](mulib-typeprofile.md) | Configurable execution policy and accounting for infrastructure typeprofile. | [header](../kernels/mulib-typeprofile.h) · [example](../examples/mulib-typeprofile.c) |
+| [typesandbox](mulib-typesandbox.md) | Configurable execution policy and accounting for infrastructure typesandbox. | [header](../kernels/mulib-typesandbox.h) · [example](../examples/mulib-typesandbox.c) |
+| [typesrc](mulib-typesrc.md) | Owned source text with location-aware line and column lookup. | [header](../kernels/mulib-typesrc.h) · [example](../examples/mulib-typesrc.c) |
+| [typestatus](mulib-typestatus.md) | Stable error codes and human-readable diagnostics for publishing modules. | [header](../kernels/mulib-typestatus.h) · [example](../examples/mulib-typestatus.c) |
+| [typesystem](mulib-typesystem.md) | Canonical primitive, pointer, array and homogeneous-function type interning. | [header](../kernels/mulib-typesystem.h) · [example](../examples/modules/typesystem.c) |
+| [typography](mulib-typography.md) | Owned bounded registry of typographic rule preferences; replace, lookup and remove by name. | [header](../kernels/mulib-typography.h) · [example](../examples/mulib-typography.c) |
 
 ## U
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [udev](mulib-udev.md) | Parser-backed kernel uevent views and Linux netlink monitoring. | [header](../include/mulib-udev.h) · [example](../examples/modules/udev.c) |
-| [uefi](mulib-uefi.md) | UEFI native service bindings, status values and boot-services lifecycle. | [header](../include/mulib-uefi.h) · [example](../examples/modules/uefi.c) |
-| [uefiutils](mulib-uefiutils.md) | UEFI device paths, load options, Boot#### names and Shell parameters. | [header](../include/mulib-uefiutils.h) · [example](../examples/modules/uefiutils.c) |
-| [uip-arp](mulib-uip-arp.md) | Encode/decode Ethernet IPv4 ARP request and reply packets | [header](../include/mulib-uip-arp.h) · [example](../examples/modules/uip-arp.c) |
-| [uip-arp-cache](mulib-uip-arp-cache.md) | Small time-bounded IPv4-to-MAC ARP cache with deterministic eviction | [header](../include/mulib-uip-arp-cache.h) · [example](../examples/modules/uip-arp-cache.c) |
-| [uip-checksum](mulib-uip-checksum.md) | RFC 1071 Internet checksum and IPv4 TCP/UDP pseudoheader checksum | [header](../include/mulib-uip-checksum.h) · [example](../examples/modules/uip-checksum.c) |
-| [uip-dns](mulib-uip-dns.md) | Build DNS A queries and decode one uncompressed or compressed A answer | [header](../include/mulib-uip-dns.h) · [example](../examples/modules/uip-dns.c) |
-| [uip-ethernet](mulib-uip-ethernet.md) | Serialize and validate fixed-length Ethernet II frames | [header](../include/mulib-uip-ethernet.h) · [example](../examples/modules/uip-ethernet.c) |
-| [uip-fragment](mulib-uip-fragment.md) | One-datagram IPv4 payload reassembly with overlap rejection and bounded memory | [header](../include/mulib-uip-fragment.h) · [example](../examples/modules/uip-fragment.c) |
-| [uip-icmp](mulib-uip-icmp.md) | Build verified ICMPv4 echo requests or replies for userspace IPv4 | [header](../include/mulib-uip-icmp.h) · [example](../examples/modules/uip-icmp.c) |
-| [uip-ipv4](mulib-uip-ipv4.md) | Build and parse verified unfragmented IPv4 packets and expose fragmentation flags | [header](../include/mulib-uip-ipv4.h) · [example](../examples/modules/uip-ipv4.c) |
-| [uip-ipv6](mulib-uip-ipv6.md) | Build and parse basic IPv6 fixed headers without extension-header processing | [header](../include/mulib-uip-ipv6.h) · [example](../examples/modules/uip-ipv6.c) |
-| [uip-pbuf](mulib-uip-pbuf.md) | Owned dynamically allocated packet buffer supporting prepend and append | [header](../include/mulib-uip-pbuf.h) · [example](../examples/modules/uip-pbuf.c) |
-| [uip-route](mulib-uip-route.md) | Fixed-table longest-prefix matching for userspace IPv4 routing | [header](../include/mulib-uip-route.h) · [example](../examples/modules/uip-route.c) |
-| [uip-tcp](mulib-uip-tcp.md) | Parse basic TCP headers and encode TCP no-option IPv4 segments with checksum | [header](../include/mulib-uip-tcp.h) · [example](../examples/modules/uip-tcp.c) |
-| [uip-tcp-state](mulib-uip-tcp-state.md) | Deterministic subset TCP connection state transitions for active open/close | [header](../include/mulib-uip-tcp-state.h) · [example](../examples/modules/uip-tcp-state.c) |
-| [uip-timer](mulib-uip-timer.md) | Monotonic clock helper for userspace IP ARP expiry and retransmission scheduling | [header](../include/mulib-uip-timer.h) · [example](../examples/modules/uip-timer.c) |
-| [uip-udp](mulib-uip-udp.md) | Build/check IPv4 UDP datagrams with correct pseudoheader checksums | [header](../include/mulib-uip-udp.h) · [example](../examples/modules/uip-udp.c) |
-| [unibreak](mulib-unibreak.md) | Unicode line, grapheme, word and sentence boundaries through runtime ICU. | [header](../include/mulib-unibreak.h) · [example](../examples/modules/unibreak.c) |
-| [unicodebidi](mulib-unicodebidi.md) | Conservative base-direction detection from Hebrew/Arabic and ASCII letters. | [header](../include/mulib-unicodebidi.h) · [example](../examples/mulib-unicodebidi.c) |
-| [unicodebreak](mulib-unicodebreak.md) | Line-break opportunity discovery after ASCII whitespace and common separators. | [header](../include/mulib-unicodebreak.h) · [example](../examples/mulib-unicodebreak.c) |
-| [unicodecase](mulib-unicodecase.md) | Owned ordered collection for font and unicode unicodecase layout records; insertion, indexing, removal. | [header](../include/mulib-unicodecase.h) · [example](../examples/mulib-unicodecase.c) |
-| [unicodegrapheme](mulib-unicodegrapheme.md) | UTF-8 grapheme iterator with combining-mark continuation baseline. | [header](../include/mulib-unicodegrapheme.h) · [example](../examples/mulib-unicodegrapheme.c) |
-| [unicodenorm](mulib-unicodenorm.md) | Bounds-checked font and unicode unicodenorm structures binary inspection and record access. | [header](../include/mulib-unicodenorm.h) · [example](../examples/mulib-unicodenorm.c) |
-| [unicodeprops](mulib-unicodeprops.md) | Unicode scalar validity and conservative text class classification. | [header](../include/mulib-unicodeprops.h) · [example](../examples/mulib-unicodeprops.c) |
-| [unicodescript](mulib-unicodescript.md) | Bounds-checked font and unicode unicodescript structures binary inspection and record access. | [header](../include/mulib-unicodescript.h) · [example](../examples/mulib-unicodescript.c) |
-| [unidiff](mulib-unidiff.md) | Bounded unified-diff parsing with exact context and byte-preserving patch application. | [header](../include/mulib-unidiff.h) · [example](../examples/apply_unidiff.c) |
-| [uniname](mulib-uniname.md) | Unicode character names and reverse lookup through the ICU database. | [header](../include/mulib-uniname.h) · [example](../examples/modules/uniname.c) |
-| [uniproc](mulib-uniproc.md) | Strict UTF conversion, Unicode normalization, casing and scalar properties. | [header](../include/mulib-uniproc.h) · [example](../examples/modules/uniproc.c) |
-| [unit](mulib-unit.md) | Shared owned architecture profiles for MPU, MCU and GPU contracts. | [header](../include/mulib-unit.h) · [example](../examples/modules/unit.c) |
-| [upstream](mulib-upstream.md) | Borrowed upstream endpoints with bounded in-flight accounting. | [header](../include/mulib-upstream.h) · [example](../examples/modules/upstream.c) |
-| [uri](mulib-uri.md) | URI component parsing, composition, and relative-reference resolution. | [header](../include/mulib-uri.h) · [example](../examples/modules/uri.c) |
-| [url](mulib-url.md) | URL component percent encoder and decoder. | [header](../include/mulib-url.h) · [example](../examples/modules/url.c) |
-| [urlcanon](mulib-urlcanon.md) | Conservative URL normalization for HTTP(S) resource keys. | [header](../include/mulib-urlcanon.h) · [example](../examples/modules/urlcanon.c) |
-| [ustack](mulib-ustack.md) | Small userspace Ethernet/ARP/IPv4/ICMP echo/UDP endpoint with callback-driven I/O | [header](../include/mulib-ustack.h) · [example](../examples/modules/ustack.c) |
-| [ustack-tuntap](mulib-ustack-tuntap.md) | Drive userspace Ethernet stack using an existing Linux TAP descriptor | [header](../include/mulib-ustack-tuntap.h) · [example](../examples/modules/ustack-tuntap.c) |
-| [utf8](mulib-utf8.md) | UTF-8 validation and single-code-point decoding. | [header](../include/mulib-utf8.h) · [example](../examples/modules/utf8.c) |
-| [uuid](mulib-uuid.md) | Formatting and parsing RFC 4122-style 128-bit UUID text. | [header](../include/mulib-uuid.h) · [example](../examples/modules/uuid.c) |
+| [udev](mulib-udev.md) | Parser-backed kernel uevent views and Linux netlink monitoring. | [header](../kernels/mulib-udev.h) · [example](../examples/modules/udev.c) |
+| [uefi](mulib-uefi.md) | UEFI native service bindings, status values and boot-services lifecycle. | [header](../kernels/mulib-uefi.h) · [example](../examples/modules/uefi.c) |
+| [uefiutils](mulib-uefiutils.md) | UEFI device paths, load options, Boot#### names and Shell parameters. | [header](../kernels/mulib-uefiutils.h) · [example](../examples/modules/uefiutils.c) |
+| [uip-arp](mulib-uip-arp.md) | Encode/decode Ethernet IPv4 ARP request and reply packets | [header](../kernels/mulib-uip-arp.h) · [example](../examples/modules/uip-arp.c) |
+| [uip-arp-cache](mulib-uip-arp-cache.md) | Small time-bounded IPv4-to-MAC ARP cache with deterministic eviction | [header](../kernels/mulib-uip-arp-cache.h) · [example](../examples/modules/uip-arp-cache.c) |
+| [uip-checksum](mulib-uip-checksum.md) | RFC 1071 Internet checksum and IPv4 TCP/UDP pseudoheader checksum | [header](../kernels/mulib-uip-checksum.h) · [example](../examples/modules/uip-checksum.c) |
+| [uip-dns](mulib-uip-dns.md) | Build DNS A queries and decode one uncompressed or compressed A answer | [header](../kernels/mulib-uip-dns.h) · [example](../examples/modules/uip-dns.c) |
+| [uip-ethernet](mulib-uip-ethernet.md) | Serialize and validate fixed-length Ethernet II frames | [header](../kernels/mulib-uip-ethernet.h) · [example](../examples/modules/uip-ethernet.c) |
+| [uip-fragment](mulib-uip-fragment.md) | One-datagram IPv4 payload reassembly with overlap rejection and bounded memory | [header](../kernels/mulib-uip-fragment.h) · [example](../examples/modules/uip-fragment.c) |
+| [uip-icmp](mulib-uip-icmp.md) | Build verified ICMPv4 echo requests or replies for userspace IPv4 | [header](../kernels/mulib-uip-icmp.h) · [example](../examples/modules/uip-icmp.c) |
+| [uip-ipv4](mulib-uip-ipv4.md) | Build and parse verified unfragmented IPv4 packets and expose fragmentation flags | [header](../kernels/mulib-uip-ipv4.h) · [example](../examples/modules/uip-ipv4.c) |
+| [uip-ipv6](mulib-uip-ipv6.md) | Build and parse basic IPv6 fixed headers without extension-header processing | [header](../kernels/mulib-uip-ipv6.h) · [example](../examples/modules/uip-ipv6.c) |
+| [uip-pbuf](mulib-uip-pbuf.md) | Owned dynamically allocated packet buffer supporting prepend and append | [header](../kernels/mulib-uip-pbuf.h) · [example](../examples/modules/uip-pbuf.c) |
+| [uip-route](mulib-uip-route.md) | Fixed-table longest-prefix matching for userspace IPv4 routing | [header](../kernels/mulib-uip-route.h) · [example](../examples/modules/uip-route.c) |
+| [uip-tcp](mulib-uip-tcp.md) | Parse basic TCP headers and encode TCP no-option IPv4 segments with checksum | [header](../kernels/mulib-uip-tcp.h) · [example](../examples/modules/uip-tcp.c) |
+| [uip-tcp-state](mulib-uip-tcp-state.md) | Deterministic subset TCP connection state transitions for active open/close | [header](../kernels/mulib-uip-tcp-state.h) · [example](../examples/modules/uip-tcp-state.c) |
+| [uip-timer](mulib-uip-timer.md) | Monotonic clock helper for userspace IP ARP expiry and retransmission scheduling | [header](../kernels/mulib-uip-timer.h) · [example](../examples/modules/uip-timer.c) |
+| [uip-udp](mulib-uip-udp.md) | Build/check IPv4 UDP datagrams with correct pseudoheader checksums | [header](../kernels/mulib-uip-udp.h) · [example](../examples/modules/uip-udp.c) |
+| [unibreak](mulib-unibreak.md) | Unicode line, grapheme, word and sentence boundaries through runtime ICU. | [header](../kernels/mulib-unibreak.h) · [example](../examples/modules/unibreak.c) |
+| [unicodebidi](mulib-unicodebidi.md) | Conservative base-direction detection from Hebrew/Arabic and ASCII letters. | [header](../kernels/mulib-unicodebidi.h) · [example](../examples/mulib-unicodebidi.c) |
+| [unicodebreak](mulib-unicodebreak.md) | Line-break opportunity discovery after ASCII whitespace and common separators. | [header](../kernels/mulib-unicodebreak.h) · [example](../examples/mulib-unicodebreak.c) |
+| [unicodecase](mulib-unicodecase.md) | Owned ordered collection for font and unicode unicodecase layout records; insertion, indexing, removal. | [header](../kernels/mulib-unicodecase.h) · [example](../examples/mulib-unicodecase.c) |
+| [unicodegrapheme](mulib-unicodegrapheme.md) | UTF-8 grapheme iterator with combining-mark continuation baseline. | [header](../kernels/mulib-unicodegrapheme.h) · [example](../examples/mulib-unicodegrapheme.c) |
+| [unicodenorm](mulib-unicodenorm.md) | Bounds-checked font and unicode unicodenorm structures binary inspection and record access. | [header](../kernels/mulib-unicodenorm.h) · [example](../examples/mulib-unicodenorm.c) |
+| [unicodeprops](mulib-unicodeprops.md) | Unicode scalar validity and conservative text class classification. | [header](../kernels/mulib-unicodeprops.h) · [example](../examples/mulib-unicodeprops.c) |
+| [unicodescript](mulib-unicodescript.md) | Bounds-checked font and unicode unicodescript structures binary inspection and record access. | [header](../kernels/mulib-unicodescript.h) · [example](../examples/mulib-unicodescript.c) |
+| [unidiff](mulib-unidiff.md) | Bounded unified-diff parsing with exact context and byte-preserving patch application. | [header](../kernels/mulib-unidiff.h) · [example](../examples/apply_unidiff.c) |
+| [uniname](mulib-uniname.md) | Unicode character names and reverse lookup through the ICU database. | [header](../kernels/mulib-uniname.h) · [example](../examples/modules/uniname.c) |
+| [uniproc](mulib-uniproc.md) | Strict UTF conversion, Unicode normalization, casing and scalar properties. | [header](../kernels/mulib-uniproc.h) · [example](../examples/modules/uniproc.c) |
+| [unit](mulib-unit.md) | Shared owned architecture profiles for MPU, MCU and GPU contracts. | [header](../kernels/mulib-unit.h) · [example](../examples/modules/unit.c) |
+| [upstream](mulib-upstream.md) | Borrowed upstream endpoints with bounded in-flight accounting. | [header](../kernels/mulib-upstream.h) · [example](../examples/modules/upstream.c) |
+| [uri](mulib-uri.md) | URI component parsing, composition, and relative-reference resolution. | [header](../kernels/mulib-uri.h) · [example](../examples/modules/uri.c) |
+| [url](mulib-url.md) | URL component percent encoder and decoder. | [header](../kernels/mulib-url.h) · [example](../examples/modules/url.c) |
+| [urlcanon](mulib-urlcanon.md) | Conservative URL normalization for HTTP(S) resource keys. | [header](../kernels/mulib-urlcanon.h) · [example](../examples/modules/urlcanon.c) |
+| [ustack](mulib-ustack.md) | Small userspace Ethernet/ARP/IPv4/ICMP echo/UDP endpoint with callback-driven I/O | [header](../kernels/mulib-ustack.h) · [example](../examples/modules/ustack.c) |
+| [ustack-tuntap](mulib-ustack-tuntap.md) | Drive userspace Ethernet stack using an existing Linux TAP descriptor | [header](../kernels/mulib-ustack-tuntap.h) · [example](../examples/modules/ustack-tuntap.c) |
+| [utf8](mulib-utf8.md) | UTF-8 validation and single-code-point decoding. | [header](../kernels/mulib-utf8.h) · [example](../examples/modules/utf8.c) |
+| [uuid](mulib-uuid.md) | Formatting and parsing RFC 4122-style 128-bit UUID text. | [header](../kernels/mulib-uuid.h) · [example](../examples/modules/uuid.c) |
 
 ## V
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [v2rayproto](mulib-v2rayproto.md) | VLESS version-zero request headers without addons or multiplexing. | [header](../include/mulib-v2rayproto.h) · [example](../examples/modules/v2rayproto.c) |
-| [vangage_point_trees](mulib-vangage_point_trees.md) | Balanced metric vantage-point trees over copied fixed-stride points. | [header](../include/mulib-vangage_point_trees.h) · [example](../examples/modules/vangage_point_trees.c) |
-| [varint](mulib-varint.md) | Unsigned LEB128 integer encoding and bounds-checked decoding. | [header](../include/mulib-varint.h) · [example](../examples/modules/varint.c) |
-| [vcdiff](mulib-vcdiff.md) | RFC 3284 default-table VCDIFF decoding and prefix-delta encoding. | [header](../include/mulib-vcdiff.h) · [example](../examples/modules/vcdiff.c) |
-| [vcscomitt](mulib-vcscomitt.md) | Compatibility spelling for the canonical vcscommit API. | [header](../include/mulib-vcscomitt.h) · [example](../examples/modules/vcscomitt.c) |
-| [vcscommit](mulib-vcscommit.md) | Canonical Git commit construction and repository insertion. | [header](../include/mulib-vcscommit.h) · [example](../examples/modules/vcscommit.c) |
-| [vcspack](mulib-vcspack.md) | Git PACK v2 encoding and bounded stored-DEFLATE pack decoding. | [header](../include/mulib-vcspack.h) · [example](../examples/modules/vcspack.c) |
-| [vcsrepo](mulib-vcsrepo.md) | Bounded owned Git-object repository and compare-and-swap references. | [header](../include/mulib-vcsrepo.h) · [example](../examples/modules/vcsrepo.c) |
-| [vdev](mulib-vdev.md) | Linux uinput keyboard and relative-pointer creation and emission. | [header](../include/mulib-vdev.h) · [example](../examples/modules/vdev.c) |
-| [vec](mulib-vec.md) | An untyped, byte-stride dynamic vector with amortized growth. | [header](../include/mulib-vec.h) · [example](../examples/modules/vec.c) |
-| [vectgfx](mulib-vectgfx.md) | Vector paths, Bezier and Catmull-Rom curves, elliptical arcs and path language. | [header](../include/mulib-vectgfx.h) · [example](../examples/modules/vectgfx.c) |
-| [vector](mulib-vector.md) | Arbitrary-dimensional numerical vector algebra over mulib-vec. | [header](../include/mulib-vector.h) · [example](../examples/modules/vector.c) |
-| [vectorindex](mulib-vectorindex.md) | Owned exact Euclidean single-nearest-neighbor index with replaceable finite double vectors | [header](../include/mulib-vectorindex.h) · [example](../examples/modules/vectorindex.c) |
-| [vectorpath](mulib-vectorpath.md) | Owned ordered collection for graphics vectorpath rectangles and records; insertion, indexing, removal. | [header](../include/mulib-vectorpath.h) · [example](../examples/mulib-vectorpath.c) |
-| [verttext](mulib-verttext.md) | Owned ordered collection for references verttext rectangles and records; insertion, indexing, removal. | [header](../include/mulib-verttext.h) · [example](../examples/mulib-verttext.c) |
-| [vfs](mulib-vfs.md) | Normalized virtual filesystem mounts and backend dispatch. | [header](../include/mulib-vfs.h) · [example](../examples/modules/vfs.c) |
-| [vgabuffer](mulib-vgabuffer.md) | Allocation-free VGA text cells, clipped drawing, windows and consoles. | [header](../include/mulib-vgabuffer.h) · [example](../examples/modules/vgabuffer.c) |
-| [vhpst](mulib-vhpst.md) | Exact DNS virtual-host selection over a borrowed table. | [header](../include/mulib-vhpst.h) · [example](../examples/modules/vhpst.c) |
-| [virtio](mulib-virtio.md) | Virtio device registry, wire constants and MuLIB VMM host-service contracts. | [header](../include/mulib-virtio.h) · [example](../examples/modules/virtio.c) |
-| [virtio-guest](mulib-virtio-guest.md) | MuLIB VMM Virtio frontend negotiation, configuration and queue operations. | [header](../include/mulib-virtio-guest.h) · [example](../examples/modules/virtio-guest.c) |
-| [virtio-os](mulib-virtio-os.md) | Service-assisted Virtio device backends over the MuLIB VMM protocol. | [header](../include/mulib-virtio-os.h) · [example](../examples/modules/virtio-os.c) |
-| [visitor](mulib-visitor.md) | Controllable preorder AST traversal with explicit node budgets. | [header](../include/mulib-visitor.h) · [example](../examples/modules/visitor.c) |
-| [viterbi_decoding](mulib-viterbi_decoding.md) | Log-space Viterbi decoding with deterministic state ties. | [header](../include/mulib-viterbi_decoding.h) · [example](../examples/modules/viterbi_decoding.c) |
-| [vizigen](mulib-vizigen.md) | ASDL semantic-action bytecode for push listeners and visitor walkers. | [header](../include/mulib-vizigen.h) · [example](../examples/modules/vizigen.c) |
-| [vm-host](mulib-vm-host.md) | Explicit signed-64 host-call registry with checked arity and atomic result writes. | [header](../include/mulib-vm-host.h) · [example](../examples/modules/vm-host.c) |
-| [vm-module](mulib-vm-module.md) | Owned named bytecode registry with structural verification before insertion. | [header](../include/mulib-vm-module.h) · [example](../examples/modules/vm-module.c) |
-| [vm-value](mulib-vm-value.md) | Tagged VM scalars and owned binary byte strings with alias-safe deep copying. | [header](../include/mulib-vm-value.h) · [example](../examples/modules/vm-value.c) |
-| [vmm](mulib-vmm.md) | Serialized VMM lifecycle, discovery, device isolation and guest-call dispatch. | [header](../include/mulib-vmm.h) · [example](../examples/modules/vmm.c) |
-| [vmm-host](mulib-vmm-host.md) | Volatile RAM block storage and Linux system entropy host providers. | [header](../include/mulib-vmm-host.h) · [example](../examples/modules/vmm-host.c) |
-| [vmm-kvm](mulib-vmm-kvm.md) | Native Linux x86 KVM execution adapter and guest-call port binding. | [header](../include/mulib-vmm-kvm.h) · [example](../examples/modules/vmm-kvm.c) |
-| [vmm-memory](mulib-vmm-memory.md) | Transactional guest RAM copies and per-device DMA view validation. | [header](../include/mulib-vmm-memory.h) · [example](../examples/modules/vmm-memory.c) |
-| [vmmdev](mulib-vmmdev.md) | Bounded little-endian VMM device messages and guest-memory access. | [header](../include/mulib-vmmdev.h) · [example](../examples/modules/vmmdev.c) |
-| [vmweave](mulib-vmweave.md) | Fault-preserving MIR optimization and resumable typed register VM execution. | [header](../include/mulib-vmweave.h) · [example](../examples/modules/vmweave.c) |
-| [vterm](mulib-vterm.md) | Focused virtual-terminal screen, cursor, and rendition emulation. | [header](../include/mulib-vterm.h) · [example](../examples/modules/vterm.c) |
+| [v2rayproto](mulib-v2rayproto.md) | VLESS version-zero request headers without addons or multiplexing. | [header](../kernels/mulib-v2rayproto.h) · [example](../examples/modules/v2rayproto.c) |
+| [vangage_point_trees](mulib-vangage_point_trees.md) | Balanced metric vantage-point trees over copied fixed-stride points. | [header](../kernels/mulib-vangage_point_trees.h) · [example](../examples/modules/vangage_point_trees.c) |
+| [varint](mulib-varint.md) | Unsigned LEB128 integer encoding and bounds-checked decoding. | [header](../kernels/mulib-varint.h) · [example](../examples/modules/varint.c) |
+| [vcdiff](mulib-vcdiff.md) | RFC 3284 default-table VCDIFF decoding and prefix-delta encoding. | [header](../kernels/mulib-vcdiff.h) · [example](../examples/modules/vcdiff.c) |
+| [vcscomitt](mulib-vcscomitt.md) | Compatibility spelling for the canonical vcscommit API. | [header](../kernels/mulib-vcscomitt.h) · [example](../examples/modules/vcscomitt.c) |
+| [vcscommit](mulib-vcscommit.md) | Canonical Git commit construction and repository insertion. | [header](../kernels/mulib-vcscommit.h) · [example](../examples/modules/vcscommit.c) |
+| [vcspack](mulib-vcspack.md) | Git PACK v2 encoding and bounded stored-DEFLATE pack decoding. | [header](../kernels/mulib-vcspack.h) · [example](../examples/modules/vcspack.c) |
+| [vcsrepo](mulib-vcsrepo.md) | Bounded owned Git-object repository and compare-and-swap references. | [header](../kernels/mulib-vcsrepo.h) · [example](../examples/modules/vcsrepo.c) |
+| [vdev](mulib-vdev.md) | Linux uinput keyboard and relative-pointer creation and emission. | [header](../kernels/mulib-vdev.h) · [example](../examples/modules/vdev.c) |
+| [vec](mulib-vec.md) | An untyped, byte-stride dynamic vector with amortized growth. | [header](../kernels/mulib-vec.h) · [example](../examples/modules/vec.c) |
+| [vectgfx](mulib-vectgfx.md) | Vector paths, Bezier and Catmull-Rom curves, elliptical arcs and path language. | [header](../kernels/mulib-vectgfx.h) · [example](../examples/modules/vectgfx.c) |
+| [vector](mulib-vector.md) | Arbitrary-dimensional numerical vector algebra over mulib-vec. | [header](../kernels/mulib-vector.h) · [example](../examples/modules/vector.c) |
+| [vectorindex](mulib-vectorindex.md) | Owned exact Euclidean single-nearest-neighbor index with replaceable finite double vectors | [header](../kernels/mulib-vectorindex.h) · [example](../examples/modules/vectorindex.c) |
+| [vectorpath](mulib-vectorpath.md) | Owned ordered collection for graphics vectorpath rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-vectorpath.h) · [example](../examples/mulib-vectorpath.c) |
+| [verttext](mulib-verttext.md) | Owned ordered collection for references verttext rectangles and records; insertion, indexing, removal. | [header](../kernels/mulib-verttext.h) · [example](../examples/mulib-verttext.c) |
+| [vfs](mulib-vfs.md) | Normalized virtual filesystem mounts and backend dispatch. | [header](../kernels/mulib-vfs.h) · [example](../examples/modules/vfs.c) |
+| [vgabuffer](mulib-vgabuffer.md) | Allocation-free VGA text cells, clipped drawing, windows and consoles. | [header](../kernels/mulib-vgabuffer.h) · [example](../examples/modules/vgabuffer.c) |
+| [vhpst](mulib-vhpst.md) | Exact DNS virtual-host selection over a borrowed table. | [header](../kernels/mulib-vhpst.h) · [example](../examples/modules/vhpst.c) |
+| [virtio](mulib-virtio.md) | Virtio device registry, wire constants and MuLIB VMM host-service contracts. | [header](../kernels/mulib-virtio.h) · [example](../examples/modules/virtio.c) |
+| [virtio-guest](mulib-virtio-guest.md) | MuLIB VMM Virtio frontend negotiation, configuration and queue operations. | [header](../kernels/mulib-virtio-guest.h) · [example](../examples/modules/virtio-guest.c) |
+| [virtio-os](mulib-virtio-os.md) | Service-assisted Virtio device backends over the MuLIB VMM protocol. | [header](../kernels/mulib-virtio-os.h) · [example](../examples/modules/virtio-os.c) |
+| [visitor](mulib-visitor.md) | Controllable preorder AST traversal with explicit node budgets. | [header](../kernels/mulib-visitor.h) · [example](../examples/modules/visitor.c) |
+| [viterbi_decoding](mulib-viterbi_decoding.md) | Log-space Viterbi decoding with deterministic state ties. | [header](../kernels/mulib-viterbi_decoding.h) · [example](../examples/modules/viterbi_decoding.c) |
+| [vizigen](mulib-vizigen.md) | ASDL semantic-action bytecode for push listeners and visitor walkers. | [header](../kernels/mulib-vizigen.h) · [example](../examples/modules/vizigen.c) |
+| [vm-host](mulib-vm-host.md) | Explicit signed-64 host-call registry with checked arity and atomic result writes. | [header](../kernels/mulib-vm-host.h) · [example](../examples/modules/vm-host.c) |
+| [vm-module](mulib-vm-module.md) | Owned named bytecode registry with structural verification before insertion. | [header](../kernels/mulib-vm-module.h) · [example](../examples/modules/vm-module.c) |
+| [vm-value](mulib-vm-value.md) | Tagged VM scalars and owned binary byte strings with alias-safe deep copying. | [header](../kernels/mulib-vm-value.h) · [example](../examples/modules/vm-value.c) |
+| [vmm](mulib-vmm.md) | Serialized VMM lifecycle, discovery, device isolation and guest-call dispatch. | [header](../kernels/mulib-vmm.h) · [example](../examples/modules/vmm.c) |
+| [vmm-host](mulib-vmm-host.md) | Volatile RAM block storage and Linux system entropy host providers. | [header](../kernels/mulib-vmm-host.h) · [example](../examples/modules/vmm-host.c) |
+| [vmm-kvm](mulib-vmm-kvm.md) | Native Linux x86 KVM execution adapter and guest-call port binding. | [header](../kernels/mulib-vmm-kvm.h) · [example](../examples/modules/vmm-kvm.c) |
+| [vmm-memory](mulib-vmm-memory.md) | Transactional guest RAM copies and per-device DMA view validation. | [header](../kernels/mulib-vmm-memory.h) · [example](../examples/modules/vmm-memory.c) |
+| [vmmdev](mulib-vmmdev.md) | Bounded little-endian VMM device messages and guest-memory access. | [header](../kernels/mulib-vmmdev.h) · [example](../examples/modules/vmmdev.c) |
+| [vmweave](mulib-vmweave.md) | Fault-preserving MIR optimization and resumable typed register VM execution. | [header](../kernels/mulib-vmweave.h) · [example](../examples/modules/vmweave.c) |
+| [vterm](mulib-vterm.md) | Focused virtual-terminal screen, cursor, and rendition emulation. | [header](../kernels/mulib-vterm.h) · [example](../examples/modules/vterm.c) |
 
 ## W
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [waf](mulib-waf.md) | Fail-closed request size method and origin-path policy. | [header](../include/mulib-waf.h) · [example](../examples/modules/waf.c) |
-| [wal](mulib-wal.md) | CRC-framed, sequence-checked write-ahead-log byte codec, not disk I/O. | [header](../include/mulib-wal.h) · [example](../examples/modules/wal.c) |
-| [walker](mulib-walker.md) | Visitor walker sharing the parser event-listener interface. | [header](../include/mulib-walker.h) · [example](../examples/modules/walker.c) |
-| [wask](mulib-wask.md) | Validated bounded i32 WebAssembly module interpreter. | [header](../include/mulib-wask.h) · [example](../examples/modules/wask.c) |
-| [wave-correlation](engineering-kernels.md) | Pearson correlation on overlapping portions of two real sample arrays at one signed lag. | [header](../include/mulib-wave-correlation.h) |
-| [wave-decimate](mulib-wave-decimate.md) | Min/max display decimation in index-aligned buckets, preserving extrema. | [header](../include/mulib-wave-decimate.h) · [example](../examples/modules/wave-decimate.c) |
-| [wave-expression](engineering-kernels.md) | Elementwise arithmetic on paired sample arrays and cumulative trapezoidal integration. | [header](../include/mulib-wave-expression.h) |
-| [wave-eye](engineering-kernels.md) | Bin waveform samples into a time-amplitude eye histogram folded over two unit intervals. | [header](../include/mulib-wave-eye.h) |
-| [wave-fst](engineering-kernels.md) | Unsigned LEB128 read/write and timestamp-delta encoding only; not FST file interchange. | [header](../include/mulib-wave-fst.h) |
-| [wave-histogram](engineering-kernels.md) | Equal-width amplitude histogram with separate underflow and overflow counts. | [header](../include/mulib-wave-histogram.h) |
-| [wave-index](engineering-kernels.md) | Binary-search timestamp lower bounds and find half-open windows in strictly ordered samples. | [header](../include/mulib-wave-index.h) |
-| [wave-jitter](engineering-kernels.md) | Centered RMS and peak-to-peak edge timing jitter relative to a supplied ideal period. | [header](../include/mulib-wave-jitter.h) |
-| [wave-measure](mulib-wave-measure.md) | Sample-weighted RMS, extrema, threshold crossing counts and time-domain integration. | [header](../include/mulib-wave-measure.h) · [example](../examples/modules/wave-measure.c) |
-| [wave-psd](engineering-kernels.md) | One-sided Welch-style power spectral density estimate with Hann-windowed, optionally overlapping segments. | [header](../include/mulib-wave-psd.h) |
-| [wave-signal](mulib-wave-signal.md) | Owned finite time-value sample series with nondecreasing timestamps, validation and interpolation. | [header](../include/mulib-wave-signal.h) · [example](../examples/modules/wave-signal.c) |
-| [wave-spectrum](engineering-kernels.md) | Complex forward and inverse transforms using radix-2 FFT or a direct DFT fallback. | [header](../include/mulib-wave-spectrum.h) |
-| [wave-store](engineering-kernels.md) | Append finite, strictly time-ordered samples to linked chunks and retrieve samples by index. | [header](../include/mulib-wave-store.h) |
-| [wave-stream](engineering-kernels.md) | Send strictly time-ordered samples via a callback while retaining the last accepted timestamp. | [header](../include/mulib-wave-stream.h) |
-| [wave-trigger](engineering-kernels.md) | Find rising or falling threshold crossings and interpolate their timestamps between samples. | [header](../include/mulib-wave-trigger.h) |
-| [wave-vcd](mulib-wave-vcd.md) | VCD writer for one scalar four-state signal with a fixed identifier (!) and 1ns timescale. | [header](../include/mulib-wave-vcd.h) · [example](../examples/modules/wave-vcd.c) |
-| [wayland](mulib-wayland.md) | Wayland frame codec and runtime-loaded client connections. | [header](../include/mulib-wayland.h) · [example](../examples/modules/wayland.c) |
-| [wayland-data](mulib-gfx-wire.md) | Bounded wayland-data API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-data.h) · [example](../examples/gfx-headless.c) |
-| [wayland-dmabuf](mulib-gfx-wire.md) | Bounded wayland-dmabuf API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-dmabuf.h) · [example](../examples/gfx-headless.c) |
-| [wayland-protocol](mulib-gfx-wire.md) | Bounded wayland-protocol API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-protocol.h) · [example](../examples/gfx-headless.c) |
-| [wayland-seat](mulib-gfx-wire.md) | Bounded wayland-seat API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-seat.h) · [example](../examples/gfx-headless.c) |
-| [wayland-shm](mulib-gfx-wire.md) | Bounded wayland-shm API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-shm.h) · [example](../examples/gfx-headless.c) |
-| [wayland-textinput](mulib-gfx-wire.md) | Bounded wayland-textinput API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-textinput.h) · [example](../examples/gfx-headless.c) |
-| [wayland-wire](mulib-gfx-wire.md) | Bounded wayland-wire API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-wire.h) · [example](../examples/gfx-headless.c) |
-| [wayland-xdg](mulib-gfx-wire.md) | Bounded wayland-xdg API; see documented scope and acceptance gates. | [header](../include/mulib-wayland-xdg.h) · [example](../examples/gfx-headless.c) |
-| [web_conntection](mulib-web_conntection.md) | Bounded incremental HTTP/1 receive buffering. | [header](../include/mulib-web_conntection.h) · [example](../examples/modules/web_conntection.c) |
-| [webarchive](mulib-webarchive.md) | Write WARC-like minimal record headers into a bounded caller buffer. | [header](../include/mulib-webarchive.h) · [example](../examples/modules/webarchive.c) |
-| [webclient](mulib-webclient.md) | Bounded HTTP exchange over application-supplied transport callbacks. | [header](../include/mulib-webclient.h) · [example](../examples/modules/webclient.c) |
-| [webextract](mulib-webextract.md) | Locate JSON-LD script block within HTML as borrowed byte span. | [header](../include/mulib-webextract.h) · [example](../examples/modules/webextract.c) |
-| [webextract-evidence](mulib-webextract-evidence.md) | Source-span anchored extraction evidence records and integrity hashes. | [header](../include/mulib-webextract-evidence.h) · [example](../examples/modules/webextract-evidence.c) |
-| [webextract-llm](mulib-webextract-llm.md) | OpenAI-compatible JSON extraction request builder and pluggable response transport. | [header](../include/mulib-webextract-llm.h) · [example](../examples/modules/webextract-llm.c) |
-| [webextract-reconcile](mulib-webextract-reconcile.md) | Evidence-aware consensus of candidate numeric price extractions. | [header](../include/mulib-webextract-reconcile.h) · [example](../examples/modules/webextract-reconcile.c) |
-| [webextract-rules](mulib-webextract-rules.md) | Executable bounded HTML element/tag/class/id text extraction rules. | [header](../include/mulib-webextract-rules.h) · [example](../examples/modules/webextract-rules.c) |
-| [webframework](mulib-webframework.md) | Bounded HTTP route registration and dispatch on shared messages. | [header](../include/mulib-webframework.h) · [example](../examples/modules/webframework.c) |
-| [webidl](mulib-webidl.md) | WebIDL source compiler to S-expression CST/AST, CodeYAML and C99 declarations. | [header](../include/mulib-webidl.h) · [example](../examples/modules/webidl.c) |
-| [webidl-bindgen](mulib-webidl-bindgen.md) | C header declaration generation from a bounded interface-name WebIDL subset. | [header](../include/mulib-webidl-bindgen.h) · [example](../examples/modules/webidl-bindgen.c) |
-| [webidl-runtime](mulib-webidl-runtime.md) | Strict primitive WebIDL conversion utilities with range validation. | [header](../include/mulib-webidl-runtime.h) · [example](../examples/modules/webidl-runtime.c) |
-| [weblocation](mulib-weblocation.md) | Owned current URL state for navigation integration. | [header](../include/mulib-weblocation.h) · [example](../examples/modules/weblocation.c) |
-| [webratelimit](mulib-webratelimit.md) | Deterministic caller-clocked minimum-interval request scheduler. | [header](../include/mulib-webratelimit.h) · [example](../examples/modules/webratelimit.c) |
-| [websearch](mulib-websearch.md) | Static Google/Bing search provider identification. | [header](../include/mulib-websearch.h) · [example](../examples/modules/websearch.c) |
-| [websearch-engine](mulib-websearch-engine.md) | Deduplicated bounded ranked web search result collection. | [header](../include/mulib-websearch-engine.h) · [example](../examples/modules/websearch-engine.c) |
-| [websearch-provider](mulib-websearch-provider.md) | Registered search providers with encoded query-URL generation. | [header](../include/mulib-websearch-provider.h) · [example](../examples/modules/websearch-provider.c) |
-| [websocket](mulib-websocket.md) | RFC 6455 opening handshake and bounded WebSocket frame codecs. | [header](../include/mulib-websocket.h) · [example](../examples/modules/websocket.c) |
-| [webstorage](mulib-webstorage.md) | In-memory Web Storage style string key-value store. | [header](../include/mulib-webstorage.h) · [example](../examples/modules/webstorage.c) |
-| [webtimers](mulib-webtimers.md) | Caller-clocked fixed-capacity timer scheduler. | [header](../include/mulib-webtimers.h) · [example](../examples/modules/webtimers.c) |
-| [weighed_edit_distane](mulib-weighed_edit_distane.md) | Weighted byte edit distance with directional insertion/deletion costs. | [header](../include/mulib-weighed_edit_distane.h) · [example](../examples/modules/weighed_edit_distane.c) |
-| [weighted-edit-distance](mulib-weighted-edit-distance.md) | Weighted edit DP with per-symbol costs; canonical access to legacy byte DP. | [header](../include/mulib-weighted-edit-distance.h) · [example](../examples/modules/weighted-edit-distance.c) |
-| [wifi-ap](mulib-wifi-ap.md) | Request wireless ap information from nl80211 (NL80211_CMD_GET_INTERFACE) | [header](../include/mulib-wifi-ap.h) · [example](../examples/modules/wifi-ap.c) |
-| [wifi-monitor](mulib-wifi-monitor.md) | Receive Linux RTMGRP_LINK notifications for wireless device state changes | [header](../include/mulib-wifi-monitor.h) · [example](../examples/modules/wifi-monitor.c) |
-| [wifi-regulatory](mulib-wifi-regulatory.md) | Request wireless regulatory information from nl80211 (NL80211_CMD_GET_REG) | [header](../include/mulib-wifi-regulatory.h) · [example](../examples/modules/wifi-regulatory.c) |
-| [wifi-rfkill](mulib-wifi-rfkill.md) | Read hardware and software radio block state from /dev/rfkill | [header](../include/mulib-wifi-rfkill.h) · [example](../examples/modules/wifi-rfkill.c) |
-| [wifi-scan](mulib-wifi-scan.md) | Request wireless scan information from nl80211 (NL80211_CMD_GET_SCAN) | [header](../include/mulib-wifi-scan.h) · [example](../examples/modules/wifi-scan.c) |
-| [wifi-security](mulib-wifi-security.md) | Strict bounded WPA2 RSN information element parsing | [header](../include/mulib-wifi-security.h) · [example](../examples/modules/wifi-security.c) |
-| [wifi-station](mulib-wifi-station.md) | Request wireless station information from nl80211 (NL80211_CMD_GET_STATION) | [header](../include/mulib-wifi-station.h) · [example](../examples/modules/wifi-station.c) |
-| [wit](mulib-wit.md) | Flat primitive schemas to WIT record source generation. | [header](../include/mulib-wit.h) · [example](../examples/modules/wit.c) |
-| [wl-buffer](notebook-desktop.md) | Reference-counted Wayland buffer lifetime and idle release. | [header](../include/mulib-wl-buffer.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-client](notebook-desktop.md) | Nonblocking server-side byte transport and bounded incoming FD queue. | [header](../include/mulib-wl-client.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-compositor](notebook-desktop.md) | Version 1 compositor resources with SHM surfaces and frame lists. | [header](../include/mulib-wl-compositor.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-datadevice](notebook-desktop.md) | MIME offer state and focus/serial authorization helpers. | [header](../include/mulib-wl-datadevice.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-dispatch](notebook-desktop.md) | Native-endian frame validation and resource request dispatch. | [header](../include/mulib-wl-dispatch.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-dmabuf](notebook-desktop.md) | DMA-BUF plane parameter assembly and ownership helpers. | [header](../include/mulib-wl-dmabuf.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-frame](notebook-desktop.md) | Bounded frame callback list and done/delete-ID events. | [header](../include/mulib-wl-frame.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-layershell](notebook-desktop.md) | Layer policy helper for exclusive edge zones. | [header](../include/mulib-wl-layershell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-output](notebook-desktop.md) | Output mode, scale and done event serializers. | [header](../include/mulib-wl-output.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-protogen](notebook-desktop.md) | Descriptor-driven C opcode and signature emission. | [header](../include/mulib-wl-protogen.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-registry](notebook-desktop.md) | Wayland global announcements and bind validation. | [header](../include/mulib-wl-registry.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-resource](notebook-desktop.md) | Bounded object table with destruction callbacks. | [header](../include/mulib-wl-resource.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-seat](notebook-desktop.md) | Serial generation and key, motion and button event helpers. | [header](../include/mulib-wl-seat.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-server](notebook-desktop.md) | Unix listener, client acceptance and display sync/registry dispatch. | [header](../include/mulib-wl-server.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-shm](notebook-desktop.md) | Version 1 SHM pool and buffer resources with CPU snapshots. | [header](../include/mulib-wl-shm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-subsurface](notebook-desktop.md) | Cycle-safe subsurface relationships and pending positions. | [header](../include/mulib-wl-subsurface.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-surface](notebook-desktop.md) | Pending/current surface attachment, role and commit state. | [header](../include/mulib-wl-surface.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-xdgshell](notebook-desktop.md) | Minimal version 1 xdg-shell toplevel handshake and configure queue. | [header](../include/mulib-wl-xdgshell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wl-xwayland](notebook-desktop.md) | XWayland process supervisor and displayfd parsing. | [header](../include/mulib-wl-xwayland.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wlroots](mulib-wlroots.md) | Wlroots-style output geometry, transforms and owned logical layouts. | [header](../include/mulib-wlroots.h) · [example](../examples/modules/wlroots.c) |
-| [wm-container](notebook-desktop.md) | Cycle-safe parent/child window grouping. | [header](../include/mulib-wm-container.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-core](notebook-desktop.md) | Stable window registry with owned strings, rectangle math and mapping state. | [header](../include/mulib-wm-core.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-decoration](notebook-desktop.md) | Frame extents and resize-edge hit testing. | [header](../include/mulib-wm-decoration.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-focus](notebook-desktop.md) | Focus eligibility and cyclic focus selection. | [header](../include/mulib-wm-focus.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-keybind](notebook-desktop.md) | Key, modifier and mode command lookup. | [header](../include/mulib-wm-keybind.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-launch](notebook-desktop.md) | Launch hint matching with ambiguity rejection. | [header](../include/mulib-wm-launch.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-layout](notebook-desktop.md) | Vertical, horizontal, grid, monocle and master-stack placement. | [header](../include/mulib-wm-layout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-rules](notebook-desktop.md) | Window actions from exact app IDs or title prefixes. | [header](../include/mulib-wm-rules.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-session](notebook-desktop.md) | Bounded offline window placement records. | [header](../include/mulib-wm-session.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-stack](notebook-desktop.md) | Window stacking and topmost hit lookup. | [header](../include/mulib-wm-stack.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-transaction](notebook-desktop.md) | Configure transaction with acknowledgement, revision and deadline checks. | [header](../include/mulib-wm-transaction.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wm-workspace](notebook-desktop.md) | Named workspace activation and window assignment. | [header](../include/mulib-wm-workspace.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [wmfunc](mulib-wmfunc.md) | Portable window placement and transactional backend dispatch. | [header](../include/mulib-wmfunc.h) · [example](../examples/modules/wmfunc.c) |
-| [woff](mulib-woff.md) | Bounds-checked font and unicode woff structures binary inspection and record access. | [header](../include/mulib-woff.h) · [example](../examples/mulib-woff.c) |
-| [woff2](mulib-woff2.md) | Bounds-checked font and unicode woff2 structures binary inspection and record access. | [header](../include/mulib-woff2.h) · [example](../examples/mulib-woff2.c) |
-| [workspace-edit](mulib-workspace-edit.md) | Staged multi-file edits with exact preimages, cooperative lock, rollback and structured audit callbacks. | [header](../include/mulib-workspace-edit.h) · [example](../examples/apply_unidiff.c) |
-| [workspace-fs](mulib-workspace-fs.md) | Confined-by-descriptor symlink-rejecting relative POSIX file operations and single-file atomic replacement. | [header](../include/mulib-workspace-fs.h) · [example](../examples/apply_unidiff.c) |
-| [wpa-ctrl](mulib-wpa-ctrl.md) | Send a single wpa_supplicant control request over an AF_UNIX datagram socket | [header](../include/mulib-wpa-ctrl.h) · [example](../examples/modules/wpa-ctrl.c) |
+| [waf](mulib-waf.md) | Fail-closed request size method and origin-path policy. | [header](../kernels/mulib-waf.h) · [example](../examples/modules/waf.c) |
+| [wal](mulib-wal.md) | CRC-framed, sequence-checked write-ahead-log byte codec, not disk I/O. | [header](../kernels/mulib-wal.h) · [example](../examples/modules/wal.c) |
+| [walker](mulib-walker.md) | Visitor walker sharing the parser event-listener interface. | [header](../kernels/mulib-walker.h) · [example](../examples/modules/walker.c) |
+| [wask](mulib-wask.md) | Validated bounded i32 WebAssembly module interpreter. | [header](../kernels/mulib-wask.h) · [example](../examples/modules/wask.c) |
+| [wave-correlation](engineering-kernels.md) | Pearson correlation on overlapping portions of two real sample arrays at one signed lag. | [header](../kernels/mulib-wave-correlation.h) |
+| [wave-decimate](mulib-wave-decimate.md) | Min/max display decimation in index-aligned buckets, preserving extrema. | [header](../kernels/mulib-wave-decimate.h) · [example](../examples/modules/wave-decimate.c) |
+| [wave-expression](engineering-kernels.md) | Elementwise arithmetic on paired sample arrays and cumulative trapezoidal integration. | [header](../kernels/mulib-wave-expression.h) |
+| [wave-eye](engineering-kernels.md) | Bin waveform samples into a time-amplitude eye histogram folded over two unit intervals. | [header](../kernels/mulib-wave-eye.h) |
+| [wave-fst](engineering-kernels.md) | Unsigned LEB128 read/write and timestamp-delta encoding only; not FST file interchange. | [header](../kernels/mulib-wave-fst.h) |
+| [wave-histogram](engineering-kernels.md) | Equal-width amplitude histogram with separate underflow and overflow counts. | [header](../kernels/mulib-wave-histogram.h) |
+| [wave-index](engineering-kernels.md) | Binary-search timestamp lower bounds and find half-open windows in strictly ordered samples. | [header](../kernels/mulib-wave-index.h) |
+| [wave-jitter](engineering-kernels.md) | Centered RMS and peak-to-peak edge timing jitter relative to a supplied ideal period. | [header](../kernels/mulib-wave-jitter.h) |
+| [wave-measure](mulib-wave-measure.md) | Sample-weighted RMS, extrema, threshold crossing counts and time-domain integration. | [header](../kernels/mulib-wave-measure.h) · [example](../examples/modules/wave-measure.c) |
+| [wave-psd](engineering-kernels.md) | One-sided Welch-style power spectral density estimate with Hann-windowed, optionally overlapping segments. | [header](../kernels/mulib-wave-psd.h) |
+| [wave-signal](mulib-wave-signal.md) | Owned finite time-value sample series with nondecreasing timestamps, validation and interpolation. | [header](../kernels/mulib-wave-signal.h) · [example](../examples/modules/wave-signal.c) |
+| [wave-spectrum](engineering-kernels.md) | Complex forward and inverse transforms using radix-2 FFT or a direct DFT fallback. | [header](../kernels/mulib-wave-spectrum.h) |
+| [wave-store](engineering-kernels.md) | Append finite, strictly time-ordered samples to linked chunks and retrieve samples by index. | [header](../kernels/mulib-wave-store.h) |
+| [wave-stream](engineering-kernels.md) | Send strictly time-ordered samples via a callback while retaining the last accepted timestamp. | [header](../kernels/mulib-wave-stream.h) |
+| [wave-trigger](engineering-kernels.md) | Find rising or falling threshold crossings and interpolate their timestamps between samples. | [header](../kernels/mulib-wave-trigger.h) |
+| [wave-vcd](mulib-wave-vcd.md) | VCD writer for one scalar four-state signal with a fixed identifier (!) and 1ns timescale. | [header](../kernels/mulib-wave-vcd.h) · [example](../examples/modules/wave-vcd.c) |
+| [wayland](mulib-wayland.md) | Wayland frame codec and runtime-loaded client connections. | [header](../kernels/mulib-wayland.h) · [example](../examples/modules/wayland.c) |
+| [wayland-data](mulib-gfx-wire.md) | Bounded wayland-data API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-data.h) · [example](../examples/gfx-headless.c) |
+| [wayland-dmabuf](mulib-gfx-wire.md) | Bounded wayland-dmabuf API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-dmabuf.h) · [example](../examples/gfx-headless.c) |
+| [wayland-protocol](mulib-gfx-wire.md) | Bounded wayland-protocol API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-protocol.h) · [example](../examples/gfx-headless.c) |
+| [wayland-seat](mulib-gfx-wire.md) | Bounded wayland-seat API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-seat.h) · [example](../examples/gfx-headless.c) |
+| [wayland-shm](mulib-gfx-wire.md) | Bounded wayland-shm API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-shm.h) · [example](../examples/gfx-headless.c) |
+| [wayland-textinput](mulib-gfx-wire.md) | Bounded wayland-textinput API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-textinput.h) · [example](../examples/gfx-headless.c) |
+| [wayland-wire](mulib-gfx-wire.md) | Bounded wayland-wire API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-wire.h) · [example](../examples/gfx-headless.c) |
+| [wayland-xdg](mulib-gfx-wire.md) | Bounded wayland-xdg API; see documented scope and acceptance gates. | [header](../kernels/mulib-wayland-xdg.h) · [example](../examples/gfx-headless.c) |
+| [web_conntection](mulib-web_conntection.md) | Bounded incremental HTTP/1 receive buffering. | [header](../kernels/mulib-web_conntection.h) · [example](../examples/modules/web_conntection.c) |
+| [webarchive](mulib-webarchive.md) | Write WARC-like minimal record headers into a bounded caller buffer. | [header](../kernels/mulib-webarchive.h) · [example](../examples/modules/webarchive.c) |
+| [webclient](mulib-webclient.md) | Bounded HTTP exchange over application-supplied transport callbacks. | [header](../kernels/mulib-webclient.h) · [example](../examples/modules/webclient.c) |
+| [webextract](mulib-webextract.md) | Locate JSON-LD script block within HTML as borrowed byte span. | [header](../kernels/mulib-webextract.h) · [example](../examples/modules/webextract.c) |
+| [webextract-evidence](mulib-webextract-evidence.md) | Source-span anchored extraction evidence records and integrity hashes. | [header](../kernels/mulib-webextract-evidence.h) · [example](../examples/modules/webextract-evidence.c) |
+| [webextract-llm](mulib-webextract-llm.md) | OpenAI-compatible JSON extraction request builder and pluggable response transport. | [header](../kernels/mulib-webextract-llm.h) · [example](../examples/modules/webextract-llm.c) |
+| [webextract-reconcile](mulib-webextract-reconcile.md) | Evidence-aware consensus of candidate numeric price extractions. | [header](../kernels/mulib-webextract-reconcile.h) · [example](../examples/modules/webextract-reconcile.c) |
+| [webextract-rules](mulib-webextract-rules.md) | Executable bounded HTML element/tag/class/id text extraction rules. | [header](../kernels/mulib-webextract-rules.h) · [example](../examples/modules/webextract-rules.c) |
+| [webframework](mulib-webframework.md) | Bounded HTTP route registration and dispatch on shared messages. | [header](../kernels/mulib-webframework.h) · [example](../examples/modules/webframework.c) |
+| [webidl](mulib-webidl.md) | WebIDL source compiler to S-expression CST/AST, CodeYAML and C99 declarations. | [header](../kernels/mulib-webidl.h) · [example](../examples/modules/webidl.c) |
+| [webidl-bindgen](mulib-webidl-bindgen.md) | C header declaration generation from a bounded interface-name WebIDL subset. | [header](../kernels/mulib-webidl-bindgen.h) · [example](../examples/modules/webidl-bindgen.c) |
+| [webidl-runtime](mulib-webidl-runtime.md) | Strict primitive WebIDL conversion utilities with range validation. | [header](../kernels/mulib-webidl-runtime.h) · [example](../examples/modules/webidl-runtime.c) |
+| [weblocation](mulib-weblocation.md) | Owned current URL state for navigation integration. | [header](../kernels/mulib-weblocation.h) · [example](../examples/modules/weblocation.c) |
+| [webratelimit](mulib-webratelimit.md) | Deterministic caller-clocked minimum-interval request scheduler. | [header](../kernels/mulib-webratelimit.h) · [example](../examples/modules/webratelimit.c) |
+| [websearch](mulib-websearch.md) | Static Google/Bing search provider identification. | [header](../kernels/mulib-websearch.h) · [example](../examples/modules/websearch.c) |
+| [websearch-engine](mulib-websearch-engine.md) | Deduplicated bounded ranked web search result collection. | [header](../kernels/mulib-websearch-engine.h) · [example](../examples/modules/websearch-engine.c) |
+| [websearch-provider](mulib-websearch-provider.md) | Registered search providers with encoded query-URL generation. | [header](../kernels/mulib-websearch-provider.h) · [example](../examples/modules/websearch-provider.c) |
+| [websocket](mulib-websocket.md) | RFC 6455 opening handshake and bounded WebSocket frame codecs. | [header](../kernels/mulib-websocket.h) · [example](../examples/modules/websocket.c) |
+| [webstorage](mulib-webstorage.md) | In-memory Web Storage style string key-value store. | [header](../kernels/mulib-webstorage.h) · [example](../examples/modules/webstorage.c) |
+| [webtimers](mulib-webtimers.md) | Caller-clocked fixed-capacity timer scheduler. | [header](../kernels/mulib-webtimers.h) · [example](../examples/modules/webtimers.c) |
+| [weighed_edit_distane](mulib-weighed_edit_distane.md) | Weighted byte edit distance with directional insertion/deletion costs. | [header](../kernels/mulib-weighed_edit_distane.h) · [example](../examples/modules/weighed_edit_distane.c) |
+| [weighted-edit-distance](mulib-weighted-edit-distance.md) | Weighted edit DP with per-symbol costs; canonical access to legacy byte DP. | [header](../kernels/mulib-weighted-edit-distance.h) · [example](../examples/modules/weighted-edit-distance.c) |
+| [wifi-ap](mulib-wifi-ap.md) | Request wireless ap information from nl80211 (NL80211_CMD_GET_INTERFACE) | [header](../kernels/mulib-wifi-ap.h) · [example](../examples/modules/wifi-ap.c) |
+| [wifi-monitor](mulib-wifi-monitor.md) | Receive Linux RTMGRP_LINK notifications for wireless device state changes | [header](../kernels/mulib-wifi-monitor.h) · [example](../examples/modules/wifi-monitor.c) |
+| [wifi-regulatory](mulib-wifi-regulatory.md) | Request wireless regulatory information from nl80211 (NL80211_CMD_GET_REG) | [header](../kernels/mulib-wifi-regulatory.h) · [example](../examples/modules/wifi-regulatory.c) |
+| [wifi-rfkill](mulib-wifi-rfkill.md) | Read hardware and software radio block state from /dev/rfkill | [header](../kernels/mulib-wifi-rfkill.h) · [example](../examples/modules/wifi-rfkill.c) |
+| [wifi-scan](mulib-wifi-scan.md) | Request wireless scan information from nl80211 (NL80211_CMD_GET_SCAN) | [header](../kernels/mulib-wifi-scan.h) · [example](../examples/modules/wifi-scan.c) |
+| [wifi-security](mulib-wifi-security.md) | Strict bounded WPA2 RSN information element parsing | [header](../kernels/mulib-wifi-security.h) · [example](../examples/modules/wifi-security.c) |
+| [wifi-station](mulib-wifi-station.md) | Request wireless station information from nl80211 (NL80211_CMD_GET_STATION) | [header](../kernels/mulib-wifi-station.h) · [example](../examples/modules/wifi-station.c) |
+| [wit](mulib-wit.md) | Flat primitive schemas to WIT record source generation. | [header](../kernels/mulib-wit.h) · [example](../examples/modules/wit.c) |
+| [wl-buffer](notebook-desktop.md) | Reference-counted Wayland buffer lifetime and idle release. | [header](../kernels/mulib-wl-buffer.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-client](notebook-desktop.md) | Nonblocking server-side byte transport and bounded incoming FD queue. | [header](../kernels/mulib-wl-client.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-compositor](notebook-desktop.md) | Version 1 compositor resources with SHM surfaces and frame lists. | [header](../kernels/mulib-wl-compositor.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-datadevice](notebook-desktop.md) | MIME offer state and focus/serial authorization helpers. | [header](../kernels/mulib-wl-datadevice.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-dispatch](notebook-desktop.md) | Native-endian frame validation and resource request dispatch. | [header](../kernels/mulib-wl-dispatch.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-dmabuf](notebook-desktop.md) | DMA-BUF plane parameter assembly and ownership helpers. | [header](../kernels/mulib-wl-dmabuf.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-frame](notebook-desktop.md) | Bounded frame callback list and done/delete-ID events. | [header](../kernels/mulib-wl-frame.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-layershell](notebook-desktop.md) | Layer policy helper for exclusive edge zones. | [header](../kernels/mulib-wl-layershell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-output](notebook-desktop.md) | Output mode, scale and done event serializers. | [header](../kernels/mulib-wl-output.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-protogen](notebook-desktop.md) | Descriptor-driven C opcode and signature emission. | [header](../kernels/mulib-wl-protogen.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-registry](notebook-desktop.md) | Wayland global announcements and bind validation. | [header](../kernels/mulib-wl-registry.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-resource](notebook-desktop.md) | Bounded object table with destruction callbacks. | [header](../kernels/mulib-wl-resource.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-seat](notebook-desktop.md) | Serial generation and key, motion and button event helpers. | [header](../kernels/mulib-wl-seat.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-server](notebook-desktop.md) | Unix listener, client acceptance and display sync/registry dispatch. | [header](../kernels/mulib-wl-server.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-shm](notebook-desktop.md) | Version 1 SHM pool and buffer resources with CPU snapshots. | [header](../kernels/mulib-wl-shm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-subsurface](notebook-desktop.md) | Cycle-safe subsurface relationships and pending positions. | [header](../kernels/mulib-wl-subsurface.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-surface](notebook-desktop.md) | Pending/current surface attachment, role and commit state. | [header](../kernels/mulib-wl-surface.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-xdgshell](notebook-desktop.md) | Minimal version 1 xdg-shell toplevel handshake and configure queue. | [header](../kernels/mulib-wl-xdgshell.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wl-xwayland](notebook-desktop.md) | XWayland process supervisor and displayfd parsing. | [header](../kernels/mulib-wl-xwayland.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wlroots](mulib-wlroots.md) | Wlroots-style output geometry, transforms and owned logical layouts. | [header](../kernels/mulib-wlroots.h) · [example](../examples/modules/wlroots.c) |
+| [wm-container](notebook-desktop.md) | Cycle-safe parent/child window grouping. | [header](../kernels/mulib-wm-container.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-core](notebook-desktop.md) | Stable window registry with owned strings, rectangle math and mapping state. | [header](../kernels/mulib-wm-core.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-decoration](notebook-desktop.md) | Frame extents and resize-edge hit testing. | [header](../kernels/mulib-wm-decoration.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-focus](notebook-desktop.md) | Focus eligibility and cyclic focus selection. | [header](../kernels/mulib-wm-focus.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-keybind](notebook-desktop.md) | Key, modifier and mode command lookup. | [header](../kernels/mulib-wm-keybind.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-launch](notebook-desktop.md) | Launch hint matching with ambiguity rejection. | [header](../kernels/mulib-wm-launch.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-layout](notebook-desktop.md) | Vertical, horizontal, grid, monocle and master-stack placement. | [header](../kernels/mulib-wm-layout.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-rules](notebook-desktop.md) | Window actions from exact app IDs or title prefixes. | [header](../kernels/mulib-wm-rules.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-session](notebook-desktop.md) | Bounded offline window placement records. | [header](../kernels/mulib-wm-session.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-stack](notebook-desktop.md) | Window stacking and topmost hit lookup. | [header](../kernels/mulib-wm-stack.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-transaction](notebook-desktop.md) | Configure transaction with acknowledgement, revision and deadline checks. | [header](../kernels/mulib-wm-transaction.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wm-workspace](notebook-desktop.md) | Named workspace activation and window assignment. | [header](../kernels/mulib-wm-workspace.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [wmfunc](mulib-wmfunc.md) | Portable window placement and transactional backend dispatch. | [header](../kernels/mulib-wmfunc.h) · [example](../examples/modules/wmfunc.c) |
+| [woff](mulib-woff.md) | Bounds-checked font and unicode woff structures binary inspection and record access. | [header](../kernels/mulib-woff.h) · [example](../examples/mulib-woff.c) |
+| [woff2](mulib-woff2.md) | Bounds-checked font and unicode woff2 structures binary inspection and record access. | [header](../kernels/mulib-woff2.h) · [example](../examples/mulib-woff2.c) |
+| [workspace-edit](mulib-workspace-edit.md) | Staged multi-file edits with exact preimages, cooperative lock, rollback and structured audit callbacks. | [header](../kernels/mulib-workspace-edit.h) · [example](../examples/apply_unidiff.c) |
+| [workspace-fs](mulib-workspace-fs.md) | Confined-by-descriptor symlink-rejecting relative POSIX file operations and single-file atomic replacement. | [header](../kernels/mulib-workspace-fs.h) · [example](../examples/apply_unidiff.c) |
+| [wpa-ctrl](mulib-wpa-ctrl.md) | Send a single wpa_supplicant control request over an AF_UNIX datagram socket | [header](../kernels/mulib-wpa-ctrl.h) · [example](../examples/modules/wpa-ctrl.c) |
 
 ## X
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [x11-atoms](notebook-desktop.md) | X11 atom intern requests and connection-local cache. | [header](../include/mulib-x11-atoms.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-composite](notebook-desktop.md) | Composite redirection and named-pixmap request helpers. | [header](../include/mulib-x11-composite.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-damage](notebook-desktop.md) | Damage creation, subtraction and destruction request helpers. | [header](../include/mulib-x11-damage.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-events](mulib-gfx-wire.md) | Bounded x11-events API; see documented scope and acceptance gates. | [header](../include/mulib-x11-events.h) · [example](../examples/gfx-headless.c) |
-| [x11-ewmh](notebook-desktop.md) | EWMH property lists and client-message decoding helpers. | [header](../include/mulib-x11-ewmh.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-ext](notebook-desktop.md) | Little-endian request/reply adapter and extension query helpers. | [header](../include/mulib-x11-ext.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-grab](notebook-desktop.md) | Key grab/ungrab and pointer grab requests. | [header](../include/mulib-x11-grab.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-icccm](notebook-desktop.md) | ICCCM size hint subset and WM_PROTOCOLS messages. | [header](../include/mulib-x11-icccm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-image](mulib-gfx-wire.md) | Bounded x11-image API; see documented scope and acceptance gates. | [header](../include/mulib-x11-image.h) · [example](../examples/gfx-headless.c) |
-| [x11-property](notebook-desktop.md) | Get/ChangeProperty and checked reply length and CARD32 access. | [header](../include/mulib-x11-property.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-randr](notebook-desktop.md) | RandR input selection and bounded screen resources reply. | [header](../include/mulib-x11-randr.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-reparent](notebook-desktop.md) | Core reparent, save-set, event selection and configure requests. | [header](../include/mulib-x11-reparent.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-selection](mulib-gfx-wire.md) | Bounded x11-selection API; see documented scope and acceptance gates. | [header](../include/mulib-x11-selection.h) · [example](../examples/gfx-headless.c) |
-| [x11-window](mulib-gfx-wire.md) | Bounded x11-window API; see documented scope and acceptance gates. | [header](../include/mulib-x11-window.h) · [example](../examples/gfx-headless.c) |
-| [x11-wire](mulib-gfx-wire.md) | Bounded x11-wire API; see documented scope and acceptance gates. | [header](../include/mulib-x11-wire.h) · [example](../examples/gfx-headless.c) |
-| [x11-wm](mulib-gfx-wire.md) | Bounded x11-wm API; see documented scope and acceptance gates. | [header](../include/mulib-x11-wm.h) · [example](../examples/gfx-headless.c) |
-| [x11-xfixes](notebook-desktop.md) | XFixes region creation and selection event requests. | [header](../include/mulib-x11-xfixes.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x11-xinput](notebook-desktop.md) | XI2 version query and event selection requests. | [header](../include/mulib-x11-xinput.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [x25519](mulib-x25519.md) | RFC 7748 X25519 public keys and shared secrets. | [header](../include/mulib-x25519.h) · [example](../examples/modules/x25519.c) |
-| [x509](mulib-x509.md) | X.509 server certificate chains, SAN identities and PEM trust stores. | [header](../include/mulib-x509.h) · [example](../examples/modules/x509.c) |
-| [xatomics](mulib-xatomics.md) | Portable sequentially consistent integer and pointer atomics. | [header](../include/mulib-xatomics.h) · [example](../examples/modules/xatomics.c) |
-| [xkb](notebook-desktop.md) | Optional runtime xkbcommon state, key symbols and UTF-8 lookup. | [header](../include/mulib-xkb.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
-| [xlib](mulib-xlib.md) | Runtime-loaded Xlib display and simple-window operations. | [header](../include/mulib-xlib.h) · [example](../examples/modules/xlib.c) |
-| [xll](mulib-xll.md) | X Layout Language: owned text-layout programs, parser and direct C emitter. | [header](../include/mulib-xll.h) · [example](../examples/modules/xll.c) |
-| [xmacir](mulib-xmacir.md) | Bounded X Macro IR for portable stack programs and immutable data capsules. | [header](../include/mulib-xmacir.h) · [example](../examples/modules/capasm.c) |
-| [xml](mulib-xml.md) | Owned XML document trees, parsing, escaping, and serialization. | [header](../include/mulib-xml.h) · [example](../examples/modules/xml.c) |
-| [xpath](mulib-xpath.md) | Focused path and predicate queries over the MuLIB XML tree. | [header](../include/mulib-xpath.h) · [example](../examples/modules/xpath.c) |
-| [xsimd](mulib-xsimd.md) | Runtime-selected scalar, SSE4.1, AVX2 and AArch64 NEON float kernels. | [header](../include/mulib-xsimd.h) · [example](../examples/modules/xsimd.c) |
-| [xtas](mulib-xtas.md) | Bounded, cancellable documentation-tree event stream. | [header](../include/mulib-xtas.h) · [example](../examples/modules/xtas.c) |
-| [xtbb](mulib-xtbb.md) | C11 task arenas, fork/join algorithms and deterministic reductions. | [header](../include/mulib-xtbb.h) · [example](../examples/modules/xtbb.c) |
-| [xtensa](mulib-xtensa.md) | Owned little-endian Xtensa core 24-bit MCU implementation. | [header](../include/mulib-xtensa.h) · [example](../examples/modules/xtensa.c) |
-| [xthreads](mulib-xthreads.md) | Portable native threads, mutexes, conditions, once and thread-local keys. | [header](../include/mulib-xthreads.h) · [example](../examples/modules/xthreads.c) |
-| [xtks](mulib-xtks.md) | X transport toolkit: checked borrowed streams and resumable exact | [header](../include/mulib-xtks.h) · [example](../examples/modules/xtks.c) |
-| [xz](mulib-xz.md) | Dependency-free XZ streams with LZMA2, block/index validation and checks. | [header](../include/mulib-xz.h) · [example](../examples/modules/xz.c) |
+| [x11-atoms](notebook-desktop.md) | X11 atom intern requests and connection-local cache. | [header](../kernels/mulib-x11-atoms.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-composite](notebook-desktop.md) | Composite redirection and named-pixmap request helpers. | [header](../kernels/mulib-x11-composite.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-damage](notebook-desktop.md) | Damage creation, subtraction and destruction request helpers. | [header](../kernels/mulib-x11-damage.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-events](mulib-gfx-wire.md) | Bounded x11-events API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-events.h) · [example](../examples/gfx-headless.c) |
+| [x11-ewmh](notebook-desktop.md) | EWMH property lists and client-message decoding helpers. | [header](../kernels/mulib-x11-ewmh.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-ext](notebook-desktop.md) | Little-endian request/reply adapter and extension query helpers. | [header](../kernels/mulib-x11-ext.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-grab](notebook-desktop.md) | Key grab/ungrab and pointer grab requests. | [header](../kernels/mulib-x11-grab.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-icccm](notebook-desktop.md) | ICCCM size hint subset and WM_PROTOCOLS messages. | [header](../kernels/mulib-x11-icccm.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-image](mulib-gfx-wire.md) | Bounded x11-image API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-image.h) · [example](../examples/gfx-headless.c) |
+| [x11-property](notebook-desktop.md) | Get/ChangeProperty and checked reply length and CARD32 access. | [header](../kernels/mulib-x11-property.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-randr](notebook-desktop.md) | RandR input selection and bounded screen resources reply. | [header](../kernels/mulib-x11-randr.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-reparent](notebook-desktop.md) | Core reparent, save-set, event selection and configure requests. | [header](../kernels/mulib-x11-reparent.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-selection](mulib-gfx-wire.md) | Bounded x11-selection API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-selection.h) · [example](../examples/gfx-headless.c) |
+| [x11-window](mulib-gfx-wire.md) | Bounded x11-window API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-window.h) · [example](../examples/gfx-headless.c) |
+| [x11-wire](mulib-gfx-wire.md) | Bounded x11-wire API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-wire.h) · [example](../examples/gfx-headless.c) |
+| [x11-wm](mulib-gfx-wire.md) | Bounded x11-wm API; see documented scope and acceptance gates. | [header](../kernels/mulib-x11-wm.h) · [example](../examples/gfx-headless.c) |
+| [x11-xfixes](notebook-desktop.md) | XFixes region creation and selection event requests. | [header](../kernels/mulib-x11-xfixes.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x11-xinput](notebook-desktop.md) | XI2 version query and event selection requests. | [header](../kernels/mulib-x11-xinput.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [x25519](mulib-x25519.md) | RFC 7748 X25519 public keys and shared secrets. | [header](../kernels/mulib-x25519.h) · [example](../examples/modules/x25519.c) |
+| [x509](mulib-x509.md) | X.509 server certificate chains, SAN identities and PEM trust stores. | [header](../kernels/mulib-x509.h) · [example](../examples/modules/x509.c) |
+| [xatomics](mulib-xatomics.md) | Portable sequentially consistent integer and pointer atomics. | [header](../kernels/mulib-xatomics.h) · [example](../examples/modules/xatomics.c) |
+| [xkb](notebook-desktop.md) | Optional runtime xkbcommon state, key symbols and UTF-8 lookup. | [header](../kernels/mulib-xkb.h) · [example](../tests/notebook-desktop-headers/consumer.c) |
+| [xlib](mulib-xlib.md) | Runtime-loaded Xlib display and simple-window operations. | [header](../kernels/mulib-xlib.h) · [example](../examples/modules/xlib.c) |
+| [xll](mulib-xll.md) | X Layout Language: owned text-layout programs, parser and direct C emitter. | [header](../kernels/mulib-xll.h) · [example](../examples/modules/xll.c) |
+| [xmacir](mulib-xmacir.md) | Bounded X Macro IR for portable stack programs and immutable data capsules. | [header](../kernels/mulib-xmacir.h) · [example](../examples/modules/capasm.c) |
+| [xml](mulib-xml.md) | Owned XML document trees, parsing, escaping, and serialization. | [header](../kernels/mulib-xml.h) · [example](../examples/modules/xml.c) |
+| [xpath](mulib-xpath.md) | Focused path and predicate queries over the MuLIB XML tree. | [header](../kernels/mulib-xpath.h) · [example](../examples/modules/xpath.c) |
+| [xsimd](mulib-xsimd.md) | Runtime-selected scalar, SSE4.1, AVX2 and AArch64 NEON float kernels. | [header](../kernels/mulib-xsimd.h) · [example](../examples/modules/xsimd.c) |
+| [xtas](mulib-xtas.md) | Bounded, cancellable documentation-tree event stream. | [header](../kernels/mulib-xtas.h) · [example](../examples/modules/xtas.c) |
+| [xtbb](mulib-xtbb.md) | C11 task arenas, fork/join algorithms and deterministic reductions. | [header](../kernels/mulib-xtbb.h) · [example](../examples/modules/xtbb.c) |
+| [xtensa](mulib-xtensa.md) | Owned little-endian Xtensa core 24-bit MCU implementation. | [header](../kernels/mulib-xtensa.h) · [example](../examples/modules/xtensa.c) |
+| [xthreads](mulib-xthreads.md) | Portable native threads, mutexes, conditions, once and thread-local keys. | [header](../kernels/mulib-xthreads.h) · [example](../examples/modules/xthreads.c) |
+| [xtks](mulib-xtks.md) | X transport toolkit: checked borrowed streams and resumable exact | [header](../kernels/mulib-xtks.h) · [example](../examples/modules/xtks.c) |
+| [xz](mulib-xz.md) | Dependency-free XZ streams with LZMA2, block/index validation and checks. | [header](../kernels/mulib-xz.h) · [example](../examples/modules/xz.c) |
 
 ## Y
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [yaml](mulib-yaml.md) | Focused YAML configuration parsing and emission using the JSON value model. | [header](../include/mulib-yaml.h) · [example](../examples/modules/yaml.c) |
-| [yantlr](mulib-yantlr.md) | YANTLR host language, dependency linking and provider-driven generation. | [header](../include/mulib-yantlr.h) · [example](../examples/modules/yantlr.c) |
+| [yaml](mulib-yaml.md) | Focused YAML configuration parsing and emission using the JSON value model. | [header](../kernels/mulib-yaml.h) · [example](../examples/modules/yaml.c) |
+| [yantlr](mulib-yantlr.md) | YANTLR host language, dependency linking and provider-driven generation. | [header](../kernels/mulib-yantlr.h) · [example](../examples/modules/yantlr.c) |
 
 ## Z
 
 | Library | Purpose | Source and example |
 | --- | --- | --- |
-| [zip](mulib-zip.md) | Checked memory ZIP32 archives with stored and DEFLATE entries. | [header](../include/mulib-zip.h) · [example](../examples/modules/zip.c) |
-| [zoneindex](mulib-zoneindex.md) | Capacity-checked zone-map range pruning over finite per-block numeric min/max | [header](../include/mulib-zoneindex.h) · [example](../examples/modules/zoneindex.c) |
-| [zorder](mulib-zorder.md) | Morton Z-order encoding/decoding for 2D unsigned 32-bit coordinates | [header](../include/mulib-zorder.h) · [example](../examples/modules/zorder.c) |
-| [zstd](mulib-zstd.md) | Dependency-free Zstandard LZ/FSE/Huffman codec and raw/RLE helpers. | [header](../include/mulib-zstd.h) · [example](../examples/modules/zstd.c) |
+| [zip](mulib-zip.md) | Checked memory ZIP32 archives with stored and DEFLATE entries. | [header](../kernels/mulib-zip.h) · [example](../examples/modules/zip.c) |
+| [zoneindex](mulib-zoneindex.md) | Capacity-checked zone-map range pruning over finite per-block numeric min/max | [header](../kernels/mulib-zoneindex.h) · [example](../examples/modules/zoneindex.c) |
+| [zorder](mulib-zorder.md) | Morton Z-order encoding/decoding for 2D unsigned 32-bit coordinates | [header](../kernels/mulib-zorder.h) · [example](../examples/modules/zorder.c) |
+| [zstd](mulib-zstd.md) | Dependency-free Zstandard LZ/FSE/Huffman codec and raw/RLE helpers. | [header](../kernels/mulib-zstd.h) · [example](../examples/modules/zstd.c) |

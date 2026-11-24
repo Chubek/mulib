@@ -1,6 +1,6 @@
 /* Regression coverage for restricted image/color/nodegraph review candidates.
  * cc -std=c11 -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined,float-cast-overflow
- *    -Iinclude tests/media-image-review-test.c -lm -o /tmp/opencode/image-review
+ *    -Ikernels tests/media-image-review-test.c -lm -o /tmp/opencode/image-review
  */
 #include "mulib-img-blend.h"
 #include "mulib-img-blur.h"

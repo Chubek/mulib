@@ -27,7 +27,7 @@ IPv6 extension-header limitations apply. Tests:
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-packetrules.h`](../include/mulib-packetrules.h).
+Verbatim declaration section from [`kernels/mulib-packetrules.h`](../kernels/mulib-packetrules.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -78,7 +78,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-packetrules.h`](../include/mulib-packetrules.h) |
+| Header | [`kernels/mulib-packetrules.h`](../kernels/mulib-packetrules.h) |
 | Implementation switch | `MULIB_IMPL_PACKETRULES` |
 | Repository-local includes | [mulib-packetfiter](mulib-packetfiter.md) |
 | Complete example | [`examples/modules/packetrules.c`](../examples/modules/packetrules.c) |
@@ -91,6 +91,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/packetrules.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/packetrules.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

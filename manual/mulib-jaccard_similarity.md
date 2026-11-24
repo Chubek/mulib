@@ -15,7 +15,7 @@ O(n²+m²+n*m), constant extra storage. Intended for small sets.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-jaccard_similarity.h`](../include/mulib-jaccard_similarity.h).
+Verbatim declaration section from [`kernels/mulib-jaccard_similarity.h`](../kernels/mulib-jaccard_similarity.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -51,7 +51,7 @@ double mulib_jaccard_similarity(const uint64_t *a, size_t n, const uint64_t *b, 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-jaccard_similarity.h`](../include/mulib-jaccard_similarity.h) |
+| Header | [`kernels/mulib-jaccard_similarity.h`](../kernels/mulib-jaccard_similarity.h) |
 | Implementation switch | `MULIB_IMPL_JACCARD_SIMILARITY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/jaccard_similarity.c`](../examples/modules/jaccard_similarity.c) |
@@ -64,6 +64,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/jaccard_similarity.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/jaccard_similarity.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

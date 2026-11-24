@@ -56,7 +56,7 @@ rules, capacity, allocation and denied access.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-containerd-accessstub.h`](../include/mulib-containerd-accessstub.h) |
+| Header | [`kernels/mulib-containerd-accessstub.h`](../kernels/mulib-containerd-accessstub.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINERD_ACCESSSTUB` |
 | Repository-local includes | [mulib-conainerd-ipc](mulib-conainerd-ipc.md) |
 | Complete example | [`examples/modules/containerd-accessstub.c`](../examples/modules/containerd-accessstub.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/containerd-accessstub.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/containerd-accessstub.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

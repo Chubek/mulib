@@ -12,7 +12,7 @@ Binary search costs O(log count) string comparisons and allocates nothing.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-stopwords.h`](../include/mulib-stopwords.h).
+Verbatim declaration section from [`kernels/mulib-stopwords.h`](../kernels/mulib-stopwords.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -53,7 +53,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-stopwords.h`](../include/mulib-stopwords.h) |
+| Header | [`kernels/mulib-stopwords.h`](../kernels/mulib-stopwords.h) |
 | Implementation switch | `MULIB_IMPL_STOPWORDS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/stopwords.c`](../examples/modules/stopwords.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/stopwords.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/stopwords.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

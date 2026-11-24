@@ -15,7 +15,7 @@ include `mulib-procfs.h` for C/C++ declarations. The dependency supplies normali
 paths, shared error codes and fixture/backend queries.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/procfs.c -o /tmp/procfs-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/procfs.c -o /tmp/procfs-example
 /tmp/procfs-example
 ```
 
@@ -113,7 +113,7 @@ VFS query ownership/error paths, allocation failure, and optional live Linux
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-procfs.h`](../include/mulib-procfs.h) |
+| Header | [`kernels/mulib-procfs.h`](../kernels/mulib-procfs.h) |
 | Implementation switch | `MULIB_IMPL_PROCFS` |
 | Repository-local includes | [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/procfs.c`](../examples/modules/procfs.c) |
@@ -126,6 +126,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/procfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/procfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

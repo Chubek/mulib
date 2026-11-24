@@ -1,7 +1,7 @@
 # mulib-pcb-geometry
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-pcb-geometry.h`  
+**Header:** `kernels/mulib-pcb-geometry.h`  
 **Implementation switch:** `MULIB_IMPL_PCB_GEOMETRY`  
 **Dependencies:** C11 standard library only.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_PCB_GEOMETRY` defined befor
 `tests/test_pcb_geometry.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_pcb_geometry.c -lm -o /tmp/test_pcb_geometry
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_pcb_geometry.c -lm -o /tmp/test_pcb_geometry
 /tmp/test_pcb_geometry
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-pcb-geometry.h`](../include/mulib-pcb-geometry.h).
+Verbatim declaration section from [`kernels/mulib-pcb-geometry.h`](../kernels/mulib-pcb-geometry.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -92,7 +92,7 @@ int mulib_pcb_segments_violate(mulib_pcb_segment_t a, mulib_pcb_segment_t b, dou
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-pcb-geometry.h`](../include/mulib-pcb-geometry.h) |
+| Header | [`kernels/mulib-pcb-geometry.h`](../kernels/mulib-pcb-geometry.h) |
 | Implementation switch | `MULIB_IMPL_PCB_GEOMETRY` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/pcb-geometry.c`](../examples/modules/pcb-geometry.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/pcb-geometry.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/pcb-geometry.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

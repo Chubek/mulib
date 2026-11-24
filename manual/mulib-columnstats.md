@@ -13,7 +13,7 @@ not proof that a row matches. All operations are O(1), allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-columnstats.h`](../include/mulib-columnstats.h).
+Verbatim declaration section from [`kernels/mulib-columnstats.h`](../kernels/mulib-columnstats.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -56,7 +56,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-columnstats.h`](../include/mulib-columnstats.h) |
+| Header | [`kernels/mulib-columnstats.h`](../kernels/mulib-columnstats.h) |
 | Implementation switch | `MULIB_IMPL_COLUMNSTATS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/columnstats.c`](../examples/modules/columnstats.c) |
@@ -69,6 +69,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/columnstats.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/columnstats.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -4,7 +4,7 @@
 
 C11 kernels; no ICU installation is required for PrettyPrint. Use the MuLIB
 planner for one implementation TU. Standalone examples use
-`include/mulib-pretty-standalone.inc` to select the switches. On Linux link
+`kernels/mulib-pretty-standalone.inc` to select the switches. On Linux link
 with `-lm -ldl`.
 
 Unlike MuLIB's glyph-oriented `mulib-layout.h`, this kernel operates on *code structure*: `Text`, `SoftLine`, `HardLine`, `Concat`, `Group`, `Nest`, `Align`, `Choice`, `Annotate`, `Fill`, `Region` (local algorithm selection), and `ParagraphRegion` (local paragraph-strategy selection).
@@ -123,7 +123,7 @@ python3 formatter.py examples/arithmetic.ast.json |
 ## Example native build
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude \
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels \
   examples/prettyprint-demo.c -lm -ldl -o /tmp/pretty-demo
 /tmp/pretty-demo
 ```
@@ -151,7 +151,7 @@ The layout engine preserves the shared indentation and current column across reg
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-prettydoc.h`](../include/mulib-prettydoc.h) |
+| Header | [`kernels/mulib-prettydoc.h`](../kernels/mulib-prettydoc.h) |
 | Implementation switch | `MULIB_IMPL_PRETTYDOC` |
 | Repository-local includes | [mulib-linebreak](mulib-linebreak.md) |
 | Complete example | [`examples/prettyprint-demo.c`](../examples/prettyprint-demo.c) |
@@ -164,6 +164,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/prettyprint-demo.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/prettyprint-demo.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

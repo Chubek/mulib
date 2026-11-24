@@ -1,4 +1,4 @@
-/* cc -std=c11 -Iinclude examples/modules/oix.c -lm -o oix
+/* cc -std=c11 -Ikernels examples/modules/oix.c -lm -o oix
  * ./oix --output oix.img
  * ./oix --json config.json --output custom.img --run
  * Configuration and image generation require only C11/libc and MuLIB headers.

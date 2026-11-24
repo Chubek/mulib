@@ -110,7 +110,7 @@ emitting `syscall`, `ud2`, or an unbalanced `push` does not make it safe to run.
 ## Runnable end-to-end example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/assembler.c -lm -o /tmp/opencode/mulib-assembler
 /tmp/opencode/mulib-assembler
 ```
@@ -129,7 +129,7 @@ changes, demonstrating the encoder actually consults its metadata.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-assembler.h`](../include/mulib-assembler.h) |
+| Header | [`kernels/mulib-assembler.h`](../kernels/mulib-assembler.h) |
 | Implementation switch | `MULIB_IMPL_ASSEMBLER` |
 | Repository-local includes | [mulib-dsymspec](mulib-dsymspec.md), [mulib-emitter](mulib-emitter.md), [mulib-linker](mulib-linker.md) |
 | Complete example | [`examples/modules/assembler.c`](../examples/modules/assembler.c) |
@@ -142,6 +142,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/assembler.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/assembler.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

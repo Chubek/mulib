@@ -63,7 +63,7 @@ def inventory():
         if header in entries:
             raise ValueError('duplicate manifest header: ' + str(header))
         entries[header] = fields
-    headers = set((ROOT / 'include').glob('mulib-*.h'))
+    headers = set((ROOT / 'kernels').glob('mulib-*.h'))
     if set(entries) != headers:
         raise ValueError('manifest and mulib header inventory differ')
     records = []
@@ -115,7 +115,7 @@ def local_includes(record):
     # Ignore commented-out directives; conditional includes remain visible.
     text = re.sub(r'/\*.*?\*/|//[^\n]*', '', record['text'], flags=re.S)
     for name in INCLUDE.findall(text):
-        for candidate in (record['header'].parent / name, ROOT / 'include' / name):
+        for candidate in (record['header'].parent / name, ROOT / 'kernels' / name):
             candidate = candidate.resolve()
             if candidate.is_relative_to(ROOT) and candidate.is_file():
                 result.add(candidate)
@@ -135,7 +135,7 @@ def reference(record, by_header):
               'None (support header; see scope above)')
     source = record['example'].relative_to(ROOT).as_posix()
     command = shlex.join(['cc', '-std=c11', '-Wall', '-Wextra', '-Wpedantic',
-                          '-Werror', '-UNDEBUG', '-Iinclude', source,
+                          '-Werror', '-UNDEBUG', '-Ikernels', source,
                           '-pthread', '-lm', '-ldl', *record.get('example_ldlibs', ()),
                           '-o', 'mulib-example'])
     return '\n'.join([
@@ -233,7 +233,7 @@ def check_links(documents):
 def compile_examples(records, jobs):
     compiler = shlex.split(os.environ.get('CC', 'cc'))
     flags = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG',
-             '-I' + str(ROOT / 'include')]
+             '-I' + str(ROOT / 'kernels')]
     flags += ['-pthread'] if os.name == 'posix' else []
     libraries = [] if sys.platform == 'win32' else ['-lm']
     libraries += ['-ldl'] if sys.platform.startswith(('linux', 'freebsd')) else []

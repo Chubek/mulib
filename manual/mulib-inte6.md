@@ -61,7 +61,7 @@ Membership returns 0 for invalid arguments as well as a nonmember.
 
 ## Example and tests
 
-`cc -std=c11 -Iinclude examples/modules/inte6.c -o inte6` builds a runnable
+`cc -std=c11 -Ikernels examples/modules/inte6.c -o inte6` builds a runnable
 example exercising both spellings. `tests/test_dns_stack.c` tests the actual
 forwarding functions; existing network/protocol suites continue using the
 historical header with `MULIB_IMPL_INET6`. New applications should prefer the
@@ -74,7 +74,7 @@ canonical filename and API documented in `manual/mulib-inet6.md`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-inte6.h`](../include/mulib-inte6.h) |
+| Header | [`kernels/mulib-inte6.h`](../kernels/mulib-inte6.h) |
 | Implementation switch | `MULIB_IMPL_INTE6` |
 | Repository-local includes | [mulib-inet6](mulib-inet6.md) |
 | Complete example | [`examples/modules/inte6.c`](../examples/modules/inte6.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/inte6.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/inte6.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

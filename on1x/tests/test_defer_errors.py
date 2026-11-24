@@ -228,7 +228,7 @@ fn make(n:i64)->fn()->i64{defer println(1);return fn()->i64{return n;};}
 fn main(){{let b=get();println(buffer_text(b));let f=make(42);println(f());}assert(data_live_nodes()==0);}
 ''', 'xz\n1\n42\n')
 
-if (t.root.parent / 'include/mulib-json.h').exists():
+if (t.root.parent / 'kernels/mulib-json.h').exists():
     execute('json_cleanup', RESULT + '''
 extern fn defer_json_blocks()->i64;
 fn live(){assert(defer_json_blocks()>0);println(9);}
@@ -239,7 +239,7 @@ fn main(){println(match use(0) with{Ok(n)=>n,Err(e)=>u8_to_i64(e)});assert(defer
  println(match use(-1) with{Ok(n)=>n,Err(e)=>u8_to_i64(e)});assert(defer_json_blocks()==0);
  for i in 0..3{let root=json_parse_or_die("42");defer println(json_number(root)+i);}assert(defer_json_blocks()==0);}
 ''', '9\n42\n9\n7\n44\n43\n42\n', extra=[
-        '-I', t.root.parent / 'include', t.root / 'runtime/on1x_json.c',
+        '-I', t.root.parent / 'kernels', t.root / 'runtime/on1x_json.c',
         t.root / 'tests/fixtures/defer_json_allocator.c', '-lm'])
 
 # Internal C ABI boundary, not separate On1x compilation or aggregate FFI.

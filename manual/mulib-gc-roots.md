@@ -20,7 +20,7 @@ Add/remove are O(root count); collection uses the GC contract.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-gc-roots.h`](../include/mulib-gc-roots.h) |
+| Header | [`kernels/mulib-gc-roots.h`](../kernels/mulib-gc-roots.h) |
 | Implementation switch | `MULIB_IMPL_GC_ROOTS` |
 | Repository-local includes | [mulib-gc](mulib-gc.md) |
 | Complete example | [`examples/modules/gc-roots.c`](../examples/modules/gc-roots.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/gc-roots.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/gc-roots.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

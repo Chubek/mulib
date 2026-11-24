@@ -15,7 +15,7 @@ unchanged on validation failure.
 
 ## Integration and ownership
 
-Include `include/mulib-price-monitor.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-price-monitor.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -39,7 +39,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-price-monitor.h`](../include/mulib-price-monitor.h).
+Verbatim declaration section from [`kernels/mulib-price-monitor.h`](../kernels/mulib-price-monitor.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -92,7 +92,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-price-monitor.h`](../include/mulib-price-monitor.h) |
+| Header | [`kernels/mulib-price-monitor.h`](../kernels/mulib-price-monitor.h) |
 | Implementation switch | `MULIB_IMPL_PRICE_MONITOR` |
 | Repository-local includes | [mulib-price-observation](mulib-price-observation.md) |
 | Complete example | [`examples/modules/price-monitor.c`](../examples/modules/price-monitor.c) |
@@ -105,6 +105,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/price-monitor.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/price-monitor.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

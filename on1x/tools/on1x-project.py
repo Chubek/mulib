@@ -1069,7 +1069,7 @@ class Execution:
                 self.prefix.extend(('--setenv', key, value))
             self.mounts = set()
             for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib',
-                         mulib / 'include', mulib / 'manual',
+                         mulib / 'kernels', mulib / 'manual',
                          mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
                 self.mount(path)
             # A failed setup must not even start a compiler discovery process.

@@ -3,7 +3,7 @@
 [Manuals](README.md) · [Library index](index.md)
 
 **Docstrings** is a structured documentation language and renderer. The single
-public header is `include/mulib-docstring.h`; its compiler API uses the
+public header is `kernels/mulib-docstring.h`; its compiler API uses the
 `mulib_docstrings_` prefix. It defines DocstrIL, compiles markup or Lua into
 that IR, runs Lua extensions/filters, applies stylesheets, and emits XML, HTML,
 Pandoc JSON ASTs, token streams, event streams and a documentation DOM.
@@ -376,9 +376,9 @@ embedded default modules; edit their Lua sources, not the generated include.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-docstring.h`](../include/mulib-docstring.h) |
+| Header | [`kernels/mulib-docstring.h`](../kernels/mulib-docstring.h) |
 | Implementation switch | `MULIB_IMPL_DOCSTRING` |
-| Repository-local includes | [mulib-css](mulib-css.md), [`include/mulib-docstring-data.inc`](../include/mulib-docstring-data.inc), [mulib-dsdom](mulib-dsdom.md), [mulib-dyegram](mulib-dyegram.md), [mulib-mune](mulib-mune.md), [mulib-pandocast](mulib-pandocast.md), [mulib-tas](mulib-tas.md), [mulib-tbl](mulib-tbl.md), [mulib-termsyn](mulib-termsyn.md), [mulib-yaml](mulib-yaml.md) |
+| Repository-local includes | [mulib-css](mulib-css.md), [`kernels/mulib-docstring-data.inc`](../kernels/mulib-docstring-data.inc), [mulib-dsdom](mulib-dsdom.md), [mulib-dyegram](mulib-dyegram.md), [mulib-mune](mulib-mune.md), [mulib-pandocast](mulib-pandocast.md), [mulib-tas](mulib-tas.md), [mulib-tbl](mulib-tbl.md), [mulib-termsyn](mulib-termsyn.md), [mulib-yaml](mulib-yaml.md) |
 | Complete example | [`examples/modules/docstring.c`](../examples/modules/docstring.c) |
 
 The include list includes conditional and implementation-only includes;
@@ -389,6 +389,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/docstring.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/docstring.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

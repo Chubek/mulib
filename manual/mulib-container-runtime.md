@@ -62,7 +62,7 @@ side effects. See [container-stack](container-stack.md) for ownership and tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-container-runtime.h`](../include/mulib-container-runtime.h) |
+| Header | [`kernels/mulib-container-runtime.h`](../kernels/mulib-container-runtime.h) |
 | Implementation switch | `MULIB_IMPL_CONTAINER_RUNTIME` |
 | Repository-local includes | [mulib-container](mulib-container.md), [mulib-rootfs](mulib-rootfs.md) |
 | Complete example | [`examples/modules/container-runtime.c`](../examples/modules/container-runtime.c) |
@@ -75,6 +75,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/container-runtime.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/container-runtime.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

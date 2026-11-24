@@ -20,7 +20,7 @@ must be linked for this dispatcher, even when using only one mode.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-regalloc.h`](../include/mulib-regalloc.h) |
+| Header | [`kernels/mulib-regalloc.h`](../kernels/mulib-regalloc.h) |
 | Implementation switch | `MULIB_IMPL_REGALLOC` |
 | Repository-local includes | [mulib-regalloc-graph](mulib-regalloc-graph.md), [mulib-regalloc-linear](mulib-regalloc-linear.md) |
 | Complete example | [`examples/modules/regalloc.c`](../examples/modules/regalloc.c) |
@@ -33,6 +33,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/regalloc.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/regalloc.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

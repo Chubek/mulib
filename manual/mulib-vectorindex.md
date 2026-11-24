@@ -14,7 +14,7 @@ not approximate nearest-neighbor indexing. Free clears dimension as well as data
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-vectorindex.h`](../include/mulib-vectorindex.h).
+Verbatim declaration section from [`kernels/mulib-vectorindex.h`](../kernels/mulib-vectorindex.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -64,7 +64,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vectorindex.h`](../include/mulib-vectorindex.h) |
+| Header | [`kernels/mulib-vectorindex.h`](../kernels/mulib-vectorindex.h) |
 | Implementation switch | `MULIB_IMPL_VECTORINDEX` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/vectorindex.c`](../examples/modules/vectorindex.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vectorindex.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vectorindex.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

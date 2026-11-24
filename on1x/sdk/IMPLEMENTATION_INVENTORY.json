@@ -55,7 +55,7 @@
     {"area": "runtime", "paths": ["on1x/runtime"], "facilities": ["closures", "managed data", "unique boxes", "defer", "numeric runtime", "cooperative CSP"]},
     {"area": "foreign", "paths": ["on1x/contracts-exoml", "on1x/contracts-exotract", "on1x/tools"], "facilities": ["CDecl v2", "contract v2 validation", "KernelBind review", "single-TU planning"]},
     {"area": "projects", "paths": ["on1x/tools/on1x_project.py", "on1x/tools/on1x-project.py", "on1x/tools/on1x-build.py"], "facilities": ["On1xfile", "frozen builds", "atomic outputs", "kernel plans"]},
-    {"area": "mulib", "paths": ["MANIFEST.yaml", "include/mulib-cdd-*.h"], "facilities": ["CDD", "IPC", "sandbox", "shared memory", "graphs", "passes", "egraph", "Mune", "assembler/object/link/regalloc"]},
+    {"area": "mulib", "paths": ["MANIFEST.yaml", "kernels/mulib-cdd-*.h"], "facilities": ["CDD", "IPC", "sandbox", "shared memory", "graphs", "passes", "egraph", "Mune", "assembler/object/link/regalloc"]},
     {"area": "libstone", "paths": ["on1x/third_party/libstone"], "facilities": ["Chisel", "Syren", "Wetstone", "Nerotypical", "Novostone", "ExoML", "Exotract", "Plaid", "Prolific", "Yellowstone"]}
   ],
   "exclusive_owners": {

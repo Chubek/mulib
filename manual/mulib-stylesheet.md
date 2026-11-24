@@ -74,7 +74,7 @@ Tests: `tests/test_pglayout.c`, allocation failure tests and standalone examples
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-stylesheet.h`](../include/mulib-stylesheet.h) |
+| Header | [`kernels/mulib-stylesheet.h`](../kernels/mulib-stylesheet.h) |
 | Implementation switch | `MULIB_IMPL_STYLESHEET` |
 | Repository-local includes | [mulib-css](mulib-css.md) |
 | Complete example | [`examples/modules/stylesheet.c`](../examples/modules/stylesheet.c) |
@@ -87,6 +87,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/stylesheet.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/stylesheet.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

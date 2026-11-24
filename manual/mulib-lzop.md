@@ -37,7 +37,7 @@ independently built/verified lzop frames, including compressed and stored blocks
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lzop.h`](../include/mulib-lzop.h) |
+| Header | [`kernels/mulib-lzop.h`](../kernels/mulib-lzop.h) |
 | Implementation switch | `MULIB_IMPL_LZOP` |
 | Repository-local includes | [mulib-adler32](mulib-adler32.md), [mulib-crc32](mulib-crc32.md), [mulib-lzo](mulib-lzo.md) |
 | Complete example | [`examples/modules/lzop.c`](../examples/modules/lzop.c) |
@@ -50,6 +50,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lzop.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lzop.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

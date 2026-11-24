@@ -12,7 +12,7 @@ Use one list per document/token for phrasequery.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-positions.h`](../include/mulib-positions.h).
+Verbatim declaration section from [`kernels/mulib-positions.h`](../kernels/mulib-positions.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -53,7 +53,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-positions.h`](../include/mulib-positions.h) |
+| Header | [`kernels/mulib-positions.h`](../kernels/mulib-positions.h) |
 | Implementation switch | `MULIB_IMPL_POSITIONS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/positions.c`](../examples/modules/positions.c) |
@@ -66,6 +66,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/positions.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/positions.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -62,10 +62,10 @@ with tempfile.TemporaryDirectory(prefix="on1x-harness-abi-") as tmp:
         assert sha == digest(Path(name)), name
 
     for name in modules[:-1]:
-        header = root / "include" / f"mulib-{name}.h"
+        header = root / "kernels" / f"mulib-{name}.h"
         direct = work / f"direct-{name}.json"
         run(bind, "extract", header, "--revision", "sha256:" + digest(header),
-            "--include", root / "include", "--target", target,
+            "--include", root / "kernels", "--target", target,
             "--resource-dir", resource, "-o", direct)
         expected = set(exports["libraries"][name]["archive_exports"])
         for graph in (load(direct), load(archive / f"{name}.cdecl.json")):
@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory(prefix="on1x-harness-abi-") as tmp:
                                 if decl["kind"] == "function"}, name
 
     run(cc, "-std=c11", "-D_GNU_SOURCE", "-Wall", "-Wextra", "-Wpedantic", "-Werror",
-        "-I", root / "include", root / "tests/harness-kernels/test_harness.c",
+        "-I", root / "kernels", root / "tests/harness-kernels/test_harness.c",
         archive / "libmulib.a", "-o", work / "client")
     run(work / "client", cwd=work)
 

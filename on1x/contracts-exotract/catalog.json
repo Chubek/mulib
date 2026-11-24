@@ -1,7 +1,7 @@
 {
   "schema": "on1x.exotract-catalog/v1",
   "manifest": "MANIFEST.yaml",
-  "headers": "include/mulib-*.h",
+  "headers": "kernels/mulib-*.h",
   "implementation_translation_units": 1,
   "safe_export": false,
   "discovery_only_prefixes": {

@@ -14,7 +14,7 @@ implementation translation units. Include `mulib-sysfs.h` normally in other C/C+
 translation units; no dependency switch is enabled by the header.
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude examples/modules/sysfs.c -o /tmp/sysfs-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels examples/modules/sysfs.c -o /tmp/sysfs-example
 /tmp/sysfs-example
 ```
 
@@ -114,7 +114,7 @@ typed writes, unchanged failed outputs, and optional read-only native Linux
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sysfs.h`](../include/mulib-sysfs.h) |
+| Header | [`kernels/mulib-sysfs.h`](../kernels/mulib-sysfs.h) |
 | Implementation switch | `MULIB_IMPL_SYSFS` |
 | Repository-local includes | [mulib-vfs](mulib-vfs.md) |
 | Complete example | [`examples/modules/sysfs.c`](../examples/modules/sysfs.c) |
@@ -127,6 +127,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sysfs.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sysfs.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

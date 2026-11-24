@@ -118,8 +118,8 @@ int main(void)
 Compile the implementation once and link it with the consumer:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude -c mulib_impl.c -o mulib_impl.o
-cc -std=c11 -Wall -Wextra -Wpedantic -Iinclude app.c mulib_impl.o -lm -o app
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels -c mulib_impl.c -o mulib_impl.o
+cc -std=c11 -Wall -Wextra -Wpedantic -Ikernels app.c mulib_impl.o -lm -o app
 ./app
 ```
 
@@ -146,8 +146,8 @@ as C++ source. The `app.c` example above can also serve as `app.cpp`:
 
 ```sh
 cp app.c app.cpp
-cc -std=c11 -Iinclude -c mulib_impl.c -o mulib_impl.o
-c++ -std=c++17 -Iinclude app.cpp mulib_impl.o -lm -o app-cpp
+cc -std=c11 -Ikernels -c mulib_impl.c -o mulib_impl.o
+c++ -std=c++17 -Ikernels app.cpp mulib_impl.o -lm -o app-cpp
 ./app-cpp
 ```
 
@@ -203,7 +203,7 @@ Each module manual includes a build command for its standalone example. For
 JSON, run from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels \
     examples/modules/json.c -lm -o json-example
 ./json-example
 ```

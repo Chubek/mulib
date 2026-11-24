@@ -13,9 +13,9 @@ Define `MULIB_IMPL_CRAWLQUEUE` in exactly one C11 translation unit. Use `#includ
 ## Build and test
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -pedantic -Iinclude tests/test-crawlqueue.c -o /tmp/test-crawlqueue
+cc -std=c11 -Wall -Wextra -Werror -pedantic -Ikernels tests/test-crawlqueue.c -o /tmp/test-crawlqueue
 /tmp/test-crawlqueue
-cc -std=c11 -Wall -Wextra -Iinclude examples/modules/crawlqueue.c -o /tmp/example-crawlqueue
+cc -std=c11 -Wall -Wextra -Ikernels examples/modules/crawlqueue.c -o /tmp/example-crawlqueue
 ```
 
 ## API
@@ -41,7 +41,7 @@ Regression: `tests/test_data_patches.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-crawlqueue.h`](../include/mulib-crawlqueue.h).
+Verbatim declaration section from [`kernels/mulib-crawlqueue.h`](../kernels/mulib-crawlqueue.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -90,7 +90,7 @@ This is a functional building block, not a claim of complete W3C/WHATWG/ECMAScri
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-crawlqueue.h`](../include/mulib-crawlqueue.h) |
+| Header | [`kernels/mulib-crawlqueue.h`](../kernels/mulib-crawlqueue.h) |
 | Implementation switch | `MULIB_IMPL_CRAWLQUEUE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/crawlqueue.c`](../examples/modules/crawlqueue.c) |
@@ -103,6 +103,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/crawlqueue.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/crawlqueue.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

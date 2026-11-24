@@ -21,7 +21,7 @@ no allocation, generated automaton, regular expressions, or hidden state.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-lexgen.h`](../include/mulib-lexgen.h) |
+| Header | [`kernels/mulib-lexgen.h`](../kernels/mulib-lexgen.h) |
 | Implementation switch | `MULIB_IMPL_LEXGEN` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/lexgen.c`](../examples/modules/lexgen.c) |
@@ -34,6 +34,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/lexgen.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/lexgen.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

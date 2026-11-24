@@ -59,7 +59,7 @@ See [`examples/modules/xatomics.c`](../examples/modules/xatomics.c).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-xatomics.h`](../include/mulib-xatomics.h) |
+| Header | [`kernels/mulib-xatomics.h`](../kernels/mulib-xatomics.h) |
 | Implementation switch | `MULIB_IMPL_XATOMICS` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/xatomics.c`](../examples/modules/xatomics.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/xatomics.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/xatomics.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

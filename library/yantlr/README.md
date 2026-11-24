@@ -1,6 +1,6 @@
 # YANTLR standard library, version 1
 
-An **opt-in provider registry** for [`mulib-yantlr.h`](../../include/mulib-yantlr.h).
+An **opt-in provider registry** for [`mulib-yantlr.h`](../../kernels/mulib-yantlr.h).
 It uses only public MuLIB APIs, adds no third-party dependencies, and leaves the
 core's explicit linking, immutable values and transactional artifact rules intact.
 It does not implement the proposed compiler services in `Lua.y1` or `YBASIC.y1`.
@@ -8,7 +8,7 @@ Those specifications still fail with unresolved services, not dummy successes.
 
 ## Integration
 
-Add `include` and `library/yantlr` to your include paths (or link the CMake
+Add `kernels` and `library/yantlr` to your include paths (or link the CMake
 interface target `mulib_yantlr_stdlib`). In **one** translation unit:
 
 ```c
@@ -50,7 +50,7 @@ alive. Independent runs may share one registry; individual runs are not thread-s
 Run the complete example from the repository root:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude library/yantlr/example.c -lm -o /tmp/opencode/yantlr-demo
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels library/yantlr/example.c -lm -o /tmp/opencode/yantlr-demo
 /tmp/opencode/yantlr-demo library/yantlr/example.y1
 ```
 

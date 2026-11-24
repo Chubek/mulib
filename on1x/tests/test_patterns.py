@@ -195,14 +195,14 @@ for mode, suffix in [('--emit-c', 'hir'), ('--emit-ir-c', 'mir')]:
 p = run([t.compiler, '--run-ir', trap_path])
 assert p.returncode == 70 and p.stdout == '91\n' and 'division' in p.stderr, p.stderr
 
-if (t.root.parent / 'include/mulib-json.h').exists():
+if (t.root.parent / 'kernels/mulib-json.h').exists():
     source = '''
 fn main(){let root=json_parse_or_die("{\\"n\\":42}");
  println(match true with {true=>{let view=json_get_or_die(root,"n");json_number(view)},false=>0});
  for(var i=0;i<3;i=i+1){match i with {0=>{let a=json_parse_or_die("{}");continue;},rest=>{let b=json_parse_or_die("{}");break;}};}
  match true with {true=>{let inner=json_parse_or_die("{}");return;},false=>{return;}};
 }'''
-    json_path = execute('json_cleanup', source, '42\n', extra=['-I', t.root.parent / 'include',
+    json_path = execute('json_cleanup', source, '42\n', extra=['-I', t.root.parent / 'kernels',
                         t.root / 'runtime/on1x_json.c', t.root / 'runtime/on1x_mulib_impl.c', '-lm'])
     for mode in ['--check-types', '--check-memory']:
         p = run([t.compiler, mode, json_path])

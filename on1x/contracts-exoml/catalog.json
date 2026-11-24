@@ -5,10 +5,10 @@
   "profiles": {
     "json": {
       "contract": "json.exocontract.json",
-      "header": "include/mulib-json.h",
+      "header": "kernels/mulib-json.h",
       "header_sha256": "3b5c762603f570a7699316a97d52290ecbe63f06f63440e09bbe0c764b8ccbbe",
       "manual": "manual/mulib-json.md",
-      "manual_sha256": "8feed8421f8f5a1402482d715312ffd46384b53b7b73f74b4cd104845ca35009",
+      "manual_sha256": "4176e53806877e1690c81b6989d7893d8ca8d6d93c25f3995920fa0745af8d3a",
       "function_prefix": "mulib_json_",
       "function_count": 20,
       "implementation_modules": [
@@ -26,10 +26,10 @@
     },
     "vec": {
       "contract": "vec.exocontract.json",
-      "header": "include/mulib-vec.h",
+      "header": "kernels/mulib-vec.h",
       "header_sha256": "b2576214db977f01ef73d07059c2877082b57bcb14e5773fb7bc98af591e2a0e",
       "manual": "manual/mulib-vec.md",
-      "manual_sha256": "278bca05c4ae8b8cadfc8e9468c42ce27fb79d084ce85840d05a906bdd397c3e",
+      "manual_sha256": "5ff5e6f012ae76943aba9ef4cde2a28b86dc32e5ab5c72a55a405e007087ee88",
       "function_prefix": "mulib_vec_",
       "function_count": 7,
       "implementation_modules": [
@@ -40,10 +40,10 @@
     },
     "parsec": {
       "contract": "parsec.exocontract.json",
-      "header": "include/mulib-parsec.h",
+      "header": "kernels/mulib-parsec.h",
       "header_sha256": "f697a7723bf797241a069a98f47d8adcc4f7d4742eb5c75713ed4b3d7dd40d42",
       "manual": "manual/mulib-parsec.md",
-      "manual_sha256": "65c126026d7ddddd8f34c7f0ff4c5d485878598ec1187f84e9f43ac0f9464c6d",
+      "manual_sha256": "6a146dc4dd69cb9d89a95c224345d0875bd573bb0908d590fa4273a189d28c9b",
       "function_prefix": "mulib_parsec_",
       "function_count": 18,
       "implementation_modules": [
@@ -56,14 +56,14 @@
     },
     "mune": {
       "contract": "mune.exocontract.json",
-      "header": "include/mulib-mune.h",
+      "header": "kernels/mulib-mune.h",
       "header_sha256": "de1ec25f294edf20c11fa6359382711aa287c62a2942efbefe577641b93e456d",
       "manual": "manual/mulib-mune.md",
-      "manual_sha256": "860ba0228338a81fa7e93dc37d02fcf1a0f5dd0acf9024d22d628b154cea2e24",
+      "manual_sha256": "33c899954b6f7b2b101cbb82759f14c437b67413167967e863b9974454c84c73",
       "evidence_sha256": {
         "tests/test_mune_runtime.c": "7f211038c40ddeff24a7cdaa6049c4cb79c6569ccc1a189e7517b253e573604a",
         "tests/test_mune_runtime_alloc.c": "7528ea59e13270c829f11af6290ccab1832792e8f1e78fada5be5d7697fad35d",
-        "tools/check_mune_runtime.py": "162a34b537543e9ce57ec8453079468f42504e2ee0fc67e7014318a5bfd98655"
+        "tools/check_mune_runtime.py": "9d36a66a1b862e4b708891d3648f78a81606654448c7de196d806f4ef3c2fbd5"
       },
       "function_prefix": "mulib_mune_",
       "function_count": 52,
@@ -77,14 +77,14 @@
     },
     "quic": {
       "contract": "quic.exocontract.json",
-      "header": "include/mulib-quic.h",
+      "header": "kernels/mulib-quic.h",
       "header_sha256": "198a98470a3335ecf538d5ce2cdf46402f1095e295053b89a67582452053fdcd",
       "manual": "manual/mulib-quic.md",
-      "manual_sha256": "c8f410bd24b240704b83e102a411a99c64b805a52b2ace4eebb5c714c8e33efa",
+      "manual_sha256": "6207b20322525658bf6aa57fa8f671cdc301399b19274026c6e40427baf10e45",
       "evidence_sha256": {
-        "include/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
-        "include/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
-        "include/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
+        "kernels/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
+        "kernels/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
+        "kernels/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
         "tests/test_http3_client.c": "1543c34e13ce3980abbd521b49a11069e13292cdd619f6831ba94d4dee03e9d5",
         "tests/test_quic_http3_stream.c": "7b973aab38715f95c28713bf457910ee57b83b5d3622b28ef0107639ac319d83"
       },
@@ -102,17 +102,17 @@
     },
     "http3": {
       "contract": "http3.exocontract.json",
-      "header": "include/mulib-http3.h",
+      "header": "kernels/mulib-http3.h",
       "header_sha256": "60f752c79df28aa94d8484091a37568c9597cf3f855532cc263e666886449bc1",
       "manual": "manual/mulib-http3.md",
-      "manual_sha256": "d4cc9f1ceeef65eef85791d9439765955199945bf1b669d78b0e2b9bdd3cddb6",
+      "manual_sha256": "7d90775ddfa19787c89d1cc90e6ba77b6daec4c1ff5fc01cf4f2eca5658c66e0",
       "evidence_sha256": {
-        "include/mulib-quic.h": "198a98470a3335ecf538d5ce2cdf46402f1095e295053b89a67582452053fdcd",
-        "include/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
-        "include/detail/mulib-http3-client.h": "1b015b01c456311307c6e9012fb810d27a916265a244597fd9a10d89fab290e5",
-        "include/detail/mulib-qpack-tables.h": "abfa480d102643394e4cbfed8ddee1b99ee58ea4cfa8ab0a507e636f6e4bdef7",
-        "include/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
-        "include/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
+        "kernels/mulib-quic.h": "198a98470a3335ecf538d5ce2cdf46402f1095e295053b89a67582452053fdcd",
+        "kernels/detail/mulib-quic-client.h": "39c7035c25b2c9645f2cdebc3f1e4dc9896f23edae61b872937bf7bd1cbba894",
+        "kernels/detail/mulib-http3-client.h": "1b015b01c456311307c6e9012fb810d27a916265a244597fd9a10d89fab290e5",
+        "kernels/detail/mulib-qpack-tables.h": "abfa480d102643394e4cbfed8ddee1b99ee58ea4cfa8ab0a507e636f6e4bdef7",
+        "kernels/mulib-tls.h": "1beb47775879b9645b8e297464943b90e5d4b73c8cf4670cb49dce64db7a9a22",
+        "kernels/mulib-signature.h": "73cd6d3d144318899dff3b35ef92dc0037a3647922173fa32b6b5a0ea98ff74d",
         "tests/test_http3_client.c": "1543c34e13ce3980abbd521b49a11069e13292cdd619f6831ba94d4dee03e9d5",
         "tests/test_http3_integration.py": "2b2f88b12e5f3a5b69fa15c4467eee81566d72bbdbcc6ff40e9d97e82c4caca4"
       },
@@ -130,13 +130,13 @@
     },
     "elvi-scrape": {
       "contract": "elvi-scrape.exocontract.json",
-      "header": "include/mulib-elvi-scrape.h",
+      "header": "kernels/mulib-elvi-scrape.h",
       "header_sha256": "7f9816e0f5738f62b6f4ae1525bae2e44be175e72b9b9a8a4b17239dcf385dd2",
       "manual": "manual/mulib-elvi-scrape.md",
-      "manual_sha256": "e280f5e00c510a14e6ab37502a6050fc840e7cf940fc5fc6f013f98ecd2bc7db",
+      "manual_sha256": "964bcfdffe64ac9b47b73b092b7c227bb6ecb51f19a5ec33157213cda372fca1",
       "evidence_sha256": {
-        "include/detail/mulib-webscan.h": "2c185aa14836e655c0e66273c4ec64840537f1bc77ba545fd000e37f92ba4a29",
-        "include/mulib-json.h": "3b5c762603f570a7699316a97d52290ecbe63f06f63440e09bbe0c764b8ccbbe",
+        "kernels/detail/mulib-webscan.h": "2c185aa14836e655c0e66273c4ec64840537f1bc77ba545fd000e37f92ba4a29",
+        "kernels/mulib-json.h": "3b5c762603f570a7699316a97d52290ecbe63f06f63440e09bbe0c764b8ccbbe",
         "tests/test-elvi-scrape.c": "83461041f6a8481ecc3b433590cb3d36f268917dfc786a8501882ed99dd4dd7f",
         "tests/test-elvi-scrape-https.c": "39d0abf03b49db6c642f5193c2975a707151413035a7383082df1a4c52d1ed68",
         "tests/test-elvi-scrape-alloc.c": "4b06b5be77ad7f327054763503d6825cde64a8b8f0bd0c07e4105d5b3e88e92c",
@@ -160,7 +160,7 @@
         "tests/fixtures/elvi-scrape/packagist.json": "0033b4d4ae8104b02131770b4fc5b553e507b5eca968ca95e46738afe4760356",
         "tests/test-elvi-scrape-providers.c": "d4016da4d0b6df2349e784c15cf815baaae25ac8138f5e5c099df8ba853bdd23",
         "tests/fixtures/elvi-scrape-setup.h": "733bfb55ec44d412eee77adf0d111f8fd4b7f9f7ba77e9f5db8e9efa42c48393",
-        "examples/elvi-scrape.c": "beb438ce11a037ff050646044fad5553cd4472960b09e046c20ff41dfadb34be",
+        "examples/elvi-scrape.c": "67cbe7dbab6c2d2a0e4c6b06074813f4178d44b1c2f4e6eadf5206f7c2fcd44f",
         "library/elvis/README.md": "57edbb1915d041341391bf3f55f51744d04d8f482b50157f55b1a25bb0f467be",
         "library/elvis/Bing.elvs": "72baf7da870cdc76224d5041136bd633980c42863a000f8ddee7d5b520714675",
         "library/elvis/Crossref.elvs": "1425d11ab88a5a024669ecd437139d8b1e906eb9fae92cccfac856eaee88e01d",

@@ -8,7 +8,7 @@ choose their event loop, transports, clocks and synchronization.
 ## Build and run
 
 ```sh
-cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -O2 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/containerd.c -lm -o containerd-example
 ./containerd-example
 python3 tools/check_container_stack.py

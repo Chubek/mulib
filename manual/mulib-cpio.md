@@ -70,7 +70,7 @@ See also [cpio(5)](https://man.freebsd.org/cgi/man.cgi?query=cpio&sektion=5).
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cpio.h`](../include/mulib-cpio.h) |
+| Header | [`kernels/mulib-cpio.h`](../kernels/mulib-cpio.h) |
 | Implementation switch | `MULIB_IMPL_CPIO` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/cpio.c`](../examples/modules/cpio.c) |
@@ -83,6 +83,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cpio.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cpio.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

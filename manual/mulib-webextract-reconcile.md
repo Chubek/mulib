@@ -16,7 +16,7 @@ blend prices or return calibrated confidence.
 
 ## Integration and ownership
 
-Include `include/mulib-webextract-reconcile.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-webextract-reconcile.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -40,7 +40,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-webextract-reconcile.h`](../include/mulib-webextract-reconcile.h).
+Verbatim declaration section from [`kernels/mulib-webextract-reconcile.h`](../kernels/mulib-webextract-reconcile.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-webextract-reconcile.h`](../include/mulib-webextract-reconcile.h) |
+| Header | [`kernels/mulib-webextract-reconcile.h`](../kernels/mulib-webextract-reconcile.h) |
 | Implementation switch | `MULIB_IMPL_WEBEXTRACT_RECONCILE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/webextract-reconcile.c`](../examples/modules/webextract-reconcile.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/webextract-reconcile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/webextract-reconcile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

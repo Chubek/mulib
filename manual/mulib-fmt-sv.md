@@ -1,7 +1,7 @@
 # mulib-fmt-sv
 
 **Status:** Implemented with the *bounded profile specified below* (not a full EDA/IEEE-standard implementation).  
-**Header:** `include/mulib-fmt-sv.h`  
+**Header:** `kernels/mulib-fmt-sv.h`  
 **Implementation switch:** `MULIB_IMPL_FMT_SV`  
 **Dependencies:** `hwil-module`.
 
@@ -31,7 +31,7 @@ Compile exactly one C11 source file with `MULIB_IMPL_FMT_SV` defined before incl
 `tests/test_fmt_sv.c` is a standalone C11 executable with a substantive positive and negative/boundary test. For example:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror -Iinclude tests/test_fmt_sv.c -lm -o /tmp/test_fmt_sv
+cc -std=c11 -Wall -Wextra -Werror -Ikernels tests/test_fmt_sv.c -lm -o /tmp/test_fmt_sv
 /tmp/test_fmt_sv
 ```
 
@@ -42,7 +42,7 @@ No external code was copied. This MuLIB module implements only the bounded profi
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-fmt-sv.h`](../include/mulib-fmt-sv.h).
+Verbatim declaration section from [`kernels/mulib-fmt-sv.h`](../kernels/mulib-fmt-sv.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -81,7 +81,7 @@ int mulib_fmt_sv_emit(FILE *out, const mulib_hwil_module_t *module, size_t outpu
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-fmt-sv.h`](../include/mulib-fmt-sv.h) |
+| Header | [`kernels/mulib-fmt-sv.h`](../kernels/mulib-fmt-sv.h) |
 | Implementation switch | `MULIB_IMPL_FMT_SV` |
 | Repository-local includes | [mulib-hwil-module](mulib-hwil-module.md) |
 | Complete example | [`examples/modules/fmt-sv.c`](../examples/modules/fmt-sv.c) |
@@ -94,6 +94,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/fmt-sv.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/fmt-sv.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

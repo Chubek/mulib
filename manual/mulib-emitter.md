@@ -47,7 +47,7 @@ allocation or hidden sticky-error state exists.
 ## Runnable example
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Iinclude \
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ikernels \
   examples/modules/emitter.c -o /tmp/opencode/mulib-emitter
 /tmp/opencode/mulib-emitter
 ```
@@ -63,7 +63,7 @@ overlapping buffers, empty images, full capacity, and overflowing ranges.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-emitter.h`](../include/mulib-emitter.h) |
+| Header | [`kernels/mulib-emitter.h`](../kernels/mulib-emitter.h) |
 | Implementation switch | `MULIB_IMPL_EMITTER` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/emitter.c`](../examples/modules/emitter.c) |
@@ -76,6 +76,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/emitter.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/emitter.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

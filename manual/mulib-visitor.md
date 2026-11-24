@@ -26,7 +26,7 @@ inside callbacks. Use listeners when paired enter/leave callbacks are needed.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-visitor.h`](../include/mulib-visitor.h).
+Verbatim declaration section from [`kernels/mulib-visitor.h`](../kernels/mulib-visitor.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -71,7 +71,7 @@ int mulib_visitor_walk_bounded(const mulib_ast_t *root,mulib_visitor_fn visit,vo
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-visitor.h`](../include/mulib-visitor.h) |
+| Header | [`kernels/mulib-visitor.h`](../kernels/mulib-visitor.h) |
 | Implementation switch | `MULIB_IMPL_VISITOR` |
 | Repository-local includes | [mulib-ast](mulib-ast.md) |
 | Complete example | [`examples/modules/visitor.c`](../examples/modules/visitor.c) |
@@ -84,6 +84,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/visitor.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/visitor.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

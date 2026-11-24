@@ -73,7 +73,7 @@ padding, alpha, scissor, shared edges, depth, lines and blits in memory.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-glx.h`](../include/mulib-glx.h) |
+| Header | [`kernels/mulib-glx.h`](../kernels/mulib-glx.h) |
 | Implementation switch | `MULIB_IMPL_GLX` |
 | Repository-local includes | [mulib-drm](mulib-drm.md), [mulib-linalg](mulib-linalg.md) |
 | Complete example | [`examples/modules/glx.c`](../examples/modules/glx.c) |
@@ -86,6 +86,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/glx.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/glx.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

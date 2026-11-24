@@ -54,7 +54,7 @@ allocation failures are checked in the focused language tests.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-cache.h`](../include/mulib-cache.h) |
+| Header | [`kernels/mulib-cache.h`](../kernels/mulib-cache.h) |
 | Implementation switch | `MULIB_IMPL_CACHE` |
 | Repository-local includes | [mulib-hattrie](mulib-hattrie.md), [mulib-kvdb](mulib-kvdb.md), [mulib-trie](mulib-trie.md) |
 | Complete example | [`examples/modules/cache.c`](../examples/modules/cache.c) |
@@ -67,6 +67,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/cache.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/cache.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -105,7 +105,7 @@ launcher PID/rootfs lifecycle, and independent security review.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sandbox-process.h`](../include/mulib-sandbox-process.h) |
+| Header | [`kernels/mulib-sandbox-process.h`](../kernels/mulib-sandbox-process.h) |
 | Implementation switch | `MULIB_IMPL_SANDBOX_PROCESS` |
 | Repository-local includes | [mulib-cgroup2](mulib-cgroup2.md), [mulib-ipc-framed](mulib-ipc-framed.md), [mulib-landlock](mulib-landlock.md), [mulib-namespace](mulib-namespace.md), [mulib-sandbox-profile](mulib-sandbox-profile.md), [mulib-seccomp](mulib-seccomp.md) |
 | Complete example | [`examples/modules/sandbox-process.c`](../examples/modules/sandbox-process.c) |
@@ -118,6 +118,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sandbox-process.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

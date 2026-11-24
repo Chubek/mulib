@@ -12,7 +12,7 @@ their outputs without accessing the terminal.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-layout.h`](../include/mulib-imtui-layout.h) |
+| Header | [`kernels/mulib-imtui-layout.h`](../kernels/mulib-imtui-layout.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_LAYOUT` |
 | Repository-local includes | [mulib-imtui-core](mulib-imtui-core.md) |
 | Complete example | [`examples/imtui/headless.c`](../examples/imtui/headless.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/imtui/headless.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

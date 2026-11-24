@@ -17,7 +17,7 @@ Apply operates on an initialized style; inherited fields are handled by cascade.
 
 ## Integration and ownership
 
-Include `include/mulib-css-computed.h`. Define the following switches in exactly one C11
+Include `kernels/mulib-css-computed.h`. Define the following switches in exactly one C11
 translation unit, before including the module; do not enable implementations in
 every consumer:
 
@@ -41,7 +41,7 @@ malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-css-computed.h`](../include/mulib-css-computed.h).
+Verbatim declaration section from [`kernels/mulib-css-computed.h`](../kernels/mulib-css-computed.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -91,7 +91,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-css-computed.h`](../include/mulib-css-computed.h) |
+| Header | [`kernels/mulib-css-computed.h`](../kernels/mulib-css-computed.h) |
 | Implementation switch | `MULIB_IMPL_CSS_COMPUTED` |
 | Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/css-computed.c`](../examples/modules/css-computed.c) |
@@ -104,6 +104,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/css-computed.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/css-computed.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -31,7 +31,7 @@ See `../tests/test_netfilter-log.c` for its compile/link verification. Selected 
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-netfilter-log.h`](../include/mulib-netfilter-log.h) |
+| Header | [`kernels/mulib-netfilter-log.h`](../kernels/mulib-netfilter-log.h) |
 | Implementation switch | `MULIB_IMPL_NETFILTER_LOG` |
 | Repository-local includes | [mulib-netlink-attr](mulib-netlink-attr.md), [mulib-nfnetlink](mulib-nfnetlink.md) |
 | Complete example | [`examples/modules/netfilter-log.c`](../examples/modules/netfilter-log.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/netfilter-log.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/netfilter-log.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -13,7 +13,7 @@ Total iteration is O(row bytes), allocation-free.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-tsv.h`](../include/mulib-tsv.h).
+Verbatim declaration section from [`kernels/mulib-tsv.h`](../kernels/mulib-tsv.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-tsv.h`](../include/mulib-tsv.h) |
+| Header | [`kernels/mulib-tsv.h`](../kernels/mulib-tsv.h) |
 | Implementation switch | `MULIB_IMPL_TSV` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/tsv.c`](../examples/modules/tsv.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/tsv.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/tsv.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

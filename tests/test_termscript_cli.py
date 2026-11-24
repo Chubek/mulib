@@ -83,7 +83,7 @@ def main():
             want=b"\x1b[?2004h", env=env)
         generated = work / "generated.c"
         generated.write_bytes(run([a.compiler_test, "--emit"]))
-        headers = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "include")]
+        headers = ["-std=c11", "-pedantic-errors", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "kernels")]
         flags = ["-fsanitize=address,undefined", "-fno-omit-frame-pointer"] if a.sanitize == "1" else []
         executable, obj = work / "compiled", work / "generated.o"
         cc = shlex.split(a.cc)
@@ -140,7 +140,7 @@ def main():
                  "--cpp", driver, "-"], b"42", env=env)
             preprocessed = run([a.runner, "--compile", "compiled_script", "--kernel", "money",
                                 "--emit", "preprocessed", "--cpp", driver,
-                                "--cpp-arg", f"-I{ROOT / 'include'}", "-"], b"42", env=env)
+                                "--cpp-arg", f"-I{ROOT / 'kernels'}", "-"], b"42", env=env)
             if b"mulib_money_make" not in preprocessed:
                 raise RuntimeError("selected CAPASM headers were not passed to preprocessing")
             assembly = run(cli + ["--emit", "asm", "--cpp", driver, "-"], b"42", env=env)

@@ -19,7 +19,7 @@ There are no architectural defaults or allocations; lookup examines at most 64 b
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-physreg.h`](../include/mulib-physreg.h) |
+| Header | [`kernels/mulib-physreg.h`](../kernels/mulib-physreg.h) |
 | Implementation switch | `MULIB_IMPL_PHYSREG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/physreg.c`](../examples/modules/physreg.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/physreg.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/physreg.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

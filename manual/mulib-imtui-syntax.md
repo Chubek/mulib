@@ -12,7 +12,7 @@ display a temporary highlighted preview.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-imtui-syntax.h`](../include/mulib-imtui-syntax.h) |
+| Header | [`kernels/mulib-imtui-syntax.h`](../kernels/mulib-imtui-syntax.h) |
 | Implementation switch | `MULIB_IMPL_IMTUI_SYNTAX` |
 | Repository-local includes | [mulib-imtui-core](mulib-imtui-core.md), [mulib-termsyn](mulib-termsyn.md) |
 | Complete example | [`tests/test_imtui_mune.c`](../tests/test_imtui_mune.c) |
@@ -25,6 +25,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude tests/test_imtui_mune.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels tests/test_imtui_mune.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

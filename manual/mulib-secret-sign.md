@@ -9,7 +9,7 @@ Dispatch opaque handles to a trusted, approved signing or agreement backend. Pro
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-secret-sign.h`](../include/mulib-secret-sign.h) |
+| Header | [`kernels/mulib-secret-sign.h`](../kernels/mulib-secret-sign.h) |
 | Implementation switch | `MULIB_IMPL_SECRET_SIGN` |
 | Repository-local includes | [mulib-secret-core](mulib-secret-core.md) |
 | Complete example | [`examples/mulib-secret-kernels.c`](../examples/mulib-secret-kernels.c) |
@@ -22,6 +22,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/mulib-secret-kernels.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

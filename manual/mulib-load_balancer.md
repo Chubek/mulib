@@ -26,7 +26,7 @@ and performs no network I/O.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-load_balancer.h`](../include/mulib-load_balancer.h).
+Verbatim declaration section from [`kernels/mulib-load_balancer.h`](../kernels/mulib-load_balancer.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -64,7 +64,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-load_balancer.h`](../include/mulib-load_balancer.h) |
+| Header | [`kernels/mulib-load_balancer.h`](../kernels/mulib-load_balancer.h) |
 | Implementation switch | `MULIB_IMPL_LOAD_BALANCER` |
 | Repository-local includes | [mulib-upstream](mulib-upstream.md) |
 | Complete example | [`examples/modules/load_balancer.c`](../examples/modules/load_balancer.c) |
@@ -77,6 +77,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/load_balancer.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/load_balancer.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

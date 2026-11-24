@@ -37,7 +37,7 @@ See `../tests/test_net-profile.c` for its compile/link verification. Selected ru
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-net-profile.h`](../include/mulib-net-profile.h) |
+| Header | [`kernels/mulib-net-profile.h`](../kernels/mulib-net-profile.h) |
 | Implementation switch | `MULIB_IMPL_NET_PROFILE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/net-profile.c`](../examples/modules/net-profile.c) |
@@ -50,6 +50,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/net-profile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/net-profile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -137,7 +137,7 @@ transport, shadows, and output bounds. Set `CC=gcc` or `CC=clang`, and optionall
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-raytracing.h`](../include/mulib-raytracing.h) |
+| Header | [`kernels/mulib-raytracing.h`](../kernels/mulib-raytracing.h) |
 | Implementation switch | `MULIB_IMPL_RAYTRACING` |
 | Repository-local includes | [mulib-collision](mulib-collision.md), [mulib-glx](mulib-glx.md) |
 | Complete example | [`examples/modules/raytracing.c`](../examples/modules/raytracing.c) |
@@ -150,6 +150,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/raytracing.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/raytracing.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

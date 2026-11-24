@@ -20,7 +20,7 @@ Example: `examples/modules/sstfile.c`.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-sstfile.h`](../include/mulib-sstfile.h).
+Verbatim declaration section from [`kernels/mulib-sstfile.h`](../kernels/mulib-sstfile.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -67,7 +67,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-sstfile.h`](../include/mulib-sstfile.h) |
+| Header | [`kernels/mulib-sstfile.h`](../kernels/mulib-sstfile.h) |
 | Implementation switch | `MULIB_IMPL_SSTFILE` |
 | Repository-local includes | [mulib-buffer](mulib-buffer.md), [mulib-bycutils](mulib-bycutils.md), [mulib-crc32](mulib-crc32.md), [mulib-memtable](mulib-memtable.md), [mulib-wal](mulib-wal.md) |
 | Complete example | [`examples/modules/sstfile.c`](../examples/modules/sstfile.c) |
@@ -80,6 +80,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/sstfile.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/sstfile.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

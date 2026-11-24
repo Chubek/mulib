@@ -17,7 +17,7 @@ storage O(m), time O(n*m); no operation-count/work limit is imposed.
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-weighed_edit_distane.h`](../include/mulib-weighed_edit_distane.h).
+Verbatim declaration section from [`kernels/mulib-weighed_edit_distane.h`](../kernels/mulib-weighed_edit_distane.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -55,7 +55,7 @@ double mulib_weighted_edit_distance(const void *a, size_t n, const void *b, size
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-weighed_edit_distane.h`](../include/mulib-weighed_edit_distane.h) |
+| Header | [`kernels/mulib-weighed_edit_distane.h`](../kernels/mulib-weighed_edit_distane.h) |
 | Implementation switch | `MULIB_IMPL_WEIGHED_EDIT_DISTANE` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/weighed_edit_distane.c`](../examples/modules/weighed_edit_distane.c) |
@@ -68,6 +68,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/weighed_edit_distane.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/weighed_edit_distane.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

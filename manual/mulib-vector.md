@@ -59,7 +59,7 @@ Runnable 3D example: `examples/modules/vector.c`.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-vector.h`](../include/mulib-vector.h) |
+| Header | [`kernels/mulib-vector.h`](../kernels/mulib-vector.h) |
 | Implementation switch | `MULIB_IMPL_VECTOR` |
 | Repository-local includes | [mulib-vec](mulib-vec.md) |
 | Complete example | [`examples/modules/vector.c`](../examples/modules/vector.c) |
@@ -72,6 +72,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/vector.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/vector.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

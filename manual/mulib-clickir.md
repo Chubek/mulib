@@ -101,7 +101,7 @@ within the supplied limit. These explicit, dense algorithms target small graphs.
 normalizes it and lowers the result:
 
 ```sh
-cc -std=c11 -Iinclude examples/modules/clickir.c -lm -o clickir
+cc -std=c11 -Ikernels examples/modules/clickir.c -lm -o clickir
 ./clickir
 ```
 
@@ -116,7 +116,7 @@ cycles and out-of-range edges.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-clickir.h`](../include/mulib-clickir.h) |
+| Header | [`kernels/mulib-clickir.h`](../kernels/mulib-clickir.h) |
 | Implementation switch | `MULIB_IMPL_CLICKIR` |
 | Repository-local includes | [mulib-gssair](mulib-gssair.md) |
 | Complete example | [`examples/modules/clickir.c`](../examples/modules/clickir.c) |
@@ -129,6 +129,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/clickir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/clickir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -29,7 +29,7 @@ int main(void) {
 <!-- manual-interface -->
 ## Public header reference
 
-Verbatim declaration section from [`include/mulib-diag.h`](../include/mulib-diag.h).
+Verbatim declaration section from [`kernels/mulib-diag.h`](../kernels/mulib-diag.h).
 Include the header in application code; dependency types come from its includes.
 
 <details>
@@ -101,7 +101,7 @@ extern "C"
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-diag.h`](../include/mulib-diag.h) |
+| Header | [`kernels/mulib-diag.h`](../kernels/mulib-diag.h) |
 | Implementation switch | `MULIB_IMPL_DIAG` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/diag.c`](../examples/modules/diag.c) |
@@ -114,6 +114,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/diag.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/diag.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

@@ -19,7 +19,7 @@ and implementation setup.
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-markup-bridge.h`](../include/mulib-markup-bridge.h) |
+| Header | [`kernels/mulib-markup-bridge.h`](../kernels/mulib-markup-bridge.h) |
 | Implementation switch | `MULIB_IMPL_CDD_MARKUP_BRIDGE` |
 | Repository-local includes | [mulib-markup-graph](mulib-markup-graph.md), [mulib-markup-spans](mulib-markup-spans.md), [mulib-markup-stream](mulib-markup-stream.md), [mulib-markup-tree](mulib-markup-tree.md) |
 | Complete example | [`examples/markup-ir.c`](../examples/markup-ir.c) |
@@ -32,6 +32,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/markup-ir.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/markup-ir.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

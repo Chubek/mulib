@@ -38,7 +38,7 @@ See `../tests/test_wpa-ctrl.c` for its compile/link verification. Selected runna
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-wpa-ctrl.h`](../include/mulib-wpa-ctrl.h) |
+| Header | [`kernels/mulib-wpa-ctrl.h`](../kernels/mulib-wpa-ctrl.h) |
 | Implementation switch | `MULIB_IMPL_WPA_CTRL` |
 | Repository-local includes | None |
 | Complete example | [`examples/modules/wpa-ctrl.c`](../examples/modules/wpa-ctrl.c) |
@@ -51,6 +51,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/wpa-ctrl.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/wpa-ctrl.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->

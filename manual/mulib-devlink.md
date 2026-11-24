@@ -31,7 +31,7 @@ See `../tests/test_devlink.c` for its compile/link verification. Selected runnab
 
 | Resource | Location |
 | --- | --- |
-| Header | [`include/mulib-devlink.h`](../include/mulib-devlink.h) |
+| Header | [`kernels/mulib-devlink.h`](../kernels/mulib-devlink.h) |
 | Implementation switch | `MULIB_IMPL_DEVLINK` |
 | Repository-local includes | [mulib-netlink-genl](mulib-netlink-genl.md) |
 | Complete example | [`examples/modules/devlink.c`](../examples/modules/devlink.c) |
@@ -44,6 +44,6 @@ for dependency placement and platform-specific linking.
 Compile the example from the repository root on Linux:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Iinclude examples/modules/devlink.c -pthread -lm -ldl -o mulib-example
+cc -std=c11 -Wall -Wextra -Wpedantic -Werror -UNDEBUG -Ikernels examples/modules/devlink.c -pthread -lm -ldl -o mulib-example
 ```
 <!-- /manual-reference -->
