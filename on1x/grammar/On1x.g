@@ -51,7 +51,10 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
  * productions live in src/parser.cpp and bridge to include/on1x/ast.hpp:
  *   loop_stmt := [identifier ':'] ('loop' block | 'while' expr block
  *              | 'for' '(' [clause] ';' [expr] ';' [step] ')' block
- *              | 'for' identifier 'in' expr ('..' | '..=') expr block)
+ *              | 'for' identifier 'in' expr ('..' | '..=') expr block
+ *              | 'for' iteration_pattern 'in' expr block)
+ *   iteration_pattern := identifier | '_' | '(' iteration_pattern
+ *                       (',' iteration_pattern)* ')'
  *   loop_value := [identifier ':'] 'loop' block
  *   loop_exit := 'break' [identifier] ['with' expr] ';'
  *              | 'continue' [identifier] ';'

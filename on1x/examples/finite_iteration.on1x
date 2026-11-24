@@ -1,0 +1,18 @@
+fn marks() -> array<(i64,(i64,i64)),4> {
+  println(100);
+  return array[(1,(10,99)),(2,(20,99)),(3,(30,99)),(4,(40,99))];
+}
+
+fn main() {
+  var rows = marks();
+  var total = 0;
+  outer: for (index,(points,_)) in rows[1:4][0:3] {
+    rows = array[(9,(0,0)),(9,(0,0)),(9,(0,0)),(9,(0,0))];
+    if index == 2 { continue outer; }
+    total = total + points;
+    if index == 3 { break outer; }
+  }
+  println(total);
+  let (first,unused) = rows[0];
+  println(first);
+}

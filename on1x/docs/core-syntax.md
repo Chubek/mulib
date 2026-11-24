@@ -23,6 +23,7 @@ outer: while condition() {
 }
 for i in 0..10 { println(i); }      # 0 through 9
 for i in 0..=10 { println(i); }     # 0 through 10
+for (x, _) in array[(1, 10), (2, 20)] { println(x); }
 ```
 
 - Statement `loop` is endless unless exited. Expression `loop` and typed value
@@ -45,6 +46,13 @@ for i in 0..=10 { println(i); }     # 0 through 10
   `9223372036854775807` once, including with `continue`. Half-open ranges stop
   before the bound. No overflowing sentinel, wrapping or saturating increment
   is used. Explicit for-C steps retain ordinary checked arithmetic/trap behavior.
+- Finite value `for pattern in operand` accepts fixed `array<T,N>` and
+  `slice<T,N>` snapshots. It takes the operand once, before the binders
+  exist, and traverses its logical elements in ascending index order.
+  A slice uses its length, not its backing capacity; empty values still
+  evaluate the operand. Names, `_` wildcards and nested tuple patterns
+  introduce fresh immutable bindings per iteration. This is not a general
+  iterator or list protocol. See [finite iteration](finite-iteration.md).
 - Labels form a separate lexical namespace, applying only to loops. Duplicate
   active labels in the same syntax context reject. Exits cannot cross functions,
   lambdas or staging worlds. Bare exits target the nearest loop in their own
@@ -165,8 +173,9 @@ match let snapshot = make_array() with {
   an ordinary call followed by a block, as in `if match(flag) { work(); }`
   or `while match(flag) { work(); }` with a binding named `match`.
   Both spellings disappear before backend emission. `_` remains an ordinary
-  binding name in old name/tuple parameter/let patterns; it is a wildcard only
-  in the new match-pattern grammar. Contextual `match`, `with`, `as` and `rest`
+  binding name in old name/tuple parameter/let patterns and in i64 range loops;
+  it is a wildcard in structural matches and finite value iteration.
+  Contextual `match`, `with`, `as` and `rest`
   do not globally reserve ordinary identifiers.
 
 Owning lists/list-cons patterns, generalized iterator protocols, refutable
@@ -289,7 +298,8 @@ its canonical status vocabulary. No incomplete feature is marked VERIFIED.
 | Statement loop/for-C/labeled while/break/continue | EXECUTABLE | Conservative return analysis still requires a returning tail in value functions |
 | i64 half-open/inclusive ranges | EXECUTABLE | Ascending unit step only; no unsigned/float ranges or general iterators |
 | Loop values / `break with` | EXECUTABLE bounded profile | Expression-loop targets, by-value/RC results; no unique-resource transfer or general bottom type; managed/aggregate MIR remains unsupported |
-| Iterable loops/comprehensions/list patterns | Not implemented | Owning lists, iterator/result/drop protocol |
+| Finite array/snapshot-slice loops | EXECUTABLE bounded profile | C11 and VMWeave; ordinary scalar MIR rejects arrays/slices; name/wildcard/nested tuples only |
+| General iterator/comprehension/list patterns | Not implemented | Intrinsic typed lists, cons/tail decomposition, custom iterator/result/drop protocol |
 | General `match with` / structural patterns | EXECUTABLE bounded profile | Includes declared nonrecursive enum catalogs; no owning lists or foreign resources; aggregate/managed MIR and SDK support remain closed |
 | Function-scoped defer / nominal Result `?` | EXECUTABLE bounded C11 profile | [Go-style contract](defer-errors.md) supersedes the old lexical-defer proposal; shared `sexpr` and concrete finite unique-owner success/error payloads are admitted, and later cooperative cancellation drains frames; no foreign/JSON/CSP payloads, owner-bearing deferred actions, MIR/SDK defer models, typed cancellation result or trap unwind |
 | Using/try/catch/throw/finally | Not implemented | General owned-resource/effect/handler semantics |

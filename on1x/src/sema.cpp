@@ -714,6 +714,15 @@ class Checker {
        auto expected=e.kind==Expr::Kind::Length?1u:e.kind==Expr::Kind::Slice?3u:2u;
        if(e.children.size()!=expected)fail(e.where,"index/slice/length operand arity mismatch");
        auto t=child(0);
+      if(e.kind==Expr::Kind::Length&&e.text==canonical::iteration_length_marker){
+       if(t.kind()!=Type::Array&&t.kind()!=Type::Slice)
+        throw Error(e.where,canonical::iteration_type_error,"ON1X-FOR-IN");
+       const auto& snapshot=*e.children[0];
+       const auto* place=snapshot.kind==Expr::Kind::Variable?lookup(snapshot.text):nullptr;
+       if(place&&place->borrow!=BorrowMode::Value)
+        throw Error(e.where,"ON1X-FOR-IN: the iteration snapshot must be a value, not a borrow expression","ON1X-FOR-IN");
+       e.text.clear();
+      }
       if(e.kind==Expr::Kind::Index&&e.text==":")equal(t,Type::RegexCaptures,e.where);
       if(t==Type::RegexCaptures){
        if(e.kind==Expr::Kind::Length)return e.type=Type::I64;

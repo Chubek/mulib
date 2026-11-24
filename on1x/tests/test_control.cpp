@@ -33,6 +33,27 @@ int main(){try{
  auto& canonical_loop=latch.functions[0].body[0].body[1];
  auto invalid_exit=on1x::Stmt{};invalid_exit.kind=on1x::Stmt::Kind::Continue;invalid_exit.where=canonical_loop.where;invalid_exit.control_target=canonical_loop.control_target;
  canonical_loop.otherwise.push_back(std::move(invalid_exit));reject([&]{on1x::canonical::verify_control(latch);});
+ // Finite iteration exports only Unit-v1 statements, then becomes ordinary
+ // checked while/length/index operations. The latch is still verified.
+ auto finite_raw=on1x::parse(on1x::scan(
+   "fn main(){outer:for (x,_) in array[(1,2)]{continue outer;}}","finite"));
+ on1x::expand_macros(finite_raw);
+ auto finite_tree=on1x::meta::encode(finite_raw);
+ on1x::meta::base_schema().validate(finite_tree);
+ auto finite=on1x::meta::decode(finite_tree);
+ on1x::check(finite);on1x::canonical::verify_control(finite);
+ auto& scope=finite.functions[0].body[0];
+ require(scope.kind==on1x::Stmt::Kind::Block&&scope.body.size()==4,"missing finite snapshot scope");
+ auto& length=*scope.body[1].value;
+ require(length.kind==on1x::Expr::Kind::Length&&length.text.empty()&&length.type==on1x::Type::I64,"unverified finite length");
+ auto& finite_loop=scope.body[3];
+ require(finite_loop.kind==on1x::Stmt::Kind::While&&finite_loop.otherwise.size()==1,"missing canonical finite latch");
+ auto& finite_exit=finite_loop.body.back().body[0];
+ require(finite_exit.kind==on1x::Stmt::Kind::Continue&&finite_exit.control_target==finite_loop.control_target,"finite continue lost target");
+ length.text=on1x::canonical::iteration_length_marker;
+ reject([&]{on1x::emit_c(finite,"unelaborated marker mutation");});length.text.clear();
+ finite_exit.control_target=0;
+ reject([&]{on1x::canonical::verify_control(finite);});reject([&]{on1x::emit_c(finite,"mutation");});
  auto bad=on1x::meta::read_sexpr("(Unit 1 ((Function \"main\" () (VoidType) (Block ((LoopExit \"goto\" \"\" 0 (Loc \"x\" 0 1 1))) (Loc \"x\" 0 1 1)) () (Loc \"x\" 0 1 1))))","wire");
  reject([&]{on1x::meta::decode(bad);});
  std::cout<<"canonical loop targets, mutation rejection and source-wire round-trip PASS\n";

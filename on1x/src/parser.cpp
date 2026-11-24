@@ -1,4 +1,5 @@
 #include <on1x/ast.hpp>
+#include <on1x/canonical/control.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
 #include <on1x/extensions.hpp>
@@ -16,6 +17,7 @@ class Parser {
   Token assignment_token;
  std::size_t nesting=0;
  std::size_t lambdas=0;
+ std::size_t iteration_names=0;
   std::map<std::string,std::size_t> bound_types;
   std::set<std::string> enabled_extensions,used_extensions;
  bool templating=false;
@@ -1094,17 +1096,40 @@ class Parser {
     }else result.type=type();
    return result;
   }
-  bool for_header()const{
-   if(!at("for"))return false;
-   if(is_ident(peek(1).text)&&peek(2).text=="in")return true;
-   if(peek(1).text!="(")return false;
+  std::size_t group_end(std::size_t start,const char* open,const char* close)const{
    std::size_t depth=0;
-   for(std::size_t i=1;pos+i<ts.size();++i){
-    if(peek(i).text=="(")++depth;
-    if(peek(i).text==")"&&!--depth)return peek(i+1).text=="{";
+   for(std::size_t i=start;pos+i<ts.size();++i){
+    if(peek(i).text==open)++depth;
+    else if(peek(i).text==close&&!--depth)return i;
    }
-   return false;
+   return 0;
   }
+  enum class ForHeader { None, Clauses, Pattern };
+  ForHeader for_form()const{
+   if(!at("for"))return ForHeader::None;
+   const auto& first=peek(1).text;
+   if(first=="("){
+    if(const auto end=group_end(1,"(",")")){
+     if(peek(end+1).text=="in")return ForHeader::Pattern;
+     if(peek(end+1).text=="{")return ForHeader::Clauses;
+    }
+   }else if(first=="["){
+    if(const auto end=group_end(1,"[","]");end&&peek(end+1).text=="in")return ForHeader::Pattern;
+   }else if(is_ident(first)){
+    const auto& second=peek(2).text;
+    if(second=="in"||second=="as"||second=="|"||second=="::")return ForHeader::Pattern;
+    if(second=="("){
+     if(const auto end=group_end(2,"(",")");end&&peek(end+1).text=="in")return ForHeader::Pattern;
+    }
+    if(first=="record"&&second=="{"){
+     if(const auto end=group_end(2,"{","}");end&&peek(end+1).text=="in")return ForHeader::Pattern;
+    }
+   }else if(templating&&first=="$"&&is_ident(peek(2).text)&&peek(3).text=="in"){
+    return ForHeader::Pattern;
+   }
+   return ForHeader::None;
+  }
+  bool for_header()const{return for_form()!=ForHeader::None;}
   Stmt clause(const std::string& end,bool binding=true){
    Stmt s;s.where=peek().where;
    if(binding&&(at("let")||at("var"))){
@@ -1118,22 +1143,85 @@ class Parser {
    consume(end);return s;
   }
   ExprPtr truth(const Location& at){auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Boolean;e->text="true";e->where=at;return e;}
+  std::string iteration_name(){
+   return std::string(canonical::iteration_name_prefix)+std::to_string(++iteration_names);
+  }
+  [[noreturn]] void iteration_pattern_error(const Location& at){
+   throw Error(at,"ON1X-FOR-PATTERN: expected an irrefutable name, '_' or tuple pattern; list/cons patterns are unsupported","ON1X-FOR-PATTERN");
+  }
+  void iteration_binders(Pattern& p){
+   using P=Pattern::Kind;
+   if(p.kind==P::Wildcard||(p.kind==P::Name&&p.name=="_")){
+    // Lower wildcard leaves to inaccessible, ordinary immutable locals.
+    p.kind=P::Name;p.name=iteration_name();
+   }else if(p.kind==P::Rest){
+    // `rest` is special in a match arm, not a reserved iteration binder.
+    p.kind=P::Name;p.name="rest";
+   }else if(p.kind!=P::Name&&p.kind!=P::Tuple)iteration_pattern_error(p.where);
+   for(auto& child:p.elements)iteration_binders(child);
+  }
+  Stmt finite_iteration(Stmt loop,Pattern pattern,ExprPtr subject){
+   using E=Expr::Kind;using S=Stmt::Kind;
+   iteration_binders(pattern);
+   const auto at=loop.where,subject_at=subject->where;
+   const auto snapshot=iteration_name(),limit=iteration_name(),cursor=iteration_name();
+   auto local=[](const std::string& name,const Location& at){return literal(E::Variable,at,name);};
+   auto binary=[&](const char* op,ExprPtr left,ExprPtr right){
+    auto e=literal(E::Binary,at,op);e->children.push_back(std::move(left));
+    e->children.push_back(std::move(right));return syntax_bounded(std::move(e)).node;
+   };
+   auto bind=[](std::string name,ExprPtr value,Location site,bool mut=false){
+    Stmt s;s.kind=S::Let;s.where=std::move(site);s.name=std::move(name);
+    s.value=std::move(value);s.mutable_binding=mut;return s;
+   };
+   Stmt scope;scope.kind=S::Block;scope.where=at;
+   // All backends receive ordinary checked data and control. Snapshot the
+   // operand before introducing any user binders, and cache its logical length.
+   scope.body.push_back(bind(snapshot,std::move(subject),subject_at));
+   auto length=literal(E::Length,subject_at,std::string(canonical::iteration_length_marker));
+   length->children.push_back(local(snapshot,subject_at));
+   scope.body.push_back(bind(limit,syntax_bounded(std::move(length)).node,subject_at));
+   scope.body.push_back(bind(cursor,literal(E::Integer,at,"0"),at,true));
+   loop.value=binary("<",local(cursor,at),local(limit,at));
+   auto element=literal(E::Index,pattern.where);
+   element->children.push_back(local(snapshot,pattern.where));
+   element->children.push_back(local(cursor,pattern.where));
+   auto item=bind({},syntax_bounded(std::move(element)).node,pattern.where);
+   if(pattern.kind==Pattern::Kind::Name)item.name=std::move(pattern.name);
+   else item.pattern=std::move(pattern);
+   // The iteration binder and the user's block have distinct scopes, as with
+   // ranges. The canonical latch runs after body cleanup, including continue.
+   Stmt body;body.kind=S::Block;body.where=peek().where;body.body=block();
+   loop.body.push_back(std::move(item));loop.body.push_back(std::move(body));
+   Stmt step;step.kind=S::Assign;step.where=at;step.name=cursor;
+   step.value=binary("+",local(cursor,at),literal(E::Integer,at,"1"));
+   loop.otherwise.push_back(std::move(step));scope.body.push_back(std::move(loop));return scope;
+  }
   Stmt iteration(std::string label={}){
    Stmt s;s.where=peek().where;s.label=std::move(label);s.kind=Stmt::Kind::While;
    if(accept("loop")){s.value=truth(s.where);s.body=block();return s;}
    if(accept("while")){s.value=expr().node;s.body=block();return s;}
-   consume("for");
-   if(accept("(")){
+   const auto form=for_form();consume("for");
+   if(form!=ForHeader::Pattern&&accept("(")){
     Stmt scope;scope.kind=Stmt::Kind::Block;scope.where=s.where;
     if(!accept(";"))scope.body.push_back(clause(";"));
     if(accept(";"))s.value=truth(s.where);else{s.value=expr().node;consume(";");}
     if(!accept(")"))s.otherwise.push_back(clause(")",false));
     s.body=block();scope.body.push_back(std::move(s));return scope;
    }
-   s.kind=Stmt::Kind::Range;s.name=ident();consume("in");
-   auto bounds=std::make_unique<Expr>();bounds->kind=Expr::Kind::Tuple;bounds->where=peek().where;
-   bounds->children.push_back(expr().node);
-   if(!at("..")&&!at("..="))throw Error(peek().where,"ON1X-CONTROL-UNSUPPORTED: for-in requires an i64 range; general iterators are not implemented","ON1X-CONTROL-UNSUPPORTED");
+   const bool simple=(is_ident(peek().text)&&peek(1).text=="in")||
+     (templating&&at("$")&&is_ident(peek(1).text)&&peek(2).text=="in");
+   Pattern binder;
+   if(simple){binder.where=peek().where;binder.name=ident();}
+   else binder=match_pattern(false);
+   if(at("::"))iteration_pattern_error(peek().where);
+   consume("in");
+   auto start=expr().node;
+   if(!at("..")&&!at("..="))return finite_iteration(std::move(s),std::move(binder),std::move(start));
+   if(!simple)throw Error(binder.where,"ON1X-FOR-PATTERN: i64 ranges require a single named binder","ON1X-FOR-PATTERN");
+   s.kind=Stmt::Kind::Range;s.name=std::move(binder.name);
+   auto bounds=std::make_unique<Expr>();bounds->kind=Expr::Kind::Tuple;bounds->where=start->where;
+   bounds->children.push_back(std::move(start));
    s.inclusive=accept("..=");if(!s.inclusive)consume("..");bounds->children.push_back(expr().node);
    s.value=syntax_bounded(std::move(bounds)).node;s.body=block();return s;
   }

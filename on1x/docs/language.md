@@ -3,7 +3,8 @@
 The intrinsic [control/matching increment](core-syntax.md) adds statement loops,
 ascending i64 ranges, lexical loop exits, guarded structural match statements
 and expressions, and [value loops](value-loops.md) with typed `break with`
-results. It does not complete the core-syntax specification.
+results. [Finite snapshot iteration](finite-iteration.md) adds `for` over
+fixed arrays and slices; it does not add a general list/iterator protocol.
 
 Intrinsic [nominal declarations](nominal-adts.md) add module-level
 `record Point { x:i64, y:i64 }` and `enum Option<T> { None, Some(T) }`.
@@ -120,7 +121,9 @@ statement = ('let'|'var') ID [ ':' type ] '=' expr ';'
           | match_expr [';'] | block | local_syntax_block [';'] | expr ';' ;
 loop_statement = 'while' expr block | 'loop' block
           | 'for' '(' [ init ] ';' [ expr ] ';' [ step ] ')' block
-          | 'for' ID 'in' expr ('..'|'..=') expr block ;
+          | 'for' ID 'in' expr ('..'|'..=') expr block
+          | 'for' iteration_pattern 'in' expr block ;
+iteration_pattern = ID | '_' | '(' iteration_pattern { ',' iteration_pattern } ')' ;
 init      = ('let'|'var') pattern [ ':' type ] '=' expr | ID '=' expr | expr ;
 step      = ID '=' expr | expr ;
 expr    = prefix { binary_operator expr } ;

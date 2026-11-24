@@ -1,5 +1,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/clone.hpp>
+#include <on1x/canonical/control.hpp>
 #include "macro_rules.hpp"
 #include <algorithm>
 #include <set>
@@ -166,6 +167,11 @@ class Expander {
    if(e.kind==K::Variable)read(e.text,e.context);
    if(e.kind==K::PatternMatch){expression(*e.children.at(0),depth+1);scopes.emplace_back();if(!e.text.empty())bind(e.text,e.context,e.where);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],depth+1);scopes.pop_back();return;}
    if(e.kind==K::Case){scopes.emplace_back();for(auto& p:e.patterns)bind(p);expression(*e.children.at(0),depth+1);scopes.emplace_back();body(e.body,false,depth+1);expression(*e.children.at(1),depth+1);scopes.pop_back();scopes.pop_back();return;}
+   if(e.kind==K::UnsafeBlock){
+    // Private iteration binders can require alpha-renaming in KernelBind
+    // mode, where an unsafe expression's tail shares its statement scope.
+    scopes.emplace_back();body(e.body,false,depth+1);expression(*e.children.at(0),depth+1);scopes.pop_back();return;
+   }
   if(e.callee)expression(*e.callee,depth+1);
   if(e.syntax_tail)expression(*e.syntax_tail,depth+1);
   for(auto& child:e.children)expression(*child,depth+1);
@@ -238,17 +244,22 @@ public:
      callable(member.function,member.value.get(),true);
   }
 };
-bool local_syntax(const Unit& unit){
+bool local_syntax_or_private_binders(const Unit& unit){
+ auto private_binding=[](const Stmt& s){
+  // Every finite iterator has a private snapshot let, including when the
+  // user pattern contains no wildcard. Alpha-rename before Unit-v1 encoding.
+  return s.kind==Stmt::Kind::Let&&s.name.starts_with(canonical::iteration_name_prefix);
+ };
  auto expression=[&](auto&& self,const Expr& e)->bool{
   if(e.kind==K::SyntaxLet||!e.syntax_definitions.empty())return true;
   if(e.callee&&self(self,*e.callee))return true;
   for(const auto& c:e.children)if(self(self,*c))return true;
-  auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if((s.value&&self(self,*s.value))||visit(visit,s.body)||visit(visit,s.otherwise))return true;return false;};return body(body,e.body);
+  auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{for(const auto& s:b)if(private_binding(s)||(s.value&&self(self,*s.value))||visit(visit,s.body)||visit(visit,s.otherwise))return true;return false;};return body(body,e.body);
  };
   auto callable=[&](const Function& function,const Expr* value)->bool{
    auto body=[&](auto&& self,const std::vector<Stmt>& statements)->bool{
     for(const auto& statement:statements)
-     if((statement.value&&expression(expression,*statement.value))||
+     if(private_binding(statement)||(statement.value&&expression(expression,*statement.value))||
         self(self,statement.body)||self(self,statement.otherwise))return true;
     return false;
    };
@@ -268,6 +279,6 @@ bool local_syntax(const Unit& unit){
   return false;
  }
 }
-bool needs_macro_expansion(const Unit& unit){return !unit.macros.empty()||local_syntax(unit);}
+bool needs_macro_expansion(const Unit& unit){return !unit.macros.empty()||local_syntax_or_private_binders(unit);}
 void expand_macros(Unit& unit){if(!needs_macro_expansion(unit))return;std::size_t budget=262144;auto working=clone_unit(unit,budget);Expander(working).run();unit=std::move(working);}
 }

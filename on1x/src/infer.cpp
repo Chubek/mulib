@@ -1775,6 +1775,9 @@ class Inference {
    }
    case Expr::Kind::Field:case Expr::Kind::Index:case Expr::Kind::Slice:case Expr::Kind::Length:{
     auto container=head(expression(*e.children.at(0)),at);auto kind=nodes[container].kind;
+    if(e.kind==Expr::Kind::Length&&e.text==canonical::iteration_length_marker&&
+       kind!=Type::Array&&kind!=Type::Slice)
+     throw Error(at,canonical::iteration_type_error,"ON1X-FOR-IN");
     if(e.kind==Expr::Kind::Index&&e.text==":"&&kind!=Type::RegexCaptures){
      unify(container,scalar(Type::RegexCaptures,at),at);
      kind=Type::RegexCaptures;
