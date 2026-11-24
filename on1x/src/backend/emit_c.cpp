@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <bit>
 #include "numeric.hpp"
+#include "../../hir/MEMGraph/storage.hpp"
 
 namespace on1x::mir {
 namespace {
@@ -38,7 +39,11 @@ void signature(std::ostream& out,const Function& f,Types& types){
  out<<")";
 }
 }
-std::string emit_c(const Module& module){
+std::string emit_c(const Module& module){return emit_c(module,std::nullopt);}
+
+std::string emit_c(const Module& module,std::optional<std::size_t> stack_bytes){
+  if(stack_bytes&&*stack_bytes>memgraph::max_stack_bytes)
+   throw std::invalid_argument("MEMGraph scratch stack byte budget exceeds 65536");
  verify(module);const Function* main=nullptr;
  for(const auto& f:module.functions)if(f.name=="main")main=&f;
  if(!main||!main->blocks.front().parameters.empty()||(main->result!=Type::I64&&main->result!=Type::Void))
@@ -48,7 +53,21 @@ std::string emit_c(const Module& module){
   types.ctype(f.result);for(const auto& slot:f.slots)types.ctype(slot.type);
   for(const auto& b:f.blocks){for(const auto& p:b.parameters)types.ctype(p.type);for(const auto& i:b.instructions)types.ctype(i.type);}
  }
- std::ostringstream out;out<<"/* On1x scalar MIR v"<<module.version<<": checked C11 lowering. */\n#include <on1x_runtime.h>\n\n";
+  std::ostringstream out;out<<"/* On1x scalar MIR v"<<module.version<<": checked C11 lowering. */\n#include <on1x_runtime.h>\n\n";
+  const std::string cell="on1x_mir_memgraph_cell";
+  using memgraph::Placement;
+  using Plan=std::map<Id,Placement>;
+  std::map<Id,Plan> placement;
+  if(stack_bytes){
+   bool have_heap=false;
+   for(const auto& f:module.functions){
+    auto plan=memgraph::slot_placement(f,*stack_bytes);
+    have_heap|=std::any_of(plan.begin(),plan.end(),[](const auto& entry){return entry.second==Placement::Heap;});
+    if(!plan.empty())placement.emplace(f.id,std::move(plan));
+   }
+   if(!placement.empty())out<<memgraph::c11_scratch_layout();
+   if(have_heap)out<<memgraph::c11_heap_cells(cell);
+  }
   if(types.floats)out<<"#if !defined(ON1X_F64_ABI_VERSION) || ON1X_F64_ABI_VERSION != 1\n#error \"unsupported On1x f64 target or runtime ABI\"\n#endif\n"
    "#if defined(__FAST_MATH__) || (defined(__FINITE_MATH_ONLY__) && __FINITE_MATH_ONLY__ > 0) || defined(__NO_SIGNED_ZEROS__) || defined(__ASSOCIATIVE_MATH__) || defined(__RECIPROCAL_MATH__)\n#error \"On1x f64 forbids fast/finite-only math and relaxed IEEE modes\"\n#endif\n\n";
   if(types.singles)out<<"#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 runtime ABI\"\n#endif\n";
@@ -58,10 +77,23 @@ std::string emit_c(const Module& module){
  for(const auto& f:module.functions){
   std::map<Id,Type> value_types;std::map<Id,const Block*> blocks;
   for(const auto& b:f.blocks){blocks.emplace(b.id,&b);for(const auto& p:b.parameters)value_types.emplace(p.id,p.type);for(const auto& i:b.instructions)value_types.emplace(i.id,i.type);}
-  signature(out,f,types);out<<" {\n";
+   signature(out,f,types);out<<" {\n";
+   const Plan no_placement;
+   const auto& plan=placement.contains(f.id)?placement.at(f.id):no_placement;
+   auto is_heap=[&](Id id){const auto it=plan.find(id);return it!=plan.end()&&it->second==Placement::Heap;};
+   const bool cleanup=std::any_of(plan.begin(),plan.end(),[](const auto& p){return p.second==Placement::Heap;})&&
+    std::any_of(f.blocks.begin(),f.blocks.end(),[](const auto& b){return b.exit.kind==Exit::Return;});
+   if(cleanup&&f.result!=Type::Void)
+    out<<"  "<<types.ctype(f.result)<<" on1x_memgraph_result;\n";
   for(const auto& p:f.blocks.front().parameters)out<<"  (void)"<<value(p.id)<<";\n";
   auto declare=[&](Id id,const Type& type){if(type!=Type::Void)out<<"  "<<types.ctype(type)<<" "<<value(id)<<" = "<<(type.is_tuple()?"{0}":"0")<<"; (void)"<<value(id)<<";\n";};
-  for(const auto& s:f.slots)declare(s.id,s.type);
+   for(const auto& s:f.slots){
+    if(is_heap(s.id))
+     out<<"  "<<cell<<" "<<value(s.id)<<" = {0}; /* MEMGraph: heap slot */\n";
+    else if(plan.contains(s.id))
+     out<<"  int64_t "<<value(s.id)<<" = 0; (void)"<<value(s.id)<<"; /* MEMGraph: stack slot */\n";
+    else declare(s.id,s.type);
+   }
   for(const auto& b:f.blocks){
    if(&b!=&f.blocks.front())for(const auto& p:b.parameters)declare(p.id,p.type);
    for(const auto& i:b.instructions)declare(i.id,i.type);
@@ -96,8 +128,17 @@ std::string emit_c(const Module& module){
       const char* op=i.op==Op::Eq?"==":i.op==Op::Ne?"!=":i.op==Op::Lt?"<":i.op==Op::Le?"<=":i.op==Op::Gt?">":">=";
      out<<"("<<a<<" "<<op<<" "<<c<<")";break;
     }
-    case Op::Load:out<<value(i.target);break;
-    case Op::Store:out<<value(i.target)<<" = "<<a;break;
+     case Op::Load:
+      if(is_heap(i.target))out<<"*"<<cell<<"_ptr(&"<<value(i.target)<<")";
+      else out<<value(i.target);
+      break;
+     case Op::Store:
+      if(is_heap(i.target)){
+       const auto slot=value(i.target);
+       out<<"if (!"<<slot<<".data) "<<cell<<"_alloc(&"<<slot<<", "<<a<<", \"<mir>\", "
+          <<i.where.line<<", "<<i.where.column<<"); else *"<<cell<<"_ptr(&"<<slot<<") = "<<a;
+      }else out<<value(i.target)<<" = "<<a;
+      break;
     case Op::Call:
      out<<name(i.target)<<"(";
      for(std::size_t n=0;n<i.operands.size();++n){if(n)out<<", ";out<<value(i.operands[n]);}
@@ -145,9 +186,22 @@ std::string emit_c(const Module& module){
     for(std::size_t n=0;n<e.arguments.size();++n)out<<"    "<<value(target->parameters[n].id)<<" = edge"<<n<<";\n";
     out<<"    goto b"<<e.block<<";\n  }\n";
    };
-   if(t.kind==Exit::Return){out<<"  return";if(t.value)out<<" "<<value(t.value);out<<";\n";}
+    if(t.kind==Exit::Return){
+     if(cleanup){
+      if(t.value)out<<"  on1x_memgraph_result = "<<value(t.value)<<";\n";
+      out<<"  goto on1x_memgraph_return;\n";
+     }else{
+      out<<"  return";if(t.value)out<<" "<<value(t.value);out<<";\n";
+     }
+    }
    else if(t.kind==Exit::Jump){out<<" ";edge(t.edges[0]);}
    else{out<<"  if ("<<value(t.value)<<")";edge(t.edges[0]);out<<"  else";edge(t.edges[1]);}
+  }
+  if(cleanup){
+   out<<"on1x_memgraph_return:;\n";
+   for(const auto& [id,where]:plan)if(where==Placement::Heap)
+    out<<"  free("<<value(id)<<".data);\n";
+   out<<"  return"<<(f.result==Type::Void?"":" on1x_memgraph_result")<<";\n";
   }
   out<<"}\n\n";
  }

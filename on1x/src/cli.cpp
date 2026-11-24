@@ -10,6 +10,8 @@
 #include <on1x/backend/passes.hpp>
 #include <on1x/ffi.hpp>
 #include "../hir/FFIHandler/lower.hpp"
+#include "../hir/MEMGraph/resources.hpp"
+#include "../hir/MEMGraph/storage.hpp"
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -396,7 +398,7 @@ std::string read_ir(const std::string& name){
   }
  }
 }
-int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization,const VmSourcePrefixes& prefixes){
+int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization,const VmSourcePrefixes& prefixes,std::optional<std::size_t> stack_bytes){
  std::optional<on1x::mir::passes::Result> optimized;
  if(optimization){
   optimized=on1x::mir::passes::run(input,*optimization);
@@ -405,6 +407,9 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
  }
  if(mode=="--dump-passes"){write_all(out,on1x::mir::passes::report(*optimized));return 0;}
   const auto& module=optimized?optimized->module():input;
+  if(mode=="--emit-ir-c"&&stack_bytes){
+   write_all(out,on1x::mir::emit_c(module,stack_bytes));return 0;
+  }
   if(mode=="--emit-vm"||mode=="--run-vm"){
    auto image=[&]{
     if(prefixes.empty())return on1x::vm::compile(module);
@@ -616,6 +621,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --dump-passes INPUT [-o OUTPUT] [--ir-input]\n"
   "       on1xc --dump-processor INPUT [-o OUTPUT]\n"
   "       on1xc --dump-memgraph INPUT [-o OUTPUT] (inspect C11 bounds decisions)\n"
+  "       --memgraph-resources off|warn|error (advisory raw string lifetime analysis)\n"
+  "       --memgraph-stack-bytes N (--emit-c or --emit-ir-c; eligible i64 storage only)\n"
   "       on1xc --check-memory INPUT [-o OUTPUT] (Chisel opt-in build)\n"
   "       [--admitted-extern FILE] (reviewed scalar-only extern evidence; memory modes only)\n"
   "       [--memory-check] (check resource usage before source compilation)\n"
@@ -705,7 +712,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          std::string cephyr_sarif;
          std::set<std::string> cephyr_switches;
 #endif
-     std::size_t analysis_work=10000000;bool analysis_limit=false;
+      std::size_t analysis_work=10000000;bool analysis_limit=false;
+      std::string resource_policy;
+      std::optional<std::size_t> scratch_stack_bytes;
         on1x::mir::passes::Options optimization;bool legacy_optimize=false,opt_limit=false;
          on1x::driver::OptimizationRequest requested_opts;
          VmSourcePrefixes vm_prefixes;
@@ -901,7 +910,23 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        else import_paths.emplace_back(argv[i]);
       }
       else if(arg.starts_with("-I")&&arg.size()>2)import_paths.emplace_back(arg.substr(2));
-      else if(arg=="--ir-input")ir_input=true;
+       else if(arg=="--ir-input")ir_input=true;
+       else if(arg=="--memgraph-resources"){
+        if(!resource_policy.empty()||++i>=argc)
+         throw std::runtime_error("--memgraph-resources requires one off, warn, or error policy");
+        resource_policy=argv[i];
+        if(resource_policy!="off"&&resource_policy!="warn"&&resource_policy!="error")
+         throw std::runtime_error("invalid --memgraph-resources policy (expected off, warn, or error)");
+       }
+       else if(arg=="--memgraph-stack-bytes"){
+        if(scratch_stack_bytes||++i>=argc)
+         throw std::runtime_error("--memgraph-stack-bytes requires one byte budget");
+        std::string_view value=argv[i];std::size_t bytes=0;
+        auto [end,ec]=std::from_chars(value.data(),value.data()+value.size(),bytes);
+        if(ec!=std::errc{}||end!=value.data()+value.size()||bytes>on1x::memgraph::max_stack_bytes)
+         throw std::runtime_error("--memgraph-stack-bytes must be 0..65536");
+        scratch_stack_bytes=bytes;
+       }
        else if(arg=="--optimize-ir")legacy_optimize=true;
       else if(arg=="--opt-work"||arg=="--opt-rewrites"){
        if(++i>=argc)throw std::runtime_error(arg+" requires a value");
@@ -988,7 +1013,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(list_opts){
         if(mode!="--emit-c"||explicit_c||!source.empty()||!sdk_mode.empty()||ir_input||opt_limit||
            !sdk_target.empty()||native_pic||native_no_entry||!plugin_selectors.empty()||
-           memory||type_safety||!loader.interfaces.empty()||analysis_limit)
+            memory||type_safety||!loader.interfaces.empty()||analysis_limit||
+            !resource_policy.empty()||scratch_stack_bytes)
          throw std::runtime_error("--list-optimizations cannot be combined with an input or compilation mode");
         write_all(out,policy.listing());return 0;
        }
@@ -998,7 +1024,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
            mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
        const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
-         mode!="--print-stdlib"&&mode!="--stdlib-resource";
+          mode!="--print-stdlib"&&mode!="--stdlib-resource";
+         if(!resource_policy.empty()&&(!checked_source||mode=="--check-interfaces"||
+            mode=="--repair"||mode=="--ffi-imports"||mode=="--ffi-adapter"))
+          throw std::runtime_error("--memgraph-resources requires checked On1x source");
+         if(scratch_stack_bytes&&((mode!="--emit-c"&&mode!="--emit-ir-c")||
+            !sdk_mode.empty()||!archvirt_mode.empty()||cephyr_object))
+          throw std::runtime_error("--memgraph-stack-bytes requires --emit-c or --emit-ir-c without native/SDK targets");
          requested_opts.check_stages(policy,checked_source,
                                      checked_source&&(vm_mode||(!mir_mode&&(mode=="--emit-c"||dump_memgraph))),
                                     mir_mode&&!ir_input,mir_mode);
@@ -1159,7 +1191,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_EXTENSION_SDK
        if(!sdk_mode.empty())return sdk_output(module);
 #endif
-        return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes);
+        return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes);
     }
     const bool ffi_inspect=mode=="--ffi-imports"||mode=="--ffi-adapter";
     if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||ffi_inspect)&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
@@ -1230,8 +1262,32 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     on1x::meta::rewrite(unit,ppx);
      on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
       on1x::processor::Report processor_report;
-       on1x::check(unit,analysis_context,policy.rules,mode=="--dump-processor"?&processor_report:nullptr);
-     if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+        on1x::check(unit,analysis_context,policy.rules,mode=="--dump-processor"?&processor_report:nullptr);
+      if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+      if(resource_policy=="warn"||resource_policy=="error"){
+       const auto& level=diagnostic_catalog->level(resource_policy=="warn"?"warning":"error");
+       auto findings=on1x::memgraph::speculate_resources(unit);
+       for(const auto& finding:findings){
+        using Issue=on1x::memgraph::ResourceIssue;
+        auto [id,message]=[&]() -> std::pair<const char*, const char*> {
+         switch(finding.issue){
+         case Issue::UnknownRetention:
+          return {"ON1X-MEMGRAPH-RETENTION",
+                  "raw foreign string input has no established static lifetime or no-retain contract"};
+         case Issue::UnknownResultOwner:
+          return {"ON1X-MEMGRAPH-POSSIBLE-LEAK",
+                  "raw foreign string result has unknown lifetime and deallocator; it may leak if it transfers ownership"};
+         case Issue::Incomplete:
+          return {"ON1X-MEMGRAPH-RESOURCE-LIMIT",
+                  "MEMGraph resource analysis budget exhausted; no partial conclusions published"};
+         }
+         throw std::logic_error("unknown MEMGraph resource finding");
+        }();
+        (void)diagnostic_registry.emit({.id=id,.message=message,.category="ffi",.phase="analysis",
+            .origin="MEMGraph",.level=level,.where=finding.where});
+       }
+       if(!findings.empty()&&resource_policy=="error"){publish_diagnostics();return 1;}
+      }
      auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
 #ifdef ON1X_WITH_NEROTYPICAL
@@ -1257,7 +1313,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_EXTENSION_SDK
         if(!sdk_mode.empty())return sdk_output(module);
 #endif
-         auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes);
+         auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes);
        publish_diagnostics();return result;
       }
    if(mode=="--types"){
@@ -1310,6 +1366,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      std::string bounds_report;
       on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
       c11_options.foreign_driver_staging=loader.ffi_stage;
+      c11_options.memgraph_stack_bytes=scratch_stack_bytes;
      c11_options.allow_stackless_timers=!cephyr_object&&archvirt_mode.empty();
      if(!archvirt_mode.empty()&&!vm_prefixes.empty())c11_options.source_prefixes=&vm_prefixes;
 #ifdef ON1X_WITH_CEPHYR

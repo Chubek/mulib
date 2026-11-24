@@ -2,6 +2,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/source_paths.hpp>
 #include <map>
+#include <optional>
 
 namespace on1x {
 struct C11Options {
@@ -18,6 +19,8 @@ struct C11Options {
     // Require checked typed link-only calls on the native driver route.
     // The verified HIR mode alone controls foreign linkage and lexical unsafe.
     bool foreign_driver_staging = false;
+    // Opt-in placement for a verified, compiler-owned scalar FFI out cell.
+    std::optional<std::size_t> memgraph_stack_bytes = std::nullopt;
 };
 
 std::string emit_c(const Unit&, const std::string& source_name, const C11Options&);

@@ -1,6 +1,7 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <functional>
+#include <optional>
 #include <string_view>
 
 namespace on1x::mir {
@@ -59,6 +60,7 @@ Module deserialize(std::string_view text, const std::string& filename="<mir>");
 bool structurally_equal(const Module& a, const Module& b);
 std::string cfg_dot(const Module& module);
 std::string emit_c(const Module& module);
+std::string emit_c(const Module& module, std::optional<std::size_t> memgraph_stack_bytes);
 
 enum class Status { Returned, Trapped, BudgetExhausted };
 // Scalar storage is an i64 number, bool 0/1, or exact typed unsigned/IEEE bit

@@ -8,6 +8,7 @@
 #include <on1x/numeric.hpp>
 #include <on1x/primitives.hpp>
 #include "../../hir/MEMGraph/lexical_slots_detail.hpp"
+#include "../../hir/MEMGraph/resource_detail.hpp"
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -41,6 +42,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    const Unit& unit;
    NominalCatalog catalog;
    memgraph::detail::LexicalSlotBuilder* slots;
+   memgraph::detail::ResourceGraph* resource_graph;
   bool unsafe_context=false;
   bool generic_context=false;
    bool loan_tracking=false;
@@ -54,6 +56,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     const Stmt* scalar_root_statement=nullptr;
     const Param* scalar_root_parameter=nullptr;
     const Stmt* planned_binding=nullptr;
+    const Expr* immutable_string_initializer=nullptr;
    };
    struct Loan {
     BorrowMode mode=BorrowMode::Value;
@@ -728,12 +731,16 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       conflict=loan.mode==BorrowMode::Exclusive&&
                !(loan_id&&ancestor(loan_id,source.id,at));
      if(conflict)
-      ref_error(at,(mode==BorrowMode::Exclusive?
+       ref_error(at,(mode==BorrowMode::Exclusive?
         std::string("overlapping exclusive borrow of '"):
         std::string("conflicting shared borrow of '"))+name+
-        "' while another borrow is live");
-    });
-   }
+         "' while another borrow is live");
+     });
+     // Even a `let` root can be changed by an exclusive loan. A projection
+     // with no path-sensitive contents must forget that initializer entirely.
+     if(resource_graph&&!generic_context&&mode==BorrowMode::Exclusive&&source.immutable_string_initializer)
+      resource_graph->invalidate(*source.immutable_string_initializer);
+    }
    void invalidate_loan_tags(State& state,std::size_t root,const Location& at){
     for(auto it=state.tags.begin();it!=state.tags.end();){
      const auto* binding=by_id(it->first,at);
@@ -967,8 +974,10 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        if(!place_base)
         fail(e.where,"copy of unique local requires move(local): "+e.text);
       }else if(e.move_out)fail(e.where,"move metadata on a copyable local");
-      if(slots&&!generic_context&&binding->planned_binding)
-       slots->read(e,*binding->planned_binding);
+       if(slots&&!generic_context&&binding->planned_binding)
+        slots->read(e,*binding->planned_binding);
+       if(resource_graph&&!generic_context&&binding->immutable_string_initializer)
+        resource_graph->edge(e,*binding->immutable_string_initializer);
       return true;
     }
     if(e.reference==Expr::Reference::Intrinsic){
@@ -1039,7 +1048,11 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     auto saved_unsafe=unsafe_context;unsafe_context=unsafe_context||e.unsafe_region;
    scopes.emplace_back();auto after=body(e.body,state,depth+1,false);
    if(e.noreturn==after.has_value())fail(e.where,"incorrect value-region completion metadata");
-   if(after){if(!expression(*e.children[0],*after,depth+1)||e.children[0]->type!=e.type)fail(e.where,"value-region result mismatch");state=*after;}
+    if(after){
+     if(!expression(*e.children[0],*after,depth+1)||e.children[0]->type!=e.type)fail(e.where,"value-region result mismatch");
+     if(resource_graph&&!generic_context)resource_graph->edge(e,*e.children[0]);
+     state=*after;
+    }
    else if(e.type!=Type::Void||e.children[0]->kind!=E::Unit)fail(e.where,"non-returning region must have no value");
     scopes.pop_back();unsafe_context=saved_unsafe;return after.has_value();
   }
@@ -1127,7 +1140,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
         fail(e.children[i]->where,"canonical call argument type mismatch");
      result=callable.result();
     }
-    if(e.type!=result)fail(e.where,"canonical call result type mismatch");
+     if(e.type!=result)fail(e.where,"canonical call result type mismatch");
+     if(resource_graph&&!generic_context&&e.callee->reference==Expr::Reference::Extern)
+      resource_graph->call(e,*functions.at(e.callee->text));
     return true;
    }
     const bool place_operation=e.kind==E::TagTest||e.kind==E::Payload||
@@ -1426,8 +1441,10 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       fail(s.where,"canonical binding annotation/type mismatch");
      if(s.pattern)pattern(*s.pattern,s.value->type);
      else{
-      bind(s.name,s.value->type,s.mutable_binding);
-      plan_statement_root(s,s.value->type);
+       bind(s.name,s.value->type,s.mutable_binding);
+       plan_statement_root(s,s.value->type);
+       if(resource_graph&&!generic_context&&!s.mutable_binding&&s.value->type==Type::String)
+        scopes.back().at(s.name).immutable_string_initializer=s.value.get();
      }
      break;
    case S::Storage:
@@ -1499,8 +1516,9 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
   return state;
  }
  public:
-   explicit Verify(const Unit& source,memgraph::detail::LexicalSlotBuilder* plan=nullptr)
-    :unit(source),catalog(source),slots(plan){}
+    explicit Verify(const Unit& source,memgraph::detail::LexicalSlotBuilder* plan=nullptr,
+                    memgraph::detail::ResourceGraph* graph=nullptr)
+     :unit(source),catalog(source),slots(plan),resource_graph(graph){}
   void run(){
    for(const auto& [schema,instances]:unit.forall_layouts){
     checked_type(schema,{"<forall-layout>"});
@@ -1572,5 +1590,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
 void verify_values(const Unit& unit){Verify(unit).run();}
 void verify_values_with_lexical_slots(const Unit& unit,memgraph::detail::LexicalSlotBuilder& plan){
  Verify(unit,&plan).run();
+}
+void verify_values_with_resources(const Unit& unit,memgraph::detail::ResourceGraph& graph){
+ Verify(unit,nullptr,&graph).run();
 }
 }

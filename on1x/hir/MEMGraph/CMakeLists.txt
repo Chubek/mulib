@@ -1,11 +1,22 @@
 # MEMGraph rules are compiled at build time; only immutable tables reach C++.
 # Host lexical planning is independent of generated rules.
-target_sources(on1x_frontend PRIVATE memgraph.cpp lexical_slots.cpp)
+target_sources(on1x_frontend PRIVATE memgraph.cpp lexical_slots.cpp resources.cpp storage.cpp)
 if(BUILD_TESTING)
   add_executable(on1x_memgraph_lexical_slots_tests tests/test_lexical_slots.cpp)
   target_link_libraries(on1x_memgraph_lexical_slots_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.memgraph.lexical_slots COMMAND on1x_memgraph_lexical_slots_tests)
   set_tests_properties(on1x.memgraph.lexical_slots PROPERTIES TIMEOUT 60)
+  if(NOT CMAKE_CROSSCOMPILING)
+    set(_resource_test_flags)
+    foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
+      list(APPEND _resource_test_flags "--cflag=${_flag}")
+    endforeach()
+    add_test(NAME on1x.memgraph.resources
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_resources.py"
+        "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}/../.."
+        "${CMAKE_CURRENT_BINARY_DIR}/tests/resources" "${CMAKE_C_COMPILER}" ${_resource_test_flags})
+    set_tests_properties(on1x.memgraph.resources PROPERTIES TIMEOUT 120)
+  endif()
 endif()
 find_package(Perl QUIET)
 set(_mmg_driver "")

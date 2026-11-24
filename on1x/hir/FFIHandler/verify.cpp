@@ -108,4 +108,15 @@ bool requires_call_loan(const Function& declaration){
   if(argument_policy(declaration,i).mode==ArgumentPolicy::Mode::ExclusiveOwner)return true;
  return false;
 }
+
+bool unclassified_string_resource(const Function& declaration,const Type& type){
+ return declaration.external&&!declaration.foreign&&declaration.kernel_symbol.empty()&&type==Type::String;
+}
+
+bool ipc_call_scoped_i64_out(const Function& declaration){
+ // Both runtime functions write to `out` on success and do not store or
+ // forward its address (including during the On1x callback).
+ return declaration.external&&!declaration.foreign&&
+        (declaration.kernel_symbol==ipc_kernel_roundtrip||declaration.kernel_symbol==ipc_kernel_poll);
+}
 }

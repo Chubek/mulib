@@ -1,5 +1,8 @@
 # MEMGraph/v1 — typed memory-graph rewrite descriptions for On1x
 
+The separate [resource speculation and private scratch profile](RESOURCES.md)
+runs on checked HIR and verified MIR independently of authored bounds rules.
+
 **Status:** `on1xc` uses the compiled `c11_fixed_array_v1` profile to omit
 provably redundant fixed-array index and slice checks in direct C11 and
 VM-product MIR. The existing rules and profile identifier are unchanged.

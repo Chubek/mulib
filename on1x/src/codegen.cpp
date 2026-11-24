@@ -17,6 +17,7 @@
 #include <on1x/ffi_hir.hpp>
 #include "../hir/FFIHandler/lower.hpp"
 #include "../hir/MEMGraph/memgraph.hpp"
+#include "../hir/MEMGraph/storage.hpp"
 #include <algorithm>
 #include <map>
 #include <set>
@@ -52,6 +53,9 @@ class Generator {
   const Unit& unit;
   NominalCatalog catalog;
   memgraph::Bounds bounds;
+  std::optional<std::size_t> scratch_stack_bytes;
+  bool scratch_layout_used=false;
+  std::string heap_cell_type;
   std::map<std::size_t,Location>* origins;
   const SourcePrefixes* source_prefixes;
   std::map<std::size_t,const Location*> proto_origins,body_origins;
@@ -107,6 +111,13 @@ class Generator {
   return name;
  }
   std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
+   void use_heap_cells(){
+    if(!heap_cell_type.empty())return;
+    do { heap_cell_type=unique("memgraph_cell"); }
+    while(identifiers.contains(heap_cell_type+"_alloc")||identifiers.contains(heap_cell_type+"_ptr"));
+    identifiers.insert(heap_cell_type+"_alloc");
+    identifiers.insert(heap_cell_type+"_ptr");
+   }
   std::string pad()const{return std::string(indent*2,' ');}
   bool linked_foreign(const Function& f)const{
     return ffi::link_only(f.foreign.mode());
@@ -896,10 +907,23 @@ class Generator {
        const auto out=unique("ipc_out"),status=unique("ipc_status");
        const bool opening=ipc_kernel_opening(ipc);
        const bool transfers=ipc==ipc_kernel_roundtrip;
-       const bool output=opening||transfers||ipc==ipc_kernel_poll;
-       if(output)
-        definitions<<pad()<<(opening?"on1x_unique *":"int64_t ")<<out
-                   <<(opening?" = NULL;\n":" = 0;\n");
+        const bool output=opening||transfers||ipc==ipc_kernel_poll;
+        const bool place_scratch=scratch_stack_bytes&&ffi::ipc_call_scoped_i64_out(*externs.at(callee.text));
+        const bool heap=place_scratch&&*scratch_stack_bytes<memgraph::scalar_cell_bytes;
+        std::string out_address="&"+out,out_value=out;
+        if(heap){
+         use_heap_cells();
+         definitions<<pad()<<"/* MEMGraph: heap (call-scoped i64 scratch) */\n"
+                    <<pad()<<heap_cell_type<<" "<<out<<";\n"
+                    <<pad()<<heap_cell_type<<"_alloc(&"<<out<<", INT64_C(0), "<<location(e.where)<<");\n";
+         out_address=heap_cell_type+"_ptr(&"+out+")";
+         out_value="*"+out_address;
+        }else if(output){
+         if(place_scratch)definitions<<pad()<<"/* MEMGraph: stack (call-scoped i64 scratch) */\n";
+         definitions<<pad()<<(opening?"on1x_unique *":"int64_t ")<<out
+                    <<(opening?" = NULL;\n":" = 0;\n");
+        }
+        scratch_layout_used|=place_scratch;
        if(transfers)disarm_temporary(args.at(0));
        definitions<<pad()<<"int64_t "<<status<<" = "<<target<<"(";
        if(transfers){
@@ -914,15 +938,16 @@ class Generator {
         else for(std::size_t i=1;i<args.size();++i)definitions<<", "<<args[i];
         if(output)definitions<<", ";
        }
-       if(output)definitions<<"&"<<out;
+        if(output)definitions<<out_address;
        definitions<<");\n"
                   <<pad()<<"if ("<<status<<" == 0) {\n"
-                  <<pad()<<"  "<<result<<".payload.element_1 = "<<(output?out:"INT64_C(0)")<<";\n"
+                   <<pad()<<"  "<<result<<".payload.element_1 = "<<(output?out_value:"INT64_C(0)")<<";\n"
                  <<pad()<<"  "<<result<<".tag = INT64_C(1);\n"
                  <<pad()<<"} else {\n"
                  <<pad()<<"  "<<result<<".payload.element_0 = "<<status<<";\n"
                  <<pad()<<"}\n";
-      return result;
+       if(heap)definitions<<pad()<<"free("<<out<<".data);\n";
+       return result;
      }
      if(auto binding=foreign_bindings.find(callee.text); binding!=foreign_bindings.end()){
       // Only a canonical direct callee may reach this path. Every operand is
@@ -1363,7 +1388,8 @@ class Generator {
  public:
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
-          bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins),
+           bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),
+           scratch_stack_bytes(options.memgraph_stack_bytes),origins(options.origins),
           source_prefixes(options.source_prefixes){
     for(const auto& f:unit.functions){
      verify_kernel_shape(f);
@@ -1533,7 +1559,9 @@ class Generator {
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
           +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
-         +foreign_headers+ipc_header+float_guard+types.str()+"\n";
+          +foreign_headers+ipc_header+float_guard+types.str()+"\n";
+    if(scratch_layout_used)output+=memgraph::c11_scratch_layout();
+    if(!heap_cell_type.empty())output+=memgraph::c11_heap_cells(heap_cell_type);
    const auto proto_begin=output.size();
    output+=prototypes.str()+"\n"+value_helpers.str()+helpers.str();
    const auto body_begin=output.size();
@@ -1555,7 +1583,9 @@ class Generator {
 };
 }
 std::string emit_c(const Unit& unit,const std::string& source_name,const C11Options& options){
- (void)source_name;
+  (void)source_name;
+  if(options.memgraph_stack_bytes&&*options.memgraph_stack_bytes>memgraph::max_stack_bytes)
+   throw std::invalid_argument("MEMGraph scratch stack byte budget exceeds 65536");
  for(const auto& function:unit.functions)verify_kernel_shape(function);
  extensions::verify_evidence(unit);inherent::verify_elaborated(unit);cliches::verify_elaborated(unit);
  canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);

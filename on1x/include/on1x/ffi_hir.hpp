@@ -24,6 +24,13 @@ ArgumentPolicy argument_policy(const Function&,std::size_t);
 bool argument_type(ArgumentPolicy,const Type& expected,const Type& actual);
 bool requires_call_loan(const Function&);
 
+// Unqualified raw C strings carry no retention, ownership or release fact.
+// This predicate is for advisory analysis, not admission.
+bool unclassified_string_resource(const Function&, const Type&);
+// Closed, body-audited runtime adapters; identifies only the generated
+// caller's i64 out cell, never the externally owned IPC Pair/Session payload.
+bool ipc_call_scoped_i64_out(const Function&);
+
 inline Expr::Reference foreign_reference(ForeignMode mode){
  return requires_unsafe(mode)?Expr::Reference::UnsafeForeign:Expr::Reference::ScalarForeign;
 }
