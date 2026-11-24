@@ -2,21 +2,25 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 [--cloudflared] root@SERVER [PUBLIC_MCP_HOST]" >&2
+    echo "Usage: $0 [--cloudflared | --backend-only] root@SERVER [PUBLIC_MCP_HOST]" >&2
     echo "Use --cloudflared instead of PUBLIC_MCP_HOST for a temporary public Quick Tunnel." >&2
+    echo "Use --backend-only without PUBLIC_MCP_HOST to redeploy the existing backend without changing its Host or managing proxies." >&2
     exit 2
 }
 cloudflared=0
+backend_only=0
 positional=()
 for arg in "$@"; do
     case "$arg" in
         --cloudflared) (( ! cloudflared )) || usage; cloudflared=1 ;;
+        --backend-only) (( ! backend_only )) || usage; backend_only=1 ;;
         -*) usage ;;
         *) positional+=("$arg") ;;
     esac
 done
 if (( ${#positional[@]} < 1 || ${#positional[@]} > 2 ||
-      (cloudflared && ${#positional[@]} == 2) )); then
+      (cloudflared && backend_only) ||
+      ((cloudflared || backend_only) && ${#positional[@]} == 2) )); then
     usage
 fi
 target=${positional[0]}
@@ -78,6 +82,7 @@ umask 022
 revision=$1
 public_host=$2
 quick=$3
+backend_only=$4
 service=on1x-knowledge.service
 tunnel=on1x-knowledge-tunnel.service
 tunnel_host=on1x-mcp-tunnel.invalid:8787
@@ -140,7 +145,20 @@ python3 -B "$addon/server.py" --root "$release" --revision "$revision" --check
 
 host_options=
 origin_host=$public_host
-if (( quick )); then
+if [[ -e $unit ]]; then cp -- "$unit" "$work/previous"; fi
+if (( backend_only )); then
+    # Recover the exact Host from the installer-generated unit, not the proxy.
+    # Never source the unit or reuse unchecked text in the new ExecStart.
+    previous_exec=$(grep '^ExecStart=' "$work/previous" 2>/dev/null) || previous_exec=
+    managed_exec='^ExecStart=/usr/bin/python3 -B [^[:space:]]+/on1x/addons/mcp/server\.py'
+    managed_exec+=' --root [^[:space:]]+ --revision [0-9a-f]+ --port 8787'
+    managed_exec+='( --public-data --allowed-host ([a-z0-9]+([.-][a-z0-9]+)*(:[0-9]{1,5})?))?[[:blank:]]*$'
+    if [[ ! $previous_exec =~ $managed_exec ]]; then
+        echo "--backend-only requires an existing installer-managed $service with a recognized ExecStart." >&2
+        exit 1
+    fi
+    origin_host=${BASH_REMATCH[2]}
+elif (( quick )); then
     origin_host=$tunnel_host
 fi
 if [[ -n $origin_host ]]; then
@@ -166,12 +184,12 @@ Restart=on-failure
 WantedBy=multi-user.target
 UNIT
 
-if [[ -e $unit ]]; then cp -- "$unit" "$work/previous"; fi
 if systemctl is-active --quiet "$service"; then was_active=1; fi
 if systemctl is-enabled --quiet "$service"; then was_enabled=1; fi
 # Do not leave a previous public URL forwarding to a replacement backend.
 # A Quick Tunnel cannot resume the old public URL after being stopped.
-if systemctl is-active --quiet "$tunnel"; then
+# Backend-only deployments deliberately keep existing forwarding in place.
+if (( ! backend_only )) && systemctl is-active --quiet "$tunnel"; then
     systemctl stop "$tunnel"
 fi
 installed=1
@@ -221,7 +239,9 @@ systemctl is-active --quiet "$service"
 systemctl enable "$service"
 committed=1
 echo "Deployed $revision; MCP discovery passed on the loopback backend."
-if (( quick )); then
+if (( backend_only )); then
+    echo "Existing tunnels and proxies were left unchanged; public access was not checked."
+elif (( quick )); then
     echo "Cloudflare MCP URL: $tunnel_url"
     echo "Use this URL in ChatGPT with No authentication. Anyone with the URL can access it."
     echo "Temporary URL; to stop it on the server: systemctl stop $tunnel"
@@ -239,4 +259,4 @@ REMOTE
 # SSH joins its arguments into one command. Quote the script for the remote shell.
 remote=${remote//\'/\'\\\'\'}
 ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes "$target" \
-    "bash -c '$remote' bash '$revision' '$public_host' '$cloudflared'" <"$archive"
+    "bash -c '$remote' bash '$revision' '$public_host' '$cloudflared' '$backend_only'" <"$archive"

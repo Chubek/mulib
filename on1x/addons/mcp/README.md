@@ -163,9 +163,10 @@ endpoint or an explicitly configured Secure MCP Tunnel.
    Passing `knowledge.example.org` approves the allowlisted data for anonymous
    publication and configures the exact Host accepted by the backend. Deploy
    checks `initialize`, `notifications/initialized`, and `tools/list` over
-    loopback with that Host before keeping the new service. This mode does not
-    install DNS, a TLS certificate, or an HTTPS proxy. Without either a public
-    hostname or `--cloudflared`, it installs a local-only backend.
+   loopback with that Host before keeping the new service. This mode does not
+   install DNS, a TLS certificate, or an HTTPS proxy. A normal deploy without
+   a public hostname installs a local-only backend unless `--cloudflared` is
+   requested.
 3. Put a maintained HTTPS reverse proxy in front of the loopback service.
    Enforce OpenAI-managed mTLS at that proxy to limit clients to ChatGPT
    (validate the documented chain, client-auth use and SAN; do not pin a leaf).
@@ -228,7 +229,7 @@ authentication**. This test does not verify ChatGPT workspace registration.
 
 Stop the public endpoint with `sudo systemctl stop on1x-knowledge-tunnel.service`
 on the server. The tunnel does not restart automatically or start at boot; a
-redeploy stops the previous tunnel and produces a new URL if requested. If
+normal redeploy stops the previous tunnel and produces a new URL if requested. If
 startup or HTTPS discovery fails, the installer stops the new tunnel and rolls
 back the backend deployment; it cannot restore a stopped temporary URL. For
 diagnostics, run `journalctl -u on1x-knowledge-tunnel.service` on the server.
@@ -238,7 +239,23 @@ are not a production proxy, do not support SSE, and are distinct from the
 Secure MCP Tunnel. The addon uses JSON response mode; for stable or
 authenticated access, use a separately configured production proxy or tunnel.
 
-Optional portable distribution (does **not** deploy the service):
+### Redeploy only the backend
+
+```sh
+bash on1x/addons/mcp/deploy.sh --backend-only root@server.example.org
+```
+
+This requires an existing installer-managed backend. It preserves the current
+Host setting on `127.0.0.1:8787` and restarts only the backend, leaving
+`cloudflared` and other reverse proxies unchanged. Do not combine it with
+`--cloudflared` or `PUBLIC_MCP_HOST`. Audit the new committed sources for the
+existing exposure: any public endpoint remains public. The backend may be
+briefly unavailable during restart, and the installer checks discovery on
+loopback only, not through the public URL.
+
+### Optional portable distribution
+
+Packaging does **not** deploy the service:
 
 ```sh
 sh on1x/addons/mcp/package.sh \

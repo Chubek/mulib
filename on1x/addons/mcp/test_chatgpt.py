@@ -449,16 +449,19 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode())
         args = self.ssh_args.read_text().splitlines()
         self.assertIn("root@test.invalid", args)
-        self.assertTrue(args[-1].endswith(f"bash '{revision}' 'knowledge.example.org' '0'"))
+        self.assertTrue(args[-1].endswith(f"bash '{revision}' 'knowledge.example.org' '0' '0'"))
         with tarfile.open(fileobj=io.BytesIO(result.stdout)) as archive:
             self.assertEqual(archive.extractfile("README.md").read(), b"# Committed docs\n")
             self.assertEqual(archive.extractfile(str(self.probe)).read(),
                              (HOME / self.probe.name).read_bytes())
             self.assertNotIn(str(local_only), archive.getnames())
 
-    def test_cloudflared_conflicting_or_unknown_options_reject_before_ssh(self):
+    def test_conflicting_or_unknown_deploy_options_reject_before_ssh(self):
         for args in (("--cloudflared", "root@test.invalid", "knowledge.example.org"),
                      ("--cloudflared", "root@test.invalid", "--cloudflared"),
+                     ("--backend-only", "root@test.invalid", "knowledge.example.org"),
+                     ("--backend-only", "root@test.invalid", "--backend-only"),
+                     ("--backend-only", "root@test.invalid", "--cloudflared"),
                      ("--not-an-option", "root@test.invalid")):
             with self.subTest(args=args):
                 result = self.deploy(*args)
@@ -506,6 +509,9 @@ case "$tool" in
     timeout) shift; exec "$@" ;;
     python3)
         if [[ $MOCK_SCENARIO == bad-https && $* == *--quick-url* ]]; then
+            exit 1
+        elif [[ $MOCK_SCENARIO == bad-loopback && $* == *deploy_probe.py* ]]; then
+            echo 'MCP discovery failed on loopback port 8787' >&2
             exit 1
         fi ;;
     sleep) : ;;
@@ -565,6 +571,70 @@ esac
         self.assertFalse((base / "active").exists())
         self.assertNotIn("--public-data", unit.read_text())
         self.assertNotIn("systemd-run ", (base / "calls").read_text())
+
+    def assert_no_proxy_calls(self, base):
+        calls = (base / "calls").read_text()
+        for unexpected in ("-tunnel.service", "cloudflared", "systemd-run", "journalctl", "--quick-url"):
+            self.assertNotIn(unexpected, calls)
+        return calls
+
+    def assert_backend_only_redeploy(self, previous_args, host):
+        base, unit = self.mock_remote("success")
+        result = self.deploy("root@test.invalid", *previous_args)
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        previous = unit.read_text()
+        (base / "calls").unlink()
+
+        result = self.deploy("--backend-only", "root@test.invalid")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertIn(b"Existing tunnels and proxies were left unchanged", result.stdout)
+        self.assertNotIn(b"Cloudflare MCP URL:", result.stdout)
+        calls = self.assert_no_proxy_calls(base)
+        self.assertIn("systemctl restart on1x-knowledge.service\n", calls)
+        self.assertIn(f"deploy_probe.py --host {host}\n", calls)
+        self.assertNotEqual(unit.read_text(), previous)
+        if host:
+            self.assertIn(f"--public-data --allowed-host {host}\n", unit.read_text())
+        else:
+            self.assertNotIn("--public-data", unit.read_text())
+        return base
+
+    def test_backend_only_keeps_quick_tunnel_and_its_host(self):
+        base = self.assert_backend_only_redeploy(("--cloudflared",), "on1x-mcp-tunnel.invalid:8787")
+        self.assertTrue((base / "active").is_file())
+
+    def test_backend_only_keeps_public_proxy_host(self):
+        self.assert_backend_only_redeploy(("knowledge.example.org",), "knowledge.example.org")
+
+    def test_backend_only_keeps_loopback_settings(self):
+        self.assert_backend_only_redeploy((), "")
+
+    def test_backend_only_failed_loopback_discovery_rolls_back_without_touching_tunnel(self):
+        base, unit = self.mock_remote("success")
+        result = self.deploy("--cloudflared", "root@test.invalid")
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        previous = unit.read_text()
+        releases = set((base / "releases").glob("*/"))
+        (base / "calls").unlink()
+        self.env["MOCK_SCENARIO"] = "bad-loopback"
+
+        result = self.deploy("--backend-only", "root@test.invalid")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"MCP discovery failed on loopback port 8787", result.stderr)
+        self.assertEqual(unit.read_text(), previous)
+        self.assertEqual(set((base / "releases").glob("*/")), releases)
+        self.assertIn("systemctl start on1x-knowledge.service\n", self.assert_no_proxy_calls(base))
+        self.assertTrue((base / "active").is_file())
+
+    def test_backend_only_rejects_unrecognized_unit_before_restarting_backend(self):
+        base, unit = self.mock_remote("success")
+        (base / "active").touch()
+        result = self.deploy("--backend-only", "root@test.invalid")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"--backend-only requires an existing installer-managed", result.stderr)
+        self.assertEqual(unit.read_text(), "previous service\n")
+        self.assertNotIn("systemctl restart", self.assert_no_proxy_calls(base))
+        self.assertTrue((base / "active").is_file())
 
 
 class HTTPTests(unittest.TestCase):

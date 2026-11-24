@@ -121,3 +121,10 @@ systemd and cloudflared logs cover URL publication after HTTPS discovery,
 failure rollback, and retirement of an earlier tunnel. A loopback protocol
 test checks the probe's exact HTTPS hostname and rejects other URL forms.
 No live Cloudflare tunnel, remote deployment, or ChatGPT registration was tested.
+
+Backend-only redeploy was checked with `bash -n on1x/addons/mcp/deploy.sh` and
+`python3 -B -X dev on1x/addons/mcp/test_chatgpt.py` (46 tests passed).
+Mocked deployments cover reuse of the Quick Tunnel Host, a public proxy Host,
+and loopback-only settings. They also check rejection of unrecognized units
+and rollback on loopback discovery failure without managing the tunnel. No
+live remote deployment or public endpoint was tested.
