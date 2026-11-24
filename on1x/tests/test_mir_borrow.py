@@ -147,6 +147,46 @@ fn main() {
 }
 ''', '7\n7\n21\n21\n21\n')
 
+exercise('exchange_continue', '''
+fn mark(n:i64)->i64 { println(n);return n; }
+fn main() {
+ let x=7;
+ outer:for(var i=0;i<2;i=i+1) {
+  let r=borrow mut x;
+  let s=borrow mut r;
+  let saved=ref_replace(s,loop{if i==0{continue outer;}break with mark(21);});
+  println(saved);
+  println(s);
+ }
+ println(x);
+}
+''', '21\n7\n21\n21\n')
+
+exercise('exchange_return', '''
+fn mark(n:i64)->i64 { println(n);return n; }
+fn work(early:bool)->i64 {
+ let x=19;
+ let r=borrow mut x;
+ let old=ref_replace(r,loop{
+  if early{return mark(9);}
+  let r=31;
+  break with mark(r);
+ });
+ println(r);
+ return old;
+}
+fn main(){println(work(true));println(work(false));}
+''', '9\n9\n31\n31\n19\n')
+
+exercise('exchange_trap', '''
+fn mark(n:i64)->i64 { println(n);return n; }
+fn main() {
+ let x=4;
+ let r=borrow mut x;
+ println(ref_replace(r,mark(1)+5/mark(0)+mark(99)));
+}
+''', '1\n0\n', status=70, trap='invalid division')
+
 # Exactly one root slot, two stores (initial value and :=), three reads.
 # Acquiring or reborrowing doesn't allocate a slot, perform a load, or bump
 # the wire version of an otherwise v1 program.
@@ -180,8 +220,13 @@ for name, text, diagnostic, checked_hir in [
      '{let r=borrow own;println(r["n"]);} drop(own);}', '', True),
     ('rc', 'fn main(){let x=sx_string("text");let r=borrow x;println(sx_text(r));}',
      '', True),
-    ('ref_replace', 'fn main(){let x=1;let r=borrow mut x;'
-     'println(ref_replace(r,2));}', 'ref_replace', True),
+    ('managed_ref_replace', 'fn main(){let x=sx_string("text");let r=borrow mut x;'
+     'println(sx_text(ref_replace(r,sx_string("next"))));}', '', True),
+    ('owner_ref_replace', 'record Cell{n:i64} fn main(){let x=box(record<Cell>{n:1});'
+     '{let r=borrow mut x;println(ref_replace(r,record<Cell>{n:2})["n"]);} drop(x);}',
+     '', True),
+    ('ref_replace_conflict', 'fn main(){let x=1;let r=borrow mut x;'
+     'println(ref_replace(r,r+2));}', 'during its exclusive borrow', False),
     ('defer', 'fn main(){let x=1;let r=borrow x;println(r);defer println(2);}',
      '', True),
     ('managed_result', 'enum Result<T,E>{Ok(T),Err(E)}'

@@ -75,6 +75,27 @@ int main() try {
     require(mir::evaluate(shadow_mir).output == "3\n2\n",
             "lexical shadow changed the resolved loan root");
 
+    auto exchange = checked("fn next()->i64{return 2;} fn main(){let x=1;"
+                            "let r=borrow mut x;println(ref_replace(r,next()));println(r);}");
+    const auto exchange_mir = mir::lower(exchange);
+    const auto& ops = exchange_mir.functions.at(1).blocks.front().instructions;
+    constexpr mir::Op expected[] = {mir::Op::Constant, mir::Op::Store, mir::Op::Call,
+        mir::Op::Load, mir::Op::Store, mir::Op::Print, mir::Op::Load, mir::Op::Print};
+    require(ops.size() == sizeof(expected) / sizeof(expected[0]), "exchange lowered unexpected ops");
+    for (std::size_t i = 0; i != ops.size(); ++i)
+        require(ops[i].op == expected[i], "exchange did not evaluate RHS before old load and store");
+    require(ops[3].target == ops[4].target && ops[3].target == ops[1].target &&
+                ops[4].operands == std::vector<mir::Id>{ops[2].id} &&
+                ops[5].operands == std::vector<mir::Id>{ops[3].id},
+            "exchange did not replace its root and yield the old value");
+    auto& rhs = *exchange.functions.at(1).body.at(2).value->children.at(0)->children.at(1);
+    rhs.kind = Expr::Kind::Variable;
+    rhs.reference = Expr::Reference::Local;
+    rhs.text = "r";
+    rhs.callee.reset();
+    reject(mir::lower, exchange);
+    reject(mir::lower_for_vm, exchange);
+
     std::cout << "MIR scalar root slot, wire round-trip and malformed HIR gates PASS\n";
 } catch (const std::exception& error) {
     std::cerr << error.what() << '\n';

@@ -498,6 +498,21 @@ class Lowering {
    return emit(found->second,e.type,{left,right},e.where);
    }
    case Expr::Kind::Call:{
+    if(e.callee&&e.callee->reference==Expr::Reference::Intrinsic&&
+       e.callee->text=="ref_replace"){
+     // The first operand is a place, not a value. On the completed RHS
+     // edge the canonical plan proves the exclusive exchange of that root.
+     // In particular, the old value is not read before evaluating the RHS.
+     auto value=expression(*e.children.at(1));
+     if(current==ended)return 0;
+     const auto* place=places.exchange(e);
+     if(!place||place->mode!=BorrowMode::Exclusive)
+      unsupported(e.where,"ref_replace lacks a checked writable MIR slot plan");
+     auto slot=root_slot(*place,e.where);
+     auto old=emit(Op::Load,place->type,{},e.children[0]->where,slot);
+     emit(Op::Store,Type::Void,{value},e.where,slot);
+     return old;
+    }
     auto descriptor=call(e);
     std::vector<Id> args;for(const auto& a:e.children)args.push_back(expression(*a));
     if(descriptor.op==Op::Numeric)return numeric(e.callee->text,e.type,std::move(args),e.where);

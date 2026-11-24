@@ -45,6 +45,9 @@ that slot. Loan acquisition has no runtime operation and does not copy the
 referent. `r := value` evaluates `value` once, then writes the same slot if
 evaluation completes. If evaluation exits or traps, it does not write the old
 slot. An ordinary by-value read of an alias still takes a scalar snapshot.
+Scalar `ref_replace(r, value)` evaluates the RHS once before loading the old
+value and storing the replacement. If the RHS transfers control or traps, it
+neither loads nor overwrites the old value.
 
 The MEMGraph lexical slot plan is derived from canonical HIR verification of
 loan conflicts, scope and control flow. Its root identities refer to specific
@@ -53,9 +56,9 @@ MIR sees only existing typed, effect-ordered `load`/`store` instructions with
 normal slot-initialization verification. There is no pointer ABI, executable
 loan object, cleanup opcode, or wire format change. The same instructions run
 through serialized MIR, the evaluator, MIR-C11, VM, and Archon where configured.
-This does not admit borrowed *function* parameters/calls, `ref_replace`,
-pattern-bound roots, aggregate or unique owner payload loans, managed values,
-or loan operations in non-entered loop latches. VM closure conversion cannot
+This does not admit borrowed *function* parameters/calls, pattern-bound roots,
+aggregate or unique owner payload loans, managed values, or loan operations
+in non-entered loop latches. VM closure conversion cannot
 turn an unsupported source referent into an admitted scalar; converted HIR
 gets its own verified plan.
 
