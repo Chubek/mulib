@@ -196,6 +196,10 @@ foreign mulib.example {
                         '--header',hdr,'--manifest',manifest,*parts],ok)
         index_registry(*units)
         indexed=(hdr.read_bytes(),manifest.read_bytes())
+        assert json.loads(indexed[1])['shards']==[
+            {'unit': p.stem, 'descriptor_sha256': json.loads(p.read_bytes())['descriptor_sha256']}
+            for p in units
+        ], 'registry must bind descriptor shard digests, not last source file digests'
         assert b'#include "unit_2.hpp"' not in indexed[0], 'discovery-only shard entered executable registry'
         index_registry(*reversed(units))
         assert indexed==(hdr.read_bytes(),manifest.read_bytes())

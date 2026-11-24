@@ -889,8 +889,8 @@ def registry_index(paths, target=None, catalogue=None):
         require(payload.get('schema') == 'on1x.ffi-descriptors/v2' and UNIT.fullmatch(unit)
                 and unit not in seen_units and path.name == unit + '.json', 'invalid or duplicate registry shard')
         seen_units.add(unit)
-        digest = payload.pop('descriptor_sha256', None)
-        require(digest == sha(canonical(payload).encode()), 'descriptor shard digest mismatch')
+        shard_digest = payload.pop('descriptor_sha256', None)
+        require(shard_digest == sha(canonical(payload).encode()), 'descriptor shard digest mismatch')
         if target is None:
             target = payload['target']
         require(target in TARGETS and payload['target'] == target, 'registry shard target mismatch')
@@ -913,7 +913,7 @@ def registry_index(paths, target=None, catalogue=None):
             require(id_ not in seen_ids and len(rows) < MAX_BINDINGS, 'registry foreign ID collision or limit')
             seen_ids.add(id_)
             rows.append({key: row[key] for key in ('module', 'member', 'symbol', 'id')})
-        fingerprints.append(dict(unit=unit, descriptor_sha256=digest))
+        fingerprints.append(dict(unit=unit, descriptor_sha256=shard_digest))
     data = dict(schema='on1x.ffi-registry/v2', target=target, module_count=len(seen_modules),
                 binding_count=len(rows), shards=fingerprints, grants_safe_admission=False)
     if catalogue:
