@@ -7,6 +7,9 @@ a foreign function. Descriptors describe representation, not admission. A native
 call additionally needs canonical HIR, applicable ABI checks, a native plan,
 and the independent unsafe or safe admission policy.
 
+Generated v2/v3 modules can end with [Cephyr declaration evidence](../../docs/ffi-cephyr-evidence.md).
+These directives enter discovery reports, never executable descriptor tables.
+
 ## Source format
 
 `ffi 2;` documents identify one exact target and one canonical module:

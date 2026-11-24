@@ -50,7 +50,7 @@
 'syntax: "requires" Word "<=" Word |
 .end
 .rule TypedModule
-'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody "}"
+'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody C11EvidenceList "}"
 .end
 .rule TypedBody
 'syntax: "unavailable" "reason" Word Audit ";" | Entries | GraphBody
@@ -69,6 +69,15 @@
 .end
 .rule Unsupported
 'syntax: "unsupported" Word "=" "c" "::" Word "reason" Word ";"
+.end
+.rule C11EvidenceList
+'syntax: C11EvidenceList C11Evidence |
+.end
+.rule C11Evidence
+'syntax: "evidence" "c" "::" Word "cephyr_c11_v1" "(" C11Facts ")" ";"
+.end
+.rule C11Facts
+'syntax: C11Facts Word | Word
 .end
 .rule NativeTypes
 'syntax: NativeType NativeTail |

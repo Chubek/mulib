@@ -33,8 +33,9 @@ inventory of the entire MuLIB include root (including unregistered detail
 headers) and the archived compatibility headers in `.deprecated/`; it does
 not claim an exact transitive include trace.
 
-Cephyr's semantic projection is discovery, not C symbol ownership or proof of
-linkage, lifetime, effects or safe use. A prefix match by itself does not select
+Cephyr's [paired syntax and declaration projection](../docs/ffi-cephyr-evidence.md)
+is discovery, not C symbol ownership or proof of binary linkage, lifetime,
+effects or safe use. A prefix match by itself does not select
 an export. An unavailable description records a reason without fabricating
 declarations. A representable function is not necessarily callable. Actual
 unsafe and reviewed-safe admission depend on the compiler, native artifact and

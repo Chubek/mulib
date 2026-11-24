@@ -210,9 +210,9 @@ def _require(condition: bool, message: str) -> None:
         raise InterfaceError("schema", message)
 
 
-def _quoted(data: bytes, start: int) -> tuple[str, int]:
+def _quoted(data: bytes, start: int, max_string_bytes: int) -> tuple[str, int]:
     pos = start + 1
-    while pos < len(data) and pos - start <= MAX_STRING_BYTES + 1:
+    while pos < len(data) and pos - start <= max_string_bytes + 1:
         char = data[pos]
         if char == 34:  # "
             try:
@@ -224,16 +224,19 @@ def _quoted(data: bytes, start: int) -> tuple[str, int]:
                 raise _syntax("invalid UTF-8 or JSON string", start) from None
             return text, pos + 1
         pos += 2 if char == 92 else 1  # skip escaped byte while finding the quote
-    if pos - start > MAX_STRING_BYTES + 1:
+    if pos - start > max_string_bytes + 1:
         raise _limit("string byte limit exceeded")
     raise _syntax("unterminated string", start)
 
 
-def _parse(data: bytes) -> list[_Node]:
+def parse_sexp(data: bytes, *, max_bytes=MAX_BYTES, max_tokens=MAX_TOKENS,
+               max_nodes=MAX_NODES, max_depth=MAX_DEPTH,
+               max_string_bytes=MAX_STRING_BYTES) -> list[_Node]:
+    """Shared bounded lexer; interface and syntax callers enforce their own schemas."""
     if not isinstance(data, bytes):
-        raise TypeError("interface input must be bytes")
-    if len(data) > MAX_BYTES:
-        raise _limit("interface byte limit exceeded")
+        raise TypeError("S-expression input must be bytes")
+    if len(data) > max_bytes:
+        raise _limit("S-expression byte limit exceeded")
 
     pos = tokens = nodes = 0
     root = None
@@ -246,7 +249,7 @@ def _parse(data: bytes) -> list[_Node]:
         if root is not None and not stack:
             raise _syntax("trailing form", pos)
         tokens += 1
-        if tokens > MAX_TOKENS:
+        if tokens > max_tokens:
             raise _limit("token limit exceeded")
         char = data[pos]
         if char == 41:  # )
@@ -256,12 +259,12 @@ def _parse(data: bytes) -> list[_Node]:
             pos += 1
             continue
         nodes += 1
-        if nodes > MAX_NODES:
+        if nodes > max_nodes:
             raise _limit("node limit exceeded")
         if stack and len(stack[-1]) >= MAX_LIST_ITEMS:
             raise _limit("list item limit exceeded")
         if char == 40:  # (
-            if len(stack) >= MAX_DEPTH:
+            if len(stack) >= max_depth:
                 raise _limit("list depth limit exceeded")
             child: list[_Node] = []
             if stack:
@@ -275,7 +278,7 @@ def _parse(data: bytes) -> list[_Node]:
             raise _syntax("expected a root list", pos)
         start = pos
         if char == 34:
-            value, pos = _quoted(data, start)
+            value, pos = _quoted(data, start, max_string_bytes)
         elif match := _INTEGER.match(data, pos):
             pos = match.end()
             if pos < len(data) and 48 <= data[pos] <= 57:
@@ -751,7 +754,9 @@ def decode_interface(data: bytes, *, expected_target: str | None = None) -> Inte
     target. Omitting it still validates the document's built-in target, ABI
     and data model against one another.
     """
-    root = _parse(data)
+    root = parse_sexp(data, max_bytes=MAX_BYTES, max_tokens=MAX_TOKENS,
+                      max_nodes=MAX_NODES, max_depth=MAX_DEPTH,
+                      max_string_bytes=MAX_STRING_BYTES)
     _require(_head(root) == "interface", "expected C11Interface root")
     if len(root) < 2 or type(root[1]) is not int or root[1] != 1:
         raise InterfaceError("version", "unsupported C11Interface version")

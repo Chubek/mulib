@@ -4,6 +4,7 @@ No parser fallback, host commands, native calls or trust grants in this tool.
 """
 from __future__ import annotations
 import argparse
+from enum import Enum
 import hashlib
 import importlib.util
 import json
@@ -67,6 +68,15 @@ FRAMED_IPC_SYMBOLS = frozenset('on1x_kernel_ipc_v1_' + suffix for suffix in (
 
 class Invalid(ValueError):
     pass
+
+
+class C11Fact(str, Enum):
+    DECLARED_NORETURN = 'declared_noreturn'
+    INLINE_ONLY = 'inline_only'
+    SYNTAX_BODY = 'syntax_body'
+
+
+C11_EVIDENCE_SOURCE = 'cephyr_c11_v1'
 
 
 def require(condition, message):
@@ -670,6 +680,40 @@ def parse_overrides(parser, raw, path):
     return OverrideDocument(target, module, overrides, tuple(sorted(selections)), tuple(sorted(obligations)))
 
 
+def read_c11_evidence(tree, mod):
+    """Validate and attach non-authorizing declaration evidence to parsed rows."""
+    entries = {row['symbol']: row for row in mod['entries']}
+    seen = set()
+    for evidence in nodes(tree, 'C11Evidence'):
+        c = evidence.children
+        symbol = ident(lexeme(c[3]))
+        require(symbol in entries and symbol not in seen, 'unknown or duplicate C11 evidence symbol')
+        seen.add(symbol)
+        names = list(tokens(c[6]))
+        require(names == sorted(set(names)) and set(names) <= {fact.value for fact in C11Fact},
+                'unknown, duplicate or unordered C11 evidence fact')
+        facts = {C11Fact(name) for name in names}
+        row = entries[symbol]
+        definition = row.get('definition')
+        if C11Fact.INLINE_ONLY in facts:
+            require(C11Fact.SYNTAX_BODY in facts, 'C11 inline-only evidence requires a syntax body')
+            require(row['profile'] != 'scalar', 'C11 inline-only evidence cannot describe a callable scalar')
+        if definition is not None:
+            require((C11Fact.INLINE_ONLY in facts) == (definition == 'inline-only')
+                    and (C11Fact.SYNTAX_BODY in facts) == (definition != 'declaration'),
+                    'C11 evidence contradicts native definition')
+        noreturn = C11Fact.DECLARED_NORETURN in facts
+        require(not noreturn or row['profile'] != 'scalar', 'C11 noreturn evidence cannot describe a callable scalar')
+        if 'specifiers' in row:
+            require(noreturn == ('noreturn' in row['specifiers']), 'C11 evidence contradicts native specifiers')
+        if row.get('reason') == 'noreturn':
+            require(noreturn, 'C11 evidence contradicts discovery reason')
+        if row.get('reason') == 'external_inline_only':
+            require(C11Fact.INLINE_ONLY in facts, 'C11 evidence contradicts discovery reason')
+        row['c11_evidence'] = dict(source=C11_EVIDENCE_SOURCE, facts=names)
+    return mod
+
+
 def parse_module(m, version, target):
     c = m.children
     module = module_name(c)
@@ -685,13 +729,13 @@ def parse_module(m, version, target):
         body = c[12].children
         if body[0].symbol == 'GraphBody':
             require(version == 3, 'native graph requires ffi 3')
-            return parse_graph_module(body[0], mod)
+            return read_c11_evidence(c[13], parse_graph_module(body[0], mod))
         if body[0].symbol != 'Entries':
             mod['unavailable'] = reason(body[2])
             if body[3].children:
                 require(version == 3, 'audit text requires ffi 3')
                 mod['audit'] = audit_text(body[3])
-            return mod
+            return read_c11_evidence(c[13], mod)
         require(version == 2, 'ffi 3 modules require a native graph or explicit unavailability')
     functions = (nodes(c[12], 'Function') if version == 1 else
                  (entry.children[0] for entry in nodes(c[12], 'Entry')))
@@ -753,7 +797,7 @@ def parse_module(m, version, target):
         if profile == 'scalar':
             row['id'] = descriptor_id(row)
         mod['entries'].append(row)
-    return mod
+    return read_c11_evidence(c[13], mod) if version >= 2 else mod
 
 
 def parse_document(parser, raw, path):
@@ -872,27 +916,38 @@ def unique_pairs(pairs):
     return fields
 
 
-def verify_catalogue(path, inputs, target):
+def verify_catalogue(path, inputs, target, evidence=None):
     raw = read(path, MAX_CATALOG_INDEX)
     data = json.loads(raw, object_pairs_hook=unique_pairs)
     require(data.get('schema') == 'on1x.stdffi.mulib/v1' and data.get('target') == target,
             'catalogue index schema or target mismatch')
     modules = data['modules']
     require(isinstance(modules, list) and 0 < len(modules) <= MAX_MODULES, 'invalid catalogue index module count')
-    files = {}
+    files, records = {}, {}
     for mod in modules:
         key, name, digest = (mod[field] for field in ('key', 'file', 'ffi_sha256'))
         require(MODULE.fullmatch(key) and name == key + '.ffi' and name not in files
                 and DIGEST.fullmatch(digest), 'invalid catalogue index file identity')
         files[name] = digest
+        if evidence is not None:
+            for row in mod.get('symbols', ()):
+                if 'c11_evidence' not in row:
+                    continue
+                subject = mod.get('module'), row['symbol']
+                require(subject not in records and row.get('emitted') is True
+                        and subject[0] == 'mulib.' + module_alias(key),
+                        'invalid catalogue C11 evidence subject')
+                records[subject] = row['c11_evidence']
     require(inputs == files, 'stale catalogue: index and descriptor input files/digests differ')
+    if evidence is not None:
+        require(evidence == records, 'stale catalogue: index and C11 evidence directives differ')
     return sha(raw)
 
 
 def registry_index(paths, target=None, catalogue=None):
     require(0 < len(paths) <= MAX_MODULES, 'invalid registry shard count')
     rows, units, fingerprints = [], [], []
-    inputs = {}
+    inputs, evidence = {}, {}
     seen_modules, seen_symbols, seen_ids, seen_units = set(), set(), set(), set()
     for path in sorted(paths, key=lambda p: p.name):
         raw = read(path, MAX_MANIFEST)
@@ -918,6 +973,8 @@ def registry_index(paths, target=None, catalogue=None):
             symbol = row['symbol']
             require(symbol not in seen_symbols, 'registry native symbol collision: ' + symbol)
             seen_symbols.add(symbol)
+            if 'c11_evidence' in row:
+                evidence[(row['module'], symbol)] = row['c11_evidence']
         if payload['bindings']:
             units.append(unit)
         for row in payload['bindings']:
@@ -929,7 +986,7 @@ def registry_index(paths, target=None, catalogue=None):
     data = dict(schema='on1x.ffi-registry/v2', target=target, module_count=len(seen_modules),
                 binding_count=len(rows), shards=fingerprints, grants_safe_admission=False)
     if catalogue:
-        data['catalogue_index_sha256'] = verify_catalogue(catalogue, inputs, target)
+        data['catalogue_index_sha256'] = verify_catalogue(catalogue, inputs, target, evidence)
     digest = sha(canonical(data).encode())
     data['descriptor_sha256'] = digest
     lines = prelude() + [f'#include "{unit}.hpp"' for unit in units]

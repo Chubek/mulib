@@ -1,4 +1,4 @@
-"""Run the pinned Cephyr C11Interface CLI with a controlled per-TU profile.
+"""Run the pinned Cephyr C11 projection stages with a controlled per-TU profile.
 
 This is not a sandbox. The caller selects trusted tool files, input roots and
 TUs, and must ensure includes stay within those roots. A Projection is bounded
@@ -29,6 +29,7 @@ TARGET_ABIS = {
 _ENV = {"PATH": "/usr/bin:/bin", "LC_ALL": "C", "TZ": "UTC0", "HOME": ".", "TMPDIR": "."}
 _CONFIG = b"# On1x projection: no ambient settings or extensions\n"
 _STAGE = "--emit-interface=sexp"
+_SYNTAX_STAGE = "--emit-ast=sexp"
 _LANGUAGES = ("c", "cpp-output", "c11-ast-json", "c11-ast-yaml", "c11-ast-sexp")
 _MACRO = re.compile(r"[A-Za-z_][A-Za-z_0-9]*(?:=[^\x00-\x1f\x7f]*)?")
 _HEADER = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*(?:/[A-Za-z0-9_][A-Za-z0-9_.+-]*)*")
@@ -238,7 +239,7 @@ class CephyrProvider:
     def __init__(self, cephyr, target, *, libstone_revision, scratch_root,
                  include_dirs=(), system_include_dirs=(), tool_inputs=(),
                  defines=(), undefines=(), sysroot=None, freestanding=False,
-                 limits=Limits(), prlimit="/usr/bin/prlimit"):
+                 require_syntax=False, limits=Limits(), prlimit="/usr/bin/prlimit"):
         if (not isinstance(target, str) or target not in TARGET_ABIS or
                 not isinstance(libstone_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", libstone_revision)):
             raise ProjectionError("invalid_profile", "select a built-in target and full LibStone revision")
@@ -295,6 +296,8 @@ class CephyrProvider:
         help_text = self._run(("--help",), b"")
         if not re.fullmatch(rb"Cephyr [ -~]{1,96}\n", version.output) or _STAGE.encode() not in help_text.output:
             raise ProjectionError("unsupported_cephyr", "selected executable lacks Cephyr C11Interface support")
+        if require_syntax and b"--emit-ast=" not in help_text.output:
+            raise ProjectionError("unsupported_cephyr", "selected executable lacks Cephyr C11Syntax support")
         self._identity = {
             "schema": 1, "target": target, "abi": TARGET_ABIS[target],
             "libstone_revision": libstone_revision, "version": version.output.decode("ascii").strip(),
@@ -375,7 +378,14 @@ class CephyrProvider:
         """Project one raw C TU, preprocessed C TU, or serialized C11Syntax input."""
         return self._project(source, language, None)
 
-    def _project(self, source, language, header):
+    def project_syntax(self, source, *, language="c"):
+        """Emit a C11Syntax v1 document; it is not typed or body-validated."""
+        if language not in ("c", "cpp-output"):
+            raise ProjectionError("invalid_input", "C11Syntax capture requires C or preprocessed C")
+        run = self._stage(source, language, None, _SYNTAX_STAGE)
+        return self._check_output(run, b"(1 (object ", b"))\n", "C11Syntax")
+
+    def _stage(self, source, language, header, stage):
         if language not in _LANGUAGES or not isinstance(source, bytes):
             raise ProjectionError("invalid_input", "expected bytes in a supported translation-unit language")
         if len(source) > self.limits.input_bytes:
@@ -385,25 +395,33 @@ class CephyrProvider:
         # Deep-copy JSON data before exposing it to callers sharing this profile.
         identity = json.loads(json.dumps(self._identity))
         identity.update({"stdin_sha256": _digest(source), "language": language, "header": header,
-                         "stage": _STAGE, "origin": "unavailable"})
+                         "stage": stage, "origin": "unavailable"})
         try:
-            run = self._run((*self._options, _STAGE, "-x", language, "-"), source)
+            run = self._run((*self._options, stage, "-x", language, "-"), source)
         except ProjectionError as exc:
             exc.provenance["identity"] = identity
             raise
-        output = run.output
+        run.provenance["identity"] = identity
+        return run
+
+    def _project(self, source, language, header):
+        run = self._stage(source, language, header, _STAGE)
         # Check only the pinned CLI transport envelope here. W01 checks actual
         # S-expression structure, schema and target again before consumption.
         prefix = (f'(interface 1\n  (target "{self.target}")\n  (data-model LP64)\n'
                   f'  (abi "{TARGET_ABIS[self.target]}")').encode("ascii")
+        return self._check_output(run, prefix, b"))\n", "C11Interface")
+
+    @staticmethod
+    def _check_output(run, prefix, suffix, stage):
+        output = run.output
         try:
             output.decode("utf-8")
-            valid = output.startswith(prefix) and output.endswith(b"))\n") and b"\x00" not in output
+            valid = output.startswith(prefix) and output.endswith(suffix) and b"\x00" not in output
         except UnicodeDecodeError:
             valid = False
-        run.provenance["identity"] = identity
         if not valid:
-            raise ProjectionError("invalid_output", "Cephyr output lacks the expected v1 transport envelope",
+            raise ProjectionError("invalid_output", f"Cephyr output lacks the expected {stage} v1 envelope",
                                   diagnostics=run.diagnostics, provenance=run.provenance)
-        identity["projection_sha256"] = _digest(output)
+        run.provenance["identity"]["projection_sha256"] = _digest(output)
         return run

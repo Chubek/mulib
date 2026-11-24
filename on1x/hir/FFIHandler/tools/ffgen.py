@@ -18,6 +18,7 @@ if __name__ == "__main__":
     sys.dont_write_bytecode = True
 
 import ffic
+from cephyr_syntax import declaration_syntax, pair_with_interface
 from ffi_types import (
     INTEGRAL_SURFACES, NativeGraph, digest, represent, require_target, target_identity,
     TARGETS,
@@ -217,6 +218,17 @@ def _render_fn(row) -> list[str]:
     ]
 
 
+def _c11_evidence(function, syntax):
+    facts = []
+    if "noreturn" in function.specifiers:
+        facts.append(ffic.C11Fact.DECLARED_NORETURN.value)
+    if function.definition == "inline-only":
+        facts.append(ffic.C11Fact.INLINE_ONLY.value)
+    if syntax.has_body:
+        facts.append(ffic.C11Fact.SYNTAX_BODY.value)
+    return dict(source=ffic.C11_EVIDENCE_SOURCE, facts=facts) if facts else None
+
+
 def _check_override(entry, target, override: Override | None) -> list[str]:
     if override is None:
         return []
@@ -228,8 +240,8 @@ def _check_override(entry, target, override: Override | None) -> list[str]:
     return sorted(override.obligations)
 
 
-def generate_module(entry, interface, target, *, override: Override | None = None,
-                    origins=None, owned_headers=(), reserved_prefixes=()) -> Generation:
+def generate_module(entry, interface, target, *, override: Override | None = None, syntax=None,
+                     origins=None, owned_headers=(), reserved_prefixes=()) -> Generation:
     """Map one validated projection; caller supplies only *verified* origins.
 
     The interface format has no origin. The default without an authored
@@ -237,6 +249,7 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
     """
     _validate_entry(entry)
     require_target(interface, target)
+    syntax_by_name = None if syntax is None else pair_with_interface(syntax, interface)
     origins = origins or {}
     owned_headers = frozenset(owned_headers) | {entry.header_path}
     reserved_prefixes = frozenset(reserved_prefixes)
@@ -328,6 +341,17 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         reason = "data_only_module" if entry.implementation == "static-data" else "no_owned_exports"
     elif len(used_members) > MAX_EXPORTS:
         reason = "module_export_limit"
+    if reason is None and syntax_by_name is not None:
+        functions = {fn.name: fn for fn in interface.functions}
+        for row in rows:
+            if not row["emitted"]:
+                continue
+            symbol = row["symbol"]
+            evidence = _c11_evidence(functions[symbol], syntax_by_name[symbol])
+            if evidence:
+                row["c11_evidence"] = evidence
+                facts = " ".join(evidence["facts"])
+                rendered.append(f'    evidence c::{symbol} {evidence["source"]} ({facts});')
     document = _document(entry, target, rendered) if reason is None else b""
     if len(document) > MAX_DOCUMENT:
         reason = "module_byte_limit"
@@ -337,6 +361,7 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         document = _document(entry, target, unavailable=reason)
         for row in rows:
             row["emitted"] = False
+            row.pop("c11_evidence", None)
     elif any(row["status"] == "representable" for row in rows):
         status = "representable"
     elif any(row["status"] == "discovery_only" for row in rows):
@@ -435,7 +460,7 @@ def _run(args) -> None:
         raise GenerationError("output overlaps authored overrides")
     tools = Path(__file__).resolve().parent
     toolchain = (
-        tools / "ffgen.py", tools / "ffi_types.py", tools / "cephyr_interface.py",
+        tools / "ffgen.py", tools / "ffi_types.py", tools / "cephyr_interface.py", tools / "cephyr_syntax.py",
         tools / "project_interface.py", tools / "ffi_inventory.py", tools / "ffi_publish.py",
         tools / "ffi_plan.py", tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
     )
@@ -491,15 +516,17 @@ def _run(args) -> None:
                     system_include_dirs=tuple(args.system_include_dir),
                     tool_inputs=tuple(args.tool_input),
                     defines=plan.defines,
-                    sysroot=args.sysroot, freestanding=args.freestanding,
+                    sysroot=args.sysroot, freestanding=args.freestanding, require_syntax=True,
                 )
                 providers[key] = provider
             return providers[key], key
 
     def project(entry, plan, provider, key):
         _check_public_header(root, entry, provider)
+        syntax_capture = None
         try:
-            projection = provider.project(plan.source)
+            syntax_capture = provider.project_syntax(plan.source)
+            projection = provider.project(syntax_capture.output, language="c11-ast-sexp")
             provenance = projection.provenance
             output = projection.output
             reason = None
@@ -522,13 +549,21 @@ def _run(args) -> None:
             profiles.setdefault(profile_sha, common)
         if "exit_status" in provenance["invocation"]:
             projection_input["exit_status"] = provenance["invocation"]["exit_status"]
-        return output, reason, projection_input, profile_sha
+        if syntax_capture is not None:
+            # C11Syntax bytes can include absolute diagnostic labels or source
+            # spellings. Bind the raw C input and the normalized syntax facts
+            # separately; never publish the raw AST digest as portable identity.
+            del projection_input["stdin_sha256"]
+            syntax_identity = syntax_capture.provenance["identity"]
+            projection_input["syntax"] = {name: syntax_identity[name] for name in
+                                          ("stdin_sha256", "language", "stage")}
+        return output, syntax_capture, reason, projection_input, profile_sha
 
     def generate(entry):
         plan = inventory.plan(entry.key)
         provider, key = provider_for(plan)
         override = selected_overrides.get(entry.key)
-        output, reason, projection_input, profile_sha = project(entry, plan, provider, key)
+        output, syntax_capture, reason, projection_input, profile_sha = project(entry, plan, provider, key)
         projection_sha = None
         if output is None:
             outcome = failed_module(entry, target, reason, override=override)
@@ -542,9 +577,20 @@ def _run(args) -> None:
                 outcome = failed_module(entry, target, _reason_code("interface_", exc.code),
                                         override=override)
             else:
-                outcome = generate_module(entry, interface, target, override=override,
-                                          owned_headers=plan.metadata["owned_headers"],
-                                          reserved_prefixes=prefixes)
+                try:
+                    syntax = declaration_syntax(syntax_capture.output)
+                except InterfaceError as exc:
+                    if exc.code != "limit":
+                        raise
+                    outcome = failed_module(entry, target, "syntax_limit", override=override)
+                else:
+                    projection_input["syntax"]["declarations_sha256"] = digest([
+                        "on1x.ffi-cephyr-c11-syntax/v1",
+                        [[row.name, row.declarations, row.has_body] for row in syntax],
+                    ])
+                    outcome = generate_module(entry, interface, target, override=override, syntax=syntax,
+                                              owned_headers=plan.metadata["owned_headers"],
+                                              reserved_prefixes=prefixes)
         row = {
             "key": entry.key, "module": entry.module, "header": entry.header_path,
             "file": entry.filename, "ffi_sha256": _sha(outcome.document),
@@ -565,6 +611,7 @@ def _run(args) -> None:
 
     def validate_stage(stage):
         names, symbols = set(), set()
+        inputs, evidence = {}, {}
         for document in sorted(stage.glob("*.ffi")):
             module = ffic.compile_files(parser, [document], target=args.target, canonical_files=True)
             if len(module["modules"]) != 1 or module["modules"][0]["version"] != 2:
@@ -573,10 +620,14 @@ def _run(args) -> None:
             if module_name in names:
                 raise GenerationError(f"duplicate generated module: {module_name}")
             names.add(module_name)
+            inputs[document.name] = module["inputs"][0]["sha256"]
             for binding in (*module["bindings"], *module["discovery"]):
                 if binding["symbol"] in symbols:
                     raise GenerationError(f'duplicate generated symbol: {binding["symbol"]}')
                 symbols.add(binding["symbol"])
+                if "c11_evidence" in binding:
+                    evidence[(module_name, binding["symbol"])] = binding["c11_evidence"]
+        ffic.verify_catalogue(stage / "index.json", inputs, args.target, evidence)
 
     def verify_inputs():
         inventory.verify_unchanged()

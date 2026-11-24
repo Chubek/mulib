@@ -17,7 +17,7 @@ from ffi_publish import DEFAULT_TARGET, TARGETS, check_package  # noqa: E402
 _CODE = re.compile(r'[a-z][a-z0-9_]{0,95}')
 _SHA256 = re.compile(r'[0-9a-f]{64}')
 _GENERATION_TOOLS = frozenset({
-    'ffgen.py', 'ffi_types.py', 'cephyr_interface.py', 'project_interface.py',
+    'ffgen.py', 'ffi_types.py', 'cephyr_interface.py', 'cephyr_syntax.py', 'project_interface.py',
     'ffi_inventory.py', 'ffi_publish.py', 'ffi_plan.py', 'ffic.py', 'FFIHandler.llsynth',
 })
 
