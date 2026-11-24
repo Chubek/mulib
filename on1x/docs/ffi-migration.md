@@ -1,12 +1,43 @@
 # MuLIB foreign interfaces: migration guide
 
-**Migration in progress.** The [KernelBind guide](kernel-bind.md) and
-[registration guide](kernel-registration.md) still describe the reference
-workflows. The [retirement manifest](ffi-retirement.md) tracks what must move
-before those workflows can be removed. This page does not announce new
-callable profiles or retired commands.
+For a portable kernel, import its standard module directly:
 
-## What stays the same for callers
+```on1x
+import foreign stdffi.clamp as Clamp;
+
+fn main() {
+    println(Clamp.add_i64(40, 2));
+}
+```
+
+`on1xc --run-ir program.on1x` evaluates the checked kernel and prints `42`.
+`on1xc --emit-ir program.on1x -o program.mir` keeps the portable body and its
+directives. Pass that file to `on1xc --ir-input --emit-ir-c program.mir` or
+`on1xc --ir-input --run-vm program.mir` to select a product later. No target
+catalogue, native review file or `unsafe` block is part of this import.
+`Clamp.i64(value, low, high)` still checks `low <= high`; a failing call traps
+after evaluating its arguments once in source order.
+
+For a native direct-C11 executable configure On1x with `ON1X_WITH_CEPHYR=ON`
+and the installed `Cephyr_DIR`. Then:
+
+```sh
+python3 on1x/tools/on1x-build.py program.on1x --on1xc /path/to/on1xc \
+    --backend c11 --cc cc -o program
+./program
+```
+
+On AMD64 Linux, the first native kernel call compiles the embedded MuLIB
+implementation with Cephyr and loads its shared module. The program reuses
+that module for later calls. With Cephyr disabled, the evaluator, VM, and
+`--backend mir-c11` can still execute the portable body. See the
+[runtime SDK](../runtime-sdk/README.md) for the native API.
+
+The [standard FFI catalogue](../stdffi/README.md) describes generation and
+the supported kernel bodies. An unlisted kernel or untranslatable export
+does not become callable because Cephyr parsed its signature.
+
+## Separate native KernelBind workflows
 
 The migration keeps the source spellings `import kernel`, `unsafe import
 kernel`, and their `[dynlib]` forms. `as` keeps the alias local to the importing
@@ -34,31 +65,16 @@ one does not authorize the other.
 
 1. `MANIFEST.yaml` remains the source of module registration and native build
    requirements. A registration is not a statement that On1x can call a module.
-2. The new generator uses Cephyr's resolved C11Interface projection from the
-   canonical headers, with an explicit target and preprocessing environment.
-   A projection can include declarations from dependencies and system headers;
-   it is not an export list or evidence that the implementation can compile.
-3. The intended generated location is `on1x/stdffi/mulib/`, with a coverage
-   and provenance index beside the `.ffi` files. Change canonical inputs
-   rather than editing generated files. Authored semantic overrides belong
-   under `on1x/stdffi/overrides/mulib/`; they supply facts such as clamp's
-   precondition, not C signatures or review authority.
-4. LLSynth and FFIHandler turn supported declarations into compiler
-   descriptors at build time. Checked On1x HIR and the C11/native boundary
-   still enforce call, ABI, and ownership rules. The application does not run
-   Cephyr's declaration projector or LLSynth at runtime.
-
-The final regeneration and application-build commands will be documented after
-qualification. Until then, keep using the manifest registration workflow in
-[CONTRIBUTING.md](../../CONTRIBUTING.md) and do not
-replace a working build with a command from the design directive.
+2. Use the registration workflow in [CONTRIBUTING.md](../../CONTRIBUTING.md).
+   The compiler does not load an external descriptor catalogue. The SDK's
+   ABI-compatible v2 descriptor lookup returns `ON1X_SDK_UNSUPPORTED`.
 
 ## Reading discovery and review results
 
 | Result | What it establishes |
 | --- | --- |
 | Registered | The module has a canonical manifest entry. |
-| Projected | Cephyr resolved declarations for this input and target. |
+| Projected | A declaration was resolved for one input and target. |
 | Representable | A supported native-to-On1x type mapping exists; this does not authorize a call. |
 | Callable with `unsafe` | The supported profile passes its native and ABI checks and requires lexical `unsafe`. |
 | Callable with independent review | The exact supported subject also has a valid approval from the operator-selected authority. |
@@ -70,6 +86,3 @@ generated file, snapshot, checksum or test key cannot authorize a safe import.
 The [existing review workflow](kernel-review.md) explains independent
 Ed25519 authorization; do not reuse its approval for a changed binding,
 artifact, compiler configuration or linkage.
-
-See [foreign inventory and taint diagnostics](ffi-taint.md) for the bounded
-evidence profile and its independent project/CLI diagnostic policy.

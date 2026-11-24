@@ -77,7 +77,7 @@ Manifest parse_package(std::string_view text,const std::string& file){
  // Match the build driver's head words, including directives not evaluated
  // by discovery. An explicit physical continuation can mask one head.
  constexpr std::string_view heads[]={
-  "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work","ffi-taint",
+  "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work",
   "optimization-profile","optimization","backend","target","dependency","profile",
   "profile-arg","command","define","kernel","source","library","resource","interface",
   "compiler","assembler","linker","assembler-arg","linker-arg"

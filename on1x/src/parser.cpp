@@ -1600,34 +1600,46 @@ class Parser {
      if(u.ppx.size()>=32)throw Error(where,"PPX program count limit exceeded");
      ++pos;u.ppx.push_back({where,std::move(label),token.text.substr(1,token.text.size()-2)});accept(";");continue;
     }
-     // `kernel` and `foreign` are contextual: `import foreign`,
-     // `import foreign.member` and `import foreign as F` are ordinary imports.
-      const bool unsafe_import=at("unsafe")&&peek(1).text=="import";
-      const bool legacy_import=(unsafe_import&&peek(2).text=="kernel")||
-         (at("import")&&peek(1).text=="kernel"&&
-          ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')||
-           peek(2).text==".."||peek(2).text=="..."||peek(2).text=="["));
-      const bool standard_foreign=(unsafe_import&&peek(2).text=="foreign")||
-         (at("import")&&peek(1).text=="foreign"&&is_ident(peek(2).text)&&peek(2).text!="as");
-     if(legacy_import||standard_foreign){
-      KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_import;
-      if(unsafe_import)consume("unsafe");
-      consume("import");
-      if(standard_foreign){
-       consume("foreign");consume("stdffi");consume(".");
-       // Keep the canonical descriptor, manifest, and review identity.
-       item.module="mulib."+ident();
-      }else{
-       consume("kernel");
-       if(accept("[")){consume("dynlib");consume("]");item.dynlib=true;}
-       item.module=module_name();
-      }
+    // `foreign` and `kernel` are contextual: bare, dotted, and aliased
+    // ordinary module imports still use the ordinary import grammar.
+     const bool unsafe_import=at("unsafe")&&peek(1).text=="import";
+     if(unsafe_import&&peek(2).text=="foreign")
+      throw Error(peek().where,"unsafe import foreign has been removed; use import foreign stdffi.<kernel> "
+                  "and remove unsafe blocks around portable calls, or use unsafe import kernel mulib.<kernel> "
+                  "where KernelBind supports it",
+                  "ON1X-STDFFI-MIGRATION");
+     const auto& target=peek(2).text;
+     const bool target_follows=(is_ident(target)&&target!="as")||target.starts_with('"')||
+                               target==".."||target=="..."||target=="[";
+     auto check_import_count=[&]{
+      if(u.foreign_imports.size()+u.kernel_imports.size()+u.module_imports.size()>1024)
+       throw Error(peek().where,"import count limit exceeded");
+     };
+     if(at("import")&&peek(1).text=="foreign"&&target_follows){
+      ForeignImport item;item.where=peek().where;
+      consume("import");consume("foreign");consume("stdffi");consume(".");
+      item.kernel=ident();
+      if(item.kernel.size()>4096)throw Error(item.where,"stdffi kernel name exceeds 4096 bytes");
+      item.alias=accept("as")?ident():item.kernel;
+      consume(";");
+      u.foreign_imports.push_back(std::move(item));
+      check_import_count();
+      continue;
+     }
+     const bool unsafe_kernel=unsafe_import&&peek(2).text=="kernel";
+     if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
+        target_follows)){
+     KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_kernel;
+     if(unsafe_kernel)consume("unsafe");
+     consume("import");consume("kernel");
+     if(accept("[")){consume("dynlib");consume("]");item.dynlib=true;}
+     item.module=module_name();
      if(item.module.size()>4096)throw Error(item.where,"kernel module name exceeds 4096 bytes");
      if(accept("as"))item.alias=ident();
      else item.alias=item.module.substr(item.module.rfind('.')+1);
      consume(";");
      u.kernel_imports.push_back(std::move(item));
-     if(u.kernel_imports.size()+u.module_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
+     check_import_count();
      continue;
     }
     if(at("import")||at("from")){
@@ -1653,7 +1665,7 @@ class Parser {
        u.module_imports.push_back(std::move(item));
       }while(accept(","));
      }
-     if(u.module_imports.size()+u.kernel_imports.size()>1024)throw Error(peek().where,"import count limit exceeded");
+     check_import_count();
      consume(";");continue;
    }
      Function f;f.where=peek().where;
@@ -1679,7 +1691,12 @@ class Parser {
 Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled){return Parser(ts,enabled).parse();}
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& ts){return Parser(ts,{}).interface();}
 void require_no_kernel_imports(const Unit& unit){
- if(unit.kernel_imports.empty())return;
+ if(unit.kernel_imports.empty()){
+  if(!unit.foreign_imports.empty())
+   throw Error(unit.foreign_imports.front().where,
+               "portable stdffi imports require source-module loading","ON1X-STDFFI-UNRESOLVED");
+  return;
+ }
  const auto& request=unit.kernel_imports.front();
  const char* code=request.is_unsafe?"ON1X-KERNEL-UNSAFE-UNSUPPORTED":"ON1X-KERNEL-NOT-ADMITTED";
  throw Error(request.where,std::string(code)+": "+request.module+

@@ -50,30 +50,19 @@ assert data == inspect(entry)
 assert {s['file_hex']: s['sha256'] for s in data['sources']} == {
     os.fsencode(path.resolve()).hex(): hashlib.sha256(path.read_bytes()).hexdigest() for path in (sub, entry)}
 
-# The new spelling is normalized before inspection or native resolution.
-foreign = t.source('stdffi', '''unsafe import foreign stdffi.ipc_framed as Framed;
-import foreign stdffi.clamp;
-fn main(){}
-''')
-assert inspect(foreign)['requests'] == [
-    request(foreign, 1, 0, 'mulib.ipc_framed', 'Framed', True),
-    request(foreign, 2, len(foreign.read_bytes().splitlines(keepends=True)[0]), 'mulib.clamp', 'clamp'),
-]
-
 # An unsafe alias in the same unit cannot make resources visible via a safe
-# alias, including as types, even in either review staging profile.
-raw = 'unsafe import foreign stdffi.ipc_framed as Raw;\n'
-for prefix in ('import foreign stdffi.ipc_framed', 'import kernel mulib.ipc_framed'):
-    path = t.source('safe_resource', raw+prefix+''' as Safe;
+# alias, including as types, even in review staging.
+raw = 'unsafe import kernel mulib.ipc_framed as Raw;\n'
+path = t.source('safe_resource', raw+'''import kernel mulib.ipc_framed as Safe;
 fn use_type(s:own<Safe.Session>){drop(s);}
 fn main(){unsafe { Safe.open_session(); }}
 ''')
-    for flags in ([], ['--kernel-c11'], ['--kernel-c11', '--kernel-stage'], ['--kernel-c11', '--ffi-stage']):
-        p = run([t.compiler, '--no-prelude', '--emit-c', *flags, path])
-        assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and 'unsafe-only' in p.stderr and not p.stdout, p
-    path = t.source('safe_resource', prefix+' as Safe;\nfn main(){}')
-    p = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', path])
-    assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and not p.stdout, p
+for flags in ([], ['--kernel-c11'], ['--kernel-c11', '--kernel-stage']):
+    p = run([t.compiler, '--no-prelude', '--emit-c', *flags, path])
+    assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and 'unsafe-only' in p.stderr and not p.stdout, p
+path = t.source('safe_resource', 'import kernel mulib.ipc_framed as Safe;\nfn main(){}')
+p = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', path])
+assert p.returncode == 1 and 'ON1X-KERNEL-NOT-ADMITTED' in p.stderr and not p.stdout, p
 
 for name, text, flags, diagnostic in (
     ('raw_available', raw+'''fn main(){
@@ -84,9 +73,8 @@ for name, text, flags, diagnostic in (
      [], 'on1x_kernel_ipc_v1_open_session'),
     ('raw_context', raw+'fn main(){ Raw.open_session(); }', [], 'ON1X-KERNEL-CONTEXT'),
     ('raw_member', raw+'fn main(){ unsafe { Raw.init(); } }', [], 'no ABI-verified export'),
-    ('raw_generated', raw+'fn main(){}', ['--ffi-stage'], 'no generated or dynlib resource ABI'),
-    ('raw_dynlib', 'unsafe import kernel[dynlib] mulib.ipc_framed;\nfn main(){}', [], 'no generated or dynlib resource ABI'),
-    ('raw_json', 'unsafe import foreign stdffi.json;\nfn main(){}', [], 'no ABI-verified unsafe import support'),
+    ('raw_dynlib', 'unsafe import kernel[dynlib] mulib.ipc_framed;\nfn main(){}', [], 'requires the static KernelBind adapter'),
+    ('raw_json', 'unsafe import kernel mulib.json;\nfn main(){}', [], 'no ABI-verified unsafe import support'),
 ):
     path = t.source(name, text)
     p = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', *flags, path])
@@ -119,12 +107,7 @@ for name, text, diagnostic in (
     ('traversal_safe', 'import kernel ../quote;', 'expected identifier'),
     ('traversal', 'unsafe import kernel ../quote;', 'expected identifier'),
     ('unsafe_relative', 'unsafe import kernel mulib../quote;', "expected ';'"),
-    ('foreign_namespace', 'unsafe import foreign mulib.clamp;', "expected 'stdffi'"),
-    ('foreign_quoted', 'unsafe import foreign stdffi."clamp";', 'expected identifier'),
-    ('foreign_extra_component', 'import foreign stdffi.mulib.clamp;', "expected ';'"),
     ('duplicate', 'import kernel mulib.json as J; import kernel mulib.json as J;', 'conflicting kernel import alias: J'),
-    ('duplicate_foreign', 'unsafe import foreign stdffi.json as J; import kernel mulib.json as J;',
-     'conflicting kernel import alias: J'),
     ('ordinary_alias', 'import child as J; import kernel mulib.json as J;', 'conflicting kernel import alias: J'),
     ('function_alias', 'import kernel mulib.json as J; fn J(){}', 'conflicting kernel import alias: J'),
     ('limitations', ''.join(f'import kernel mulib.json as J{i};\n' for i in range(1025)), 'import count limit'),
@@ -175,7 +158,7 @@ assert p.returncode == 1 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr and no
 p = run([t.compiler, '--emit-c', '--kernel-c11', clamp])
 assert p.returncode == 0 and 'unsafe_foreign: mulib_clamp_add_i64' in p.stdout, p
 assert '#include <mulib-clamp.h>' in p.stdout and '_Generic(&mulib_clamp_add_i64' in p.stdout
-assert '_Generic(&mulib_clamp_i64, long (*)(long, long, long)' in p.stdout
+assert '_Generic(&mulib_clamp_i64, int64_t (*)(int64_t, int64_t, int64_t)' in p.stdout
 assert 'extern int64_t mulib_clamp' not in p.stdout
 
 for name, source, diagnostic in (

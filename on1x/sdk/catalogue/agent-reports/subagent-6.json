@@ -6,8 +6,8 @@
   "baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "overall_status": "PARTIAL",
-  "summary": "Read-only inspection of compiler-owned FFIHandler v2 descriptors; existing CDecl, structured host admission and checked one-TU CDD surfaces remain compatible. Independent On1xRT ABI 1 supports statically linked AOT and opt-in host-authorized native loading on Linux/glibc. SDK inspection never admits an import or authorizes an artifact.",
-  "ffi_followup": {
+  "summary": "The retired descriptor lookup preserves its SDK ABI and returns UNSUPPORTED. Existing CDecl, structured host admission and checked one-TU CDD surfaces remain separate. Independent On1xRT ABI 1 supports statically linked AOT and opt-in host-authorized native loading on Linux/glibc.",
+  "historical_ffi_followup": {
     "captured": "2026-11-24",
     "branch": "ffi/sdk-followup",
     "base_revision": "97ad6809",
@@ -42,9 +42,9 @@
   "facilities": [
     {
       "id": "ffi.canonical-descriptor-inspection",
-      "status": "EXECUTABLE",
+      "status": "UNSUPPORTED",
       "public_headers": ["On1xSDK-FFIDescriptor.h"],
-      "subset": "Target-explicit, bounded read-only scalar descriptor lookup by exact module/member or descriptor SHA-256 ID. Optional pin matches the same descriptor; fields borrow immutable compiler registry bytes through On1x::SDK. Legacy seed-only entries and unsupported shapes are not exposed.",
+      "subset": "ABI compatibility only. Valid queries return ON1X_SDK_UNSUPPORTED after clearing the known output fields.",
       "blockers": [
         "Does not inspect the entire discovery catalogue, grant a capability, verify a native artifact, or publish checked HIR or an admitted import."
       ]
@@ -337,12 +337,12 @@
       "owner": "principal",
       "required_api": "Add the new structured FFI headers to the principal-owned On1xSDK.h umbrella and merge this report into CAPABILITY_MATRIX.json and IMPLEMENTATION_INVENTORY.json.",
       "reason": "Workers cannot edit the umbrella or shared capability records. Direct independent headers, On1x::SDK, and the separately packaged On1x::RT target are executable now.",
-      "proposed_signature": "Include On1xSDK-FFIDescriptor.h in On1xSDK.h and list ffi.canonical-descriptor-inspection as inspection-only. Preserve Integration2's installed compiler support archive and Integration6; no new SDK registry target."
+      "proposed_signature": "Preserve On1xSDK-FFIDescriptor.h for SDK ABI compatibility. The retired v2 registry has no lookup provider."
     },
     {
       "owner": "W10/principal",
       "required_api": "Production module build mode with a true no-entry direct-C11 checked source TU, explicit provider, exact static-archive or final DSO identity, and separately authorized review for a safe embedding subject.",
-      "reason": "The test fixture reuses the current planner but does not create a production review or deployable publication. Application executable authorization is not reusable for linked or dynamic ABI 1 modules.",
+      "reason": "The retired descriptor fixture did not create a production review or deployable publication. Application executable authorization is not reusable for linked or dynamic ABI 1 modules.",
       "proposed_signature": "An explicit module artifact kind in the canonical driver, with selected target/provider/entry shim, the same planner and executed ABI probe, exact link inputs and final artifact binding. No implicit profile switch in the runtime."
     }
   ]

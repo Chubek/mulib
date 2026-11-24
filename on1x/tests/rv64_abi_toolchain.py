@@ -1,13 +1,9 @@
-"""Static RV64IM LP64 FFI toolchain. No system sysroot or ABI fallback."""
+"""Explicit static RV64IM LP64 toolchain for the independent native ABI witness."""
 
 from pathlib import Path
 import struct
 
 
-TARGET = ['riscv64-linux-gnu', 'LP64', 'LP64', 'lp64']
-PACKAGE = 'RISCV64IM'
-BANK = 'rv64im'
-PROBE = 'on1x-ffi-rv64-lp64-probe'
 PREPROCESSOR_ABI = (
     'defined(__linux__) && defined(__riscv) && __riscv_xlen == 64 && '
     'defined(__riscv_mul) && defined(__LP64__) && defined(__riscv_float_abi_soft) && '

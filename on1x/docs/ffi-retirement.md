@@ -1,10 +1,10 @@
 # On1x FFI retirement manifest
 
-**Status: audit only; nothing here authorizes deletion.** Inventory baseline:
+**Historical audit, not a guide to the current compiler.** For current workflows
+see [foreign interface migration](ffi-migration.md). Inventory baseline:
 MuLIB `d890abb6e024091b776050964d25ed0f117c4a14`; its LibStone gitlink is
 `e10ac69eed7baf91b06d15c4e0d58360097cb5c4`. A gitlink is not a populated
-checkout or evidence that a tool was run. See [the migration directive](../MIGRATION_OF_FFI.md)
-for gates and [the user guide](ffi-migration.md) for current instructions.
+checkout or evidence that a tool was run.
 
 Retire an item only after its owner hands off the necessary behavior and W11
 independently qualifies old/new parity on the integration revision. The

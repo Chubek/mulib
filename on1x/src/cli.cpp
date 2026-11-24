@@ -6,13 +6,12 @@
 #include <on1x/discovery.hpp>
 #include <on1x/formatter.hpp>
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/mir_directives.hpp>
+#include <on1x/backend/mir_c11.hpp>
 #include <on1x/backend/vm.hpp>
 #include <on1x/backend/passes.hpp>
-#include <on1x/ffi.hpp>
-#include "../hir/FFIHandler/lower.hpp"
 #include "../hir/MEMGraph/resources.hpp"
 #include "../hir/MEMGraph/storage.hpp"
-#include <on1x/ffi_taint.hpp>
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -44,7 +43,6 @@
 #include <cstdio>
 #include <fstream>
 #include <filesystem>
-#include <iomanip>
 #include <set>
 #include <map>
 #include <iostream>
@@ -399,7 +397,7 @@ std::string read_ir(const std::string& name){
   }
  }
 }
-int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization,const VmSourcePrefixes& prefixes,std::optional<std::size_t> stack_bytes){
+int mir_output(const on1x::mir::Module& input,const std::string& mode,const std::string& out,std::size_t analysis_work,const on1x::mir::passes::Options* optimization,const VmSourcePrefixes& prefixes,std::optional<std::size_t> stack_bytes,std::string_view target){
  std::optional<on1x::mir::passes::Result> optimized;
  if(optimization){
   optimized=on1x::mir::passes::run(input,*optimization);
@@ -408,13 +406,16 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
  }
  if(mode=="--dump-passes"){write_all(out,on1x::mir::passes::report(*optimized));return 0;}
   const auto& module=optimized?optimized->module():input;
-  if(mode=="--emit-ir-c"&&stack_bytes){
-   write_all(out,on1x::mir::emit_c(module,stack_bytes));return 0;
+   if(mode=="--emit-ir-c"&&stack_bytes){
+    write_all(out,on1x::mir::emit_directed_c(module,stack_bytes,target,optimization!=nullptr));return 0;
   }
   if(mode=="--emit-vm"||mode=="--run-vm"){
    auto image=[&]{
-    if(prefixes.empty())return on1x::vm::compile(module);
-    auto portable=module;vm_source_paths(portable,prefixes);return on1x::vm::compile(portable);
+     if(prefixes.empty()&&module.version!=on1x::mir::directive_format_version)
+      return on1x::vm::compile(module);
+     auto selected=module.version==on1x::mir::directive_format_version
+      ?on1x::mir::specialize(module,"mir-vm",{},optimization!=nullptr):module;
+     vm_source_paths(selected,prefixes);return on1x::vm::compile(selected);
    }();
    if(mode=="--emit-vm"){
     if(out.empty()||out=="-")write_all(out,image);
@@ -440,99 +441,31 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
 #ifdef ON1X_WITH_EXTENSION_SDK
   const char *backend=mode=="--run-ir"?"mir-eval":mode=="--emit-ir"?"mir-text":
                       mode=="--ir-cfg"?"mir-cfg":"mir-c11";
-  auto result=on1x::backends::run_mir(module,backend);
+   auto result=on1x::backends::run_mir(module,backend,target,optimization!=nullptr);
   write_all(out,result.bytes);
   if(!result.diagnostic.empty())std::cerr<<result.diagnostic;
   return result.exit_code;
 #else
-   if(mode=="--run-ir"){
+    if(mode=="--run-ir"){
    for(const auto& f:module.functions)if(f.name=="main"&&(!f.blocks.front().parameters.empty()||(f.result!=on1x::Type::I64&&f.result!=on1x::Type::Void)))
     throw on1x::Error(f.where,"ON1X-MIR-EVAL: main must have no parameters and return i64 or void");
-  auto result=on1x::mir::evaluate(module);write_all(out,result.output);
+   auto result=module.version==on1x::mir::directive_format_version
+    ?on1x::mir::evaluate(on1x::mir::specialize(module,"mir-eval",{},optimization!=nullptr))
+    :on1x::mir::evaluate(module);
+   write_all(out,result.output);
   if(result.status!=on1x::mir::Status::Returned){
     std::cerr<<terminal_text(result.where.file)<<":"<<result.where.line<<":"<<result.where.column<<": ON1X-MIR-EVAL: "<<terminal_text(result.diagnostic)<<"\n";
    return result.status==on1x::mir::Status::Trapped?70:75;
   }
   return static_cast<int>(result.value);
  }
-  write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
+   if(mode=="--ir-cfg"&&module.version==on1x::mir::directive_format_version)
+    write_all(out,on1x::mir::cfg_dot(on1x::mir::specialize(module,"mir-cfg",{},optimization!=nullptr)));
+   else write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_directed_c(module,stack_bytes,target,optimization!=nullptr));
+   return 0;
 #endif
 }
- std::vector<const on1x::ffi::Descriptor*> selected_ffi(const on1x::KernelImportRequests& inspected){
-  std::set<std::string_view> modules;
-  for(const auto& request:inspected.requests)modules.insert(request.module);
-  std::vector<const on1x::ffi::Descriptor*> selected;
-  for(const auto& item:on1x::ffi::foreign_descriptors()){
-   if(item.schema_version!=2||!modules.contains(item.module))continue;
-   if(selected.size()==2048)throw std::runtime_error("FFI native descriptor limit exceeded");
-   selected.push_back(&item);
-  }
-  return selected;
- }
- std::string_view ffi_surface(on1x::ffi::SurfaceKind kind){
-  using on1x::ffi::SurfaceKind;
-  switch(kind){
-   case SurfaceKind::Void:return "void";
-   case SurfaceKind::I64:return "i64";
-   case SurfaceKind::U8:return "u8";
-   case SurfaceKind::U16:return "u16";
-   case SurfaceKind::U32:return "u32";
-   case SurfaceKind::U64:return "u64";
-   case SurfaceKind::F32:return "f32";
-   case SurfaceKind::F64:return "f64";
-   case SurfaceKind::Bool:return "bool";
-  }
-  throw std::runtime_error("FFI invalid surface kind");
- }
- void ffi_native_type(std::ostream& out,const on1x::ffi::NativeType& item){
-  using on1x::ffi::NativeKind;
-  switch(item.kind){
-   case NativeKind::Void:out<<"[\"void\"]";return;
-   case NativeKind::Integer:
-    out<<"[\"integer\","<<std::quoted(item.identity)<<','<<item.rank<<','<<item.bits<<','
-       <<std::quoted(item.is_signed?"signed":"unsigned")<<','<<item.size<<','<<item.alignment<<']';return;
-   case NativeKind::Real:
-    out<<"[\"real\","<<std::quoted(item.identity)<<','<<std::quoted(item.format)<<','<<item.bits
-       <<','<<item.size<<','<<item.alignment<<']';return;
-  }
-  throw std::runtime_error("FFI rich types have no qualified native build protocol");
- }
- void ffi_descriptor(std::ostream& out,const on1x::ffi::Descriptor& d){
-  if(d.effect!=on1x::ffi::Effect::Unknown)throw std::runtime_error("FFI unsupported native effect");
-  const auto& t=d.target;
-  out<<"{\"id\":"<<std::quoted(d.id.sha256)<<",\"module\":"<<std::quoted(d.module)
-     <<",\"provider\":"<<std::quoted(d.provider)<<",\"header\":"<<std::quoted(d.header)
-     <<",\"member\":"<<std::quoted(d.member)<<",\"symbol\":"<<std::quoted(d.symbol)
-     <<",\"wrapper\":"<<std::quoted(on1x::ffi::c11::linked_name(d))
-     <<",\"target\":["<<std::quoted(t.triple)<<','<<std::quoted(t.data_model)<<','
-     <<std::quoted(t.abi)<<','<<std::quoted(t.calling_convention)<<']'
-     <<",\"linkage\":"<<std::quoted(d.placement==on1x::ffi::Placement::External?"external":"internal")
-     <<",\"definition\":"<<std::quoted(d.definition)<<",\"native_parameters\":[";
-  bool first=true;
-  for(const auto& p:d.parameters){
-   if(!first)out<<',';
-   first=false;
-   ffi_native_type(out,p.native);
-  }
-  out<<"],\"native_result\":";
-  ffi_native_type(out,d.native_result);
-  out<<",\"native_fingerprint\":"<<std::quoted(d.native_fingerprint)<<",\"surface_parameters\":[";
-  first=true;
-  for(const auto& p:d.parameters){
-   if(!first)out<<',';
-   first=false;
-   out<<std::quoted(ffi_surface(p.surface));
-  }
-  out<<"],\"surface_result\":"<<std::quoted(ffi_surface(d.surface_result))<<",\"guards\":[";
-  first=true;
-  for(const auto& guard:d.plan.guards){
-   if(!first)out<<',';
-   first=false;
-   out<<'['<<static_cast<unsigned>(guard.lhs)<<','<<static_cast<unsigned>(guard.rhs)<<']';
-  }
-  out<<"],\"effect\":\"unknown\"}";
- }
- std::string kernel_requests(const on1x::KernelImportRequests& inspected,bool ffi=false){
+std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  // Filesystem paths need not be UTF-8. Retain exact bytes without emitting
  // malformed JSON; module and alias spellings are scanner identifiers.
  auto path_hex=[](const std::string& file){
@@ -541,7 +474,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
   for(unsigned char c:file){out+=hex[c>>4];out+=hex[c&15];}return out;
  };
  std::ostringstream out;
-  out<<"{\"schema\":\""<<(ffi?"on1x.ffi-imports/v1":"on1x.kernel-requests/v1")<<"\",\"sources\":[";
+ out<<"{\"schema\":\"on1x.kernel-requests/v1\",\"sources\":[";
  bool first=true;
  for(const auto& [file,digest]:inspected.source_digests){
   if(!first)out<<',';
@@ -555,17 +488,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
     <<",\"module\":\""<<item.module<<"\",\"alias\":\""<<item.alias<<"\",\"unsafe\":"
     <<(item.is_unsafe?"true":"false")<<(item.dynlib?",\"linkage\":\"dynlib\"":"")<<"}";
  }
-  out<<']';
-  if(ffi){
-   out<<",\"descriptors\":[";first=true;
-   for(const auto* d:selected_ffi(inspected)){
-    if(!first)out<<',';
-    first=false;
-    ffi_descriptor(out,*d);
-   }
-   out<<']';
-  }
-  out<<"}\n";
+ out<<"]}\n";
  return out.str();
 }
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
@@ -585,9 +508,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --list-extensions | --explain-extension NAME\n"
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
    "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
-   "       on1xc --ffi-imports INPUT [-o OUTPUT] (requests and matching immutable descriptors; not admission)\n"
-   "       [--ffi-taint reject|allow] (discovery diagnostic only; default reject)\n"
-   "       on1xc --ffi-adapter --ffi-id HEX INPUT [-o OUTPUT] (staged binding C, not admission)\n"
     "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
     "       on1xc --emit-c --kernel-c11 --kernel-stage INPUT (unresolved kernel callers; NOT admission)\n"
    "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
@@ -616,7 +536,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #endif
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
-   "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
+    "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
+    "       [--mir-target TRIPLE] (select target-specific directives for --emit-ir-c)\n"
    "       [--opt-profile default|debug|release] [--enable-opt NAME] [--disable-opt NAME]\n"
    "       on1xc --list-optimizations (JSON; accepts profile and selection flags)\n"
    "         --profile aliases --opt-profile; --all-optimizations / --no-optimizations select all\n"
@@ -699,11 +620,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
    }
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
-         std::string ffi_id;
           std::string archvirt_mode;
           bool archvirt_uncached=false;
           bool archvirt_standalone=false;
-          std::string sdk_mode,sdk_name,sdk_target;
+           std::string sdk_mode,sdk_name,sdk_target,mir_target;
           bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
          bool explicit_c=false;
@@ -724,7 +644,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        on1x::analysis::Options scrutiny;
        [[maybe_unused]] bool scrutiny_option=false;
        bool scrutiny_work_invalid=false;
-       bool ffi_taint_seen=false;
        bool color_option=false;
        std::string diagnostic_catalog_file;
       bool memory=false;
@@ -772,13 +691,14 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         }
          if(arg=="--native-pic"){native_pic=true;continue;}
          if(arg=="--native-no-entry"){native_no_entry=true;continue;}
-         if(arg=="--sdk-target"){
-          if(!sdk_target.empty()||++i>=argc||!argv[i][0])
-           throw std::runtime_error("--sdk-target requires one nonempty target triple");
-          sdk_target=argv[i];
-          if(sdk_target.size()>256||sdk_target.find_first_not_of(
-             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")!=std::string::npos)
-           throw std::runtime_error("invalid --sdk-target triple");
+          if(arg=="--sdk-target"||arg=="--mir-target"){
+           auto& target=arg=="--sdk-target"?sdk_target:mir_target;
+           if(!target.empty()||++i>=argc||!argv[i][0]||argv[i][0]=='-')
+            throw std::runtime_error(arg+" requires one nonempty target triple");
+           target=argv[i];
+           if(target.size()>256||target.find_first_not_of(
+              "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-")!=std::string::npos)
+            throw std::runtime_error("invalid "+arg+" triple");
           continue;
          }
          if(arg=="--plugin"){
@@ -850,19 +770,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       if(arg=="--no-analysis-repairs"){scrutiny.repairs=false;scrutiny_option=true;continue;}
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
-       if(arg=="--ffi-taint"){
-        if(ffi_taint_seen||++i>=argc)throw std::runtime_error("--ffi-taint requires one reject|allow policy");
-        const std::string_view policy=argv[i];
-        if(policy!="reject"&&policy!="allow")throw std::runtime_error("--ffi-taint requires reject or allow");
-        loader.allow_ffi_taint=policy=="allow";
-        ffi_taint_seen=true;continue;
-       }
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-        if(arg=="--ffi-stage"){loader.ffi_stage=true;continue;}
-       if(arg=="--ffi-id"){
-        if(++i==argc||!ffi_id.empty())throw std::runtime_error("--ffi-id requires one descriptor ID");
-        ffi_id=argv[i];continue;
-       }
         if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
@@ -907,7 +815,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      cephyr_target=argv[i];continue;
     }
      if(arg=="--check-types"){mode=arg;continue;}
-     if(arg=="--emit-category-plan"||arg=="--kernel-imports"||arg=="--ffi-imports"||arg=="--ffi-adapter"){mode=arg;continue;}
+     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
        if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
         mode=arg;explicit_c=explicit_c||arg=="--emit-c";
       }
@@ -1020,7 +928,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          if(dump_memgraph&&!on1x::memgraph::available())
           throw std::runtime_error("MEMGraph unavailable: configure with ON1X_WITH_MEMGRAPH=ON and LibStone LLSynth");
          const auto policy=requested_opts.resolve(legacy_optimize||mode=="--dump-passes",dump_memgraph);
-       if(list_opts){
+        if(!mir_target.empty()&&mode!="--emit-ir-c")
+         throw std::runtime_error("--mir-target requires --emit-ir-c");
+        if(list_opts){
         if(mode!="--emit-c"||explicit_c||!source.empty()||!sdk_mode.empty()||ir_input||opt_limit||
            !sdk_target.empty()||native_pic||native_no_entry||!plugin_selectors.empty()||
             memory||type_safety||!loader.interfaces.empty()||analysis_limit||
@@ -1036,7 +946,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
           mode!="--print-stdlib"&&mode!="--stdlib-resource";
          if(!resource_policy.empty()&&(!checked_source||mode=="--check-interfaces"||
-            mode=="--repair"||mode=="--ffi-imports"||mode=="--ffi-adapter"))
+            mode=="--repair"))
           throw std::runtime_error("--memgraph-resources requires checked On1x source");
          if(scratch_stack_bytes&&((mode!="--emit-c"&&mode!="--emit-ir-c")||
             !sdk_mode.empty()||!archvirt_mode.empty()||cephyr_object))
@@ -1168,7 +1078,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         auto result=sdk_target.empty()
          ?on1x::sdk_driver::run(module,source,sdk_name,emit,diagnostic_registry,plugin_selectors)
          :on1x::sdk_driver::run_native(module,source,sdk_name,sdk_target,diagnostic_registry,plugin_selectors,
-            {.pic=native_pic,.emit_c_entrypoint=!native_no_entry});
+             {.pic=native_pic,.emit_c_entrypoint=!native_no_entry,.speculate=optimize});
        publish_diagnostics();
        if(result.exit_code!=0)return result.exit_code;
        if(emit){
@@ -1180,8 +1090,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       };
 #endif
        if(loader.kernel_stage&&!loader.kernel_c11)throw std::runtime_error("--kernel-stage requires --kernel-c11");
-       if(loader.ffi_stage&&(!loader.kernel_c11||loader.kernel_stage))
-        throw std::runtime_error("--ffi-stage requires --kernel-c11 and excludes --kernel-stage");
        if(loader.kernel_c11){
         if(mode!="--emit-c"||!sdk_mode.empty()||ir_input||memory||type_safety||!ppx.programs.empty()||!ppx.schemas.empty()||
           ppx.allow_source||!loader.extensions.enabled.empty())
@@ -1201,32 +1109,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_EXTENSION_SDK
        if(!sdk_mode.empty())return sdk_output(module);
 #endif
-        return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes);
+         return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes,mir_target);
     }
-    const bool ffi_inspect=mode=="--ffi-imports"||mode=="--ffi-adapter";
-    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||ffi_inspect)&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
-    if((mode=="--ffi-adapter")!=(!ffi_id.empty()))throw std::runtime_error("--ffi-id is required only with --ffi-adapter");
-    if(mode=="--kernel-imports"||ffi_inspect){
-     const auto inspected=on1x::inspect_kernel_imports(source,loader);
-     if(mode=="--ffi-adapter"){
-      for(const auto* d:selected_ffi(inspected)){
-        if(d->id.sha256==ffi_id&&d->target.triple==loader.foreign_target){
-        write_all(out,on1x::ffi::c11::linked_scalar_tu(std::span(&d,1)));return 0;
-       }
-      }
-      throw std::runtime_error("FFI adapter ID is not selected for this target");
-     }
-     if(ffi_inspect&&!loader.allow_ffi_taint) {
-      std::set<std::string_view> represented;
-      for(const auto* d:selected_ffi(inspected)) represented.insert(d->module);
-      for(const auto& request:inspected.requests) {
-       if(represented.contains(request.module))continue;
-       if(const auto* observation=on1x::ffi::find_taint(request.module))
-        throw on1x::Error(request.where,"ON1X-FFI-TAINT: "+request.module+"."+
-                         std::string(observation->member)+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
-      }
-     }
-     write_all(out,kernel_requests(inspected,ffi_inspect));return 0;
+   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if(mode=="--kernel-imports"){
+    write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
    }
    if(mode=="--tokens"){
     auto tokens=on1x::scan(on1x::read_source_file(source),source);
@@ -1333,7 +1220,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_EXTENSION_SDK
         if(!sdk_mode.empty())return sdk_output(module);
 #endif
-         auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes);
+          auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes,mir_target);
        publish_diagnostics();return result;
       }
    if(mode=="--types"){
@@ -1385,7 +1272,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      std::string bounds_report;
       on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
-      c11_options.foreign_driver_staging=loader.ffi_stage;
       c11_options.memgraph_stack_bytes=scratch_stack_bytes;
      c11_options.allow_stackless_timers=!cephyr_object&&archvirt_mode.empty();
      if(!archvirt_mode.empty()&&!vm_prefixes.empty())c11_options.source_prefixes=&vm_prefixes;

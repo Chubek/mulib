@@ -1,6 +1,5 @@
 #include <on1x/infer.hpp>
 #include <on1x/clone.hpp>
-#include <on1x/ffi_hir.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/primitives.hpp>
@@ -1313,7 +1312,7 @@ class Inference {
     if(found!=globals.end())direct_function=found->second.definition;
    }
    auto policy=[&](std::size_t i){
-    return direct_function?ffi::argument_policy(*direct_function,i):ffi::ArgumentPolicy{};
+    return direct_function?kernel_argument_policy(*direct_function,i):KernelArgumentPolicy{};
    };
     for(std::size_t i=0;i<e.children.size();++i){
      const auto borrow=direct_function&&i<direct_function->params.size()?
@@ -1332,7 +1331,7 @@ class Inference {
       if(nodes[target].kind==Type::Function&&
          i<nodes[target].parameters.size())
        unify(referent,nodes[target].parameters[i],e.children[i]->where);
-     }else if(policy(i).mode==ffi::ArgumentPolicy::Mode::BoundedSlice)
+     }else if(policy(i).mode==KernelArgumentPolicy::Mode::BoundedSlice)
      args.push_back(expression(*e.children[i]));
     else if(!intrinsic&&nodes[target].kind==Type::Function&&
             i<nodes[target].parameters.size())
@@ -1350,7 +1349,7 @@ class Inference {
    for(std::size_t i=0;i<args.size();++i){
     const auto& where=e.children[i]->where;
     const auto argument=policy(i);
-    if(argument.mode==ffi::ArgumentPolicy::Mode::BoundedSlice){
+    if(argument.mode==KernelArgumentPolicy::Mode::BoundedSlice){
      auto actual=head(args[i],where);
      if(nodes[actual].kind!=Type::Slice||nodes[actual].extent>argument.max_extent)
       fail(where,"KernelBind requires a bounded slice<f64,N>");

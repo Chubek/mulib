@@ -10,6 +10,9 @@ enum class Placement { Stack, Heap };
 // Derived from verified, non-addressable MIR slots and their Load/Store
 // edges, not serialized placement claims or SSA type size alone.
 std::map<mir::Id, Placement> slot_placement(const mir::Function&, std::size_t stack_bytes);
+// Advisory projection for verified straight-line scratch lifetimes. Requires
+// both a read and write and no call or I/O between the slot's uses.
+bool has_local_scratch(const mir::Function&);
 std::string c11_scratch_layout();
 std::string c11_heap_cells(const std::string& name);
 }

@@ -4,12 +4,10 @@
 import argparse
 from pathlib import Path
 import subprocess
-import sys
 import tempfile
 
 ON1X = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ON1X / 'tools'))
-from on1x_ffi_rv64 import PREPROCESSOR_ABI, Toolchain, check_elf
+from rv64_abi_toolchain import PREPROCESSOR_ABI, Toolchain, check_elf
 
 
 def main():

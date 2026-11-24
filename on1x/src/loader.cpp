@@ -1,24 +1,13 @@
 #include <on1x/loader.hpp>
-#include <on1x/ffi_hir.hpp>
-#include <on1x/ffi_taint.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/stdffi.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <sstream>
 
 namespace on1x {
-namespace ffi {
-// Only the loader, after exact import, mode and target resolution, can mint
-// the HIR reference. Checkers, rewrites and wire readers may never mint one.
-class HirResolver {
-public:
- static HirForeign resolve(const Descriptor& descriptor,ForeignMode mode){
-  return HirForeign(descriptor,mode);
- }
-};
-}
 namespace {
 namespace fs=std::filesystem;
 struct Module;
@@ -41,7 +30,8 @@ struct Module {
  Names names;
  std::vector<Module*> quoted;
   std::vector<Module*> dependencies;
-  std::map<std::string,KernelImport> kernels;
+   std::map<std::string,KernelImport> kernels;
+   std::map<std::string,ForeignImport> foreigns;
  std::size_t id=0;
   bool active=true,legacy=false,implicit=false;
   std::optional<SharedKind> shared;
@@ -59,11 +49,10 @@ fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_
 // The sole compatibility profile with an executable resource ABI. Its
 // opaque owners and companion calls are never available to safe imports.
 constexpr std::string_view ipc_kernel_module="mulib.ipc_framed";
-constexpr std::string_view ipc_kernel_target="x86_64-linux-gnu";
 void require_kernel_import_policy(const KernelImport& request){
  if(request.module==ipc_kernel_module&&!request.is_unsafe)
   throw Error(request.where,"ON1X-KERNEL-NOT-ADMITTED: "+request.module+
-               " is unsafe-only; use unsafe import foreign stdffi.ipc_framed",
+               " is unsafe-only; use unsafe import kernel mulib.ipc_framed",
               "ON1X-KERNEL-NOT-ADMITTED");
 }
 
@@ -80,10 +69,12 @@ class Loader {
  std::size_t bytes=0,bindings=0,edges=0;
  bool implicit=false;
   KernelImportRequests* inspection;
-  const Module* kernel_scope=nullptr;
-  bool unsafe_context=false;
-  std::size_t kernel_requests=0;
-  std::map<std::string,Function> kernel_calls;
+   const Module* current_module=nullptr;
+   bool unsafe_context=false;
+   std::size_t kernel_requests=0;
+   std::map<std::string,Function> kernel_calls;
+   std::map<std::pair<std::string,std::string>,Function> foreign_functions;
+   std::set<std::string> foreign_function_names;
   static void append_parameters(Function& f,const std::vector<Type>& parameters){
    for(std::size_t i=0;i<parameters.size();++i){
     Param parameter;parameter.name="arg"+std::to_string(i);
@@ -92,60 +83,54 @@ class Loader {
    }
   }
   std::string kernel_type_prefix(bool history)const{return prefix+(history?"kernel_history_":"kernel_pricing_");}
-  Type kernel_result(bool history)const {
+    Type kernel_result(bool history)const {
    auto p=kernel_type_prefix(history);
    return Type::named(p+"Result",{Type::named(p+(history?"Forecast":"Decision")),Type::named(p+"Error")});
   }
-  bool kernel_reference(Expr& e,const Scope& values,bool direct){
-   if(!kernel_scope||e.kind!=Expr::Kind::Variable)return false;
-   const auto dot=e.text.find('.');
-   const auto alias=e.text.substr(0,dot);
-   auto found=kernel_scope->kernels.find(alias);
-   if(found==kernel_scope->kernels.end()||values.contains(alias))return false;
-   if(dot==std::string::npos||!direct){
-    throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
+   bool foreign_reference(Expr& e,const Scope& locals){
+    if(!current_module)return false;
+    const auto dot=e.text.find('.');
+    if(dot==std::string::npos)return false;
+    const auto alias=e.text.substr(0,dot);
+    const auto found=current_module->foreigns.find(alias);
+    if(found==current_module->foreigns.end()||locals.contains(alias))return false;
+    const auto& kernel=found->second.kernel;
+    auto key=std::make_pair(kernel,e.text.substr(dot+1));
+    auto function=foreign_functions.find(key);
+    if(function==foreign_functions.end()){
+     auto materialized=stdffi::materialize(kernel,key.second,e.where);
+     if(!materialized)
+      throw Error(e.where,"no portable stdffi export "+e.text,"ON1X-STDFFI-MEMBER");
+     // Internal identifiers are unspellable in source, and cannot designate a
+     // function from the disjoint native KernelBind namespace.
+     if(!materialized->name.starts_with("@stdffi_")||materialized->external||
+        !materialized->kernel_symbol.empty()||materialized->kernel_link_only||
+        materialized->prototype||materialized->body.empty()||
+        !foreign_function_names.insert(materialized->name).second)
+      throw Error(e.where,"invalid internal definition for stdffi export "+e.text,"ON1X-STDFFI-DEFINITION");
+     function=foreign_functions.emplace(std::move(key),std::move(*materialized)).first;
+    }
+    e.text=function->second.name;
+    return true;
    }
+   bool kernel_reference(Expr& e,const Scope& values,bool direct){
+    if(!current_module||e.kind!=Expr::Kind::Variable)return false;
+    const auto dot=e.text.find('.');
+    const auto alias=e.text.substr(0,dot);
+    auto found=current_module->kernels.find(alias);
+    if(found==current_module->kernels.end()||values.contains(alias))return false;
+    if(dot==std::string::npos||!direct){
+     throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
+    }
     const std::string_view member=std::string_view(e.text).substr(dot+1);
     const auto& request=found->second;
-     auto* descriptor=request.module==ipc_kernel_module?nullptr:ffi::find_descriptor(request.module,member);
-    if(descriptor&&descriptor->schema_version!=2)descriptor=nullptr;
-    // Keep the old reviewed driver/stub subject unchanged. The direct unsafe
-    // Calls through an unsafe alias keep their checked descriptor and lexical
-    // unsafe requirement even in a mixed legacy reviewed build.
-    const auto* scalar=!options.ffi_stage&&request.module==legacy_scalar_module&&
-     (!descriptor||(options.kernel_stage&&!request.is_unsafe))?ffi::find_member(request.module,member):nullptr;
-    if(scalar)descriptor=nullptr;
-    const auto symbol=scalar?scalar->symbol:
-     (options.ffi_stage?std::string_view{}:legacy_kernel_member(request.module,member));
-     if(!options.allow_ffi_taint) {
-      if(const auto* observation=ffi::find_taint(request.module,member))
-       throw Error(e.where,"ON1X-FFI-TAINT: "+e.text+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
-     }
-    if(!descriptor&&symbol.empty()){
+    const auto symbol=legacy_kernel_member(request.module,member);
+    if(symbol.empty()){
      throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
     }
     const bool unsafe=request.is_unsafe;
     if(unsafe&&!unsafe_context)
      throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
-    if(descriptor){
-     if(descriptor->target.triple!=options.foreign_target)
-      throw Error(e.where,"ON1X-FFI-TARGET: unsupported foreign target for "+e.text,"ON1X-FFI-TARGET");
-     const auto mode=unsafe?(options.ffi_stage?ffi::ForeignMode::UnsafeLinkOnly:ffi::ForeignMode::Unsafe):
-      ffi::ForeignMode::LinkOnly;
-     e.foreign=ffi::HirResolver::resolve(*descriptor,mode);
-     auto name=ffi::foreign_hir_name(e.foreign);
-     if(!kernel_calls.contains(name)){
-      Function f;f.name=name;f.where=e.where;f.external=true;f.foreign=e.foreign;
-      f.result=ffi::surface_type(descriptor->surface_result);
-      std::vector<Type> params;
-      for(const auto& parameter:descriptor->parameters)params.push_back(ffi::surface_type(parameter.surface));
-      append_parameters(f,params);
-      ffi::verify_foreign_declaration(f,options.foreign_target);
-      kernel_calls.emplace(name,std::move(f));
-     }
-     e.text=std::move(name);
-     return true;
-    }
     const bool history=history_kernel_symbol(symbol),pricing=pricing_kernel_symbol(symbol),ipc=ipc_kernel_symbol(symbol);
     auto name=(unsafe?"@kernel_":"@kernel_scalar_")+std::string(symbol);
     if(!kernel_calls.contains(name)){
@@ -154,7 +139,7 @@ class Loader {
      f.kernel_symbol=symbol;f.kernel_link_only=!unsafe;
      auto params=ipc?ipc_kernel_parameters(symbol):
         history?history_kernel_parameters(symbol):pricing?pricing_kernel_parameters(symbol,kernel_type_prefix(false)):
-       std::vector<Type>(scalar->arity,Type::I64);
+       std::vector<Type>(clamp_kernel_arity(symbol),Type::I64);
     append_parameters(f,params);
     kernel_calls.emplace(name,std::move(f));
    }
@@ -171,7 +156,7 @@ class Loader {
   if(!added&&it->second!=value)throw Error(at,"conflicting import or declaration: "+name);
   if(added)charge(at);
  }
- bool module_bound(const Names& names,const std::string& alias)const{
+  bool module_bound(const Names& names,const std::string& alias)const{
   for(const auto& [key,module]:names.modules){(void)module;if(key==alias||key.starts_with(alias+"."))return true;}
   return false;
  }
@@ -192,6 +177,10 @@ class Loader {
   if(regular(init))return init;
   if(directory(base))return base; // Namespace package, with no executable initializer.
    return {};
+  }
+  bool import_alias_conflicts(const Names& names,const std::string& alias)const{
+   return module_bound(names,alias)||names.values.contains(alias)||names.types.contains(alias)||
+          names.syntax.contains(alias)||names.cliches.contains(alias);
   }
    fs::path standard(const std::string& module,const Location& at){
     for(const auto& root:standard_roots){
@@ -272,7 +261,7 @@ class Loader {
       m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
       if(options.standalone_guest){
        const auto& u=m->unit;
-       if(!u.imports.empty()||!u.module_imports.empty()||!u.kernel_imports.empty()||
+        if(!u.imports.empty()||!u.module_imports.empty()||!u.kernel_imports.empty()||!u.foreign_imports.empty()||
           !u.ppx.empty()||!u.features.empty()||!u.extensions.empty())
         throw Error({path.string()},"standalone ArchVirt source cannot import or activate extensions");
        for(const auto& f:u.functions)
@@ -307,8 +296,8 @@ class Loader {
       }
       if(!inspection){
        for(const auto& request:m->unit.kernel_imports)require_kernel_import_policy(request);
-       if(!options.kernel_c11){
-        if(!m->unit.kernel_imports.empty()&&m->unit.kernel_imports.front().module==ipc_kernel_module)
+        if(!options.kernel_c11&&!m->unit.kernel_imports.empty()){
+         if(m->unit.kernel_imports.front().module==ipc_kernel_module)
          throw Error(m->unit.kernel_imports.front().where,
                      "ON1X-KERNEL-UNSAFE-UNSUPPORTED: mulib.ipc_framed requires the static KernelBind adapter (--kernel-bind)",
                      "ON1X-KERNEL-UNSAFE-UNSUPPORTED");
@@ -321,35 +310,17 @@ class Loader {
           !m->unit.cliche_implementations.empty()||!m->unit.inherent_implementations.empty())
         throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
        for(const auto& request:m->unit.kernel_imports){
-           // A scalar catalogue row cannot stand in for the checked resource
-           // ABI, even for an unsafe request. Use the exact companion profile.
-           if(request.module==ipc_kernel_module){
-            if(options.ffi_stage||request.dynlib)
-             throw Error(request.where,"ON1X-FFI-ABI: "+request.module+
-                          " has no generated or dynlib resource ABI; use the static KernelBind adapter",
-                         "ON1X-FFI-ABI");
-            if(options.foreign_target!=ipc_kernel_target)
-             throw Error(request.where,"ON1X-FFI-TARGET: unsupported resource target for "+request.module,
-                         "ON1X-FFI-TARGET");
-            continue;
-           }
-           const auto descriptors=ffi::foreign_descriptors();
-          const auto registered=std::find_if(descriptors.begin(),descriptors.end(),[&](const auto& descriptor){
-           return descriptor.schema_version==2&&descriptor.module==request.module;
-          });
-          if(registered!=descriptors.end()&&registered->target.triple!=options.foreign_target)
-           throw Error(request.where,"ON1X-FFI-TARGET: unsupported foreign target for "+request.module,"ON1X-FFI-TARGET");
-          const bool legacy=!options.ffi_stage&&(request.is_unsafe?
-            request.module==legacy_scalar_module:
-           options.kernel_stage&&(request.module==legacy_scalar_module||request.module=="mulib.histprice"||request.module=="mulib.priceopt"));
-          const bool supported=legacy||
-           (registered!=descriptors.end()&&(request.is_unsafe||options.kernel_stage||options.ffi_stage));
-         if(!supported){
-        if(!options.allow_ffi_taint&&registered==descriptors.end()){
-         if(const auto* observation=ffi::find_taint(request.module))
-          throw Error(request.where,"ON1X-FFI-TAINT: "+request.module+"."+
-                      std::string(observation->member)+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
+        if(request.module==ipc_kernel_module){
+         if(request.dynlib)
+          throw Error(request.where,"ON1X-KERNEL-ABI: framed transport requires the static KernelBind adapter","ON1X-KERNEL-ABI");
+#if !defined(__linux__) || !defined(__x86_64__) || !defined(__LP64__)
+         throw Error(request.where,"ON1X-KERNEL-ABI: framed transport requires native Linux x86-64 LP64","ON1X-KERNEL-ABI");
+#endif
+         continue;
         }
+        const bool supported=request.is_unsafe?request.module==legacy_scalar_module:
+         options.kernel_stage&&(request.module==legacy_scalar_module||request.module=="mulib.histprice"||request.module=="mulib.priceopt");
+        if(!supported){
         Unit denied;denied.kernel_imports.push_back(request);require_no_kernel_imports(denied);
        }
       }
@@ -415,19 +386,31 @@ class Loader {
     bind_module(m->names,alias,imported,imp.where);
    }
   }
-   if((inspection||options.kernel_c11)&&regular(path)){
-   std::set<std::string> aliases;
-   for(auto& request:m->unit.kernel_imports){
+   if(regular(path)){
+    std::set<std::string> aliases;
+    for(const auto& request:m->unit.kernel_imports){
+      if(++edges>16384||++kernel_requests>1024)
+      throw Error(request.where,"kernel import inspection limit exceeded");
+      if(!aliases.insert(request.alias).second||import_alias_conflicts(m->names,request.alias)){
+       throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
+      }
+      if(inspection)inspection->requests.push_back(request);
+      else m->kernels.emplace(request.alias,request);
+    }
+    for(const auto& request:m->unit.foreign_imports){
      if(++edges>16384||++kernel_requests>1024)
-     throw Error(request.where,"kernel import inspection limit exceeded");
-     if(!aliases.insert(request.alias).second||module_bound(m->names,request.alias)||
-       m->names.values.contains(request.alias)||m->names.types.contains(request.alias)||
-       m->names.syntax.contains(request.alias)||m->names.cliches.contains(request.alias)){
-      throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
+      throw Error(request.where,"foreign and kernel import count limit exceeded");
+     if(!aliases.insert(request.alias).second||import_alias_conflicts(m->names,request.alias))
+      throw Error(request.where,"conflicting stdffi import alias: "+request.alias,"ON1X-STDFFI-ALIAS");
+     // --kernel-imports describes only requests that may need native build
+     // inputs. Portable definitions neither require linking nor participate in
+     // that protocol; admission happens during ordinary source loading.
+     if(!inspection){
+      if(!stdffi::has_kernel(request.kernel))
+       throw Error(request.where,"no portable stdffi kernel stdffi."+request.kernel,"ON1X-STDFFI-KERNEL");
+      m->foreigns.emplace(request.alias,request);
      }
-     if(inspection)inspection->requests.push_back(std::move(request));
-     else m->kernels.emplace(request.alias,std::move(request));
-   }
+    }
     if(inspection)inspection->source_digests.merge(m->unit.source_digests);
   }
   stack.pop_back();m->active=false;order.push_back(m);return m;
@@ -443,11 +426,17 @@ class Loader {
  void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
   void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false){
   auto dot=text.find('.');auto first=text.substr(0,dot);
-  if(locals.contains(first)){
-   if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
-   return;
-  }
-   const auto& symbols=type?names.types:syntax?names.syntax:names.values;
+   if(locals.contains(first)){
+    if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
+    return;
+   }
+   if(current_module&&current_module->foreigns.contains(first)){
+    if(dot==std::string::npos&&!type&&!syntax)
+     throw Error(at,"stdffi module is not a first-class value: "+first,"ON1X-STDFFI-MEMBER");
+    throw Error(at,"no portable stdffi "+std::string(type?"type ":syntax?"syntax ":"export ")+text,
+                "ON1X-STDFFI-MEMBER");
+   }
+    const auto& symbols=type?names.types:syntax?names.syntax:names.values;
   if(auto it=symbols.find(text);it!=symbols.end()){text=name(it->second);return;}
   if(dot!=std::string::npos){
    // Longest bound prefix, followed by explicitly imported/re-exported modules.
@@ -463,10 +452,10 @@ class Loader {
       module=child->second;member=member.substr(split+1);descended=true;break;
      }
      if(!descended)break;
+     }
+     throw Error(at,"module has no export: "+text);
     }
-    throw Error(at,"module has no export: "+text);
-   }
-   throw Error(at,"unknown module qualifier: "+text);
+    throw Error(at,"unknown module qualifier: "+text);
   }
   if(names.modules.contains(text))throw Error(at,"module is not a first-class value: "+text);
    if(!type&&globals.contains(text)&&!is_intrinsic_name(text))throw Error(at,"name is not imported in this module: "+text);
@@ -538,8 +527,8 @@ class Loader {
     if(t.kind()==Type::Named){
      auto text=t.nominal();
      const auto dot=text.find('.');
-     auto found=kernel_scope?kernel_scope->kernels.find(text.substr(0,dot)):std::map<std::string,KernelImport>::const_iterator{};
-     if(dot!=std::string::npos&&kernel_scope&&found!=kernel_scope->kernels.end()){
+      auto found=current_module?current_module->kernels.find(text.substr(0,dot)):std::map<std::string,KernelImport>::const_iterator{};
+      if(dot!=std::string::npos&&current_module&&found!=current_module->kernels.end()){
       auto member=text.substr(dot+1);
       const bool history=found->second.module=="mulib.histprice", pricing=found->second.module=="mulib.priceopt";
          if(found->second.module==ipc_kernel_module&&member=="Result")text=ipc_kernel_result_name;
@@ -620,7 +609,9 @@ class Loader {
        e.result=Type::named(*nominal);e.children.clear();
       }
      }
-    if(e.kind==Expr::Kind::Variable){(void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);}
+     if(e.kind==Expr::Kind::Variable&&!foreign_reference(e,values)){
+      (void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);
+     }
    if(options.kernel_c11&&(e.kind==Expr::Kind::SyntaxLet||e.kind==Expr::Kind::MacroCall||
       e.kind==Expr::Kind::Quote||e.kind==Expr::Kind::Run||e.kind==Expr::Kind::Splice||e.kind==Expr::Kind::Lift))
     throw Error(e.where,"ON1X-KERNEL-PROFILE: staging and local syntax are outside this C11 profile","ON1X-KERNEL-PROFILE");
@@ -735,9 +726,6 @@ public:
       }
     }
  LoadedUnit run(const fs::path& input){
-   if(!inspection&&options.ffi_stage&&(!options.kernel_c11||options.kernel_stage))
-    throw Error({input.string()},"FFI staging requires the direct C11 profile and excludes legacy staging",
-                "ON1X-KERNEL-PROFILE");
    if(options.interfaces.size()>max_interface_files)
     throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
@@ -773,17 +761,19 @@ public:
    if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count);
    for(auto* m:order){
-    kernel_scope=m;
+     current_module=m;
     auto names=m->legacy?flat:m->names;
-     for(const auto& [alias,request]:m->kernels)if(module_bound(names,alias)||names.values.contains(alias)||
-      names.syntax.contains(alias)||names.types.contains(alias)||names.cliches.contains(alias))
-      throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");
-   for(auto it=preludes.rbegin();it!=preludes.rend();++it){
-    auto* prelude=*it;
-    for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!module_bound(names,key))insert(names.values,key,symbol,{m->path.string()});
-     for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!module_bound(names,key))insert(names.syntax,key,symbol,{m->path.string()});
-      for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!module_bound(names,key))insert(names.types,key,symbol,{m->path.string()});
-      for(const auto& [key,symbol]:prelude->names.cliches)if(!names.cliches.contains(key)&&!module_bound(names,key))insert(names.cliches,key,symbol,{m->path.string()});
+      for(const auto& [alias,request]:m->kernels)if(import_alias_conflicts(names,alias))
+       throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");
+      for(const auto& [alias,request]:m->foreigns)if(import_alias_conflicts(names,alias))
+       throw Error(request.where,"conflicting stdffi import alias: "+alias,"ON1X-STDFFI-ALIAS");
+    for(auto it=preludes.rbegin();it!=preludes.rend();++it){
+     auto* prelude=*it;
+     const auto bound=[&](const std::string& key){return module_bound(names,key)||m->foreigns.contains(key);};
+     for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!bound(key))insert(names.values,key,symbol,{m->path.string()});
+      for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!bound(key))insert(names.syntax,key,symbol,{m->path.string()});
+       for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!bound(key))insert(names.types,key,symbol,{m->path.string()});
+       for(const auto& [key,symbol]:prelude->names.cliches)if(!names.cliches.contains(key)&&!bound(key))insert(names.cliches,key,symbol,{m->path.string()});
    }
      for(auto& d:m->unit.nominals){
       for(auto& field:d.fields)field=type_reference(field,d.where,names);
@@ -903,8 +893,16 @@ public:
        ipc_types=true;append_ipc_kernel_nominals(result.unit,request.where);
       }
     }
-    if(kernel_calls.size()>16384-count)throw Error({input.string()},"loaded function count limit exceeded");
-    for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
+     if(kernel_calls.size()+foreign_functions.size()>16384-count)
+      throw Error({input.string()},"loaded function count limit exceeded");
+     for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
+     // These are ordinary definitions rather than externs or special-cased
+     // intrinsics. The normal semantic pipeline must check their bodies.
+     for(auto& [key,f]:foreign_functions){
+      (void)key;
+      result.internal_functions.insert(f.name);
+      result.unit.functions.push_back(std::move(f));
+     }
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
   // annotated-only checking path and keeps unused generic helpers out of PPX/MIR.
   // Explicit imports and --prelude files always retain/check their definitions.

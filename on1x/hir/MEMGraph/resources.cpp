@@ -1,8 +1,15 @@
 #include "resource_detail.hpp"
-#include <on1x/ffi_hir.hpp>
 #include <algorithm>
 
 namespace on1x::memgraph {
+namespace {
+// Ordinary source externs have no lifetime or retention contract. Kernel
+// adapters are a separate admission path, never positive resource evidence.
+bool unclassified_string_resource(const Function& declaration,const Type& type) {
+    return declaration.external && declaration.kernel_symbol.empty() && type==Type::String;
+}
+}
+
 void detail::ResourceGraph::edge(const Expr& value, const Expr& source) {
     if (incomplete || value.type != Type::String) return;
     if (sources.size() + invalidated.size() == 16384) { incomplete = true; return; }
@@ -21,11 +28,11 @@ void detail::ResourceGraph::call(const Expr& call, const Function& declaration) 
         if (boundaries.size() == 4096) { incomplete = true; return; }
         boundaries.push_back({issue, &value});
     };
-    if (ffi::unclassified_string_resource(declaration, declaration.result))
+    if (unclassified_string_resource(declaration, declaration.result))
         add(ResourceIssue::UnknownResultOwner, call);
     for (const auto& argument : call.children) {
         if (incomplete) break;
-        if (ffi::unclassified_string_resource(declaration, argument->type))
+        if (unclassified_string_resource(declaration, argument->type))
             add(ResourceIssue::UnknownRetention, *argument);
     }
 }
@@ -58,9 +65,9 @@ std::vector<ResourceFinding> detail::ResourceGraph::finish() const {
 
 std::vector<ResourceFinding> speculate_resources(const Unit& unit) {
     if (std::none_of(unit.functions.begin(), unit.functions.end(), [](const Function& declaration) {
-        return ffi::unclassified_string_resource(declaration, declaration.result) ||
+        return unclassified_string_resource(declaration, declaration.result) ||
                std::any_of(declaration.params.begin(), declaration.params.end(), [&](const Param& parameter) {
-                   return ffi::unclassified_string_resource(declaration, parameter.type);
+                   return unclassified_string_resource(declaration, parameter.type);
                });
     })) return {};
     detail::ResourceGraph graph;

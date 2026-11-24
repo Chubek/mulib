@@ -83,6 +83,16 @@ leaves the caller's `Unit` intact. Resource exhaustion raises a located
 `ON1X-PROCESSOR`. The caller is responsible for checking the resulting candidate
 before publishing compiler output.
 
+A successful canonicalization records a `canonicalized` hint for its emitted
+function in MIR v4. A replacement that is exactly one captured operand
+records both that hint and a `fold-identity` request, including for a desugar
+rule. For a redex with operands, exported evidence requires distinct source
+locations for the operator and at least one operand; this excludes synthetic guards used by
+ordinary control lowering. Non-identity desugaring does not alone upgrade the
+format either. The producer records structural rule results, not source names
+or zero-hit rules. The request is advisory: a consumer must establish any
+further identity fold against its own IR.
+
 `tests/test_processor_engine.cpp` checks actual generated rule application,
 fixed-point idempotence, source/context preservation, private-name collision
 avoidance, canonical value/control verification of Select expansion, negative

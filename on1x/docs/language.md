@@ -468,6 +468,15 @@ declaration/import order. Raw declarations carry an `extern` prefix. `_` is a
 hole only in a type position; it remains an ordinary identifier in expressions
 and bindings, not a wildcard pattern.
 
+## Standard foreign imports
+
+`import foreign stdffi.clamp as C;` binds the alias `C` in this source file.
+Use `C.add_i64(a, b)` for saturating addition, `C.sub_i64(a, b)` for
+saturating subtraction, or `C.i64(x, lo, hi)` for interval clamping. Omitting
+`as C` binds `clamp`. These direct calls require neither `unsafe` nor a linker
+flag in source. See the [foreign interface guide](ffi-migration.md) for
+backend selection and the current limits of portable translation.
+
 ## Raw foreign calls and control flow
 
 The `extern fn` syntax is deliberately an *unsafe, raw ABI escape hatch*.

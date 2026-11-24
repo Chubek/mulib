@@ -26,6 +26,10 @@ fn main(){
         'ON1X_STDLIB','ON1X_PATH','ON1X_PPX_SCHEMA','ON1X_LIB_PATH','ON1X_STDLIB_PATH',
         'ON1X_PPX_PATH','ON1X_STDPPX_PATH','ON1X_MULIB_PATH','ON1X_MULIB_ROOT')}
     assert (library/'stdlib/On1xfile').is_file()
+    portable=base/'portable.on1x'
+    portable.write_text('import foreign stdffi.clamp; fn main(){println(clamp.add_i64(40,2));}')
+    p=run([compiler,'--run-ir',portable],cwd=base,env=env)
+    assert p.returncode==0 and p.stdout=='42\n',p
     sdk_tool=relocated/'bin/on1x-sdk'
     if sdk_tool.is_file() and os.name=='posix':
         direct=run([sdk_tool,'info'],cwd=base,env=env)

@@ -146,7 +146,7 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
                 top.insert((it - 1)->where.offset);
         }
     }
-    starts(unit.kernel_imports); starts(unit.functions);
+    starts(unit.kernel_imports); starts(unit.foreign_imports); starts(unit.functions);
     starts(unit.features); starts(unit.ppx); starts(unit.macros); starts(unit.nominals);
     std::vector<const ModuleExtension*> carriers;
     for (const auto& item : unit.extensions) carriers.push_back(&item);

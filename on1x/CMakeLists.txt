@@ -19,7 +19,7 @@ endif()
 
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
 option(ON1X_WITH_ARCHVIRT "Build native-host ArchVirt program launch support" OFF)
-option(ON1X_WITH_CEPHYR "Enable in-process Cephyr compilation of checked-HIR C11 to an AMD64 Linux object" OFF)
+option(ON1X_WITH_CEPHYR "Enable in-process Cephyr C11 compilation on native AMD64 Linux" OFF)
 option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
 option(ON1X_USE_FALLBACK_SCANNER "Use the bootstrap scanner even when LibStone is present" OFF)
 option(ON1X_WITH_EXOML "Build optional ExoML contract-verification tool" OFF)
@@ -133,6 +133,8 @@ else()
   message(STATUS "On1x core regex: unavailable without LibStone Firestone headers")
 endif()
 add_subdirectory(hir)
+add_subdirectory(mir)
+add_subdirectory(hir/FFIHandler)
 target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
 if(ON1X_WITH_WETSTONE)
   if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
@@ -207,7 +209,17 @@ if(ON1X_WITH_CEPHYR)
   if(NOT ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
     message(FATAL_ERROR "Cephyr_DIR must select the project-pinned native-package Cephyr (embedding ABI 1, no embedded CPython). Rebuild and install the selected LibStone checkout.")
   endif()
-  target_link_libraries(on1xc PRIVATE Cephyr::Cephyr)
+  get_target_property(_cephyr_library_type Cephyr::Cephyr TYPE)
+  if(_cephyr_library_type STREQUAL "SHARED_LIBRARY")
+    # Ordinary compiler/inspection processes must be usable in a sandbox
+    # without mounting a native compiler. Open only the configured embedding
+    # library, in process, when the object emitter is actually selected.
+    target_include_directories(on1xc PRIVATE "$<TARGET_PROPERTY:Cephyr::Cephyr,INTERFACE_INCLUDE_DIRECTORIES>")
+    target_compile_definitions(on1xc PRIVATE ON1X_CEPHYR_SHARED_PATH="$<TARGET_FILE:Cephyr::Cephyr>")
+    target_link_libraries(on1xc PRIVATE ${CMAKE_DL_LIBS})
+  else()
+    target_link_libraries(on1xc PRIVATE Cephyr::Cephyr)
+  endif()
   set(ON1X_CEPHYR_RESOURCE_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr" CACHE PATH
     "Cephyr resource directory containing triples/ and stdlib/")
   set(ON1X_CEPHYR_ARCHON_ROOT "${ON1X_LIBSTONE_ROOT}/cornerstone/Archon" CACHE PATH
@@ -227,10 +239,12 @@ if(ON1X_WITH_CEPHYR)
     configure_file(src/backend/cephyr.toml.in "${cephyr_config_dir}/cephyr-${profile}.toml" @ONLY)
     install(FILES "${cephyr_config_dir}/cephyr-${profile}.toml" DESTINATION share/on1x)
   endforeach()
+  include(runtime-sdk/cmake/CephyrKernels.cmake)
   add_subdirectory(stdlib/cephyr)
   add_executable(on1x-cephyr-kernel src/backend/cephyr_kernel.cpp)
   target_compile_features(on1x-cephyr-kernel PRIVATE cxx_std_17)
   target_link_libraries(on1x-cephyr-kernel PRIVATE Cephyr::Cephyr)
+  set_property(TARGET on1x-cephyr-kernel PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
   target_compile_definitions(on1x-cephyr-kernel PRIVATE
     ON1X_CEPHYR_BUILD_CONFIG_DIR="${cephyr_config_dir}"
     ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
@@ -242,6 +256,10 @@ if(ON1X_WITH_CEPHYR)
     ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
     ON1X_CEPHYR_ARCHON_ROOT="${ON1X_CEPHYR_ARCHON_ROOT}")
   if(BUILD_TESTING)
+    add_test(NAME on1x.stdffi.cephyr_generator COMMAND "${CMAKE_COMMAND}" -E env
+      "PYTHONPATH=${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr/python"
+      "CEPHYR_LIBRARY=$<TARGET_FILE:Cephyr::Cephyr>"
+      "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/hir/FFIHandler/test_ffispec_gen.py")
     add_test(NAME on1x.cephyr.native COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_native.py" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.cephyr.native PROPERTIES TIMEOUT 300)
@@ -405,14 +423,14 @@ if(ON1X_BUILD_NATIVE_PPX)
 endif()
 
 install(TARGETS on1xc RUNTIME DESTINATION bin)
-install(DIRECTORY stdlib stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
+install(DIRECTORY stdlib stdffi stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
 endif()
 install(FILES tools/on1x_project.py tools/on1x_project_init.py tools/on1x_inline.py
-  tools/on1x_optimization.py tools/on1x_toolchain.py DESTINATION share/on1x/tools)
+  tools/on1x_optimization.py tools/on1x_toolchain.py tools/on1x_ffi_trust.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -710,6 +728,19 @@ if(BUILD_TESTING)
     endif()
   endif()
   add_executable(on1x_mir_tests tests/test_mir.cpp)
+  add_executable(on1x_mir_directives_tests tests/test_mir_directives.cpp)
+  target_link_libraries(on1x_mir_directives_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.mir.directives COMMAND on1x_mir_directives_tests)
+  if(NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.stdffi.imports COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_portable_import.py" "$<TARGET_FILE:on1xc>"
+      "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stdffi-imports"
+      "${CMAKE_C_COMPILER}")
+    add_test(NAME on1x.stdffi.products COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_stdffi_products.py" "$<TARGET_FILE:on1xc>"
+      "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stdffi-products"
+      "${CMAKE_C_COMPILER}")
+  endif()
   add_executable(on1x_mir_decision_tests tests/test_mir_decision.cpp)
   target_link_libraries(on1x_mir_decision_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_decision_hir COMMAND on1x_mir_decision_tests)

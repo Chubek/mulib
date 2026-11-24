@@ -71,27 +71,6 @@ struct TypeParameter {
 struct Stmt;
 struct Expr;
 struct Macro;
-namespace ffi {
-struct Descriptor;
-class HirResolver;
-enum class ForeignMode { Unsafe, LinkOnly, UnsafeLinkOnly };
-constexpr bool requires_unsafe(ForeignMode mode){return mode!=ForeignMode::LinkOnly;}
-constexpr bool link_only(ForeignMode mode){return mode!=ForeignMode::Unsafe;}
-// Loader-minted reference into the immutable compiler registry. The null
-// reference is ordinary On1x; neither source nor any wire format can mint one.
-class HirForeign {
- const Descriptor* binding = nullptr;
- ForeignMode use = ForeignMode::Unsafe;
- HirForeign(const Descriptor& descriptor,ForeignMode mode):binding(&descriptor),use(mode){}
- friend class HirResolver;
-public:
- HirForeign() = default;
- explicit operator bool() const {return binding!=nullptr;}
- const Descriptor* descriptor() const {return binding;}
- ForeignMode mode() const {return use;}
- bool operator==(const HirForeign&) const = default;
-};
-}
 using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, ClicheMember, InherentMember, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
@@ -101,7 +80,6 @@ struct Expr {
                          Character, ByteBuffer, Interpolated, RegexLiteral, RegexMatch, RegexCapture,
                          Borrow } kind;
   enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign, BorrowFunction } reference = Reference::Unresolved;
- ffi::HirForeign foreign; // Only a direct foreign callee may carry this reference.
  bool unsafe_region = false; // Canonical region lowered from a lexical unsafe expression.
  Location where;
  std::string text;
@@ -162,14 +140,16 @@ struct Function {
  std::vector<ClicheConstraint> constraints;
  Type result = Type::Void;
  bool external = false;
- ffi::HirForeign foreign;
  // Internal typed foreign declaration. An ordinary source extern has no symbol here.
  std::string kernel_symbol;
  bool kernel_link_only=false; // Scalar call to an adapter supplied only after build-driver admission.
  bool prototype = false; // Checked generalized declaration, not emitted.
- std::vector<Stmt> body;
-  std::vector<ExprPtr> attributes;
-   bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
+  std::vector<Stmt> body;
+   std::vector<ExprPtr> attributes;
+    bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
+  // Host-only On1xMETA pass history. Never an input to semantic verification.
+  bool meta_canonicalized=false;
+  bool meta_folded_identity=false;
 };
 inline bool takes_borrows(const Function& function){
  for(const auto& parameter:function.params)
@@ -279,6 +259,12 @@ struct KernelImport {
  bool is_unsafe=false;
  bool dynlib=false;
 };
+// A source-only request for a portable, compiler-supplied On1x definition.
+// Unlike KernelImport, this cannot request an ABI, linkage, or unsafe mode.
+struct ForeignImport {
+ Location where;
+ std::string kernel,alias; // Bare kernel name under stdffi.
+};
 struct NominalDeclaration {
  Location where;
  std::string name;
@@ -317,6 +303,7 @@ struct Unit {
   std::vector<std::string> imports; std::vector<Function> functions;
   std::vector<Import> module_imports;
   std::vector<KernelImport> kernel_imports;
+  std::vector<ForeignImport> foreign_imports;
   std::vector<FeatureActivation> features;
   std::vector<ScrutinyDirective> scrutiny;
   std::vector<ModuleExtension> extensions;
@@ -338,6 +325,8 @@ std::string read_source_file(const std::string& filename);
 std::vector<Token> scan(const std::string& source, const std::string& filename);
 Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enabled={});
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& tokens);
+// Reject unresolved KernelBind and portable stdffi requests at source-only
+// boundaries that did not run the module loader.
 void require_no_kernel_imports(const Unit&);
 bool is_intrinsic_name(const std::string& name);
 bool is_reserved_intrinsic_name(const std::string& name);

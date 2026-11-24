@@ -62,7 +62,7 @@ TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
 # Reserve heads even where the directive is forbidden; validation decides
 # authority, not the lexer. Keep compiler package discovery in sync.
 HEADS = frozenset((
-    'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work', 'ffi-taint',
+    'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work',
     'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
     'profile-arg', 'command', 'define', 'kernel', 'source', 'library', 'resource', 'interface',
 )) | toolchain.DIRECTIVES
@@ -410,11 +410,6 @@ def root_manifest(payload, origin, dependency=False):
             elif verb == 'scrutiny-work' and not dependency:
                 value, = fields(args, 'w')
                 unique(options, verb, scrutiny_work(value))
-            elif verb == 'ffi-taint' and not dependency:
-                value, = fields(args, 'w')
-                if value not in ('reject', 'allow'):
-                    fail('ffi-taint policy must be reject or allow')
-                unique(options, verb, value)
             elif verb == 'optimization-profile' and not dependency:
                 value, = fields(args, 'w')
                 if value not in optimization.PROFILES:
@@ -1077,9 +1072,6 @@ class Execution:
                          mulib / 'include', mulib / 'manual',
                          mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
                 self.mount(path)
-            if args.ffi_provider:
-                self.mount(ROOT / 'contracts-exotract/catalog.json')
-                self.mount(ROOT / 'contracts-exoml')
             # A failed setup must not even start a compiler discovery process.
             self.run(['/usr/bin/true'], bound=32)
             # Use the same name for the mount and argv, including when the
@@ -1548,23 +1540,12 @@ def source_policy(executor, compiler, file, root, libraries):
                 fail(f'{file}: relative import escapes the declared package')
 
 
-def verify_graph(executor, compiler, source, flags, permitted, trusted_roots, *, ffi=False):
-    data = executor.run([compiler, '--ffi-imports' if ffi else '--deps', source, *flags],
-                        bound=8 * MAX_MANIFEST)
-    requests = []
-    if ffi:
-        graph = json.loads(data)
-        if graph['schema'] != 'on1x.ffi-imports/v1':
-            fail(f'{source}: incompatible compiler import graph')
-        paths = [os.fsdecode(bytes.fromhex(item['file_hex'])) for item in graph['sources']]
-        requests = graph['requests']
-    else:
-        paths = data.decode('utf-8').splitlines()
-    for item in paths:
+def verify_graph(executor, compiler, source, flags, permitted, trusted_roots):
+    data = executor.run([compiler, '--deps', source, *flags], bound=8 * MAX_MANIFEST)
+    for item in data.decode('utf-8').splitlines():
         path = Path(item)
         if path not in permitted and not any(path.is_relative_to(root) for root in trusted_roots):
             fail(f'{source}: import is outside the declared module graph: {item}')
-    return requests
 
 
 def verify_interfaces(executor, compiler, staged, roles, loader, flags, permitted, trusted_roots, graph_checked=()):
@@ -1751,8 +1732,7 @@ def build(args):
                     or args.cc is not None or toolchain.requested(args) or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
                      or args.scrutiny or args.scrutiny_work is not None
-                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir or args.ffi_provider
-                      or args.ffi_taint is not None):
+                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -1764,20 +1744,17 @@ def build(args):
         args.profile = args.project_command
     analysis_work = (scrutiny_work(args.scrutiny_work) if args.scrutiny_work is not None
                      else config.get('scrutiny-work'))
-    ffi_taint = args.ffi_taint or config.get('ffi-taint', 'reject')
     chosen = args.profile or ('release' if args.release else 'dev')
     name(chosen)
     backend = ('archvirt' if vm_policy else
                args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11'))
-    if args.ffi_provider and (backend != 'c11' or config['kind'] == 'library' or config['kernels']):
-        fail('--ffi-provider requires a hosted C11 project without legacy kernel directives')
     tool_options = toolchain.requested(args) or bool(config.keys() & toolchain.DIRECTIVES)
     uses_c11 = backend in ('c11', 'mir-c11') and config['kind'] != 'library'
-    if tool_options and (not uses_c11 or args.ffi_provider):
-        fail('native toolchain directives and options require a hosted C11 build without a separate FFI provider')
+    if tool_options and not uses_c11:
+        fail('native toolchain directives and options require a hosted C11 build')
     selected, tool_files, missing = None, {}, []
     if uses_c11:
-        selected = toolchain.resolve(args, config, force_host=bool(args.ffi_provider))
+        selected = toolchain.resolve(args, config)
         tool_files, missing = toolchain.resolve_files(selected, args.cephyr_prefix)
         if args.sandbox and not toolchain.is_host(selected):
             fail(f'LibStone project tool mounts are not qualified under --sandbox; {toolchain.HOST_HELP}')
@@ -2047,8 +2024,6 @@ def build(args):
         loader = ['--stdlib', str(standard), '-I', str(executor.path(deps_stage)),
                   '-I', str(executor.path(project_stage))]
         analysis_flags = []
-        if args.ffi_provider:
-            analysis_flags.extend(('--ffi-taint', ffi_taint))
         if config.get('scrutiny'):
             analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
         if args.scrutiny:
@@ -2075,26 +2050,7 @@ def build(args):
             outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
-            graph_flags = [*loader, '--ffi-taint', ffi_taint] if args.ffi_provider else loader
-            requests = verify_graph(executor, compiler, entry, graph_flags, permitted | {entry}, trusted_roots,
-                                    ffi=bool(args.ffi_provider))
-            ffi_args = []
-            if requests:
-                if any(not request['unsafe'] or request.get('linkage') for request in requests):
-                    fail(f'{source}: project generated FFI supports only explicit unsafe static imports')
-                ffi_args = ['--ffi-provider', args.ffi_provider, '--ffi-static-only']
-                plan_file = work / 'artifact' / (key + '.ffi.json')
-                executor.mount(executor.python)
-                executor.run([executor.python, ROOT / 'tools/on1x-build.py', entry,
-                              '-o', executor.path(plan_file), '--inspect-ffi', *ffi_args,
-                              '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib,
-                              *loader, *analysis_flags, *opt_flags, *(f'--cflag={flag}' for flag in cflags)],
-                             timeout=180)
-                plan_data = read(plan_file, MAX_BUILD_REPORT)
-                if args.command == 'plan':
-                    backend_info.setdefault('ffi_plans', {})[key] = json.loads(plan_data)
-                else:
-                    outputs[plan_file.name] = digest(plan_data)
+            verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
             if args.command == 'plan':
                 continue
             if backend in ('archvirt', 'mir-vm'):
@@ -2131,9 +2087,8 @@ def build(args):
                 outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
                 continue
             toolchain.assert_available(missing)
-            native_args = [f'--{stage}={selected[stage]}' for stage in toolchain.CHOICES] if not ffi_args else []
-            if not ffi_args:
-                native_args.extend(f'--{key}={value}' for key in toolchain.ARGUMENTS for value in selected[key])
+            native_args = [f'--{stage}={selected[stage]}' for stage in toolchain.CHOICES]
+            native_args.extend(f'--{key}={value}' for key in toolchain.ARGUMENTS for value in selected[key])
             if cc is not None:
                 native_args.extend(('--cc', cc))
             if args.cephyr_prefix:
@@ -2144,8 +2099,8 @@ def build(args):
             command = [executor.python, ROOT / 'tools/on1x-build.py', entry, '-o', output,
                         '--on1xc', compiler, '--mulib-root', mulib, *loader, *analysis_flags, *native_args,
                         *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
-                        *(f'--cflag={flag}' for flag in cflags), *ffi_args]
-            if '-g' in cflags and not ffi_args:
+                        *(f'--cflag={flag}' for flag in cflags)]
+            if '-g' in cflags:
                 command.extend(('--debug-build-root', executor.path(work)))
             for kernel in config['kernels']:
                 command.extend(('--mulib', kernel))
@@ -2197,9 +2152,6 @@ def build(args):
                       scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
                       tools={key: tool_digest(path) for key, path in chosen_tools.items()})
-        if args.ffi_provider:
-            report['ffi_provider'] = args.ffi_provider
-            report['ffi_taint'] = ffi_taint
         if analysis_work is not None:
             report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
@@ -2272,8 +2224,6 @@ def main():
     toolchain.arguments(command)
     command.add_argument('--stdlib', type=Path)
     command.add_argument('--mulib-root', type=Path)
-    command.add_argument('--ffi-provider', choices=('host',),
-                         help='enable native generated FFI for explicit unsafe static imports in this C11 build')
     command.add_argument('--libstone-root', type=Path)
     command.add_argument('--mune-runner')
     command.add_argument('--qmr-compiler')
@@ -2293,8 +2243,6 @@ def main():
     command.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
     command.add_argument('--allow-shell', action='store_true', help='allow explicit root shell defines outside sandbox')
     command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
-    command.add_argument('--ffi-taint', choices=('reject', 'allow'),
-                         help='override the root On1xfile foreign taint diagnostic')
     command.add_argument('--scrutiny-work', metavar='UNITS',
                          help='override the On1xfile static-analysis work budget (1..10000000)')
     command.add_argument('--offline', action='store_true',

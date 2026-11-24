@@ -137,7 +137,7 @@ class ProcessBoundary(unittest.TestCase):
         (work / 'private-host-data').touch()
         for folder in ('cwd', 'input', 'artifact'):
             (work / folder).mkdir()
-        envelope = ENGINE.Execution(argparse.Namespace(sandbox=True, ffi_provider=None),
+        envelope = ENGINE.Execution(argparse.Namespace(sandbox=True),
                                     work, Path(ARGS.on1xc).resolve(), cc, ON1X.parent)
         envelope.run(['/bin/sh', '-ec', 'test ! -e /work/private-host-data'])
 

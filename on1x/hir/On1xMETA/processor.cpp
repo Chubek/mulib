@@ -34,6 +34,7 @@ class Engine {
   Limits limits;
   Stats stats;
   Stats* canonical=nullptr;
+  bool canonicalized=false, folded_identity=false;
   std::size_t canonical_count=0, total_rewrites=0;
   std::size_t steps=0, nodes=0, serial=0;
   std::set<std::string> names;
@@ -310,11 +311,21 @@ class Engine {
         if(!match(rule.match,e,captures,depth)||!guard(rule.guard,captures))continue;
         if(total_rewrites>=limits.rewrites)exhausted(e->where,"rewrite");
         const auto at=e->where;const auto type=e->type;
+        const bool identity=node(rule.replacement,at).kind==N::Capture;
+        // A redex whose operands all share its source location can be
+        // lowering scaffolding (e.g. a generated range-loop guard). Still
+        // rewrite it, but require distinct provenance for an exported fact.
+        const bool located=e->children.empty()||std::any_of(e->children.begin(),e->children.end(),[&](const auto& child) {
+          const auto& where=child->where;
+          return where.file!=at.file||where.offset!=at.offset;
+        });
         auto replacement=construct(rule.replacement,captures,at,depth);
         for(const auto& [name,slot]:captures)
           if(slot)fail(at,"replacement dropped capture "+name);
         if(replacement->type!=type)fail(at,"replacement changes checked result type");
         e=std::move(replacement);
+        canonicalized|=located&&(rule.phase==meta::Phase::Canonicalize||identity);
+        folded_identity|=located&&identity;
         ++total_rewrites;
         auto& hits=i<canonical_count?*canonical:stats;
         ++hits.rewrites;++hits.rules[i<canonical_count?i:i-canonical_count].second;
@@ -370,7 +381,12 @@ public:
       if(error.diagnostic_id=="ON1X-AST-LIMIT")exhausted(error.where,"clone node");
       throw;
     }
-    for(auto& f:working.functions)if(!f.prototype&&!f.external)rewrite(f.body,0);
+    for(auto& f:working.functions)if(!f.prototype&&!f.external) {
+      canonicalized=folded_identity=false;
+      rewrite(f.body,0);
+      f.meta_canonicalized|=canonicalized;
+      f.meta_folded_identity|=folded_identity;
+    }
     // Re-count the completed tree with the same depth limit, before publishing.
     nodes=0;
     inventory(working);

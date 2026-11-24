@@ -1,5 +1,4 @@
 #include <on1x/meta.hpp>
-#include <on1x/ffi_hir.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
 #include <on1x/patterns.hpp>
@@ -69,9 +68,8 @@ SExpr expression(const Expr& e){
   if(e.kind==K::Borrow||e.borrow!=BorrowMode::Value)
    throw Error(e.where,"lexical borrows are not PPX Unit v1 wire data",
                "ON1X-REF");
-  if(e.kind==K::UnsafeBlock||e.unsafe_region||e.foreign||
-     e.reference==Expr::Reference::UnsafeForeign||e.reference==Expr::Reference::ScalarForeign||
-     (e.kind==K::Variable&&ffi::is_foreign_hir_name(e.text)))
+  if(e.kind==K::UnsafeBlock||e.unsafe_region||
+     e.reference==Expr::Reference::UnsafeForeign||e.reference==Expr::Reference::ScalarForeign)
    throw Error(e.where,"ON1X-KERNEL-PPX: foreign identities and unsafe scopes are not PPX wire data","ON1X-KERNEL-PPX");
  if(e.kind==K::SourceCsp){
   std::vector<SExpr> args;for(const auto& c:e.children)args.push_back(expression(*c));
@@ -403,8 +401,10 @@ SExpr encode(const Unit& unit){
   std::vector<SExpr> params,labels,fields;for(const auto& p:d.parameters)params.push_back(string(p));for(const auto& l:d.labels)labels.push_back(string(l));for(const auto& f:d.fields)fields.push_back(type(f));
   functions.push_back(form("NominalDeclaration",{string(d.kind==Type::Record?"record":"enum"),string(d.name),list(std::move(params)),list(std::move(labels)),list(std::move(fields)),loc(d.where)}));
  }
-  for(const auto& f:unit.functions){
-    if(f.foreign||ffi::is_foreign_hir_name(f.name)||!f.kernel_symbol.empty()||f.kernel_link_only)
+   for(const auto& f:unit.functions){
+     if(f.name.starts_with("@stdffi_"))
+      throw Error(f.where,"portable stdffi definitions are not Unit-v1 PPX wire data","ON1X-STDFFI-PPX");
+     if(!f.kernel_symbol.empty()||f.kernel_link_only)
     throw Error(f.where,"ON1X-KERNEL-PPX: foreign interfaces are not PPX wire data","ON1X-KERNEL-PPX");
    std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));

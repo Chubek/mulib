@@ -1,4 +1,4 @@
-/* Read-only inspection of the compiler's immutable FFIHandler registry. */
+/* ABI compatibility for the retired scalar descriptor registry. */
 #ifndef ON1X_SDK_FFI_DESCRIPTOR_H
 #define ON1X_SDK_FFI_DESCRIPTOR_H
 
@@ -100,19 +100,8 @@ typedef struct On1xSDK_FFIDescriptorView {
  * Names and target are bounded UTF-8 without embedded NULs; matching is
  * byte-exact. The maximum length is ON1X_SDK_FFI_MAX_TEXT_BYTES.
  * A valid output is cleared (except its prefix) on failure. It must not
- * overlap the query or its backing strings. Returned text borrows immutable
- * registry storage, valid across threads until the SDK is unloaded.
- *
- * NOT_FOUND: no exact registry key for the requested target (an ID-only
- * request for a different target also fails).
- * STALE: the named descriptor exists for that target but does not match the ID.
- * UNSUPPORTED: this descriptor schema/shape is not exposed by the SDK.
- *
- * This does not project C declarations or choose a native target for the
- * caller. It does not check an artifact or admit calls. A successful result
- * exposes a compiler-validated scalar plan with unknown effects, not an
- * approved import, callable address, or capability. Native linking and
- * authorization must use the canonical build/verification path separately.
+ * overlap the query or its backing strings. Valid queries return
+ * ON1X_SDK_UNSUPPORTED: the v2 registry has been retired.
  */
 On1xSDK_Status
 on1x_sdk_ffi_descriptor_find(const On1xSDK_FFIDescriptorQuery *query,

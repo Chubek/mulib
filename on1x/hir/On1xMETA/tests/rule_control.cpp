@@ -35,7 +35,14 @@ int main(int argc, char** argv) {
       throw std::runtime_error("authored .o1m pattern did not control checked HIR");
     if (result.where.file != "rule-control.on1x" || result.where.line != 1)
       throw std::runtime_error("rule replacement lost original source provenance");
-    const auto evaluated = on1x::mir::evaluate(on1x::mir::lower(unit));
+    const auto module = on1x::mir::lower(unit);
+    if (add ? (module.directives.size() != 2 ||
+               module.directives[0].action != "canonicalized" ||
+               module.directives[1].action != "fold-identity" ||
+               module.directives[1].function != module.functions[0].id)
+            : !module.directives.empty())
+      throw std::runtime_error("authored rule hit did not control MIR directive emission");
+    const auto evaluated = on1x::mir::evaluate(module);
     if (evaluated.output != "42\n")
       throw std::runtime_error("generated rewrite changed source execution");
     std::cout << (add ? "add-zero: Variable" : "subtract-zero: Binary")

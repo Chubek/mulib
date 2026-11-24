@@ -29,8 +29,8 @@ on1xc aux build ./hello --cc cc --assembler-arg=--noexecstack \
 
 `--cc /path/to/driver` can also select a specific trusted host driver. The
 existing single-file helper remains host-by-default and accepts the same stage
-options for ordinary C11 executable builds. MIR-Archon, VM, ArchVirt, and the
-separately selected FFI and KernelBind profiles keep their own tool contracts.
+options for ordinary C11 executable builds. MIR-Archon, VM, ArchVirt, and
+KernelBind keep their own tool contracts.
 
 Tool arguments are restricted to options that do not choose executables,
 output files or load scripts, plugins, or response files. For SandAS, use

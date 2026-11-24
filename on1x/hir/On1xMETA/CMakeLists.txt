@@ -58,6 +58,11 @@ if(TARGET on1x_frontend)
   target_include_directories(on1x_frontend BEFORE PRIVATE "${_meta_generated}")
 endif()
 if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
+  if("${ON1X_META_RULE_FILES}" STREQUAL "${_meta_default_rules}")
+    add_executable(on1x_test_analysis_directives tests/analysis_directives.cpp)
+    target_link_libraries(on1x_test_analysis_directives PRIVATE on1x_frontend)
+    add_test(NAME on1x.hir.analysis_directives COMMAND on1x_test_analysis_directives)
+  endif()
   add_test(NAME on1x.processor.include_precedence
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_include_precedence.py"
       --processor "${CMAKE_CURRENT_SOURCE_DIR}"

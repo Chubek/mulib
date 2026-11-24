@@ -49,9 +49,16 @@ descriptors, recursive depth, or other stack allocations.
   uses and verified return edges to materialize placement; a heap cell is
   allocated only when its first store executes, reused on later stores, and
   freed at every normal return. Serialized input is verified again; the
-  placement decisions are visible in generated C, not claims in a new MIR
-  wire schema. Other slot types are unchanged. The MIR evaluator, VM and
-  native SDK backends do not implement this optional storage policy.
+  placement decisions are visible in generated C. Other slot types are
+  unchanged. The MIR evaluator, VM and native SDK backends do not implement
+  this optional storage policy.
+
+MIR v4 can additionally carry a function-scoped `local-memory` hint. This
+advisory profile looks for a used `i64` scratch slot whose loads and stores are
+all in the same block without a call or I/O between them. It does not prescribe
+a storage location, claim that every slot in the function is local scratch, or
+carry any conclusion about pointers or ownership. In particular, raw string
+speculation never generates a placement hint.
 
 Stack placement uses a typed C cell. Heap placement uses a TU-private
 pointer-plus-bounds descriptor with a checked accessor. A C11 layout assertion

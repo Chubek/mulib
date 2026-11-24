@@ -49,6 +49,11 @@ static on1x_token_t on1x_lexeme(char *text, GLRParser start) {
 %%
 /* The generated component is the token arena/scanner. Executable source
  * productions live in src/parser.cpp and bridge to include/on1x/ast.hpp:
+ *   foreign_import := 'import' 'foreign' 'stdffi' '.' identifier
+ *                     ['as' identifier] ';'
+ *   kernel_import := ['unsafe'] 'import' 'kernel' ['[' 'dynlib' ']']
+ *                    qualified_identifier ['as' identifier] ';'
+ * `foreign`, `kernel`, and `unsafe` are contextual words.
  *   loop_stmt := [identifier ':'] ('loop' block | 'while' expr block
  *              | 'for' '(' [clause] ';' [expr] ';' [step] ')' block
  *              | 'for' identifier 'in' expr ('..' | '..=') expr block

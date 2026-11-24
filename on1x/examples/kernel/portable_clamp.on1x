@@ -1,0 +1,6 @@
+import foreign stdffi.clamp as Clamp;
+
+fn main() {
+  println(Clamp.i64(27, 0, 10));
+  println(Clamp.add_i64(9223372036854775807, 1));
+}

@@ -23,6 +23,38 @@ std::map<mir::Id, Placement> slot_placement(const mir::Function& function, std::
     return plan;
 }
 
+bool has_local_scratch(const mir::Function& function) {
+    struct Uses {
+        mir::Id block=0;
+        std::size_t epoch=0;
+        bool load=false, store=false, spans_boundary=false;
+    };
+    std::map<mir::Id, Uses> uses;
+    for (const auto& slot : function.slots)
+        if (slot.type==Type::I64) uses.try_emplace(slot.id);
+    if (uses.empty()) return false;
+    for (const auto& block : function.blocks) {
+        std::size_t epoch=0;
+        for (const auto& inst : block.instructions) {
+            const auto effect=mir::effect(inst.op);
+            if (effect==mir::Effect::Call || effect==mir::Effect::IO) ++epoch;
+            if (inst.op!=mir::Op::Load && inst.op!=mir::Op::Store) continue;
+            const auto it=uses.find(inst.target);
+            if (it==uses.end()) continue;
+            auto& use=it->second;
+            if (use.block==0) { use.block=block.id; use.epoch=epoch; }
+            else if (use.block!=block.id || use.epoch!=epoch) use.spans_boundary=true;
+            if (inst.op==mir::Op::Load) use.load=true;
+            else use.store=true;
+        }
+    }
+    for (const auto& entry : uses) {
+        const auto& use=entry.second;
+        if (use.load && use.store && !use.spans_boundary) return true;
+    }
+    return false;
+}
+
 std::string c11_scratch_layout() {
     return "_Static_assert(sizeof(int64_t) == 8 && _Alignof(int64_t) <= 8"
            " && _Alignof(int64_t) <= _Alignof(max_align_t), \"unsupported MEMGraph scratch layout\");\n";

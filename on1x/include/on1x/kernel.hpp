@@ -1,18 +1,16 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <on1x/nominal.hpp>
-#include <on1x/ffi_scalar.hpp>
 
 namespace on1x {
-// Transitional compatibility for clients of this internal header.
 inline constexpr std::string_view legacy_scalar_module="mulib.clamp";
 inline bool clamp_interval_symbol(std::string_view symbol) {
- const auto* b=ffi::find_scalar(symbol);
- return b && b->arity==3 && b->guard_lhs==1 && b->guard_rhs==2;
+ return symbol=="mulib_clamp_i64";
 }
 inline std::size_t clamp_kernel_arity(std::string_view symbol) {
- const auto* b=ffi::find_scalar(symbol);
- return b?b->arity:0;
+ if(clamp_interval_symbol(symbol))return 3;
+ if(symbol=="mulib_clamp_add_i64"||symbol=="mulib_clamp_sub_i64")return 2;
+ return 0;
 }
 inline bool history_kernel_symbol(std::string_view symbol) {
  return symbol=="mulib_histprice_ema"||symbol=="mulib_histprice_holt";
@@ -28,11 +26,12 @@ inline constexpr char ipc_kernel_revoke[]="on1x_kernel_ipc_v1_revoke";
 inline constexpr char ipc_kernel_send[]="on1x_kernel_ipc_v1_send";
 inline constexpr char ipc_kernel_poll[]="on1x_kernel_ipc_v1_poll";
 inline constexpr char ipc_kernel_finish[]="on1x_kernel_ipc_v1_finish_send";
-// Compatibility-only rich profiles; remove after the corresponding FFI
-// descriptors and native admission gates are qualified. Match pairs exactly
-// instead of manufacturing a C symbol from a surface member spelling.
+// Match exact KernelBind profiles, never synthesize a C symbol from source text.
 struct LegacyKernelMember { std::string_view module, member, symbol; };
 inline constexpr LegacyKernelMember legacy_kernel_members[]={
+ {"mulib.clamp","i64","mulib_clamp_i64"},
+ {"mulib.clamp","add_i64","mulib_clamp_add_i64"},
+ {"mulib.clamp","sub_i64","mulib_clamp_sub_i64"},
  {"mulib.histprice","ema","mulib_histprice_ema"},
  {"mulib.histprice","holt","mulib_histprice_holt"},
  {"mulib.priceopt","optimize","mulib_priceopt_optimize"},
@@ -111,6 +110,25 @@ inline bool kernel_span_argument(std::string_view symbol,std::size_t i) {
 }
 inline bool kernel_span_type(const Type& type) {
  return type.kind()==Type::Slice&&type.elements()==std::vector<Type>{Type::F64}&&type.extent()<=256;
+}
+struct KernelArgumentPolicy {
+ enum class Mode { Value, BoundedSlice, ConsumeOwner, ExclusiveOwner } mode=Mode::Value;
+ std::size_t max_extent=0;
+};
+inline KernelArgumentPolicy kernel_argument_policy(const Function& f,std::size_t index){
+ if(index>=f.params.size()||f.kernel_symbol.empty())return {};
+ if(index==0&&f.kernel_symbol==ipc_kernel_roundtrip)return {KernelArgumentPolicy::Mode::ConsumeOwner};
+ if(index==0&&ipc_kernel_session_loan(f.kernel_symbol))return {KernelArgumentPolicy::Mode::ExclusiveOwner};
+ if(kernel_span_argument(f.kernel_symbol,index))return {KernelArgumentPolicy::Mode::BoundedSlice,256};
+ return {};
+}
+inline bool kernel_argument_type(KernelArgumentPolicy policy,const Type& expected,const Type& actual){
+ if(policy.mode==KernelArgumentPolicy::Mode::BoundedSlice)
+  return actual.kind()==Type::Slice&&expected.kind()==Type::Slice&&
+         actual.elements()==expected.elements()&&actual.extent()<=policy.max_extent;
+ if(policy.mode==KernelArgumentPolicy::Mode::ConsumeOwner||policy.mode==KernelArgumentPolicy::Mode::ExclusiveOwner)
+  return expected.is_own()&&actual==expected;
+ return actual==expected;
 }
 inline std::vector<Type> pricing_kernel_parameters(std::string_view symbol,const std::string& prefix) {
  std::vector<Type> types;
@@ -207,11 +225,11 @@ inline void verify_kernel_shape(const Function& f) {
   }
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal history interface","ON1X-KERNEL-ABI");
  }
- const auto* binding=ffi::find_scalar(f.kernel_symbol);
- if(!binding||
+ const auto arity=clamp_kernel_arity(f.kernel_symbol);
+ if(!arity||
      f.name!=expected||!f.external||f.prototype||f.extension_generated||
      !f.type_parameters.empty()||!f.constraints.empty()||!f.body.empty()||!f.attributes.empty()||
-     f.result!=Type::I64||f.params.size()!=binding->arity)
+     f.result!=Type::I64||f.params.size()!=arity)
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal scalar interface","ON1X-KERNEL-ABI");
  for(const auto& p:f.params)
   if(p.type!=Type::I64||p.pattern||p.borrow!=BorrowMode::Value)

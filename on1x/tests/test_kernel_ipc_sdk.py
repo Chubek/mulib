@@ -106,7 +106,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert not output.exists()
         return path
 
-    prefix = 'unsafe import foreign stdffi.ipc_framed as I;\n'
+    prefix = 'unsafe import kernel mulib.ipc_framed as I;\n'
     valid = 'fn f(x:i64)->i64 { return x; }\n'
     owner = 'let pair = match I.open_pair() with { Ok(p)=>move(p), Err(e)=>{println(e); return;} };\n'
     denied('context', prefix+'fn main(){ I.open_pair(); }', 'ON1X-KERNEL-CONTEXT')
@@ -122,7 +122,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     denied('borrow', prefix+'fn main(){ unsafe { '+owner+'let borrow_pair=borrow pair; } }', 'ON1X-KERNEL-OPAQUE')
     denied('bad_callback', prefix+'fn main(){ unsafe { '+owner+
            'I.roundtrip(move(pair),0u8,1000,fn(x:bool)->bool {return x;}); } }', 'i64')
-    safe = denied('safe', 'import foreign stdffi.ipc_framed as I;\nfn main(){}',
+    safe = denied('safe', 'import kernel mulib.ipc_framed as I;\nfn main(){}',
                   'ON1X-KERNEL-NOT-ADMITTED', options=('--kernel-c11', '--kernel-stage'))
     denied('disabled', prefix+'fn main(){}', 'ON1X-KERNEL-UNSAFE-UNSUPPORTED', options=())
     for options in ('--kernel-bind', '--kernel-review-candidate'):

@@ -68,10 +68,10 @@ def validate_argv(tool, stage, argv):
         raise ValueError(f'unsupported {tool} {stage} argument: {arg!r}')
 
 
-def resolve(args, config=None, *, force_host=False):
+def resolve(args, config=None):
     """CLI > root > explicit legacy --cc host defaults > context defaults."""
     config = config or {}
-    defaults = HOST if force_host or args.cc is not None or not config else DEFAULT
+    defaults = HOST if args.cc is not None or not config else DEFAULT
     tools = {key: getattr(args, key) or config.get(key, defaults[key]) for key in CHOICES}
     for key in ARGUMENTS:
         argv = [*config.get(key, []), *getattr(args, key.replace('-', '_'))]

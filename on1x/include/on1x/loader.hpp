@@ -1,7 +1,6 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <on1x/extensions.hpp>
-#include <on1x/ffi.hpp>
 #include <filesystem>
 #include <set>
 
@@ -14,9 +13,6 @@ struct LoaderOptions {
   bool prelude=true;
   bool kernel_c11=false; // Explicit unsafe-only C11 compilation profile.
    bool kernel_stage=false; // Emit unresolved reviewed-profile callers, not an admission decision.
-   bool ffi_stage=false; // Emit unresolved descriptor-v2 callers, including unsafe imports.
-    bool allow_ffi_taint=false; // Diagnostic policy only; does not grant native admission.
-    std::string foreign_target{ffi::configured_target()}; // Exact compiler-owned catalogue target.
    bool standalone_guest=false; // Untrusted source: no imports or host-side extensions.
  std::vector<std::filesystem::path> preludes;
  std::size_t max_modules=1024,max_depth=64,max_bytes=16*1024*1024;
@@ -46,6 +42,7 @@ struct KernelImportRequests {
  std::map<std::string,std::string> source_digests;
 };
 // Parse the ordinary module graph without executing extensions or PPX.
-// This reports requests only; it does not resolve C declarations or admit calls.
+// Reports native KernelBind requests only, never portable stdffi imports.
+// This does not resolve C declarations or admit calls.
 KernelImportRequests inspect_kernel_imports(const std::filesystem::path&,const LoaderOptions&);
 }
