@@ -25,6 +25,17 @@ Serialization rejects retained declarations or metadata it cannot preserve.
 Deserialization validates one rooted acyclic tree and always returns
 `CANDIDATE`; it cannot recreate the private canonical `Unit`.
 
+Lexical borrow expressions carry one local variable operand and exactly one of
+`ON1X_SDK_HIR_FLAG_SHARED` or `ON1X_SDK_HIR_FLAG_EXCLUSIVE`. Parameters carry
+one of these flags for `borrow` or `ref`, respectively; neither is set for
+ordinary value parameters in newly produced views. A `:=` statement retains
+the existing `EXCLUSIVE` flag. The borrow and parameter types are referent
+types, not raw pointers or first-class reference types. The field layout and
+schema version are unchanged. Older HIR-v1 readers reject the new flags/borrow
+expression kind, and older payloads that did not record `SHARED` on parameters
+cannot recover that mode. A decoded snapshot provides no loan, lifetime, ABI
+or backend admission.
+
 ## `O1XMIR1\0`
 
 The MIR envelope is magic, schema `u32` (`1`), canonical MIR version `u32`,

@@ -118,8 +118,19 @@ std::string expression_tag(on1x::Expr::Kind kind) {
     case Kind::RegexLiteral: return "regex_literal";
     case Kind::RegexMatch: return "regex_match";
     case Kind::RegexCapture: return "regex_capture";
+    case Kind::Borrow: return "borrow";
     }
     return "unknown_expression";
+}
+
+On1xSDK_ASTNodeFlags borrow_flags(on1x::BorrowMode mode) noexcept {
+    switch (mode) {
+    case on1x::BorrowMode::Value: return 0;
+    case on1x::BorrowMode::Shared: return ON1X_SDK_AST_FLAG_REFERENCE;
+    case on1x::BorrowMode::Exclusive:
+        return ON1X_SDK_AST_FLAG_REFERENCE | ON1X_SDK_AST_FLAG_EXCLUSIVE;
+    }
+    return 0;
 }
 
 std::string statement_tag(on1x::Stmt::Kind kind) {
@@ -317,7 +328,7 @@ class Flattener {
                                 : value.borrow == on1x::BorrowMode::Shared
                                       ? "shared_parameter"
                                       : "parameter",
-            value.name, value.where, value.context);
+            value.name, value.where, value.context, borrow_flags(value.borrow));
         if (value.pattern) link(index, pattern(*value.pattern));
         link(index, type(value.type, value.where));
         return index;
@@ -385,6 +396,8 @@ class Flattener {
             flags |= ON1X_SDK_AST_FLAG_STATEMENT_FORM;
         if (value.sum_match)
             flags |= ON1X_SDK_AST_FLAG_SUM_FORM;
+        if (value.kind == on1x::Expr::Kind::Borrow)
+            flags |= borrow_flags(value.borrow);
         auto index = add(
             ON1X_SDK_AST_EXPRESSION, expression_tag(value.kind),
             value.text, value.where, value.context, flags);

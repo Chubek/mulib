@@ -41,7 +41,11 @@
             "enum": ["unit", "declaration", "parameter", "statement", "expression", "pattern", "type_syntax", "import", "macro", "macro_rule", "directive", "attribute", "constraint", "extension"]
           },
           "tag": {"type": "string", "minLength": 1, "maxLength": 128},
-          "flags": {"type": "integer", "minimum": 0},
+          "flags": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "On borrow expressions (tag 'borrow') and borrow/ref parameters, REFERENCE marks a reference and EXCLUSIVE distinguishes 'borrow mut' or 'ref' from shared 'borrow'. A ':=' statement uses only REFERENCE. The borrow operand is the named identifier child; a parameter's type syntax remains the referent type."
+          },
           "text": {"type": "string"},
           "hygiene_context": {"type": "integer", "minimum": 0},
           "source_id": {"type": "integer", "minimum": 0},

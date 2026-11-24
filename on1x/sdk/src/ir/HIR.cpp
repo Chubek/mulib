@@ -16,6 +16,18 @@
 namespace on1x::sdk::ir {
 namespace {
 
+constexpr On1xSDK_HIRNodeFlags borrow_mask =
+    ON1X_SDK_HIR_FLAG_SHARED | ON1X_SDK_HIR_FLAG_EXCLUSIVE;
+
+On1xSDK_HIRNodeFlags borrow_flags(BorrowMode mode) noexcept {
+    switch (mode) {
+    case BorrowMode::Value: return 0;
+    case BorrowMode::Shared: return ON1X_SDK_HIR_FLAG_SHARED;
+    case BorrowMode::Exclusive: return ON1X_SDK_HIR_FLAG_EXCLUSIVE;
+    }
+    return 0;
+}
+
 class Flatten {
 public:
     explicit Flatten(const Unit &unit) : unit_(unit) {
@@ -85,8 +97,7 @@ private:
     std::uint64_t parameter(const Param &source, std::size_t depth) {
         HIRNode node;
         node.node_class = ON1X_SDK_HIR_NODE_PARAMETER;
-        node.flags = source.borrow == BorrowMode::Exclusive
-            ? ON1X_SDK_HIR_FLAG_EXCLUSIVE : 0;
+        node.flags = borrow_flags(source.borrow);
         node.name = source.name;
         node.where = source.where;
         node.type = source.type;
@@ -122,6 +133,7 @@ private:
         node.auxiliary[1] = source.context;
         node.auxiliary[2] = source.projection;
         node.auxiliary[3] = source.control_target;
+        node.flags |= borrow_flags(source.borrow);
         if (source.unsafe_region) node.flags |= ON1X_SDK_HIR_FLAG_UNSAFE;
         if (source.move_out) node.flags |= ON1X_SDK_HIR_FLAG_MOVE_OUT;
         if (source.noreturn) node.flags |= ON1X_SDK_HIR_FLAG_NO_RETURN;
@@ -253,7 +265,7 @@ On1xSDK_HIRNodeFlags allowed_flags(On1xSDK_HIRNodeClass node_class) noexcept {
                ON1X_SDK_HIR_FLAG_PROTOTYPE |
                ON1X_SDK_HIR_FLAG_EXTENSION_GENERATED;
     case ON1X_SDK_HIR_NODE_PARAMETER:
-        return ON1X_SDK_HIR_FLAG_EXCLUSIVE;
+        return borrow_mask;
     case ON1X_SDK_HIR_NODE_STATEMENT:
         return ON1X_SDK_HIR_FLAG_MUTABLE |
                ON1X_SDK_HIR_FLAG_PROTOTYPE |
@@ -265,7 +277,8 @@ On1xSDK_HIRNodeFlags allowed_flags(On1xSDK_HIRNodeClass node_class) noexcept {
                ON1X_SDK_HIR_FLAG_NO_RETURN |
                ON1X_SDK_HIR_FLAG_PROTOTYPE |
                ON1X_SDK_HIR_FLAG_STATEMENT_MATCH |
-               ON1X_SDK_HIR_FLAG_SUM_MATCH;
+               ON1X_SDK_HIR_FLAG_SUM_MATCH |
+               borrow_mask;
     case ON1X_SDK_HIR_NODE_PATTERN:
         return ON1X_SDK_HIR_FLAG_OPEN_PATTERN;
     case ON1X_SDK_HIR_NODE_CAPTURE:
@@ -297,6 +310,13 @@ bool valid_edge(const HIRNode &parent, const HIREdge &edge,
                  edge.kind == ON1X_SDK_HIR_EDGE_INSTANCE) &&
                 child.node_class == ON1X_SDK_HIR_NODE_STATEMENT);
     case ON1X_SDK_HIR_NODE_EXPRESSION:
+        if (parent.kind == static_cast<std::uint32_t>(Expr::Kind::Borrow))
+            return edge.kind == ON1X_SDK_HIR_EDGE_OPERAND &&
+                   child.node_class == ON1X_SDK_HIR_NODE_EXPRESSION &&
+                   child.kind == static_cast<std::uint32_t>(
+                       Expr::Kind::Variable) &&
+                   child.auxiliary[0] == static_cast<std::uint64_t>(
+                       Expr::Reference::Local);
         return ((edge.kind == ON1X_SDK_HIR_EDGE_CALLEE ||
                  edge.kind == ON1X_SDK_HIR_EDGE_OPERAND ||
                  edge.kind == ON1X_SDK_HIR_EDGE_PROOF ||
@@ -375,12 +395,20 @@ On1xSDK_Status validate_tree(const On1xSDK_HIRSnapshot &snapshot,
                          Stmt::Kind::CspScope)) ||
                     (node.node_class == ON1X_SDK_HIR_NODE_EXPRESSION &&
                      node.kind <= static_cast<std::uint32_t>(
-                         Expr::Kind::RegexCapture)) ||
+                         Expr::Kind::Borrow)) ||
                     (node.node_class == ON1X_SDK_HIR_NODE_PATTERN &&
                      node.kind <= static_cast<std::uint32_t>(
                          Pattern::Kind::As));
+                const bool is_borrow =
+                    node.node_class == ON1X_SDK_HIR_NODE_EXPRESSION &&
+                    node.kind == static_cast<std::uint32_t>(Expr::Kind::Borrow);
+                const auto mode = node.flags & borrow_mask;
                 if (node.id != frame.id || !valid_kind ||
                     (node.flags & ~allowed_flags(node.node_class)) ||
+                    mode == borrow_mask ||
+                    (node.node_class == ON1X_SDK_HIR_NODE_EXPRESSION &&
+                     (is_borrow ? !mode || node.children.size() != 1
+                                : mode != 0)) ||
                     node.labels.size() > 256 ||
                     ((node.node_class == ON1X_SDK_HIR_NODE_FUNCTION ||
                       node.node_class == ON1X_SDK_HIR_NODE_PARAMETER ||

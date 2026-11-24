@@ -66,6 +66,7 @@ enum {
     ON1X_SDK_HIR_FLAG_EXTERNAL = UINT64_C(1) << 0,
     ON1X_SDK_HIR_FLAG_PROTOTYPE = UINT64_C(1) << 1,
     ON1X_SDK_HIR_FLAG_MUTABLE = UINT64_C(1) << 2,
+    /* Exclusive borrow expression, 'ref' parameter, or ':=' statement. */
     ON1X_SDK_HIR_FLAG_EXCLUSIVE = UINT64_C(1) << 3,
     ON1X_SDK_HIR_FLAG_UNSAFE = UINT64_C(1) << 4,
     ON1X_SDK_HIR_FLAG_MOVE_OUT = UINT64_C(1) << 5,
@@ -73,7 +74,10 @@ enum {
     ON1X_SDK_HIR_FLAG_OPEN_PATTERN = UINT64_C(1) << 7,
     ON1X_SDK_HIR_FLAG_EXTENSION_GENERATED = UINT64_C(1) << 8,
     ON1X_SDK_HIR_FLAG_STATEMENT_MATCH = UINT64_C(1) << 9,
-    ON1X_SDK_HIR_FLAG_SUM_MATCH = UINT64_C(1) << 10
+    ON1X_SDK_HIR_FLAG_SUM_MATCH = UINT64_C(1) << 10,
+    /* Shared borrow expression or 'borrow' parameter, never with EXCLUSIVE.
+       The node's type is its referent type, not a reference/pointer type. */
+    ON1X_SDK_HIR_FLAG_SHARED = UINT64_C(1) << 11
 };
 
 void on1x_sdk_hir_snapshot_retain(On1xSDK_HIRSnapshot *snapshot);

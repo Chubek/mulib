@@ -103,6 +103,67 @@ On1xSDK_Status throwing_visitor(
     throw 1;
 }
 
+void check_borrow_ast(On1xSDK_Session *session, On1xSDK_Options *options) {
+    constexpr std::string_view path = "virtual/borrow.on1x";
+    constexpr std::string_view text =
+        "fn f(a:borrow i64,b:ref i64,c:i64){"
+        "let shared=borrow a;let exclusive=borrow mut b;exclusive:=c;}";
+    On1xSDK_Source *source = nullptr;
+    assert(on1x_sdk_source_create(
+        session, path.data(), path.size(), text.data(), text.size(),
+        ON1X_SDK_SOURCE_UTF8, &source) == ON1X_SDK_OK);
+    auto *ast = parse(source, options);
+    auto root = ast_info(ast);
+    assert(root.validation_state == ON1X_SDK_AST_PARSED_CANDIDATE);
+    auto node = [ast](On1xSDK_ASTNode id) {
+        On1xSDK_ASTNodeInfo info =
+            ON1X_SDK_COMPILER_INIT(On1xSDK_ASTNodeInfo);
+        assert(on1x_sdk_ast_node(ast, id, &info) == ON1X_SDK_OK);
+        return info;
+    };
+    auto child = [ast, &node](On1xSDK_ASTNode parent, std::size_t index) {
+        On1xSDK_ASTNode id = 0;
+        assert(on1x_sdk_ast_child(ast, parent, index, &id) == ON1X_SDK_OK);
+        return node(id);
+    };
+    constexpr auto reference = ON1X_SDK_AST_FLAG_REFERENCE;
+    constexpr auto exclusive = reference | ON1X_SDK_AST_FLAG_EXCLUSIVE;
+    auto check_parameter = [&](std::string_view tag, std::string_view name,
+                               On1xSDK_ASTNodeFlags flags) {
+        const auto parameter = node(find_tag(ast, root.root, tag));
+        assert(parameter.category == ON1X_SDK_AST_PARAMETER);
+        assert(parameter.flags == flags);
+        assert(std::string_view(parameter.text, parameter.text_size) == name);
+        const auto type = child(parameter.node, 0);
+        assert(type.category == ON1X_SDK_AST_TYPE_SYNTAX);
+        assert(std::string_view(type.tag, type.tag_size) == "i64_type");
+    };
+    check_parameter("shared_parameter", "a", reference);
+    check_parameter("exclusive_parameter", "b", exclusive);
+    check_parameter("parameter", "c", 0);
+
+    std::size_t found = 0;
+    const auto fn = node(find_tag(ast, root.root, "function"));
+    for (std::size_t i = 0; i < fn.child_count; ++i) {
+        const auto stmt = child(fn.node, i);
+        if (std::string_view(stmt.tag, stmt.tag_size) != "let") continue;
+        const bool shared = std::string_view(stmt.text, stmt.text_size) == "shared";
+        const auto expr = child(stmt.node, 0);
+        assert(expr.category == ON1X_SDK_AST_EXPRESSION && expr.child_count == 1);
+        assert(std::string_view(expr.tag, expr.tag_size) == "borrow");
+        assert(expr.flags == (shared ? reference : exclusive));
+        assert(expr.byte_begin == text.find(shared ? "borrow a" : "borrow mut b"));
+        const auto place = child(expr.node, 0);
+        assert(std::string_view(place.tag, place.tag_size) == "identifier");
+        assert(std::string_view(place.text, place.text_size) == (shared ? "a" : "b"));
+        ++found;
+    }
+    assert(found == 2);
+    assert(node(find_tag(ast, root.root, "assign")).flags == reference);
+    on1x_sdk_ast_release(ast);
+    on1x_sdk_source_release(source);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -125,6 +186,7 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_session_create(&sink, &session) == ON1X_SDK_OK);
     assert(on1x_sdk_options_create(session, &options) == ON1X_SDK_OK);
     assert(on1x_sdk_vfs_create(session, &vfs) == ON1X_SDK_OK);
+    check_borrow_ast(session, options);
 
     /* Invalid option combinations do not partially mutate the options. */
     const auto initial_options_revision = on1x_sdk_options_revision(options);

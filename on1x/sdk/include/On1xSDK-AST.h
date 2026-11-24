@@ -43,9 +43,12 @@ enum {
     ON1X_SDK_AST_FLAG_OPEN = 1u << 4,
     ON1X_SDK_AST_FLAG_UNSAFE = 1u << 5,
     ON1X_SDK_AST_FLAG_INCLUSIVE = 1u << 6,
+    /* A borrow expression, a borrow/ref parameter, or a ':=' store. */
     ON1X_SDK_AST_FLAG_REFERENCE = 1u << 7,
     ON1X_SDK_AST_FLAG_STATEMENT_FORM = 1u << 8,
-    ON1X_SDK_AST_FLAG_SUM_FORM = 1u << 9
+    ON1X_SDK_AST_FLAG_SUM_FORM = 1u << 9,
+    /* With REFERENCE: 'borrow mut' expression or 'ref' parameter. */
+    ON1X_SDK_AST_FLAG_EXCLUSIVE = 1u << 10
 };
 
 typedef struct On1xSDK_ASTInfo {

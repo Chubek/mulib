@@ -467,6 +467,132 @@ void test_types(const On1xSDK_Context *owner,
             "external type construction forged checked state");
 }
 
+struct BorrowView {
+    unsigned params = 0;
+    unsigned borrows = 0;
+    unsigned stores = 0;
+    On1xSDK_HIRNodeRef shared{};
+};
+
+On1xSDK_Status inspect_borrow(void *data,
+                              const On1xSDK_HIRSnapshot *snapshot,
+                              const On1xSDK_HIRNodeRef *node, size_t) {
+    auto &view = *static_cast<BorrowView *>(data);
+    On1xSDK_HIRNodeClass node_class{};
+    On1xSDK_HIRNodeFlags flags = 0;
+    std::uint32_t kind = 0;
+    if (on1x_sdk_hir_node_class(snapshot, node, &node_class) != ON1X_SDK_OK ||
+        on1x_sdk_hir_node_flags(snapshot, node, &flags) != ON1X_SDK_OK ||
+        on1x_sdk_hir_node_kind(snapshot, node, &kind) != ON1X_SDK_OK)
+        return ON1X_SDK_ERROR;
+    if (node_class == ON1X_SDK_HIR_NODE_PARAMETER) {
+        constexpr On1xSDK_HIRNodeFlags modes[] = {
+            ON1X_SDK_HIR_FLAG_SHARED, ON1X_SDK_HIR_FLAG_EXCLUSIVE, 0};
+        if (view.params >= std::size(modes) || flags != modes[view.params++])
+            return ON1X_SDK_ERROR;
+    } else if (node_class == ON1X_SDK_HIR_NODE_EXPRESSION &&
+               kind == static_cast<std::uint32_t>(on1x::Expr::Kind::Borrow)) {
+        constexpr auto shared = ON1X_SDK_HIR_FLAG_SHARED;
+        if (view.borrows > 1 ||
+            flags != (view.borrows == 0 ? shared : ON1X_SDK_HIR_FLAG_EXCLUSIVE))
+            return ON1X_SDK_ERROR;
+        if (flags == shared) view.shared = *node;
+        size_t count = 0;
+        On1xSDK_HIREdgeKind edge{};
+        On1xSDK_HIRNodeRef child{};
+        On1xSDK_IRStringView name{};
+        if (on1x_sdk_hir_node_child_count(snapshot, node, &count) != ON1X_SDK_OK ||
+            count != 1 ||
+            on1x_sdk_hir_node_child(snapshot, node, 0, &edge, &child) != ON1X_SDK_OK ||
+            edge != ON1X_SDK_HIR_EDGE_OPERAND ||
+            on1x_sdk_hir_node_name(snapshot, &child, &name) != ON1X_SDK_OK ||
+            std::string_view(name.data, name.size) != (view.borrows == 0 ? "amount" : "target"))
+            return ON1X_SDK_ERROR;
+        ++view.borrows;
+    } else {
+        if (node_class == ON1X_SDK_HIR_NODE_STATEMENT &&
+            kind == static_cast<std::uint32_t>(on1x::Stmt::Kind::Assign) &&
+            flags == ON1X_SDK_HIR_FLAG_EXCLUSIVE)
+            ++view.stores;
+        return ON1X_SDK_OK;
+    }
+    On1xSDK_Type *type = nullptr;
+    if (on1x_sdk_hir_node_type(snapshot, node, &type) != ON1X_SDK_OK)
+        return ON1X_SDK_ERROR;
+    On1xSDK_TypeKind type_kind{};
+    const auto status = on1x_sdk_type_kind(type, &type_kind);
+    on1x_sdk_type_release(type);
+    return status == ON1X_SDK_OK && type_kind == ON1X_SDK_TYPE_I64
+               ? ON1X_SDK_OK : ON1X_SDK_ERROR;
+}
+
+void test_borrow_hir(const On1xSDK_Context *owner) {
+    auto unit = source(
+        "fn update(a:borrow i64,b:ref i64,c:i64){b:=a+c;}"
+        "fn main()->i64{var target=40;let amount=1;"
+        "{let view=borrow amount;let edit=borrow mut target;update(view,edit,1);}"
+        "return target;}");
+    const auto id = identity(owner, 9, 8);
+    On1xSDK_HIRSnapshot *hir = nullptr;
+    On1xSDK_IRFailure failure{};
+    ok(on1x::sdk::ir::check_hir_candidate(
+           unit, id, "lexical-borrow", &hir, &failure, nullptr),
+       "check lexical borrow HIR");
+    On1xSDK_IRBlob *blob = nullptr;
+    ok(on1x_sdk_hir_serialize(hir, &blob), "serialize lexical borrow HIR");
+    auto wire = bytes(blob);
+    auto decode = decode_options(id);
+    On1xSDK_HIRSnapshot *candidate = nullptr;
+    ok(on1x_sdk_hir_deserialize(wire.data(), wire.size(), &decode,
+                               &candidate, &failure, nullptr),
+       "decode lexical borrow HIR");
+    BorrowView observed{};
+    for (const auto *snapshot : {hir, candidate}) {
+        observed = {};
+        ok(on1x_sdk_hir_visit(snapshot, nullptr, inspect_borrow, &observed, &failure),
+           "inspect lexical borrow HIR");
+        require(observed.params == 3 && observed.borrows == 2 && observed.stores == 1,
+                "HIR inspection lost parameter, borrow or store mode");
+    }
+    require(on1x_sdk_semantics_verify_checked_hir(candidate, &failure, nullptr) ==
+                ON1X_SDK_UNSUPPORTED,
+            "decoded borrow HIR became checked");
+
+    /* Locate the shared borrow node by its wire id/class/kind/flags prefix. */
+    std::vector<std::uint8_t> header;
+    auto append = [&header](std::uint64_t value, unsigned count) {
+        for (unsigned i = 0; i < count; ++i)
+            header.push_back(static_cast<std::uint8_t>(value >> (i * 8)));
+    };
+    append(observed.shared.id, 8);
+    append(ON1X_SDK_HIR_NODE_EXPRESSION, 4);
+    append(static_cast<std::uint32_t>(on1x::Expr::Kind::Borrow), 4);
+    append(ON1X_SDK_HIR_FLAG_SHARED, 8);
+    const auto entry = std::search(wire.begin(), wire.end(), header.begin(), header.end());
+    require(entry != wire.end(), "missing shared borrow header");
+    entry[16] |= ON1X_SDK_HIR_FLAG_EXCLUSIVE;
+    On1xSDK_HIRSnapshot *bad = nullptr;
+    require(on1x_sdk_hir_deserialize(wire.data(), wire.size(), &decode,
+                                    &bad, &failure, nullptr) == ON1X_SDK_ERROR &&
+                bad == nullptr && failure == ON1X_SDK_IR_FAILURE_MALFORMED,
+            "conflicting shared/exclusive flags were accepted");
+    entry[16] = entry[17] = 0;
+    require(on1x_sdk_hir_deserialize(wire.data(), wire.size(), &decode,
+                                    &bad, &failure, nullptr) == ON1X_SDK_ERROR &&
+                bad == nullptr && failure == ON1X_SDK_IR_FAILURE_MALFORMED,
+            "mode-less borrow expression was accepted");
+    on1x_sdk_hir_snapshot_release(candidate);
+    on1x_sdk_ir_blob_release(blob);
+    on1x_sdk_hir_snapshot_release(hir);
+
+    auto illegal = source("fn main(){var x=1;let view=borrow x;view:=2;}");
+    require(on1x::sdk::ir::check_hir_candidate(
+                illegal, id, "illegal-borrow", &bad, &failure, nullptr) ==
+                ON1X_SDK_ERROR && bad == nullptr &&
+                failure == ON1X_SDK_IR_FAILURE_SEMANTIC,
+            "assignment through shared borrow passed canonical checks");
+}
+
 void test_hir_and_mir(const On1xSDK_Context *owner) {
     auto candidate_id = identity(owner, 9, 1);
     Diagnostics diagnostics;
@@ -1193,6 +1319,7 @@ int main() {
         const auto *other =
             reinterpret_cast<const On1xSDK_Context *>(&other_token);
         test_types(owner, other);
+        test_borrow_hir(owner);
         test_hir_and_mir(owner);
         std::cout << "SDK type/HIR/MIR semantics PASS\n";
         return 0;
