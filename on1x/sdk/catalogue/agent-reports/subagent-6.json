@@ -6,8 +6,49 @@
   "baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "overall_status": "PARTIAL",
-  "summary": "Executable bounded C11 projections of canonical ExoML CDecl/contract and Exotract evidence, fail-closed host-owned foreign admission, checked one-TU MuLIB CDD accessors, and an independently versioned recoverable On1xRT ABI for statically linked or explicitly authorized native AOT modules. General foreign callbacks, dynamic loading, WASM, concurrency, sandboxing, debugger and profiler integration remain explicitly unsupported.",
+  "summary": "Read-only inspection of compiler-owned FFIHandler v2 descriptors; existing CDecl, structured host admission and checked one-TU CDD surfaces remain compatible. Independent On1xRT ABI 1 supports statically linked AOT and opt-in host-authorized native loading on Linux/glibc. SDK inspection never admits an import or authorizes an artifact.",
+  "ffi_followup": {
+    "captured": "2026-11-24",
+    "branch": "ffi/sdk-followup",
+    "base_revision": "97ad6809",
+    "libstone_revision": "e10ac69eed7baf91b06d15c4e0d58360097cb5c4",
+    "scope": "Host AMD64 Linux; actual generated clamp and container-core catalogues; static-link and sealed shared-image runtime fixtures. No production module build or reviewed safe embedding admission.",
+    "changed_files": [
+      "on1x/sdk/cmake/Integration6.cmake",
+      "on1x/sdk/include/On1xSDK-FFIDescriptor.h",
+      "on1x/sdk/src/contracts/FFIDescriptor.cpp",
+      "on1x/sdk/src/contracts/README.md",
+      "on1x/sdk/tests/contracts/check_descriptor_package.py",
+      "on1x/sdk/tests/contracts/ffi_descriptor.c",
+      "on1x/sdk/tests/contracts/ffi_descriptor.cpp",
+      "on1x/runtime-sdk/README.md",
+      "on1x/runtime-sdk/cmake/FFIEmbedding.cmake",
+      "on1x/runtime-sdk/tests/ffi_embed.on1x",
+      "on1x/runtime-sdk/tests/ffi_embed_provider.c",
+      "on1x/runtime-sdk/tests/ffi_embedding.c",
+      "on1x/runtime-sdk/tests/ffi_embedding.py",
+      "on1x/sdk/catalogue/agent-reports/subagent-6.json"
+    ],
+    "qualification": {
+      "gcc_selected_overlay_ctest": {"passed": 82, "failed": 0, "skipped": 0},
+      "gcc_legacy_seed_compatibility_ctest": {"passed": 15, "failed": 0, "skipped": 0},
+      "clang_native_fixtures": {"passed": 2, "failed": 0},
+      "clang_relocated_sdk_clients": {"passed": 2, "failed": 0},
+      "gcc_static_runtime_archive_fixture": {"passed": 1, "failed": 0},
+      "integrated_build_blockers": ["Principal umbrella include", "W05 compiler verifier/lowerer target wiring", "W10 CLI staging-flag conflict"]
+    },
+    "evidence": "WORKER-SDK.md in the coordinator's external evidence directory; lists exact commands, logs, result counts and private dependency corrections."
+  },
   "facilities": [
+    {
+      "id": "ffi.canonical-descriptor-inspection",
+      "status": "EXECUTABLE",
+      "public_headers": ["On1xSDK-FFIDescriptor.h"],
+      "subset": "Target-explicit, bounded read-only scalar descriptor lookup by exact module/member or descriptor SHA-256 ID. Optional pin matches the same descriptor; fields borrow immutable compiler registry bytes through On1x::SDK. Legacy seed-only entries and unsupported shapes are not exposed.",
+      "blockers": [
+        "Does not inspect the entire discovery catalogue, grant a capability, verify a native artifact, or publish checked HIR or an admitted import."
+      ]
+    },
     {
       "id": "ffi.structured-projections",
       "status": "EXECUTABLE",
@@ -98,7 +139,7 @@
       ],
       "subset": "Independent C11 ABI 1; prefix-negotiated descriptors; copied host allocator; allocator-domain errors; thread-confined engines; owner/kind/generation/lifecycle-checked generation32-slot32 handles; copied descriptors; transactional dependency registration; reverse lifecycle compensation; instances/functions; exact scalar/string/buffer calls; synchronous host callbacks; callback-scoped capabilities; statically registered native modules; native AOT only after explicit host authorization.",
       "blockers": [
-        "Dynamic libraries, WASM, tasks, fibers, channels, schedulers, sandbox enforcement, debugger and profiler integration return UNSUPPORTED.",
+        "Path-only dynamic loading, WASM, tasks, fibers, channels, schedulers, sandbox enforcement, debugger and profiler integration return UNSUPPORTED.",
         "Native callbacks execute with host-process authority and are not sandboxed."
       ]
     }
@@ -107,7 +148,7 @@
     "Extraction, discovery, hashes, review claims and shape checks alone never admit a foreign interface.",
     "Unknown calling conventions, layouts, ownership, lifetimes, effects, nullability, callback behavior and source identity reject.",
     "ABI-v1 On1xSDK_Contract metadata is never upgraded to structured admission.",
-    "On1xRT does not resolve a path, load a DSO, instantiate WASM, create concurrency primitives, or claim native-code isolation.",
+    "On1xRT does not resolve or load a DSO from path alone, instantiate WASM, create concurrency primitives, or claim native-code isolation.",
     "On1xRT native AOT execution is trusted in-process execution after an explicit host callback, not a sandbox.",
     "The private generated-program runtime under on1x/runtime is unchanged."
   ],
@@ -296,7 +337,13 @@
       "owner": "principal",
       "required_api": "Add the new structured FFI headers to the principal-owned On1xSDK.h umbrella and merge this report into CAPABILITY_MATRIX.json and IMPLEMENTATION_INVENTORY.json.",
       "reason": "Workers cannot edit the umbrella or shared capability records. Direct independent headers, On1x::SDK, and the separately packaged On1x::RT target are executable now.",
-      "proposed_signature": "Include the On1xSDK headers listed by ffi.structured-projections and ffi.host-admission in dependency order; record ffi.contracts and runtime.embedding as PARTIAL with the executable subsets and explicit blockers above."
+      "proposed_signature": "Include On1xSDK-FFIDescriptor.h in On1xSDK.h and list ffi.canonical-descriptor-inspection as inspection-only. Preserve Integration2's installed compiler support archive and Integration6; no new SDK registry target."
+    },
+    {
+      "owner": "W10/principal",
+      "required_api": "Production module build mode with a true no-entry direct-C11 checked source TU, explicit provider, exact static-archive or final DSO identity, and separately authorized review for a safe embedding subject.",
+      "reason": "The test fixture reuses the current planner but does not create a production review or deployable publication. Application executable authorization is not reusable for linked or dynamic ABI 1 modules.",
+      "proposed_signature": "An explicit module artifact kind in the canonical driver, with selected target/provider/entry shim, the same planner and executed ABI probe, exact link inputs and final artifact binding. No implicit profile switch in the runtime."
     }
   ]
 }

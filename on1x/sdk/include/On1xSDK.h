@@ -112,6 +112,7 @@
 /* Structured foreign descriptions and explicit host admission. */
 #include "On1xSDK-Contract.h"
 #include "On1xSDK-FFI.h"
+#include "On1xSDK-FFIDescriptor.h"
 #include "On1xSDK-ForeignType.h"
 #include "On1xSDK-CDecl.h"
 #include "On1xSDK-ContractCheck.h"

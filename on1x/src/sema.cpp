@@ -1,6 +1,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/regex.hpp>
 #include <on1x/analysis.hpp>
+#include <on1x/ffi_hir.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/extensions.hpp>
@@ -244,13 +245,15 @@ class Checker {
    e.reference=Expr::Reference::Local;return e.type=binding->type;
   }
   if(auto found=funcs.find(e.text);found!=funcs.end()){
+    ffi::verify_foreign_reference(e,*found->second);
     if(takes_borrows(*found->second)){
      if(!call_position)ref_error(e.where,"functions with borrowed parameters require a direct named call");
     e.reference=Expr::Reference::BorrowFunction;return e.type=signatures.at(e.text);
    }
    if(found->second->external&&!call_position)
     fail(e.where,"raw extern functions cannot be used as values; write an On1x wrapper");
-     e.reference=found->second->kernel_link_only?Expr::Reference::ScalarForeign:
+     e.reference=found->second->foreign?ffi::foreign_reference(found->second->foreign.mode()):
+       found->second->kernel_link_only?Expr::Reference::ScalarForeign:
        !found->second->kernel_symbol.empty()?Expr::Reference::UnsafeForeign:
       found->second->external?Expr::Reference::Extern:Expr::Reference::Function;
     if(e.reference==Expr::Reference::UnsafeForeign&&!unsafe_context)
@@ -779,17 +782,21 @@ class Checker {
      if(builtin)return check_intrinsic(e,arg);
      const auto& n=callee.text;
      if(callable.parameters().size()!=arg.size())fail(e.where,"wrong number of arguments to "+(n.empty()?"function value":n));
-       const auto kernel=callee.reference==Expr::Reference::ScalarForeign||
-                         callee.reference==Expr::Reference::UnsafeForeign?
-                         std::string_view(funcs.at(n)->kernel_symbol):std::string_view{};
+       const auto* foreign=callee.reference==Expr::Reference::ScalarForeign||
+                           callee.reference==Expr::Reference::UnsafeForeign?funcs.at(n):nullptr;
        for(size_t i=0;i<arg.size();++i){
-          if(i==0&&ipc_kernel_session_loan(kernel)&&
+          const auto policy=foreign?ffi::argument_policy(*foreign,i):ffi::ArgumentPolicy{};
+          if(policy.mode==ffi::ArgumentPolicy::Mode::ExclusiveOwner&&
              (e.children[i]->kind!=Expr::Kind::Variable||e.children[i]->reference!=Expr::Reference::Local))
-           ref_error(e.children[i]->where,"framed session operation requires a named owner place");
-         if(kernel_span_argument(kernel,i)){
-         if(!kernel_span_type(arg[i]))
-         fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
-        }else if(callee.reference==Expr::Reference::BorrowFunction&&
+           ref_error(e.children[i]->where,"foreign call loan requires a named owner place");
+          if(policy.mode==ffi::ArgumentPolicy::Mode::BoundedSlice){
+          if(!ffi::argument_type(policy,callable.parameters()[i],arg[i]))
+          fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
+         }else if(policy.mode==ffi::ArgumentPolicy::Mode::ConsumeOwner||
+                  policy.mode==ffi::ArgumentPolicy::Mode::ExclusiveOwner){
+          if(!ffi::argument_type(policy,callable.parameters()[i],arg[i]))
+           ref_error(e.children[i]->where,"foreign call requires an owner of the exact type");
+         }else if(callee.reference==Expr::Reference::BorrowFunction&&
                  funcs.at(n)->params[i].borrow!=BorrowMode::Value){
          auto referent=arg[i];
          if(ipc_kernel_opaque_owner(referent))ipc_kernel_opaque_error(e.children[i]->where);
@@ -821,7 +828,7 @@ class Checker {
          if(s.value->callee->reference==Expr::Reference::BorrowFunction||
             (s.value->callee->reference==Expr::Reference::Intrinsic&&s.value->callee->text=="ref_replace")||
             (s.value->callee->reference==Expr::Reference::UnsafeForeign&&
-             ipc_kernel_session_loan(funcs.at(s.value->callee->text)->kernel_symbol)))
+             ffi::requires_call_loan(*funcs.at(s.value->callee->text))))
          ref_error(s.where,"defer cannot retain a borrowed call");
        if(csp::contains(t))fail(s.where,"defer cannot retain concurrency handles");
        for(const auto& a:s.value->children)if(resource(a->type))fail(a->where,"defer cannot retain JSON owners/views");
@@ -909,6 +916,7 @@ class Checker {
      if(!interfaces&&unit.functions.empty())fail({"<unit>"},"missing main function");
      for(auto& f:unit.functions){
        generic_context=f.prototype;
+       ffi::verify_foreign_declaration(f);
        verify_kernel_shape(f);
      if(f.result.has_generics()&&!f.prototype)fail(f.where,"quantified types require a checked prototype");
      for(const auto& parameter:f.params)if(parameter.type.has_generics()&&!f.prototype)
@@ -989,8 +997,15 @@ class Checker {
    generic_context=false;
  }
 };
+   bool has_typed_foreign(const Unit& unit){
+    return std::any_of(unit.functions.begin(),unit.functions.end(),[](const auto& f){
+     return bool(f.foreign)||ffi::is_foreign_hir_name(f.name);
+    });
+   }
    processor::SemanticStats recheck_candidate(Unit& unit,const std::vector<InterfaceObligation>* interfaces){
     auto stats=processor::validate(unit,processor::SemanticStage::Typed);
+    // Do not let Checker repair forged checked-callee annotations on ingress.
+    if(has_typed_foreign(unit))canonical::verify_values(unit);
     Checker(unit).run(interfaces);
     canonical::verify_control(unit);canonical::verify_values(unit);
     csp::verify(unit,true);extensions::verify_evidence(unit);
@@ -1001,7 +1016,9 @@ class Checker {
     if(output)*output={};
     processor::Report evidence;
      require_no_kernel_imports(u);cliches::prepare(u);inherent::prepare(u);
-     expand_macros(u);meta::require_core(u);infer_types(u);
+     expand_macros(u);meta::require_core(u);
+     for(const auto& f:u.functions)ffi::verify_foreign_declaration(f);
+     infer_types(u);
      cliches::verify_elaborated(u);inherent::verify_elaborated(u);
      evidence.structural=processor::validate(u,processor::SemanticStage::Structural);
      canonical::lower_control(u);
@@ -1013,6 +1030,15 @@ class Checker {
     // precede any compiled rewrite that could remove an invalid operand.
     evidence.typed_before=processor::validate(u,processor::SemanticStage::Typed);
     if(analysis_context&&analysis_context->diagnostics.has_errors())return;
+     if(has_typed_foreign(u)){
+      // Scalar descriptors currently have unknown effects. Canonical checking
+      // is mandatory, but speculative HIR rewrites have no effect-equivalence
+      // proof for these units. Retain the original even if hooks were enabled.
+      evidence.typed_after=evidence.typed_before;
+      evidence.verified=true;
+      if(output)*output=std::move(evidence);
+      return;
+     }
      hir::optimize_checked(u,selection,[&](Unit& candidate){
       // Validate annotations before Checker can recompute them. Never repeat
       // inference, macro expansion or source lowering on this private HIR.

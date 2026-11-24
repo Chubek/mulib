@@ -431,6 +431,55 @@ builder and the canonical one-TU MuLIB planner. `--mulib-root` selects the
 operator's MuLIB SDK. Native requests produce `<target>.mulib.json` with the
 canonical link plan. This is not independent KernelBind/FFI admission.
 
+For a generated standard FFI descriptor, use a source import such as
+`unsafe import kernel mulib.clamp as Clamp;`, and put each call inside
+lexical `unsafe`. Select the native provider explicitly:
+
+```sh
+on1xc exec build --ffi-provider host --frozen --mulib-root /path/to/mulib
+on1x-project.py plan . --ffi-provider host --frozen --mulib-root /path/to/mulib
+```
+
+This opt-in currently supports direct C11, static linkage and explicit
+unsafe imports in executable/complex projects only. Do not combine it with an
+`On1xfile` `kernel` directive. Targets without foreign imports keep their
+ordinary build path. The project still validates the staged source graph,
+dependency locks, offline rules and any requested sandbox. It publishes each
+selected target's `<target>.ffi.json` plan with the build; a plan alone is
+not executable ABI evidence or a safe review. Project dependencies cannot
+provide a native recipe, choose a provider, or supply a trust key.
+
+With the standalone builder, `--inspect-ffi --ffi-provider host INPUT -o PLAN`
+resolves descriptors and the canonical native closure without compiling. Omit
+`--inspect-ffi` to compile and run the independent ABI probe before publication.
+`--ffi-adapter-provider cephyr` selects embedded Cephyr for only the adapter;
+`--ffi-provider cephyr` selects it for both native parts unless overridden.
+The application and probe caller use the selected host C compiler. An unavailable
+provider or unsupported ABI is an error, not a reason to switch providers.
+An installed On1x compiler still needs a separately selected MuLIB SDK (its
+matching manifest, headers, manuals and native inputs) for this build.
+An embedded-Cephyr installation also needs the matching `libcephyr.so.1`
+and its native AMD64 provider package (including assembler and bank) in
+Cephyr's installed layout. Installing `on1xc` by itself does not provide
+those external toolchain inputs.
+
+Native safe imports require a new `--ffi-review-candidate` subject and
+`--ffi-review`, `--ffi-review-key` and `--ffi-review-signature`. The signed JSON
+uses `on1x.ffi-review/v1` with `reviewer`, `review_reference` and the exact
+`subject`, verified with an independently selected Ed25519 DER public key.
+Candidate output is not authorization. The subject binds the generated
+descriptors, reviewed assumptions, exact flags, compiler, dependencies and
+actual native objects. A legacy KernelBind review cannot authorize a generated
+binding, even if the symbol and API spelling are unchanged. No trusted reviewer
+key ships with On1x.
+
+The generated lane currently qualifies the clamp scalar exports and the
+`container-core` static-inline counter addition. Generated safe DSO, richer
+marshalling and project Cephyr providers stay unavailable. Unsafe host DSO
+publication keeps the pinned library and program together in a fresh output
+directory. Run it with a trusted loader environment and keep both files intact;
+the published artifact hashes are build evidence, not a runtime verifier.
+
 ### Locking and explicit remote Git acquisition
 
 ```text
