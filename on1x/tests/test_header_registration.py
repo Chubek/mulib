@@ -110,7 +110,13 @@ for name in new:
             continue
         source = t.source(name+'-'+str(bool(unsafe)),
                           f'{unsafe}import kernel mulib.{logical} as K;\nfn main(){{}}\n')
-        result = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', source])
+        args = [t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', source]
+        if name == 'qvm':
+            denied = run(args)
+            assert denied.returncode != 0 and 'ON1X-FFI-TAINT' in denied.stderr and not denied.stdout, denied
+        # This test checks standalone admission. Suppressing an inventory
+        # hazard diagnostic must still leave the unsupported ABI unavailable.
+        result = run([*args, '--ffi-taint', 'allow'])
         assert result.returncode != 0 and diagnostic in result.stderr and not result.stdout, result
 
 # Internal-linkage dependencies can supply definitions to a switched consumer
