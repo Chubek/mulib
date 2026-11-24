@@ -220,6 +220,7 @@ static inline int64_t mulib_example_zero(void) {return 0;}
 #include <vector>
 int main() {
  using namespace on1x::ffi;
+  assert(configured_target()=="x86_64-linux-gnu");
   assert(scalar_bindings().size()==5);
   assert(foreign_descriptors().size()==10);
   auto* typed=find_descriptor("mulib.typed","wider");
@@ -260,7 +261,9 @@ int main() {
  return 0;
 })C";
 }''')
-        run([a.cxx,'-std=c++20','-Wall','-Wextra','-Werror','-I'+str(ON1X/'include'),'-I'+str(w),DIR/'ffi.cpp',harness,'-o',w/'emit'])
+        run([a.cxx,'-std=c++20','-Wall','-Wextra','-Werror',
+             '-DON1X_FFI_CONFIGURED_TARGET="x86_64-linux-gnu"',
+             '-I'+str(ON1X/'include'),'-I'+str(w),DIR/'ffi.cpp',harness,'-o',w/'emit'])
         c=w/'client.c'; c.write_text(run([w/'emit']).stdout+"\n")
         inc=ON1X.parent/'include'
         assert (inc/'mulib-clamp.h').is_file(), 'real canonical MuLIB clamp header is required'
