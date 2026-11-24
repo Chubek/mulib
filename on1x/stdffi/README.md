@@ -76,8 +76,9 @@ To publish instead, use `python3 -B "$ffi/tools/ffgen.py" --mulib-root .
 same explicit provider/parser arguments after the CI command's `--`.
 
 For a quick check without Cephyr, replace the `--` and everything after it with
-`--inventory-only`. This checks the source inventory, reconciled counts and
-package hashes; it does not rerun projection or establish authenticity. Run
+`--inventory-only`. This checks the source inventory, generator and grammar
+digests, reconciled counts and package hashes; it does not rerun projection or
+establish authenticity. Run
 the full check against at least two different absolute checkout locations
 when qualifying a profile. A reproducible check needs the same tool binaries
 and resources, not just the same reported version.

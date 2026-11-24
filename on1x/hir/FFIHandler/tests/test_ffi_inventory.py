@@ -15,7 +15,7 @@ ROOT = TOOLS.parents[3]
 sys.path.insert(0, str(TOOLS))
 import ffi_inventory  # noqa: E402
 import ffi_publish as publication  # noqa: E402
-from check_stdffi import check_counts  # noqa: E402
+from check_stdffi import _GENERATION_TOOLS, check_counts, check_generation_sources  # noqa: E402
 
 
 class InventoryTest(unittest.TestCase):
@@ -294,6 +294,24 @@ class CountsTest(unittest.TestCase):
         first['ownership'] = 'ambiguous_export'
         with self.assertRaisesRegex(ValueError, 'inconsistent stdffi symbol state'):
             check_counts(self.index, self.inventory)
+
+    def test_inventory_only_catches_generator_and_grammar_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            tools = root / 'tools'
+            tools.mkdir()
+            content = b'a tracked generator input\n'
+            digest = hashlib.sha256(content).hexdigest()
+            for name in _GENERATION_TOOLS:
+                (root if name.endswith('.llsynth') else tools).joinpath(name).write_bytes(content)
+            index = {'generation': {'tools': dict.fromkeys(_GENERATION_TOOLS, digest)}}
+            check_generation_sources(index, tools)
+            (root / 'FFIHandler.llsynth').write_bytes(b'a changed grammar\n')
+            with self.assertRaisesRegex(ValueError, 'source is stale: FFIHandler.llsynth'):
+                check_generation_sources(index, tools)
+            del index['generation']['tools']['FFIHandler.llsynth']
+            with self.assertRaisesRegex(ValueError, 'does not record the current generator sources'):
+                check_generation_sources(index, tools)
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@
 """CI gate for complete generated inventory and read-only freshness."""
 import argparse
 from collections import Counter
+import hashlib
 from pathlib import Path
 import re
 import subprocess
@@ -15,10 +16,26 @@ from ffi_publish import DEFAULT_TARGET, TARGETS, check_package  # noqa: E402
 
 _CODE = re.compile(r'[a-z][a-z0-9_]{0,95}')
 _SHA256 = re.compile(r'[0-9a-f]{64}')
+_GENERATION_TOOLS = frozenset({
+    'ffgen.py', 'ffi_types.py', 'cephyr_interface.py', 'project_interface.py',
+    'ffi_inventory.py', 'ffi_publish.py', 'ffic.py', 'FFIHandler.llsynth',
+})
 
 
 def _matches(value, pattern):
     return isinstance(value, str) and pattern.fullmatch(value) is not None
+
+
+def check_generation_sources(index, tools=TOOLS):
+    """Detect local generator/grammar drift without requiring Cephyr or LLSynth."""
+    generation = index.get('generation')
+    sources = generation.get('tools') if isinstance(generation, dict) else None
+    if not isinstance(sources, dict) or sources.keys() != _GENERATION_TOOLS:
+        raise ValueError('stdffi index does not record the current generator sources')
+    for name, recorded in sorted(sources.items()):
+        path = (tools.parent if name == 'FFIHandler.llsynth' else tools) / name
+        if not _matches(recorded, _SHA256) or hashlib.sha256(path.read_bytes()).hexdigest() != recorded:
+            raise ValueError('stdffi generator source is stale: ' + name)
 
 
 def check_counts(index, inventory):
@@ -109,7 +126,7 @@ def main():
     parser.add_argument('--output', type=Path)
     parser.add_argument('--target', choices=sorted(TARGETS), default=DEFAULT_TARGET)
     parser.add_argument('--inventory-only', action='store_true',
-                        help='check source inventory, counts and package digests without projection')
+                        help='check inventory, tools, counts and package digests without projection')
     options = parser.parse_args(args)
     if options.inventory_only == bool(generation):
         parser.error('select --inventory-only or pass explicit generation options after --')
@@ -125,11 +142,13 @@ def main():
         inventory = load(root)
         index = check_package(output, options.target, inventory.by_key)
         check_counts(index, inventory)
+        check_generation_sources(index)
         if not options.inventory_only:
             argv = [sys.executable, '-B', str(TOOLS / 'ffgen.py'), '--mulib-root', str(root),
                     '--output', str(output), '--target', options.target, '--all', '--check']
             subprocess.run([*argv, *generation], check=True, timeout=7200)
         inventory.verify_unchanged()
+        check_generation_sources(index)
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         print(f'check_stdffi: {error}', file=sys.stderr)
         return 1
