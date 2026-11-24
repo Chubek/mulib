@@ -7,6 +7,20 @@
   },
   "features": [
     {
+      "id": "M5-ARCHVIRT-LIVE-SESSION",
+      "contract": "A stable content ID addresses one live owner-only KVM session. A MuLIB REPL or repeated detached invocations queue bounded checked i64 inputs, preserving guest state and live console output across attachments. Explicit stop removes its endpoint.",
+      "owner": "ArchVirt guest and VM session workers, integration lead",
+      "prerequisites": ["M5-ARCHVIRT-KVM-LAUNCH", "Linux AF_UNIX SO_PEERCRED, procfs and close_range", "MuLIB readline"],
+      "source_paths": ["on1x/archvirt/runner.c", "on1x/archvirt/session_host.cpp", "on1x/archvirt/session_console.c", "on1x/src/archvirt_driver.cpp", "on1x/tests/test_vmm_sessions.py"],
+      "backends": ["Linux AMD64 KVM, guest-only parameter ABI"],
+      "positive_tests": ["on1x.archvirt.session_kvm", "on1x.archvirt.session_host", "installed on1xc vmm"],
+      "negative_tests": ["invalid parameter/ID", "unowned or symlink socket", "stale endpoint", "output and input quotas", "failure/stop cleanup", "missing cache and no live session"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-archvirt-enabled --output-on-failure -R '^on1x\\.archvirt\\.(session_|core)'", "result": "Actual KVM, MuLIB PTY and host fixture passed; detached sends and attach after cache clear preserve state. Also passed installed and fallback runs."}, {"command": "ctest --test-dir build/on1x-archvirt-fallback --output-on-failure -R '^on1x\\.archvirt\\.session_' --repeat until-fail:4", "result": "Both final fixtures passed four consecutive times after startup cleanup ordering fix; strict Clang sanitizer host test also passed."}],
+      "revision": "f0e2f29f",
+      "limits": ["Signed decimal i64 only; no argv/network or filesystem forwarding", "Runner active/idle/wall deadlines; full 300-second limit was not independently exercised", "Local same-UID ownership only, not a hostile-artifact security certification"]
+    },
+    {
       "id": "M5-ARCHON-TIMER-FRAMES",
       "contract": "A verified standalone timer taskgroup uses native AMD64 Archon resume functions and shared CSP lifecycle, without a per-frame native stack. Scalar computations go through canonical verified MIR.",
       "owner": "Archon async worker",

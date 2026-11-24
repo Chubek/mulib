@@ -286,3 +286,21 @@ generated backend from the same LibStone pin
 adapter and fallback scanner passed independently; only the runtime and
 ABI shim, not the emitted native assembly, were sanitizer-instrumented.
 No public MIR suspension or SDK execution contract is added.
+
+### Live ArchVirt sessions
+
+`69006df7` assigns content IDs to emitted guest and linked images.
+`cf9cd971`, `f6f362c2`, and `6b7e8697` add the interactive serial protocol,
+the owner-only session supervisor and the MuLIB line editor. The installed
+and build-tree tests compile a real guest, seed it in detached mode,
+clear the replay cache, send a second parameter to the same VM, attach the
+console, and confirm the accumulated state. Project preparation
+(`on1xc aux run --prepare`) registers an ID without launching.
+The combined focused GCC selection passed 14/14
+(`build/on1x-vmm-enabled-verified-ctest.log`). The final fallback selection
+covered CLI, actual KVM and host session transport (3/3,
+`build/on1x-vmm-fallback-final-ctest.log`). A Clang ASan/UBSan rerun of the
+host fixture found that an error reply could race endpoint cleanup; moving
+the reply after cleanup fixed it in the integration follow-up. The worker
+also tested the real 60-second guest idle timeout; the 300-second wall
+deadline was not exercised end-to-end.
