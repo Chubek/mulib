@@ -1,5 +1,12 @@
 # On1x completion matrix
 
+**Portable FFI update (baseline `f5cb9d55`):** `STDFFI-PORTABLE-MIR` is
+**PARTIAL** across MuLIB: the three `stdffi.clamp` exports execute, and other
+headers remain discovery-only. See [the migration guide](docs/ffi-migration.md),
+[generator coverage](stdffi/README.md), and the current entry in the JSON ledger.
+The older target-catalogue/descriptor results below describe their listed
+revisions, not the standard foreign import in this checkout.
+
 This ledger is incremental, not a release certification. The checkout audited
 for this continuation starts at MuLIB `681ceacf213673ebc1978d71d8cf6821bf35a7fb`
 with LibStone pinned at `3be5e9d7ffde4f97f333365e7080e316396a0e55`. The
@@ -7,6 +14,10 @@ mandate's older indexed snapshot is not the executable baseline used here.
 See the [machine-readable ledger](COMPLETION_MATRIX.json), the
 [completion report](COMPLETION_REPORT.md), and the separate
 [historical capability matrix](docs/capability-matrix.md).
+
+The generated FFI descriptor entries record results at the revisions shown.
+Their catalogues and build driver have since been retired; see the
+[migration guide](docs/ffi-migration.md) for the current native interface.
 
 | ID / owner | Prerequisites and exact scope | Status and evidence | Remaining limits |
 |---|---|---|---|

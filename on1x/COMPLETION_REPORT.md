@@ -1,5 +1,45 @@
 # On1x completion report
 
+## Portable standard FFI and MIR directives
+
+Baseline: `f5cb9d559fa4feb8e452bc866ac169dca7b86de3`, LibStone
+`a307d550936a10b6c58b752e56d7e475c794926e`. The starting tree was clean
+but could not build `on1xc`: it still included a deleted `FFIHandler/lower.hpp`.
+The previous architecture-specific catalogues are superseded. The following
+older milestones refer to their original revisions.
+
+`import foreign stdffi.clamp` supports `i64`, `add_i64`, and `sub_i64` as
+ordinary checked kernel functions in MIR, and as in-memory Cephyr calls in
+direct native C11. The [standard catalogue](stdffi/README.md) documents exact
+generation, profile review and discovery limits; [MIR](docs/backend-mir.md)
+documents conditional rewrites and product selection. The SDK exposes v4
+directives read-only. KernelBind retains its separate native admission rules.
+
+Verification configurations: GCC 16.2.1, generated scanner, extension SDK,
+MEMGraph and Cephyr enabled (`build/on1x-portable-ffi`); Clang, fallback
+scanner, extension SDK and Cephyr disabled (`build/on1x-portable-ffi-clang`).
+The focused product test compares 75 boundary calls against `mulib-clamp.h`
+across serialized MIR, evaluator, VM and compiled MIR-C11, checks the order
+of effects on guard failure, and inspects exported ELF symbols. Runtime tests
+exercise compilation, local loading, checked calls and direct-C11 programs.
+
+The full `ffispec-gen.py --batch --project` scan (Cephyr LP64,
+`--stdlib=cephyr`) attempted all 2,053 headers: 405 projected and 1,648 failed
+projection, so the command correctly returned nonzero. In 1,550 cases the
+diagnostic included a missing `math.h`. The machine-readable results are
+reproducible with the command in `stdffi/README.md`; the integration run
+wrote `build/on1x-portable-ffi-all-kernels.json`. Projection is not admission:
+only the three reviewed clamp exports are callable via standard FFI.
+
+Final code revision: `8bd7821a`. `ctest --test-dir build/on1x-portable-ffi
+--output-on-failure -j5` registered **246 tests: 245 passed, 1 skipped**
+(`on1x.container_pod_cgroup` requires a delegated cgroup), with no failures.
+The Clang fallback import, product, directive and specialization checks passed
+**4/4**. Both native Cephyr tests passed after the standalone runtime target
+was also made to verify the source pin before embedding the kernel. Logs:
+`build/on1x-portable-ffi-final-ctest.log`,
+`build/on1x-portable-ffi-clang-final.log`, and `build/on1x-portable-ffi-pin-test.log`.
+
 This continuation starts at MuLIB `681ceacf213673ebc1978d71d8cf6821bf35a7fb`.
 The final implementation/test revision is `565de4f5`; the follow-up
 documentation commit records results without changing compiler behavior.

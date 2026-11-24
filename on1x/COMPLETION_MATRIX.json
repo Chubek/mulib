@@ -1,11 +1,26 @@
 {
   "schema": "on1x.completion/v1",
+  "scope_note": "Generated FFI descriptor, catalogue and native-driver results in this ledger are historical at the listed revisions. See docs/ffi-migration.md for current workflows.",
   "baseline": {
     "mulib": "681ceacf213673ebc1978d71d8cf6821bf35a7fb",
     "libstone": "3be5e9d7ffde4f97f333365e7080e316396a0e55",
     "target": "x86_64 Linux/glibc"
   },
   "features": [
+    {
+      "id": "STDFFI-PORTABLE-MIR",
+      "contract": "A reviewed, source-pinned scalar definition becomes a checked function on first use by a standard foreign import. Portable MIR carries target/backend-selected hints and verified rewrite actions; native C11 calls the embedded kernel through Cephyr.",
+      "owner": "FFI/MIR integration",
+      "prerequisites": ["matching MuLIB header and checked recipe", "Cephyr Python API for regeneration", "ON1X_WITH_CEPHYR and native AMD64 Linux for direct C11 execution"],
+      "source_paths": ["on1x/hir/FFIHandler", "on1x/stdffi", "on1x/mir", "on1x/src/loader.cpp", "on1x/runtime-sdk/src/On1xKernelRT.c", "on1x/sdk/include/On1xSDK-MIR.h"],
+      "backends": ["MIR text, evaluator, VM, MIR-C11", "direct C11 Cephyr runtime on AMD64 Linux"],
+      "positive_tests": ["on1x.stdffi.products", "on1x.stdffi.cephyr_generator", "on1x.runtime.cephyr_stdffi_program", "on1x.sdk.mir_directives", "on1x.mir.specialize"],
+      "negative_tests": ["on1x.stdffi.imports", "on1x.stdffi.recipe_compiler", "on1x.mir.directives", "on1x.runtime.cephyr_kernels"],
+      "status": "PARTIAL",
+      "evidence": [{"command": "ctest --test-dir build/on1x-portable-ffi --output-on-failure -R 'stdffi|mir[.]|runtime.cephyr|sdk.mir_directives'", "result": "See COMPLETION_REPORT.md for configuration and results; the product test compares all 75 boundary calls with the C11 kernel."}],
+      "revision": "8bd7821a; LibStone a307d550",
+      "limits": ["Only the three stdffi.clamp signed-i64 exports have executable recipes. Header discovery and declaration projection do not confer admission.", "No general pointer/record/resource or callback ABI. SDK v2 descriptor IDs do not authorize imports."]
+    },
     {
       "id": "FFI-TARGET-CATALOGUES",
       "contract": "Generate an atomic complete inventory per exact architecture and verify the descriptors, index and compiler ABI before selecting or installing that package.",
