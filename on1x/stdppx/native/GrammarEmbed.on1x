@@ -140,7 +140,7 @@ fn grammar_emit(marker: sexpr,
         return grammar_string(sx_text(sx_head(found)), at);
       }
     }
-    if tag == "Function" || tag == "Identifier"
+    if tag == "Function" || tag == "Procedure" || tag == "Identifier"
     {
       let key = sx_text(sexpr_nth(node, 1));
       let found = ppx_lookup(bindings, key);
@@ -168,7 +168,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
     declarations = sx_tail(declarations);
     let tag = visitor_tag(declaration);
     var attributes = sx_nil();
-    if tag == "Function"
+    if tag == "Function" || tag == "Procedure"
     {
       attributes = sexpr_nth(declaration, 5);
     }

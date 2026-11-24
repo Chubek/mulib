@@ -52,7 +52,7 @@ bool identifier(const std::string& s){
  auto alpha=[](char c){return (c>='A'&&c<='Z')||(c>='a'&&c<='z')||c=='_';};
  if(s.empty()||!alpha(s[0]))return false;
  for(char c:s)if(!alpha(c)&&(c<'0'||c>'9'))return false;
- static const std::set<std::string> keywords={"fn","let","var","if","else","while","return","true","false","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax"};return !keywords.contains(s);
+ static const std::set<std::string> keywords={"fn","proc","let","var","if","else","while","return","true","false","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax"};return !keywords.contains(s);
 }
 bool natural(const std::string& s,bool positive){
  std::size_t v=0;auto [end,ec]=std::from_chars(s.data(),s.data()+s.size(),v);

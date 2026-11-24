@@ -19,6 +19,7 @@ int main() {
         "fn main(){let s=\"snow: \xe9\x9b\xaa\";println(s);}",
         "fn main(){let c=quote{lift(40)+2};println(run(c));}",
         "fn main(){let r=/[a-z]+/;assert(match r ~ \"abc\");}",
+        "proc main(){let action=proc(){return;};action();}",
         "fn main(){let a=r!\"raw\";let b=b!\"bytes\";"
         "let c=#\\a;let x=1.5f32;}",
         "{! main doc }{- skipped -}fn main(){let a='''a\n b''';"
@@ -69,6 +70,8 @@ int main() {
                 assert(token.kind == ON1X_SDK_TOKEN_CHARACTER);
             if (spelling == "1.5f32")
                 assert(token.kind == ON1X_SDK_TOKEN_FLOAT);
+            if (spelling == "proc")
+                assert(token.kind == ON1X_SDK_TOKEN_KEYWORD);
         }
         if (samples[sample].starts_with("{! main doc }")) {
             On1xSDK_AST *ast = nullptr;

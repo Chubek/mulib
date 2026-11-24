@@ -164,6 +164,24 @@ void check_borrow_ast(On1xSDK_Session *session, On1xSDK_Options *options) {
     on1x_sdk_source_release(source);
 }
 
+void check_procedure_ast(On1xSDK_Session *session, On1xSDK_Options *options) {
+    constexpr std::string_view path = "virtual/procedures.on1x";
+    constexpr std::string_view text = "proc main(){let action=proc(){return;};action();}";
+    On1xSDK_Source *source = nullptr;
+    assert(on1x_sdk_source_create(
+        session, path.data(), path.size(), text.data(), text.size(),
+        ON1X_SDK_SOURCE_UTF8, &source) == ON1X_SDK_OK);
+    auto *ast = parse(source, options);
+    for (const auto tag : {"function", "lambda"}) {
+        On1xSDK_ASTNodeInfo info = ON1X_SDK_COMPILER_INIT(On1xSDK_ASTNodeInfo);
+        const auto node = find_tag(ast, ast_info(ast).root, tag);
+        assert(node && on1x_sdk_ast_node(ast, node, &info) == ON1X_SDK_OK);
+        assert(info.flags == ON1X_SDK_AST_FLAG_PROCEDURE);
+    }
+    on1x_sdk_ast_release(ast);
+    on1x_sdk_source_release(source);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -187,6 +205,7 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_options_create(session, &options) == ON1X_SDK_OK);
     assert(on1x_sdk_vfs_create(session, &vfs) == ON1X_SDK_OK);
     check_borrow_ast(session, options);
+    check_procedure_ast(session, options);
 
     /* Invalid option combinations do not partially mutate the options. */
     const auto initial_options_revision = on1x_sdk_options_revision(options);

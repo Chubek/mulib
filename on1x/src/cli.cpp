@@ -5,6 +5,7 @@
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
 #include <on1x/formatter.hpp>
+#include <on1x/generated_scan.h>
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/mir_directives.hpp>
 #include <on1x/backend/mir_c11.hpp>
@@ -45,6 +46,7 @@
 #include <filesystem>
 #include <set>
 #include <map>
+#include <memory>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -60,7 +62,35 @@
 #include <mach-o/dyld.h>
 #endif
 namespace {
- std::string terminal_text(std::string_view text){return on1x::diagnostic::terminal_text(text);}
+  std::string terminal_text(std::string_view text){return on1x::diagnostic::terminal_text(text);}
+  int syntax_faults(const std::string& filename){
+#ifdef ON1X_WITH_AUROCKS_FAULTS
+   auto input=on1x::read_source_file(filename);
+   if(input.size()>=(1u<<20))
+    throw std::runtime_error("--syntax-faults requires input smaller than 1 MiB");
+   for(unsigned edits=0;;++edits){
+    try{
+     (void)on1x::scan(input,filename);
+    }catch(const on1x::Error& error){
+     if(error.diagnostic_id!="ON1X-LEX-TOKEN")throw;
+     if(edits==8)throw on1x::Error(error.where,"lexical recovery exceeded eight edits","ON1X-LEX-TOKEN");
+     char* candidate=nullptr;
+     const auto status=on1x_aurocks_fault_step(input.c_str(),error.where.offset,&candidate);
+     const std::unique_ptr<char,decltype(&std::free)> replacement(candidate,&std::free);
+     if(status<0)throw std::bad_alloc{};
+     if(!status)throw;
+     input.assign(replacement.get());
+     continue;
+    }
+    std::cout.write(input.data(),static_cast<std::streamsize>(input.size()));
+    if(!std::cout)throw std::runtime_error("could not write lexical proposal");
+    return 0;
+   }
+#else
+   (void)filename;
+   throw std::runtime_error("--syntax-faults requires the generated Aurocks scanner");
+#endif
+  }
  int project_command(int argc,char** argv){
   const bool aux=std::string_view(argv[1])=="aux";
   const char* driver=aux?"on1x-project.py":"on1x-build.py";
@@ -554,7 +584,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     "       [--diagnostics text|json|sarif] [--color auto|always|never] (diagnostics use stderr)\n"
     "       [--diagnostic-catalog FILE] [--scrutiny LEVEL] [--project-scrutiny LEVEL]\n"
     "       [--scrutiny-work UNITS] [--no-analysis-repairs] (bounded Wetstone analysis)\n"
-   "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
+    "       on1xc --repair INPUT.on1x -o NEW_FILE (Syren; reviewable proposal only)\n"
+    "       on1xc --syntax-faults INPUT.on1x (Aurocks lexical diagnostics and proposals on stdout)\n"
   "       on1xc --help\n"
     "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
     "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
@@ -592,8 +623,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     return sdk_command(argc,argv);
 #endif
    if(argc>1){
-    std::string_view command=argv[1];
-    if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
+     std::string_view command=argv[1];
+     if(command=="--syntax-faults"){
+      if(argc!=3)throw std::runtime_error("--syntax-faults requires exactly one input file");
+      return syntax_faults(argv[2]);
+     }
+     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
      return format_command(argc,argv,command);
     if(command=="vmm"){
 #ifdef ON1X_WITH_ARCHVIRT

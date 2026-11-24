@@ -44,7 +44,7 @@
           "flags": {
             "type": "integer",
             "minimum": 0,
-            "description": "On borrow expressions (tag 'borrow') and borrow/ref parameters, REFERENCE marks a reference and EXCLUSIVE distinguishes 'borrow mut' or 'ref' from shared 'borrow'. A ':=' statement uses only REFERENCE. The borrow operand is the named identifier child; a parameter's type syntax remains the referent type."
+            "description": "On borrow expressions (tag 'borrow') and borrow/ref parameters, REFERENCE marks a reference and EXCLUSIVE distinguishes 'borrow mut' or 'ref' from shared 'borrow'. A ':=' statement uses only REFERENCE. The borrow operand is the named identifier child; a parameter's type syntax remains the referent type. PROCEDURE marks function and lambda nodes spelled 'proc'."
           },
           "text": {"type": "string"},
           "hygiene_context": {"type": "integer", "minimum": 0},

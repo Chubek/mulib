@@ -1,7 +1,8 @@
 # Grammar boundaries
 
 `On1x.asdl` owns the token arena, and `On1x.g` is the generated scanner grammar.
-LibStone's actual `scripts/{asdl,aurocks}.pl` generate these in the build tree.
+LibStone's ASDL generator handles the arena; the C++ generator in
+`cornerstone/Aurocks` handles `.g` files. See [the integration notes](../docs/aurocks.md).
 The C++ parser in `src/parser.cpp` owns source expression/statement semantics;
 see [the readable grammar](../docs/language.md).
 
@@ -9,6 +10,11 @@ The scanner keeps both triple-quote spellings intact for the parser, which
 strips leading line indentation only from triple apostrophes. It discards
 ordinary block comments and hands docstrings to the frontend as trivia,
 separately from the parser's expression and declaration tokens.
+
+Compound types can be grouped with optional parentheses in the C++ parser.
+Simple types cannot be grouped on their own; a comma still denotes a tuple.
+The scanner emits `proc` as an identifier-shaped token; the parser reserves it
+for void-only named and anonymous definitions, not for callable type terms.
 
 Local syntax groups add these parser productions (keywords remain identifier
 tokens in **both** scanners):

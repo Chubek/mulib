@@ -3,7 +3,8 @@ fn transform(tree: sexpr, label: string) -> sexpr
 {
   return visitor_rewrite(tree, fn(node: sexpr, path: sexpr) -> sexpr
   {
-    if visitor_tag(node) != "Function"
+    let tag = visitor_tag(node);
+    if tag != "Function" && tag != "Procedure"
     {
       return node;
     }
@@ -55,7 +56,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
       1)),
       sexpr_nth(old,
       2));
-    return ppx_node("Function",
+    return ppx_node(tag,
       sx_cons(sexpr_nth(node,
       1),
       sx_cons(sexpr_nth(node,

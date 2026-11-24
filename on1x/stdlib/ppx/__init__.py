@@ -7,7 +7,7 @@ import sys
 from sexpr import Atom, MAX_BYTES, MAX_DEPTH, MAX_NODES, loads, dumps
 from visitor import rewrite, walk, tag
 
-KEYWORDS = {'fn', 'let', 'var', 'if', 'else', 'while', 'return', 'true', 'false', 'extern', 'import', 'forall', 'macro', 'rule', 'quote', 'splice', 'lift', 'let_syntax', 'letrec_syntax'}
+KEYWORDS = {'fn', 'proc', 'let', 'var', 'if', 'else', 'while', 'return', 'true', 'false', 'extern', 'import', 'forall', 'macro', 'rule', 'quote', 'splice', 'lift', 'let_syntax', 'letrec_syntax'}
 
 
 def name(s):

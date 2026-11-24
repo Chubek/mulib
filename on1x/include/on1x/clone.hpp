@@ -43,7 +43,7 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
  out->parameters=e.parameters;out->type_parameters=e.type_parameters;out->constraints=e.constraints;
  out->cliche_arguments=e.cliche_arguments;out->member_type_arguments=e.member_type_arguments;
  out->cliche_member=e.cliche_member;
- out->result=e.result;out->captures=e.captures;out->syntax_depth=e.syntax_depth;
+ out->result=e.result;out->procedure=e.procedure;out->captures=e.captures;out->syntax_depth=e.syntax_depth;
  out->projection=e.projection;out->prototype=e.prototype;
  out->syntax_repeat=e.syntax_repeat;
   out->context=e.context;
@@ -101,6 +101,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
     item.function.name=member.function.name;item.function.where=member.function.where;
      item.function.params=member.function.params;item.function.type_parameters=member.function.type_parameters;
      item.function.constraints=member.function.constraints;item.function.result=member.function.result;
+     item.function.procedure=member.function.procedure;
      item.function.external=member.function.external;item.function.prototype=member.function.prototype;
      item.function.extension_generated=member.function.extension_generated;
      item.function.kernel_symbol=member.function.kernel_symbol;
@@ -127,6 +128,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
     item.function.type_parameters=member.function.type_parameters;
     item.function.constraints=member.function.constraints;
     item.function.result=member.function.result;
+    item.function.procedure=member.function.procedure;
     item.function.external=member.function.external;
     item.function.prototype=member.function.prototype;
     item.function.extension_generated=member.function.extension_generated;
@@ -148,7 +150,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
  for(const auto& f:unit.functions){
     Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;
     copy.type_parameters=f.type_parameters;copy.constraints=f.constraints;
-    copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
+    copy.result=f.result;copy.procedure=f.procedure;copy.external=f.external;copy.prototype=f.prototype;
     copy.extension_generated=f.extension_generated;
     copy.meta_canonicalized=f.meta_canonicalized;
     copy.meta_folded_identity=f.meta_folded_identity;

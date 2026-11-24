@@ -17,7 +17,7 @@ cases={
  'cond':('fn main(){@cond("branches",false,{println(1);},true,{println(2);},{println(3);});}', '2\n'),
  'tap':('fn value()->i64{println(1);return 42;}fn main(){var callback=fn(x:i64){println(x);};println(@tap("call",value(),callback));}', '1\n42\n42\n'),
  'assertions':('fn value()->i64{println(1);return 42;}fn main(){@assertions("between",value(),40,44);}', '1\n'),
- 'trace':('@trace("entry","work") fn f()->i64{return 42;}fn main(){println(f());}', '42\n'),
+ 'trace':('@trace("entry","work") proc f(){println(42);}proc main(){f();}', '42\n'),
  'logging':('fn main(){@logging("info","hello");}', ''),
  'format':('fn value(s:string)->string{println(s);return s;}fn main(){println(@format("string","{0}+{1}={{ok}}",value("A"),value("B")));}', 'A\nB\nA+B={ok}\n'),
  'embed':('fn main(){io_stdout(@embed("text","asset.txt"));}', 'embedded\n'),

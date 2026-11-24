@@ -128,6 +128,15 @@ def test_repository_style(work):
     assert b"} # first\n\n\nfn second()" in spaced
 
 
+def test_procedures(work):
+    source = work / "procedures.on1x"
+    source.write_bytes(b"proc main(){let f=proc(){println(42);};f();}\n")
+    fmt(source, "--inplace")
+    assert b"proc main()" in source.read_bytes() and b"proc()" in source.read_bytes()
+    fmt(source, "--check")
+    assert run_source(source, work / "procedures") == b"42\n"
+
+
 def test_multiline_syntax(work):
     source = work / "multiline.on1x"
     formatted = work / "multiline-formatted.on1x"
@@ -317,6 +326,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="on1x-fmt-") as directory:
         test_inplace(Path(directory))
         test_repository_style(Path(directory))
+        test_procedures(Path(directory))
         test_multiline_syntax(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

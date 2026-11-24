@@ -79,9 +79,9 @@ def _render_type(t):
 
 
 def derive(tree,label):
-    extra=[]; used={entry[1] for entry in tree[2] if tag(entry) in ('Function','Extern')}
+    extra=[]; used={entry[1] for entry in tree[2] if tag(entry) in ('Function','Procedure','Extern')}
     for entry in tree[2]:
-        if tag(entry) not in ('Function','Extern'):continue
+        if tag(entry) not in ('Function','Procedure','Extern'):continue
         attrs_idx=4 if tag(entry)=='Extern' else 5
         rest=[]
         for a in entry[attrs_idx]:
@@ -201,7 +201,7 @@ def assertions(tree,label):
 
 def trace(tree,label):
     for f in tree[2]:
-        if tag(f)!='Function':continue
+        if tag(f) not in ('Function','Procedure'):continue
         keep=[]; logs=[]
         for a in f[5]:
             if not attribute(a,label):keep.append(a);continue
@@ -314,7 +314,7 @@ def regex(tree,label):
 def contract(tree,label):
     fresh=Fresh(tree);wrapper=fresh.new();var=fresh.new();found=False
     for f in tree[2]:
-        if tag(f)!='Function':continue
+        if tag(f) not in ('Function','Procedure'):continue
         keep=[];pre=[]
         for a in f[5]:
             if not attribute(a,label):keep.append(a);continue
@@ -379,7 +379,7 @@ def cfg(tree,label):
     features={x.strip() for x in os.environ.get('ON1X_PPX_FEATURES','').split(',') if x.strip()}
     result=[]
     for f in tree[2]:
-        if tag(f) not in ('Function','Extern'):
+        if tag(f) not in ('Function','Procedure','Extern'):
             result.append(f)
             continue
         keep=[];enabled=True
@@ -399,7 +399,7 @@ def cfg(tree,label):
 def test(tree,label):
     tests=[];names={f[1] for f in tree[2]}
     for f in tree[2]:
-        if tag(f)!='Function':continue
+        if tag(f) not in ('Function','Procedure'):continue
         keep=[]
         for a in f[5]:
             if not attribute(a,label):keep.append(a);continue
@@ -416,7 +416,7 @@ def test(tree,label):
 
 def _rewrite_returns(body, wrap):
     # Return inside a nested lambda or staged quote belongs to a different world.
-    if tag(body) in ('Lambda','Quote'):
+    if tag(body) in ('Lambda','ProcedureLambda','Quote'):
         return body
     if tag(body)=='Return':
         return mk('Return',wrap(body[1],body[2]),body[2])
@@ -434,7 +434,7 @@ def _rewrite_returns(body, wrap):
 def return_guard(tree,label):
     fresh=Fresh(tree);wrapper=fresh.new();arg=fresh.new();needed=False
     for f in tree[2]:
-        if tag(f)!='Function':continue
+        if tag(f) not in ('Function','Procedure'):continue
         kept=[];active=False
         for a in f[5]:
             if not attribute(a,label):kept.append(a);continue
@@ -455,7 +455,7 @@ def timing(tree,label):
     fresh=Fresh(tree);now='on1x_ppx_clock_ns';report='on1x_ppx_timing_log';changed=False
     existing={entry[1] for entry in tree[2]}
     for f in tree[2]:
-        if tag(f)!='Function':continue
+        if tag(f) not in ('Function','Procedure'):continue
         at=f[-1];keep=[];active=False
         for a in f[5]:
             if not attribute(a,label):keep.append(a);continue
@@ -473,7 +473,7 @@ def timing(tree,label):
         # The value is first fully evaluated, then clocked/logged, then returned.
         def instrument(body):
             kind=tag(body)
-            if kind in ('Lambda','Quote'):return body
+            if kind in ('Lambda','ProcedureLambda','Quote'):return body
             if kind=='Return':
                 # Scope is a statement, so multiple statements preserve the original return expression's single evaluation.
                 return mk('Scope',block([mk('Let',retvar,result_type,body[1],body[2]),finish(),mk('Return',ident(retvar,body[2]),body[2])],body[2]),body[2])
@@ -507,7 +507,7 @@ def ffi_bind(tree,label):
     target=os.environ.get('ON1X_PPX_FFI_TARGET','')
     required=[]
     for f in tree[2]:
-        if tag(f) not in ('Function','Extern'):continue
+        if tag(f) not in ('Function','Procedure','Extern'):continue
         i=4 if tag(f)=='Extern' else 5
         if not any(attribute(a,label) for a in f[i]):continue
         if tag(f)!='Extern':raise ValueError('ffi_bind attributes apply only to extern fn declarations')

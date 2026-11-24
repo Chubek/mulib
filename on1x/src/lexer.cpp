@@ -3,7 +3,6 @@
 #include <on1x/literal_scan.h>
 #include <on1x/regex_scan.h>
 #include <algorithm>
-#include <mutex>
 #include <exception>
 #include <string_view>
 namespace on1x {
@@ -117,11 +116,11 @@ std::vector<Token> scan(const std::string& source,const std::string& filename,st
     masked[r.start]='@';
    }
   }
-  Collected c{{},&lines,&filename,{}}; size_t error=0;
- {static std::mutex mutex;std::lock_guard guard(mutex);
-    int status=on1x_generated_scan(scanner_input->data(),scanner_input->size(),collect,&c,&error);
+  Collected c{{},&lines,&filename,{}};
+  size_t error=0;
+  const int status=on1x_generated_scan(scanner_input->data(),scanner_input->size(),collect,&c,&error);
   if(c.error)std::rethrow_exception(c.error);
-   if(status)throw Error(pos_at(source,filename,error),status==2?"scanner allocation failure":"invalid token",status==2?"ON1X-LEX-ALLOCATION":"ON1X-LEX-TOKEN");}
+  if(status)throw Error(pos_at(source,filename,error),status==2?"scanner allocation failure":"invalid token",status==2?"ON1X-LEX-ALLOCATION":"ON1X-LEX-TOKEN");
   // Fallback callbacks are forwards; the ASDL linked list is traversed backwards.
   if(!std::is_sorted(c.tokens.begin(),c.tokens.end(),[](const Token& a,const Token& b){return a.where.offset<b.where.offset;}))
     std::reverse(c.tokens.begin(),c.tokens.end());

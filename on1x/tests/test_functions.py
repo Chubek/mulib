@@ -3,6 +3,36 @@
 from support import NativeTests, run
 
 tests = NativeTests()
+tests.valid('procedures', '41\n42\n43\n', text='''
+proc print_twice(value: i64, again: bool) -> void {
+  println(value);
+  if !again { return; }
+  println(value);
+}
+fn inferred() -> _ { return 42; }
+fn invoke(action: fn(i64, bool) -> void) { return action(inferred(), false); }
+proc main() {
+  print_twice(41, false);
+  let action: fn(i64, bool) -> void = proc(x: i64, again: bool) {
+    let next = fn() -> _ { return x + 1; };
+    println(next());
+    if !again { return; }
+  };
+  invoke(print_twice);
+  invoke(action);
+}
+''')
+for name, source, diagnostic in [
+    ('proc_result', 'proc bad() -> i64 {} proc main() {}', 'declare -> void'),
+    ('proc_result_hole', 'proc main() -> _ {}', 'declare -> void'),
+    ('proc_return', 'proc main() { if true { return 1; } }', 'cannot return an expression'),
+    ('proc_void_return', 'proc main() { return println(1); }', 'cannot return an expression'),
+    ('proc_lambda_result', 'fn main() { let bad = proc() -> bool {}; }', 'declare -> void'),
+    ('proc_lambda_return', 'fn main() { let bad = proc() { return 1; }; }', 'cannot return an expression'),
+    ('proc_reserved', 'fn proc() {} fn main() {}', 'reserved keyword used as identifier: proc'),
+]:
+    p = run([tests.compiler, '--check', tests.source(name, source)])
+    assert p.returncode == 1 and diagnostic in p.stderr, (name, p.returncode, p.stderr)
 tests.valid('higher_order', '41\n42\n14\n10\n18\n12\n21\n')
 tests.valid('function_shadowing', '9\n9\n11\n11\n1\n', text='''
 fn add(x: i64) -> i64 { return x + 1; }
@@ -69,6 +99,19 @@ fn use(h: fn(fn(i64) -> i64) -> fn(i64) -> i64) -> i64 { return h(increment)(3);
 fn main() {
   let typed: fn(fn(i64) -> i64) -> fn(i64) -> i64 = keep;
   println(use(typed));
+}
+''')
+tests.valid('grouped_complex_types', '42\n', text='''
+record Box<T> { value: T }
+fn incr(x: i64) -> i64 { return x + 1; }
+fn keep(f: (fn(i64) -> i64)) -> ((fn(i64) -> i64)) { return f; }
+fn main() {
+  let apply: (fn((fn(i64) -> i64)) -> (fn(i64) -> i64)) = keep;
+  let pair: ((i64, bool)) = (41, true);
+  let (number, _) = pair;
+  let box: (Box<i64>) = record<(Box<i64>)>{value: number};
+  let local = fn(x: i64) -> (fn(i64) -> i64) { return apply(incr); };
+  println(local(0)(box["value"]));
 }
 ''')
 tests.valid('function_evaluation', '0\n1\n2\n3\n4\n5\n1\n7\n2\n3\n4\n5\n', text='''
@@ -176,6 +219,14 @@ for name, source, expected in semantic_cases:
     assert not p.stdout, (name, 'partially emitted rejected program')
 
 syntax_cases = [
+    ('grouped_primitive', 'fn main() { let n: (i64) = 1; }', 'grouping requires a complex type'),
+    ('grouped_primitive_return', 'fn main() -> (void) {}', 'grouping requires a complex type'),
+    ('grouped_primitive_nested', 'fn main() { let f: fn((i64)) -> i64 = increment; }',
+     'grouping requires a complex type'),
+    ('grouped_type_hole', 'fn main() { let n: (_) = 1; }', 'grouping requires a complex type'),
+    ('grouped_bare_name', 'record Box {} fn main() { let n: (Box) = record<Box>{}; }',
+     'grouping requires a complex type'),
+    ('unclosed_grouped_type', 'fn main() { let f: (fn(i64) -> i64 = increment; }', "expected ')'"),
     ('missing_arrow', 'fn main() { let f: fn(i64) = increment; }', "expected '->'"),
     ('trailing_call_comma', 'fn main() { increment(1,); }', 'expected identifier'),
     ('parameter_names_in_type', 'fn main() { let f: fn(x: i64) -> i64 = increment; }', 'unknown type: x'),

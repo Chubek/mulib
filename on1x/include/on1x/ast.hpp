@@ -107,6 +107,7 @@ struct Expr {
   std::vector<Type> cliche_arguments,member_type_arguments;
   std::string cliche_member;
   Type result = Type::Void;
+  bool procedure = false; // Lambda spelled `proc`, not an alternate callable type.
  std::vector<Stmt> body;
  std::vector<Capture> captures; // Checked immutable value captures, in first-use order.
  std::size_t syntax_depth = 1; // Parser bound includes anonymous-function bodies.
@@ -139,6 +140,7 @@ struct Function {
  std::vector<TypeParameter> type_parameters;
  std::vector<ClicheConstraint> constraints;
  Type result = Type::Void;
+ bool procedure = false; // Named definition spelled `proc`.
  bool external = false;
  // Internal typed foreign declaration. An ordinary source extern has no symbol here.
  std::string kernel_symbol;

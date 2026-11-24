@@ -178,11 +178,31 @@ relative imports, compatibility flat imports and the automatic pervasive environ
 
 Global functions generalize at recursive-component boundaries. Ordinary
 parameters have one monotype per instance unless explicitly universal, may omit annotations, and `_`
-opts into inference in a type position. A resolved `fn main() -> i64` or
-`fn main() -> void` must exist. An omitted return annotation still defaults to
+opts into inference in a type position. The program needs a zero-parameter
+`main` returning `i64` or `void`. An omitted `fn` return annotation defaults to
 `void`, not inference. `let` and `var` types are inferred from their
 initializers; annotations are optional. Variables are lexically scoped and
 can shadow bindings in outer scopes.
+
+Use the reserved keyword `proc` for a function definition that cannot return
+a value. `proc name(...) { ... }` defines a named procedure, and
+`proc(...) { ... }` is an anonymous procedure expression. Both may optionally
+spell `-> void`; neither accepts `-> _` or another result type. A procedure
+falls through or exits early with bare `return;`, never `return expression;`.
+For example:
+
+```on1x
+proc announce(text: string) { println(text); }
+proc main() {
+  let run: fn() -> void = proc() { announce("ready"); };
+  run();
+}
+```
+
+Procedure values use the same `fn(...) -> void` type as void `fn` values.
+`proc` does not replace `fn` in type annotations, externs, or interface
+signatures. Existing void `fn` definitions and `fn` result inference with
+`-> _` are unchanged.
 
 ## Function values and structural monotypes
 
@@ -190,11 +210,16 @@ An ordinary top-level function name denotes a first-class value. Types are
 structural and exact: two functions with the same parameter/result types have
 the same type, independent of their names. `fn(i64, bool) -> string` is a
 two-argument function type; `fn() -> void` is a zero-argument procedure type.
-Function types can be nested, including in return position:
+Function types can be nested, including in return position. Parentheses can
+optionally group a complex type, such as a function, a tuple, a record, or a
+generic application. Grouping does not change the type: `(fn(i64) -> i64)`
+and `fn(i64) -> i64` are equivalent. A comma still denotes a tuple type,
+as in `(i64, bool)`. Primitive types, bare type names and `_` cannot be
+grouped on their own; write `i64`, not `(i64)`.
 
 ```on1x
 fn increment(x: i64) -> i64 { return x + 1; }
-fn identity(f: fn(i64) -> i64) -> fn(i64) -> i64 { return f; }
+fn identity(f: (fn(i64) -> i64)) -> (fn(i64) -> i64) { return f; }
 fn main() {
   var f: fn(i64) -> i64 = increment;
   let apply: fn(fn(i64) -> i64) -> fn(i64) -> i64 = identity;

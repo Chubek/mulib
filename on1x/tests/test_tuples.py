@@ -28,7 +28,7 @@ fn main() {
 }
 ''')
 valid('tuple_grouping', '42\n', text='''
-fn combine(pair: ((i64, i64))) -> (i64) { let (a, b) = pair; return a + b; }
+fn combine(pair: ((i64, i64))) -> i64 { let (a, b) = pair; return a + b; }
 fn main() { let f: (fn((i64, i64)) -> i64) = combine; println((f)((40, (2)))); }
 ''')
 valid('tuple_nested_patterns', '42\ntext\ntrue\n', text='''

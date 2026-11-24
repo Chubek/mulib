@@ -33,6 +33,14 @@ def native(name,expected,*,text=None,source=None,flags=(),status=0,diagnostic=No
 native('stdppx','42\ntrue\ntrue\n2\nfn(i64, i64) -> i64\n',source=root/'examples/ppx.on1x',flags=['--allow-source-ppx'])
 simple='fn main(){println(20);}'
 native('ordered_chain','42\n',text=simple,flags=options('increment','double'))
+procedures=t.source('proc_input','proc main(){let action=proc(){println(20);};action();}')
+native('proc_rewrite','42\n',source=procedures,flags=options('proc_rewrite','double'))
+for mode,diagnostic in [
+    ('proc_result','declare -> void'),('proc_lambda_result','declare -> void'),
+    ('proc_return','cannot return an expression'),
+]:
+    p=run([t.compiler,'--check',procedures,*options(mode)])
+    assert p.returncode==1 and diagnostic in p.stderr,(mode,p.returncode,p.stderr)
 t.source('doc_provider', '{> Imported. }\nfn answer()->i64{return 42;}')
 doc_source=t.source('doc_input', 'import "doc_provider.on1x";\n{! Main\n  details. }\n'
                     'fn main(){println("${answer{> Embedded. }()}");}\n{! Trailing. }')

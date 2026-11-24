@@ -747,7 +747,7 @@ class Inference {
   component_stack.push_back(name);global_stack.push_back(name);auto& f=*global.definition;
   auto source=std::make_unique<Stmt>();source->kind=Stmt::Kind::Let;source->name=f.name;source->where=f.where;
   auto lambda=std::make_unique<Expr>();lambda->kind=Expr::Kind::Lambda;lambda->where=f.where;
-  lambda->parameters=f.params;lambda->result=f.result;
+   lambda->parameters=f.params;lambda->result=f.result;lambda->procedure=f.procedure;
   for(const auto& s:f.body)lambda->body.push_back(clone_statement(s,ast_budget));
   source->value=std::move(lambda);
   global.source=source.get();global_sources.push_back(std::move(source));
@@ -2082,7 +2082,7 @@ public:
   for(auto& source:global_sources)for(auto& instance:source->instances){
    auto& lambda=*instance->value;finish_expression(lambda);
    Function f;f.name=instance->name;f.where=instance->where;f.prototype=instance->prototype;
-   f.params=std::move(lambda.parameters);f.result=lambda.result;f.body=std::move(lambda.body);
+    f.params=std::move(lambda.parameters);f.result=lambda.result;f.procedure=lambda.procedure;f.body=std::move(lambda.body);
    generated.push_back(std::move(f));
   }
   for(auto& f:generated)unit.functions.push_back(std::move(f));

@@ -99,8 +99,12 @@ int main() {
         auto limit = on1x::scan(std::string(on1x::max_source_bytes, ' '), "scanner-test");
         require(limit.size() == 1 && limit[0].where.offset == on1x::max_source_bytes,
                 "source limit is not inclusive");
+        auto long_terminal = on1x::scan(std::string(on1x::max_source_bytes, 'a'), "scanner-test");
+        require(long_terminal.size() == 2 && long_terminal[0].text.size() == on1x::max_source_bytes &&
+                long_terminal[0].where.offset == 0,
+                "whole-input parser or chart limits leaked into terminal scanning");
 
-        // The generated parser has process-global state; scan() must serialize it.
+        // Independent native matcher state and arenas must stay isolated.
         std::vector<std::future<void>> workers;
         for (int i = 0; i < 4; ++i)
             workers.push_back(std::async(std::launch::async, repeated_scans));

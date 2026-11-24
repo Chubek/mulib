@@ -95,6 +95,8 @@ valid_cases = [
     'let pattern = /雪+/; assert(match /[a-z]+/ ~ "élan"); let score = 24 / 6 / 2;'.encode(),
     b'fn main(){taskgroup within 25ms{taskgroup within duration() s{poll{after 0ms=>1};}}}',
     b'1f32 1.5f32 1.5e-12f32 1e3f64 1u128 1.5u8 1f16 0x1.0f32 1u8x 1f32x 1u16f32',
+    b'proc frob(){ f(1.25e-2f32,0b101u8,0o70u16,0XAFu64); a::b:=0..=9; }',
+    br'#\newline# comment' + b'\n' + br'b!#\x{@macro(1);}',
     b'"' + b'x' * 65536 + b'"',
     b'#' + b'x' * (2 * 1024 * 1024 - 1),
 ]
@@ -109,7 +111,8 @@ for i, bad in enumerate([b'`', b'`trailing\\', b'```unterminated', b'````', b'`c
                          b"'''unclosed", b"r!'''unclosed", b"b!'''unclosed", b"'single'",
                          b"r!'", b"b!''",
                          b'{- no close', b'{@ wrong close -}', b'{! missing brace',
-                         b'{> missing brace', b'{- ' * 257 + b' -}' * 257]):
+                          b'{> missing brace', b'{- ' * 257 + b' -}' * 257,
+                          b'#\\', b'b!#\\ ', b'`bad\rline`']):
     offset = 8 if bad == b'`closed``unterminated' else 6 if bad == b'```````' else 0
     check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix) + offset)
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):

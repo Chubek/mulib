@@ -283,6 +283,14 @@ Quoted strings are byte strings, symbols represent tags/enums/natural numbers.
 Wire strings are ASCII with `\\`, `\"`, `\n`, `\r`, `\t`, `\xHH` escapes;
 UTF-8 source text is preserved byte-for-byte. NUL does not enter the core AST.
 Locations are `(Loc "file" offset line column)`. The root is `(Unit 1 (...))`.
+Named `proc` definitions use `Procedure` with the same fields as `Function`;
+anonymous `proc` expressions use `ProcedureLambda` with the same fields as
+`Lambda`. These additive v1 constructors distinguish procedures from ordinary
+void `fn` definitions without changing the latter's wire form. Preserve the
+input tag when rebuilding a function or lambda. The compiler checks procedure
+result annotations and returns after PPX, so valid wire shape alone does not
+make a generated procedure valid.
+
 The declaration list can also contain `(Docstring "!" "comment body" (Loc ...))`
 or its `">"` counterpart. The body is preserved verbatim, without delimiters,
 and the location points to the opening `{`. These are source metadata, not

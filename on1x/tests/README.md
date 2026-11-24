@@ -250,10 +250,11 @@ fixture in `on1x.functions` checks owner cleanup through indirect calls and
 function-valued returns, not captured-resource lifetimes. Closures reject all
 JSON captures; `on1x.json` separately checks lambda-local roots against MuLIB.
 
-The generated frontend requires the actual LibStone
-`scripts/{asdl,aurocks}.pl`. Configure with `-DON1X_REQUIRE_LIBSTONE=ON` and set
-`ON1X_LIBSTONE_ROOT` for a non-default checkout. Independently configure
-`-DON1X_USE_FALLBACK_SCANNER=ON` in another build directory to test bootstrapping.
+The generated frontend requires LibStone's native `cornerstone/Aurocks` generator
+and `scripts/asdl.pl`. Configure with `-DON1X_REQUIRE_LIBSTONE=ON` and use
+`ON1X_LIBSTONE_ROOT` to select the pinned checkout if it is not at the default
+path. Independently configure `-DON1X_USE_FALLBACK_SCANNER=ON` in another build
+directory to test bootstrapping. See [Aurocks integration](../docs/aurocks.md).
 
 All native test programs use `-std=c11 -Wall -Wextra -Wpedantic -Werror`.
 `ON1X_TEST_C_FLAGS` is a semicolon-separated CMake list of additional

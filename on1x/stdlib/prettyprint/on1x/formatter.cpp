@@ -345,7 +345,7 @@ mulib_pretty_style_t style(const Part& p) {
         return MULIB_PRETTY_STRING;
     if (first >= '0' && first <= '9') return MULIB_PRETTY_NUMBER;
     if (one_of(p.text, {
-        "fn", "extern", "let", "var", "return", "if", "else", "while", "for", "loop",
+        "fn", "proc", "extern", "let", "var", "return", "if", "else", "while", "for", "loop",
         "break", "continue", "true", "false", "import", "from", "as", "forall",
         "macro", "rule", "quote", "splice", "lift", "match", "with", "record", "enum",
         "taskgroup", "launch", "join", "poll", "defer", "unsafe"

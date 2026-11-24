@@ -13,6 +13,12 @@ endif()
 if(NOT TARGET qobjld::qobjld)
   set(_yellowstone "${ON1X_LIBSTONE_ROOT}/yellowstone")
   if(NOT Yellowstone_DIR AND EXISTS "${_yellowstone}/ld/BackendManifest.cpp")
+    if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/scripts/aurocks.pl")
+      message(FATAL_ERROR
+        "This Yellowstone source still requires the removed LibStone scripts/aurocks.pl. "
+        "Use a compatible installed Yellowstone package, supply ON1X_YELLOWSTONE_HOST_GENERATOR, "
+        "or configure with ON1X_USE_YELLOWSTONE_LINK=OFF.")
+    endif()
     set(YELLOWSTONE_BUILD_TOOLS OFF)
     set(YELLOWSTONE_BUILD_TESTS OFF)
     set(QOBJFILE_DOMTERM OFF)

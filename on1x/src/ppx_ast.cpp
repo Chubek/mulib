@@ -111,7 +111,7 @@ SExpr expression(const Expr& e){
   if(e.kind==K::Call)return form("Call",{expression(*e.callee),list(std::move(args)),std::move(at)});
   return form("Tuple",{list(std::move(args)),std::move(at)});
  }
-  case K::Lambda:return form("Lambda",{parameters(e.parameters),type(e.result),block(e.body,e.where),std::move(at)});
+  case K::Lambda:return form(e.procedure?"ProcedureLambda":"Lambda",{parameters(e.parameters),type(e.result),block(e.body,e.where),std::move(at)});
   case K::Quote:case K::Splice:case K::Lift:case K::Run:
    return form(e.kind==K::Quote?"Quote":e.kind==K::Splice?"Splice":e.kind==K::Lift?"Lift":"Run",{expression(*e.children.at(0)),std::move(at)});
  case K::SyntaxBlock:return block(e.body,e.where);
@@ -305,8 +305,9 @@ ExprPtr read_expression(const SExpr& n){
   if(k=="Tuple"&&e->children.size()<2)invalid(n,"tuple expression requires at least two elements");
   }else if(k=="Quote"||k=="Splice"||k=="Lift"||k=="Run"){
    e->kind=k=="Quote"?K::Quote:k=="Splice"?K::Splice:k=="Lift"?K::Lift:K::Run;e->children.push_back(read_expression(field(n,0)));
-  }else if(k=="Lambda"){
-  e->kind=K::Lambda;e->parameters=read_parameters(field(n,0));e->result=read_type(field(n,1));e->body=read_block(field(n,2));
+  }else if(k=="Lambda"||k=="ProcedureLambda"){
+   e->kind=K::Lambda;e->procedure=k=="ProcedureLambda";
+   e->parameters=read_parameters(field(n,0));e->result=read_type(field(n,1));e->body=read_block(field(n,2));
  }else if(k=="ExtensionExpr"||k=="Attribute")invalid(n,"unhandled extension @"+field(n,0).text+"("+field(n,1).text+")");
  else invalid(n,"unhandled extension constructor "+k);
  return e;
@@ -408,7 +409,7 @@ SExpr encode(const Unit& unit){
     throw Error(f.where,"ON1X-KERNEL-PPX: foreign interfaces are not PPX wire data","ON1X-KERNEL-PPX");
    std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));
-  else functions.push_back(form("Function",{string(f.name),parameters(f.params),type(f.result),block(f.body,f.where),list(std::move(attributes)),loc(f.where)}));
+  else functions.push_back(form(f.procedure?"Procedure":"Function",{string(f.name),parameters(f.params),type(f.result),block(f.body,f.where),list(std::move(attributes)),loc(f.where)}));
   }
   for(const auto& doc:unit.docstrings)
    functions.push_back(form("Docstring",{string(std::string(1,doc.marker)),string(doc.text),loc(doc.where)}));
@@ -432,7 +433,8 @@ Unit decode(const SExpr& tree){
    unit.nominals.push_back(std::move(d));continue;
   }
   Function f;f.where=location(n.items.back());
-  f.external=tag(n)=="Extern";if(!f.external&&tag(n)!="Function")invalid(n,"unhandled declaration extension "+tag(n));
+  f.external=tag(n)=="Extern";f.procedure=tag(n)=="Procedure";
+  if(!f.external&&!f.procedure&&tag(n)!="Function")invalid(n,"unhandled declaration extension "+tag(n));
   f.name=field(n,0).text;f.params=read_parameters(field(n,1));f.result=read_type(field(n,2));
   if(!f.external)f.body=read_block(field(n,3));
   const auto& attrs=field(n,f.external?3:4);if(!attrs.items.empty())invalid(attrs.items[0],"unhandled function attribute");
@@ -444,16 +446,32 @@ Unit decode(const SExpr& tree){
 void require_core(const Unit& unit){
  require_no_kernel_imports(unit);
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: unconsumed declaration carrier","ON1X-CAT-PPX");
- if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
- if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");
- auto expr=[&](auto&& self,const Expr& e)->void{
- if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.kind==K::SyntaxLet||!e.syntax_definitions.empty()||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
-  if(e.callee)self(self,*e.callee);
-  for(const auto& c:e.children)self(self,*c);
-  auto stmts=[&](auto&& visit,const std::vector<Stmt>& body)->void{for(const auto& s:body){if(s.value)self(self,*s.value);visit(visit,s.body);visit(visit,s.otherwise);}};
-  stmts(stmts,e.body);
- };
- auto body=[&](auto&& self,const std::vector<Stmt>& b)->void{for(const auto& s:b){if(s.value)expr(expr,*s.value);self(self,s.body);self(self,s.otherwise);}};
- for(const auto& f:unit.functions){if(!f.attributes.empty())throw Error(f.attributes.front()->where,"unhandled PPX attribute: "+f.attributes.front()->text);body(body,f.body);}
+  if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
+  if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");
+  // Check after source rewriting and before inference can resolve an explicit
+  // result hole. Only a nested callable changes the return's lexical owner.
+  auto require_void=[](const Type& result,const Location& at){
+   if(result!=Type::Void)throw Error(at,"proc must omit its result annotation or declare -> void","ON1X-PROC");
+  };
+  auto body=[](auto&& self,const auto& expr,const std::vector<Stmt>& statements,bool procedure)->void{
+   for(const auto& s:statements){
+    if(procedure&&s.kind==Stmt::Kind::Return&&s.value)
+     throw Error(s.where,"proc cannot return an expression; use bare return;","ON1X-PROC");
+    if(s.value)expr(expr,*s.value,procedure);
+    self(self,expr,s.body,procedure);self(self,expr,s.otherwise,procedure);
+   }
+  };
+  auto expr=[&](auto&& self,const Expr& e,bool procedure)->void{
+   if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.kind==K::SyntaxLet||!e.syntax_definitions.empty()||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
+   if(e.procedure)require_void(e.result,e.where);
+   if(e.callee)self(self,*e.callee,procedure);
+   for(const auto& c:e.children)self(self,*c,procedure);
+   body(body,self,e.body,e.kind==K::Lambda?e.procedure:procedure);
+  };
+  for(const auto& f:unit.functions){
+   if(!f.attributes.empty())throw Error(f.attributes.front()->where,"unhandled PPX attribute: "+f.attributes.front()->text);
+   if(f.procedure)require_void(f.result,f.where);
+   body(body,expr,f.body,f.procedure);
+  }
 }
 }

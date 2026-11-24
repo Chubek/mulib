@@ -4,8 +4,9 @@ set(ON1X_YELLOWSTONE_HOST_GENERATOR "" CACHE FILEPATH
   "Absolute path to a build-host on1x-backend-manifest executable (for cross builds)")
 set(_on1x_yellowstone_default OFF)
 if(ON1X_YELLOWSTONE_HOST_GENERATOR OR
-   (NOT CMAKE_CROSSCOMPILING AND
-    EXISTS "${ON1X_LIBSTONE_ROOT}/yellowstone/ld/BackendManifest.cpp"))
+    (NOT CMAKE_CROSSCOMPILING AND
+     EXISTS "${ON1X_LIBSTONE_ROOT}/yellowstone/ld/BackendManifest.cpp" AND
+     EXISTS "${ON1X_LIBSTONE_ROOT}/scripts/aurocks.pl"))
   set(_on1x_yellowstone_default ON)
 endif()
 option(ON1X_USE_YELLOWSTONE_LINK "Generate the built-in registrar map with LibStone Yellowstone"

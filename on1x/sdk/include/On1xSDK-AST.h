@@ -48,7 +48,9 @@ enum {
     ON1X_SDK_AST_FLAG_STATEMENT_FORM = 1u << 8,
     ON1X_SDK_AST_FLAG_SUM_FORM = 1u << 9,
     /* With REFERENCE: 'borrow mut' expression or 'ref' parameter. */
-    ON1X_SDK_AST_FLAG_EXCLUSIVE = 1u << 10
+    ON1X_SDK_AST_FLAG_EXCLUSIVE = 1u << 10,
+    /* A function declaration or lambda written with 'proc'. */
+    ON1X_SDK_AST_FLAG_PROCEDURE = 1u << 11
 };
 
 typedef struct On1xSDK_ASTInfo {

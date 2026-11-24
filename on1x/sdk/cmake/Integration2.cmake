@@ -22,6 +22,13 @@ install(TARGETS on1x_frontend on1x_scanner
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     COMPONENT On1xSDK
 )
+if(ON1X_GENERATED_FRONTEND)
+    set_target_properties(aurocks_fault_runtime PROPERTIES EXPORT_NAME AurocksFaultRuntime)
+    set_property(TARGET aurocks_fault_runtime PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+        "$<BUILD_INTERFACE:${ON1X_LIBSTONE_ROOT}/cornerstone/Aurocks/include>")
+    install(TARGETS aurocks_fault_runtime EXPORT On1xSDKTargets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK)
+endif()
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../schemas/frontend"
     DESTINATION "share/on1x-sdk/schemas"
     COMPONENT On1xSDK

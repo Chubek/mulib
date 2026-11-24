@@ -202,7 +202,7 @@ fn transform(tree: sexpr, label: string) -> sexpr
       declarations = sx_tail(declarations);
       var marker = sx_nil();
       let tag = visitor_tag(declaration);
-      if tag == "Function" || tag == "Extern"
+      if tag == "Function" || tag == "Procedure" || tag == "Extern"
       {
         var index = 5;
         if tag == "Extern"

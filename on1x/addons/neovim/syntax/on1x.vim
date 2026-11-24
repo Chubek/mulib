@@ -6,7 +6,7 @@ endif
 syntax case match
 syntax iskeyword 48-57,65-90,95,97-122
 
-syntax keyword on1xDeclaration fn nextgroup=on1xFunction skipwhite skipnl
+syntax keyword on1xDeclaration fn proc nextgroup=on1xFunction skipwhite skipnl
 syntax match on1xFunction /\<[A-Za-z_][A-Za-z0-9_]*\>\ze\s*(/ contained
 syntax keyword on1xDeclaration extern let var forall
 syntax keyword on1xConditional if else

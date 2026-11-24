@@ -65,7 +65,7 @@ class Parser {
   std::string ident(){if(templating&&accept("$"))return "$"+ident();
    auto t=peek();if(!is_ident(t.text))throw Error(t.where,"expected identifier");++pos;
      static const std::set<std::string> reserved={
-      "fn","let","var","if","else","while","return","true","false",
+      "fn","proc","let","var","if","else","while","return","true","false",
       "extern","import","forall","macro","rule","quote","splice","lift",
       "let_syntax","letrec_syntax","borrow","mut","ref"};
   if(reserved.count(t.text))throw Error(t.where,"reserved keyword used as identifier: "+t.text);
@@ -93,6 +93,18 @@ class Parser {
     auto where=peek().where;std::string name=ident();
     while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"qualified name exceeds 4096 bytes");}
     return name;
+   }
+   static bool can_group_type(const Type& type){
+    switch(type.kind()){
+     case Type::Function: case Type::Forall: case Type::Tuple: case Type::Code:
+     case Type::Record: case Type::Sum: case Type::Array: case Type::Slice:
+     case Type::Own: case Type::Fiber: case Type::Channel: case Type::Sender: case Type::Receiver:
+      return true;
+     case Type::Named:
+      return !type.arguments().empty();
+     default:
+      return false;
+    }
    }
       Type type(){Nesting guard(*this);auto t=peek();
       if((at("ref")||at("borrow"))&&is_ident(peek(1).text))
@@ -147,17 +159,24 @@ class Parser {
     }
    if(accept("(")){
     auto first=type();
-    if(!accept(",")){consume(")");return first;}
+    if(!accept(",")){
+     consume(")");
+     if(!can_group_type(first))
+      throw Error(t.where,"type grouping requires a complex type; remove these parentheses",
+                  "ON1X-PARSE-TYPE");
+     return first;
+    }
     std::vector<Type> elements;elements.push_back(std::move(first));
     do{elements.push_back(type());}while(accept(","));
     consume(")");return Type::tuple(std::move(elements));
    }
-  if(accept("fn")){
-   consume("(");std::vector<Type> parameters;
-   if(!at(")"))do{parameters.push_back(type());}while(accept(","));
-   consume(")");consume("->");auto result=type();
-   return Type::function(std::move(parameters),std::move(result));
-  }
+   if(accept("fn")){
+    consume("(");std::vector<Type> parameters;
+    if(!at(")"))do{parameters.push_back(type());}while(accept(","));
+    consume(")");consume("->");auto result=type();
+    return Type::function(std::move(parameters),std::move(result));
+   }
+   if(at("proc"))throw Error(t.where,"'proc' is reserved for definitions; use 'fn(...) -> void' for a procedure type","ON1X-PARSE-TYPE");
     ++pos;
     if(auto found=bound_types.find(t.text);found!=bound_types.end())return Type::bound(found->second);
    if(t.text=="_")return Type::Hole;
@@ -586,16 +605,17 @@ class Parser {
      syntax_sequence(*e,"]");if(vector&&e->syntax_tail)throw Error(t.where,"vector syntax cannot have a dotted tail");return syntax_bounded(std::move(e));
     }
     if((syntax_atoms||literal_ellipsis)&&
-       (at("...")||at("else")||at("if")||at("let")||at("var")||at("return")||at("while")||at("extern")||at("import")||at("macro")||at("rule")||at("forall")||(at("fn")&&peek(1).text!="("))){
+       (at("...")||at("else")||at("if")||at("let")||at("var")||at("return")||at("while")||at("extern")||at("import")||at("macro")||at("rule")||at("forall")||((at("fn")||at("proc"))&&peek(1).text!="("))){
      ++pos;return syntax_token(t);
     }
     if(templating&&accept("$")){
      auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SyntaxHole;e->where=t.where;e->text="$"+ident();return {std::move(e)};
     }
     if(accept("@"))return extension(t.where);
-   if(accept("fn")){
+   if(accept("fn")||accept("proc")){
     if(++lambdas>2048)throw Error(t.where,"too many anonymous functions");
     auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Lambda;e->where=t.where;
+    e->procedure=t.text=="proc";
     consume("(");
     if(!at(")"))do{
       auto p=parameter(e->parameters.size());
@@ -750,7 +770,7 @@ class Parser {
   }
   Expression syntax_token(const Token& token){
    auto e=std::make_unique<Expr>();e->where=token.where;e->text=token.text;
-   static const std::set<std::string> keywords={"fn","let","var","if","else","while","return","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax","..."};
+   static const std::set<std::string> keywords={"fn","proc","let","var","if","else","while","return","extern","import","forall","macro","rule","quote","splice","lift","let_syntax","letrec_syntax","..."};
    e->kind=keywords.contains(token.text)?Expr::Kind::SyntaxKeyword:Expr::Kind::Variable;return {std::move(e)};
   }
   Expression syntax_bounded(ExprPtr e){
@@ -1683,7 +1703,9 @@ class Parser {
    }
      Function f;f.where=peek().where;
      while(accept("@"))f.attributes.push_back(extension(ts[pos-1].where).node);
-     f.external=accept("extern");consume("fn");f.name=ident();bound_types.clear();
+     f.external=accept("extern");f.procedure=!f.external&&accept("proc");
+     if(!f.procedure)consume("fn");
+     f.name=ident();bound_types.clear();
      f.type_parameters=generic_parameters(f.constraints);
      if(f.external&&!f.type_parameters.empty())
       throw Error(f.where,"extern functions cannot be generic","ON1X-CLICHE-UNSUPPORTED");

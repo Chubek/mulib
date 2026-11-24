@@ -75,7 +75,7 @@ source snapshot, with cache invalidation through actual fact deltas.
 ```
      .on1x source
          │
-     LibStone Aurocks scanner (generated C99)
+     LibStone native Aurocks scanner (generated C + C11 scanner adapter)
          │       └─ ASDL token AST (generated C11, temporary arena)
          │                  OR portable scanner fallback
          ▼
@@ -105,11 +105,13 @@ source snapshot, with cache invalidation through actual fact deltas.
      ISO C11 compiler → native binary with MuLIB kernels
 ```
 
-The ASDL and Aurocks scripts are external; CMake invokes them from
-`<mulib>/third_party/libstone/scripts/`. They are not copied into this tree.
-The Aurocks parser's global parser state is serialized by the C++ scanner.
-Temporary ASDL arena allocations are destroyed after token callback delivery.
-The C++ typed HIR owns its own tokens and tree nodes.
+CMake builds the native C++ Aurocks generator from LibStone's
+`cornerstone/Aurocks` for `grammar/On1x.g`. Perl still generates the ASDL
+schemas; it does not process `.g` files owned by On1x. The scanner uses
+Aurocks' emitted longest-prefix matcher for regular terminals and shared
+bounded recognizers for nested comments and complex literals. Matcher state
+and the temporary ASDL arena belong to each scan, and the C++ frontend copies
+tokens before the arena is destroyed. See [the Aurocks integration notes](aurocks.md).
 
 `src/loader.cpp` owns per-invocation canonical-path caches, bounded dependency
 loading, explicit import bindings and deterministic identifier lowering. The

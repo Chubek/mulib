@@ -396,6 +396,8 @@ class Flattener {
             flags |= ON1X_SDK_AST_FLAG_STATEMENT_FORM;
         if (value.sum_match)
             flags |= ON1X_SDK_AST_FLAG_SUM_FORM;
+        if (value.procedure)
+            flags |= ON1X_SDK_AST_FLAG_PROCEDURE;
         if (value.kind == on1x::Expr::Kind::Borrow)
             flags |= borrow_flags(value.borrow);
         auto index = add(
@@ -491,6 +493,7 @@ class Flattener {
         std::string_view tag = "function") {
         On1xSDK_ASTNodeFlags flags = 0;
         if (value.external) flags |= ON1X_SDK_AST_FLAG_EXTERNAL;
+        if (value.procedure) flags |= ON1X_SDK_AST_FLAG_PROCEDURE;
         if (value.extension_generated)
             flags |= ON1X_SDK_AST_FLAG_GENERATED;
         auto index = add(
@@ -785,7 +788,7 @@ void require_schema(
 On1xSDK_TokenKind classify_token(std::string_view text) {
     if (text == "<eof>") return ON1X_SDK_TOKEN_EOF;
     static const std::unordered_set<std::string_view> keywords = {
-        "fn", "let", "var", "if", "else", "while", "return", "true",
+        "fn", "proc", "let", "var", "if", "else", "while", "return", "true",
         "false", "extern", "import", "from", "as", "forall", "macro",
         "rule", "quote", "splice", "lift", "run", "let_syntax",
         "letrec_syntax", "record", "enum", "impl", "cliche", "match",

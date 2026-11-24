@@ -48,10 +48,12 @@ assert.deepEqual(matches("literals", "1..=4 -22 0x2au8 2e-2 1.25f32 5f64 value32
 ]);
 assert.deepEqual(matches("punctuation", "1..=4 ... <- => ?"), ["..=", "...", "<-", "=>", "?"]);
 assert.deepEqual(matches("declarations", "fn fizz(x: i64)"), ["fn fizz"]);
+assert.deepEqual(matches("declarations", "proc fizz(x: i64) { let action = proc() {}; }"), ["proc fizz"]);
 assert.deepEqual(matches("declarations", "enum Option<T>"), ["enum Option"]);
 assert.deepEqual(matches("declarations", "on1xi 1;"), ["on1xi"]);
 assert.deepEqual(matches("metaprogramming", "unless!(false) $value @ppx checks"), ["unless!", "$value", "@ppx"]);
 assert.deepEqual(matches("metaprogramming", "return !(flag);"), []);
+assert.deepEqual(matches("metaprogramming", "proc!(flag);"), []);
 assert.deepEqual(matches("keywords", "let match = for(loop); close(value); await select"), ["let"]);
 assert.deepEqual(matches("keywords", "if close { return 1; }"), ["if", "return"]);
 assert.deepEqual(matches("keywords", "match sent with { Ok(n) => n }"), ["match", "with"]);

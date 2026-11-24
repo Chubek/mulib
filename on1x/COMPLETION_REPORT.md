@@ -1,5 +1,45 @@
 # On1x completion report
 
+## Grouped complex types
+
+Working-tree change on `c6eaf18f`, LibStone `ab4bde6d`. The GCC 16.2.1
+fallback frontend passed `on1x.functions`, `on1x.tuples`,
+`on1x.nominal_adts`, and `on1x.patterns`. The broader fallback run reported
+154 passes, one cgroup-dependent skip, and one package inventory failure
+(`mcp/__init__.on1x` is not packaged by `on1x.stdlib_project`); the same
+failure reproduced using the pre-change compiler.
+
+Grouping is transparent for complex types. Remove parentheses around a
+single primitive or other simple term; parentheses with commas still
+construct tuple types.
+
+## Native Aurocks
+
+The On1x-owned `On1x.g` now builds with the C++ generator at LibStone
+`ab4bde6d`. Generated and bootstrap scanners agreed on 340 cases under
+GCC and Clang ASan/UBSan. `on1x.compiler` passed with the separate
+Yellowstone link pipeline disabled. With LibStone `1ebcf9bd`, the integration
+also supports 120 runtime lexical PEG faults through `--syntax-faults`.
+The rule-by-rule runtime, scanner parity, compiler, PPX, formatter, and
+SDK scanner checks passed. The fallback build rejects the proposal mode
+and still passes its scanner tests. The externally supplied host-generator
+build and installed SDK frontend consumer also passed. The broader suite
+still reports the standard-library package inventory failure and a stale
+On1xMETA snapshot; neither is part of the fault integration. See
+[Aurocks integration](docs/aurocks.md) for usage and scope.
+
+## Procedures
+
+Named and anonymous `proc` definitions are void-only. They may omit their
+return annotation, or state `-> void`, and can use `return;`. Ordinary PPX
+sees `Procedure` and `ProcedureLambda` and cannot give those nodes a
+non-void result. This does not add an optimization pass. The focused
+generated-scanner run passed all six tests; the focused fallback run
+passed all eleven. The combined native-scanner suite passed 232 tests,
+skipped the cgroup-dependent test, and reproduced the same pre-existing
+standard-library package inventory failure. See
+`build/on1x-native-syntax-integration-retest.log`.
+
 ## Triple apostrophes and block comments
 
 Working-tree change on `1277fd43`. GCC 16.2.1 with the generated scanner
