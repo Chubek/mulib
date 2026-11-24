@@ -43,6 +43,12 @@ def main():
                         *options, source, "-o", output], check=check)
 
         tests = [(root / "examples/hello.on1x", (0, b"21\n", b""))]
+        finite = work / "finite-local-slice.on1x"
+        finite.write_text(
+            "fn main(){let a=array[(1,2),(3,5),(7,11)];var sum=0;\n"
+            " outer:for (x,y) in a[1:3]{if x==3{continue outer;}sum=sum+y;}\n"
+            " println(sum);}\n")
+        tests.append((finite, (0, b"11\n", b"")))
         for name, expr, message in (
                 ("overflow", "9223372036854775807 + n", "addition overflow"),
                 ("division", "n / (n - 1)", "invalid division")):
@@ -78,6 +84,11 @@ def main():
         bad = emit(root / "examples/async_timer.on1x", obj, check=False)
         assert bad.returncode and b"stackless timer frames require the direct C11 runtime profile" in bad.stderr, bad.stderr
         assert obj.read_bytes() == sentinel
+        # Loop-local products work, but this example returns an array across
+        # a function boundary that the embedded AMD64 backend does not admit.
+        bad = emit(root / "examples/finite_iteration.on1x", obj, check=False)
+        assert bad.returncode and b"cephyr.abi.aggregate" in bad.stderr, bad.stderr
+        assert obj.read_bytes() == sentinel, bad.stderr
         output_dir = work / "nonempty"
         output_dir.mkdir()
         retained = output_dir / "file"

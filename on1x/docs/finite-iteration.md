@@ -48,9 +48,12 @@ opcodes or runtime ABI are added.
 The direct C11 backend and the VMWeave product lowering execute this profile
 subject to their existing type, layout, and body restrictions. VMWeave does
 not inherit C11's foreign/resource/cleanup support merely by admitting this
-loop. The ordinary scalar MIR evaluator, MIR-to-C11 route and the ordinary
-source-to-Archon route do not admit the required array/slice layouts and do
-not silently fall back. See [VMWeave](../backends/mir-vm/README.md).
+loop. Embedded Cephyr also executes loops over local aggregates on AMD64;
+it still rejects by-value aggregate function ABI, such as the array return in
+`examples/finite_iteration.on1x`. The ordinary scalar MIR evaluator,
+MIR-to-C11 route and the ordinary source-to-Archon route do not admit the
+required array/slice layouts and do not silently fall back.
+See [VMWeave](../backends/mir-vm/README.md).
 
 Arrays and slices are the only admitted operands. The stdlib compatibility
 lists use `sexpr`, and a user-defined recursive `own<List>` has no intrinsic
@@ -60,8 +63,68 @@ patterns, constructor/record/array or guarded/refutable iteration patterns,
 filtering/comprehensions, and general iterator/drop protocols are not
 implemented by this feature.
 
-Run `examples/finite_iteration.on1x` for `100`, `30`, and `9`, or use
-`ctest --test-dir build/on1x -R '^on1x\.control(_hir)?$' --output-on-failure`
-after building with tests. This checks direct C11, verified standalone VM
+## Verification
+
+Run `examples/finite_iteration.on1x` for `100`, `30`, and `9`. With
+`ON1X_LIBSTONE_ROOT` pointing to LibStone
+`3be5e9d7ffde4f97f333365e7080e316396a0e55` (read-only in the worker run):
+
+```sh
+mkdir -p build/tmp
+export TMPDIR="$PWD/build/tmp"
+cmake -S on1x -B build/iter-generated -DBUILD_TESTING=ON
+cmake --build build/iter-generated --parallel 3
+# Unix Makefiles with CMake 4.4 may require install-time relink artifacts.
+cmake --build build/iter-generated --target preinstall --parallel 3
+ctest --test-dir build/iter-generated --parallel 3 --output-on-failure
+
+cmake -S on1x -B build/iter-fallback-clang -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  '-DON1X_TEST_C_FLAGS=-fsanitize=address,undefined;-fno-sanitize-recover=all;-fno-omit-frame-pointer'
+cmake --build build/iter-fallback-clang --parallel 3
+ctest --test-dir build/iter-fallback-clang --parallel 3 --output-on-failure \
+  -R '^on1x\.(control(_hir)?|pattern(s|_hir)?|value_loops?(_hir)?|vm_data|vm\.(opcodes|source)|acceptance\.slice_snapshots)$'
+```
+
+`on1x.control` and `on1x.control_hir` cover direct C11, verified standalone VM
 artifacts with and without optimization, source and HIR rejection, identity
-PPX, staging, and C11 lifetime accounting.
+PPX, staging, and C11 lifetime accounting. The sanitizer flags instrument
+the generated C11 programs and their linked C runtime, not the compiler or VM.
+
+Worker baseline: `825f65857db0b4c03aee860e297a7d1f33401e77`; implementation
+and fixtures: `660cd130`. CMake 4.4.3 with GCC 16.2.1 and the generated scanner
+passed the iterator, scanner parity and VM tests in the 216-test run.
+The initial run had 208 passes, seven failures and one skip. All six install
+failures passed after `preinstall` and
+`ctest --test-dir build/iter-generated --rerun-failed --output-on-failure --parallel 3`.
+The remaining failure was the relocated `on1x.processor.snapshots` check
+already recorded in [`COMPLETION_REPORT.md`](../COMPLETION_REPORT.md).
+`on1x.container_pod_cgroup` skipped (no delegated cgroup). Logs:
+`build/iter-generated/full-tests.log` and `build/iter-generated/recheck-failed.log`.
+Clang 22.1.8 plus the fallback scanner and generated-program ASan/UBSan
+passed all 10 focused tests (`build/iter-fallback-clang/tests.log`).
+
+The optional AMD64 test used existing installed Cephyr and Archon packages:
+
+```sh
+cmake -S on1x -B build/iter-native -DBUILD_TESTING=ON \
+  -DON1X_WITH_CEPHYR=ON -DCephyr_DIR:PATH="$Cephyr_DIR" \
+  -DON1X_BUILD_MIR_ARCHON=ON -DArchonBackend_DIR:PATH="$ArchonBackend_DIR" \
+  -DON1X_ARCHON_ENABLE_SDK_ADAPTER=ON \
+  -DON1X_ARCHON_TARGET_TRIPLE=x86_64-unknown-linux-gnu
+cmake --build build/iter-native --parallel 3 --target on1xc
+ctest --test-dir build/iter-native --output-on-failure --parallel 3 \
+  -R '^on1x\.cephyr\.(native|options)$'
+build/iter-native/on1xc --sdk-emit mir-archon \
+  --sdk-target x86_64-unknown-linux-gnu on1x/examples/finite_iteration.on1x \
+  -o build/iter-native/finite-archon.s
+```
+
+Both Cephyr tests passed, including link/execute of the labeled tuple-pattern
+loop over a local slice with base, SandSLAB and Blackstone objects. The
+Archon command fails with `ON1X-MIR-UNSUPPORTED: scalar MIR cannot lower array`
+and leaves a pre-existing output file untouched. The Cephyr example with an
+array-returning function fails with `cephyr.abi.aggregate` and also preserves
+the existing output. Logs: `build/iter-native/tests.log` and
+`build/iter-native/iterator-results.log`.

@@ -298,7 +298,7 @@ its canonical status vocabulary. No incomplete feature is marked VERIFIED.
 | Statement loop/for-C/labeled while/break/continue | EXECUTABLE | Conservative return analysis still requires a returning tail in value functions |
 | i64 half-open/inclusive ranges | EXECUTABLE | Ascending unit step only; no unsigned/float ranges or general iterators |
 | Loop values / `break with` | EXECUTABLE bounded profile | Expression-loop targets, by-value/RC results; no unique-resource transfer or general bottom type; managed/aggregate MIR remains unsupported |
-| Finite array/snapshot-slice loops | EXECUTABLE bounded profile | C11 and VMWeave; ordinary scalar MIR rejects arrays/slices; name/wildcard/nested tuples only |
+| Finite array/snapshot-slice loops | EXECUTABLE bounded profile | C11, VMWeave and Cephyr AMD64 for loop-local aggregates; ordinary scalar MIR rejects arrays/slices; name/wildcard/nested tuples only |
 | General iterator/comprehension/list patterns | Not implemented | Intrinsic typed lists, cons/tail decomposition, custom iterator/result/drop protocol |
 | General `match with` / structural patterns | EXECUTABLE bounded profile | Includes declared nonrecursive enum catalogs; no owning lists or foreign resources; aggregate/managed MIR and SDK support remain closed |
 | Function-scoped defer / nominal Result `?` | EXECUTABLE bounded C11 profile | [Go-style contract](defer-errors.md) supersedes the old lexical-defer proposal; shared `sexpr` and concrete finite unique-owner success/error payloads are admitted, and later cooperative cancellation drains frames; no foreign/JSON/CSP payloads, owner-bearing deferred actions, MIR/SDK defer models, typed cancellation result or trap unwind |
