@@ -151,7 +151,9 @@ def main():
     symbols = [s for s in row_without["symbols"] if s["symbol"].startswith("mulib_clamp_")]
     if len(symbols) != 3 or any(s["reason"] != "ambiguous_export" for s in symbols):
         raise RuntimeError("prefix alone was treated as ownership")
-    authored = (repo / "on1x/stdffi/overrides/mulib/clamp.ffi").read_bytes()
+    authored_root = repo / "on1x/stdffi/overrides/mulib"
+    authored_target = authored_root / "x86_64-linux-gnu"
+    authored = ((authored_target if authored_target.exists() else authored_root) / "clamp.ffi").read_bytes()
     bad, n = re.subn(rb'(?<=fingerprint ")[a-f0-9]{64}(?=")', b"0" * 64, authored)
     if n != 1 or bad == authored:
         raise RuntimeError("missing unique native signature in authored override")
