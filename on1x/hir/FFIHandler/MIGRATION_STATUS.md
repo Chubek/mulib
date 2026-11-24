@@ -48,6 +48,44 @@ These are byte identities, not executable verification or trust evidence.
 | `include/cephyr/Cephyr.h` | `1cf2c3d10ecfb08fc0d059588a93c2f73d1c50dc3bfce65443d92d7ce2374648` |
 | `include/cephyr/Cephyr.hpp` | `3cc7ae5cfeb75279556cdc99d0f2fb7c04666bf707902d2af2bb2782efa828d0` |
 
+### Coordinator baseline checks
+
+The pinned LLSynth generated the real v0 Python parser. Running the baseline
+`ffic.py` against the supplied seed in two separate output directories
+produced byte-identical headers and descriptor manifests. The latter included
+three `representation_only` functions, a guard over slots 1 and 2, and
+`grants_safe_admission: false`. This verifies the supplied grammar input only,
+not Cephyr extraction or an On1x native build. To reproduce from the common base:
+
+```sh
+handler=on1x/hir/FFIHandler
+llsynth=on1x/third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl
+out=/absolute/path/to/empty/seed-test-dir
+mkdir -p "$out/a" "$out/b"
+perl "$llsynth" --mode=interpret -T python3 -o "$out/FFIHandler.py" "$handler/FFIHandler.llsynth"
+for run in a b; do
+  python3 -B "$handler/tools/ffic.py" --parser "$out/FFIHandler.py" \
+    --header "$out/$run/on1x_ffi_rules.hpp" --manifest "$out/$run/ffi-manifest.json" \
+    on1x/stdffi/clamp.ffi
+done
+cmp "$out/a/on1x_ffi_rules.hpp" "$out/b/on1x_ffi_rules.hpp"
+cmp "$out/a/ffi-manifest.json" "$out/b/ffi-manifest.json"
+```
+
+The parser SHA-256 was
+`1956ec505def1418037c63764e17a7da6faee2f894692e81182b29e26f5e388b`.
+
+An independent `-std=c11 -Wall -Wextra -Wpedantic -Werror -fsyntax-only`
+probe of the real PriceOpt header passed under both GCC and Clang (2/2).
+Both report `mulib_priceopt_demand_kind_t` and
+`mulib_priceopt_objective_t` as compatible with `unsigned int` using
+`_Generic`; the latter is 4 bytes with alignment 4. The selected Cephyr's
+`src/semantics.cpp` (`NK_ENUMERAL_TYPE`) chooses `int` and preserves the enum
+tag. Do not collapse the two observations into one identity or infer mixed
+ABI compatibility from size/alignment. Exact named enum declarations,
+conversion domains, and provider-specific ABI and artifact checks are
+separate requirements.
+
 ## Worker isolation
 
 Twelve implementation workers, W01–W12, were launched together on branches
