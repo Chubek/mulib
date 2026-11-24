@@ -12,6 +12,7 @@
 #include "../hir/FFIHandler/lower.hpp"
 #include "../hir/MEMGraph/resources.hpp"
 #include "../hir/MEMGraph/storage.hpp"
+#include <on1x/ffi_taint.hpp>
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -585,6 +586,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
    "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
    "       on1xc --ffi-imports INPUT [-o OUTPUT] (requests and matching immutable descriptors; not admission)\n"
+   "       [--ffi-taint reject|allow] (discovery diagnostic only; default reject)\n"
    "       on1xc --ffi-adapter --ffi-id HEX INPUT [-o OUTPUT] (staged binding C, not admission)\n"
     "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
     "       on1xc --emit-c --kernel-c11 --kernel-stage INPUT (unresolved kernel callers; NOT admission)\n"
@@ -722,6 +724,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        on1x::analysis::Options scrutiny;
        [[maybe_unused]] bool scrutiny_option=false;
        bool scrutiny_work_invalid=false;
+       bool ffi_taint_seen=false;
        bool color_option=false;
        std::string diagnostic_catalog_file;
       bool memory=false;
@@ -847,6 +850,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       if(arg=="--no-analysis-repairs"){scrutiny.repairs=false;scrutiny_option=true;continue;}
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
+       if(arg=="--ffi-taint"){
+        if(ffi_taint_seen||++i>=argc)throw std::runtime_error("--ffi-taint requires one reject|allow policy");
+        const std::string_view policy=argv[i];
+        if(policy!="reject"&&policy!="allow")throw std::runtime_error("--ffi-taint requires reject or allow");
+        loader.allow_ffi_taint=policy=="allow";
+        ffi_taint_seen=true;continue;
+       }
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
         if(arg=="--ffi-stage"){loader.ffi_stage=true;continue;}
        if(arg=="--ffi-id"){
@@ -1205,6 +1215,16 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        }
       }
       throw std::runtime_error("FFI adapter ID is not selected for this target");
+     }
+     if(ffi_inspect&&!loader.allow_ffi_taint) {
+      std::set<std::string_view> represented;
+      for(const auto* d:selected_ffi(inspected)) represented.insert(d->module);
+      for(const auto& request:inspected.requests) {
+       if(represented.contains(request.module))continue;
+       if(const auto* observation=on1x::ffi::find_taint(request.module))
+        throw on1x::Error(request.where,"ON1X-FFI-TAINT: "+request.module+"."+
+                         std::string(observation->member)+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
+      }
      }
      write_all(out,kernel_requests(inspected,ffi_inspect));return 0;
    }

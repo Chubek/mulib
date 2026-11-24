@@ -15,6 +15,7 @@ struct LoaderOptions {
   bool kernel_c11=false; // Explicit unsafe-only C11 compilation profile.
    bool kernel_stage=false; // Emit unresolved reviewed-profile callers, not an admission decision.
    bool ffi_stage=false; // Emit unresolved descriptor-v2 callers, including unsafe imports.
+    bool allow_ffi_taint=false; // Diagnostic policy only; does not grant native admission.
     std::string foreign_target{ffi::configured_target()}; // Exact compiler-owned catalogue target.
    bool standalone_guest=false; // Untrusted source: no imports or host-side extensions.
  std::vector<std::filesystem::path> preludes;

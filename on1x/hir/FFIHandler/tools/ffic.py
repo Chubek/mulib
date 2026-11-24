@@ -916,7 +916,7 @@ def unique_pairs(pairs):
     return fields
 
 
-def verify_catalogue(path, inputs, target, evidence=None):
+def verify_catalogue(path, inputs, target, evidence=None, *, discovery_symbols=None, taint=None):
     raw = read(path, MAX_CATALOG_INDEX)
     data = json.loads(raw, object_pairs_hook=unique_pairs)
     require(data.get('schema') == 'on1x.stdffi.mulib/v1' and data.get('target') == target,
@@ -941,6 +941,24 @@ def verify_catalogue(path, inputs, target, evidence=None):
     require(inputs == files, 'stale catalogue: index and descriptor input files/digests differ')
     if evidence is not None:
         require(evidence == records, 'stale catalogue: index and C11 evidence directives differ')
+    # Existing v2 catalogues may store the exact native shape only in their
+    # index. Join it to already-validated emitted discovery entries; never
+    # consume index data to create or change executable descriptors.
+    if discovery_symbols is not None:
+        for mod in modules:
+            shapes = mod.get('symbols', [])
+            require(isinstance(shapes, list) and len(shapes) <= 4096, 'invalid discovery index symbols')
+            module = 'mulib.' + module_alias(mod['key'])
+            for row in shapes:
+                key = (module, row.get('member'))
+                if key in taint or key not in discovery_symbols or row.get('symbol') != discovery_symbols[key]:
+                    continue
+                if row.get('emitted') is not True or row.get('surface') is not None:
+                    continue
+                code = taint_reason({field: row[field] for field in ('native_type', 'specifiers') if field in row})
+                if code is not None:
+                    require(len(taint) < MAX_BINDINGS, 'registry discovery taint limit exceeded')
+                    taint[key] = code
     return sha(raw)
 
 
@@ -948,6 +966,7 @@ def registry_index(paths, target=None, catalogue=None):
     require(0 < len(paths) <= MAX_MODULES, 'invalid registry shard count')
     rows, units, fingerprints = [], [], []
     inputs, evidence = {}, {}
+    discovery_symbols, taint = {}, {}
     seen_modules, seen_symbols, seen_ids, seen_units = set(), set(), set(), set()
     for path in sorted(paths, key=lambda p: p.name):
         raw = read(path, MAX_MANIFEST)
@@ -975,6 +994,13 @@ def registry_index(paths, target=None, catalogue=None):
             seen_symbols.add(symbol)
             if 'c11_evidence' in row:
                 evidence[(row['module'], symbol)] = row['c11_evidence']
+        for row in payload['discovery']:
+            key = (row['module'], row['member'])
+            discovery_symbols[key] = row['symbol']
+            code = taint_reason(row)
+            if code is not None:
+                require(len(taint) < MAX_BINDINGS, 'registry discovery taint limit exceeded')
+                taint[key] = code
         if payload['bindings']:
             units.append(unit)
         for row in payload['bindings']:
@@ -983,21 +1009,76 @@ def registry_index(paths, target=None, catalogue=None):
             seen_ids.add(id_)
             rows.append({key: row[key] for key in ('module', 'member', 'symbol', 'id')})
         fingerprints.append(dict(unit=unit, descriptor_sha256=shard_digest))
+    catalogue_sha = (verify_catalogue(catalogue, inputs, target, evidence,
+                                      discovery_symbols=discovery_symbols, taint=taint)
+                     if catalogue else None)
     data = dict(schema='on1x.ffi-registry/v2', target=target, module_count=len(seen_modules),
-                binding_count=len(rows), shards=fingerprints, grants_safe_admission=False)
-    if catalogue:
-        data['catalogue_index_sha256'] = verify_catalogue(catalogue, inputs, target, evidence)
+                binding_count=len(rows), taint_observation_count=len(taint),
+                shards=fingerprints, grants_safe_admission=False)
+    if catalogue_sha:
+        data['catalogue_index_sha256'] = catalogue_sha
     digest = sha(canonical(data).encode())
     data['descriptor_sha256'] = digest
-    lines = prelude() + [f'#include "{unit}.hpp"' for unit in units]
+    lines = prelude() + ['#include <on1x/ffi_taint.hpp>'] + [f'#include "{unit}.hpp"' for unit in units]
     lines += ['namespace on1x::ffi::generated {',
               f'inline constexpr char descriptor_sha256[] = "{digest}";',
               f'inline constexpr auto bindings = [] {{ std::array<Descriptor, {len(rows)}> all{{}};']
     if units:
         lines += ['    std::size_t pos = 0;',
                   *(f'    for (const auto& entry : {u}::bindings) all[pos++] = entry;' for u in units)]
-    lines += ['    return all;', '}();', *emit_indexes(rows), '}', '']
+    lines += ['    return all;', '}();', *emit_indexes(rows)]
+    # Do not compile discovered native types into the executable binding table.
+    lines += array('TaintObservation', 'taint_observations', [
+        braces(map(json.dumps, (*key, code))) for key, code in sorted(taint.items())
+    ]) + ['}', '']
     return '\n'.join(lines), data
+
+
+def taint_reason(row):
+    # Explicit v2 projection evidence or fixed v2 generator classifications.
+    code = row.get('reason')
+    codes = ('taint_caller_callback', 'taint_function_pointer', 'variadic', 'no_prototype', 'noreturn')
+    if code in codes:
+        return code
+    # V3 already has a validated structural type graph separate from reasons.
+    # V3 tags/indirect body observations not explicitly marked stay unknown.
+    specifiers = row.get('specifiers', ())
+    if not isinstance(specifiers, (list, tuple)) or not all(isinstance(s, str) for s in specifiers):
+        raise ValueError('invalid discovery specifiers')
+    if 'noreturn' in specifiers:
+        return 'noreturn'
+    if row.get('native_type') is not None:
+        pending = [row['native_type']]
+        remaining = MAX_NATIVE_NODES
+        while pending:
+            if not remaining:
+                return None
+            remaining -= 1
+            t = pending.pop()
+            require(isinstance(t, list) and t and isinstance(t[0], str), 'invalid discovery type shape')
+            if t[0] == 'function-type':
+                require(len(t) == 5 and type(t[1]) is bool and type(t[2]) is bool
+                        and isinstance(t[4], list) and len(t[4]) <= 1024, 'invalid discovery function shape')
+                if t[2]:
+                    return 'variadic'
+                if not t[1]:
+                    return 'no_prototype'
+            elif t[0] in ('pointer', 'array', 'qualified'):
+                require(len(t) == (3 if t[0] == 'qualified' else 5), 'invalid discovery type wrapper')
+                if t[0] == 'pointer':
+                    pointee = t[4]
+                    levels = 0
+                    while isinstance(pointee, list) and len(pointee) == 3 and pointee[0] == 'qualified':
+                        levels += 1
+                        if levels > MAX_TYPE_DEPTH:
+                            return None
+                        pointee = pointee[2]
+                    if (isinstance(pointee, list) and len(pointee) == 5
+                            and pointee[0] == 'function-type' and type(pointee[1]) is bool
+                            and type(pointee[2]) is bool and isinstance(pointee[4], list)):
+                        return 'taint_function_pointer'
+            pending.extend(native_children(t))
+    return None
 
 
 def write_atomic(path, data):

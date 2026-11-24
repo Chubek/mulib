@@ -70,3 +70,6 @@ generated file, snapshot, checksum or test key cannot authorize a safe import.
 The [existing review workflow](kernel-review.md) explains independent
 Ed25519 authorization; do not reuse its approval for a changed binding,
 artifact, compiler configuration or linkage.
+
+See [foreign inventory and taint diagnostics](ffi-taint.md) for the bounded
+evidence profile and its independent project/CLI diagnostic policy.

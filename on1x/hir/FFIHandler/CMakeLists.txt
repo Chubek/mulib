@@ -155,6 +155,13 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.hpp" OR EXISTS "${CMAKE_CURRENT_SOU
   target_sources(on1x_frontend PRIVATE lower.cpp)
 endif()
 target_include_directories(on1x_frontend PRIVATE "${_ffi_gen}")
+if(ON1X_WITH_WETSTONE AND EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/path-analysis/TaintAnalysis.hpp")
+  # Report generation only. Never invoke the helper during compilation of an
+  # On1x application or link Wetstone into generated application code.
+  add_executable(on1x-wetstone-ffi-taint EXCLUDE_FROM_ALL tools/wetstone_ffi_taint.cpp)
+  target_compile_features(on1x-wetstone-ffi-taint PRIVATE cxx_std_20)
+  target_include_directories(on1x-wetstone-ffi-taint SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}")
+endif()
 install(FILES ${_ffi_specs} "${_ffi_catalogue_index}"
   DESTINATION "share/on1x/stdffi/mulib/${ON1X_FFI_TARGET}")
 install(FILES "${_ffi_manifest}" DESTINATION "share/on1x/stdffi/${ON1X_FFI_TARGET}")
@@ -211,6 +218,14 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_plan.py"
       --parser "${_ffi_parser}")
   set_tests_properties(on1x.ffihandler.rich_plan_validation PROPERTIES TIMEOUT 90)
+  if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu" AND
+     ON1X_FFI_CATALOG STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}/../../stdffi/mulib")
+    add_test(NAME on1x.ffihandler.taint_policy
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_taint.py"
+        --on1xc "$<TARGET_FILE:on1xc>" --mulib-root "${CMAKE_CURRENT_SOURCE_DIR}/../../.."
+        --scratch "${CMAKE_CURRENT_BINARY_DIR}")
+    set_tests_properties(on1x.ffihandler.taint_policy PROPERTIES TIMEOUT 90)
+  endif()
   if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu" AND
      EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_hir.cpp" AND
      EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.cpp")

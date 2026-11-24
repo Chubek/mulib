@@ -312,6 +312,11 @@ def root_manifest(payload, origin, dependency=False):
             elif verb == 'scrutiny-work' and not dependency:
                 value, = fields(args, 'w')
                 unique(options, verb, scrutiny_work(value))
+            elif verb == 'ffi-taint' and not dependency:
+                value, = fields(args, 'w')
+                if value not in ('reject', 'allow'):
+                    fail('ffi-taint policy must be reject or allow')
+                unique(options, verb, value)
             elif verb == 'optimization-profile' and not dependency:
                 value, = fields(args, 'w')
                 if value not in optimization.PROFILES:
@@ -1651,7 +1656,8 @@ def build(args):
                     or args.cc is not None or toolchain.requested(args) or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
                      or args.scrutiny or args.scrutiny_work is not None
-                     or args.opt_select or args.opt_profile or args.backend or args.optimize_ir or args.ffi_provider):
+                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir or args.ffi_provider
+                      or args.ffi_taint is not None):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -1663,6 +1669,7 @@ def build(args):
         args.profile = args.project_command
     analysis_work = (scrutiny_work(args.scrutiny_work) if args.scrutiny_work is not None
                      else config.get('scrutiny-work'))
+    ffi_taint = args.ffi_taint or config.get('ffi-taint', 'reject')
     chosen = args.profile or ('release' if args.release else 'dev')
     name(chosen)
     backend = ('archvirt' if vm_policy else
@@ -1943,6 +1950,8 @@ def build(args):
         loader = ['--stdlib', str(standard), '-I', str(executor.path(deps_stage)),
                   '-I', str(executor.path(project_stage))]
         analysis_flags = []
+        if args.ffi_provider:
+            analysis_flags.extend(('--ffi-taint', ffi_taint))
         if config.get('scrutiny'):
             analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
         if args.scrutiny:
@@ -1969,7 +1978,8 @@ def build(args):
             outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
-            requests = verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots,
+            graph_flags = [*loader, '--ffi-taint', ffi_taint] if args.ffi_provider else loader
+            requests = verify_graph(executor, compiler, entry, graph_flags, permitted | {entry}, trusted_roots,
                                     ffi=bool(args.ffi_provider))
             ffi_args = []
             if requests:
@@ -2092,6 +2102,7 @@ def build(args):
                       tools={key: tool_digest(path) for key, path in chosen_tools.items()})
         if args.ffi_provider:
             report['ffi_provider'] = args.ffi_provider
+            report['ffi_taint'] = ffi_taint
         if analysis_work is not None:
             report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
@@ -2190,6 +2201,8 @@ def main():
     command.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
     command.add_argument('--allow-shell', action='store_true', help='allow explicit root shell defines outside sandbox')
     command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
+    command.add_argument('--ffi-taint', choices=('reject', 'allow'),
+                         help='override the root On1xfile foreign taint diagnostic')
     command.add_argument('--scrutiny-work', metavar='UNITS',
                          help='override the On1xfile static-analysis work budget (1..10000000)')
     command.add_argument('--offline', action='store_true',

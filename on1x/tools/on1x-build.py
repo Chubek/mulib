@@ -162,6 +162,8 @@ def main():
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
     cli.add_argument('--ffi-provider', choices=('host', 'cephyr'),
                      help='select the native implementation provider for compiler-owned FFI descriptors')
+    cli.add_argument('--ffi-taint', choices=('reject', 'allow'),
+                     help='override the foreign discovery taint diagnostic (default: reject)')
     cli.add_argument('--ffi-adapter-provider', choices=('host', 'cephyr'),
                      help='select the adapter provider (defaults to --ffi-provider)')
     cli.add_argument('--ffi-cross-runner', type=Path,
@@ -317,6 +319,8 @@ def main():
             compiler += ['--scrutiny', args.scrutiny]
         if args.scrutiny_work is not None:
             compiler += ['--scrutiny-work', str(args.scrutiny_work)]
+        if args.ffi_taint is not None:
+            compiler += ['--ffi-taint', args.ffi_taint]
         if args.no_analysis_repairs:
             compiler.append('--no-analysis-repairs')
         if args.diagnostic_catalog:

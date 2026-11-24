@@ -8,6 +8,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -18,7 +19,9 @@ if __name__ == "__main__":
     sys.dont_write_bytecode = True
 
 import ffic
+from cephyr_interface import Function, Object
 from cephyr_syntax import declaration_syntax, pair_with_interface
+from ffi_taint import callback_pointer, declaration_evidence
 from ffi_types import (
     INTEGRAL_SURFACES, NativeGraph, digest, represent, require_target, target_identity,
     TARGETS,
@@ -133,7 +136,8 @@ def failed_module(entry, target, reason, *, override: Override | None = None) ->
         raise GenerationError(f"{entry.key}: cannot verify override after {reason}")
     return Generation(_document(entry, target, unavailable=reason), {
         "status": "failed", "attempted": True, "projected": False, "reason": reason,
-        "symbols": [], "native_tags": [], "obligations": obligations,
+        "symbols": [], "projection_only": [], "native_tags": [], "obligations": obligations,
+        "body_taint": {"status": "unavailable", "reason": "interface_unavailable"},
         "normalized_signature_sha256": None,
     })
 
@@ -241,7 +245,8 @@ def _check_override(entry, target, override: Override | None) -> list[str]:
 
 
 def generate_module(entry, interface, target, *, override: Override | None = None, syntax=None,
-                     origins=None, owned_headers=(), reserved_prefixes=()) -> Generation:
+                     origins=None, owned_headers=(), reserved_prefixes=(),
+                     body_taint=None, callback_taint=None) -> Generation:
     """Map one validated projection; caller supplies only *verified* origins.
 
     The interface format has no origin. The default without an authored
@@ -260,7 +265,11 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
     deltas = override.deltas if override else {}
     pending_selections, pending_deltas = set(selections), set(deltas)
     graph = NativeGraph(interface.tags)
+    tags_by_id = {tag.id: tag for tag in interface.tags}
+    callback_taint = callback_taint or {}
+    body_taint = body_taint or {"status": "unavailable", "reason": "not_requested"}
     rows, rendered = [], []
+    projection_only = []
     used_members = set()
     prefix = entry.reserved_prefix
     for function in sorted(interface.functions, key=lambda fn: fn.name):
@@ -271,6 +280,8 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
             # W05's exact container-core exception; never reserve mulib_ct_*.
             member = symbol.removeprefix("mulib_ct_")
         else:
+            projection_only.append({"symbol": symbol, "kind": "function",
+                                    "reason": "outside_module_selection"})
             continue
         if function.calling_convention != target[3]:
             raise GenerationError(f"{entry.key}: mismatched projected calling convention")
@@ -289,6 +300,12 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
             "parameter_names": list(display_names(function.parameter_names)),
             "surface": None, "native_fingerprint": None, "guards": [], "emitted": False,
         }
+        facts, within_budget = declaration_evidence(function, tags_by_id)
+        row["taint"] = [{"code": fact, "source": "cephyr_interface"} for fact in facts]
+        row["declaration_taint_status"] = "partial" if within_budget else "work_limit"
+        if symbol in callback_taint:
+            row["taint"].append({"code": "taint_caller_callback",
+                                 "source": "cephyr_syntax_wetstone", **callback_taint[symbol]})
         rows.append(row)
         if ownership == "excluded":
             row["reason"] = evidence
@@ -312,7 +329,12 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         if reason is not None:
             row.update(status="discovery_only" if reason == "ambiguous_export" else "unsupported",
                        reason=reason)
-            rendered.append(f"    unsupported {member} = c::{symbol} reason {reason};")
+            # Keep the original ownership/ABI reason in the index. Publish
+            # only a fixed, non-authorizing diagnostic code to the compiler.
+            policy_reason = ("taint_caller_callback" if symbol in callback_taint else
+                             next((code for code in ("taint_function_pointer", "variadic",
+                                                    "no_prototype", "noreturn") if code in facts), reason))
+            rendered.append(f"    unsupported {member} = c::{symbol} reason {policy_reason};")
             row["emitted"] = True
             continue
         native = row["native_type"]
@@ -333,6 +355,20 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
     if pending_deltas:
         raise GenerationError(f"{entry.key}: stale or ineligible override: {min(pending_deltas)}")
 
+    for declaration in interface.declarations:
+        if isinstance(declaration, Function):
+            continue
+        item = {"symbol": declaration.name, "kind": "object" if isinstance(declaration, Object) else "typedef",
+                "reason": "not_a_function"}
+        # Keep local-looking types and layouts without turning dependency
+        # declarations into duplicate exports or adding their tags to the graph.
+        if declaration.name.startswith(prefix):
+            item["native_type"] = graph.type(declaration.type)
+            if isinstance(declaration, Object):
+                item.update(linkage=declaration.linkage, definition=declaration.definition,
+                            size=declaration.layout.size, alignment=declaration.layout.align)
+        projection_only.append(item)
+    projection_only.sort(key=lambda item: (item["symbol"], item["kind"]))
     tags = graph.tags()
     signature_rows = [[row[key] for key in ("symbol", "linkage", "definition",
                                            "specifiers", "native_type")] for row in rows]
@@ -374,6 +410,7 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         "declaration_count": len(interface.declarations),
         "function_count": len(interface.functions),
         "symbols": rows, "native_tags": tags, "obligations": obligations,
+        "projection_only": projection_only, "body_taint": body_taint,
         "normalized_signature_sha256": digest(["on1x.ffi-projection/v1", target,
                                                 signature_rows, tags]),
     })
@@ -456,9 +493,10 @@ def _check_public_header(root, entry, provider):
 
 def _run(args) -> None:
     from cephyr_interface import InterfaceError, decode_interface
+    from ffi_taint import callback_sites, wetstone_evidence
     import ffi_inventory
     import ffi_publish
-    from project_interface import CephyrProvider, ProjectionError
+    from project_interface import CephyrProvider, ProjectionError, _file_identity
 
     target = target_identity(args.target)
     root = args.mulib_root.resolve(strict=True)
@@ -476,18 +514,27 @@ def _run(args) -> None:
     toolchain = (
         tools / "ffgen.py", tools / "ffi_types.py", tools / "cephyr_interface.py", tools / "cephyr_syntax.py",
         tools / "project_interface.py", tools / "ffi_inventory.py", tools / "ffi_publish.py",
-        tools / "ffi_plan.py", tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
+        tools / "ffi_plan.py", tools / "ffi_taint.py", tools / "wetstone_ffi_taint.cpp",
+        tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
     )
     snapshots = {path: _sha(path.read_bytes()) for path in toolchain}
     parser_source = ffic.read(args.parser, 4 * 1024 * 1024)
     snapshots[args.parser] = _sha(parser_source)
+    wetstone = args.wetstone_taint.resolve(strict=True) if args.wetstone_taint else None
+    wetstone_sha = None
+    if wetstone is not None:
+        if not os.access(wetstone, os.X_OK):
+            raise GenerationError("Wetstone helper is not executable")
+        _, _, wetstone_sha = _file_identity(wetstone, 16 * 1024 * 1024)
     generation = {
         "tools": {path.name: snapshots[path] for path in toolchain},
         "parser_identity_sha256": _parser_identity(parser_source, snapshots[toolchain[-1]]),
+        "wetstone_taint_sha256": wetstone_sha,
     }
     protected_paths = (root, root / "include", root / "MANIFEST.yaml", *protected_overrides,
                         *snapshots, args.cephyr.resolve(), args.scratch_root.resolve(),
                        *(path.resolve() for path in (*args.system_include_dir, *args.tool_input)),
+                       *((wetstone,) if wetstone else ()),
                        *((args.sysroot.resolve(),) if args.sysroot else ()))
     if any(path.is_relative_to(output) for path in protected_paths):
         raise GenerationError("output overlaps a protected input or scratch root")
@@ -526,7 +573,7 @@ def _run(args) -> None:
                     args.cephyr, args.target, libstone_revision=args.libstone_revision,
                     scratch_root=args.scratch_root, include_dirs=plan.include_dirs,
                     system_include_dirs=tuple(args.system_include_dir),
-                    tool_inputs=tuple(args.tool_input),
+                    tool_inputs=(*args.tool_input, *((wetstone,) if wetstone else ())),
                     defines=plan.defines,
                     sysroot=args.sysroot, freestanding=args.freestanding, require_syntax=True,
                 )
@@ -579,6 +626,28 @@ def _run(args) -> None:
                                           ("stdin_sha256", "language", "stage")}
         return output, syntax_capture, reason, projection_input, profile_sha
 
+    def analyze_body(entry, provider, syntax_capture, interface, override):
+        if wetstone is None:
+            return {"status": "unavailable", "reason": "wetstone_not_selected"}, {}
+        selections = frozenset(override.selections if override else ())
+        functions = {fn.name: fn for fn in interface.functions
+                     if fn.definition != "declaration" and
+                     (fn.name.startswith(entry.reserved_prefix) or fn.name in selections) and
+                     any(callback_pointer(param) for param in fn.type.parameters)}
+        if not functions:
+            return {"status": "partial", "reason": "no_supported_definition",
+                    "matched_sites": 0, "tainted_sites": 0}, {}
+        try:
+            # C11Interface was generated by replaying these exact AST bytes.
+            sites = callback_sites(syntax_capture.output, functions)
+            findings = wetstone_evidence(provider, wetstone, functions, sites)
+        except (InterfaceError, ProjectionError) as exc:
+            if exc.code in ("input_changed", "input_io", "scratch_io", "process_io"):
+                raise
+            return {"status": "unavailable", "reason": exc.code}, {}
+        return {"status": "partial", "matched_sites": len(sites), "tainted_sites": len(findings),
+                "model_sha256": digest(["on1x.ffi-callee-flow/v1", sorted(sites.items())])}, findings
+
     def generate(entry):
         plan = inventory.plan(entry.key)
         provider, key = provider_for(plan)
@@ -608,9 +677,11 @@ def _run(args) -> None:
                         "on1x.ffi-cephyr-c11-syntax/v1",
                         [[row.name, row.declarations, row.has_body] for row in syntax],
                     ])
+                    body_report, findings = analyze_body(entry, provider, syntax_capture, interface, override)
                     outcome = generate_module(entry, interface, target, override=override, syntax=syntax,
                                               owned_headers=plan.metadata["owned_headers"],
-                                              reserved_prefixes=prefixes)
+                                              reserved_prefixes=prefixes, body_taint=body_report,
+                                              callback_taint=findings)
         row = {
             "key": entry.key, "module": entry.module, "header": entry.header_path,
             "file": entry.filename, "ffi_sha256": _sha(outcome.document),
@@ -653,6 +724,8 @@ def _run(args) -> None:
         inventory.verify_unchanged()
         for provider in providers.values():
             provider.verify_inputs()
+        if wetstone is not None and _file_identity(wetstone, 16 * 1024 * 1024)[2] != wetstone_sha:
+            raise GenerationError("Wetstone helper changed during generation")
         if select_overrides() != override_dir or raw_overrides != _override_inputs(override_dir, inventory):
             raise GenerationError("authored overrides changed during generation")
         for path, sha in snapshots.items():
@@ -718,6 +791,8 @@ def main(argv=None) -> int:
     parser.add_argument("--parser", required=True, type=_absolute,
                         help="trusted Python parser generated by genuine LLSynth")
     parser.add_argument("--scratch-root", required=True, type=_absolute)
+    parser.add_argument("--wetstone-taint", type=_absolute,
+                        help="trusted wetstone-ffi-taint helper for bounded body observations")
     parser.add_argument("--system-include-dir", action="append", default=[], type=_absolute)
     parser.add_argument("--tool-input", action="append", required=True, type=_absolute,
                         help="repeat for actual compiler libraries and target resources")

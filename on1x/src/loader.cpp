@@ -1,5 +1,6 @@
 #include <on1x/loader.hpp>
 #include <on1x/ffi_hir.hpp>
+#include <on1x/ffi_taint.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/discovery.hpp>
@@ -116,6 +117,10 @@ class Loader {
     if(scalar)descriptor=nullptr;
     const auto symbol=scalar?scalar->symbol:
      (options.ffi_stage?std::string_view{}:legacy_kernel_member(request.module,member));
+     if(!options.allow_ffi_taint) {
+      if(const auto* observation=ffi::find_taint(request.module,member))
+       throw Error(e.where,"ON1X-FFI-TAINT: "+e.text+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
+     }
     if(!descriptor&&symbol.empty()){
      throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
     }
@@ -340,6 +345,11 @@ class Loader {
           const bool supported=legacy||
            (registered!=descriptors.end()&&(request.is_unsafe||options.kernel_stage||options.ffi_stage));
          if(!supported){
+        if(!options.allow_ffi_taint&&registered==descriptors.end()){
+         if(const auto* observation=ffi::find_taint(request.module))
+          throw Error(request.where,"ON1X-FFI-TAINT: "+request.module+"."+
+                      std::string(observation->member)+" ("+std::string(observation->code)+")","ON1X-FFI-TAINT");
+        }
         Unit denied;denied.kernel_imports.push_back(request);require_no_kernel_imports(denied);
        }
       }

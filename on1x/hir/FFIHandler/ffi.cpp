@@ -1,5 +1,6 @@
 #include <on1x/ffi.hpp>
 #include <on1x/ffi_scalar.hpp>
+#include <on1x/ffi_taint.hpp>
 #include <on1x_ffi_rules.hpp>
 #include <algorithm>
 #include <stdexcept>
@@ -82,6 +83,13 @@ const Descriptor* find_descriptor(ForeignId id) noexcept {
 }
 const Descriptor* find_descriptor_by_symbol(std::string_view symbol) noexcept {
     return lookup(symbol, generated::by_symbol, [](const Descriptor& d) { return d.symbol; });
+}
+const TaintObservation* find_taint(std::string_view module, std::string_view member) noexcept {
+    const auto& rows = generated::taint_observations;
+    auto it = std::lower_bound(rows.begin(), rows.end(), std::pair{module, member},
+        [](const TaintObservation& row, auto key) { return std::pair{row.module, row.member} < key; });
+    return it != rows.end() && it->module == module && (member.empty() || it->member == member)
+        ? &*it : nullptr;
 }
 
 std::span<const ScalarBinding> scalar_bindings() noexcept { return scalar_bindings_view; }
