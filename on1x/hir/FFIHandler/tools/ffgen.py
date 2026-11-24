@@ -437,7 +437,7 @@ def _run(args) -> None:
     toolchain = (
         tools / "ffgen.py", tools / "ffi_types.py", tools / "cephyr_interface.py",
         tools / "project_interface.py", tools / "ffi_inventory.py", tools / "ffi_publish.py",
-        tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
+        tools / "ffi_plan.py", tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
     )
     snapshots = {path: _sha(path.read_bytes()) for path in toolchain}
     parser_source = ffic.read(args.parser, 4 * 1024 * 1024)

@@ -18,7 +18,7 @@ _CODE = re.compile(r'[a-z][a-z0-9_]{0,95}')
 _SHA256 = re.compile(r'[0-9a-f]{64}')
 _GENERATION_TOOLS = frozenset({
     'ffgen.py', 'ffi_types.py', 'cephyr_interface.py', 'project_interface.py',
-    'ffi_inventory.py', 'ffi_publish.py', 'ffic.py', 'FFIHandler.llsynth',
+    'ffi_inventory.py', 'ffi_publish.py', 'ffi_plan.py', 'ffic.py', 'FFIHandler.llsynth',
 })
 
 

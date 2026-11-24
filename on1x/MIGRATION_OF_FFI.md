@@ -1,9 +1,9 @@
 # MIGRATION_OF_FFI
 
-**Agent implementation directive — revision 2: Cephyr semantic projection**  
-**Repositories:** `Chubek/mulib` (On1x), `Chubek/libstone` (Cephyr and LLSynth)  
-**Parallelism:** exactly 12 implementation workers plus a supervising coordinator.  
-**Supersedes:** the previous 12-worker FFI migration directive and its manual-binding assumptions.  
+**Agent implementation directive — revision 2: Cephyr semantic projection**\
+**Repositories:** `Chubek/mulib` (On1x), `Chubek/libstone` (Cephyr and LLSynth)\
+**Parallelism:** exactly 12 implementation workers plus a supervising coordinator.\
+**Supersedes:** the previous 12-worker FFI migration directive and its manual-binding assumptions.\
 **Objective:** automatically generate the standard MuLIB foreign-interface library in `on1x/stdffi/mulib` from Cephyr's existing resolved declaration projection; compile it with LLSynth-based FFIHandler; replace KernelBind and On1x-specific standalone contracts with one generic, checked FFI implementation.
 
 ## 0. Orders to the supervising agent
