@@ -37,6 +37,7 @@ inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
 inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
  clone_tick(budget,e.where);auto out=std::make_unique<Expr>();
   out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
+  out->foreign=e.foreign;
    out->labels=e.labels;
    for(const auto& p:e.patterns)out->patterns.push_back(clone_pattern(p,budget));
     out->statement_match=e.statement_match;out->sum_match=e.sum_match;out->move_out=e.move_out;out->borrow=e.borrow;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;
@@ -101,6 +102,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
      item.function.constraints=member.function.constraints;item.function.result=member.function.result;
      item.function.external=member.function.external;item.function.prototype=member.function.prototype;
      item.function.extension_generated=member.function.extension_generated;
+     item.function.foreign=member.function.foreign;
      item.function.kernel_symbol=member.function.kernel_symbol;
      item.function.kernel_link_only=member.function.kernel_link_only;
      for(const auto& statement:member.function.body)item.function.body.push_back(clone_statement(statement,budget));
@@ -128,6 +130,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
     item.function.external=member.function.external;
     item.function.prototype=member.function.prototype;
     item.function.extension_generated=member.function.extension_generated;
+    item.function.foreign=member.function.foreign;
     item.function.kernel_symbol=member.function.kernel_symbol;
     item.function.kernel_link_only=member.function.kernel_link_only;
     for(const auto& statement:member.function.body){
@@ -148,6 +151,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
     copy.type_parameters=f.type_parameters;copy.constraints=f.constraints;
     copy.result=f.result;copy.external=f.external;copy.prototype=f.prototype;
     copy.extension_generated=f.extension_generated;
+    copy.foreign=f.foreign;
     copy.kernel_symbol=f.kernel_symbol;
     copy.kernel_link_only=f.kernel_link_only;
   for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));

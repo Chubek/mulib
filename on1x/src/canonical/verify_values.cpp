@@ -1,5 +1,6 @@
 #include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
+#include <on1x/ffi_hir.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/literals.hpp>
@@ -179,6 +180,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     std::set<std::size_t> ids;
     std::vector<Loop> loops;
     std::vector<std::size_t> regions;
+    bool unsafe=false;
    };
    void retained_pattern(const Pattern& pattern,std::size_t depth){
     tick(pattern.where,depth);source(pattern.where);
@@ -191,6 +193,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
                       RetainedControl& control,std::size_t depth){
     for(const auto& statement:statements){
      tick(statement.where,depth);source(statement.where);
+     if(statement.unsafe_block&&statement.kind!=S::Block)
+      fail(statement.where,"unsafe marker on a retained non-block statement");
      if(!statement.instances.empty())
       fail(statement.where,
            "unfrozen specialization instances in retained generic source");
@@ -247,13 +251,19 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       fail(statement.where,
            "control identity on retained generic non-control statement");
      value();
+     const auto saved_unsafe=control.unsafe;
+     control.unsafe=control.unsafe||statement.unsafe_block;
      retained_body(statement.body,control,depth+1);
+     control.unsafe=saved_unsafe;
      retained_body(statement.otherwise,control,depth+1);
     }
    }
    void retained_expression(const Expr& expression,RetainedControl& control,
                             std::size_t depth,bool callee_position=false){
     tick(expression.where,depth);source(expression.where);
+    verify_foreign_callee(expression,callee_position,control.unsafe);
+    if(expression.unsafe_region&&expression.kind!=E::Region)
+     fail(expression.where,"unsafe marker on a retained non-region expression");
     const bool intrinsic=callee_position&&expression.kind==E::Variable&&
                          expression.reference==Expr::Reference::Intrinsic;
     if(intrinsic){
@@ -346,6 +356,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     }else if(expression.control_target)
      fail(expression.where,
           "control identity on retained generic non-loop expression");
+    const auto saved_unsafe=control.unsafe;
+    if(expression.kind==E::UnsafeBlock||expression.unsafe_region)control.unsafe=true;
     if(expression.callee)
      retained_expression(*expression.callee,control,depth+1,true);
     for(const auto& child:expression.children){
@@ -361,7 +373,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(expression.kind==E::Lambda){
      auto loops=std::move(control.loops);
      auto regions=std::move(control.regions);
-     control.loops.clear();control.regions.clear();
+     control.loops.clear();control.regions.clear();control.unsafe=false;
      retained_body(expression.body,control,depth+1);
      control.loops=std::move(loops);
      control.regions=std::move(regions);
@@ -370,6 +382,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      retained_body(expression.body,control,depth+1);
      control.loops.pop_back();
     }else retained_body(expression.body,control,depth+1);
+    control.unsafe=saved_unsafe;
    }
    static Type signature(const Function& function){
    std::vector<Type> parameters;
@@ -377,14 +390,28 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    return Type::function(std::move(parameters),function.result);
   }
   static Expr::Reference function_reference(const Function& function){
+   if(function.foreign)return ffi::foreign_reference(function.foreign.mode());
    if(function.kernel_link_only)return Expr::Reference::ScalarForeign;
    if(!function.kernel_symbol.empty())return Expr::Reference::UnsafeForeign;
    if(function.external)return Expr::Reference::Extern;
     if(takes_borrows(function))return Expr::Reference::BorrowFunction;
    return Expr::Reference::Function;
    }
+   void verify_foreign_callee(const Expr& e,bool callee_position,bool lexical_unsafe){
+    if(!e.foreign&&(e.kind!=E::Variable||!ffi::is_foreign_hir_name(e.text)))return;
+    if(e.kind!=E::Variable||!callee_position||!e.foreign)
+     fail(e.where,"descriptor identity is valid only on a direct foreign callee");
+    const auto found=functions.find(e.text);
+    if(found==functions.end())fail(e.where,"foreign callee has no canonical declaration");
+    ffi::verify_foreign_reference(e,*found->second);
+    if(e.reference!=function_reference(*found->second)||e.type!=signature(*found->second))
+     fail(e.where,"canonical foreign callee reference/signature mismatch");
+    if(ffi::requires_unsafe(e.foreign.mode())&&!lexical_unsafe)
+     fail(e.where,"unsafe foreign reference must be a direct lexically unsafe call");
+   }
    void expression_header(const Expr& e,std::size_t depth,bool callee_position){
     tick(e.where,depth);source(e.where);
+    verify_foreign_callee(e,callee_position,unsafe_context);
     if(e.prototype&&!generic_context&&borrowers.empty())
      fail(e.where,"non-executable prototype marker in executable checked HIR");
     const bool generics=generic_context||e.prototype;
@@ -1052,16 +1079,18 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        call_loans.resize(acquired);
        return live;
       }
-     const auto kernel=unsafe||e.callee->reference==Expr::Reference::ScalarForeign?
-      std::string_view(functions.at(e.callee->text)->kernel_symbol):std::string_view{};
-     const bool session_loan=ipc_kernel_session_loan(kernel);
+     const auto* foreign=unsafe||e.callee->reference==Expr::Reference::ScalarForeign?
+      functions.at(e.callee->text):nullptr;
+     const auto policy=[&](std::size_t i){
+      return foreign?ffi::argument_policy(*foreign,i):ffi::ArgumentPolicy{};
+     };
      const auto loans_before=call_loans.size();
      for(std::size_t i=0;i<e.children.size();++i){
       const auto& child=*e.children[i];
-      if(i==0&&session_loan){
+      if(policy(i).mode==ffi::ArgumentPolicy::Mode::ExclusiveOwner){
        const auto& place=borrow_source(child,state,depth+1);
-       if(place.type!=ipc_kernel_session_owner()||place.borrow!=BorrowMode::Value)
-        ref_error(child.where,"framed session operation requires a named session owner");
+       if(!place.type.is_own()||place.type!=foreign->params[i].type||place.borrow!=BorrowMode::Value)
+        ref_error(child.where,"foreign call loan requires an initialized named owner of the exact type");
        acquire(place,BorrowMode::Exclusive,child.where,child.text);
        call_loans.push_back({BorrowMode::Exclusive,place.id,place.root});
       }else if(!expression(child,state,depth+1)){
@@ -1077,8 +1106,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      if(!callable.is_function()||callable.parameters().size()!=e.children.size())
       fail(e.where,"canonical call target/arity mismatch");
       for(std::size_t i=0;i<e.children.size();++i)
-       if(kernel_span_argument(kernel,i)?!kernel_span_type(e.children[i]->type):
-                                          e.children[i]->type!=callable.parameters()[i])
+       if(!ffi::argument_type(policy(i),callable.parameters()[i],e.children[i]->type))
         fail(e.children[i]->where,"canonical call argument type mismatch");
      result=callable.result();
     }
@@ -1467,8 +1495,14 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       fail({"<forall-layout>"},"invalid/duplicate forall layout instance");
     }
    }
+    const Function* raw_foreign=nullptr;
+    const Function* checked_foreign=nullptr;
+    std::string_view foreign_target;
     for(const auto& f:unit.functions){
      source(f.where);
+     if(const auto* descriptor=ffi::verify_foreign_declaration(f,foreign_target)){
+      foreign_target=descriptor->target.triple;checked_foreign=&f;
+     }else if(f.external&&f.kernel_symbol.empty())raw_foreign=&f;
      verify_kernel_shape(f);
      if(ipc_kernel_symbol(f.kernel_symbol)&&csp::present(unit))
       fail(f.where,"framed transport cannot run in the cooperative concurrency profile");
@@ -1485,8 +1519,13 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(!f.attributes.empty())fail(f.where,"unhandled function attribute in checked HIR");
     if(f.external&&!f.body.empty())fail(f.where,"external function has an executable body");
     scopes.emplace_back();params(f.params);scopes.pop_back();
-    if(!functions.emplace(f.name,&f).second)
-     fail(f.where,"duplicate checked function: "+f.name);
+     if(!functions.emplace(f.name,&f).second)
+      fail(f.where,"duplicate checked function: "+f.name);
+   }
+   if(checked_foreign){
+    if(raw_foreign)fail(raw_foreign->where,"raw extern cannot be mixed with checked foreign descriptors");
+    if(csp::present(unit))
+     fail(checked_foreign->where,"unknown foreign effects cannot run in the cooperative concurrency profile");
    }
    generic_context=false;
    const Function* first=nullptr;

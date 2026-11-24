@@ -98,6 +98,14 @@ It is not an admission artifact or an application-runtime log.
 
 ## Contract for future profiles that change HIR
 
+The `ffi.mmgi` foreign rules are descriptive; the executable MEMGraph
+adapter does not interpret them as admission. Checked foreign calls are
+resolved by the compiler-owned descriptor registry and rechecked by
+FFIHandler and the canonical value verifier, including when
+`ON1X_WITH_MEMGRAPH=OFF`. A descriptor identity carries representation, not
+permission to execute or link. The native driver remains responsible for the
+independent admission, build and ABI checks.
+
 MEMGraph is intended to run on **checked and specialized** On1x canonical HIR,
 not source text. Core entry points to inspect in MuLIB are:
 

@@ -1,4 +1,5 @@
 #include <on1x/loader.hpp>
+#include <on1x/ffi_hir.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/discovery.hpp>
@@ -7,6 +8,16 @@
 #include <sstream>
 
 namespace on1x {
+namespace ffi {
+// Only the loader, after exact import, mode and target resolution, can mint
+// the HIR reference. Checkers, rewrites and wire readers may never mint one.
+class HirResolver {
+public:
+ static HirForeign resolve(const Descriptor& descriptor,ForeignMode mode){
+  return HirForeign(descriptor,mode);
+ }
+};
+}
 namespace {
 namespace fs=std::filesystem;
 struct Module;
@@ -61,11 +72,12 @@ class Loader {
   bool unsafe_context=false;
   std::size_t kernel_requests=0;
   std::map<std::string,Function> kernel_calls;
-    static constexpr const char* kernel_symbols[]={"mulib_histprice_ema","mulib_histprice_holt","mulib_priceopt_optimize","mulib_priceopt_candidates",
-      ipc_kernel_open,ipc_kernel_roundtrip,ipc_kernel_open_session,ipc_kernel_register,
-      ipc_kernel_revoke,ipc_kernel_send,ipc_kernel_poll,ipc_kernel_finish};
-  static bool kernel_name(std::string_view name){
-   return ffi::find_scalar(name)||std::find(std::begin(kernel_symbols),std::end(kernel_symbols),name)!=std::end(kernel_symbols);
+  static void append_parameters(Function& f,const std::vector<Type>& parameters){
+   for(std::size_t i=0;i<parameters.size();++i){
+    Param parameter;parameter.name="arg"+std::to_string(i);
+    parameter.type=parameters[i];parameter.where=f.where;
+    f.params.push_back(std::move(parameter));
+   }
   }
   std::string kernel_type_prefix(bool history)const{return prefix+(history?"kernel_history_":"kernel_pricing_");}
   Type kernel_result(bool history)const {
@@ -78,22 +90,47 @@ class Loader {
    const auto alias=e.text.substr(0,dot);
    auto found=kernel_scope->kernels.find(alias);
    if(found==kernel_scope->kernels.end()||values.contains(alias))return false;
-   if(dot==std::string::npos||!direct)
+   if(dot==std::string::npos||!direct){
     throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
-   const bool history=found->second.module=="mulib.histprice";
-   const bool pricing=found->second.module=="mulib.priceopt";
-    const bool ipc=found->second.module=="mulib.ipc_framed";
-    const auto member=e.text.substr(dot+1);
-    const auto* scalar=ffi::find_member(found->second.module,member);
-    const auto symbol=scalar?std::string(scalar->symbol):
-       (history?"mulib_histprice_":pricing?"mulib_priceopt_":ipc?"on1x_kernel_ipc_v1_":"")+member;
-    if((!scalar&&!history&&!pricing&&!ipc)||!kernel_name(symbol)){
+   }
+    const std::string_view member=std::string_view(e.text).substr(dot+1);
+    const auto& request=found->second;
+    auto* descriptor=ffi::find_descriptor(request.module,member);
+    if(descriptor&&descriptor->schema_version!=2)descriptor=nullptr;
+    // Keep the old reviewed driver/stub subject unchanged. The direct unsafe
+    // C11 route prefers a real v2 descriptor even for an existing export.
+    const auto* scalar=!options.ffi_stage&&request.module==legacy_scalar_module&&
+     (!descriptor||options.kernel_stage)?ffi::find_member(request.module,member):nullptr;
+    if(scalar)descriptor=nullptr;
+    const auto symbol=scalar?scalar->symbol:
+     (options.ffi_stage?std::string_view{}:legacy_kernel_member(request.module,member));
+    if(!descriptor&&symbol.empty()){
      throw Error(e.where,"ON1X-KERNEL-MEMBER: no ABI-verified export "+e.text,"ON1X-KERNEL-MEMBER");
     }
-    const bool unsafe=found->second.is_unsafe;
+    const bool unsafe=request.is_unsafe;
     if(unsafe&&!unsafe_context)
      throw Error(e.where,"ON1X-KERNEL-CONTEXT: "+e.text+" requires unsafe { ... }","ON1X-KERNEL-CONTEXT");
-    auto name=(unsafe?"@kernel_":"@kernel_scalar_")+symbol;
+    if(descriptor){
+     if(descriptor->target.triple!=options.foreign_target)
+      throw Error(e.where,"ON1X-FFI-TARGET: unsupported foreign target for "+e.text,"ON1X-FFI-TARGET");
+     const auto mode=unsafe?(options.ffi_stage?ffi::ForeignMode::UnsafeLinkOnly:ffi::ForeignMode::Unsafe):
+      ffi::ForeignMode::LinkOnly;
+     e.foreign=ffi::HirResolver::resolve(*descriptor,mode);
+     auto name=ffi::foreign_hir_name(e.foreign);
+     if(!kernel_calls.contains(name)){
+      Function f;f.name=name;f.where=e.where;f.external=true;f.foreign=e.foreign;
+      f.result=ffi::surface_type(descriptor->surface_result);
+      std::vector<Type> params;
+      for(const auto& parameter:descriptor->parameters)params.push_back(ffi::surface_type(parameter.surface));
+      append_parameters(f,params);
+      ffi::verify_foreign_declaration(f,options.foreign_target);
+      kernel_calls.emplace(name,std::move(f));
+     }
+     e.text=std::move(name);
+     return true;
+    }
+    const bool history=history_kernel_symbol(symbol),pricing=pricing_kernel_symbol(symbol),ipc=ipc_kernel_symbol(symbol);
+    auto name=(unsafe?"@kernel_":"@kernel_scalar_")+std::string(symbol);
     if(!kernel_calls.contains(name)){
      Function f;f.name=name;f.where=e.where;
      f.result=ipc?ipc_kernel_result(symbol):history||pricing?kernel_result(history):Type{Type::I64};f.external=true;
@@ -101,7 +138,7 @@ class Loader {
      auto params=ipc?ipc_kernel_parameters(symbol):
         history?history_kernel_parameters(symbol):pricing?pricing_kernel_parameters(symbol,kernel_type_prefix(false)):
        std::vector<Type>(scalar->arity,Type::I64);
-    for(std::size_t i=0;i<params.size();++i){Param param;param.name="arg"+std::to_string(i);param.type=params[i];param.where=e.where;f.params.push_back(std::move(param));}
+    append_parameters(f,params);
     kernel_calls.emplace(name,std::move(f));
    }
    e.text=std::move(name);
@@ -258,8 +295,17 @@ class Loader {
           !m->unit.cliche_implementations.empty()||!m->unit.inherent_implementations.empty())
         throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
       for(const auto& request:m->unit.kernel_imports){
-          const bool supported=request.is_unsafe?(request.module=="mulib.clamp"||request.module=="mulib.ipc_framed"):
-          options.kernel_stage&&(request.module=="mulib.clamp"||request.module=="mulib.histprice"||request.module=="mulib.priceopt");
+          const auto descriptors=ffi::foreign_descriptors();
+          const auto registered=std::find_if(descriptors.begin(),descriptors.end(),[&](const auto& descriptor){
+           return descriptor.schema_version==2&&descriptor.module==request.module;
+          });
+          if(registered!=descriptors.end()&&registered->target.triple!=options.foreign_target)
+           throw Error(request.where,"ON1X-FFI-TARGET: unsupported foreign target for "+request.module,"ON1X-FFI-TARGET");
+          const bool legacy=!options.ffi_stage&&(request.is_unsafe?
+           (request.module==legacy_scalar_module||request.module=="mulib.ipc_framed"):
+           options.kernel_stage&&(request.module==legacy_scalar_module||request.module=="mulib.histprice"||request.module=="mulib.priceopt"));
+          const bool supported=legacy||
+           (registered!=descriptors.end()&&(request.is_unsafe||options.kernel_stage||options.ffi_stage));
          if(!supported){
         Unit denied;denied.kernel_imports.push_back(request);require_no_kernel_imports(denied);
        }
@@ -646,6 +692,9 @@ public:
       }
     }
  LoadedUnit run(const fs::path& input){
+   if(!inspection&&options.ffi_stage&&(!options.kernel_c11||options.kernel_stage))
+    throw Error({input.string()},"FFI staging requires the direct C11 profile and excludes legacy staging",
+                "ON1X-KERNEL-PROFILE");
    if(options.interfaces.size()>max_interface_files)
     throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
@@ -678,12 +727,8 @@ public:
     for(const auto& implementation:m->unit.inherent_implementations)
      count+=implementation.members.size();
    }
-    // In reviewed staging each clamp export can also have a distinct unsafe
-    // spelling. Their call authorities are not interchangeable.
-    std::size_t generated=options.kernel_c11?std::size(kernel_symbols)+ffi::scalar_bindings().size():0;
-    if(options.kernel_stage)generated+=ffi::scalar_bindings().size();
-   if(count>16384-generated)throw Error({input.string()},"loaded function count limit exceeded");
-   result.unit.functions.reserve(count+generated);
+   if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
+   result.unit.functions.reserve(count);
    for(auto* m:order){
     kernel_scope=m;
     auto names=m->legacy?flat:m->names;
@@ -815,6 +860,7 @@ public:
        ipc_types=true;append_ipc_kernel_nominals(result.unit,request.where);
       }
     }
+    if(kernel_calls.size()>16384-count)throw Error({input.string()},"loaded function count limit exceeded");
     for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
   // Automatic pervasive bindings are demand-loaded. This preserves the existing
   // annotated-only checking path and keeps unused generic helpers out of PPX/MIR.
