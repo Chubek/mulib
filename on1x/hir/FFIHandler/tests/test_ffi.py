@@ -188,6 +188,12 @@ foreign mulib.example {
             units.append(unit_json)
         entries=[{'key':p.stem,'file':p.name,'ffi_sha256':digest(p)}
                  for p in (spec,inline,typed_path,empty,absent,ctr)]
+        # The real clamp descriptor may contain enriched evidence. Copy its
+        # exact catalogue row, rather than silently stripping the paired report.
+        catalogue_rows=json.loads((a.catalogue/'index.json').read_bytes())['modules']
+        clamp_row=next(row for row in catalogue_rows if row['key']==spec.stem)
+        assert all(clamp_row[key]==value for key,value in entries[0].items())
+        entries[0]=clamp_row
         index=w/'index.json'
         metadata=dict(schema='on1x.stdffi.mulib/v1',target='x86_64-linux-gnu',modules=entries)
         index.write_text(json.dumps(metadata))
