@@ -50,7 +50,7 @@
 'syntax: "requires" Word "<=" Word |
 .end
 .rule TypedModule
-'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody C11EvidenceList "}"
+'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody C11EvidenceList C11Analysis "}"
 .end
 .rule TypedBody
 'syntax: "unavailable" "reason" Word Audit ";" | Entries | GraphBody
@@ -78,6 +78,33 @@
 .end
 .rule C11Facts
 'syntax: C11Facts Word | Word
+.end
+.rule C11Analysis
+'syntax: "analysis" "cephyr_c11_analysis_v1" "{" "target-properties" "(" NUMBER Word NUMBER Word Word ")" ";" AnalysisFunctions "}" |
+.end
+.rule AnalysisFunctions
+'syntax: AnalysisFunctions AnalysisFunction |
+.end
+.rule AnalysisFunction
+'syntax: "analyze" "c" "::" Word "call-contract" "(" Layout Word Word ")" AnalysisArrayAccesses "memory-safety" "(" Word AnalysisMemoryModel ")" AnalysisBodyProof ";"
+.end
+.rule AnalysisArrayAccesses
+'syntax: AnalysisArrayAccesses AnalysisArrayAccess |
+.end
+.rule AnalysisArrayAccess
+'syntax: "requires-array-access" "(" NUMBER NUMBER NUMBER ")"
+.end
+.rule AnalysisMemoryModel
+'syntax: Word Word NUMBER Word |
+.end
+.rule AnalysisBodyProof
+'syntax: "body-proof" "(" Word Word Word Word ")" "return-dependencies" "(" Words ")" "return-policies" "(" AnalysisWidthChecks ")" |
+.end
+.rule AnalysisWidthChecks
+'syntax: AnalysisWidthChecks AnalysisWidthCheck | AnalysisWidthCheck
+.end
+.rule AnalysisWidthCheck
+'syntax: NUMBER Word
 .end
 .rule NativeTypes
 'syntax: NativeType NativeTail |
@@ -263,4 +290,6 @@
        | "graph" | "tag" | "none" | "unknown" | "companion" | "complete" | "incomplete" | "field" | "at" | "bit-field" | "flexible" | "underlying" | "case" | "discover" | "specifiers" | "audit"
        | "function-type" | "void" | "integer" | "real" | "pointer" | "array" | "qualified" | "tag-ref"
        | "adapt" | "surface" | "plan"
+       | "analysis" | "cephyr_c11_analysis_v1" | "target-properties" | "analyze" | "call-contract"
+       | "requires-array-access" | "memory-safety" | "body-proof" | "return-dependencies" | "return-policies"
 .end

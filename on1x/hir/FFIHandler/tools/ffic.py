@@ -77,6 +77,9 @@ class C11Fact(str, Enum):
 
 
 C11_EVIDENCE_SOURCE = 'cephyr_c11_v1'
+C11_ANALYSIS_SOURCE = 'cephyr_c11_analysis_v1'
+C11_BODY_MODEL = 'closed-unsigned-expression-v2'
+C11_PROOF_STATUSES = frozenset(('proved', 'disproved', 'unknown'))
 
 
 def require(condition, message):
@@ -714,6 +717,127 @@ def read_c11_evidence(tree, mod):
     return mod
 
 
+def _analysis_choice(node, choices):
+    value = lexeme(node)
+    require(value in choices, 'invalid C11 analysis value')
+    return value
+
+
+def _analysis_number(node, high, low=0):
+    text = lexeme(node)
+    require(len(text) <= 20 and (text == '0' or text[0] != '0'),
+            'noncanonical or out-of-bounds C11 analysis number')
+    value = int(text)
+    require(low <= value <= high, 'out-of-bounds C11 analysis number')
+    return value
+
+
+def _read_c11_function_analysis(c, row):
+    fixed = (None if lexeme(c[6]) == 'unknown' else _analysis_number(c[6], 1024))
+    tail = _analysis_choice(c[7], ('true', 'false', 'unknown'))
+    normal = _analysis_choice(c[8], ('forbidden-by-declaration', 'unknown'))
+    require((fixed is None) == (tail == 'unknown') and (tail != 'true' or fixed > 0),
+            'inconsistent C11 call contract')
+    noreturn = normal == 'forbidden-by-declaration'
+    facts = row.get('c11_evidence')
+    if facts is not None:
+        require(noreturn == (C11Fact.DECLARED_NORETURN.value in facts['facts']),
+                'C11 call contract contradicts declaration evidence')
+    if row.get('reason') == 'noreturn':
+        require(noreturn, 'C11 call contract contradicts discovery reason')
+    if row.get('reason') == 'no_prototype':
+        require(fixed is None, 'C11 call contract contradicts discovery reason')
+    if row.get('reason') == 'variadic':
+        require(tail == 'true', 'C11 call contract contradicts discovery reason')
+    if 'parameters' in row:
+        require(fixed == len(row['parameters']) and tail == 'false',
+                'C11 call contract contradicts native signature')
+    require(not noreturn or row['profile'] != 'scalar',
+            'C11 noreturn contract cannot describe a callable scalar')
+    contract = dict(fixed_parameters=fixed, variadic_tail=None if tail == 'unknown' else tail == 'true',
+                    normal_return=normal)
+
+    accesses = []
+    previous = (-1, -1)
+    for access in nodes(c[10], 'AnalysisArrayAccess'):
+        a = access.children
+        site = _analysis_number(a[2], 4095)
+        param = _analysis_number(a[3], 1023)
+        count = _analysis_number(a[4], U64_MAX, 1)
+        require((site, param) > previous and fixed is not None and param < fixed
+                and 'parameters' not in row, 'invalid C11 array-access obligation')
+        previous = (site, param)
+        accesses.append(dict(declaration=site, parameter=param, minimum_elements=count))
+
+    status = _analysis_choice(c[13], C11_PROOF_STATUSES)
+    memory = dict(status=status)
+    model = c[14].children
+    if model:
+        name = _analysis_choice(model[0], (C11_BODY_MODEL,))
+        scope = _analysis_choice(model[1], ('this-definition',))
+        count = _analysis_number(model[2], 24)
+        solver = _analysis_choice(model[3], ('satie',))
+        require(fixed is not None and fixed <= 8 and tail == 'false' and not noreturn
+                and row.get('definition') != 'declaration' and not accesses
+                and (status != 'disproved' or count > 0),
+                'C11 memory-safety model contradicts declaration')
+        if facts is not None:
+            require(C11Fact.SYNTAX_BODY.value in facts['facts'], 'C11 proof requires a syntax body')
+        if 'parameters' in row:
+            uint = ['integer', 'unsigned-int', *INTEGER_LAYOUTS['unsigned-int']]
+            require(row['native_result'] == uint and all(p['native'] == uint for p in row['parameters']),
+                    'C11 memory-safety model contradicts native types')
+        memory.update(model=name, scope=scope, checked_accesses=count, solver=solver)
+    else:
+        require(status == 'unknown', 'unmodeled C11 memory safety must be unknown')
+
+    body = c[16].children
+    require(bool(body) == (status == 'proved'), 'C11 body proof requires proved modeled memory safety')
+    result = dict(symbol=row['symbol'], call_contract=contract,
+                  requires_array_access=accesses, memory_safety=memory)
+    if body:
+        require([lexeme(n) for n in body[2:6]] ==
+                [memory['model'], memory['scope'], 'none-by-construction', memory['solver']],
+                'invalid C11 body proof model, scope, memory effect or solver')
+        dependencies = list(tokens(body[9]))
+        require(len(dependencies) == fixed
+                and all(state in ('independent', 'may-influence', 'unknown') for state in dependencies),
+                'invalid C11 return dependencies')
+        checks = [[_analysis_number(check.children[0], 31),
+                   _analysis_choice(check.children[1], C11_PROOF_STATUSES)]
+                  for check in nodes(body[13], 'AnalysisWidthCheck')]
+        require([width for width, _ in checks] == [8, 16, 31], 'invalid C11 return policies')
+        result['body_proof'] = dict(model=memory['model'], scope=memory['scope'],
+                                    memory_effects='none-by-construction', solver=memory['solver'],
+                                    return_dependencies=dependencies, return_policies=checks)
+    return result
+
+
+def read_c11_analysis(tree, mod):
+    """Read report-only facts; do not modify binding descriptors or admission."""
+    c = tree.children
+    if not c:
+        return mod
+    require(mod['version'] == 2 and mod['unavailable'] is None and mod['entries'],
+            'C11 analysis report requires an available ffi 2 module with entries')
+    properties = dict(byte_bits=_analysis_number(c[5], 8, 8),
+                      byte_order=_analysis_choice(c[6], ('little',)),
+                      pointer_bits=_analysis_number(c[7], 64, 64),
+                      integer_representation=_analysis_choice(c[8], ('twos-complement',)),
+                      hosted=_analysis_choice(c[9], ('true', 'false')) == 'true')
+    entries = {row['symbol']: row for row in mod['entries']}
+    report = []
+    previous = ''
+    for fn in nodes(c[12], 'AnalysisFunction'):
+        symbol = ident(lexeme(fn.children[3]))
+        require(symbol in entries and symbol > previous, 'unknown, duplicate or unordered C11 analysis symbol')
+        previous = symbol
+        report.append(_read_c11_function_analysis(fn.children, entries[symbol]))
+    require(len(report) == len(entries), 'C11 analysis report does not cover emitted symbols')
+    mod['c11_analysis'] = dict(source=C11_ANALYSIS_SOURCE, target_properties=properties, functions=report)
+    return mod
+
+
 def parse_module(m, version, target):
     c = m.children
     module = module_name(c)
@@ -729,13 +853,14 @@ def parse_module(m, version, target):
         body = c[12].children
         if body[0].symbol == 'GraphBody':
             require(version == 3, 'native graph requires ffi 3')
-            return read_c11_evidence(c[13], parse_graph_module(body[0], mod))
+            mod = parse_graph_module(body[0], mod)
+            return read_c11_analysis(c[14], read_c11_evidence(c[13], mod))
         if body[0].symbol != 'Entries':
             mod['unavailable'] = reason(body[2])
             if body[3].children:
                 require(version == 3, 'audit text requires ffi 3')
                 mod['audit'] = audit_text(body[3])
-            return read_c11_evidence(c[13], mod)
+            return read_c11_analysis(c[14], read_c11_evidence(c[13], mod))
         require(version == 2, 'ffi 3 modules require a native graph or explicit unavailability')
     functions = (nodes(c[12], 'Function') if version == 1 else
                  (entry.children[0] for entry in nodes(c[12], 'Entry')))
@@ -797,7 +922,7 @@ def parse_module(m, version, target):
         if profile == 'scalar':
             row['id'] = descriptor_id(row)
         mod['entries'].append(row)
-    return read_c11_evidence(c[13], mod) if version >= 2 else mod
+    return read_c11_analysis(c[14], read_c11_evidence(c[13], mod)) if version >= 2 else mod
 
 
 def parse_document(parser, raw, path):
@@ -916,19 +1041,25 @@ def unique_pairs(pairs):
     return fields
 
 
-def verify_catalogue(path, inputs, target, evidence=None, *, discovery_symbols=None, taint=None):
+def verify_catalogue(path, inputs, target, evidence=None, analysis=None, *, discovery_symbols=None, taint=None):
+    analysis = {} if analysis is None else analysis
     raw = read(path, MAX_CATALOG_INDEX)
     data = json.loads(raw, object_pairs_hook=unique_pairs)
     require(data.get('schema') == 'on1x.stdffi.mulib/v1' and data.get('target') == target,
             'catalogue index schema or target mismatch')
     modules = data['modules']
     require(isinstance(modules, list) and 0 < len(modules) <= MAX_MODULES, 'invalid catalogue index module count')
-    files, records = {}, {}
+    files, records, reports = {}, {}, {}
     for mod in modules:
         key, name, digest = (mod[field] for field in ('key', 'file', 'ffi_sha256'))
         require(MODULE.fullmatch(key) and name == key + '.ffi' and name not in files
                 and DIGEST.fullmatch(digest), 'invalid catalogue index file identity')
         files[name] = digest
+        if 'c11_analysis' in mod:
+            module = mod.get('module')
+            require(module == 'mulib.' + module_alias(key) and module not in reports,
+                    'invalid catalogue C11 analysis subject')
+            reports[module] = mod['c11_analysis']
         if evidence is not None:
             for row in mod.get('symbols', ()):
                 if 'c11_evidence' not in row:
@@ -941,6 +1072,10 @@ def verify_catalogue(path, inputs, target, evidence=None, *, discovery_symbols=N
     require(inputs == files, 'stale catalogue: index and descriptor input files/digests differ')
     if evidence is not None:
         require(evidence == records, 'stale catalogue: index and C11 evidence directives differ')
+    # JSON identity distinguishes booleans, numbers, null, and missing fields.
+    require(analysis.keys() == reports.keys() and all(
+        canonical(report) == canonical(reports[module]) for module, report in analysis.items()),
+            'stale catalogue: index and C11 analysis directives differ')
     # Existing v2 catalogues may store the exact native shape only in their
     # index. Join it to already-validated emitted discovery entries; never
     # consume index data to create or change executable descriptors.
@@ -965,7 +1100,7 @@ def verify_catalogue(path, inputs, target, evidence=None, *, discovery_symbols=N
 def registry_index(paths, target=None, catalogue=None):
     require(0 < len(paths) <= MAX_MODULES, 'invalid registry shard count')
     rows, units, fingerprints = [], [], []
-    inputs, evidence = {}, {}
+    inputs, evidence, analysis = {}, {}, {}
     discovery_symbols, taint = {}, {}
     seen_modules, seen_symbols, seen_ids, seen_units = set(), set(), set(), set()
     for path in sorted(paths, key=lambda p: p.name):
@@ -988,6 +1123,8 @@ def registry_index(paths, target=None, catalogue=None):
             module = mod['module']
             require(module not in seen_modules and len(seen_modules) < MAX_MODULES, 'registry module collision or limit')
             seen_modules.add(module)
+            if 'c11_analysis' in mod:
+                analysis[module] = mod['c11_analysis']
         for row in (*payload['bindings'], *payload['discovery']):
             symbol = row['symbol']
             require(symbol not in seen_symbols, 'registry native symbol collision: ' + symbol)
@@ -1009,7 +1146,7 @@ def registry_index(paths, target=None, catalogue=None):
             seen_ids.add(id_)
             rows.append({key: row[key] for key in ('module', 'member', 'symbol', 'id')})
         fingerprints.append(dict(unit=unit, descriptor_sha256=shard_digest))
-    catalogue_sha = (verify_catalogue(catalogue, inputs, target, evidence,
+    catalogue_sha = (verify_catalogue(catalogue, inputs, target, evidence, analysis,
                                       discovery_symbols=discovery_symbols, taint=taint)
                      if catalogue else None)
     data = dict(schema='on1x.ffi-registry/v2', target=target, module_count=len(seen_modules),

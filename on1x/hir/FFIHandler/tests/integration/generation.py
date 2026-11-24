@@ -13,6 +13,9 @@ import subprocess
 import sys
 
 
+ANALYSIS_REVISION = "6a7d52e866db8eb441bb7a4f86ce91253732e740"
+
+
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("work", type=Path, help="new directory for all outputs and test mutations")
@@ -91,6 +94,12 @@ def main():
     if (row["key"] != "clamp" or row["projection_sha256"] is None
             or row["ffi_sha256"] != sha256(before["clamp.ffi"][0]).hexdigest()):
         raise RuntimeError("clamp projection and generated DSL identities missing")
+    if revision == ANALYSIS_REVISION:
+        if (row["projection"].get("digest_kind") != "on1x.cephyr-c11-interface-analysis/v1"
+                or row["c11_analysis"]["source"] != "cephyr_c11_analysis_v1"
+                or b"analysis cephyr_c11_analysis_v1" not in before["clamp.ffi"][0]
+                or any(str(root).encode() in value[0] for root in (repo, other) for value in before.values())):
+            raise RuntimeError("extended analysis report or relocatable identity missing")
     interval = next(s for s in row["symbols"] if s["symbol"] == "mulib_clamp_i64")
     if interval["status"] != "representable" or interval["guards"] != [[1, 2]]:
         raise RuntimeError("clamp lost the position-bound override")
@@ -101,6 +110,9 @@ def main():
     if {k: val[0] for k, val in before.items()} != {
             k: val[0] for k, val in snapshot(relocated).items()}:
         raise RuntimeError("generation was not byte-identical across checkout locations")
+    generate("independent-location-check", other, output, "--check")
+    if snapshot(output) != before:
+        raise RuntimeError("relocated --check wrote to the original destination")
 
     first_package, other_package = (work / name for name in ("package", "relocated-package"))
     shutil.copytree(output, first_package)

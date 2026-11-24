@@ -1,6 +1,6 @@
 # Cephyr evidence in FFIHandler
 
-The pinned LibStone revision `e10ac69eed7baf91b06d15c4e0d58360097cb5c4`
+The original declaration-only LibStone revision `e10ac69eed7baf91b06d15c4e0d58360097cb5c4`
 exports `cephyr_parse_c11(request, CEPHYR_AST_SEXP, result)` / `--emit-ast=sexp`
 and `cephyr_emit_interface(request, result)` / `--emit-interface=sexp`. Project
 from the **same syntax document** with `-x c11-ast-sexp`, retaining the same
@@ -57,9 +57,70 @@ absolute paths. The portable index records the original C source input digest
 and a digest of sorted `(name, declaration count, body present)` facts, not
 the raw AST or a claim of body identity.
 
-## Upstream blocker: typed body semantics
+## Analysis model 1 reports
 
-Reproduce against the pin with:
+LibStone `6a7d52e866db8eb441bb7a4f86ce91253732e740` adds analysis model 1 to
+C11Interface v1. `ffgen` verifies that a Cephyr selected at this revision
+reports the model, and checks the projected hosted mode against the generation
+profile. Legacy projections without the model still work with legacy Cephyr.
+
+Generated `ffi 2;` modules may report the following after their declaration
+evidence:
+
+```text
+analysis cephyr_c11_analysis_v1 {
+    target-properties (8 little 64 twos-complement true);
+    analyze c::mulib_example_access call-contract (1 false unknown)
+        requires-array-access (0 0 5) memory-safety (unknown);
+    analyze c::mulib_example_mask call-contract (1 false unknown)
+        memory-safety (proved closed-unsigned-expression-v2 this-definition 0 satie)
+        body-proof (closed-unsigned-expression-v2 this-definition none-by-construction satie)
+        return-dependencies (may-influence) return-policies (8 proved 16 proved 31 proved);
+}
+```
+
+- `target-properties` lists byte width, byte order, pointer width, integer
+  representation and C hosted mode. `call-contract` lists fixed argument count,
+  presence of a variadic tail and the declared normal-return rule. Unknown
+  argument count is not zero; `forbidden-by-declaration` is not a proof of
+  termination or an exception classification.
+- `requires-array-access` lists a zero-based declaration ordinal, a zero-based
+  parameter position and an evaluated minimum number of elements required of
+  the caller. It is not a check of any particular buffer. The report omits
+  nonconstant minimums; omission does not discharge an obligation. Presumed
+  source labels are neither published by this directive nor used as origin.
+- `memory-safety` is either unmodeled (unknown) or a bounded result for this
+  definition, with a count of modeled access sites. Only the closed model for
+  unsigned expressions and reads of fully initialized fixed local arrays is
+  covered, not general pointer, alias, or lifetime safety. A `body-proof`
+  requires proved memory safety in that model. Its effects claim is only
+  about observable memory outside that definition; it is not a claim about
+  linked or interposed implementations or machine-level loads and stores.
+- Return dependencies are in parameter order. The width checks bound the
+  result for a specific numeric policy; even a proved eight-bit output can
+  depend on untrusted input. They do not classify sources or sinks, grant
+  universal sanitization, or establish the absence of taint. Unknown or
+  absent facts say nothing about errno, exceptions, heap effects or taint.
+
+FFIHandler checks the closed form, symbol identity and compatible declaration
+facts. The validated `c11_analysis` report lives at module scope, not on a
+runtime binding. Both package publication and registry indexing require exact
+agreement with the report in `index.json`. It does not change candidate
+selection, native fingerprints, IDs, runtime effects, or reviewed admission.
+An unavailable module does not carry function analysis.
+
+The legacy `projection_sha256` remains a raw-byte digest. For a successfully
+decoded extended interface, `projection.digest_kind` is
+`on1x.cephyr-c11-interface-analysis/v1`, and `projection_sha256` hashes the
+validated typed data with the presumed per-site file and line removed.
+Declaration order, parameter positions and semantic facts are retained. This
+is a relocatable semantic identity, not a hash of the exact producer bytes;
+those bytes remain local. The index separately records input and provider
+provenance and the SHA-256 of the exact generated `.ffi` file.
+
+## Remaining limit: general typed body semantics
+
+Reproduce with:
 
 ```sh
 printf '%s\n' 'static inline int bad(void) { return undeclared; }' |
@@ -98,3 +159,8 @@ python3 -B on1x/hir/FFIHandler/tests/qualify_cephyr_evidence.py \
   --scratch "$work/scratch" --tool-input "$cephyr_build/libcephyr.so.0.1.0" \
   --tool-input "$stone/cornerstone/Cephyr/triples"
 ```
+
+For LibStone `6a7d52e8`, run the equivalent
+`tests/qualify_cephyr_analysis_report.py` with the same arguments and new tool
+inputs. It covers exact report identity, target and hosted mode, negative
+validation, absence of new grants, and path-independent semantic hashing.

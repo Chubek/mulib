@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import base64
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 import os
@@ -35,6 +35,8 @@ MAX_EXPORTS = 256
 MAX_GUARDS = 16
 MAX_DOCUMENT = 64 * 1024
 INDEX_SCHEMA = "on1x.stdffi.mulib/v1"
+ANALYSIS_REVISION = "6a7d52e866db8eb441bb7a4f86ce91253732e740"
+ANALYSIS_DIGEST_KIND = "on1x.cephyr-c11-interface-analysis/v1"
 
 
 class GenerationError(ValueError):
@@ -64,6 +66,16 @@ class Generation:
 
 def _sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
+
+
+def projection_digest(interface, raw: bytes) -> str:
+    """Retain legacy byte hashes; hash extended typed facts without diagnostic sites."""
+    if interface.analysis_model is None:
+        return _sha(raw)
+    normalized = asdict(interface)
+    for declaration, decoded in zip(normalized["declarations"], interface.declarations, strict=True):
+        declaration["declaration_sites"] = [site.portable_data() for site in decoded.declaration_sites]
+    return digest([ANALYSIS_DIGEST_KIND, normalized])
 
 
 def _parser_identity(raw: bytes, grammar_sha: str) -> str:
@@ -233,6 +245,75 @@ def _c11_evidence(function, syntax):
     return dict(source=ffic.C11_EVIDENCE_SOURCE, facts=facts) if facts else None
 
 
+def _c11_analysis(interface, rows):
+    if interface.analysis_model is None:
+        return None
+    emitted = {row["symbol"] for row in rows if row["emitted"]}
+    functions = []
+    for fn in sorted(interface.functions, key=lambda fn: fn.name):
+        if fn.name not in emitted:
+            continue
+        accesses = [
+            dict(declaration=ordinal, parameter=param.index, minimum_elements=access.minimum_elements)
+            for ordinal, site in enumerate(fn.declaration_sites)
+            for param in site.parameters
+            if (access := param.requires_array_access) is not None and access.minimum_elements is not None
+        ]
+        memory = fn.memory_safety
+        memory_report = dict(status=memory.status)
+        if memory.model is not None:
+            memory_report.update(model=memory.model, scope=memory.scope,
+                                 checked_accesses=memory.checked_accesses, solver=memory.solver)
+        contract = fn.call_contract
+        result = dict(symbol=fn.name, requires_array_access=accesses, memory_safety=memory_report,
+                      call_contract=dict(fixed_parameters=contract.fixed_parameters,
+                                         variadic_tail=contract.variadic_tail,
+                                         normal_return=contract.normal_return))
+        if (proof := fn.body_proof) is not None:
+            result["body_proof"] = dict(
+                model=proof.model, scope=proof.scope, memory_effects=proof.memory_effects,
+                solver=proof.solver, return_dependencies=[dep.status for dep in proof.return_dependencies],
+                return_policies=[[policy.width, policy.status] for policy in proof.return_policies],
+            )
+        functions.append(result)
+    return dict(source=ffic.C11_ANALYSIS_SOURCE,
+                target_properties=asdict(interface.target_properties), functions=functions)
+
+
+def _render_analysis(report):
+    def fields(*values):
+        return " ".join("unknown" if value is None else
+                        str(value).lower() if type(value) is bool else str(value)
+                        for value in values)
+
+    target = report["target_properties"]
+    lines = [
+        f'    analysis {report["source"]} {{',
+        "        target-properties (" + fields(
+            target["byte_bits"], target["byte_order"], target["pointer_bits"],
+            target["integer_representation"], target["hosted"]) + ");",
+    ]
+    for fn in report["functions"]:
+        contract = fn["call_contract"]
+        statement = f'        analyze c::{fn["symbol"]} call-contract (' + fields(
+            contract["fixed_parameters"], contract["variadic_tail"], contract["normal_return"]) + ")"
+        for access in fn["requires_array_access"]:
+            statement += " requires-array-access (" + fields(
+                access["declaration"], access["parameter"], access["minimum_elements"]) + ")"
+        memory = fn["memory_safety"]
+        model = fields(memory["model"], memory["scope"], memory["checked_accesses"], memory["solver"]
+                       ) if "model" in memory else ""
+        statement += " memory-safety (" + " ".join(filter(None, (memory["status"], model))) + ")"
+        if proof := fn.get("body_proof"):
+            statement += " body-proof (" + fields(
+                proof["model"], proof["scope"], proof["memory_effects"], proof["solver"]) + ")"
+            statement += " return-dependencies (" + fields(*proof["return_dependencies"]) + ")"
+            statement += " return-policies (" + " ".join(fields(*policy)
+                                                         for policy in proof["return_policies"]) + ")"
+        lines.append(statement + ";")
+    return [*lines, "    }"]
+
+
 def _check_override(entry, target, override: Override | None) -> list[str]:
     if override is None:
         return []
@@ -388,6 +469,9 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
                 row["c11_evidence"] = evidence
                 facts = " ".join(evidence["facts"])
                 rendered.append(f'    evidence c::{symbol} {evidence["source"]} ({facts});')
+    analysis = _c11_analysis(interface, rows) if reason is None else None
+    if analysis is not None:
+        rendered.extend(_render_analysis(analysis))
     document = _document(entry, target, rendered) if reason is None else b""
     if len(document) > MAX_DOCUMENT:
         reason = "module_byte_limit"
@@ -404,7 +488,7 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         status = "discovery_only"
     else:
         status = "unsupported"
-    return Generation(document, {
+    metadata = {
         "status": "unsupported" if reason is not None else status,
         "attempted": True, "projected": True, "reason": reason,
         "declaration_count": len(interface.declarations),
@@ -413,7 +497,10 @@ def generate_module(entry, interface, target, *, override: Override | None = Non
         "projection_only": projection_only, "body_taint": body_taint,
         "normalized_signature_sha256": digest(["on1x.ffi-projection/v1", target,
                                                 signature_rows, tags]),
-    })
+    }
+    if reason is None and analysis is not None:
+        metadata["c11_analysis"] = analysis
+    return Generation(document, metadata)
 
 
 def _reason_code(prefix, code) -> str:
@@ -574,6 +661,15 @@ def _run(args) -> None:
     staged_bytes = {"files": 0, "records": 0}
     budget_lock = Lock()
 
+    def check_analysis(interface, expected=None):
+        ready = interface.analysis_model is not None
+        if (args.libstone_revision == ANALYSIS_REVISION and not ready
+                or expected is not None and ready is not expected):
+            raise GenerationError("selected Cephyr does not consistently report C11 analysis-model 1")
+        if ready and interface.target_properties.hosted is args.freestanding:
+            raise GenerationError("Cephyr C11 analysis hosted mode disagrees with the selected profile")
+        return ready
+
     def provider_for(plan):
         key = (plan.include_dirs, plan.defines)
         with provider_lock:
@@ -590,14 +686,15 @@ def _run(args) -> None:
                 # ABI at all. Real module failures below are still recorded individually.
                 try:
                     probe = provider.project(b"extern long on1x_projection_target_probe;\n")
-                    decode_interface(probe.output, expected_target=args.target)
+                    probe_interface = decode_interface(probe.output, expected_target=args.target)
                 except (ProjectionError, InterfaceError) as exc:
                     raise GenerationError(
                         f"Cephyr target probe failed for {args.target}: {exc}") from exc
-                providers[key] = provider
-            return providers[key], key
+                providers[key] = (provider, check_analysis(probe_interface))
+            provider, ready = providers[key]
+            return provider, key, ready
 
-    def project(entry, plan, provider, key):
+    def project(entry, plan, provider, key, ready):
         _check_public_header(root, entry, provider)
         syntax_capture = None
         try:
@@ -618,6 +715,8 @@ def _run(args) -> None:
         projection_input = {name: common.pop(name) for name in
                             ("stdin_sha256", "language", "header", "stage", "origin")}
         common.pop("projection_sha256", None)
+        if ready:
+            common["interface_analysis_model"] = 1
         profile_sha = digest(common)
         with provider_lock:
             if observed_profiles.setdefault(key, profile_sha) != profile_sha:
@@ -659,23 +758,29 @@ def _run(args) -> None:
 
     def generate(entry):
         plan = inventory.plan(entry.key)
-        provider, key = provider_for(plan)
+        provider, key, ready = provider_for(plan)
         override = selected_overrides.get(entry.key)
-        output, syntax_capture, reason, projection_input, profile_sha = project(entry, plan, provider, key)
+        output, syntax_capture, reason, projection_input, profile_sha = project(
+            entry, plan, provider, key, ready)
         projection_sha = None
         numeric_obligations = {"status": "unavailable", "reason": "interface_unavailable"}
         if output is None:
             outcome = failed_module(entry, target, reason, override=override)
         else:
-            projection_sha = _sha(output)
             try:
                 interface = decode_interface(output, expected_target=args.target)
             except InterfaceError as exc:
                 if exc.code in ("target", "version"):
                     raise
+                # Only the legacy wire format has a portable raw byte hash.
+                if not ready:
+                    projection_sha = _sha(output)
                 outcome = failed_module(entry, target, _reason_code("interface_", exc.code),
                                         override=override)
             else:
+                if check_analysis(interface, ready):
+                    projection_input["digest_kind"] = ANALYSIS_DIGEST_KIND
+                projection_sha = projection_digest(interface, output)
                 try:
                     syntax = declaration_syntax(syntax_capture.output)
                 except InterfaceError as exc:
@@ -717,27 +822,30 @@ def _run(args) -> None:
 
     def validate_stage(stage):
         names, symbols = set(), set()
-        inputs, evidence = {}, {}
+        inputs, evidence, analysis = {}, {}, {}
         for document in sorted(stage.glob("*.ffi")):
             module = ffic.compile_files(parser, [document], target=args.target, canonical_files=True)
             if len(module["modules"]) != 1 or module["modules"][0]["version"] != 2:
                 raise GenerationError(f"{document.name}: expected one v2 generated module")
-            module_name = module["modules"][0]["module"]
+            descriptor = module["modules"][0]
+            module_name = descriptor["module"]
             if module_name in names:
                 raise GenerationError(f"duplicate generated module: {module_name}")
             names.add(module_name)
             inputs[document.name] = module["inputs"][0]["sha256"]
+            if "c11_analysis" in descriptor:
+                analysis[module_name] = descriptor["c11_analysis"]
             for binding in (*module["bindings"], *module["discovery"]):
                 if binding["symbol"] in symbols:
                     raise GenerationError(f'duplicate generated symbol: {binding["symbol"]}')
                 symbols.add(binding["symbol"])
                 if "c11_evidence" in binding:
                     evidence[(module_name, binding["symbol"])] = binding["c11_evidence"]
-        ffic.verify_catalogue(stage / "index.json", inputs, args.target, evidence)
+        ffic.verify_catalogue(stage / "index.json", inputs, args.target, evidence, analysis)
 
     def verify_inputs():
         inventory.verify_unchanged()
-        for provider in providers.values():
+        for provider, _ in providers.values():
             provider.verify_inputs()
         for name, (helper, sha) in wetstone_helpers.items():
             if _file_identity(helper, 16 * 1024 * 1024)[2] != sha:
@@ -766,11 +874,11 @@ def _run(args) -> None:
                 if prior.get("override_sha256") != (_sha(raw) if raw is not None else None):
                     raise GenerationError(f"sibling override changed: {key}; run --all")
                 plan = inventory.plan(key)
-                provider, profile_key = provider_for(plan)
+                provider, profile_key, ready = provider_for(plan)
                 # Reuse a sibling only for the same *observed* complete input
                 # profile; a different planner profile requires one real probe.
                 if profile_key not in observed_profiles:
-                    project(entry, plan, provider, profile_key)
+                    project(entry, plan, provider, profile_key, ready)
                 else:
                     _check_public_header(root, entry, provider)
                 if (digest(prior.get("plan")) != digest(plan.metadata) or
