@@ -77,9 +77,24 @@ add_custom_command(OUTPUT "${_ffi_header}" "${_ffi_manifest}"
 add_custom_target(on1x_ffi_tables DEPENDS "${_ffi_header}" "${_ffi_manifest}")
 add_dependencies(on1x_frontend on1x_ffi_tables)
 target_sources(on1x_frontend PRIVATE ffi.cpp)
+# Merge dependencies: W06 owns the checked-HIR ingress, W07 the C11 emitter.
+# A descriptor-only checkout has neither interface; a checkout exposing an
+# interface must compile its implementation rather than fall back to legacy.
+set(_ffi_hir_api "${CMAKE_CURRENT_SOURCE_DIR}/../../include/on1x/ffi_hir.hpp")
+if(EXISTS "${_ffi_hir_api}" OR EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/verify.cpp")
+  target_sources(on1x_frontend PRIVATE verify.cpp)
+endif()
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.hpp" OR EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.cpp")
+  target_sources(on1x_frontend PRIVATE lower.cpp)
+endif()
 target_include_directories(on1x_frontend PRIVATE "${_ffi_gen}")
 install(FILES ${_ffi_specs} "${_ffi_catalogue_index}" DESTINATION share/on1x/stdffi/mulib)
 install(FILES "${_ffi_manifest}" DESTINATION share/on1x/stdffi)
+set(_ffi_tools "${CMAKE_CURRENT_SOURCE_DIR}/../../tools")
+if(EXISTS "${_ffi_tools}/on1x_ffi_native.py" OR EXISTS "${_ffi_tools}/on1x_ffi_trust.py")
+  install(FILES "${_ffi_tools}/on1x_ffi_native.py" "${_ffi_tools}/on1x_ffi_trust.py"
+    DESTINATION share/on1x/tools)
+endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_test(NAME on1x.ffihandler.scalar
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi.py"
@@ -90,4 +105,13 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_rich.py"
       --parser "${_ffi_parser}" --work "${CMAKE_CURRENT_BINARY_DIR}")
   set_tests_properties(on1x.ffihandler.rich_discovery PROPERTIES TIMEOUT 90)
+  if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu" AND
+     EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_hir.cpp" AND
+     EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.cpp")
+    add_executable(on1x_ffi_check_hir tests/check_hir.cpp)
+    target_link_libraries(on1x_ffi_check_hir PRIVATE on1x_frontend on1x_mir_vm)
+    add_test(NAME on1x.ffihandler.checked_hir
+      COMMAND on1x_ffi_check_hir "${CMAKE_CURRENT_BINARY_DIR}/check-hir")
+    set_tests_properties(on1x.ffihandler.checked_hir PROPERTIES TIMEOUT 90)
+  endif()
 endif()
