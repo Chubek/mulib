@@ -20,13 +20,13 @@ elseif(_ffi_cpu STREQUAL "arm64")
 endif()
 set(ON1X_FFI_TARGET "${_ffi_cpu}-linux-gnu" CACHE STRING
     "Target identity required in the generated FFI catalogue")
-option(ON1X_FFI_CROSS_C11 "Build an AMD64 frontend with the AArch64 checked-C11 FFI catalogue" OFF)
+option(ON1X_FFI_CROSS_C11 "Build an AMD64 frontend with a cross-target checked-C11 FFI catalogue" OFF)
 if(NOT ON1X_FFI_TARGET MATCHES "^(x86_64|aarch64|riscv64)-linux-gnu$")
   message(FATAL_ERROR "Unsupported FFI target: ${ON1X_FFI_TARGET}")
 endif()
 if(ON1X_FFI_CROSS_C11 AND NOT (_ffi_cpu STREQUAL "x86_64" AND
-   ON1X_FFI_TARGET STREQUAL "aarch64-linux-gnu"))
-  message(FATAL_ERROR "ON1X_FFI_CROSS_C11 requires an AMD64 frontend and an AArch64 catalogue")
+   ON1X_FFI_TARGET MATCHES "^(aarch64|riscv64)-linux-gnu$"))
+  message(FATAL_ERROR "ON1X_FFI_CROSS_C11 requires an AMD64 frontend and an AArch64 or RV64IM LP64 catalogue")
 endif()
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR
    (NOT ON1X_FFI_CROSS_C11 AND NOT ON1X_FFI_TARGET STREQUAL "${_ffi_cpu}-linux-gnu"))
@@ -161,7 +161,7 @@ install(FILES "${_ffi_manifest}" DESTINATION "share/on1x/stdffi/${ON1X_FFI_TARGE
 set(_ffi_tools "${CMAKE_CURRENT_SOURCE_DIR}/../../tools")
 if(EXISTS "${_ffi_tools}/on1x_ffi_native.py" OR EXISTS "${_ffi_tools}/on1x_ffi_trust.py")
   install(FILES "${_ffi_tools}/on1x_ffi_native.py" "${_ffi_tools}/on1x_ffi_trust.py"
-    "${_ffi_tools}/on1x_ffi_aarch64.py"
+    "${_ffi_tools}/on1x_ffi_aarch64.py" "${_ffi_tools}/on1x_ffi_rv64.py"
     DESTINATION share/on1x/tools)
 endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)

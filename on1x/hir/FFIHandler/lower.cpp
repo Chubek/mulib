@@ -24,6 +24,11 @@ std::string_view require_target(const Target& target) {
         return "!defined(__x86_64__) || defined(__ILP32__)";
     if(target==Target{"aarch64-linux-gnu","LP64","AAPCS64","aapcs64"})
         return "!defined(__aarch64__) || !defined(__AARCH64EL__) || !defined(__LP64__)";
+    if(target==Target{"riscv64-linux-gnu","LP64","LP64","lp64"})
+        return "!defined(__riscv) || __riscv_xlen != 64 || !defined(__riscv_mul) || "
+               "!defined(__LP64__) || !defined(__riscv_float_abi_soft) || "
+               "defined(__riscv_float_abi_single) || defined(__riscv_float_abi_double) || "
+               "defined(__riscv_float_abi_quad)";
     invalid("FFIHandler C11 lowering requires a supported Linux LP64 target ABI");
 }
 
@@ -192,7 +197,8 @@ std::string range_guard(const Parameter& p,const std::string& arg) {
 
 std::string target_requirements(const Target& target) {
     const auto condition=require_target(target);
-    const auto profile=target.triple=="x86_64-linux-gnu"?"x86-64":"AArch64";
+    const auto profile=target.triple=="x86_64-linux-gnu"?"x86-64":
+                       target.triple=="riscv64-linux-gnu"?"RV64IM LP64":"AArch64";
     return "#include <float.h>\n#include <limits.h>\n#include <stdint.h>\n"
            "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || "
            "!defined(__linux__) || "+std::string(condition)+"\n"

@@ -13,6 +13,7 @@ import sys
 import tempfile
 
 import on1x_ffi_aarch64 as aarch64
+import on1x_ffi_rv64 as rv64
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT / 'stdlib/mulib/housekeeping.py')
@@ -215,8 +216,12 @@ def plan(root, document, target=TARGET):
 
 def abi_source(descriptors, target=TARGET):
     """An independent native prototype check using literal C primitives."""
-    precondition = (aarch64.PRECONDITION if target == aarch64.TARGET else
-                    '!defined(__x86_64__) || !defined(__LP64__)')
+    if target == rv64.TARGET:
+        precondition = '!(' + rv64.PREPROCESSOR_ABI + ')'
+    elif target == aarch64.TARGET:
+        precondition = aarch64.PRECONDITION
+    else:
+        precondition = '!defined(__x86_64__) || !defined(__LP64__)'
     rows = ['#include <limits.h>', '#include <float.h>',
             '#if !defined(__linux__) || ' + precondition,
             '#error "unsupported FFI target"', '#endif',
@@ -248,8 +253,8 @@ def abi_source(descriptors, target=TARGET):
     return '\n'.join(rows) + '\n'
 
 
-def probe_source(descriptors, cross=False):
-    """Independent host caller, with oracle values computed without calling C."""
+def probe_source(descriptors, cross=False, *, rv64_cross=False):
+    """Independent C caller, with oracle values computed without calling C."""
     import random
 
     def c_int(value, surface):
@@ -260,7 +265,7 @@ def probe_source(descriptors, cross=False):
         return f'-INT64_C({-value})' if value < 0 else f'INT64_C({value})'
 
     rows = ['#include <stdint.h>']
-    if cross:
+    if cross or rv64_cross:
         rows.append('#include <stdio.h>')
     checks = []
     # Qualification is intentionally narrower than representation eligibility.
@@ -298,9 +303,11 @@ def probe_source(descriptors, cross=False):
         for args, answer in answers:
             values = ', '.join(c_int(value, p) for p, value in zip(params, args))
             checks.append(f'  if ({name}({values}) != {c_int(answer, kind)}) return 1;')
-    if cross:
-        checks.append('  if (puts("on1x-ffi-aarch64-probe") < 0) return 1;')
-    return '\n'.join([*rows, 'int main(void) {', *checks, '  return 0;', '}', '']), len(checks) - int(cross)
+    count = len(checks)
+    if cross or rv64_cross:
+        marker = rv64.PROBE if rv64_cross else 'on1x-ffi-aarch64-probe'
+        checks.append(f'  if (puts("{marker}") < 0) return 1;')
+    return '\n'.join([*rows, 'int main(void) {', *checks, '  return 0;', '}', '']), count
 
 
 def check_elf(path, kind):
@@ -330,6 +337,8 @@ class Build:
         self.target = TARGET
         if any(d.get('target') == aarch64.TARGET for d in self.document.get('descriptors', ())):
             self.target = aarch64.TARGET
+        elif any(d.get('target') == rv64.TARGET for d in self.document.get('descriptors', ())):
+            self.target = rv64.TARGET
         self.aarch64 = self.target == aarch64.TARGET
         self.recipes = plan(root, self.document, self.target)
         for entry in self.document['sources']:
@@ -341,21 +350,50 @@ class Build:
         self.dynamic = 'dynlib' in self.recipes
         self.safe = any(not request['unsafe'] for request in self.document['requests'])
         self.runner = None
-        if self.aarch64:
+        self.rv64 = None
+        cross_runner = getattr(args, 'ffi_cross_runner', None)
+        rv64_prefix = getattr(args, 'ffi_rv64_toolchain', None)
+        rv64_linker = getattr(args, 'ffi_rv64_linker', None)
+        if self.target == rv64.TARGET:
+            self.inputs.add(rv64.__file__)
+            if self.dynamic:
+                raise ValueError('RV64IM LP64 FFI supports static imports only')
+            if self.safe and not args.inspect_ffi:
+                raise ValueError('ON1X-FFI-NOT-ADMITTED: RV64IM LP64 safe imports are not qualified')
+            if args.cflag:
+                raise ValueError('RV64IM LP64 FFI does not qualify extra C flags')
+            if any(recipe['link_libraries'] for recipe in self.recipes.values()):
+                raise ValueError('RV64IM LP64 FFI does not qualify external libraries')
+            if not (rv64_prefix and rv64_linker and cross_runner):
+                raise ValueError('RV64IM LP64 FFI requires --ffi-rv64-toolchain, --ffi-rv64-linker and --ffi-cross-runner')
+            prefix = rv64.Toolchain.absolute(rv64_prefix) / 'share/cephyr'
+            self.rv64 = rv64.Toolchain(args.cc, executable(rv64.Toolchain.absolute(rv64_linker)),
+                                       executable(rv64.Toolchain.absolute(cross_runner)),
+                                       prefix / 'stdlib/include', prefix / 'native-packages' / rv64.PACKAGE,
+                                       run=lambda argv: capture(argv, stage, timeout=120, bound=8 * 1024 * 1024),
+                                       pin=self.inputs.add)
+            if not capture([self.rv64.runner, '--version'], stage).startswith(b'qemu-riscv64 version '):
+                raise ValueError('RV64IM LP64 FFI requires a trusted qemu-riscv64 runner')
+            if not capture([self.rv64.linker, '--version'], stage).startswith(b'LLD '):
+                raise ValueError('RV64IM LP64 FFI requires a trusted LLD linker')
+            self.pin_tree(self.rv64.headers)
+        elif rv64_prefix or rv64_linker:
+            raise ValueError('RV64 FFI toolchain options require a configured RV64IM LP64 catalogue')
+        elif self.aarch64:
             self.inputs.add(aarch64.__file__)
             if self.dynamic:
                 raise ValueError('AArch64 FFI is qualified for static imports only')
             if self.safe and not args.inspect_ffi:
                 raise ValueError('ON1X-FFI-NOT-ADMITTED: AArch64 safe imports are not qualified')
-            if args.ffi_cross_runner:
-                if not args.ffi_cross_runner.is_absolute() or not Path(args.cc).is_absolute():
+            if cross_runner:
+                if not cross_runner.is_absolute() or not Path(args.cc).is_absolute():
                     raise ValueError('AArch64 FFI cross builds require absolute --cc and --ffi-cross-runner paths')
-                self.runner = executable(args.ffi_cross_runner)
+                self.runner = executable(cross_runner)
                 self.inputs.add(self.runner)
                 if not capture([self.runner, '--version'], stage).startswith(b'qemu-aarch64 version '):
                     raise ValueError('AArch64 FFI cross builds require a trusted qemu-aarch64 runner')
-        elif args.ffi_cross_runner:
-            raise ValueError('FFI cross runner requires a configured AArch64 catalogue')
+        elif cross_runner:
+            raise ValueError('FFI cross runner requires a configured AArch64 or RV64IM LP64 catalogue')
         self.link_flags = ['-static', '-no-pie'] if self.runner else []
         self.providers = dict(implementation=args.ffi_provider,
                               adapter=args.ffi_adapter_provider or args.ffi_provider)
@@ -371,13 +409,18 @@ class Build:
                 self.inputs.add(path, digest)
             for record in recipe['files']:
                 self.inputs.add(house.local(root, record['path']), record['sha256'])
-        self.host_target = self.host('-dumpmachine').decode().strip()
-        cpu = 'aarch64' if self.aarch64 else 'x86_64'
-        host_cpu = 'x86_64' if self.runner else cpu
+        # Clang's -dumpmachine is target-sensitive, but warns about -I etc.
+        # Don't pass compile-only flags when querying its identity.
+        reported_flags = rv64.C_TARGET_FLAGS if self.rv64 else ()
+        self.host_target = capture([self.cc, *reported_flags, '-dumpmachine'], stage).decode().strip()
+        cpu = self.target[0].split('-')[0]
+        host_cpu = 'x86_64' if self.runner or self.rv64 else cpu
         if (sys.platform != 'linux' or os.uname().machine != host_cpu or
                 not re.fullmatch(cpu + r'-(?:[A-Za-z0-9_.]+-)?linux-gnu', self.host_target)):
             raise ValueError('FFI execution requires a matching Linux GNU LP64 toolchain: ' + self.target[0])
-        self.host_version = self.host('--version').decode(errors='replace')
+        self.host_version = capture([self.cc, '--version'], stage).decode(errors='replace')
+        if self.rv64 and not re.search(r'\bclang version [0-9]', self.host_version.partition('\n')[0]):
+            raise ValueError('RV64IM LP64 FFI requires an explicit Clang driver')
         if not args.inspect_ffi and self.providers['implementation'] == 'cephyr':
             if self.dynamic:
                 raise ValueError('FFI embedded Cephyr DSO provider is not qualified; select host explicitly')
@@ -398,7 +441,20 @@ class Build:
                 self.pin_tree(directory)
 
     def host(self, *argv):
+        if self.rv64:
+            return self.rv64.driver(*argv)
         return capture([self.cc, *argv], self.stage, timeout=120, bound=8 * 1024 * 1024)
+
+    def host_command(self, argv):
+        return [self.cc, *(self.rv64.flags if self.rv64 else ()), *argv]
+
+    def rv64_link(self, output, linked, sources):
+        objects = [self.compile('host', source, output + f'-input-{i}.o', *flags)
+                   for i, (source, flags) in enumerate(sources)]
+        roots = [f'on1x_abi_symbol_{i}' for i, desc in enumerate(self.descriptors)
+                 if desc['linkage'] == 'external']
+        self.rv64.link(self.stage / output, [self.stage / name for name in (*objects, *linked)],
+                       roots=roots, record=self.record_command)
 
     def pin_tree(self, path):
         expected = {}
@@ -417,7 +473,9 @@ class Build:
         self.native_commands.append([str(token).replace(str(self.stage), '<ffi-stage>') for token in argv])
 
     def check_object(self, path):
-        if self.aarch64:
+        if self.rv64:
+            rv64.check_elf(path, 1)
+        elif self.aarch64:
             aarch64.check_elf(path, (1,))
         else:
             check_elf(path, 1)
@@ -452,11 +510,11 @@ class Build:
         if provider == 'host':
             self.deps(src, flags)
             argv = [*flags, '-c', source, '-o', output]
-            self.record_command([self.cc, *argv])
+            self.record_command(self.host_command(argv))
             self.host(*argv)
         else:
             argv = [self.cephyr, '--object', self.root / 'include', self.runtime.parent]
-            if self.aarch64:
+            if self.aarch64 or self.rv64:
                 argv.append(self.target[0])
             self.record_command([*argv, f'<stdin:{source}>', f'<stdout:{output}>'])
             with src.open('rb') as stream, (self.stage / output).open('xb') as artifact, \
@@ -476,8 +534,9 @@ class Build:
                       compiler=dict(path=str(self.cc), target=self.host_target, version=self.host_version),
                       descriptors=self.descriptors, partitions=self.recipes, safe_export=False,
                       cflags=self.args.cflag, admission='not_qualified')
-        if self.runner:
-            report['cross_runner'] = dict(path=str(self.runner), sha256=self.inputs.add(self.runner))
+        runner = self.rv64.runner if self.rv64 else self.runner
+        if runner:
+            report['cross_runner'] = dict(path=str(runner), sha256=self.inputs.add(runner))
         return report
 
     def pin_host_tools(self):
@@ -501,7 +560,8 @@ class Build:
                 self.inputs.add(path)
 
     def prepare(self):
-        self.pin_host_tools()
+        if not self.rv64:
+            self.pin_host_tools()
         self.loaded_libraries(self.on1xc)
         if self.cephyr:
             loaded = self.loaded_libraries(self.cephyr)
@@ -512,8 +572,9 @@ class Build:
             # the loaded .so, not to the explicit C include or Archon roots.
             # Bind the installed provider for the selected target, its bank and assembler.
             packages = library.parent.parent / 'share/cephyr/native-packages'
-            self.pin_tree(packages / (aarch64.PACKAGE if self.aarch64 else 'AMD64'))
-            bank = aarch64.BANK if self.aarch64 else 'amd64'
+            package, bank = ((rv64.PACKAGE, rv64.BANK) if self.rv64 else
+                             (aarch64.PACKAGE, aarch64.BANK) if self.aarch64 else ('AMD64', 'amd64'))
+            self.pin_tree(packages / package)
             for name in (f'banks/{bank}.symas', 'tools/sandstone-as'):
                 self.inputs.add(packages / name)
         flags = [*self.host_flags, *self.definitions]
@@ -558,7 +619,7 @@ class Build:
                     self.deps(native, flags)
                     obj = f'companion-{index}.o'
                     argv = [*flags, '-c', native, '-o', obj]
-                    self.record_command([self.cc, *argv])
+                    self.record_command(self.host_command(argv))
                     self.host(*argv)
                     self.check_object(self.stage / obj)
                     self.inputs.add(self.stage / obj)
@@ -627,18 +688,21 @@ class Build:
             raise ValueError('FFI review requires at least one safe import')
         if self.safe and self.dynamic:
             raise ValueError('ON1X-FFI-NOT-ADMITTED: generated safe DSO load policy is not qualified')
-        probe, checks = probe_source(self.descriptors, cross=bool(self.runner))
+        probe, checks = probe_source(self.descriptors, cross=bool(self.runner), rv64_cross=bool(self.rv64))
         (stage / 'ffi-probe.c').write_text(probe, encoding='ascii')
         self.inputs.add(stage / 'ffi-probe.c')
         links = self.prepare()
-        self.deps(stage / 'ffi-probe.c', self.host_flags)
-        self.deps(self.runtime, self.host_flags)
-        argv = [*self.host_flags, *self.link_flags, 'ffi-probe.c', self.runtime, *links, '-o', 'ffi-probe']
-        self.record_command([self.cc, *argv])
-        self.host(*argv)
+        if self.rv64:
+            self.rv64_link('ffi-probe', links, [('ffi-probe.c', self.host_flags), (self.runtime, self.host_flags)])
+        else:
+            self.deps(stage / 'ffi-probe.c', self.host_flags)
+            self.deps(self.runtime, self.host_flags)
+            argv = [*self.host_flags, *self.link_flags, 'ffi-probe.c', self.runtime, *links, '-o', 'ffi-probe']
+            self.record_command([self.cc, *argv])
+            self.host(*argv)
         self.inputs.add(stage / 'ffi-probe')
         self.check_program(stage / 'ffi-probe')
-        loaded = {} if self.runner else self.loaded_libraries(stage / 'ffi-probe')
+        loaded = {} if self.runner or self.rv64 else self.loaded_libraries(stage / 'ffi-probe')
         if self.dynamic and loaded.get(DSO) != stage / DSO:
             raise ValueError('FFI probe did not resolve the exact staged DSO')
         subject = self.subject(checks)
@@ -649,7 +713,10 @@ class Build:
                                review=args.ffi_review, signature=args.ffi_review_signature, stage=stage,
                                codec=c, diagnostic='ON1X-FFI-NOT-ADMITTED: ')
             self.inputs.add(review['verifier'], review['verifier_sha256'])
-        if self.runner:
+        if self.rv64:
+            if self.rv64.execute(stage / 'ffi-probe') != (rv64.PROBE + '\n').encode('ascii'):
+                raise ValueError('RV64IM LP64 FFI runner returned no successful ABI probe witness')
+        elif self.runner:
             if capture([self.runner, stage / 'ffi-probe'], stage, timeout=30) != b'on1x-ffi-aarch64-probe\n':
                 raise ValueError('AArch64 FFI runner returned no successful ABI probe witness')
         else:
@@ -664,15 +731,20 @@ class Build:
         companions, libs = [], []
         text = c.read(source).decode()
         if re.search(r'\bextern\s+[^;\n]*\bbasis_native_\w+\(', text):
+            if self.rv64:
+                raise ValueError('RV64IM LP64 FFI native Basis and libm companions are not qualified')
             for name in ('runtime/basis_native.c', 'runtime/basis_real.c'):
                 path = Path(os.fsdecode(capture([self.on1xc, '--stdlib-resource', name,
                                                 *self.frontend[5:]], Path.cwd()).strip()))
                 companions.append(path)
                 self.deps(path, flags)
             libs.append('-lm')
-        self.deps(source, flags)
-        self.deps(self.runtime, flags)
-        self.host(*flags, *self.link_flags, source.name, self.runtime, *companions, *links, *libs, '-o', 'program')
+        if self.rv64:
+            self.rv64_link('program', links, [(source, flags), (self.runtime, flags)])
+        else:
+            self.deps(source, flags)
+            self.deps(self.runtime, flags)
+            self.host(*flags, *self.link_flags, source.name, self.runtime, *companions, *links, *libs, '-o', 'program')
         self.check_program(stage / 'program')
         self.inputs.add(stage / 'program')
         if self.dynamic and self.loaded_libraries(stage / 'program').get(DSO) != stage / DSO:

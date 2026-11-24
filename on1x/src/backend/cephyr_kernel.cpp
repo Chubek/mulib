@@ -17,6 +17,7 @@ int main(int argc, char** argv) try {
     const std::string_view target = argc == 5 ? argv[4] : "x86_64-linux-gnu";
     unsigned machine = 62;
     if (target == "aarch64-linux-gnu") machine = 183;
+    else if (target == "riscv64-linux-gnu") machine = 243;
     else if (target != "x86_64-linux-gnu") {
         std::cerr << "unsupported Cephyr kernel object target\n";
         return 1;
@@ -55,7 +56,8 @@ int main(int argc, char** argv) try {
     auto output = result.output();
     if (output.size() < 64 || output.size() > 64 * 1024 * 1024 ||
         output.substr(0, 7) != "\177ELF\2\1\1" || output[16] != (object ? 1 : 3) ||
-        output[17] != 0 || static_cast<unsigned char>(output[18]) != machine || output[19] != 0) {
+        output[17] != 0 || static_cast<unsigned char>(output[18]) != machine || output[19] != 0 ||
+        (machine == 243 && output.substr(48, 6) != std::string_view("\0\0\0\0\x40\0", 6))) {
         std::cerr << "Cephyr did not return a bounded " << target << " ELF "
                   << (object ? "object" : "shared library") << '\n';
         return 1;

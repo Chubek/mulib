@@ -165,7 +165,11 @@ def main():
     cli.add_argument('--ffi-adapter-provider', choices=('host', 'cephyr'),
                      help='select the adapter provider (defaults to --ffi-provider)')
     cli.add_argument('--ffi-cross-runner', type=Path,
-                     help='explicit trusted QEMU AArch64 user executable for unsafe static cross builds')
+                     help='explicit trusted target QEMU user executable for unsafe static cross builds')
+    cli.add_argument('--ffi-rv64-toolchain', type=Path,
+                     help='absolute installed Cephyr prefix providing RV64IM LP64 C headers and CRT/libc')
+    cli.add_argument('--ffi-rv64-linker', type=Path,
+                     help='absolute trusted LLD executable for static RV64IM LP64 links')
     cli.add_argument('--inspect-ffi', action='store_true',
                      help='publish the descriptor-driven native plan, not an admission decision')
     cli.add_argument('--ffi-review-candidate', action='store_true',
@@ -191,7 +195,8 @@ def main():
                    any(Path(path).suffix != '.c' for path in args.extra_c)):
         cli.error(f'Cephyr C11 does not qualify those C flags, debug, archives, or runtime options; {toolchain.HOST_HELP}')
     ffi_review = (args.ffi_review, args.ffi_review_key, args.ffi_review_signature)
-    ffi_options = (args.ffi_adapter_provider, args.ffi_cross_runner, args.inspect_ffi, args.ffi_review_candidate,
+    ffi_options = (args.ffi_adapter_provider, args.ffi_cross_runner, args.ffi_rv64_toolchain,
+                   args.ffi_rv64_linker, args.inspect_ffi, args.ffi_review_candidate,
                    args.ffi_static_only, *ffi_review)
     if any(ffi_options) and not args.ffi_provider:
         cli.error('generated FFI requires explicit --ffi-provider host|cephyr')

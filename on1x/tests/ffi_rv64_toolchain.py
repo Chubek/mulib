@@ -95,7 +95,7 @@ int main(void) {{
         else:
             raise RuntimeError('incorrectly admitted an actual LP64D object')
         diagnostic = command([tool.linker, '-r', '-o', stage / 'mixed.o', clang, hard], fail=True)
-        if b'floating-point ABI' not in diagnostic.stderr.replace(b'floating point ABI', b'floating-point ABI'):
+        if not any(text in diagnostic.stderr for text in (b'floating-point ABI', b'floating point ABI')):
             raise RuntimeError(f'wrong mixed-link diagnostic: {diagnostic.stderr!r}')
 
         # Confirm that section GC cannot hide an unresolved independent
