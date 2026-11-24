@@ -110,3 +110,20 @@ from [the directive](../../MIGRATION_OF_FFI.md#6-exactly-twelve-workers).
 Worktrees, private `build/wNN` directories, and shared handoff evidence are
 under `/mnt/nvme/opencode-worktrees/mulib-ffi-e10/`. The coordinator integrates
 on `ffi/integration-e10`. An older `ffi/migration` worktree was not changed.
+
+The user separately authorized an SDK follow-up covering `on1x/sdk` and
+`on1x/runtime-sdk` on `ffi/sdk-followup`. Its private worktree and build
+directory are `sdk/` and `build/sdk/` in the same workspace. It does not
+replace one of the original twelve assignments or add a trust authority.
+
+## Reviewed worker handoffs (not integrated)
+
+| Worker commit | Executed evidence | Qualification still required |
+|---|---|---|
+| W01 `15a8cad3` | Coordinator re-ran the committed reader against W02's captured projections: **20 passed**, including raw C, preprocessed C, C11Syntax, and SDK input parity per target and real clamp and inline headers. | G1 must also verify generation controls and genuine LLSynth parsing of the generated clamp interface. No executable ABI is established by this reader run. |
+| W08 `1da9d563` | Legacy numerical CTest **3/3 passed** in an isolated reference tree with a byte-copy of the seed at the old CMake path. Extended reviewed tests passed with both GCC and Clang generated/native C. Host C and sanitizer oracles and wrong-output controls passed. | Rich descriptor/adapter support and generic reviewed parity. Pinned Cephyr projects the headers on three targets, but the tested native numerical builds fail on unavailable `math.h`; no mixed PriceOpt enum ABI approval. |
+| W09 `996566ce` | Worker reports legacy IPC HIR/SDK parity and **3/3** separate-TU native runs (GCC, Clang, Clang ASan/UBSan with leak detection). The prior bridge fails the new nested-cleanup control. | Generic resource, callback, ownership and admission parity. The runtime hardening and recorded discovery obligations do not retire KernelBind. |
+
+Reproduction logs and exact selected flags are in the shared
+`evidence/WORKER-{01,08,09}.md` handoffs. These commits remain on their
+worker branches pending the corresponding integration gates.
