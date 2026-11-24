@@ -204,3 +204,9 @@ Archon driver regression (`c2d2ccce`, `build/on1x-finite-archon-gate.log`)
 rejects the aggregate layout without replacing the existing output.
 Typed lists, cons/tail patterns, and general iterators remain outside
 the profile.
+
+The final combined GCC/generated-scanner run at `0448b733` passed **219
+tests, 0 failed, 1 skipped** of 220 scheduled, including the new ownership,
+iterator and stackless timer tests. The skip is the delegated cgroup fixture.
+Logs: `build/on1x-integrated-ownership-iter-async-build.log` and
+`build/on1x-integrated-ownership-iter-async-ctest.log`.
