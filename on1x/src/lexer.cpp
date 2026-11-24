@@ -39,6 +39,11 @@ std::vector<RegexToken> regex_tokens(const std::string& input) {
  auto layout=[&](std::size_t p){
   while(p<input.size()){
    if(input[p]==' '||input[p]=='\t'||input[p]=='\r'||input[p]=='\n'){++p;continue;}
+   if(on1x_source_comment_kind(input.data()+p,input.size()-p)){
+    auto width=on1x_comment_width(input.data()+p,input.size()-p);
+    if(!width)return input.size(); // The scanner reports the malformed comment.
+    p+=width;continue;
+   }
    if(input[p]!='#'||(p+1<input.size()&&input[p+1]=='\\'))break;
    while(p<input.size()&&input[p]!='\n')++p;
   }
@@ -57,7 +62,8 @@ std::vector<RegexToken> regex_tokens(const std::string& input) {
    if(opens&&width){
     tokens.push_back({start,width});i=start+width;
    }
-  }else if(c=='"'||((c=='r'||c=='b')&&rest>=3&&input[i]=='!'&&input[i+1]=='"')){
+   }else if(c=='"'||c=='\''||((c=='r'||c=='b')&&rest>=3&&input[i]=='!'&&
+                             (input[i+1]=='"'||input[i+1]=='\''))){
    auto width=on1x_lit_string(input.data()+start,rest,0);
    // Leave malformed preceding terminals to the ordinary scanner.
    if(!width)break;
@@ -91,7 +97,7 @@ std::vector<RegexToken> regex_tokens(const std::string& input) {
  return tokens;
 }
 }
-std::vector<Token> scan(const std::string& source,const std::string& filename){
+std::vector<Token> scan(const std::string& source,const std::string& filename,std::vector<Docstring>* docstrings){
    if(source.size()>max_source_bytes) throw Error({filename,0,1,1},"source exceeds 2 MiB limit","ON1X-LEX-LIMIT");
   auto bad=source.find('\0'); if(bad!=std::string::npos)throw Error(pos_at(source,filename,bad),"NUL in source","ON1X-LEX-NUL");
   // Callbacks from Aurocks arrive backwards. Index lines once rather than
@@ -125,6 +131,13 @@ std::vector<Token> scan(const std::string& source,const std::string& filename){
    if(token.where.offset!=r->start)continue;
    token.text=source.substr(r->start,r->len);++r;
   }
+  std::erase_if(c.tokens,[&](const Token& token){
+   auto kind=on1x_comment_kind(token.text.data(),token.text.size());
+   if(kind!='!'&&kind!='>')return false;
+   if(docstrings)docstrings->push_back({static_cast<char>(kind),
+       token.text.substr(2,token.text.size()-3),token.where});
+   return true;
+  });
  c.tokens.push_back({"<eof>",pos_at(source,filename,source.size())});
  return c.tokens;
 }

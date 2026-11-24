@@ -124,6 +124,7 @@ struct TokenData {
     std::shared_ptr<SessionState> state;
     std::shared_ptr<RevisionData> source;
     std::vector<on1x::Token> tokens;
+    std::vector<on1x::Docstring> docstrings;
     std::uint32_t generation = 1;
 };
 

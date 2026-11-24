@@ -43,14 +43,21 @@ encoding; `b!#\pound` is one byte `0xA3u8`, and `b!#\u+100` is rejected.
 | Form | Type | Backslash escapes | Interpolation |
 |---|---|---|---|
 | `"text"` / `"""text"""` | `string` | Yes | Yes |
+| `'''text'''` | `string` | Yes | Yes |
 | `r!"text"` / `r!"""text"""` | `string` | No | No |
+| `r!'''text'''` | `string` | No | No |
 | `b!"data"` / `b!"""data"""` | `buffer` | Yes, including `\0` and `\xHH` | No |
+| `b!'''data'''` | `buffer` | Yes, including `\0` and `\xHH` | No |
 
-The prefix and opening quote are adjacent. Triple quotes preserve every
-newline and indentation byte between the delimiters; no de-indentation or
-trimming is performed. They can contain individual quotes or pairs of quotes.
-A raw single-quoted form cannot contain its closing `"`, even after a
-backslash; use the raw triple-quoted form instead. Non-raw text retains the
+The prefix and opening quote are adjacent. Triple double quotes preserve
+newlines and indentation verbatim. Triple apostrophes preserve newlines but
+strip all leading spaces and tabs on each source line, including any initial
+spaces just inside the opening delimiter and any whitespace-only lines. They do not trim
+trailing spaces, remove blank lines, or strip whitespace produced by escapes
+or interpolation. Both triple forms allow individual or paired quote characters.
+Non-raw triple apostrophes also accept `\'`. A single-line raw string cannot
+contain its closing `"`, even after a backslash; use a raw triple-quoted form
+instead. Non-raw text retains the
 existing `\\`, `\"`, `\n`, `\r`, and `\t` escapes and adds `\$`. A text
 literal with `\0` is rejected. For text with a literal dollar use `\$`, `$$`,
 or a raw string. File paths in import/PPX registration directives and

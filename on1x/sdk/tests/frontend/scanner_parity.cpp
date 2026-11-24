@@ -1,5 +1,7 @@
 #include "On1xSDK-Lexer.h"
 #include "On1xSDK-Options.h"
+#include "On1xSDK-Parser.h"
+#include "On1xSDK-PPX.h"
 #include "On1xSDK-Session.h"
 #include "On1xSDK-Source.h"
 
@@ -19,6 +21,8 @@ int main() {
         "fn main(){let r=/[a-z]+/;assert(match r ~ \"abc\");}",
         "fn main(){let a=r!\"raw\";let b=b!\"bytes\";"
         "let c=#\\a;let x=1.5f32;}",
+        "{! main doc }{- skipped -}fn main(){let a='''a\n b''';"
+        "let b=r!'''raw''';let c=b!'''bytes''';}{> trailing doc }",
         "macro m{rule($x:Expression)=>expression{$x+1};}"
         "fn main(){println(m!(41));}"
     };
@@ -55,13 +59,27 @@ int main() {
             assert(token.column == direct[i].where.column);
             const auto spelling =
                 std::string_view(token.text, token.text_size);
-            if (spelling.starts_with("r!\"") ||
-                spelling.starts_with("b!\""))
+             if (spelling.starts_with("r!\"") ||
+                 spelling.starts_with("b!\"") ||
+                 spelling.starts_with("'''") ||
+                 spelling.starts_with("r!'''") ||
+                 spelling.starts_with("b!'''"))
                 assert(token.kind == ON1X_SDK_TOKEN_STRING);
             if (spelling.starts_with("#\\"))
                 assert(token.kind == ON1X_SDK_TOKEN_CHARACTER);
             if (spelling == "1.5f32")
                 assert(token.kind == ON1X_SDK_TOKEN_FLOAT);
+        }
+        if (samples[sample].starts_with("{! main doc }")) {
+            On1xSDK_AST *ast = nullptr;
+            assert(on1x_sdk_parse(tokens, options, &ast) == ON1X_SDK_OK);
+            std::size_t size = 0;
+            assert(on1x_sdk_ppx_encode(ast, nullptr, 0, &size) == ON1X_SDK_OK);
+            std::string wire(size, '\0');
+            assert(on1x_sdk_ppx_encode(ast, wire.data(), size, &size) == ON1X_SDK_OK);
+            assert(wire.find("(Docstring \"!\" \" main doc \"") != std::string::npos);
+            assert(wire.find("(Docstring \">\" \" trailing doc \"") != std::string::npos);
+            on1x_sdk_ast_release(ast);
         }
         on1x_sdk_token_stream_release(tokens);
         on1x_sdk_source_revision_release(revision);

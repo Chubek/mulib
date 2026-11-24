@@ -5,6 +5,11 @@ LibStone's actual `scripts/{asdl,aurocks}.pl` generate these in the build tree.
 The C++ parser in `src/parser.cpp` owns source expression/statement semantics;
 see [the readable grammar](../docs/language.md).
 
+The scanner keeps both triple-quote spellings intact for the parser, which
+strips leading line indentation only from triple apostrophes. It discards
+ordinary block comments and hands docstrings to the frontend as trivia,
+separately from the parser's expression and declaration tokens.
+
 Local syntax groups add these parser productions (keywords remain identifier
 tokens in **both** scanners):
 

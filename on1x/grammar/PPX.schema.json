@@ -26,6 +26,7 @@
     "Defer":{"category":"Statement","fields":[["call","Expression"],["location","Location"]]},
     "Propagate":{"category":"Expression","fields":[["value","Expression"],["location","Location"]]},
     "Unit": {"category":"Unit", "fields":[["version","Version"],["functions","Declaration*"]]},
+    "Docstring":{"category":"Declaration","fields":[["marker","Bytes"],["text","Bytes"],["location","Location"]]},
     "NominalDeclaration":{"category":"Declaration","fields":[["kind","Bytes"],["name","Name"],["parameters","Name*"],["labels","Name*"],["fields","Type*"],["location","Location"]]},
     "NamedType":{"category":"Type","fields":[["name","Name"],["arguments","Type*"]]},
     "ModuleSyntax":{"category":"ExtensionInput","fields":[["version","Version"],["origin","File"],["names","Name*"],["carriers","DeclarationCarrier*"],["module_key","Bytes"]]},

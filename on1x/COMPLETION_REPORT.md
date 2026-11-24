@@ -1,5 +1,19 @@
 # On1x completion report
 
+## Triple apostrophes and block comments
+
+Working-tree change on `1277fd43`. GCC 16.2.1 with the generated scanner
+(`build/on1x-baseline`, LibStone `e10ac69e`) passed 237 tests, with only the
+cgroup-dependent test skipped. The fallback build passed seven focused tests.
+The Clang 22.1.8 ASan/UBSan scanner comparison passed 335 cases; parity also
+passed with the repository's LibStone checkout (`2118c93e`). See
+`build/on1x-comment-feature-final-tests.log` and the completion matrix.
+
+Triple apostrophes strip source indentation, including in `r!` and `b!` forms.
+Both doc comment forms carry exact text and source locations to ordinary PPX
+without affecting generated programs. Existing code that starts a block with
+a `-` or `!` operator must separate the operator from `{`.
+
 ## Portable standard FFI and MIR directives
 
 Baseline: `f5cb9d559fa4feb8e452bc866ac169dca7b86de3`, LibStone

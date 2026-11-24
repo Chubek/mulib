@@ -87,6 +87,11 @@ valid_cases = [
     br'let c = #\newline; let b = b!#\a; let raw = r!"a\n"; let n = 0o77 + 0b101;',
     br'println("value: ${text_len("abc")}"); println("""first'
     b'\nsecond""");',
+    b"''' unprefixed\n  ${r!'''nested'''} ''' r!''' raw \\w\n''' b!'''\\x01\n'''",
+    b"x{- outer\n{@ inner {- deeper -} @} -}y{@ ignored @}z{! doc }{>\n  more\n}",
+    b'let r = {- /not-a-regex/ -}/a+/; match /b+/ {! docs /ignored/ } ~ "b";',
+    b'fn main(){@ppx_label("check", {@nested ("check");});} {@ name("in a comment") @}',
+    b'"${1 {- { } / -} + 2 {! inner } }" r!""" {! opaque } """',
     'let pattern = /雪+/; assert(match /[a-z]+/ ~ "élan"); let score = 24 / 6 / 2;'.encode(),
     b'fn main(){taskgroup within 25ms{taskgroup within duration() s{poll{after 0ms=>1};}}}',
     b'1f32 1.5f32 1.5e-12f32 1e3f64 1u128 1.5u8 1f16 0x1.0f32 1u8x 1f32x 1u16f32',
@@ -100,7 +105,11 @@ prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
 check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)
 for i, bad in enumerate([b'`', b'`trailing\\', b'```unterminated', b'````', b'`closed``unterminated',
                          b'```````', b'`line\nbreak`', b'&', b'\v', b'\f', b'\xff', b'"unclosed',
-                         b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"']):
+                         b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"',
+                         b"'''unclosed", b"r!'''unclosed", b"b!'''unclosed", b"'single'",
+                         b"r!'", b"b!''",
+                         b'{- no close', b'{@ wrong close -}', b'{! missing brace',
+                         b'{> missing brace', b'{- ' * 257 + b' -}' * 257]):
     offset = 8 if bad == b'`closed``unterminated' else 6 if bad == b'```````' else 0
     check(f'invalid_{i}', prefix + bad, invalid_at=len(prefix) + offset)
 for i, data in enumerate([b'\0', b'# comment\0', b'"string\0"', b'@\n\0']):

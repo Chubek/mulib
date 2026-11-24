@@ -33,6 +33,15 @@ def native(name,expected,*,text=None,source=None,flags=(),status=0,diagnostic=No
 native('stdppx','42\ntrue\ntrue\n2\nfn(i64, i64) -> i64\n',source=root/'examples/ppx.on1x',flags=['--allow-source-ppx'])
 simple='fn main(){println(20);}'
 native('ordered_chain','42\n',text=simple,flags=options('increment','double'))
+t.source('doc_provider', '{> Imported. }\nfn answer()->i64{return 42;}')
+doc_source=t.source('doc_input', 'import "doc_provider.on1x";\n{! Main\n  details. }\n'
+                    'fn main(){println("${answer{> Embedded. }()}");}\n{! Trailing. }')
+native('docstrings', '42\n', source=doc_source,
+       flags=options('docstrings_drop', 'docstrings_check'))
+doc_wire=run([t.compiler,'--emit-ast',doc_source])
+assert doc_wire.returncode==0,doc_wire.stderr
+doc_tree=loads(doc_wire.stdout);Schema().validate(doc_tree)
+assert sum(tag(n)=='Docstring' for n in doc_tree[2])==4
 native('cli_label','',text='fn main(){@my_checks("assert_eq",42,42);}',flags=['--ppx','my_checks',root/'stdppx/checks.py'])
 native('checks_shadow','',text='fn main(){let assert=fn(x:bool){};@c("assert_eq",1,2);}',flags=['--ppx','c',root/'stdppx/checks.py'],status=70,diagnostic='assertion failed')
 native('wire_unicode','snow: 雪\n',text='fn main(){println("snow: 雪");}',flags=['--ppx','identity',root/'stdppx/identity.py'])

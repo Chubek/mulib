@@ -256,9 +256,10 @@ class Loader {
      auto replacement=options.source_overrides.find(path);
      m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
     if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
-    bytes+=m->source.size();auto scanned=scan(m->source,path.string());
+    std::vector<Docstring> docs;
+    bytes+=m->source.size();auto scanned=scan(m->source,path.string(),&docs);
    for(const auto& t:scanned)tokens.insert(t.text);
-      m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+      m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},std::move(docs));
       if(options.standalone_guest){
        const auto& u=m->unit;
         if(!u.imports.empty()||!u.module_imports.empty()||!u.kernel_imports.empty()||!u.foreign_imports.empty()||
@@ -762,6 +763,7 @@ public:
    result.unit.functions.reserve(count);
    for(auto* m:order){
      current_module=m;
+    for(auto& doc:m->unit.docstrings)result.unit.docstrings.push_back(std::move(doc));
     auto names=m->legacy?flat:m->names;
       for(const auto& [alias,request]:m->kernels)if(import_alias_conflicts(names,alias))
        throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");

@@ -12,6 +12,7 @@ namespace on1x {
 namespace {
 class Parser {
  const std::vector<Token>& ts;
+ std::vector<Docstring>* docstrings=nullptr;
   std::size_t pos=0;
   std::optional<std::size_t> split_angle;
   Token assignment_token;
@@ -325,7 +326,8 @@ class Parser {
     return out+'"';
    }
    static bool string_token(std::string_view s){
-    return s.starts_with('"')||s.starts_with("r!\"")||s.starts_with("b!\"");
+    if(s.starts_with("r!")||s.starts_with("b!"))s.remove_prefix(2);
+    return s.starts_with('"')||s.starts_with("'''");
    }
    static ExprPtr literal(Expr::Kind kind,const Location& at,std::string text={}){
     auto e=std::make_unique<Expr>();e->kind=kind;e->where=at;e->text=std::move(text);return e;
@@ -334,7 +336,8 @@ class Parser {
     const std::string_view s=token.text;
     const bool raw=s.starts_with("r!"),bytes=s.starts_with("b!");
     const auto prefix=raw||bytes?2u:0u;
-    const auto delim=s.substr(prefix).starts_with("\"\"\"")?3u:1u;
+    const bool strip_indent=s[prefix]=='\'';
+    const auto delim=strip_indent||s.substr(prefix).starts_with("\"\"\"")?3u:1u;
     auto i=prefix+delim;
     const auto end=s.size()-delim;
     auto e=literal(bytes?Expr::Kind::ByteBuffer:Expr::Kind::String,token.where);
@@ -360,8 +363,12 @@ class Parser {
      if(at.line==1)at.column+=origin.column-1;
      at.line+=origin.line-1;
     };
+    bool line_start=true;
     while(i<end){
      auto c=s[i++];
+     // Strip only source indentation, not whitespace decoded from a splice or escape.
+     if(strip_indent&&line_start&&(c==' '||c=='\t'))continue;
+     line_start=c=='\n';
      if(!raw&&c=='\\'){
       c=s[i++];
       if(bytes&&c=='x'){
@@ -380,10 +387,15 @@ class Parser {
         ++i;auto begin=location(i);auto n=on1x_lit_interpolation(s.data()+i,end-i,0);
         if(n==end-i)throw Error(splice_at,"unterminated string interpolation","ON1X-LITERAL-STRING");
         std::vector<Token> embedded;
-        try{embedded=scan(std::string(s.substr(i,n)),token.where.file);}
+        std::vector<Docstring> embedded_docs;
+        try{embedded=scan(std::string(s.substr(i,n)),token.where.file,docstrings?&embedded_docs:nullptr);}
         catch(Error& error){rebase(error.where,begin);throw;}
         for(auto& t:embedded)rebase(t.where,begin);
+        for(auto& doc:embedded_docs){
+         rebase(doc.where,begin);docstrings->push_back(std::move(doc));
+        }
         Parser sub(embedded,{});
+        sub.docstrings=docstrings;
         sub.enabled_extensions=enabled_extensions;
         sub.templating=templating;sub.syntax_atoms=syntax_atoms;
         sub.literal_ellipsis=literal_ellipsis;sub.ellipsis=ellipsis;
@@ -1541,7 +1553,8 @@ class Parser {
      }
      accept(";");bound_types.clear();return implementation;
     }
-     Unit parse(){Unit u;
+     Unit parse(std::vector<Docstring> docs){Unit u;
+      u.docstrings=std::move(docs);docstrings=&u.docstrings;
       while(!at("<eof>")){
       if(at("cliche")&&is_ident(peek(1).text)){
        if(u.cliches.size()>=256)throw Error(peek().where,"cliche declaration limit exceeded","ON1X-CLICHE-LIMIT");
@@ -1684,11 +1697,16 @@ class Parser {
    if(u.functions.size()>2048)throw Error(peek().where,"too many functions");
   }
     // Empty files are valid package initializers; the checker still requires main.
+  std::sort(u.docstrings.begin(),u.docstrings.end(),[](const Docstring& a,const Docstring& b){
+   return a.where.offset<b.where.offset;
+  });
   return u;
  }
 };
 }
-Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled){return Parser(ts,enabled).parse();}
+Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled,std::vector<Docstring> docs){
+ return Parser(ts,enabled).parse(std::move(docs));
+}
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& ts){return Parser(ts,{}).interface();}
 void require_no_kernel_imports(const Unit& unit){
  if(unit.kernel_imports.empty()){

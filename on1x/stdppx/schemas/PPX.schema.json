@@ -35,6 +35,7 @@
     "EvidenceChoice":{"category":"EvidenceChoice","fields":[["implementation","Name"],["member","Name"],["function","Bytes"],["selector","Bytes"],["type","Type"]]},
     "ExtensionFact":{"category":"ExtensionFact","fields":[["owner","Name"],["kind","Name"],["name","Name"],["identity","Bytes"],["location","Location"]]},
     "Unit":{"category":"Unit","fields":[["version","Version"],["functions","Declaration*"]]},
+    "Docstring":{"category":"Declaration","fields":[["marker","Bytes"],["text","Bytes"],["location","Location"]]},
     "NominalDeclaration":{"category":"Declaration","fields":[["kind","Bytes"],["name","Name"],["parameters","Name*"],["labels","Name*"],["fields","Type*"],["location","Location"]]},
     "NamedType":{"category":"Type","fields":[["name","Name"],["arguments","Type*"]]},
     "Loc":{"category":"Location","fields":[["file","File"],["offset","Nat"],["line","Positive"],["column","Positive"]]},

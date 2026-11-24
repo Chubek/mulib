@@ -299,6 +299,11 @@ struct ExtensionEvidence {
  std::vector<ExtensionContract> contracts;
  std::vector<ExtensionImplementation> implementations;
 };
+struct Docstring {
+ char marker; // '!' or '>' in the opening delimiter.
+ std::string text;
+ Location where;
+};
 struct Unit {
   std::vector<std::string> imports; std::vector<Function> functions;
   std::vector<Import> module_imports;
@@ -307,6 +312,7 @@ struct Unit {
   std::vector<FeatureActivation> features;
   std::vector<ScrutinyDirective> scrutiny;
   std::vector<ModuleExtension> extensions;
+  std::vector<Docstring> docstrings;
    std::vector<NominalDeclaration> nominals;
    std::vector<ClicheDeclaration> cliches;
    std::vector<ClicheImplementation> cliche_implementations;
@@ -322,8 +328,11 @@ struct Unit {
  std::vector<PpxRegistration> ppx;
 };
 std::string read_source_file(const std::string& filename);
-std::vector<Token> scan(const std::string& source, const std::string& filename);
-Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enabled={});
+// Docstrings are trivia: optionally append them separately, in source order.
+std::vector<Token> scan(const std::string& source, const std::string& filename,
+                        std::vector<Docstring>* docstrings=nullptr);
+Unit parse(const std::vector<Token>& tokens,const std::vector<std::string>& enabled={},
+           std::vector<Docstring> docstrings={});
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& tokens);
 // Reject unresolved KernelBind and portable stdffi requests at source-only
 // boundaries that did not run the module loader.

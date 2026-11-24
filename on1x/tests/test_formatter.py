@@ -128,6 +128,43 @@ def test_repository_style(work):
     assert b"} # first\n\n\nfn second()" in spaced
 
 
+def test_multiline_syntax(work):
+    source = work / "multiline.on1x"
+    formatted = work / "multiline-formatted.on1x"
+    doc = b"{! top documentation\r\n\t{> an opener inside a doc comment is text}"
+    trailing = b"{> trailing documentation\n  # on1xfmt: off\n}"
+    block = b"{- outer\r\n\t  {@ inner -} still inner @}\n  # on1xfmt: on\n-}"
+    alternate = b"{@ alternate\n\t{- nested -}\n@}"
+    text = b"'''text\r\n\t  # on1xfmt: off\n  {- a string, not a comment -}'''"
+    raw = b"r!'''raw\r\n  ${verbatim} \\q\n\t  ' \"'''"
+    data = b"b!'''A\\0\r\n\tB'''"
+    original = (
+        doc + b"\nfn main(){\n" + block + b"println(" + text + b");\n"
+        b"println(" + raw + b");let buf=" + data + b";\n"
+        b"println(" + alternate + b"buffer_len(buf));}" + trailing
+    )
+    source.write_bytes(original)
+    rendered = fmt(source).stdout
+    assert rendered != original and b"fn main() {\n" in rendered
+    for atom in (doc, trailing, block, alternate, text, raw, data):
+        assert rendered.count(atom) == 1
+    formatted.write_bytes(rendered)
+    assert fmt(formatted).stdout == rendered
+    fmt(formatted, "--check")
+    latex = fmt(source, "--target", "latex").stdout
+    assert b"\\textit{\\{!\\ top" in latex
+    assert b"\\textit{\\{-\\ outer" in latex
+    assert run_source(source, work / "multiline-before") == run_source(
+        formatted, work / "multiline-after"
+    )
+
+    for malformed in (b"{- unclosed\n", b"{> unclosed\n", b"fn main(){println('''unclosed\n"):
+        source.write_bytes(malformed)
+        err = fmt(source, "-o", formatted, expected=1)
+        assert not err.stdout and source.name.encode() in err.stderr
+        assert formatted.read_bytes() == rendered
+
+
 def run(work):
     (work / ".on1xfmt").write_text("tabstop = 4 # spaces, not tabs\nwidth = 28\n")
     root = work / "nested"
@@ -280,5 +317,6 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="on1x-fmt-") as directory:
         test_inplace(Path(directory))
         test_repository_style(Path(directory))
+        test_multiline_syntax(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

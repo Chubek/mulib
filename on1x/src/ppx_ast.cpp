@@ -409,11 +409,20 @@ SExpr encode(const Unit& unit){
    std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));
   else functions.push_back(form("Function",{string(f.name),parameters(f.params),type(f.result),block(f.body,f.where),list(std::move(attributes)),loc(f.where)}));
- }return form("Unit",{symbol("1"),list(std::move(functions))});
+  }
+  for(const auto& doc:unit.docstrings)
+   functions.push_back(form("Docstring",{string(std::string(1,doc.marker)),string(doc.text),loc(doc.where)}));
+  return form("Unit",{symbol("1"),list(std::move(functions))});
 }
 Unit decode(const SExpr& tree){
  base_schema().validate(tree);
- Unit unit;for(const auto& n:field(tree,1).items){
+  Unit unit;for(const auto& n:field(tree,1).items){
+   if(tag(n)=="Docstring"){
+    const auto& marker=field(n,0).text;
+    if(marker!="!"&&marker!=">")invalid(n,"unknown docstring marker");
+    unit.docstrings.push_back({marker[0],field(n,1).text,location(field(n,2))});
+    continue;
+   }
   if(tag(n)=="NominalDeclaration"){
    NominalDeclaration d;d.where=location(n.items.back());auto kind=field(n,0).text;d.kind=kind=="record"?Type::Record:kind=="enum"?Type::Sum:Type::Invalid;d.name=field(n,1).text;
    for(const auto& p:field(n,2).items)d.parameters.push_back(p.text);

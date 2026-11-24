@@ -1,5 +1,6 @@
 #include <on1x/formatter.hpp>
 #include <on1x/ast.hpp>
+#include <on1x/literal_scan.h>
 #include <mulib-prettyemit.h>
 
 #include <algorithm>
@@ -112,7 +113,9 @@ Config read_config(const fs::path& input) {
     }
 }
 
-enum class Kind { token, comment, carrier, disabled };
+enum class Kind { token, line_comment, block_comment, carrier, disabled };
+bool is_comment(Kind kind) { return kind == Kind::line_comment || kind == Kind::block_comment; }
+
 struct Part {
     Kind kind;
     View text;
@@ -127,7 +130,7 @@ bool one_of(View text, std::initializer_list<View> words) {
 }
 
 // Use the canonical scanner's byte spans. Only walk trivia between those
-// spans; '#' in a literal (including multiline commands) is never a comment.
+// spans; comment markers inside a literal are not trivia.
 std::vector<Part> parts(const std::string& text, const std::vector<Token>& tokens, const Unit& unit,
                         std::optional<Target>& source_target) {
     std::set<std::size_t> top;
@@ -202,14 +205,23 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
                         else if (value == "latex") source_target = Target::latex;
                         else if (value == "troff") source_target = Target::troff;
                         else throw Error(where, "formatter target must be plain, latex or troff", "ON1X-FMT-DIRECTIVE");
-                        append(Kind::comment, cursor, end, where, false);
+                        append(Kind::line_comment, cursor, end, where, false);
                     }
                 } else if (!disabled) {
-                    append(Kind::comment, cursor, end, where, false);
+                    append(Kind::line_comment, cursor, end, where, false);
                 }
                 advance(end);
             } else if (horizontal(text[cursor]) || text[cursor] == '\n') {
                 advance(cursor + 1);
+            } else if (const auto remaining = token.where.offset - cursor;
+                       on1x_comment_kind(source.data() + cursor, remaining)) {
+                Location where{token.where.file, cursor, line, cursor - line_start + 1};
+                const auto width = on1x_comment_width(source.data() + cursor, remaining);
+                if (!width)
+                    throw Error(where, "invalid block comment in scanner gap", "ON1X-FMT-TOKENS");
+                const auto end = cursor + width;
+                if (!disabled) append(Kind::block_comment, cursor, end, where, false);
+                advance(end);
             } else {
                 throw Error(token.where, "scanner gap is not whitespace or a comment", "ON1X-FMT-TOKENS");
             }
@@ -266,7 +278,7 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
 bool space_between(const Part& a, const Part& b) {
     if (a.text == "." || b.text == ".") return a.end != b.start;
     if ((a.text == ":" && one_of(b.text, {":", "="})) || (a.text == ".." && b.text == "=")) return true;
-    if (b.kind == Kind::comment) return true;
+    if (is_comment(a.kind) || is_comment(b.kind)) return true;
     if (one_of(b.text, {")", "]", ",", ";", ":", "?"})) return false;
     if (one_of(a.text, {"(", "[", "@", "$"})) return false;
     if (b.text == "}" && a.text == "{") return false;
@@ -288,9 +300,11 @@ bool continues_block(const Part& p) {
 
 bool line_between(const Part& a, const Part& b, View input, const Config& cfg) {
     if (a.kind == Kind::disabled || b.kind == Kind::disabled) return true;
-    if (a.kind == Kind::comment) return true;
-    if (b.kind == Kind::comment)
+    if (a.kind == Kind::line_comment) return true;
+    if (is_comment(b.kind))
         return input.substr(a.end, b.start - a.end).find('\n') != View::npos;
+    if (a.kind == Kind::block_comment &&
+        input.substr(a.end, b.start - a.end).find('\n') != View::npos) return true;
     if (b.top) return true;
     if (cfg.allman) {
         if (b.text == "{" && (a.text != "." || a.end != b.start)) return true;
@@ -308,7 +322,7 @@ std::size_t newlines_after(const std::vector<Part>& input, std::size_t start,
                            std::size_t end, const Part& next, const Config& cfg) {
     for (auto i = end; i > start;) {
         const auto& part = input[--i];
-        if (part.kind == Kind::comment) continue;
+        if (is_comment(part.kind)) continue;
         if (part.kind == Kind::token &&
             one_of(part.text, {";", ",", ")", "]", "?"}))
             continue;
@@ -321,11 +335,12 @@ std::size_t newlines_after(const std::vector<Part>& input, std::size_t start,
 }
 
 mulib_pretty_style_t style(const Part& p) {
-    if (p.kind == Kind::comment) return MULIB_PRETTY_COMMENT;
+    if (is_comment(p.kind)) return MULIB_PRETTY_COMMENT;
     if (p.kind != Kind::token) return MULIB_PRETTY_NORMAL;
     const auto first = p.text.front();
-    if (first == '"' || first == '`' || p.text.starts_with("#\\") ||
-        p.text.starts_with("b!\"") || p.text.starts_with("b!#\\") || p.text.starts_with("r!\"") ||
+    if (first == '"' || first == '`' || p.text.starts_with("'''") || p.text.starts_with("#\\") ||
+        p.text.starts_with("b!\"") || p.text.starts_with("b!'''") || p.text.starts_with("b!#\\") ||
+        p.text.starts_with("r!\"") || p.text.starts_with("r!'''") ||
         (first == '/' && p.text.size() >= 2 && p.text.back() == '/'))
         return MULIB_PRETTY_STRING;
     if (first >= '0' && first <= '9') return MULIB_PRETTY_NUMBER;

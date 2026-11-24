@@ -86,7 +86,7 @@ fn main(){let v=variant<sum{A:sum{Yes:bool,No:record{}},B:(i64,bool)}>(A,variant
  println(match array[2,3] with {[1,_]=>0,[a,b]=>a*b});
  let empty:array<i64,0>=array[];println(match empty with {[]=>5});
  println(match "hello\\n" with {"hello\\n"=>6,rest=>0});
- println(match -0x8000000000000000 with {-9223372036854775808=>7,rest=>0});
+ println(match -0x8000000000000000 with { -9223372036854775808=>7,rest=>0});
  println(match 255u8 with {0xffu8=>8,rest=>0});
  println(match -0.0f32 with {0.0f32=>9,rest=>0});
  println(match record{x:2,y:true} with {record{y:false,..}=>0,record{x:n,..}=>n+8});
@@ -161,7 +161,7 @@ negative = [
     ('or_types', 'match (1,true) with {(x,_)|(_,x)=>1}', 'expected'),
     ('or_duplicate', 'match (1,2) with {(x,y)|(x,x)=>1}', 'duplicate'),
     ('literal_type', 'match 1 with {1u8=>1,rest=>2}', 'expected'),
-    ('unsigned_negative', 'match 1u8 with {-1u8=>1,rest=>2}', 'unsigned literal'),
+     ('unsigned_negative', 'match 1u8 with { -1u8=>1,rest=>2}', 'unsigned literal'),
     ('nul_string', 'match "x" with {"\\0"=>1,rest=>2}', 'NUL'),
     ('tuple_arity', 'match (1,2) with {(x,y,z)=>1}', 'arity'),
     ('array_extent', 'match array[1] with {[x,y]=>1}', 'extent'),

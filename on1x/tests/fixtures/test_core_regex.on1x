@@ -36,6 +36,7 @@ fn main()
   assert(a[lo: 1][0] == 42);
   assert(a[lo + 0: 1][0] == 42);
   assert(match /foo+/ ~ "foo");
+  assert(match {- /not a literal/ -} /foo+/ {@ still layout @} ~ "foo");
   assert(!(match /foo+/ ~ "afoo"));
   assert(match // ~ "");
   assert(match /\// # slash at the end of the on1x token

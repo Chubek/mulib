@@ -283,6 +283,12 @@ Quoted strings are byte strings, symbols represent tags/enums/natural numbers.
 Wire strings are ASCII with `\\`, `\"`, `\n`, `\r`, `\t`, `\xHH` escapes;
 UTF-8 source text is preserved byte-for-byte. NUL does not enter the core AST.
 Locations are `(Loc "file" offset line column)`. The root is `(Unit 1 (...))`.
+The declaration list can also contain `(Docstring "!" "comment body" (Loc ...))`
+or its `">"` counterpart. The body is preserved verbatim, without delimiters,
+and the location points to the opening `{`. These are source metadata, not
+executable declarations. The compiler retains them between ordinary PPX passes
+even if a pass does not echo them back. A processor that validates against a
+private copy of the schema needs the new constructor to accept documented files.
 There are no reader macros, comments, dotted pairs, or executable S-expressions.
 
 For example, load an additional constructor with

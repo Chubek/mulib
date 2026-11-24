@@ -14,11 +14,17 @@ extern "C" int on1x_generated_scan(const char* source,size_t n,on1x_token_callba
    if(c==' '||c=='\t'||c=='\r'||c=='\n'){++pos;continue;}
    if(c=='#'&&(pos+1==n||source[pos+1]!='\\')){while(pos<n&&source[pos]!='\n')++pos;continue;}
    size_t start=pos;
-   if(c=='#'||(c=='b'&&n-pos>=4&&std::memcmp(source+pos,"b!#\\",4)==0)){
+   if(auto kind=on1x_source_comment_kind(source+pos,n-pos)){
+    size_t len=on1x_comment_width(source+pos,n-pos);
+    if(!len){if(error)*error=start;return 1;}
+    pos+=len;
+    if(kind=='-'||kind=='@')continue;
+   }else if(c=='#'||(c=='b'&&n-pos>=4&&std::memcmp(source+pos,"b!#\\",4)==0)){
     size_t prefix=c=='b'?2:0,len=on1x_lit_character(source+pos+prefix,n-pos-prefix);
     if(!len){if(error)*error=start;return 1;}
     pos+=prefix+len;
-   }else if(c=='"'||((c=='r'||c=='b')&&n-pos>=3&&source[pos+1]=='!'&&source[pos+2]=='"')){
+   }else if(c=='"'||c=='\''||((c=='r'||c=='b')&&n-pos>=3&&source[pos+1]=='!'&&
+                            (source[pos+2]=='"'||source[pos+2]=='\''))){
     size_t len=on1x_lit_string(source+pos,n-pos,0);
     if(!len){if(error)*error=start;return 1;}
     pos+=len;

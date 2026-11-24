@@ -1,9 +1,11 @@
 #include <on1x/meta.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/discovery.hpp>
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <set>
 #if defined(__unix__) || defined(__APPLE__)
 #include <cerrno>
@@ -171,7 +173,10 @@ void rewrite(Unit& unit,const PpxOptions& options){
    if(!found.schema.empty())native_schemas[p.label]=found.schema.string();
   }
   for(const auto& [label,path]:options.schemas)schema.extend(read_source_file(path),label,path);
- auto tree=encode(working);schema.validate(tree);
+  auto tree=encode(working);schema.validate(tree);
+  const auto is_docstring=[](const SExpr& entry){return entry.items.front().text=="Docstring";};
+  std::vector<SExpr> docs;
+  std::copy_if(tree.items[2].items.begin(),tree.items[2].items.end(),std::back_inserter(docs),is_docstring);
  auto extensions=[&](const SExpr& ast,bool final){
   auto walk=[&](auto&& self,const SExpr& node)->void{
    if(node.kind!=SExpr::Kind::List)return;
@@ -192,7 +197,14 @@ void rewrite(Unit& unit,const PpxOptions& options){
     environment["ON1X_PPX_DIAGNOSTIC_FAILURE"]=catalog.presentation().ppx_client_failure;
     if(auto id=catalog.ppx_id(program.label))environment["ON1X_PPX_DIAGNOSTIC_ID"]=*id;
      auto output=run_transformer(program.program,write_sexpr(tree),options.timeout_ms,program.label,environment,options.diagnostics,options.diagnostic_catalog);
-  auto replacement=read_sexpr(output,"<ppx:"+program.label+" stdout>");schema.validate(replacement);extensions(replacement,false);tree=std::move(replacement);
+   auto replacement=read_sexpr(output,"<ppx:"+program.label+" stdout>");schema.validate(replacement);extensions(replacement,false);
+   // Docstrings are source metadata, not declarations authored by a processor.
+   // Keep them available to later passes even if a pass rebuilds the Unit.
+   auto& declarations=replacement.items[2].items;
+   std::erase_if(declarations,is_docstring);
+   declarations.insert(declarations.end(),docs.begin(),docs.end());
+   if(!docs.empty())schema.validate(replacement);
+   tree=std::move(replacement);
  }
   extensions(tree,true);auto result=decode(tree);
   // A generic host obligation: a later v1 transformer cannot erase/alter the

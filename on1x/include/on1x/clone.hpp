@@ -87,6 +87,7 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
     out.kernel_imports=unit.kernel_imports;
     out.foreign_imports=unit.foreign_imports;
     out.features=unit.features;out.scrutiny=unit.scrutiny;out.extensions=unit.extensions;out.nominals=unit.nominals;
+    out.docstrings=unit.docstrings;
     out.cliches=unit.cliches;out.cliches_prepared=unit.cliches_prepared;
     out.inherents_prepared=unit.inherents_prepared;
     out.extension_evidence=unit.extension_evidence;out.source_digests=unit.source_digests;

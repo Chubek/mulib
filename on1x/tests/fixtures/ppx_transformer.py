@@ -32,6 +32,16 @@ if mode=='deep':
 if mode=='ignore_input':
     print('(Unit 1 ((Function "main" () (VoidType) (Block () (Loc "generated" 0 1 1)) () (Loc "generated" 0 1 1))))');raise SystemExit
 tree=loads(sys.stdin.buffer.read())
+if mode in ('docstrings_drop', 'docstrings_check'):
+    docs=[n for n in tree[2] if tag(n)=='Docstring']
+    assert [(n[1], n[2]) for n in docs] == [
+        ('>', ' Imported. '), ('!', ' Main\n  details. '),
+        ('>', ' Embedded. '), ('!', ' Trailing. ')]
+    assert [(Path(n[3][1]).name, int(n[3][3]), int(n[3][4])) for n in docs] == [
+        ('doc_provider.on1x', 1, 1), ('doc_input.on1x', 2, 1),
+        ('doc_input.on1x', 4, 28), ('doc_input.on1x', 5, 1)]
+    if mode=='docstrings_drop':
+        tree[2]=[n for n in tree[2] if tag(n)!='Docstring']
 if mode=='hostile_diagnostic':
     identity=os.environ['ON1X_PPX_DIAGNOSTIC_ID']
     os.write(3,(f'(register "{identity}")\n'

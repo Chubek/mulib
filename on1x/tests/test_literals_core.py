@@ -57,6 +57,29 @@ expected = ('92\n10\n34\n102\n0\n£\noctal char\n255\nplain\n'
 path = t.source("test_literals_positive", source)
 t.valid("test_literals_positive", expected, source=path)
 
+t.valid("apostrophe_multiline_and_comments", "line  one\n\nline two end\n", text=r"""
+{- Outer {- nested -} {@ mixed @} and a bare }. -}
+fn main() {
+  let suffix = "end";
+  println('''  line  one
+|blank|
+      line two ${suffix {- ignore } -}}''');
+  assert('''
+      a
+      ''' == "\na\n");
+  assert(r!'''  $suffix \q
+      ''' == "\$suffix \\q\n");
+  assert('''\tkept\n  after escape''' == "\tkept\n  after escape");
+  assert(''' it''s \"quoted\" and it\'s fine''' == "it''s \"quoted\" and it's fine");
+  assert("${'''  nested'''}" == "nested");
+  let buf = b!'''  A\0
+      \xFF''';
+  assert(buffer_len(buf) == 4);
+  assert(buffer_at(buf,1) == 0u8 && buffer_at(buf,3) == 255u8);
+  assert(1{- no spaces at either end -}+{@ } ignored @}2==3);
+}
+""".replace("|blank|", "  \t"))
+
 formatted = run([t.compiler, "fmt", path])
 assert formatted.returncode == 0, formatted.stderr
 assert r'b!"A\0\xff\t"' in formatted.stdout
@@ -112,6 +135,9 @@ for name, value, message in (
     ("ordinary_escape", r'"bad\q"', "invalid token"),
     ("nul_escape", r'"no\0"', "NUL escape"),
     ("triple", '"""unclosed', "invalid token"),
+    ("apostrophe_triple", "'''unclosed", "invalid token"),
+    ("apostrophe_raw_triple", "r!'''unclosed", "invalid token"),
+    ("apostrophe_byte_triple", "b!'''unclosed", "invalid token"),
     ("interp_missing", '"${name"', "invalid token"),
     ("interp_empty", '"${}"', "expected identifier"),
     ("interp_inline", '"${42 34}"', "expected '<eof>'"),

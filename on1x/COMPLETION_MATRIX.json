@@ -8,6 +8,24 @@
   },
   "features": [
     {
+      "id": "FRONTEND-APOSTROPHE-DOCSTRINGS",
+      "contract": "Triple apostrophes strip leading spaces and tabs per source line; plain, raw and byte-buffer literals retain their existing escape and interpolation rules. Block comments are trivia; docstrings retain exact text and source location in ordinary PPX requests.",
+      "owner": "01 + 10",
+      "prerequisites": ["canonical On1x parser and matching generated or fallback scanner"],
+      "source_paths": ["on1x/grammar/On1x.g", "on1x/include/on1x/literal_scan.h", "on1x/src/parser.cpp", "on1x/src/ppx_ast.cpp"],
+      "backends": ["C11 source frontend", "ordinary Unit-v1 PPX", "SDK lexer and PPX encoding"],
+      "positive_tests": ["on1x.literals_core", "on1x.ppx", "on1x.formatter", "on1x.sdk.frontend_scanner_parity"],
+      "negative_tests": ["on1x.scanner_parity (unterminated strings and comments; comment nesting limit)", "on1x.literals_core (unterminated apostrophe literals)"],
+      "status": "VERIFIED",
+      "evidence": [
+        {"command": "ctest --test-dir build/on1x-baseline --output-on-failure -j 9", "result": "237 passed and one cgroup-dependent test skipped with the generated scanner"},
+        {"command": "ctest --test-dir build/on1x-comment-fallback-make --output-on-failure -R 'literals_core|^on1x[.]ppx$|formatter|stdppx_protocol|sdk.frontend_scanner_parity|patterns|core_regex'", "result": "Seven focused fallback tests passed"},
+        {"command": "python3 on1x/tests/scanner_parity.py build/on1x-comments-scanner/generated-tokens-san build/on1x-comments-scanner/reference-tokens-san on1x/examples build/on1x-comments-scanner/parity-san", "result": "335 exact cases passed with Clang 22.1.8 and ASan/UBSan"}
+      ],
+      "revision": "working tree on 1277fd43; generated scanner tested with LibStone e10ac69e",
+      "limits": ["Docstrings are not associated with declarations or evaluated", "Separate a block's opening brace from a leading minus or bang operator"]
+    },
+    {
       "id": "STDFFI-PORTABLE-MIR",
       "contract": "A reviewed, source-pinned scalar definition becomes a checked function on first use by a standard foreign import. Portable MIR carries target/backend-selected hints and verified rewrite actions; native C11 calls the embedded kernel through Cephyr.",
       "owner": "FFI/MIR integration",

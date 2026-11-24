@@ -1,4 +1,5 @@
 # Leading zeroes are decimal; strings must not inherit C trigraph semantics.
+{! Examples of numeric and text literals. }
 fn main()
 {
   println(0010);
@@ -8,4 +9,8 @@ fn main()
   println("C trigraph: ??/");
   println("雪7");
   println("quote: \" tab:\t");
+  {- The newlines remain; the leading spaces do not. -}
+  let lines = '''first
+      second''';
+  assert(lines == "first\nsecond");
 }

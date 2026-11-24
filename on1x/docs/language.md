@@ -58,8 +58,15 @@ profiles. See [the exact syntax, limits and migration contract](defer-errors.md)
 ## Lexical conventions
 
 Source files use ASCII identifier spelling `[A-Za-z_][A-Za-z0-9_]*`.
-`#` introduces a line comment except for `#\` character literals. Whitespace
-separates tokens. Ordinary strings support `\\`, `\"`, `\n`, `\r`, `\t` and
+`#` introduces a line comment except for `#\` character literals. `{- ... -}`
+and `{@ ... @}` are block comments and may nest, up to 256 levels. `{! ... }`
+and `{> ... }` end at the first `}` and reach ordinary PPX as docstrings;
+they have no effect on the compiled program. To distinguish a comment from
+a compact block starting with a PPX call (`{@name(...)`), put a space after
+the comment opener when its text starts with a call. When a block starts
+with `-` or `!`, separate that operator from the `{` with a space, as in
+`with { -1 => ... }`. Comments and whitespace separate tokens. Ordinary
+strings support `\\`, `\"`, `\n`, `\r`, `\t` and
 `\$` but reject embedded NUL. See [core literals](core-literals.md) for
 raw/triple strings, interpolation, `char`, `b!` buffers and numeric spellings.
 In a string that used `$name` or `${...}` literally, escape the dollar

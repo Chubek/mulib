@@ -791,8 +791,11 @@ On1xSDK_TokenKind classify_token(std::string_view text) {
         "letrec_syntax", "record", "enum", "impl", "cliche", "match",
         "for", "in", "break", "continue", "defer", "taskgroup", "unsafe"};
     if (keywords.contains(text)) return ON1X_SDK_TOKEN_KEYWORD;
-    if (text.starts_with("\"") || text.starts_with("r!\"") ||
-        text.starts_with("b!\"") || text.starts_with("`"))
+    auto quoted = text;
+    if (quoted.starts_with("r!") || quoted.starts_with("b!"))
+        quoted.remove_prefix(2);
+    if (quoted.starts_with("\"") || quoted.starts_with("'''") ||
+        text.starts_with("`"))
         return ON1X_SDK_TOKEN_STRING;
     if (text.starts_with("#\\") || text.starts_with("b!#\\"))
         return ON1X_SDK_TOKEN_CHARACTER;
@@ -821,7 +824,8 @@ std::shared_ptr<TokenData> lex_impl(
         fail(ON1X_SDK_ERROR, ON1X_SDK_COMPILER_VERIFICATION_FAILED,
              "ON1X-SDK-UTF8", "source is not valid shortest-form UTF-8");
     operation.charge(source->bytes.size() + 1u);
-    auto scanned = on1x::scan(source->bytes, source->path);
+    std::vector<on1x::Docstring> docs;
+    auto scanned = on1x::scan(source->bytes, source->path, &docs);
     operation.poll();
     if (scanned.size() > options.max_tokens)
         fail(ON1X_SDK_LIMIT, ON1X_SDK_COMPILER_CONDITION_NONE,
@@ -831,6 +835,7 @@ std::shared_ptr<TokenData> lex_impl(
     result->state = source->state;
     result->source = source;
     result->tokens = std::move(scanned);
+    result->docstrings = std::move(docs);
     result->generation = object_generation(source->state);
     return result;
 }
@@ -874,7 +879,7 @@ std::shared_ptr<ASTData> parse_impl(
         fail(ON1X_SDK_LIMIT, ON1X_SDK_COMPILER_CONDITION_NONE,
              "ON1X-SDK-TOKEN-LIMIT", "token count limit exceeded");
     operation.charge(tokens->tokens.size());
-    auto unit = on1x::parse(tokens->tokens, options.features);
+    auto unit = on1x::parse(tokens->tokens, options.features, tokens->docstrings);
     operation.poll();
     return build_ast(
         std::move(unit), {tokens->source}, options,

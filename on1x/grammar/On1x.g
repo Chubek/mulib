@@ -11,8 +11,16 @@ static on1x_token_t on1x_complex_literal(GLRParser start, GLRParser *end, int ki
   size_t available, length, prefix;
   glr_skip(&start);
   available = (size_t)(start.end - start.s);
+  if (kind == 2 && !on1x_source_comment_kind(start.s, available)) {
+    /* The apparent {@ opener is a block followed by a PPX invocation. */
+    end->s = start.s + 1;
+    return on1x_Tok(on1x_scanner_arena,
+        on1x_string_copy(on1x_scanner_arena, start.s, 1),
+        (size_t)(start.s - start.begin), on1x_token_none());
+  }
   prefix = start.s[0] == 'b' ? 2 : 0;
   length = kind == 1 ? on1x_lit_character(start.s + prefix, available - prefix)
+         : kind == 2 ? on1x_comment_width(start.s, available)
                      : on1x_lit_string(start.s, available, 0);
   if (!length) {
     if (!on1x_literal_error) on1x_literal_error = start.s;
@@ -22,6 +30,7 @@ static on1x_token_t on1x_complex_literal(GLRParser start, GLRParser *end, int ki
   }
   if (kind == 1) length += prefix;
   end->s = start.s + length;
+  if (kind == 2 && (start.s[1] == '-' || start.s[1] == '@')) return NULL;
   return on1x_Tok(on1x_scanner_arena,
       on1x_string_copy(on1x_scanner_arena, start.s, length),
       (size_t)(start.s - start.begin), on1x_token_none());
@@ -118,7 +127,8 @@ piece:
   | /`([^`\\\r\n]|\\[^\r\n])*`/ { $$ = on1x_lexeme($1, save); }
   | /b!#\\|#\\/ { $$ = on1x_complex_literal(save, &attempt, 1); }
   | /#[^\n]*/ { $$ = NULL; }
-  | /[br]!"|"/ { $$ = on1x_complex_literal(save, &attempt, 0); }
+  | /([br]!)?("|')/ { $$ = on1x_complex_literal(save, &attempt, 0); }
+  | /\{[-@!>]/ { $$ = on1x_complex_literal(save, &attempt, 2); }
   | /[A-Za-z_][A-Za-z0-9_]*/ { $$ = on1x_lexeme($1, save); }
   | /([0-9]+\.[0-9]+([eE][+\-]?[0-9]+)?|[0-9]+[eE][+\-]?[0-9]+)(f32|f64)?|[0-9]+(f32|f64)/ { $$ = on1x_lexeme($1, save); }
   | /(0[xX][0-9a-fA-F]+|0[bB][01]+|0[oO][0-7]+|[0-9]+)(u8|u16|u32|u64)?/ { $$ = on1x_lexeme($1, save); }
