@@ -11,12 +11,266 @@ import stat
 MAX_DISCOVERY = 32768
 MAX_DEPTH = 32
 TEMPLATE_NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_-]{0,63}\Z')
+GITIGNORE_TEMPLATE = '''# =============================================================================
+# On1x and MuLIB — .gitignore
+# =============================================================================
+
+# On1x project outputs and dependency caches
+/target/
+/build/
+/dist/
+/release/
+/out/
+/.on1x-deps/
+.on1x-build.json
+.on1x-vm-runner
+*.mulib.json
+*.o1vm
+
+# Native compilation products
+*.o
+*.obj
+*.lo
+*.a
+*.lib
+*.la
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.elf
+*.d
+*.exp
+*.ilk
+*.pdb
+*.dSYM/
+*.gch
+*.pch
+
+# CMake and generated build infrastructure
+build-*/
+build_*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CMakeUserPresets.json
+cmake_install.cmake
+CTestTestfile.cmake
+CPackConfig.cmake
+CPackSourceConfig.cmake
+install_manifest.txt
+compile_commands.json
+Testing/
+_deps/
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
+
+# Autotools and configuration caches
+autom4te.cache/
+.deps/
+.libs/
+config.log
+config.status
+config.cache
+
+# Coverage, profiling and instrumentation
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+*.prof
+*.lcov
+gmon.out
+coverage.info
+coverage.xml
+/coverage/
+/htmlcov/
+
+# Crash dumps and debugger artifacts
+/core
+/core.[0-9]*
+vgcore.*
+*.stackdump
+*.dmp
+*.core
+
+# Python bytecode and tooling caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.pytype/
+.pyre/
+.tox/
+.nox/
+.coverage
+.coverage.*
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Python virtual environments
+/.venv/
+/venv/
+/.env/
+/env/
+
+# Language server and indexing caches
+.cache/
+.clangd/
+.ccls-cache/
+.clangd-cache/
+.direnv/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.template
+!.env.sample
+/secrets/
+/credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.rej
+*.swp
+*.swo
+*.swn
+*~
+.nfs*
+
+# Editor and IDE metadata
+.idea/
+.vscode/
+.vs/
+.history/
+*.sublime-workspace
+.project
+.cproject
+.settings/
+Session.vim
+
+# Operating system metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# LaTeX intermediate files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.lol
+*.loa
+*.toc
+*.out
+*.nav
+*.snm
+*.vrb
+*.synctex
+*.synctex.gz
+*.run.xml
+*.xdv
+*.dvi
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.ist
+*.xdy
+*.maf
+*.mtc
+*.mtc[0-9]*
+*.thm
+_minted-*/
+_minted/
+.tikz-cache/
+
+# LaTeX build directories
+/latex-build/
+/tex-build/
+
+# -----------------------------------------------------------------------------
+# Deliberately tracked:
+#
+#   On1xfile
+#   On1xfile.m
+#   On1xfile.i
+#   On1xfile.lock
+#   .on1xfmt
+#   *.on1x
+#   *.on1xi
+#   *.o1m
+#   *.lua
+#   *.qmr
+#   *.tex
+#   *.bib
+#   *.sty
+#   *.cls
+#   CMakeLists.txt
+#   CMakePresets.json
+#   Makefile
+#   .gitmodules
+#   AGENTS.md
+#   README.md
+#   LICENSE
+#
+#   source/
+#   src/
+#   include/
+#   runtime/
+#   stdlib/
+#   profiles/
+#   contracts/
+#   fixtures/
+#   strategies/
+#   snapshots/
+#   tests/
+#   examples/
+#   docs/
+#   manual/
+#   third_party/
+# -----------------------------------------------------------------------------
+'''.encode('utf-8')
 
 
 def add_command(commands, *, root_manifest, local_roles, local, max_manifest, qmr_tag):
     parser = commands.add_parser('init', help='create an On1xfile without running project policy')
     parser.add_argument('directory', type=Path, nargs='?', default=Path('.'))
     parser.add_argument('--recursive', action='store_true', help='also generate directory-local manifests')
+    parser.add_argument('--with-gitignore', action='store_true', help='also create a root On1x and MuLIB .gitignore')
     parser.add_argument('--template', metavar='NAME', help='copy and validate an explicit NAME.On1xfile template')
     parser.add_argument('--templates-path', metavar='PATH_LIST',
                         help='search directories instead of $ON1XFILE_TEMPLATES_PATH')
@@ -192,6 +446,8 @@ def initialize(args, *, root_manifest, local_roles, local, max_manifest, qmr_tag
         raise ValueError('project templates must be plain On1xfile text; QMR is not evaluated')
     config = root_manifest(data, args.directory / 'On1xfile')
     plan = [(Path('On1xfile'), data)]
+    if args.with_gitignore:
+        plan.append((Path('.gitignore'), GITIGNORE_TEMPLATE))
     name = args.directory.name or '.'
     with directory(args.directory.parent) as parent:
         present = entry_info(parent, name) is not None

@@ -58,7 +58,13 @@ With `--recursive`, it writes an `On1xfile.m` in each directory containing
 regular `.on1x` files and an `On1xfile.i` for `.on1xi` files with a matching
 same-directory implementation. Hidden entries, symlinks, `build` and `target`
 subdirectories, declared dependency stores, and nested projects are skipped.
-Existing output files cause an error before any manifests are written.
+
+Add `--with-gitignore` to write the bundled On1x and MuLIB `.gitignore` at
+the project root, alongside `On1xfile`. It covers build outputs, caches,
+local configuration, and common tooling artifacts. Without the flag, init
+leaves `.gitignore` alone. With the flag, any existing
+`.gitignore` (including a symlink) is left untouched and init fails before
+creating any files. The same no-overwrite rule applies to all manifests.
 
 Use `--template NAME` to copy a plain root manifest named `NAME.On1xfile`.
 `--templates-path PATH_LIST` replaces `$ON1XFILE_TEMPLATES_PATH`; on POSIX,

@@ -1,5 +1,6 @@
-"""Exercise default, recursive, and explicit-template project initialization."""
+"""Exercise default, recursive, and optional project scaffolding."""
 import argparse
+from hashlib import sha256
 import os
 from pathlib import Path
 import subprocess
@@ -20,7 +21,8 @@ def exercise(compiler, work):
             assert result.returncode == 1 and error in result.stderr, result
         return result.stdout
 
-    assert '--recursive' in aux('init', '--help')
+    help_text = aux('init', '--help')
+    assert '--recursive' in help_text and '--with-gitignore' in help_text
 
     def write(relative, data):
         path = work / relative
@@ -39,12 +41,22 @@ def exercise(compiler, work):
     expected = 'on1xfile 1\nkind library\nname "plain"\ndirectory "."\n'
     assert root.read_text() == expected
     assert not list((work / 'plain').rglob('On1xfile.?'))
+    assert not (work / 'plain/.gitignore').exists()
     aux('init', 'plain', '--recursive', error='project file already exists')
     assert root.read_text() == expected
     aux('init', 'new project')
     assert 'name "new-project"' in (work / 'new project/On1xfile').read_text()
     aux('init', 'no-template', '--templates-path', '.', error='requires --template')
     assert not (work / 'no-template').exists()
+
+    def check_gitignore(project):
+        # Pin the supplied UTF-8 template, including all comments and the final LF.
+        data = (project / '.gitignore').read_bytes()
+        assert sha256(data).hexdigest() == '630418bdd0fccfbd427b2e3fb1a65edf30dd105db0d239b6fdcc3df6c69552f5'
+
+    aux('init', 'new ignored project', '--with-gitignore')
+    assert 'name "new-ignored-project"' in (work / 'new ignored project/On1xfile').read_text()
+    check_gitignore(work / 'new ignored project')
 
     impl = 'fn value()->i64{return 42;}\n'
     interface = 'on1xi 1;\nfn value()->i64;\n'
@@ -73,6 +85,25 @@ def exercise(compiler, work):
         assert not (work / directory / 'On1xfile.m').exists(), directory
     assert not (work / 'policy-ran').exists()
 
+    write('gitignore-collision/sub/mod.on1x', impl)
+    existing_ignore = work / 'gitignore-collision/.gitignore'
+    existing_bytes = b'# keep this exactly\r\n/local/\r\n'
+    existing_ignore.write_bytes(existing_bytes)
+    aux('init', '--recursive', '--with-gitignore', cwd=existing_ignore.parent,
+        error='project file already exists: .gitignore')
+    assert existing_ignore.read_bytes() == existing_bytes
+    assert not list(existing_ignore.parent.rglob('On1xfile*'))
+    aux('init', cwd=existing_ignore.parent)
+    assert (existing_ignore.parent / 'On1xfile').is_file()
+    assert existing_ignore.read_bytes() == existing_bytes
+
+    linked_ignore = mkdir('linked-ignore') / '.gitignore'
+    missing_target = work / 'missing-ignore'
+    linked_ignore.symlink_to(missing_target)
+    aux('init', 'linked-ignore', '--with-gitignore', error='project file already exists: .gitignore')
+    assert linked_ignore.readlink() == missing_target and not missing_target.exists()
+    assert not (linked_ignore.parent / 'On1xfile').exists()
+
     write('buildable/src/module.on1x', impl)
     write('buildable/src/module.on1xi', interface)
     aux('init', '--recursive', 'buildable')
@@ -85,9 +116,10 @@ def exercise(compiler, work):
     write('collision/a/ok.on1x', impl)
     write('collision/z/existing.on1x', impl)
     kept = write('collision/z/On1xfile.m', 'preserve this file')
-    aux('init', '--recursive', 'collision', error='project file already exists')
+    aux('init', '--recursive', '--with-gitignore', 'collision', error='project file already exists')
     assert kept.read_text() == 'preserve this file'
     assert not (work / 'collision/a/On1xfile.m').exists() and not (work / 'collision/On1xfile').exists()
+    assert not (work / 'collision/.gitignore').exists()
     linked_output = mkdir('linked-output')
     (linked_output / 'On1xfile').symlink_to(external)
     aux('init', linked_output, error='project file already exists')
@@ -108,8 +140,10 @@ def exercise(compiler, work):
     write('app project/no-scan/other.on1x', impl)
     mkdir('empty templates')
     templates = dict(env, ON1XFILE_TEMPLATES_PATH=os.pathsep.join(('empty templates', 'env templates')))
-    aux('init', 'app project', '--recursive', '--template', 'demo', environment=templates)
+    aux('init', 'app project', '--recursive', '--with-gitignore', '--template', 'demo', environment=templates)
     assert (work / 'app project/On1xfile').read_text() == executable
+    check_gitignore(work / 'app project')
+    assert not (work / 'app project/app/.gitignore').exists()
     assert (work / 'app project/app/On1xfile.m').read_text() == (
         'on1xfile 1\nsource "main.on1x"\nlibrary "util.on1x"\n')
     assert not (work / 'app project/no-scan/On1xfile.m').exists()
