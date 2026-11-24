@@ -179,6 +179,11 @@ discover example = c::mulib_example_example native external declaration graph 0
   one module. Only the eight known `on1x_kernel_ipc_v1_*` bridge spellings
   are recognized for that origin. This does not prove ownership, projection
   provenance, runtime artifact, callback lifetime, or authorization.
+  Discovery reports mark these companion entries `import_policy: unsafe_only`.
+  That policy is separate from the discovery profile and lowering reason:
+  no resource binding enters the generated registry, and public declarations
+  do not inherit the companion's policy. The independent static KernelBind
+  adapter is the only executable path for these operations.
 * Native graph types use the W03 `NativeGraph` type and tag shapes. A
   native fingerprint hashes compact, recursively key-sorted ASCII JSON
   `["on1x.ffi-native-graph/v3",target,source,symbol,linkage,definition,

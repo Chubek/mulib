@@ -606,10 +606,14 @@ def parse_graph_module(body, mod):
         roots[gid].append((root, definition))
         fingerprint = native_graph_fingerprint(target, source, symbol, linkage, definition, specifiers,
                                                root, graphs[gid])
-        mod['entries'].append(dict(member=member, symbol=symbol, profile='discovery', reason=reason(p[14]),
-                                   linkage=linkage, definition=definition, graph=gid, native_type=root,
-                                   declaration_source=source,
-                                   specifiers=sorted(specifiers), native_fingerprint=fingerprint))
+        row = dict(member=member, symbol=symbol, profile='discovery', reason=reason(p[14]),
+                   linkage=linkage, definition=definition, graph=gid, native_type=root,
+                   declaration_source=source, specifiers=sorted(specifiers), native_fingerprint=fingerprint)
+        # Import policy is independent of representability. The closed framed
+        # resource companion is unsafe-only, but a graph is still discovery.
+        if source[0] == 'companion':
+            row['import_policy'] = 'unsafe_only'
+        mod['entries'].append(row)
     for gid, tags in graphs.items():
         require(roots[gid], 'unused wire graph')
         validate_native_graph(tags, roots[gid], target)

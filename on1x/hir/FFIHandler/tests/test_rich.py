@@ -70,7 +70,15 @@ def run(parser_path, directory):
     mixed = companion.replace('companion framed_ipc_v1; graph 9', 'graph 2 {} graph 9 companion framed_ipc_v1')
     mixed = parse(mixed[:-1] + public + '}')
     assert [e['declaration_source'][0] for e in mixed['entries']] == ['companion', 'public']
+    assert mixed['entries'][0]['import_policy'] == 'unsafe_only'
+    assert 'import_policy' not in mixed['entries'][1]
     assert mixed['entries'][0]['native_fingerprint'] == parse(companion)['entries'][0]['native_fingerprint']
+    companion_source = directory / 'ipc-framed.ffi'
+    companion_source.write_text(companion)
+    companion_report = ffic.compile_files(parser, [companion_source])
+    assert not companion_report['bindings']
+    resource, = companion_report['discovery']
+    assert resource['import_policy'] == 'unsafe_only' and resource['reason'] == 'rich_lowering_unavailable'
     audit = parse(module('unavailable reason gc_roots_and_callback_authority'
                          ' audit "Retention requires independent review.";'))
     assert audit['audit'] == 'Retention requires independent review.' and not audit['entries']
