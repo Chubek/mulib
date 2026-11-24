@@ -71,11 +71,12 @@ def _exec(command, arguments):
         raise ValueError(f'On1xfile engine is unavailable: {engine}')
     compiler = os.environ.get('ON1X_PROJECT_COMPILER')
     options = ['--on1xc', compiler] if compiler else []
+    action = 'run' if command == 'run' else 'build'
     if command == 'release':
         options.append('--release')
-    elif command != 'build':
+    elif command not in ('build', 'run'):
         options.extend(('--project-command', command))
-    completed = subprocess.run([sys.executable, engine, 'build', *options, *arguments])
+    completed = subprocess.run([sys.executable, engine, action, *options, *arguments])
     return 128 - completed.returncode if completed.returncode < 0 else completed.returncode
 
 
@@ -113,7 +114,7 @@ def main(argv):
         root = Path(os.path.abspath(args.directory))
         _create_project(root, {root / path: text for path, text in _scaffold(args.kind, _project_name(root)).items()})
         return 0
-    parser.add_argument('command', help='build, release, or a command or profile from the root On1xfile')
+    parser.add_argument('command', help='build, release, run, or a command or profile from the root On1xfile')
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv[1:])
     return _exec(args.command, args.arguments)

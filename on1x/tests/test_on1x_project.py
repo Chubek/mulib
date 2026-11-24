@@ -320,6 +320,233 @@ class ProjectTests(unittest.TestCase):
                 self.assertTrue(item['reason'])
         self.assertFalse((self.project/'target').exists())
 
+    def project_command(self, action, *arguments, compiler=None):
+        return subprocess.run(
+            [sys.executable, OPTIONS.driver, action, str(self.project),
+             '--on1xc', compiler or OPTIONS.on1xc, *arguments],
+            text=True, capture_output=True, timeout=180)
+
+    def test_archvirt_root_only(self):
+        self.app()
+        rejected = 'vm policy is only allowed in the root On1xfile'
+        for path in ('src/On1xfile.m', 'src/On1xfile.i', 'src/nested/On1xfile'):
+            original = self.project / path
+            text = original.read_text() if original.is_file() else 'on1xfile 1\n'
+            self.write(path, text + '  vm always # must not apply\n')
+            for action in ('plan', 'build'):
+                with self.subTest(path=path, action=action):
+                    result = self.project_command(action)
+                    self.assertNotEqual(result.returncode, 0, result.stdout)
+                    self.assertIn(rejected, result.stderr)
+                    self.assertIn(path, result.stderr)
+            self.write(path, text)
+
+        self.app(extra='dependency "toolkit" local "vendor/toolkit"\n')
+        dependency = self.library('vendor/toolkit', 'toolkit')
+        manifest = dependency / 'On1xfile'
+        manifest.write_text(manifest.read_text() + 'vm opt-in\n')
+        self.build(negative=rejected)
+        self.build(root=dependency, negative=rejected)
+        # Even direct compiler package discovery rejects the directive and has
+        # no ability to turn a package import into a VM launch.
+        source = self.write('probe.on1x', 'import toolkit.value;\nfn main()->i64{return 0;}\n')
+        discovered = subprocess.run([OPTIONS.on1xc, '--check', source, '-I', dependency.parent],
+                                    text=True, capture_output=True, timeout=20)
+        self.assertNotEqual(discovered.returncode, 0, discovered.stdout)
+        self.assertIn(rejected, discovered.stderr)
+        self.assertFalse(self.output.exists())
+
+    def test_archvirt_locked_policy(self):
+        for extra, diagnostic in [
+                ('vm disabled\n', 'vm policy must be opt-in or always'),
+                ('vm always\nvm opt-in\n', 'duplicate declaration vm'),
+                ('vm "always"\n', 'incorrectly quoted fields'),
+                ('vm opt-in\nbackend "dev" c11\n', 'cannot be combined with hosted backends'),
+                ('vm opt-in\nkernel "sha"\n', 'cannot be combined with hosted backends')]:
+            self.app(extra=extra)
+            result = self.project_command('plan')
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn(diagnostic, result.stderr)
+        self.app(extra='vm always\noptimization-profile debug\n')
+
+        for action in ('plan', 'build', 'run'):
+            for flag in ('--locked', '--frozen'):
+                result = self.project_command(action, flag)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn('lockfile is required', result.stderr)
+        path = self.lock()
+        saved = path.read_bytes()
+        self.assertEqual(json.loads(saved), {'schema': 'on1x.lock/v3', 'dependencies': {},
+                                              'optimization': {'optimization-profile': 'debug'}, 'vm': 'always'})
+        plan = self.project_command('plan', '--frozen')
+        self.assertEqual(plan.returncode, 0, plan.stderr)
+        self.assertEqual(json.loads(plan.stdout)['backend'], {
+            'name': 'archvirt', 'artifact': 'archvirt-launcher', 'artifacts': ['sample'], 'vm': 'always'})
+        for options in (('--backend', 'c11'), ('--via-mir',), ('--cc', '/usr/bin/cc'), ('--optimize-ir',)):
+            result = self.project_command('plan', *options)
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn('ArchVirt projects do not accept', result.stderr)
+        for extra in ('vm opt-in\noptimization-profile debug\n', 'optimization-profile debug\n'):
+            self.app(extra=extra)
+            result = self.project_command('build', '--frozen')
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertIn('stale vm policy', result.stderr)
+        self.assertEqual(path.read_bytes(), saved)
+        self.assertFalse(self.output.exists())
+
+    def test_archvirt_build_run_dispatch(self):
+        # Test the process contract independently of the optional guest tools.
+        # Leave all source/stdlib/analysis checks with the real compiler.
+        log = self.root / 'vm dispatch.jsonl'
+        compiler = self.root / 'fixture compiler'
+        trusted = self.root / 'trusted toolchain files'
+        trusted.mkdir()
+        tool = trusted / 'guest-tool'
+        tool.write_text('expected tool input')
+        (trusted / 'not mounted').touch()
+        alias = trusted / 'guest tool alias'
+        alias.symlink_to(tool.name)
+        compiler.write_text(f'''#!/usr/bin/python3
+import json, os, sys
+from pathlib import Path
+args = sys.argv[1:]
+record = Path({str(log)!r})
+if args[0] == '--print-archvirt-build-inputs':
+    print({str(OPTIONS.on1xc)!r}, {str(alias)!r}, sep='\\n')
+elif args[0].startswith('--vm-launcher='):
+    if Path('/work/input/project').is_dir():
+        assert Path({str(alias)!r}).read_text() == 'expected tool input'
+        assert not Path({str(tool)!r}).exists() and not Path({str(trusted / 'not mounted')!r}).exists()
+    else:
+        with record.open('a') as stream:
+            stream.write(json.dumps(args) + '\\n')
+    if 'FAIL_GUEST_BUILD' in Path(args[1]).read_text():
+        sys.exit('guest build unavailable')
+    output = Path(args[args.index('-o') + 1])
+    output.write_text("#!/usr/bin/python3\\nimport json, sys\\nwith open(" + repr(str(record)) +
+                      ", 'a') as stream:\\n stream.write(json.dumps(sys.argv[1:]) + '\\\\n')\\n"
+                      "print('launcher executed')\\nraise SystemExit(47)\\n")
+    output.chmod(0o755)
+else:
+    os.execv({str(OPTIONS.on1xc)!r}, [{str(OPTIONS.on1xc)!r}, *args])
+''')
+        compiler.chmod(0o755)
+
+        def records():
+            return [json.loads(line) for line in log.read_text().splitlines()]
+
+        self.app()
+        result = self.project_command('run', compiler=compiler)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('no host execution fallback', result.stderr)
+        self.assertFalse(log.exists())
+        for policy, expected in [('opt-in', ['--sandbox']), ('always', [])]:
+            self.app(extra=f'vm {policy}\n')
+            self.lock()
+            log.unlink(missing_ok=True)
+            planned = self.project_command('plan', '--frozen', compiler=compiler)
+            self.assertEqual(planned.returncode, 0, planned.stderr)
+            self.assertFalse(log.exists(), planned.stdout)
+            built = self.project_command('build', '--frozen', compiler=compiler)
+            self.assertEqual(built.returncode, 0, built.stderr)
+            self.assertEqual(len(records()), 1, records())
+            call = records()[0]
+            self.assertEqual(call[0], f'--vm-launcher={policy}')
+            self.assertIn('--stdlib', call)
+            self.assertEqual(call.count('-I'), 2)
+            self.assertTrue(call[1].endswith('/input/project/src/main.on1x'), call)
+            self.assertEqual(set(json.loads((self.output / '.on1x-build.json').read_text())['outputs']),
+                             {'sample'})
+            before = (self.output / '.on1x-build.json').read_bytes()
+
+            # Neither option-like, spaced nor shell-like guest args are
+            # consumed as project flags or dropped silently.
+            rejected = self.project_command('run', '--frozen', '--', '--sandbox', 'a b',
+                                            '$(echo not-a-shell)', compiler=compiler)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn('does not support guest arguments', rejected.stderr)
+            self.assertEqual(len(records()), 1, records())
+            invoked = self.project_command('run', '--frozen', '--', compiler=compiler)
+            self.assertEqual(invoked.returncode, 47, invoked.stderr)
+            self.assertEqual(invoked.stdout, 'launcher executed\n')
+            self.assertEqual(records()[2:], [expected])
+            self.assertEqual((self.output / '.on1x-build.json').read_bytes(), before)
+
+        if self.bwrap_available():
+            isolated = self.project_command('run', '--frozen', '--sandbox', compiler=compiler)
+            self.assertEqual(isolated.returncode, 47, isolated.stderr)
+            self.assertEqual(isolated.stdout, 'launcher executed\n')
+            self.assertEqual(records()[-1], [])  # Driver --sandbox does not change the launcher's argv.
+            alias.unlink()
+            alias.mkdir()
+            refused = self.project_command('build', '--frozen', '--sandbox', compiler=compiler)
+            self.assertNotEqual(refused.returncode, 0, refused.stdout)
+            self.assertIn('invalid regular file in ArchVirt build toolchain', refused.stderr)
+            self.assertEqual((self.output / '.on1x-build.json').read_bytes(), before)
+
+        self.app(extra='vm always\n', implementation='fn FAIL_GUEST_BUILD()->i64{return 0;}\n'
+                                                    'fn main()->i64{return FAIL_GUEST_BUILD();}\n')
+        for action in ('build', 'run'):
+            count = len(records())
+            failed = self.project_command(action, '--frozen', compiler=compiler)
+            self.assertNotEqual(failed.returncode, 0, failed.stdout)
+            self.assertIn('guest build unavailable', failed.stderr)
+            self.assertEqual(len(records()), count + 1, records())
+            self.assertEqual((self.output / '.on1x-build.json').read_bytes(), before)
+
+        self.app(extra='vm always\ntarget "second" "src/second.on1x"\n')
+        root = self.project / 'On1xfile'
+        root.write_text(root.read_text().replace('kind executable', 'kind complex'))
+        self.write('src/On1xfile.m', 'on1xfile 1\nsource "main.on1x"\nsource "second.on1x"\n')
+        self.write('src/second.on1x', 'fn main()->i64{return 0;}\n')
+        count = len(records())
+        missing = self.project_command('run', '--frozen', compiler=compiler)
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn('select it with --target', missing.stderr)
+        self.assertEqual(len(records()), count)
+        selected = self.project_command('run', '--frozen', '--target', 'second', compiler=compiler)
+        self.assertEqual(selected.returncode, 47, selected.stderr)
+        self.assertTrue(records()[-2][1].endswith('/input/project/src/second.on1x'))
+
+    def test_archvirt_real_compiler(self):
+        if not OPTIONS.archvirt_enabled:
+            self.skipTest('ArchVirt integration not selected')
+        dependency = self.library('vendor/toolkit', 'toolkit')
+        self.assertTrue(dependency.is_dir())
+        source = ('import toolkit.value as V;\n'
+                  'fn main()->i64{println(V.number());return 37;}\n')
+        for policy in ('always', 'opt-in'):
+            with self.subTest(policy=policy):
+                self.app(extra=f'vm {policy}\ndependency "toolkit" local "vendor/toolkit"\n',
+                         implementation=source)
+                self.lock()
+                # The installed guest runner is required for this enabled
+                # test. A failed VM setup is not treated as a passing result.
+                built = self.project_command('build', '--frozen')
+                self.assertEqual(built.returncode, 0, built.stderr)
+                self.assertEqual(built.stdout.strip(), str(self.output))
+                launcher = self.output / 'sample'
+                self.assertEqual(launcher.read_bytes()[:4], b'\x7fELF')
+                if policy == 'opt-in':
+                    refused = subprocess.run([launcher], capture_output=True, text=True, timeout=30)
+                    self.assertEqual(refused.returncode, 2, refused.stderr)
+                    self.assertIn('no native payload', refused.stderr)
+                    self.assertEqual(refused.stdout, '')
+                ran = self.project_command('run', '--frozen')
+                self.assertEqual(ran.returncode, 37, ran.stderr)
+                self.assertEqual(ran.stdout, '42\n')
+                if self.bwrap_available():
+                    sandboxed = self.project_command('run', '--frozen', '--sandbox')
+                    self.assertEqual(sandboxed.returncode, 37, sandboxed.stderr)
+                    self.assertEqual(sandboxed.stdout, '42\n')
+
+    @staticmethod
+    def bwrap_available():
+        bwrap = shutil.which('bwrap')
+        return bwrap and subprocess.run([bwrap, '--unshare-all', '--ro-bind', '/usr', '/usr',
+                                        '--ro-bind', '/lib64', '/lib64', '/usr/bin/true'],
+                                       capture_output=True, timeout=5).returncode == 0
+
     def test_native_project_runner(self):
         self.app(extra='backend "dev" mir-archon\n')
         build = Path(OPTIONS.on1xc).resolve().parent
@@ -707,5 +934,6 @@ if __name__ == '__main__':
     cli.add_argument('--mune-runner')
     cli.add_argument('--qmr-compiler')
     cli.add_argument('--mulib-root')
+    cli.add_argument('--archvirt-enabled', action='store_true')
     OPTIONS, remainder = cli.parse_known_args()
     unittest.main(argv=[sys.argv[0], *remainder], verbosity=2)

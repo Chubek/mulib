@@ -35,6 +35,8 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / 'stdlib/on1xfile'
 MAX_MANIFEST = 64 * 1024
 BACKENDS = ('c11', 'mir-c11', 'mir-vm', 'mir-archon')
+VM_POLICIES = ('opt-in', 'always')
+VM_DIRECTIVE = re.compile(rb'(?m)^[ \t\r]*vm(?=[ \t\r\n#]|$)')
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
@@ -199,6 +201,11 @@ def unique(items, key, value):
     items[key] = value
 
 
+def root_only_vm(origin=None):
+    at = f'{origin}: ' if origin is not None else ''
+    fail(f'{at}vm policy is only allowed in the root On1xfile of an executable or complex project')
+
+
 def remote_url(value):
     # Admit a conservative, unambiguous subset, without URL credentials,
     # escaped path segments, options, or Git's <helper>:: and scp syntax.
@@ -253,6 +260,13 @@ def root_manifest(payload, origin, dependency=False):
             elif verb in ('name', 'directory'):
                 value, = fields(args, '"')
                 unique(options, verb, name(value) if verb == 'name' else local(value, dot=True))
+            elif verb == 'vm':
+                if dependency:
+                    root_only_vm()
+                value, = fields(args, 'w')
+                if value not in VM_POLICIES:
+                    fail('vm policy must be opt-in or always')
+                unique(options, verb, value)
             elif verb == 'scrutiny' and not dependency:
                 value, = fields(args, 'w')
                 if not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', value):
@@ -314,12 +328,12 @@ def root_manifest(payload, origin, dependency=False):
                     fail('dependency kind must be local, git or git-remote')
             elif verb == 'profile' and not dependency:
                 key, path = fields(args, '""')
-                if key in ('dev', 'release') or not path.endswith('.lua'):
+                if key in ('dev', 'release', 'run') or not path.endswith('.lua'):
                     fail('use a custom profile name and a local .lua script')
                 unique(profiles, name(key), local(path))
             elif verb == 'command' and not dependency:
                 key, action, target, path = fields(args, '"ww"')
-                if key in ('build', 'release') or action != 'format' or target not in ('plain', 'latex', 'troff'):
+                if key in ('build', 'release', 'run') or action != 'format' or target not in ('plain', 'latex', 'troff'):
                     fail('expected a custom command of the form: command "name" format plain|latex|troff "source.on1x"')
                 source = local(path)
                 if source.suffix != '.on1x':
@@ -344,6 +358,11 @@ def root_manifest(payload, origin, dependency=False):
     kind = options.get('kind')
     if not options.get('name') or not kind:
         fail(f'{origin}: name and kind are required')
+    if 'vm' in options:
+        if kind == 'library':
+            root_only_vm(origin)
+        if 'backend' in options or backend_scopes or kernels:
+            fail(f'{origin}: vm policy cannot be combined with hosted backends or kernel declarations')
     if kind == 'executable' and len(targets) != 1 or kind == 'complex' and not targets or kind == 'library' and targets:
         fail(f'{origin}: executable needs one target, complex needs at least one, and library allows none')
     if len(targets) > 64 or len(deps) > 32 or len(profiles) > 32 or len(defines) > 64 or len(kernels) > 32:
@@ -392,11 +411,13 @@ def declared_policy(config):
     return policy
 
 
-def lock_bytes(entries, policy):
+def lock_bytes(entries, policy, vm_policy):
     document = {'schema': 'on1x.lock/v1',
                 'dependencies': {key: entries[key] for key in sorted(entries)}}
     if policy:
         document.update(schema='on1x.lock/v2', optimization=policy)
+    if vm_policy is not None:
+        document.update(schema='on1x.lock/v3', vm=vm_policy)
     return (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=True) + '\n').encode()
 
 
@@ -416,8 +437,18 @@ def parse_lock(payload, origin):
         fail(f'{origin}: invalid lockfile JSON: {error}')
     if not isinstance(document, dict) or not isinstance(document.get('dependencies'), dict):
         fail(f'{origin}: expected an On1x lock object')
+    schema = document.get('schema')
+    vm_policy = None
+    if schema == 'on1x.lock/v3' and set(document) in (
+            {'schema', 'dependencies', 'vm'}, {'schema', 'dependencies', 'optimization', 'vm'}):
+        vm_policy = document['vm']
+        if vm_policy not in VM_POLICIES:
+            fail(f'{origin}: invalid locked vm policy')
+    elif not (schema == 'on1x.lock/v1' and set(document) == {'schema', 'dependencies'}
+              or schema == 'on1x.lock/v2' and set(document) == {'schema', 'dependencies', 'optimization'}):
+        fail(f'{origin}: expected an on1x.lock/v1, on1x.lock/v2 or on1x.lock/v3 object')
     policy = {}
-    if document.get('schema') == 'on1x.lock/v2' and set(document) == {'schema', 'dependencies', 'optimization'}:
+    if 'optimization' in document:
         policy = document['optimization']
         if (not isinstance(policy, dict) or not policy
                 or set(policy) - {'optimization-profile', 'backend', 'backend_scopes', 'selections', 'scoped'}
@@ -448,8 +479,6 @@ def parse_lock(payload, origin):
                     fail(f'{origin}: invalid locked optimization selection for {key!r}')
         if total > 512:
             fail(f'{origin}: locked selector count budget exceeded')
-    elif document.get('schema') != 'on1x.lock/v1' or set(document) != {'schema', 'dependencies'}:
-        fail(f'{origin}: expected an on1x.lock/v1 or on1x.lock/v2 object')
     dependencies = document['dependencies']
     if len(dependencies) > 32:
         fail(f'{origin}: dependency count budget exceeded')
@@ -472,7 +501,7 @@ def parse_lock(payload, origin):
             result[key] = entry
         except ValueError as error:
             fail(f'{origin}: dependency {key!r}: {error}')
-    return result, policy
+    return result, policy, vm_policy
 
 
 def read_lock(project, config, *, required=False, strict=True, snapshot=None):
@@ -486,7 +515,9 @@ def read_lock(project, config, *, required=False, strict=True, snapshot=None):
     if not stat.S_ISREG(mode):
         fail(f'{path}: expected a regular lockfile')
     payload = read(path, MAX_LOCKFILE)
-    entries, policy = parse_lock(payload, path)
+    entries, policy, vm_policy = parse_lock(payload, path)
+    if strict and vm_policy != config.get('vm'):
+        fail(f'{path}: stale vm policy does not match On1xfile; run on1x-project.py lock')
     if strict and policy != declared_policy(config):
         fail(f'{path}: stale optimization policy does not match On1xfile')
     if snapshot is not None:
@@ -530,7 +561,7 @@ def write_lock(project, entries, config):
             fail(f'{path}: refusing to replace a non-regular lockfile')
     except FileNotFoundError:
         pass
-    payload = lock_bytes(entries, declared_policy(config))
+    payload = lock_bytes(entries, declared_policy(config), config.get('vm'))
     descriptor, temporary = tempfile.mkstemp(dir=project, prefix='.On1xfile.lock-')
     temporary = Path(temporary)
     try:
@@ -685,8 +716,9 @@ class Disk:
                 fail(f'{start}: directory discovery budget exceeded')
             children[:] = sorted(c for c in children if not c.startswith('.') and c not in ('target', 'build')
                                  and not (parent / c).is_symlink() and (parent / c) not in self.exclude)
-            for filename in ('On1xfile.m', 'On1xfile.i'):
-                if filename in files or (parent / filename).is_symlink():
+            for filename in ('On1xfile', 'On1xfile.m', 'On1xfile.i'):
+                if (filename != 'On1xfile' or rel != Path('.')) and (
+                        filename in files or (parent / filename).is_symlink()):
                     yield rel / filename
 
 
@@ -837,7 +869,7 @@ class Git:
     def manifests(self, directory):
         for key in sorted(self.entries):
             path = Path(key)
-            if path.name in ('On1xfile.m', 'On1xfile.i') and path.is_relative_to(directory):
+            if path != Path('On1xfile') and path.name in ('On1xfile', 'On1xfile.m', 'On1xfile.i') and path.is_relative_to(directory):
                 parents = path.parent.relative_to(directory).parts
                 if not any(p.startswith('.') or p in ('target', 'build') for p in parents):
                     yield local(key)
@@ -887,16 +919,22 @@ class Execution:
             # Eligibility is checked before any project-owned Lua can be run.
             self.run(['/usr/bin/true'], bound=32)
 
-    def mount(self, path):
+    def mount(self, path, *, exact=False):
         if not self.prefix or path is None or not path.exists():
             return
-        path = path.resolve()
-        if path.is_relative_to('/usr') or path in self.mounts:
+        source = path.resolve()
+        # The ArchVirt toolchain records the paths it actually opens. For
+        # example, the ELF loader may request a shared library's SONAME link,
+        # not the canonical filename.
+        target = path if exact else source
+        if ((source.is_relative_to('/usr') and target.is_relative_to('/usr'))
+                or target in self.mounts):
             return
-        if path == Path('/') or path.is_relative_to(self.work):
+        if (source == Path('/') or source.is_relative_to(self.work)
+                or target.is_relative_to(self.work)):
             fail(f'invalid sandbox toolchain mount: {path}')
-        self.mounts.add(path)
-        self.prefix.extend(('--ro-bind', path, path))
+        self.mounts.add(target)
+        self.prefix.extend(('--ro-bind', source, target))
 
     def path(self, path):
         return Path('/work') / path.relative_to(self.work) if self.prefix else path
@@ -934,6 +972,8 @@ def local_roles(data, origin, manifest, kind):
     declared = {}
     for at, role, args in rows(data, origin):
         try:
+            if role == 'vm':
+                root_only_vm()
             if role not in allowed or role == 'source' and kind == 'library':
                 fail(f'role {role!r} is not allowed here')
             filename, = fields(args, '"')
@@ -955,6 +995,12 @@ def layouts(provider, config, label, staged, snapshot, preprocess=None, dependen
     for path in provider.manifests(directory):
         local(path.as_posix())
         origin = f'{label}/{path.as_posix()}'
+        if path.name == 'On1xfile':
+            # Nested package manifests are inert here, including templates:
+            # the driver never evaluates one as a second project root.
+            if VM_DIRECTIVE.search(provider.get(path, MAX_MANIFEST)):
+                root_only_vm(origin)
+            continue
         data = snapshot.record(origin, provider.get(path, MAX_MANIFEST))
         if QMR_TAG.search(data):
             if dependency:
@@ -1364,6 +1410,24 @@ def native_tools(compiler, cc, executor, chosen_tools):
     return [*command, '--assembler', assembler, '--linker', linker], probe
 
 
+def archvirt_mounts(compiler, executor, chosen_tools):
+    # The explicitly selected compiler is a trusted toolchain input. Probe
+    # its installation before project policy executes, without passing source
+    # paths. The regular-file list never grants a directory or device mount.
+    payload = run([compiler, '--print-archvirt-build-inputs'], executor.work / 'cwd',
+                  bound=MAX_MANIFEST)
+    lines = payload.decode('utf-8').splitlines()
+    if not 1 <= len(lines) <= 128 or len(lines) != len(set(lines)):
+        fail('invalid ArchVirt build toolchain file list')
+    for i, line in enumerate(lines):
+        path = Path(line)
+        if (not path.is_absolute() or str(path) != line or '..' in path.parts
+                or not path.is_file()):
+            fail(f'invalid regular file in ArchVirt build toolchain: {line!r}')
+        executor.mount(path, exact=True)
+        chosen_tools[f'archvirt_build_input/{i}'] = path
+
+
 def vm_launcher(key):
     # `name()` restricts the artifact stem to a portable ASCII identifier.
     return ('#!/bin/sh\n'
@@ -1399,12 +1463,21 @@ def build(args):
     project = args.root.resolve(strict=True)
     if not project.is_dir():
         fail(f'{project}: expected project directory')
-    compiler = compiler_path(args.on1xc)
     mulib = (args.mulib_root or ROOT.parent).resolve()
     snapshot = Snapshot()
     disk = Disk(project)
     rootinput = snapshot.record('project/On1xfile', disk.get(Path('On1xfile'), MAX_MANIFEST))
     config = root_manifest(rootinput, project / 'On1xfile')
+    vm_policy = config.get('vm')
+    launching = args.command == 'run'
+    if launching:
+        if vm_policy is None:
+            fail('run requires vm opt-in or vm always in the root On1xfile; no host execution fallback')
+        if args.output_dir or args.project_command:
+            fail('run uses a private build and does not take --output-dir or a project command')
+    if vm_policy is not None and (args.backend or args.optimize_ir or args.cc != 'cc'):
+        fail('ArchVirt projects do not accept --backend, --via-mir, --optimize-ir or --cc overrides')
+    compiler = compiler_path(args.on1xc)
     if args.project_command:
         if args.profile or args.release:
             fail('a named On1xfile command cannot be combined with --profile or --release')
@@ -1428,8 +1501,9 @@ def build(args):
                      else config.get('scrutiny-work'))
     chosen = args.profile or ('release' if args.release else 'dev')
     name(chosen)
-    backend = args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11')
-    cc = program(args.cc) if backend != 'mir-vm' else None
+    backend = ('archvirt' if vm_policy else
+               args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11'))
+    cc = program(args.cc) if backend not in ('mir-vm', 'archvirt') else None
     if config['kernels'] and backend not in ('c11', 'mir-c11'):
         fail(f'{backend} cannot link project kernel declarations')
     if config['kind'] == 'library' and backend != 'c11':
@@ -1440,7 +1514,8 @@ def build(args):
     git_keys = {key for key, dependency in config['deps'].items()
                 if dependency.kind in ('git', 'git-remote')}
     lock_entries, lock_payload = read_lock(
-        project, config, required=locked and bool(git_keys or declared_policy(config)), strict=True, snapshot=snapshot)
+        project, config, required=locked and bool(git_keys or declared_policy(config) or vm_policy),
+        strict=True, snapshot=snapshot)
     if locked:
         require_locked(lock_entries, config)
     resolved_dependencies = {}
@@ -1466,14 +1541,18 @@ def build(args):
     if args.target and args.target not in config['targets']:
         fail(f'unknown target {args.target!r}')
     targets = {key: source for key, source in config['targets'].items() if not args.target or args.target == key}
-    dest = (args.output_dir or contained(project, Path('target') / chosen)).absolute()
-    if dest == project or project.is_relative_to(dest) or dest.name in ('', '.', '..'):
-        fail(f'invalid output directory: {dest}')
-    dest = dest.parent.resolve() / dest.name
-    if dest == project or project.is_relative_to(dest):
-        fail(f'invalid output directory: {dest}')
-    disk.exclude.update([dest, *(project / location
-                                 for _, location, _ in resolved_dependencies.values())])
+    if launching and len(targets) != 1:
+        fail('run requires exactly one target; select it with --target')
+    dest = None
+    if not launching:
+        dest = (args.output_dir or contained(project, Path('target') / chosen)).absolute()
+        if dest == project or project.is_relative_to(dest) or dest.name in ('', '.', '..'):
+            fail(f'invalid output directory: {dest}')
+        dest = dest.parent.resolve() / dest.name
+        if dest == project or project.is_relative_to(dest):
+            fail(f'invalid output directory: {dest}')
+        disk.exclude.add(dest)
+    disk.exclude.update(project / location for _, location, _ in resolved_dependencies.values())
     with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp:
         work = Path(tmp)
         (work / 'input/project').mkdir(parents=True)
@@ -1489,6 +1568,8 @@ def build(args):
         executor = Execution(args, work, compiler, cc, stdlib, mulib)
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
                         'optimization_helper': Path(optimization.__file__)}
+        if vm_policy and args.sandbox:
+            archvirt_mounts(compiler, executor, chosen_tools)
         if cc is not None:
             chosen_tools['cc'] = cc
         if backend in ('c11', 'mir-c11'):
@@ -1574,7 +1655,10 @@ def build(args):
             fail('--optimize-ir requires a MIR backend')
         native_command = None
         backend_info = {'name': backend}
-        if backend == 'mir-archon':
+        if backend == 'archvirt':
+            backend_info.update(artifact='archvirt-launcher', vm=vm_policy)
+            cflags = []
+        elif backend == 'mir-archon':
             native_command, probe = native_tools(compiler, cc, executor, chosen_tools)
             backend_info.update(artifact='elf-executable', **probe)
         elif backend == 'mir-vm':
@@ -1600,12 +1684,14 @@ def build(args):
             active_stages.append('c11')
         if backend in ('c11', 'mir-vm') and 'hir' in stages.values():
             active_stages.append('hir')
-        if backend != 'c11':
+        if backend not in ('c11', 'archvirt'):
             active_stages.extend(['lowering', 'mir'])
         for key in sorted(declared_names(config)):
             if key not in stages:
                 fail(f'unknown optimization in On1xfile: {key}')
         for key in selections:
+            if key != 'all' and backend == 'archvirt' and stages[key] not in active_stages:
+                fail(f'optimization {key} is not available for the project ArchVirt backend')
             if key != 'all' and stages[key] == 'hir' and 'hir' not in active_stages:
                 fail(f'optimization {key} requires the C11 or mir-vm backend')
             if key != 'all' and stages[key] not in active_stages and backend == 'c11':
@@ -1684,6 +1770,11 @@ def build(args):
             if args.command == 'plan':
                 continue
             output = executor.path(work / 'artifact' / key)
+            if backend == 'archvirt':
+                executor.run([compiler, '--vm-launcher=' + vm_policy, entry, '-o', output,
+                              *loader, *analysis_flags, *opt_flags], timeout=180)
+                outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
+                continue
             if backend == 'mir-vm':
                 tape = work / 'artifact' / (key + '.o1vm')
                 # The VM keeps diagnostic locations in its bytecode. Map staged
@@ -1721,6 +1812,17 @@ def build(args):
             executor.mount(Path(sys.executable))
             executor.run(command, timeout=180)
             outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
+        if launching:
+            # Only the just-built launcher in the private staging directory may
+            # execute. It supplies the ArchVirt runtime boundary; --sandbox on
+            # this driver independently applies to the preceding build.
+            launcher = work / 'artifact' / next(iter(targets))
+            try:
+                completed = subprocess.run([launcher, *(['--sandbox'] if vm_policy == 'opt-in' else [])],
+                                           cwd=work / 'cwd', env=ENV, stdin=subprocess.DEVNULL, timeout=60)
+            except subprocess.TimeoutExpired:
+                fail('ArchVirt launcher exceeded the 60-second project run limit')
+            return 128 - completed.returncode if completed.returncode < 0 else completed.returncode
         if config['kind'] == 'library':
             # The language checker requires a main. Validate each project library
             # through a fresh declaration-only carrier, then publish source only.
@@ -1858,6 +1960,7 @@ def main():
                           help='equivalent to --offline --locked')
     commands.add_parser('build', parents=[command])
     commands.add_parser('plan', parents=[command], help='print the resolved build policy and inputs without publishing')
+    commands.add_parser('run', parents=[command], help='build and run one declared ArchVirt target without publishing')
     inventory = commands.add_parser('backends', help='probe the actual installed backend tools using fixed input')
     inventory.add_argument('--on1xc')
     inventory.add_argument('--cc', default='cc')
@@ -1881,13 +1984,20 @@ def main():
     locking.add_argument('--locked', action='store_true', help='validate without changing On1xfile.lock')
     locking.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     try:
-        arguments = parser.parse_args()
-        {'build': build, 'plan': build, 'backends': backend_inventory, 'format': format_manifest, 'fetch': fetch_dependency,
-         'lock': lock_dependencies}[arguments.command](arguments)
+        argv = sys.argv[1:]
+        if argv[:1] == ['run'] and '--' in argv:
+            separator = argv.index('--')
+            if argv[separator + 1:]:
+                fail('ArchVirt project run does not support guest arguments')
+            argv = argv[:separator]
+        arguments = parser.parse_args(argv)
+        status = {'build': build, 'plan': build, 'run': build, 'backends': backend_inventory,
+                  'format': format_manifest, 'fetch': fetch_dependency,
+                  'lock': lock_dependencies}[arguments.command](arguments)
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)
         return 1
-    return 0
+    return status or 0
 
 
 if __name__ == '__main__':

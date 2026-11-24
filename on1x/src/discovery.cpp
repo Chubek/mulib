@@ -67,7 +67,7 @@ Manifest parse_package(std::string_view text,const std::string& file){
  auto fail=[&](std::string message)->void{throw Error({file},"invalid On1xfile manifest: "+message);};
  Manifest result;
  std::set<std::string_view> fields;
- bool header=false;
+ bool header=false,vm_policy=false;
  if(text.find('\0')!=std::string_view::npos)fail("contains NUL");
  for(;!text.empty();){
   const auto newline=text.find('\n');
@@ -82,7 +82,8 @@ Manifest parse_package(std::string_view text,const std::string& file){
    header=true;
    continue;
   }
-  if(key!="kind"&&key!="name"&&key!="directory")continue;
+   if(key=="vm")vm_policy=true;
+   if(key!="kind"&&key!="name"&&key!="directory")continue;
   if(!fields.insert(key).second)fail("duplicate "+std::string(key));
   if(key=="kind")value=trim(value.substr(0,value.find('#')));
   else{
@@ -103,8 +104,12 @@ Manifest parse_package(std::string_view text,const std::string& file){
  if(result.name.empty()||result.name.size()>64||initial.find(result.name.front())==std::string_view::npos||
     result.name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789-")!=std::string::npos)
   fail("invalid package name");
- if(result.kind!="library"&&result.kind!="executable"&&result.kind!="complex")fail("invalid project kind");
- return result;
+  if(result.kind!="library"&&result.kind!="executable"&&result.kind!="complex")fail("invalid project kind");
+  // An executable's root may also be on an import search path, but only the
+  // project driver can interpret its launch policy. Libraries cannot declare it.
+  if(vm_policy&&result.kind=="library")
+   fail("vm policy is only allowed in the root On1xfile of an executable or complex project");
+  return result;
 }
 fs::path local(const fs::path& base,const std::string& value,bool file){
  auto path=fs::path(value);

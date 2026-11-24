@@ -117,6 +117,71 @@ publishes the ELF executable, or assembly with `--emit-only`. These paths
 also use the selected compiler's adjacent tools. Native plans probe the real
 target/ABI and fingerprint the assembler, linker, target manifest and archives.
 
+### ArchVirt launch policy
+
+An executable or complex project's root `On1xfile` can choose an ArchVirt
+launcher with exactly one of:
+
+```text
+vm opt-in
+```
+
+```text
+vm always
+```
+
+`build` compiles and publishes a launcher for each selected target. It does
+not start the guest. A launcher built with `vm opt-in` requires an explicit
+`./target/dev/NAME --sandbox`; without `--sandbox` it refuses to run.
+A `vm always` launcher attempts to start its embedded guest on direct
+invocation. Neither policy produces or falls back to a host implementation of
+the guest program. This mechanism is distinct from the `mir-vm` bytecode
+backend above.
+
+```sh
+on1x-project.py lock .
+on1x-project.py plan . --frozen
+on1xc exec build --frozen
+on1xc exec run --frozen --target hello
+```
+
+`on1x-project.py run PROJECT` (also `on1xc exec run`) is the explicit
+build-and-launch command for either policy. It requires one target; use
+`--target NAME` for a multi-target project. It builds into a private
+directory, invokes only the launcher it just built, and returns its exit
+status without replacing an existing build generation. `run` with no root
+VM policy refuses to start anything. The initial guest profile does not
+support argument passing: arguments after `--` are rejected, not dropped or
+reinterpreted as launcher options. The `run` name is reserved for this
+built-in, not a custom project command or profile.
+
+Dependencies, library roots, discovered library package metadata, and
+directory-local `On1xfile.m`/`On1xfile.i` files do not set VM policy.
+Nested `On1xfile` files within the declared source tree are not evaluated as
+projects, and a literal `vm` directive in one is rejected.
+A VM project cannot declare a hosted backend or native kernels, or override
+the backend with `--backend`/`--via-mir`. The launcher build uses the
+compiler's ArchVirt toolchain, not the host project `--cc` or C profile
+flags. The driver admits only processor optimization selections for this
+path and rejects `--optimize-ir`. Unsupported guests or unavailable VM
+tools are build or launch errors; `plan` reports policy and validates
+inputs but does not build or probe a launcher.
+
+The driver's `--sandbox` still means fail-closed Linux bubblewrap isolation
+for the **build**. The selected compiler reports the regular toolchain files
+it needs for ArchVirt launcher builds; the driver adds only those files as
+read-only mounts, not a build tree or a KVM device. It is not
+the same as the opt-in launcher's `--sandbox` switch. The explicit `run`
+command invokes the generated launcher after the build, with the launcher's
+own ArchVirt requirements; if either stage fails there is no host fallback.
+
+`lock` records `vm` in `on1x.lock/v3`, even for projects without Git
+dependencies. `build`, `plan`, and `run` with `--locked` or `--frozen`
+require the lock to match; even ordinary invocations reject a stale lock
+when one is present. Re-lock after adding, changing, or removing `vm`.
+`--frozen` retains the existing offline dependency behavior and does not
+itself launch a target or authorize any host backend.
+
 ### Compiler optimizations
 
 Use `on1xc --list-optimizations` for the active compiler's generated rule
