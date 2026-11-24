@@ -14,11 +14,14 @@
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
 #include <on1x/c11.hpp>
+#include <on1x/ffi_hir.hpp>
+#include "../hir/FFIHandler/lower.hpp"
 #include "../hir/MEMGraph/memgraph.hpp"
 #include <algorithm>
 #include <map>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <unordered_map>
 #include <bit>
 
@@ -49,8 +52,8 @@ class Generator {
   const Unit& unit;
   NominalCatalog catalog;
   memgraph::Bounds bounds;
-   std::map<std::size_t,Location>* origins;
-   const SourcePrefixes* source_prefixes;
+  std::map<std::size_t,Location>* origins;
+  const SourcePrefixes* source_prefixes;
   std::map<std::size_t,const Location*> proto_origins,body_origins;
   const Location* enclosing=nullptr;
  std::ostringstream types,prototypes,helpers,value_helpers,definitions;
@@ -67,7 +70,8 @@ class Generator {
  std::vector<CleanupDestructor> cleanup_destructors;
  std::set<std::string> identifiers;
  std::map<std::string,std::string> functions,adapters;
- std::map<std::string,const Function*> externs;
+  std::map<std::string,const Function*> externs;
+  std::map<std::string,const ffi::Descriptor*> foreign_bindings;
  std::map<std::string,const Function*> borrow_functions;
  std::vector<Lambda> lambdas;
  std::unordered_map<const Expr*,std::size_t> lambda_index;
@@ -102,8 +106,11 @@ class Generator {
   while(!identifiers.insert(name).second)name=preferred+"_"+std::to_string(++suffix);
   return name;
  }
- std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
- std::string pad()const{return std::string(indent*2,' ');}
+  std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
+  std::string pad()const{return std::string(indent*2,' ');}
+  bool linked_foreign(const Function& f)const{
+    return ffi::link_only(f.foreign.mode());
+  }
  static bool needs_drop(const Type& type){return type.has_functions()||type.is_move_only();}
  std::string regex_literal(const Expr& e){
   if(auto found=regex_constants.find(e.text);found!=regex_constants.end())return "&"+found->second;
@@ -917,13 +924,24 @@ class Generator {
                  <<pad()<<"}\n";
       return result;
      }
-    if(callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign){
-     // Operands were evaluated once, in source order; guard references only temporaries.
-     if(const auto* binding=ffi::find_scalar(externs.at(callee.text)->kernel_symbol)){
-      const auto guard=ffi::scalar_guard(*binding,args);
-      if(!guard.empty())definitions<<pad()<<guard;
+     if(auto binding=foreign_bindings.find(callee.text); binding!=foreign_bindings.end()){
+      // Only a canonical direct callee may reach this path. Every operand is
+      // already saved above, before the guard and any native conversion.
+      const auto guard=ffi::c11::scalar_guards(*binding->second,args,pad());
+      if(!guard.empty()){
+       if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=&e.where;
+       definitions<<guard;
+       if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=enclosing;
+      }
+     }else if(callee.reference==Expr::Reference::ScalarForeign){
+      // Retained only for the old reviewed, unresolved caller.
+      const auto* f=externs.at(callee.text);
+      if(f->kernel_link_only)
+       if(const auto* legacy=ffi::find_scalar(f->kernel_symbol)){
+        const auto guard=ffi::scalar_guard(*legacy,args);
+        if(!guard.empty())definitions<<pad()<<guard;
+       }
      }
-    }
     if(callee.reference==Expr::Reference::ScalarForeign&&pricing_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
      const bool candidates=externs.at(callee.text)->kernel_symbol=="mulib_priceopt_candidates";
      std::vector<std::string> wire;
@@ -1345,19 +1363,51 @@ class Generator {
  public:
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
-         bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins),
-         source_prefixes(options.source_prefixes){
-   for(const auto& f:unit.functions)verify_kernel_shape(f);
-   uses_csp=csp::present(unit);
-     for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
-     for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
-     for(const auto& f:unit.functions)if(ipc_kernel_symbol(f.kernel_symbol))identifiers.insert(f.kernel_symbol);
+          bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins),
+          source_prefixes(options.source_prefixes){
+    for(const auto& f:unit.functions){
+     verify_kernel_shape(f);
+     if(const auto* binding=ffi::verify_foreign_declaration(f,"x86_64-linux-gnu")){
+      if(options.foreign_driver_staging&&!linked_foreign(f))
+       throw Error(f.where,"native driver staging requires a checked link-only descriptor","ON1X-KERNEL-ABI");
+      foreign_bindings.emplace(f.name,binding);
+     }else if(options.foreign_driver_staging&&!f.kernel_symbol.empty())
+      throw Error(f.where,"native driver staging cannot use a legacy kernel symbol","ON1X-KERNEL-ABI");
+    }
+    uses_csp=csp::present(unit);
+      std::set<std::string_view> raw_externs;
+      for(const auto& f:unit.functions)
+       if(f.external&&f.kernel_symbol.empty()&&!f.foreign){
+        raw_externs.insert(f.name);
+        identifiers.insert(f.name);
+       }
+      for(const auto& f:unit.functions){
+       if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
+       if(f.foreign){
+        const auto& binding=*foreign_bindings.at(f.name);
+        if(raw_externs.contains(binding.symbol))
+         throw Error(f.where,"raw extern collides with a typed foreign symbol","ON1X-KERNEL-ABI");
+        if(linked_foreign(f)){
+         const auto name=ffi::c11::linked_name(binding);
+         if(raw_externs.contains(name))
+          throw Error(f.where,"foreign adapter C name collision","ON1X-KERNEL-ABI");
+         identifiers.insert(name);
+        }
+       }
+      }
+      for(const auto& f:unit.functions)if(ipc_kernel_symbol(f.kernel_symbol))identifiers.insert(f.kernel_symbol);
   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
    for(const auto& f:unit.functions)
     if(!f.prototype&&takes_borrows(f))borrow_functions.emplace(f.name,&f);
-      for(const auto& f:unit.functions)functions.emplace(f.name,ipc_kernel_symbol(f.kernel_symbol)?f.kernel_symbol:
-       f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
-      f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
+       for(const auto& f:unit.functions){
+        if(f.foreign){
+         const auto& binding=*foreign_bindings.at(f.name);
+         functions.emplace(f.name,linked_foreign(f)
+            ?ffi::c11::linked_name(binding):reserve("on1x_ffi_local_"+std::string(binding.symbol)));
+        }else functions.emplace(f.name,ipc_kernel_symbol(f.kernel_symbol)?f.kernel_symbol:
+           f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
+           f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
+       }
     for(const auto& declaration:unit.nominals)
      for(const auto& field:declaration.fields)
       if(field.contains_unique())uses_unique=true;
@@ -1374,9 +1424,31 @@ class Generator {
    }
      std::string bounds_report() const {return bounds.report();}
     std::string run(){
-     std::string kernel_headers,ipc_header;
-     for(const auto& f:unit.functions){
-      if(f.prototype)continue;
+       std::string ipc_header,foreign_headers;
+      std::set<std::string_view> foreign_includes,linked_foreign_prototypes;
+      for(const auto& f:unit.functions){
+       if(f.prototype)continue;
+       if(f.foreign){
+        const auto& binding=*foreign_bindings.at(f.name);
+        const auto& name=functions.at(f.name);
+        if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=&f.where;
+        try{
+         if(foreign_headers.empty())
+          foreign_headers=ffi::c11::target_requirements(binding.target);
+         if(linked_foreign(f)){
+          if(linked_foreign_prototypes.insert(name).second)
+           prototypes<<ffi::c11::scalar_prototype(binding,name);
+         }else{
+          if(foreign_includes.insert(binding.header).second)
+           foreign_headers+=ffi::c11::scalar_header(binding);
+          prototypes<<ffi::c11::scalar_wrapper(binding,name,ffi::c11::Linkage::Local);
+         }
+        }catch(const std::invalid_argument& failure){
+         throw Error(f.where,failure.what(),"ON1X-KERNEL-ABI");
+        }
+        if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=nullptr;
+        continue;
+       }
       if(ipc_kernel_symbol(f.kernel_symbol)){
        ipc_header="#include <on1x_kernel_ipc.h>\n";
        continue;
@@ -1394,24 +1466,15 @@ class Generator {
        else prototypes<<"int64_t, double, double, double, ";
        prototypes<<"double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);\n";
       }else {
-       const auto* binding=ffi::find_scalar(f.kernel_symbol);
-       if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
-       prototypes<<ffi::scalar_prototype(*binding,functions.at(f.name));
+       // Keep the old stub ABI until independent legacy review parity.
+       const auto* legacy=ffi::find_scalar(f.kernel_symbol);
+       if(!legacy)throw Error(f.where,"missing legacy scalar descriptor","ON1X-KERNEL-ABI");
+       prototypes<<ffi::scalar_prototype(*legacy,functions.at(f.name));
       }
-      continue;
-     }
-     if(!f.kernel_symbol.empty()){
-     if(kernel_headers.empty())kernel_headers="#include <limits.h>\n#include <stdint.h>\n"
-      "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
-      "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
-      "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";
-      const auto* binding=ffi::find_scalar(f.kernel_symbol);
-      if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
-      const auto include=ffi::scalar_header(*binding);
-      if(kernel_headers.find(include)==std::string::npos)kernel_headers+=include;
-      prototypes<<ffi::scalar_wrapper(*binding,functions.at(f.name));
-     continue;
-    }
+       continue;
+      }
+     if(!f.kernel_symbol.empty())
+      throw Error(f.where,"scalar foreign lowering requires a checked descriptor ID","ON1X-KERNEL-ABI");
     if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=&f.where;
     prototypes<<(f.external?"extern ":takes_borrows(f)?"static ":"")
               <<ctype(f.result)<<" "<<functions.at(f.name)<<"(";
@@ -1470,7 +1533,7 @@ class Generator {
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
           +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
-        +kernel_headers+ipc_header+float_guard+types.str()+"\n";
+         +foreign_headers+ipc_header+float_guard+types.str()+"\n";
    const auto proto_begin=output.size();
    output+=prototypes.str()+"\n"+value_helpers.str()+helpers.str();
    const auto body_begin=output.size();

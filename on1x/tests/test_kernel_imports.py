@@ -123,7 +123,7 @@ assert p.returncode == 1 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr and no
 p = run([t.compiler, '--emit-c', '--kernel-c11', clamp])
 assert p.returncode == 0 and 'unsafe_foreign: mulib_clamp_add_i64' in p.stdout, p
 assert '#include <mulib-clamp.h>' in p.stdout and '_Generic(&mulib_clamp_add_i64' in p.stdout
-assert '_Generic(&mulib_clamp_i64, int64_t (*)(int64_t, int64_t, int64_t)' in p.stdout
+assert '_Generic(&mulib_clamp_i64, long (*)(long, long, long)' in p.stdout
 assert 'extern int64_t mulib_clamp' not in p.stdout
 
 for name, source, diagnostic in (
