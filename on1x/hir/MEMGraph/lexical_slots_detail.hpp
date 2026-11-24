@@ -26,6 +26,10 @@ public:
         plan.stores.emplace(&assignment, &binding);
     }
 
+    void exchange(const Expr& call, const Stmt& binding) {
+        plan.exchanges.emplace(&call, &binding);
+    }
+
     LexicalSlots finish() && { return std::move(plan); }
 };
 

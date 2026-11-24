@@ -123,6 +123,14 @@ fn main() {
     let (left,right)=(1,2);
     let component=borrow left;
 }
+fn managed(x:sexpr,next:sexpr)->sexpr {
+    let view=borrow mut x;
+    return ref_replace(view,next);
+}
+fn incoming(x:ref i64)->i64 {
+    let view=borrow mut x;
+    return ref_replace(view,42);
+}
 )");
     const auto& peeker = unit.functions.at(0);
     const auto& body = unit.functions.at(1).body;
@@ -133,11 +141,64 @@ fn main() {
     require(!plan.read(*body.at(2).value->children.at(0)->children.at(0)) &&
                 !plan.read(*body.at(3).value->children.at(0)->children.at(0)),
             "mistook pointer-call or exchange argument for direct read");
+    require(plan.exchange(*body.at(3).value->children.at(0)) == alias &&
+                !plan.exchange(*body.at(2).value->children.at(0)),
+            "did not distinguish the exchange from a borrowed call");
     require(!plan.is_root(peeker.params.at(0)) && !plan.binding(peeker.body.at(0)) &&
                 !plan.read(*peeker.body.at(1).value),
             "incoming borrowed parameter gained a pointer-free plan");
     for (auto index : {6u, 8u, 10u, 12u})
         require(!plan.binding(body.at(index)), "unsupported origin gained a plan");
+    for (auto index : {2u, 3u})
+        require(!plan.exchange(*unit.functions.at(index).body.at(1).value),
+                "exchange gained a plan for a managed or incoming borrowed origin");
+}
+
+void exchange_identity_and_rejection() {
+    auto unit = checked(R"(
+fn update(x:i64,next:i64)->i64 {
+    let edit=borrow mut x;
+    {
+        let x=100;
+        let child=borrow mut edit;
+        return ref_replace(child, next+x);
+    }
+}
+fn main() { println(update(5,6)); }
+)");
+    auto& function = unit.functions.at(0);
+    auto& nested = function.body.at(1).body;
+    auto& call = *nested.at(2).value;
+    auto& target = *call.children.at(0);
+    auto& replacement = *call.children.at(1);
+    const auto plan = plan_lexical_slots(unit);
+    const auto* exchange = plan.exchange(call);
+    require(exchange && exchange == plan.binding(nested.at(1)) &&
+                exchange->root_parameter == &function.params.at(0) &&
+                !exchange->root_statement && exchange->parent_binding == &function.body.at(0),
+            "exchange did not preserve the exact root under shadowing");
+    require(!plan.exchange(target) && !plan.exchange(replacement) && !plan.read(target),
+            "exchange indexed an operand instead of the checked call");
+
+    nested.at(1).value->borrow = BorrowMode::Shared;
+    rejected(unit, "ON1X-REF", target.where);
+    nested.at(1).value->borrow = BorrowMode::Exclusive;
+    auto& rhs_read = *replacement.children.at(0);
+    rhs_read.text = nested.at(1).name;
+    rejected(unit, "ON1X-REF", rhs_read.where);
+
+    auto shadow = checked(R"(
+fn ref_replace(a:i64,b:i64)->i64 { return a+b; }
+fn main() {
+    let value=1;
+    let view=borrow mut value;
+    println(ref_replace(view,2));
+}
+)");
+    const auto shadow_plan = plan_lexical_slots(shadow);
+    const auto& same_name = *shadow.functions.at(1).body.at(2).value->children.at(0);
+    require(!shadow_plan.exchange(same_name) && shadow_plan.read(*same_name.children.at(0)),
+            "matched a user call instead of the intrinsic identity");
 }
 
 void invalid_store_and_overlap() {
@@ -163,6 +224,7 @@ int main() try {
     identity_and_order();
     storage_initialization();
     unsupported_shapes();
+    exchange_identity_and_rejection();
     invalid_store_and_overlap();
     return 0;
 } catch (const std::exception& error) {

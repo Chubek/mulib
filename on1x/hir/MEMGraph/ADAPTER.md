@@ -28,10 +28,14 @@ or change of the input `Unit`.
 
 Aggregate, pointer-bearing and managed values, pattern-bound roots, incoming
 borrowed parameters, and generic proof/non-executable nodes have no plan
-entries. An entry for a binding is not a claim about all uses: borrowed call
-operands and `ref_replace` place operands are **not** ordinary reads and
-are never projected as such. Lowerers must reject or independently support
-those operations. This projection neither changes direct C11 pointer
+entries. An entry for a binding is not a claim about all uses: calls with
+borrowed parameters remain outside the plan. For `ref_replace`, query
+`exchange` by the original intrinsic call, never `read` by its first operand.
+The plan records an exchange only for a planned exclusive alias, after the
+verifier checks the RHS under the temporary exclusive reborrow and finds a
+completing path. A consumer must take the old value and install the replacement
+at the original exchange site, only after the RHS succeeds. An early exit must
+not modify the root. This projection neither changes direct C11 pointer
 lowering nor introduces any new runtime or wire representation.
 
 ## Executable profile: `c11_fixed_array_v1`

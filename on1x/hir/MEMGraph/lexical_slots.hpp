@@ -27,15 +27,17 @@ class LexicalSlots {
     std::map<const Stmt*, LexicalSlot> bindings;
     std::map<const Expr*, const Stmt*> reads;
     std::map<const Stmt*, const Stmt*> stores;
+    std::map<const Expr*, const Stmt*> exchanges;
     std::set<const Stmt*> statement_roots;
     std::set<const Param*> parameter_roots;
 
 public:
-    // Null means no plan. A binding entry does not admit address-taking uses:
-    // calls with borrowed parameters and ref_replace are not projected.
+    // Null means no plan. Calls with borrowed parameters are not projected.
     const LexicalSlot* binding(const Stmt&) const;
     const LexicalSlot* read(const Expr&) const;
     const LexicalSlot* store(const Stmt&) const;
+    // Query the intrinsic call itself, not its address-taking first operand.
+    const LexicalSlot* exchange(const Expr&) const;
     bool is_root(const Stmt&) const;
     bool is_root(const Param&) const;
 };

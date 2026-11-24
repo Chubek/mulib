@@ -17,6 +17,11 @@ const LexicalSlot* LexicalSlots::store(const Stmt& statement) const {
     return found == stores.end() ? nullptr : binding(*found->second);
 }
 
+const LexicalSlot* LexicalSlots::exchange(const Expr& call) const {
+    const auto found = exchanges.find(&call);
+    return found == exchanges.end() ? nullptr : binding(*found->second);
+}
+
 bool LexicalSlots::is_root(const Stmt& statement) const {
     return statement_roots.contains(&statement);
 }

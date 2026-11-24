@@ -1022,12 +1022,17 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
       if(place.borrow!=BorrowMode::Exclusive)
        ref_error(target.where,"ref_replace requires a named exclusive borrowed place");
       const auto root=place.root;
+      const auto* planned_binding=place.planned_binding;
       acquire(place,BorrowMode::Exclusive,target.where,target.text);
       const auto acquired=call_loans.size();
       call_loans.push_back({BorrowMode::Exclusive,place.id,root});
       const bool live=expression(*e.children[1],state,depth+1);
       call_loans.resize(acquired);
-      if(live)invalidate_loan_tags(state,root,e.where);
+      if(live){
+       invalidate_loan_tags(state,root,e.where);
+       if(slots&&!generic_context&&planned_binding)
+        slots->exchange(e,*planned_binding);
+      }
       return live;
      }
      if(e.callee->reference==Expr::Reference::Intrinsic)
