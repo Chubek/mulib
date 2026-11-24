@@ -1,0 +1,53 @@
+# A value, not authority to read files or start native VM work.
+enum VmmMachine { VmmX86_64, VmmAarch64, VmmRiscv64 }
+enum VmmBackend { VmmSoftware, VmmAuto, VmmKvm }
+
+record VmmConfig
+{
+  machine: VmmMachine, backend: VmmBackend,
+  memory_mb: i64, instruction_limit: i64, domix: bool, domios: bool
+}
+
+enum VmmConfigStatus
+{
+  VmmValid, VmmUnsupportedBackend, VmmBadMemory,
+  VmmBadInstructionLimit, VmmPathTooLong, VmmCmdlineTooLong,
+  VmmMissingKernel, VmmFirmwareNeedsDomios
+}
+
+fn basis_vmm_bundled_config(machine: VmmMachine) -> VmmConfig
+{
+  return record<VmmConfig>{
+    machine: machine, backend: variant<VmmBackend>(VmmSoftware, record {}), memory_mb: 40,
+    instruction_limit: 3000000, domix: true, domios: true
+  };
+}
+
+fn basis_vmm_validate_config(config: VmmConfig, archml_path: string, kernel_path: string,
+  image_path: string, firmware_path: string, cmdline: string) -> VmmConfigStatus
+{
+  let kvm = match config["backend"] with { VmmKvm() => true, _ => false };
+  if kvm {
+    return variant<VmmConfigStatus>(VmmUnsupportedBackend, record {});
+  }
+  if config["memory_mb"] < 40 || config["memory_mb"] > 1024 {
+    return variant<VmmConfigStatus>(VmmBadMemory, record {});
+  }
+  if config["instruction_limit"] < 1 || config["instruction_limit"] > 100000000 {
+    return variant<VmmConfigStatus>(VmmBadInstructionLimit, record {});
+  }
+  if text_len(archml_path) > 4096 || text_len(kernel_path) > 4096 ||
+     text_len(image_path) > 4096 || text_len(firmware_path) > 4096 {
+    return variant<VmmConfigStatus>(VmmPathTooLong, record {});
+  }
+  if text_len(cmdline) > 2048 {
+    return variant<VmmConfigStatus>(VmmCmdlineTooLong, record {});
+  }
+  if kernel_path == "" && !config["domix"] {
+    return variant<VmmConfigStatus>(VmmMissingKernel, record {});
+  }
+  if firmware_path != "" && !config["domios"] {
+    return variant<VmmConfigStatus>(VmmFirmwareNeedsDomios, record {});
+  }
+  return variant<VmmConfigStatus>(VmmValid, record {});
+}

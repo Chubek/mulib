@@ -26,6 +26,9 @@ It is **not a conforming implementation of the Standard ML Basis Library**.
   status, bounds, binary sockets and the explicitly raw trust boundary.
 - [`std.cephyr`](cephyr/README.md) optionally checks trusted C11 source
   and emits MIR or AMD64 assembly using the pinned Cephyr embedding API.
+- [`std.vmm`](vmm/README.md) validates ArchVirt configurations. Its optional
+  trusted C-host companion runs a scoped software VM; management calls are not
+  safe-admitted On1x externs.
 - [`std.environ`](environ/README.md) reads process arguments, environment
   variables, and host information, and provides POSIX `exec` and `system`.
 

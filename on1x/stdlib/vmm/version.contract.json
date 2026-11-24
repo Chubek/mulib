@@ -1,0 +1,34 @@
+{
+  "schema_version": 2,
+  "library": "ArchVirt",
+  "headers": ["archvirt.h"],
+  "state": "annotated",
+  "bundle_provenance": {
+    "header": "archvirt.h",
+    "revision": "21f886afe61ce27ef5684acde8f1ed7c064e4e6a",
+    "author": "On1x std.vmm maintainers",
+    "review_status": "unreviewed",
+    "evidence_method": "Pinned src/domvirt.cpp returns the CMake DOMVIRT_VERSION string literal"
+  },
+  "functions": [
+    {
+      "c_name": "archvirt_version",
+      "parameters": [],
+      "return": {"kind": "borrow", "nullable": false, "lifetime": {"origin": "global_static"}},
+      "errors": {"kind": "none"},
+      "effects": {"effects": ["read"], "unknown": false},
+      "concurrency": {
+        "thread_safety": "single_thread",
+        "blocking_behavior": "synchronous",
+        "suspension_safe": false
+      },
+      "provenance": {
+        "header": "archvirt.h",
+        "revision": "21f886afe61ce27ef5684acde8f1ed7c064e4e6a",
+        "author": "On1x std.vmm maintainers",
+        "review_status": "unreviewed",
+        "evidence_method": "Pinned src/domvirt.cpp returns the CMake DOMVIRT_VERSION string literal"
+      }
+    }
+  ]
+}
