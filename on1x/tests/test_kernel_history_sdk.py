@@ -17,8 +17,8 @@ if not sys.platform.startswith('linux') or not all(shutil.which(t) for t in ('cl
     sys.exit(77)
 
 
-def run(*cmd, reject=None):
-    p = subprocess.run(list(map(str, cmd)), capture_output=True, text=True, timeout=120)
+def run(*cmd, reject=None, stdin=None):
+    p = subprocess.run(list(map(str, cmd)), input=stdin, capture_output=True, text=True, timeout=120)
     if reject is None:
         assert p.returncode == 0, p
     else:
@@ -67,6 +67,7 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
         ('let v=array[1.0,2.0];let r=H.ema(v,0.0,1);', 'bounded slice<f64,N>'),
         ('let v=array[1,2];let r=H.ema(v[0:2],0.0,1);', 'expected f64'),
         ('let v=array[1.0,2.0];let r=H.ema(v[0:2],0.0,1u64);', 'expected i64'),
+        ('let v=array[' + ','.join(['1.0'] * 257) + '];let r=H.ema(v[0:1],0.0,1);', 'array extent limit exceeded'),
         ('let v=array[1.0,2.0];let r=H.kalman(v[0:2],0.0,1);', 'ON1X-KERNEL-MEMBER'),
         ('let f=H.holt;', 'ON1X-KERNEL-DIRECT'),
         ('let a:H.Missing=1;', 'ON1X-KERNEL-MEMBER'),
@@ -87,6 +88,11 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
                       'fn main(){match result() with {Ok(x)=>{println(x["point"]);},Err(_)=>{println(-1);}};}\n')
     run(*build, sample, '-o', d/'cross')
     assert run(d/'cross/program').stdout == '0x1.0000000000000p+2\n'
+    sample.write_text('import kernel mulib.histprice as H;\nimport kernel mulib.priceopt as P;\n'
+                      'fn bad(r:H.Result<H.Forecast,H.Error>)->P.Result<H.Forecast,P.Error>{return r;}\n'
+                      'fn main(){}\n')
+    run(compiler, '--emit-c', '--kernel-c11', '--kernel-stage', '--no-prelude', sample,
+        reject='incompatible nominal types')
 
     # Unsupported CDecl drift stays rejected even if a new subject is requested.
     spec = importlib.util.spec_from_file_location('exo', root/'tools/on1x-exotract.py')
@@ -124,6 +130,7 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
     subject_set = json.loads(review_set.read_bytes())
     assert subject_set['schema'] == 'on1x.kernel-review-subject-set/v1'
     assert set(subject_set['modules']) == {'mulib.histprice', 'mulib.priceopt'}
+    assert set(subject_set['modules']['mulib.priceopt']['symbols']) == {'optimize', 'candidates'}
     review.write_text(json.dumps(dict(schema='on1x.kernel-review/v1', reviewer='TEST ONLY',
                                       review_reference='Ephemeral integration authority; not an audit', subject=subject_set)))
     run('openssl', 'pkeyutl', '-sign', '-inkey', key, '-rawin', '-in', review, '-out', signature)
@@ -136,9 +143,20 @@ with tempfile.TemporaryDirectory(dir=artifacts) as temp:
         *[flag.removeprefix('--cflag=') for flag in flags],
         root/'tests/fixtures/kernel_pricing_oracle.c', linked/'libmulib.a', '-lm', '-o', oracle)
     assert run(oracle).stdout == p.stdout
+    edges = root/'tests/fixtures/kernel_numerics_edges.on1x'
+    run(*build, edges, '-o', d/'edges')
+    assert run(d/'edges/program', stdin='checks').stdout == '1\n2\n3\n4\nnumerical-edges\n'
+    trap = run(d/'edges/program', stdin='trap', reject='slice bounds out of range')
+    assert (trap.returncode, trap.stdout) == (70, '1\n6\n'), trap
+    status_probe = d/'status-probe'
+    run(cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-I', root.parent/'include',
+        *[flag.removeprefix('--cflag=') for flag in flags],
+        root/'tests/fixtures/kernel_numerics_status_probe.c', linked/'kernel-adapter.o', '-lm', '-o', status_probe)
+    run(status_probe)
     assert run('ar', 't', linked/'libmulib.a').stdout == 'mulib.o\n'
     link_plan = json.loads((linked/'build-plan.json').read_bytes())
     assert link_plan['implementation_macros'] == ['MULIB_IMPL_STATSPROC', 'MULIB_IMPL_HISTPRICE', 'MULIB_IMPL_PRICEOPT']
+    assert link_plan['link_libraries'] == ['m']
     assert (linked/'kernel-adapter.o').is_file()
     linked_interface = json.loads((linked/'interface.json').read_bytes())
     assert linked_interface['safe_export'] and all(m['safe_export'] for m in linked_interface['modules'].values())
