@@ -304,3 +304,10 @@ host fixture found that an error reply could race endpoint cleanup; moving
 the reply after cleanup fixed it in the integration follow-up. The worker
 also tested the real 60-second guest idle timeout; the 300-second wall
 deadline was not exercised end-to-end.
+
+The full ArchVirt-enabled GCC/generated-scanner run with live sessions
+passed **228 tests, 0 failed, 1 skipped** of 229 scheduled
+(`build/on1x-archvirt-combined-ctest.log`). The skip was the delegated
+cgroup fixture. After the final startup cleanup ordering fix, both session
+suites passed four consecutive Clang fallback runs
+(`build/on1x-vmm-fallback-readiness-ctest.log`).
