@@ -214,7 +214,17 @@ class Loader {
     if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
     bytes+=m->source.size();auto scanned=scan(m->source,path.string());
    for(const auto& t:scanned)tokens.insert(t.text);
-     m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+      m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()});
+      if(options.standalone_guest){
+       const auto& u=m->unit;
+       if(!u.imports.empty()||!u.module_imports.empty()||!u.kernel_imports.empty()||
+          !u.ppx.empty()||!u.features.empty()||!u.extensions.empty())
+        throw Error({path.string()},"standalone ArchVirt source cannot import or activate extensions");
+       for(const auto& f:u.functions)
+        if(!f.attributes.empty()||(f.external&&(f.name!="on1x_archvirt_read_i64"||
+           !f.params.empty()||f.result!=Type::I64)))
+         throw Error(f.where,"standalone ArchVirt source permits only the guest i64 input extern and no attributes");
+      }
        if((!m->unit.cliches.empty()||!m->unit.cliche_implementations.empty()||
            !m->unit.inherent_implementations.empty())&&
           (!m->unit.ppx.empty()||!m->unit.extensions.empty()||!m->unit.features.empty()))

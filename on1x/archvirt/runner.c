@@ -123,6 +123,8 @@ enum live_reason {
 
 struct interactive {
     int input, output, error, cancelling, finished, signals;
+    int ready_fd;
+    bool managed;
     sigset_t old_signals;
     /* Monotonic milliseconds shifted left, with the low bit indicating a read wait. */
     atomic_llong deadline;
@@ -409,7 +411,8 @@ static void *watch_interactive(void *arg)
         const long long now = now_ms();
         const long long activity = atomic_load(&live->deadline);
         const long long due = activity / 2;
-        const long long next = due < live->wall ? due : live->wall;
+        const long long next = live->managed ? ((activity & 1) ? now + 100 : due)
+                                            : (due < live->wall ? due : live->wall);
         const int wait = next <= now ? 0 : next - now > 100 ? 100 : (int)(next - now);
         int n = poll(p, sizeof(p) / sizeof(p[0]), wait);
         if (p[0].revents & POLLIN) return NULL;
@@ -428,11 +431,12 @@ static void *watch_interactive(void *arg)
             cancel(live, live_watchdog_error);
             break;
         }
-        if (now >= live->wall) {
+        if (!live->managed && now >= live->wall) {
             cancel(live, live_wall_timeout);
             break;
         }
-        if (now >= due && atomic_load(&live->deadline) == activity) {
+        if (now >= due && atomic_load(&live->deadline) == activity &&
+            !(live->managed && (activity & 1))) {
             cancel(live, (activity & 1) ? live_idle_timeout : live_active_timeout);
             break;
         }
@@ -465,6 +469,12 @@ static int run_interactive(void *vm, const char *path, struct console *c)
         archvirt_wait(vm);
         dprintf(live->error, "On1x ArchVirt: cannot start interactive watchdog: %s\n", strerror(error));
         return launch_failure;
+    }
+    if (live->managed) {
+        ssize_t written;
+        do { written = write(live->ready_fd, "R", 1); } while (written < 0 && errno == EINTR);
+        close(live->ready_fd);
+        if (written != 1) cancel(live, live_watchdog_error);
     }
     int waited = archvirt_wait(vm);
     notify(live->finished);
@@ -602,13 +612,13 @@ static int from_path(const char *guest_elf, bool execute, struct interactive *li
 int on1x_archvirt_run_path(const char *guest_elf) { return from_path(guest_elf, true, NULL); }
 int on1x_archvirt_check_path(const char *guest_elf) { return from_path(guest_elf, false, NULL); }
 
-int on1x_archvirt_run_interactive_path(const char *guest_elf)
+static int run_live_path(const char *guest_elf, int ready_fd)
 {
     if (getuid() != geteuid() || getgid() != getegid()) {
         fputs("On1x ArchVirt: interactive runner unavailable in a set-ID process\n", stderr);
         return launch_failure;
     }
-    struct interactive live = {0};
+    struct interactive live = {.ready_fd = ready_fd, .managed = ready_fd >= 0};
     if (!open_interactive(&live)) {
         fputs("On1x ArchVirt: interactive runner requires a stdin pipe and pipe/terminal console outputs\n",
               stderr);
@@ -617,4 +627,9 @@ int on1x_archvirt_run_interactive_path(const char *guest_elf)
     int result = from_path(guest_elf, true, &live);
     close_interactive(&live);
     return result;
+}
+
+int on1x_archvirt_run_interactive_path(const char *guest_elf) { return run_live_path(guest_elf, -1); }
+int on1x_archvirt_run_managed_path(const char *guest_elf, int ready_fd) {
+    return run_live_path(guest_elf, ready_fd);
 }

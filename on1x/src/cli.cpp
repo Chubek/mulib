@@ -603,6 +603,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
           std::string archvirt_mode;
           bool archvirt_uncached=false;
+          bool archvirt_standalone=false;
           std::string sdk_mode,sdk_name,sdk_target;
           bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
@@ -638,6 +639,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           archvirt_mode=arg;continue;
          }
          if(arg=="--vm-uncached"){archvirt_uncached=true;continue;}
+         if(arg=="--vm-standalone"){archvirt_standalone=true;continue;}
          if(arg=="--vm-source-prefix"){
           if(i+2>=argc||vm_prefixes.size()>=16)
            throw std::runtime_error("--vm-source-prefix needs two absolute paths (maximum 16 maps)");
@@ -836,6 +838,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    }
    if(archvirt_uncached&&(archvirt_mode.empty()||archvirt_mode=="--vm-run"))
     throw std::runtime_error("--vm-uncached requires --vm-build or --vm-launcher");
+   if(archvirt_standalone){
+    if(archvirt_mode!="--vm-build"||!archvirt_uncached||!loader.preludes.empty()||
+       !loader.extensions.enabled.empty()||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source)
+     throw std::runtime_error("--vm-standalone requires --vm-build --vm-uncached without prelude or extensions");
+    loader.standalone_guest=true;
+    loader.prelude=false;
+   }
    if(!archvirt_mode.empty()){
     if(mode!="--emit-c"||explicit_c||ir_input||!sdk_mode.empty()||list_opts||cephyr_object||
        loader.kernel_c11||loader.kernel_stage)
