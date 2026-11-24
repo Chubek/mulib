@@ -84,7 +84,7 @@
       "positive_tests": ["on1x.processor.snapshots at the canonical checkout path"],
       "negative_tests": ["on1x.processor.snapshots at a relocated checkout path"],
       "status": "BLOCKED",
-      "evidence": [{"command": "ctest --test-dir build/on1x-clang-fallback --output-on-failure -R '^on1x\\.processor\\.snapshots$' (from the independent worktree)", "result": "Generated parser contains checkout-specific file and dependencies[].path fields; grammar digest unchanged"}],
+      "evidence": [{"command": "ctest --test-dir build/on1x-clang-fallback --output-on-failure -R '^on1x\\.processor\\.snapshots$' (from the independent worktree)", "result": "Only failure in the final fallback run (213 passed, 1 failed, 1 skipped). Generated parser contains checkout-specific file and dependencies[].path fields; grammar digest unchanged."}],
       "revision": "681ceacf213673ebc1978d71d8cf6821bf35a7fb",
       "limits": ["Canonicalize path metadata in LLSynth or snapshot.py", "Require a two-root byte-for-byte regeneration test; do not relax unrelated checks"]
     },

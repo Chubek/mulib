@@ -103,6 +103,11 @@ do not ignore semantic differences or replace the generated parser.
 Clang also reports an existing missing `Borrow` case in the SDK frontend
 AST tag mapper. Baseline log:
 `/mnt/nvme/on1x-workers-681ceacf/12/build/worker12-logs/ctest-nvme-tmp.log`.
+The final Clang/fallback rerun at `565de4f5` finished with **213 passed,
+1 failed, 1 skipped** of 215 scheduled. Both editor tests, the ownership
+regressions, and the slice differential passed. The only failure was the
+same snapshot relocation issue; the same cgroup test was skipped. Final log:
+`/mnt/nvme/on1x-workers-681ceacf/12/build/worker12-logs/final-ctest.log`.
 
 Optional GCC generated run: **6/6** Cephyr and ExoML contract tests passed
 (`build/on1x-optional-ffi-cephyr.log`). The Chisel-enabled compiler from the
