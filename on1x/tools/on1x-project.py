@@ -916,6 +916,9 @@ class Execution:
                          mulib / 'include', mulib / 'manual',
                          mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc, POLICY):
                 self.mount(path)
+            if args.ffi_provider:
+                self.mount(ROOT / 'contracts-exotract/catalog.json')
+                self.mount(ROOT / 'contracts-exoml')
             if stdlib is not None:
                 self.mount(stdlib)
                 self.mount(stdlib.parent / 'std')
@@ -1349,12 +1352,23 @@ def source_policy(executor, compiler, file, root, libraries):
                 fail(f'{file}: relative import escapes the declared package')
 
 
-def verify_graph(executor, compiler, source, flags, permitted, trusted_roots):
-    data = executor.run([compiler, '--deps', source, *flags], bound=8 * MAX_MANIFEST)
-    for item in data.decode('utf-8').splitlines():
+def verify_graph(executor, compiler, source, flags, permitted, trusted_roots, *, ffi=False):
+    data = executor.run([compiler, '--kernel-imports' if ffi else '--deps', source, *flags],
+                        bound=8 * MAX_MANIFEST)
+    requests = []
+    if ffi:
+        graph = json.loads(data)
+        if graph['schema'] != 'on1x.kernel-requests/v1':
+            fail(f'{source}: incompatible compiler import graph')
+        paths = [os.fsdecode(bytes.fromhex(item['file_hex'])) for item in graph['sources']]
+        requests = graph['requests']
+    else:
+        paths = data.decode('utf-8').splitlines()
+    for item in paths:
         path = Path(item)
         if path not in permitted and not any(path.is_relative_to(root) for root in trusted_roots):
             fail(f'{source}: import is outside the declared module graph: {item}')
+    return requests
 
 
 def verify_interfaces(executor, compiler, staged, roles, loader, flags, permitted, trusted_roots, graph_checked=()):
@@ -1540,8 +1554,8 @@ def build(args):
             if (args.sandbox or args.allow_shell or args.target or args.output_dir or args.stdlib
                     or args.cc != 'cc' or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
-                    or args.scrutiny or args.scrutiny_work is not None
-                    or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
+                     or args.scrutiny or args.scrutiny_work is not None
+                     or args.opt_select or args.opt_profile or args.backend or args.optimize_ir or args.ffi_provider):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -1557,6 +1571,8 @@ def build(args):
     name(chosen)
     backend = ('archvirt' if vm_policy else
                args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11'))
+    if args.ffi_provider and (backend != 'c11' or config['kind'] == 'library' or config['kernels']):
+        fail('--ffi-provider requires a hosted C11 project without legacy kernel directives')
     cc = program(args.cc) if backend not in ('mir-vm', 'archvirt') else None
     if config['kernels'] and backend not in ('c11', 'mir-c11'):
         fail(f'{backend} cannot link project kernel declarations')
@@ -1821,7 +1837,25 @@ def build(args):
             outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
-            verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
+            requests = verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots,
+                                    ffi=bool(args.ffi_provider))
+            ffi_args = []
+            if requests:
+                if any(not request['unsafe'] or request.get('linkage') for request in requests):
+                    fail(f'{source}: project generated FFI supports only explicit unsafe static imports')
+                ffi_args = ['--ffi-provider', args.ffi_provider, '--ffi-static-only']
+                plan_file = work / 'artifact' / (key + '.ffi.json')
+                executor.mount(Path(sys.executable))
+                executor.run([sys.executable, ROOT / 'tools/on1x-build.py', entry,
+                              '-o', executor.path(plan_file), '--inspect-ffi', *ffi_args,
+                              '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib,
+                              *loader, *analysis_flags, *opt_flags, *(f'--cflag={flag}' for flag in cflags)],
+                             timeout=180)
+                plan_data = read(plan_file, MAX_BUILD_REPORT)
+                if args.command == 'plan':
+                    backend_info.setdefault('ffi_plans', {})[key] = json.loads(plan_data)
+                else:
+                    outputs[plan_file.name] = digest(plan_data)
             if args.command == 'plan':
                 continue
             if backend in ('archvirt', 'mir-vm'):
@@ -1858,10 +1892,10 @@ def build(args):
                 outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
                 continue
             command = [sys.executable, ROOT / 'tools/on1x-build.py', entry, '-o', output,
-                       '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader, *analysis_flags,
-                       *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
-                       *(f'--cflag={flag}' for flag in cflags)]
-            if setting[1]:
+                        '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader, *analysis_flags,
+                        *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
+                        *(f'--cflag={flag}' for flag in cflags), *ffi_args]
+            if setting[1] and not ffi_args:
                 command.extend(('--debug-build-root', executor.path(work)))
             for kernel in config['kernels']:
                 command.extend(('--mulib', kernel))
@@ -1913,6 +1947,8 @@ def build(args):
                       scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
                       tools={key: tool_digest(path) for key, path in chosen_tools.items()})
+        if args.ffi_provider:
+            report['ffi_provider'] = args.ffi_provider
         if analysis_work is not None:
             report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
@@ -1989,6 +2025,8 @@ def main():
     command.add_argument('--cc', default='cc')
     command.add_argument('--stdlib', type=Path)
     command.add_argument('--mulib-root', type=Path)
+    command.add_argument('--ffi-provider', choices=('host',),
+                         help='enable native generated FFI for explicit unsafe static imports in this C11 build')
     command.add_argument('--libstone-root', type=Path)
     command.add_argument('--mune-runner')
     command.add_argument('--qmr-compiler')

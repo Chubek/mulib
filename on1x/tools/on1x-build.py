@@ -157,8 +157,45 @@ def main():
     cli.add_argument('--kernel-review-signature', type=Path, help='detached Ed25519 signature of the review file bytes')
     cli.add_argument('--exotract', help='trusted Lua-enabled Exotract executable for KernelBind')
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
+    cli.add_argument('--ffi-provider', choices=('host', 'cephyr'),
+                     help='select the native implementation provider for compiler-owned FFI descriptors')
+    cli.add_argument('--ffi-adapter-provider', choices=('host', 'cephyr'),
+                     help='select the adapter provider (defaults to --ffi-provider)')
+    cli.add_argument('--inspect-ffi', action='store_true',
+                     help='publish the descriptor-driven native plan, not an admission decision')
+    cli.add_argument('--ffi-review-candidate', action='store_true',
+                     help='build and probe the binding, then publish an unsigned exact review subject')
+    cli.add_argument('--ffi-review', type=Path,
+                     help='signed generated-binding review; -o publishes a new evidence directory')
+    cli.add_argument('--ffi-review-key', type=Path, help='independent Ed25519 DER public trust anchor')
+    cli.add_argument('--ffi-review-signature', type=Path, help='detached signature of the FFI review')
+    cli.add_argument('--ffi-static-only', action='store_true', help=argparse.SUPPRESS)
     args = cli.parse_args()
     args.via_mir = args.backend == 'mir-c11'
+    ffi_review = (args.ffi_review, args.ffi_review_key, args.ffi_review_signature)
+    ffi_options = (args.ffi_adapter_provider, args.inspect_ffi, args.ffi_review_candidate,
+                   args.ffi_static_only, *ffi_review)
+    if any(ffi_options) and not args.ffi_provider:
+        cli.error('generated FFI requires explicit --ffi-provider host|cephyr')
+    if args.ffi_provider:
+        from on1x_ffi_native import CFLAGS
+        if (args.backend not in (None, 'c11') or args.emit_only or args.trust_inline_c11 or
+                args.memory_check or args.verify_types or args.admitted_extern or args.enable_pod_fixture or
+                args.extra_c or args.ppx_chain or args.ppx_schema or args.allow_source_ppx or args.enable or
+                args.mulib or args.mulib_path or args.mulib_fixture or args.mulib_archive or args.mulib_plan or
+                args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or
+                args.kernel_review or args.kernel_review_key or args.kernel_review_signature or
+                args.kernel_dynlib_compiler or args.exotract or args.resource_dir or args.debug_build_root or
+                any(option in ('--ppx-path', '--stdppx-path') for option, _ in args.search_chain or [])):
+            cli.error('generated FFI requires direct C11 without user C, PPX, legacy linkage or extension options')
+        if set(args.cflag) - CFLAGS:
+            cli.error('generated FFI only permits documented optimization/debug/sanitizer C flags')
+        if sum(map(bool, (args.inspect_ffi, args.ffi_review_candidate, any(ffi_review)))) > 1:
+            cli.error('FFI inspection, review candidate and signed-review build are mutually exclusive')
+        if any(ffi_review) and not all(ffi_review):
+            cli.error('FFI review, independent public key and detached signature must be supplied together')
+        if args.output.exists() or args.output.is_symlink():
+            cli.error('generated FFI requires fresh output')
     if args.trust_inline_c11 and (args.backend not in (None, 'c11') or args.emit_only or
             args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or
             args.memory_check or args.admitted_extern):
@@ -287,6 +324,10 @@ def main():
             compiler += ['--disable', name]
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
+        if args.ffi_provider:
+            from on1x_ffi_native import Build, house
+            root = house.kernel_root(args.mulib_root, MULIB, [])
+            return Build(args, compiler, root, Path(temp).resolve()).run()
         kernel_report = kernel_interface = raw_kernel_interface = None
         ipc_raw = False
         dyn_modules = set()
@@ -296,8 +337,11 @@ def main():
             compiler[0] = exo.executable(compiler[0])
             driver_pins = {path: exo.contracts.digest(path) for path in
                            [compiler[0], Path(__file__).resolve(), Path(optimization.__file__).resolve(),
-                            ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h',
-                            ROOT/'runtime/on1x_bounds.h']}
+                             ROOT/'runtime/on1x_runtime.c', ROOT/'runtime/on1x_runtime.h',
+                             ROOT/'runtime/on1x_bounds.h']}
+            if args.kernel_review_candidate or args.kernel_review:
+                verifier_policy = ROOT/'tools/on1x_ffi_trust.py'
+                driver_pins[verifier_policy] = exo.contracts.digest(verifier_policy)
             requests_path = Path(temp)/'kernel-requests.json'
             inspect = [str(compiler[0]), '--kernel-imports', str(args.input), '-o', str(requests_path), *compiler[5:]]
             subprocess.run(inspect, check=True, timeout=60)

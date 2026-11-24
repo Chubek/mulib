@@ -8,6 +8,8 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/vm.hpp>
 #include <on1x/backend/passes.hpp>
+#include <on1x/ffi.hpp>
+#include "../hir/FFIHandler/lower.hpp"
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -39,6 +41,7 @@
 #include <cstdio>
 #include <fstream>
 #include <filesystem>
+#include <iomanip>
 #include <set>
 #include <map>
 #include <iostream>
@@ -449,7 +452,81 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
   write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_c(module));return 0;
 #endif
 }
-std::string kernel_requests(const on1x::KernelImportRequests& inspected){
+ std::vector<const on1x::ffi::Descriptor*> selected_ffi(const on1x::KernelImportRequests& inspected){
+  std::set<std::string_view> modules;
+  for(const auto& request:inspected.requests)modules.insert(request.module);
+  std::vector<const on1x::ffi::Descriptor*> selected;
+  for(const auto& item:on1x::ffi::foreign_descriptors()){
+   if(item.schema_version!=2||!modules.contains(item.module))continue;
+   if(selected.size()==2048)throw std::runtime_error("FFI native descriptor limit exceeded");
+   selected.push_back(&item);
+  }
+  return selected;
+ }
+ std::string_view ffi_surface(on1x::ffi::SurfaceKind kind){
+  using on1x::ffi::SurfaceKind;
+  switch(kind){
+   case SurfaceKind::Void:return "void";
+   case SurfaceKind::I64:return "i64";
+   case SurfaceKind::U8:return "u8";
+   case SurfaceKind::U16:return "u16";
+   case SurfaceKind::U32:return "u32";
+   case SurfaceKind::U64:return "u64";
+   case SurfaceKind::F32:return "f32";
+   case SurfaceKind::F64:return "f64";
+   case SurfaceKind::Bool:return "bool";
+  }
+  throw std::runtime_error("FFI invalid surface kind");
+ }
+ void ffi_native_type(std::ostream& out,const on1x::ffi::NativeType& item){
+  using on1x::ffi::NativeKind;
+  switch(item.kind){
+   case NativeKind::Void:out<<"[\"void\"]";return;
+   case NativeKind::Integer:
+    out<<"[\"integer\","<<std::quoted(item.identity)<<','<<item.rank<<','<<item.bits<<','
+       <<std::quoted(item.is_signed?"signed":"unsigned")<<','<<item.size<<','<<item.alignment<<']';return;
+   case NativeKind::Real:
+    out<<"[\"real\","<<std::quoted(item.identity)<<','<<std::quoted(item.format)<<','<<item.bits
+       <<','<<item.size<<','<<item.alignment<<']';return;
+  }
+  throw std::runtime_error("FFI rich types have no qualified native build protocol");
+ }
+ void ffi_descriptor(std::ostream& out,const on1x::ffi::Descriptor& d){
+  if(d.effect!=on1x::ffi::Effect::Unknown)throw std::runtime_error("FFI unsupported native effect");
+  const auto& t=d.target;
+  out<<"{\"id\":"<<std::quoted(d.id.sha256)<<",\"module\":"<<std::quoted(d.module)
+     <<",\"provider\":"<<std::quoted(d.provider)<<",\"header\":"<<std::quoted(d.header)
+     <<",\"member\":"<<std::quoted(d.member)<<",\"symbol\":"<<std::quoted(d.symbol)
+     <<",\"wrapper\":"<<std::quoted(on1x::ffi::c11::linked_name(d))
+     <<",\"target\":["<<std::quoted(t.triple)<<','<<std::quoted(t.data_model)<<','
+     <<std::quoted(t.abi)<<','<<std::quoted(t.calling_convention)<<']'
+     <<",\"linkage\":"<<std::quoted(d.placement==on1x::ffi::Placement::External?"external":"internal")
+     <<",\"definition\":"<<std::quoted(d.definition)<<",\"native_parameters\":[";
+  bool first=true;
+  for(const auto& p:d.parameters){
+   if(!first)out<<',';
+   first=false;
+   ffi_native_type(out,p.native);
+  }
+  out<<"],\"native_result\":";
+  ffi_native_type(out,d.native_result);
+  out<<",\"native_fingerprint\":"<<std::quoted(d.native_fingerprint)<<",\"surface_parameters\":[";
+  first=true;
+  for(const auto& p:d.parameters){
+   if(!first)out<<',';
+   first=false;
+   out<<std::quoted(ffi_surface(p.surface));
+  }
+  out<<"],\"surface_result\":"<<std::quoted(ffi_surface(d.surface_result))<<",\"guards\":[";
+  first=true;
+  for(const auto& guard:d.plan.guards){
+   if(!first)out<<',';
+   first=false;
+   out<<'['<<static_cast<unsigned>(guard.lhs)<<','<<static_cast<unsigned>(guard.rhs)<<']';
+  }
+  out<<"],\"effect\":\"unknown\"}";
+ }
+ std::string kernel_requests(const on1x::KernelImportRequests& inspected,bool ffi=false){
  // Filesystem paths need not be UTF-8. Retain exact bytes without emitting
  // malformed JSON; module and alias spellings are scanner identifiers.
  auto path_hex=[](const std::string& file){
@@ -458,7 +535,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
   for(unsigned char c:file){out+=hex[c>>4];out+=hex[c&15];}return out;
  };
  std::ostringstream out;
- out<<"{\"schema\":\"on1x.kernel-requests/v1\",\"sources\":[";
+  out<<"{\"schema\":\""<<(ffi?"on1x.ffi-imports/v1":"on1x.kernel-requests/v1")<<"\",\"sources\":[";
  bool first=true;
  for(const auto& [file,digest]:inspected.source_digests){
   if(!first)out<<',';
@@ -472,7 +549,17 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
     <<",\"module\":\""<<item.module<<"\",\"alias\":\""<<item.alias<<"\",\"unsafe\":"
     <<(item.is_unsafe?"true":"false")<<(item.dynlib?",\"linkage\":\"dynlib\"":"")<<"}";
  }
- out<<"]}\n";
+  out<<']';
+  if(ffi){
+   out<<",\"descriptors\":[";first=true;
+   for(const auto* d:selected_ffi(inspected)){
+    if(!first)out<<',';
+    first=false;
+    ffi_descriptor(out,*d);
+   }
+   out<<']';
+  }
+  out<<"}\n";
  return out.str();
 }
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
@@ -492,6 +579,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --list-extensions | --explain-extension NAME\n"
   "       on1xc --emit-category-plan INPUT [-o OUTPUT] (checked concrete evidence)\n"
    "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
+   "       on1xc --ffi-imports INPUT [-o OUTPUT] (requests and matching immutable descriptors; not admission)\n"
+   "       on1xc --ffi-adapter --ffi-id HEX INPUT [-o OUTPUT] (staged binding C, not admission)\n"
     "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
     "       on1xc --emit-c --kernel-c11 --kernel-stage INPUT (unresolved kernel callers; NOT admission)\n"
    "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
@@ -601,6 +690,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
    }
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
+         std::string ffi_id;
           std::string archvirt_mode;
           bool archvirt_uncached=false;
           bool archvirt_standalone=false;
@@ -749,6 +839,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
+       if(arg=="--ffi-stage"){loader.kernel_stage=true;loader.ffi_stage=true;continue;}
+       if(arg=="--ffi-id"){
+        if(++i==argc||!ffi_id.empty())throw std::runtime_error("--ffi-id requires one descriptor ID");
+        ffi_id=argv[i];continue;
+       }
         if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
@@ -793,7 +888,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      cephyr_target=argv[i];continue;
     }
      if(arg=="--check-types"){mode=arg;continue;}
-     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
+     if(arg=="--emit-category-plan"||arg=="--kernel-imports"||arg=="--ffi-imports"||arg=="--ffi-adapter"){mode=arg;continue;}
        if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
         mode=arg;explicit_c=explicit_c||arg=="--emit-c";
       }
@@ -1064,9 +1159,20 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #endif
         return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes);
     }
-   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
-   if(mode=="--kernel-imports"){
-    write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
+    const bool ffi_inspect=mode=="--ffi-imports"||mode=="--ffi-adapter";
+    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||ffi_inspect)&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+    if((mode=="--ffi-adapter")!=(!ffi_id.empty()))throw std::runtime_error("--ffi-id is required only with --ffi-adapter");
+    if(mode=="--kernel-imports"||ffi_inspect){
+     const auto inspected=on1x::inspect_kernel_imports(source,loader);
+     if(mode=="--ffi-adapter"){
+      for(const auto* d:selected_ffi(inspected)){
+       if(d->id.sha256==ffi_id&&d->target.triple=="x86_64-linux-gnu"){
+        write_all(out,on1x::ffi::c11::linked_scalar_tu(std::span(&d,1)));return 0;
+       }
+      }
+      throw std::runtime_error("FFI adapter ID is not selected for this target");
+     }
+     write_all(out,kernel_requests(inspected,ffi_inspect));return 0;
    }
    if(mode=="--tokens"){
     auto tokens=on1x::scan(on1x::read_source_file(source),source);
@@ -1200,7 +1306,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      publish_diagnostics();write_all(out,listing.str());return 0;
     }
      std::string bounds_report;
-     on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+      on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+      c11_options.foreign_driver_staging=loader.ffi_stage;
      c11_options.allow_stackless_timers=!cephyr_object&&archvirt_mode.empty();
      if(!archvirt_mode.empty()&&!vm_prefixes.empty())c11_options.source_prefixes=&vm_prefixes;
 #ifdef ON1X_WITH_CEPHYR
