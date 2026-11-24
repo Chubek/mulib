@@ -1,4 +1,6 @@
 """Shared MuLIB kernel/fixture planning. No C declaration parsing or ABI guesses."""
+from collections import namedtuple
+from copy import deepcopy
 import hashlib
 import importlib.util
 import json
@@ -16,6 +18,7 @@ contracts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contracts)
 MAX_FILES = 8192
 MAX_BYTES = 64*1024*1024
+_PlanInputs = namedtuple('_PlanInputs', 'root digests modules config profiles')
 
 
 def search_paths(values=(), environment='ON1X_MULIB_PATH'):
@@ -101,14 +104,26 @@ def fixture_files(root, group):
     return sorted(files)
 
 
-def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
+def prepare_plan(root):
+    """Prepare common canonical inputs once for a batch of independent plans."""
     root = root.resolve()
-    inputs = {str(path):contracts.digest(path) for path in
-              [root/'MANIFEST.yaml', CATALOG, Path(__file__), HOME/'tools/on1x-contracts.py',
-               HOME/'contracts-exotract/catalog.json']}
+    digests = {str(path):contracts.digest(path) for path in
+               [root/'MANIFEST.yaml', CATALOG, Path(__file__), HOME/'tools/on1x-contracts.py',
+                HOME/'contracts-exotract/catalog.json']}
     modules = inventory(root)
     config = catalog(root, modules)
     profiles = contracts.exotract_catalog()
+    for path, digest in digests.items():
+        if contracts.digest(path)!=digest:raise ValueError('planning input drift: '+path)
+    return _PlanInputs(root, digests, modules, config, profiles)
+
+
+def plan(root, libraries, fixtures=(), paths=(), *, discovery=False, prepared=None):
+    root = root.resolve()
+    common = prepare_plan(root) if prepared is None else prepared
+    if common.root != root:raise ValueError('prepared MuLIB planner root mismatch')
+    modules, config, profiles = common.modules, common.config, common.profiles
+    inputs = dict(common.digests)
     if len(libraries)!=len(set(libraries)) or any(n not in modules for n in libraries):
         raise ValueError('select unique known MuLIB modules')
     if len(fixtures)!=len(set(fixtures)) or any(n not in config['fixtures'] for n in fixtures):
@@ -228,13 +243,15 @@ def plan(root, libraries, fixtures=(), paths=(), *, discovery=False):
     if 'process-stream' in ordered or any(
             profiles['profiles'].get(name, {}).get('sandbox_contract') for name in ordered):
         definitions.append('_GNU_SOURCE=1')
-    return dict(schema='on1x.mulib-plan/v1', libraries=list(libraries), requested_fixtures=list(fixtures),
+    result = dict(schema='on1x.mulib-plan/v1', libraries=list(libraries), requested_fixtures=list(fixtures),
                 modules=entries, implementation_macros=macros, implementation_translation_units=1,
                 required_symbols=required, dependency_cycles=cycles, fixtures=groups, files=records,
                 native_sources=sources, include_headers=headers, generator_checks=sorted(checks),
                 link_libraries=sorted(links), include_directories=[str(p) for p in directories],
                 compile_definitions=definitions, inputs=inputs, safe_export=False,
                 **({'discovery_only': discovery_only} if discovery_only else {}))
+    # Results cannot mutate the shared manifest or profile structures.
+    return deepcopy(result) if prepared is not None else result
 
 
 def declaration_plan(root, name, modules, paths):
