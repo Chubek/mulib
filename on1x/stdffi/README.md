@@ -58,24 +58,26 @@ exports. For example, the bundled Cephyr header profile cannot project
 `media-timebase` because it lacks `math.h`; generation does not replace it with
 host libc or a synthetic declaration.
 
-## AMD64 coverage
+## Checked-in coverage
 
-The checked-in catalogue accounts for 2,053 registrations: all were attempted
-and 751 projected successfully. The 2,053 module outcomes are:
+Each catalogue accounts for all 2,053 registrations. Cephyr projected 751
+modules per target with the bundled header profile; 1,302 failed explicitly
+and emitted no declarations.
 
-| Outcome | Modules | Reason |
-|---|---:|---|
-| Projection failed | 1,302 | `cephyr_failed` under the bundled header profile; no declarations emitted |
-| Discovery only | 634 | Ownership was not established for emitted entries |
-| Unsupported after projection | 115 | 114 `no_owned_exports`; 1 `data_only_module` (`lprowse`) |
-| Scalar candidates | 2 | Three `clamp` functions and `container-core`'s audited static-inline function |
+| Target | Discovery-only modules | Projected modules without eligible exports | Scalar modules (functions) | Function occurrences projected |
+|---|---:|---:|---:|---:|
+| AMD64 | 634 | 115 | 2 (4) | 11,606 |
+| AArch64 | 634 | 116 | 1 (3) | 11,606 |
+| RV64IM | 634 | 116 | 1 (3) | 11,605 |
 
-There are 11,606 projected function occurrences across declaration units
-(not distinct library exports): 9,127 non-candidates and 2,479 candidate
-outcomes. Of those candidates, 2,358 are ambiguous, 115 have unrepresentable
-identifiers, 2 are reserved to other modules, and 4 are explicitly selected
-and emitted. These are **not** unsafe or reviewed-safe admission counts.
-The existing tracked v1 seed is not an input to this generated catalogue.
+All three select the three `clamp` functions. AMD64 also selects
+`container-core`'s audited static-inline counter. Across each target, 2,358
+candidate occurrences are ambiguous, 115 have unrepresentable identifiers,
+and two are reserved to other modules. These are discovery and
+representation counts, **not** numbers of admitted unsafe or safe calls.
+The checked-in profiles report 356 function-pointer observations each.
+None of their selected public definitions produced a bounded body memory
+proof; `unknown` is not evidence of safety.
 
 ## Regeneration and CI
 
@@ -90,8 +92,10 @@ compares it without modifying the catalogue. Both generation and CI select
 standalone directory (including existing flat fixtures outside the canonical
 tree); it cannot select a different target's slot or replace the shared parent.
 
-The pinned LibStone `e10ac69eed7baf91b06d15c4e0d58360097cb5c4` provides all three
-targets through the same host `cephyr --emit-interface=sexp` binary. The
+LibStone `6a7d52e866db8eb441bb7a4f86ce91253732e740` supplies the enriched
+analysis model used in the checked-in catalogues. The generator also accepts
+declaration-only Cephyr `e10ac69e` for a separate legacy generation profile.
+All three targets use the same host `cephyr --emit-interface=sexp` binary. The
 projection step needs neither a cross compiler, target libc/sysroot, nor an
 emulator with the bundled profile below. It needs Linux `prlimit` and
 `renameat2` (for publication), Python 3.10+, Perl for LLSynth, Cephyr and its
@@ -99,6 +103,10 @@ matching shared library, the pinned headers, target definitions and Archon
 resource bank. Use a build that lists `--emit-interface=sexp` in `--help`; a
 reported `Cephyr 0.1.0` alone does not establish which revision was built.
 Generation probes the selected ABI before accepting any per-module failures.
+The checked-in indexes include both [Wetstone taint observations](../docs/ffi-taint.md)
+and [Wetstone numeric checks](../docs/ffi-wetstone-obligations.md). To check
+the same profile, select the same helper binaries; their identities are
+stored in the index. They are optional for generating a different profile.
 
 From the MuLIB checkout root, generate a real parser and select the explicit
 projection inputs:
@@ -109,6 +117,9 @@ ffi=on1x/hir/FFIHandler
 stone=/abs/path/to/libstone
 cephyr_build=/abs/path/to/cephyr-build
 work=/abs/path/to/ffi-work
+# Both can be built as host targets by `cmake --build ON1X_BUILD --target ...`.
+taint_helper=/abs/path/to/on1x-wetstone-ffi-taint
+numeric_helper=/abs/path/to/on1x-wetstone-ffi-obligations
 mkdir -p "$work/scratch"
 export TMPDIR="$work"
 PERL_HASH_SEED=0 PERL_PERTURB_KEYS=0 \
@@ -122,6 +133,7 @@ profile=(
   --tool-input "$cephyr_build/libcephyr.so.0.1.0"
   --tool-input "$stone/cornerstone/Cephyr/triples"
   --tool-input "$stone/cornerstone/Archon/stdspec" --jobs 2
+  --wetstone-taint "$taint_helper" --wetstone-obligations "$numeric_helper"
 )
 for target in x86_64-linux-gnu aarch64-linux-gnu riscv64-linux-gnu; do
   python3 -B "$ffi/tools/ffgen.py" --mulib-root . --target "$target" --all "${profile[@]}"
