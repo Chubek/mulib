@@ -765,19 +765,24 @@ class Inference {
    returns=nodes[signature].result;saw_return=false;global.first_slot=slots.size();block(f.body,false);scopes.pop_back();global.last_slot=slots.size();
     if(!saw_return&&nodes[head(returns,f.where)].kind==Type::Hole)
      unify(returns,scalar(Type::Void,f.where),f.where);
-   std::set<Term> explicit_variables;
-   for(std::size_t i=0;i<global.variables.size();++i){
-    auto variable=head(global.variables[i],f.type_parameters[i].where);
-    if(nodes[variable].kind!=Type::Hole)
-     fail(f.type_parameters[i].where,"generic function body specializes type parameter "+
-          f.type_parameters[i].name);
-    if(!explicit_variables.insert(variable).second)
-     fail(f.type_parameters[i].where,"generic function body equates distinct type parameters");
-   }
   if(global.low==global.index){
    std::vector<std::string> group;
    do{group.push_back(component_stack.back());component_stack.pop_back();globals.at(group.back()).on_stack=false;}while(group.back()!=name);
    std::sort(group.begin(),group.end());
+   // A sibling can still constrain a member's binders after its body has
+   // finished. Validate the entire component before publishing any schemes.
+   for(const auto& member:group){
+    const auto& item=globals.at(member);
+    std::set<Term> explicit_variables;
+    for(std::size_t i=0;i<item.variables.size();++i){
+     const auto& parameter=item.definition->type_parameters[i];
+     auto variable=head(item.variables[i],parameter.where);
+     if(nodes[variable].kind!=Type::Hole)
+      fail(parameter.where,"generic function body specializes type parameter "+parameter.name);
+     if(!explicit_variables.insert(variable).second)
+      fail(parameter.where,"generic function body equates distinct type parameters");
+    }
+   }
    if(std::find(group.begin(),group.end(),"main")==group.end()){
     returns=scalar(Type::Void,f.where);generalizing_globals={group.begin(),group.end()};
      bool any=false;std::map<std::string,std::set<Term>> variables;

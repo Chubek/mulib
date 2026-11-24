@@ -59,6 +59,10 @@ strongly connected recursive components. Each component is inferred with shared
 monotypes; eligible variables then generalize at its boundary. Calls from outside
 the component instantiate fresh signatures. Recursive calls within one instance
 share its monotypes: **polymorphic recursion is not inferred**.
+Explicit type parameters must remain type variables and distinct within their
+declaration after the entire recursive component is inferred. An inferred sibling
+cannot fix one to a concrete type or equate two binders, regardless of declaration
+order. Binders in different functions may correspond through recursive calls.
 
 ```on1x
 fn repeat(x, count: i64) -> _ {

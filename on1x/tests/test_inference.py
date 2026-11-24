@@ -13,6 +13,14 @@ fn odd(n) -> _ { if n == 0 { return false; } return even(n - 1); }
 fn even(n) -> _ { if n == 0 { return true; } return odd(n - 1); }
 fn main() { println(factorial(5)); println(even(10)); println(odd(10)); }
 ''')
+tests.valid('explicit_generic_recursive_component', '42\ntrue\n', text='''
+fn relay(x, count: i64) -> _ {
+  if count == 0 { return x; }
+  return identity(x, count - 1);
+}
+fn identity<T>(x: T, count: i64) -> T { return relay(x, count); }
+fn main() { println(relay(42, 3)); println(identity(true, 3)); }
+''')
 tests.valid('inferred_holes', '42\ntrue\n', text='''
 fn identity(x: _) -> _ { return x; }
 fn keep(f: fn(_) -> _) -> fn(_) -> _ { return f; }
@@ -139,6 +147,21 @@ fn inc(x) -> _ { return x + 1; } fn main() { let f = inc; f = inc; }
     ('non_callable', 'fn main() { let x: _ = 1; x(); }', 'cannot call value of type i64'),
     ('wrong_arity', 'fn apply(f) { f(1); f(1, 2); } fn main() {}', 'wrong number of arguments'),
 ]
+# Discover each component from both ends: the inferred sibling must not
+# specialize or equate explicit binders after the generic body has returned.
+recursive_generic_cases = [
+    ('specialized', 'fn relay(x) { identity(x); x + 1; }',
+     'fn identity<T>(x: T) { relay(x); }',
+     'generic function body specializes type parameter T'),
+    ('equated', 'fn relay(x, y) { pair(x, y); pair(x, x); }',
+     'fn pair<T, U>(x: T, y: U) { relay(x, y); }',
+     'generic function body equates distinct type parameters'),
+]
+for name, inferred, generic, diagnostic in recursive_generic_cases:
+    for first, second, order in [(inferred, generic, 'inferred_first'),
+                                 (generic, inferred, 'generic_first')]:
+        semantic_cases.append((f'recursive_{name}_{order}',
+                               f'{first}\n{second}\nfn main() {{}}\n', diagnostic))
 for name, text, diagnostic in semantic_cases:
     path = tests.source('reject_' + name, text)
     p = run([tests.compiler, '--emit-c', path])
