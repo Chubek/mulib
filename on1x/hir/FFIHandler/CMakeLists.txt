@@ -105,6 +105,10 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_rich.py"
       --parser "${_ffi_parser}" --work "${CMAKE_CURRENT_BINARY_DIR}")
   set_tests_properties(on1x.ffihandler.rich_discovery PROPERTIES TIMEOUT 90)
+  add_test(NAME on1x.ffihandler.rich_plan_validation
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_plan.py"
+      --parser "${_ffi_parser}")
+  set_tests_properties(on1x.ffihandler.rich_plan_validation PROPERTIES TIMEOUT 90)
   if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu" AND
      EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/check_hir.cpp" AND
      EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.cpp")

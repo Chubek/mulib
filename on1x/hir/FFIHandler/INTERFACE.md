@@ -194,7 +194,80 @@ discover example = c::mulib_example_example native external declaration graph 0
   reachable declaration. The generated shard report retains these graphs
   and fingerprints for discovery, not for runtime lookup.
 
+### Authored plans: validated numerical subset, no runtime publication
+
+`tools/ffi_plan.py` parses and checks a bounded v3 `extend` subset, using the
+same genuine LLSynth parser. `obligation CODE audit "text";` records a
+non-authorizing module audit; text may be omitted. A plan requires explicit
+`select c::SYMBOL;` and an `adapt c::SYMBOL fingerprint "DIGEST" …` matching
+the exact discovery entry, module, and target. For example (not a projected
+signature or a production override):
+
+```text
+adapt c::SYMBOL fingerprint "64 lowercase hexadecimal digits"
+    surface (snapshot samples:slice(f64,256), value horizon:i64)
+    -> sum(mulib.example.Result,nominal(mulib.example.Value),nominal(mulib.example.Error))
+    effects unknown
+    plan {
+        snapshot(arg(0),local(0),1,256);
+        slice_domain(local(0),finite_nonnegative);
+        check_i64(arg(1),1,1000000);
+        slice_data(local(0),native(0));
+        slice_length(local(0),native(1));
+        scalar_arg(arg(1),native(2));
+        out_slot(local(1),native(3));
+        init_field(local(1),field(0),nan);
+        call(local(2));
+        status_eq(local(2),1);
+        out_field(local(1),field(0),local(3));
+        check_field(local(3),finite_nonnegative);
+        ok_record(local(3));
+        reject(Rejected);
+    }
+```
+
+* `arg`, `local`, `native`, and `field` are independent zero-based sorts.
+  There are at most 16 surface and 16 native arguments, 32 single-assignment
+  locals, 64 operations, and 256 elements per binary64 snapshot. No arbitrary
+  expressions, C names, unbounded allocation, loops, or authority flags.
+* Before the call, `check_i64(arg,lo,hi)` specifies an inclusive signed
+  range. `check_f64(arg,zero_to_one|positive_to_one)` is ordered `[0,1]` or
+  `(0,1]`. `snapshot(arg,local,min,capacity)` requires the backing, start
+  and length checks before offset; `same_length(local,local)` and
+  `slice_domain(local,finite_nonnegative)` address the checked windows.
+  `slice_data` requires a pointer to const binary64 and `slice_length`
+  exact C `unsigned long`. `scalar_arg` uses exact checked scalar mapping;
+  `i64` to unsigned long additionally requires a preceding nonnegative
+  check. Language-level argument evaluation remains once left-to-right;
+  adapter rejection is not a language slice trap.
+* `out_slot(local,native)` requires a mutable pointer to a complete named
+  native struct with primitive fields. Every field gets explicit
+  `init_field(local,field,zero|nan)` before `call(status_local)`; only a
+  binary64 field can use `nan`. The one call requires all native slots
+  assigned and surface slots used. Its status is exact C `int` and must be
+  checked immediately by `status_eq(status_local,expected)`. Only its
+  success continuation permits `out_field` and `check_field`
+  (`finite`, `finite_nonnegative`, `is_nan` for binary64; `positive` for an
+  integer). `ok_record` values follow the exact canonical record field
+  order. Final `reject(case)` applies to every adapter rejection or native
+  status mismatch; no such path reads or publishes output. Poison is not
+  evidence that the native function wrote a field.
+* `parse_rich_overrides` reads only authored data. `verify_plan` requires
+  exact module-qualified nominal definitions resolved by its compiler
+  consumer; the override cannot define or alias them. It returns a candidate
+  digest over the target, module, symbol, native fingerprint, conservative
+  effect, ordered surface modes and shapes, result identity, resolved
+  nominal shapes, and typed operations, in compact ASCII JSON prefixed by
+  `"on1x.ffi-marshalling-plan/v3"` as the first array element. It is **not**
+  a foreign ID, artifact identity, or signed admission. Display names and
+  audit prose do not affect it.
+
 V2 remains the only projected executable *representation* supported by
-`<on1x/ffi.hpp>`. No rich `adapt`/plan, record/slice/status adapter, owner or
-callback is currently executable through the typed path. Keep existing
-numerical and framed IPC adapters and their review/admission mechanisms.
+`<on1x/ffi.hpp>`. V3 validation currently has no runtime publication;
+`ffic.py` rejects unmerged `extend`. W06 canonical nominal/HIR resolution,
+W07 lowering, and W10 native ABI, artifact and review support are required
+before a validated rich candidate may become executable. Record/enum
+input, resource ownership/loan or callback effects, retained roots, and
+companion execution are explicitly unsupported by this plan subset. Keep
+existing numerical and framed IPC adapters and their review/admission
+mechanisms.
