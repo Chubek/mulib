@@ -712,6 +712,12 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vm_data.py" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/vm-data" "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.vm_data PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.acceptance.slice_snapshots
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_acceptance_slice_snapshots.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/slice-snapshots"
+      "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.acceptance.slice_snapshots PROPERTIES TIMEOUT 120)
   target_link_libraries(on1x_mir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_hir COMMAND on1x_mir_tests)
   set_tests_properties(on1x.mir_hir PROPERTIES TIMEOUT 40)
