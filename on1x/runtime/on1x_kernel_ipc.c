@@ -1,6 +1,7 @@
 #include "on1x_kernel_ipc.h"
 #include <limits.h>
 #include <mulib-ipc-framed.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -34,9 +35,40 @@ _Static_assert(MULIB_SB_OK == 0 && MULIB_SB_INVALID == -1 && MULIB_SB_SYSTEM == 
                MULIB_SB_AGAIN == 1 && MULIB_SB_DENIED == -4 && MULIB_SB_STATE == -9,
                "framed KernelBind status drift");
 
-typedef struct { int fds[2]; mulib_ipc_framed_t writer, reader; } ipc_pair;
 enum { MAX_LIVE_PAIRS = 128 };
+typedef enum { IPC_PAIR, IPC_SESSION } ipc_kind;
+typedef struct {
+    int fds[2];
+    mulib_ipc_framed_t writer, reader;
+    const void *thread;
+    unsigned slot;
+} ipc_pair;
+typedef struct { on1x_unique *owner; ipc_kind kind; } ipc_slot;
+
+// The generic unique box checks size, not nominal identity. Check the
+// bounded, opening-thread index before borrowing any payload. This is not a
+// handle ABI or a second owner: compiler ownership still governs box lifetime
+// (in particular no stale pointer may be reused, even if its address recurs).
+// Opening and dropping still require the scheduler-free unique/closure runtime.
+static _Thread_local ipc_slot owners[MAX_LIVE_PAIRS];
 static unsigned live_pairs;
+
+static bool has_owner(on1x_unique *owner, ipc_kind kind) {
+    if (!owner) return false;
+    for (unsigned i = 0; i < MAX_LIVE_PAIRS; ++i)
+        if (owners[i].owner == owner) return owners[i].kind == kind;
+    return false;
+}
+
+static void unlist_owner(ipc_pair *pair) {
+    // The private ABI must never hand its boxes to another thread for drop.
+    // The generic drop queue itself is not a cross-thread interface.
+    if (pair->thread != owners) abort();
+    if (pair->slot != MAX_LIVE_PAIRS) {
+        owners[pair->slot].owner = NULL;
+        pair->slot = MAX_LIVE_PAIRS;
+    }
+}
 
 static void close_pair(ipc_pair *pair) {
     // On Linux close must not be retried (even on EINTR): a new descriptor
@@ -48,7 +80,9 @@ static void close_pair(ipc_pair *pair) {
 }
 
 static void drop_pair(void *payload) {
-    close_pair(payload);
+    ipc_pair *pair = payload;
+    unlist_owner(pair);
+    close_pair(pair);
     --live_pairs;
 }
 
@@ -61,10 +95,18 @@ static int make_pair(ipc_pair *pair) {
     return status;
 }
 
-static int publish_owner(void *data, size_t size, on1x_unique_destructor drop,
+// ipc_pair is the complete pair payload and the first member of a session.
+static int publish_owner(void *data, size_t size, ipc_kind kind, on1x_unique_destructor drop,
                          on1x_unique **out) {
+    unsigned slot = 0;
+    while (slot < MAX_LIVE_PAIRS && owners[slot].owner) ++slot;
+    if (slot == MAX_LIVE_PAIRS) return MULIB_SB_LIMIT;
+    ipc_pair *pair = data;
+    pair->thread = owners;
+    pair->slot = slot;
     on1x_unique *owner = on1x_unique_try_box(data, size, drop);
     if (!owner) return MULIB_SB_NOMEM;
+    owners[slot] = (ipc_slot){owner, kind};
     ++live_pairs;
     *out = owner;
     return MULIB_SB_OK;
@@ -76,7 +118,7 @@ int64_t on1x_kernel_ipc_v1_open_pair(on1x_unique **out) {
     if (live_pairs >= MAX_LIVE_PAIRS) return MULIB_SB_LIMIT;
     int status = make_pair(&pair);
     if (status != 0) return status;
-    status = publish_owner(&pair, sizeof pair, drop_pair, out);
+    status = publish_owner(&pair, sizeof pair, IPC_PAIR, drop_pair, out);
     if (status != 0) close_pair(&pair);
     return status;
 }
@@ -86,11 +128,12 @@ int64_t on1x_kernel_ipc_v1_roundtrip(on1x_unique **slot, uint8_t byte,
         on1x_env *context, int64_t *out) {
     if (!slot || !*slot) return MULIB_SB_INVALID;
     on1x_unique *owner = *slot;
+    if (!has_owner(owner, IPC_PAIR)) return MULIB_SB_STATE;
     *slot = NULL;
+    ipc_pair *pair = on1x_unique_borrow(owner, sizeof *pair, __FILE__, __LINE__, 1);
     int status = MULIB_SB_INVALID;
     uint8_t received = 0;
     if (callback && out && timeout_ms >= 1 && timeout_ms <= 1000) {
-        ipc_pair *pair = on1x_unique_borrow(owner, sizeof *pair, __FILE__, __LINE__, 1);
         int64_t deadline = 0;
         size_t length = 0;
         status = mulib_ipc_deadline((uint64_t)timeout_ms, &deadline);
@@ -99,6 +142,10 @@ int64_t on1x_kernel_ipc_v1_roundtrip(on1x_unique **slot, uint8_t byte,
                                                      &length, deadline);
         if (status == 0 && length != sizeof received) status = MULIB_SB_PROTOCOL;
     }
+    // Generic box destruction can be queued behind another destructor.
+    // Invalidation and socket closure must still precede the On1x callback.
+    unlist_owner(pair);
+    close_pair(pair);
     on1x_unique_drop(owner);
     if (status == 0) *out = callback(context, received);
     return status;
@@ -106,15 +153,10 @@ int64_t on1x_kernel_ipc_v1_roundtrip(on1x_unique **slot, uint8_t byte,
 
 typedef struct {
     ipc_pair pair;
-    const void *thread;
     on1x_kernel_ipc_callback callback;
     on1x_env *context;
     bool pending, deliver, writing_finished, in_callback;
 } ipc_session;
-
-// Only compared, never dereferenced. Source never transfers a box between
-// threads; this catches an accidental private-ABI call on another live thread.
-static _Thread_local unsigned char thread_marker;
 
 static void release_callback(ipc_session *session) {
     on1x_env *context = session->context;
@@ -131,25 +173,28 @@ static void close_session(ipc_session *session) {
 }
 
 static void drop_session(void *payload) {
-    close_session(payload);
+    ipc_session *session = payload;
+    if (session->in_callback) abort(); // Raw C violated the exclusive loan.
+    unlist_owner(&session->pair);
+    close_session(session);
     --live_pairs;
 }
 
 static ipc_session *get_session(on1x_unique *owner) {
-    if (!owner) return NULL;
+    if (!has_owner(owner, IPC_SESSION)) return NULL;
     ipc_session *session = on1x_unique_borrow(owner, sizeof *session, __FILE__, __LINE__, 1);
-    if (session->thread != &thread_marker || session->in_callback || session->pair.fds[0] < 0)
+    if (session->in_callback || session->pair.fds[0] < 0)
         return NULL;
     return session;
 }
 
 int64_t on1x_kernel_ipc_v1_open_session(on1x_unique **out) {
-    ipc_session session = {.thread = &thread_marker};
+    ipc_session session = {0};
     if (!out) return MULIB_SB_INVALID;
     if (live_pairs >= MAX_LIVE_PAIRS) return MULIB_SB_LIMIT;
     int status = make_pair(&session.pair);
     if (status != 0) return status;
-    status = publish_owner(&session, sizeof session, drop_session, out);
+    status = publish_owner(&session, sizeof session, IPC_SESSION, drop_session, out);
     if (status != 0) close_pair(&session.pair);
     return status;
 }
