@@ -61,6 +61,7 @@ install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/../tools/on1x-project.py"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools"
     COMPONENT On1xSDK)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../tools/on1x_optimization.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../tools/on1x_toolchain.py"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools" COMPONENT On1xSDK)
 
 if(BUILD_TESTING)

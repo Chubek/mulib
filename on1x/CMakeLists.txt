@@ -412,7 +412,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
 endif()
 install(FILES tools/on1x_project.py tools/on1x_project_init.py tools/on1x_inline.py
-  tools/on1x_optimization.py DESTINATION share/on1x/tools)
+  tools/on1x_optimization.py tools/on1x_toolchain.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -810,6 +810,12 @@ if(BUILD_TESTING)
       --cc "${CMAKE_C_COMPILER}")
     add_test(NAME on1x.project_aux_init COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_aux_init.py" --on1xc "$<TARGET_FILE:on1xc>")
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+      add_test(NAME on1x.project_native_tools COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_toolchain.py" --on1xc "$<TARGET_FILE:on1xc>"
+        --cc "${CMAKE_C_COMPILER}")
+      set_tests_properties(on1x.project_native_tools PROPERTIES TIMEOUT 120)
+    endif()
     set_tests_properties(on1x.project_aux on1x.project_aux_init PROPERTIES TIMEOUT 90)
   endif()
   set(_novostone_test_options)

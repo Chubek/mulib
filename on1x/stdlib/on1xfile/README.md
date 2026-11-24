@@ -53,7 +53,7 @@ Run from a checkout:
 
 ```sh
 python3 on1x/tools/on1x-project.py build /path/to/hello \
-  --on1xc build/on1x/on1xc --sandbox
+  --on1xc build/on1x/on1xc --cc cc --sandbox
 ```
 
 `--profile NAME` selects a profile, `--release` is shorthand for `release`,
@@ -89,8 +89,9 @@ is an alias for `--backend mir-c11`. A project never falls back to another
 backend. Check a selected toolchain and see its artifact kind, tools and flags
 before building with `on1x-project.py plan PROJECT --backend NAME`.
 `on1x-project.py backends --on1xc /path/to/on1xc` probes all four backends
-with a fixed program and prints availability or a failure reason. It does
-not read the current project's manifest or execute the compiled programs.
+with a fixed program and prints availability or a failure reason. It uses
+the host compatibility driver for the C11 probes, does not read the current
+project's manifest, and does not execute the compiled programs.
 
 | Backend | Project output | Requirements |
 |---|---|---|
@@ -98,6 +99,11 @@ not read the current project's manifest or execute the compiled programs.
 | `mir-c11` | Host executable from verified MIR→C11 | MIR-admitted source and C toolchain |
 | `mir-archon` | Linux AMD64 SysV ELF executable | Archon generator tool, matching target manifest, assembler/linker, scalar ABI and runtime archives |
 | `mir-vm` | `NAME.o1vm` bytecode, bundled `.on1x-vm-runner`, executable `NAME` launcher | VM-enabled compiler and matching `on1x-vm` beside it; no host C compiler |
+
+Hosted `c11` and `mir-c11` projects select Cephyr, SandAS, and Yellowstone ld
+by default. See [native project tools](../../docs/native-project-toolchain.md)
+for root directives, per-tool arguments, current limits, and the explicit host
+compatibility path.
 
 The three MIR backends use checked MIR and reject constructs outside their
 admitted profiles. Source-library packaging uses the checked source path.

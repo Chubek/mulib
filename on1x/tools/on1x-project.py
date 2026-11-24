@@ -25,6 +25,10 @@ _opt_spec = importlib.util.spec_from_file_location(
     '_on1x_optimization', Path(__file__).resolve().with_name('on1x_optimization.py'))
 optimization = importlib.util.module_from_spec(_opt_spec)
 _opt_spec.loader.exec_module(optimization)
+_tools_spec = importlib.util.spec_from_file_location(
+    '_on1x_toolchain', Path(__file__).resolve().with_name('on1x_toolchain.py'))
+toolchain = importlib.util.module_from_spec(_tools_spec)
+_tools_spec.loader.exec_module(toolchain)
 
 try:
     import fcntl
@@ -279,6 +283,20 @@ def root_manifest(payload, origin, dependency=False):
             elif verb in ('name', 'directory'):
                 value, = fields(args, '"')
                 unique(options, verb, name(value) if verb == 'name' else local(value, dot=True))
+            elif verb in toolchain.DIRECTIVES:
+                if dependency:
+                    fail('native toolchain directives are only allowed in the root project On1xfile')
+                if verb in toolchain.CHOICES:
+                    value, = fields(args, 'w')
+                    if value not in toolchain.CHOICES[verb]:
+                        fail(f'invalid {verb}: {value!r}; choose from {", ".join(toolchain.CHOICES[verb])}')
+                    unique(options, verb, value)
+                else:
+                    value, = fields(args, '"')
+                    argv = options.setdefault(verb, [])
+                    if len(argv) >= 64:
+                        fail(f'too many {verb} directives (maximum 64)')
+                    argv.append(toolchain.arg_token(value))
             elif verb == 'vm':
                 if dependency:
                     root_only_vm()
@@ -383,6 +401,12 @@ def root_manifest(payload, origin, dependency=False):
     kind = options.get('kind')
     if not options.get('name') or not kind:
         fail(f'{origin}: name and kind are required')
+    if toolchain.DIRECTIVES & options.keys() and (kind == 'library' or 'vm' in options):
+        fail(f'{origin}: native toolchain directives require a hosted executable project')
+    try:
+        toolchain.validate_manifest(options)
+    except ValueError as error:
+        fail(f'{origin}: {error}')
     if 'vm' in options:
         if kind == 'library':
             root_only_vm(origin)
@@ -1047,6 +1071,8 @@ def local_roles(data, origin, manifest, kind):
         try:
             if role == 'vm':
                 root_only_vm()
+            if role in toolchain.DIRECTIVES:
+                fail('native toolchain directives are only allowed in the root project On1xfile')
             if role not in allowed or role == 'source' and kind == 'library':
                 fail(f'role {role!r} is not allowed here')
             filename, = fields(args, '"')
@@ -1071,8 +1097,11 @@ def layouts(provider, config, label, staged, snapshot, preprocess=None, dependen
         if path.name == 'On1xfile':
             # Nested package manifests are inert here, including templates:
             # the driver never evaluates one as a second project root.
-            if VM_DIRECTIVE.search(provider.get(path, MAX_MANIFEST)):
+            nested = provider.get(path, MAX_MANIFEST)
+            if VM_DIRECTIVE.search(nested):
                 root_only_vm(origin)
+            if toolchain.ROOT_ONLY.search(nested):
+                fail(f'{origin}: native toolchain directives are only allowed in the root project On1xfile')
             continue
         data = snapshot.record(origin, provider.get(path, MAX_MANIFEST))
         if QMR_TAG.search(data):
@@ -1610,8 +1639,8 @@ def build(args):
         require_vm_policy(config, args.command)
         if args.output_dir or args.project_command:
             fail('run uses a private build and does not take --output-dir or a project command')
-    if vm_policy is not None and (args.backend or args.optimize_ir or args.cc != 'cc'):
-        fail('ArchVirt projects do not accept --backend, --via-mir, --optimize-ir or --cc overrides')
+    if vm_policy is not None and (args.backend or args.optimize_ir or args.cc is not None or toolchain.requested(args)):
+        fail('ArchVirt projects do not accept --backend, --via-mir, --optimize-ir, --cc or native tool overrides')
     compiler = compiler_path(args.on1xc)
     if args.project_command:
         if args.profile or args.release:
@@ -1619,7 +1648,7 @@ def build(args):
         selected = config['commands'].get(args.project_command)
         if selected:
             if (args.sandbox or args.allow_shell or args.target or args.output_dir or args.stdlib
-                    or args.cc != 'cc' or args.mulib_root or args.libstone_root or args.qmr_compiler
+                    or args.cc is not None or toolchain.requested(args) or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
                      or args.scrutiny or args.scrutiny_work is not None
                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir or args.ffi_provider):
@@ -1640,7 +1669,18 @@ def build(args):
                args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11'))
     if args.ffi_provider and (backend != 'c11' or config['kind'] == 'library' or config['kernels']):
         fail('--ffi-provider requires a hosted C11 project without legacy kernel directives')
-    cc = program(args.cc) if backend not in ('mir-vm', 'archvirt') else None
+    tool_options = toolchain.requested(args) or bool(config.keys() & toolchain.DIRECTIVES)
+    uses_c11 = backend in ('c11', 'mir-c11') and config['kind'] != 'library'
+    if tool_options and (not uses_c11 or args.ffi_provider):
+        fail('native toolchain directives and options require a hosted C11 build without a separate FFI provider')
+    selected, tool_files, missing = None, {}, []
+    if uses_c11:
+        selected = toolchain.resolve(args, config, force_host=bool(args.ffi_provider))
+        tool_files, missing = toolchain.resolve_files(selected, args.cephyr_prefix)
+        if args.sandbox and not toolchain.is_host(selected):
+            fail(f'LibStone project tool mounts are not qualified under --sandbox; {toolchain.HOST_HELP}')
+    cc = (program(args.cc or 'cc') if backend == 'mir-archon' or
+          selected and any(selected[key] == 'host' for key in toolchain.CHOICES) else None)
     if config['kernels'] and backend not in ('c11', 'mir-c11'):
         fail(f'{backend} cannot link project kernel declarations')
     if config['kind'] == 'library' and backend != 'c11':
@@ -1711,8 +1751,10 @@ def build(args):
             archvirt_mounts(compiler, executor, chosen_tools)
         if cc is not None:
             chosen_tools['cc'] = cc
-        if backend in ('c11', 'mir-c11'):
+        if uses_c11:
             chosen_tools['build_helper'] = ROOT / 'tools/on1x-build.py'
+            chosen_tools['native_toolchain_helper'] = Path(toolchain.__file__)
+            chosen_tools.update(tool_files)
         model = {'profile': chosen, 'project': config['name'], 'kind': config['kind']}
         for key, (kind, value) in sorted(config['defines'].items()):
             if key in model:
@@ -1793,6 +1835,12 @@ def build(args):
                 fail('invalid Mune profile protocol response')
             setting = tuple(map(int, result.split()))
         cflags = [f'-O{setting[0]}', *(['-g'] if setting[1] else [])]
+        if selected and selected['compiler'] == 'cephyr':
+            if chosen in config['profiles'] and setting != (0, 0):
+                fail('project Lua C optimization/debug flags are not supported by Cephyr C11')
+            if chosen == 'debug':
+                fail(f'Cephyr C11 has no DWARF debug mode; {toolchain.HOST_HELP}')
+            cflags = ['-O0']
         # Keep ordinary dev and existing custom C profiles backwards compatible.
         builtin = chosen if chosen in optimization.PROFILES and chosen not in config['profiles'] else None
         opt_profile = args.opt_profile or config.get('optimization-profile') or builtin or 'default'
@@ -1822,6 +1870,9 @@ def build(args):
             backend_info.update(artifact='bytecode', runner='.on1x-vm-runner')
         else:
             backend_info['artifact'] = 'source-library' if config['kind'] == 'library' else 'host-executable'
+            if selected is not None:
+                backend_info['toolchain'] = {**selected, 'missing': missing,
+                                             'runtime': ('host' if toolchain.is_host(selected) else 'cephyr-static-amd64')}
         if config['kind'] != 'library':
             backend_info['artifacts'] = sorted([*targets] + (
                 [key + '.o1vm' for key in targets] + ['.on1x-vm-runner'] if backend == 'mir-vm' else []))
@@ -1972,11 +2023,22 @@ def build(args):
                               *(f'--cflag={flag}' for flag in cflags)], timeout=180)
                 outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
                 continue
+            toolchain.assert_available(missing)
+            native_args = [f'--{stage}={selected[stage]}' for stage in toolchain.CHOICES] if not ffi_args else []
+            if not ffi_args:
+                native_args.extend(f'--{key}={value}' for key in toolchain.ARGUMENTS for value in selected[key])
+            if cc is not None:
+                native_args.extend(('--cc', cc))
+            if args.cephyr_prefix:
+                native_args.extend(('--cephyr-prefix', args.cephyr_prefix.resolve()))
+            elif 'cephyr' in tool_files:
+                # The project runner does not inherit the operator's PATH.
+                native_args.extend(('--_cephyr-executable', tool_files['cephyr']))
             command = [executor.python, ROOT / 'tools/on1x-build.py', entry, '-o', output,
-                        '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader, *analysis_flags,
+                        '--on1xc', compiler, '--mulib-root', mulib, *loader, *analysis_flags, *native_args,
                         *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
                         *(f'--cflag={flag}' for flag in cflags), *ffi_args]
-            if setting[1] and not ffi_args:
+            if '-g' in cflags and not ffi_args:
                 command.extend(('--debug-build-root', executor.path(work)))
             for kernel in config['kernels']:
                 command.extend(('--mulib', kernel))
@@ -2103,7 +2165,8 @@ def main():
     command = argparse.ArgumentParser(add_help=False)
     command.add_argument('root', type=Path, nargs='?', default=Path('.'))
     command.add_argument('--on1xc')
-    command.add_argument('--cc', default='cc')
+    command.add_argument('--cc', help='explicit host C driver; defaults unset native stages to host')
+    toolchain.arguments(command)
     command.add_argument('--stdlib', type=Path)
     command.add_argument('--mulib-root', type=Path)
     command.add_argument('--ffi-provider', choices=('host',),

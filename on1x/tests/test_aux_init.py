@@ -107,7 +107,7 @@ def exercise(compiler, work):
     write('buildable/src/module.on1x', impl)
     write('buildable/src/module.on1xi', interface)
     aux('init', '--recursive', 'buildable')
-    built = Path(aux('build', 'buildable', '--on1xc', compiler).strip())
+    built = Path(aux('build', 'buildable', '--on1xc', compiler, '--cc', 'cc').strip())
     assert (built / 'library/src/module.on1xi').read_text() == interface
 
     write('orphan/mod.on1xi', interface)

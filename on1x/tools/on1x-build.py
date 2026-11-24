@@ -86,13 +86,16 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] in ('init', 'exec'):
         from on1x_project import main as project_main
         return project_main(sys.argv[1:])
+    import on1x_toolchain as toolchain
     cli = argparse.ArgumentParser(description=__doc__, epilog=
         'Projects: use "init --bin|--proj|--lib [DIRECTORY]" to scaffold, '
         'or "exec COMMAND" to run a command defined by an On1xfile.')
     cli.add_argument('input', type=Path)
     cli.add_argument('-o', '--output', type=Path, required=True)
     cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc') if (ROOT / 'build' / 'on1xc').is_file() else shutil.which('on1xc') or 'on1xc')
-    cli.add_argument('--cc', default=os.environ.get('CC', 'cc'))
+    cli.add_argument('--cc', help='explicit host C driver, otherwise CC or cc')
+    toolchain.arguments(cli)
+    cli.add_argument('--_cephyr-executable', type=Path, help=argparse.SUPPRESS)
     cli.add_argument('--emit-only', action='store_true')
     cli.add_argument('--trust-inline-c11', action='store_true',
                      help='authorize the native InlineC11 processor and link its trusted C expressions')
@@ -172,6 +175,19 @@ def main():
     cli.add_argument('--ffi-static-only', action='store_true', help=argparse.SUPPRESS)
     args = cli.parse_args()
     args.via_mir = args.backend == 'mir-c11'
+    tools = toolchain.resolve(args)
+    args.cc = args.cc or os.environ.get('CC', 'cc')
+    custom_tools = toolchain.requested(args) or args._cephyr_executable is not None
+    if custom_tools and (args.emit_only or args.backend in ('mir-vm', 'mir-archon') or
+                         args.ffi_provider or args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate):
+        cli.error('native tool options require an ordinary C11 executable build')
+    use_cephyr = tools['compiler'] == 'cephyr'
+    tool_files, missing_tools = toolchain.resolve_files(tools, args.cephyr_prefix, args._cephyr_executable)
+    toolchain.assert_available(missing_tools)
+    if use_cephyr and (set(args.cflag) - {'-O0'} or args.debug_build_root or args.enable_pod_fixture or
+                   args.mulib or args.mulib_archive or args.mulib_fixture or args.mulib_plan or
+                   any(Path(path).suffix != '.c' for path in args.extra_c)):
+        cli.error(f'Cephyr C11 does not qualify those C flags, debug, archives, or runtime options; {toolchain.HOST_HELP}')
     ffi_review = (args.ffi_review, args.ffi_review_key, args.ffi_review_signature)
     ffi_options = (args.ffi_adapter_provider, args.inspect_ffi, args.ffi_review_candidate,
                    args.ffi_static_only, *ffi_review)
@@ -520,7 +536,9 @@ def main():
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
         native = (kernel_interface or has_json or has_csp or has_pretty or has_tty or has_environ or has_mulib or
-                  has_bridge or containers or has_shared or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
+                   has_bridge or containers or has_shared or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
+        if use_cephyr and native:
+            raise ValueError(f'this native bridge requires the host C11 runtime and link recipe; {toolchain.HOST_HELP}')
         recipe, fingerprints, native_links = None, {}, []
         if native:
             cc=shutil.which(args.cc)
@@ -763,6 +781,18 @@ def main():
         supplied = {Path(path).resolve() for path in args.extra_c}
         cmd += [str(path) for path in adapters if path.resolve() not in supplied]
         cmd += args.extra_c
+        binary = Path(temp) / 'program'
+        if use_cephyr:
+            if adapters:
+                raise ValueError(f'this adapter requires system runtime libraries; {toolchain.HOST_HELP}')
+            try:
+                toolchain.build_cephyr(tools, tool_files, Path(temp), args.cc,
+                                       [generated, *(Path(path).resolve() for path in args.extra_c)],
+                                       ROOT/'runtime/on1x_runtime.c',
+                                       ['-I', str(ROOT/'runtime'), *include_flags, *args.cflag], binary)
+            except subprocess.CalledProcessError as error:
+                raise ValueError(f'LibStone C11 stage failed ({Path(error.cmd[0]).name}); '
+                                 f'no host fallback; {toolchain.HOST_HELP}') from error
         if adapters:
             cmd += ['-lm']
         if args.debug_build_root:
@@ -780,7 +810,6 @@ def main():
                 for path,digest in house.compile_inputs(args.cc,flags,source).items():
                     if path in fingerprints and fingerprints[path]!=digest:raise ValueError('native input drift: '+path)
                     fingerprints[path]=digest
-        binary=Path(temp)/'program'
         if args.kernel_review:
             adapter_obj = Path(temp)/'kernel-adapter.o'
             adapter_flags = [*compile_flags, *['-D'+item for item in recipe['compile_definitions']]]
@@ -811,8 +840,11 @@ def main():
                 probe_env = {k: v for k, v in os.environ.items()
                              if k not in ('LD_LIBRARY_PATH', 'LD_PRELOAD', 'LD_AUDIT')}
             subprocess.run([str(probe_binary)], check=True, timeout=30, env=probe_env)
-        cmd += ['-o', str(binary)]
-        subprocess.run(cmd, check=True)
+        if not use_cephyr:
+            cmd += toolchain.forward('-Xassembler', tools['assembler-arg'])
+            cmd += toolchain.forward('-Xlinker', tools['linker-arg'])
+            cmd += ['-o', str(binary)]
+            subprocess.run(cmd, check=True)
         if native:
             for path, digest in fingerprints.items():
                 if house.contracts.digest(path)!=digest:raise ValueError('native input drift: '+path)
@@ -883,6 +915,9 @@ def main():
                              executable_sha256=house.contracts.digest(binary),safe_export=False)
                 if opt_flags or args.optimize_ir:
                     report['optimization_args'] = opt_flags + (['--optimize-ir'] if args.optimize_ir else [])
+                for key in toolchain.ARGUMENTS:
+                    if tools[key]:
+                        report[key] = tools[key]
                 if containers or has_shared:
                     report['container_bridge_groups'] = sorted(containers + (['SHARED'] if has_shared else []))
                 if 'POD' in containers:
