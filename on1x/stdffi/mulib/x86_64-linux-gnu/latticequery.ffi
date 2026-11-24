@@ -5,4 +5,8 @@ foreign mulib.latticequery {
     provider mulib "latticequery";
     header "mulib-latticequery.h";
     unsupported filter = c::mulib_latticequery_filter reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_latticequery_filter call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

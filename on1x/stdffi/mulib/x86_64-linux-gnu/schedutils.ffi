@@ -7,4 +7,10 @@ foreign mulib.schedutils {
     unsupported current = c::mulib_schedutils_current reason ambiguous_export;
     unsupported next = c::mulib_schedutils_next reason ambiguous_export;
     unsupported yield = c::mulib_schedutils_yield reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_schedutils_current call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_schedutils_next call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_schedutils_yield call-contract (0 false unknown) memory-safety (unknown);
+    }
 }

@@ -11,4 +11,14 @@ foreign mulib.sha {
     unsupported intrinsics = c::mulib_sha_intrinsics reason ambiguous_export;
     unsupported squeeze = c::mulib_sha_squeeze reason ambiguous_export;
     unsupported update = c::mulib_sha_update reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_sha_digest_size call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_final call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_init call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_init_intrinsics call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_intrinsics call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_squeeze call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_sha_update call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

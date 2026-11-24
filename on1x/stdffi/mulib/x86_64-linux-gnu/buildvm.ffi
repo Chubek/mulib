@@ -7,4 +7,10 @@ foreign mulib.buildvm {
     unsupported execute = c::mulib_buildvm_execute reason ambiguous_export;
     unsupported task = c::mulib_buildvm_task reason ambiguous_export;
     unsupported validate = c::mulib_buildvm_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_buildvm_execute call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildvm_task call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildvm_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

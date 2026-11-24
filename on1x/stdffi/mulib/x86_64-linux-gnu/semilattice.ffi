@@ -7,4 +7,10 @@ foreign mulib.semilattice {
     unsupported join = c::mulib_semilattice_join reason ambiguous_export;
     unsupported leq = c::mulib_semilattice_leq reason ambiguous_export;
     unsupported meet = c::mulib_semilattice_meet reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_semilattice_join call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_semilattice_leq call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_semilattice_meet call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

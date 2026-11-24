@@ -10,4 +10,13 @@ foreign mulib.eda_netgraph {
     unsupported merge = c::mulib_eda_netgraph_merge reason ambiguous_export;
     unsupported net = c::mulib_eda_netgraph_net reason ambiguous_export;
     unsupported terminal = c::mulib_eda_netgraph_terminal reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_eda_netgraph_connect call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_netgraph_degree call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_netgraph_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_netgraph_merge call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_netgraph_net call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_netgraph_terminal call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.wifi_regulatory {
     provider mulib "wifi-regulatory";
     header "mulib-wifi-regulatory.h";
-    unsupported query = c::mulib_wifi_regulatory_query reason ambiguous_export;
+    unsupported query = c::mulib_wifi_regulatory_query reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_wifi_regulatory_query call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

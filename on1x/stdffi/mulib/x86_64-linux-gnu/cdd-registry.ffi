@@ -8,4 +8,11 @@ foreign mulib.cdd_registry {
     unsupported init = c::mulib_cdd_registry_init reason ambiguous_export;
     unsupported remove = c::mulib_cdd_registry_remove reason ambiguous_export;
     unsupported view = c::mulib_cdd_registry_view reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_cdd_registry_add call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cdd_registry_init call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_cdd_registry_remove call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cdd_registry_view call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

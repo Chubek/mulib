@@ -5,4 +5,8 @@ foreign mulib.sitemap {
     provider mulib "sitemap";
     header "mulib-sitemap.h";
     unsupported next = c::mulib_sitemap_next reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_sitemap_next call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

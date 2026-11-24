@@ -9,4 +9,12 @@ foreign mulib.der {
     unsupported take = c::mulib_der_take reason ambiguous_export;
     unsupported u32 = c::mulib_der_u32 reason ambiguous_export;
     unsupported unsigned = c::mulib_der_unsigned reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_der_contents call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_der_next call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_der_take call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_der_u32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_der_unsigned call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

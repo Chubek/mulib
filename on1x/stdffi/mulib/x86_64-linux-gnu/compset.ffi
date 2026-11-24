@@ -7,4 +7,10 @@ foreign mulib.compset {
     unsupported build = c::mulib_compset_build reason ambiguous_export;
     unsupported build_diagnosed = c::mulib_compset_build_diagnosed reason ambiguous_export;
     unsupported extract = c::mulib_compset_extract reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_compset_build call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_compset_build_diagnosed call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_compset_extract call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

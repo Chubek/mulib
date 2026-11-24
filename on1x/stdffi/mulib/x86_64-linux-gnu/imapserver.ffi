@@ -4,6 +4,11 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.imapserver {
     provider mulib "imapserver";
     header "mulib-imapserver.h";
-    unsupported feed = c::mulib_imapserver_feed reason ambiguous_export;
-    unsupported init = c::mulib_imapserver_init reason ambiguous_export;
+    unsupported feed = c::mulib_imapserver_feed reason taint_function_pointer;
+    unsupported init = c::mulib_imapserver_init reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_imapserver_feed call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_imapserver_init call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

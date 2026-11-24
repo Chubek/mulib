@@ -5,4 +5,8 @@ foreign mulib.search_query {
     provider mulib "search-query";
     header "mulib-search-query.h";
     unsupported url = c::mulib_search_query_url reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_search_query_url call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

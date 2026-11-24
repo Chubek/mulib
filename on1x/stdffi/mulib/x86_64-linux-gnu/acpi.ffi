@@ -8,4 +8,11 @@ foreign mulib.acpi {
     unsupported root_at = c::mulib_acpi_root_at reason ambiguous_export;
     unsupported rsdp = c::mulib_acpi_rsdp reason ambiguous_export;
     unsupported sdt = c::mulib_acpi_sdt reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_acpi_madt_next call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_acpi_root_at call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_acpi_rsdp call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_acpi_sdt call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

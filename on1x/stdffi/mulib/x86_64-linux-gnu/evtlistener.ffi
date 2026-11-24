@@ -4,6 +4,11 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.evtlistener {
     provider mulib "evtlistener";
     header "mulib-evtlistener.h";
-    unsupported listen = c::mulib_evtlistener_listen reason ambiguous_export;
-    unsupported push = c::mulib_evtlistener_push reason ambiguous_export;
+    unsupported listen = c::mulib_evtlistener_listen reason taint_function_pointer;
+    unsupported push = c::mulib_evtlistener_push reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_evtlistener_listen call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_evtlistener_push call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

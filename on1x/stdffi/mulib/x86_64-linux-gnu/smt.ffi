@@ -11,4 +11,14 @@ foreign mulib.smt {
     unsupported difference = c::mulib_smt_difference reason ambiguous_export;
     unsupported real_value = c::mulib_smt_real_value reason ambiguous_export;
     unsupported solve = c::mulib_smt_solve reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_smt_boolean_value call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_clause call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_difference call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_real_value call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_smt_solve call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

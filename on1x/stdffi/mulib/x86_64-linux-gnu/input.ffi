@@ -9,4 +9,12 @@ foreign mulib.input {
     unsupported grab = c::mulib_input_grab reason ambiguous_export;
     unsupported open = c::mulib_input_open reason ambiguous_export;
     unsupported read = c::mulib_input_read reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_input_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_input_event_valid call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_input_grab call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_input_open call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_input_read call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

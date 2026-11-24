@@ -5,4 +5,8 @@ foreign mulib.netlink_extack {
     provider mulib "netlink-extack";
     header "mulib-netlink-extack.h";
     unsupported parse = c::mulib_netlink_extack_parse reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_netlink_extack_parse call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

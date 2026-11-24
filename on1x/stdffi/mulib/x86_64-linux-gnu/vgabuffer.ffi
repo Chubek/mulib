@@ -12,7 +12,7 @@ foreign mulib.vgabuffer {
     unsupported console_init = c::mulib_vgabuffer_console_init reason ambiguous_export;
     unsupported console_move = c::mulib_vgabuffer_console_move reason ambiguous_export;
     unsupported console_write = c::mulib_vgabuffer_console_write reason ambiguous_export;
-    unsupported cursor = c::mulib_vgabuffer_cursor reason ambiguous_export;
+    unsupported cursor = c::mulib_vgabuffer_cursor reason taint_function_pointer;
     unsupported fill = c::mulib_vgabuffer_fill reason ambiguous_export;
     unsupported get = c::mulib_vgabuffer_get reason ambiguous_export;
     unsupported hline = c::mulib_vgabuffer_hline reason ambiguous_export;
@@ -24,4 +24,27 @@ foreign mulib.vgabuffer {
     unsupported valid = c::mulib_vgabuffer_valid reason ambiguous_export;
     unsupported view = c::mulib_vgabuffer_view reason ambiguous_export;
     unsupported vline = c::mulib_vgabuffer_vline reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vgabuffer_attribute call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_blit call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_box call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_cell call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_clear call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_console_init call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_console_move call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_console_write call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_cursor call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_fill call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_get call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_hline call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_init call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_put call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_restyle call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_scroll call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_text call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_valid call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_view call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vgabuffer_vline call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

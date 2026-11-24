@@ -10,6 +10,17 @@ foreign mulib.polytask {
     unsupported plan_destroy = c::mulib_polytask_plan_destroy reason ambiguous_export;
     unsupported result_destroy = c::mulib_polytask_result_destroy reason ambiguous_export;
     unsupported run = c::mulib_polytask_run reason ambiguous_export;
-    unsupported schedule = c::mulib_polytask_schedule reason ambiguous_export;
+    unsupported schedule = c::mulib_polytask_schedule reason taint_function_pointer;
     unsupported tasks = c::mulib_polytask_tasks reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_polytask_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_parse call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_plan_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_result_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_run call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_schedule call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_polytask_tasks call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

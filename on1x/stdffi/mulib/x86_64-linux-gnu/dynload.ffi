@@ -11,4 +11,14 @@ foreign mulib.dynload {
     unsupported open_ex = c::mulib_dynload_open_ex reason ambiguous_export;
     unsupported open_pinned = c::mulib_dynload_open_pinned reason ambiguous_export;
     unsupported symbol = c::mulib_dynload_symbol reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dynload_close call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_function call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_native_name call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_open call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_open_ex call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_open_pinned call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_dynload_symbol call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

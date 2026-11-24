@@ -6,4 +6,9 @@ foreign mulib.ipv6_ra {
     header "mulib-ipv6-ra.h";
     unsupported parse = c::mulib_ipv6_ra_parse reason ambiguous_export;
     unsupported prefix = c::mulib_ipv6_ra_prefix reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ipv6_ra_parse call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_ipv6_ra_prefix call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -10,4 +10,13 @@ foreign mulib.process {
     unsupported spawn = c::mulib_process_spawn reason ambiguous_export;
     unsupported terminate = c::mulib_process_terminate reason ambiguous_export;
     unsupported wait = c::mulib_process_wait reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_process_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_process_init call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_process_pipe call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_process_spawn call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_process_terminate call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_process_wait call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

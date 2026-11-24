@@ -6,4 +6,9 @@ foreign mulib.net_cli_format {
     header "mulib-net-cli-format.h";
     unsupported ipv4 = c::mulib_net_cli_format_ipv4 reason ambiguous_export;
     unsupported json = c::mulib_net_cli_format_json reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_net_cli_format_ipv4 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_net_cli_format_json call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

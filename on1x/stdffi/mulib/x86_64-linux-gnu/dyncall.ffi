@@ -4,10 +4,19 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.dyncall {
     provider mulib "dyncall";
     header "mulib-dyncall.h";
-    unsupported f64_0 = c::mulib_dyncall_f64_0 reason ambiguous_export;
-    unsupported f64_1 = c::mulib_dyncall_f64_1 reason ambiguous_export;
-    unsupported f64_2 = c::mulib_dyncall_f64_2 reason ambiguous_export;
-    unsupported i64_0 = c::mulib_dyncall_i64_0 reason ambiguous_export;
-    unsupported i64_1 = c::mulib_dyncall_i64_1 reason ambiguous_export;
-    unsupported i64_2 = c::mulib_dyncall_i64_2 reason ambiguous_export;
+    unsupported f64_0 = c::mulib_dyncall_f64_0 reason taint_function_pointer;
+    unsupported f64_1 = c::mulib_dyncall_f64_1 reason taint_function_pointer;
+    unsupported f64_2 = c::mulib_dyncall_f64_2 reason taint_function_pointer;
+    unsupported i64_0 = c::mulib_dyncall_i64_0 reason taint_function_pointer;
+    unsupported i64_1 = c::mulib_dyncall_i64_1 reason taint_function_pointer;
+    unsupported i64_2 = c::mulib_dyncall_i64_2 reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dyncall_f64_0 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dyncall_f64_1 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dyncall_f64_2 call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_dyncall_i64_0 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dyncall_i64_1 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dyncall_i64_2 call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

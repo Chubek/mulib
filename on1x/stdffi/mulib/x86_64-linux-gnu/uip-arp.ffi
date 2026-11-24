@@ -6,4 +6,9 @@ foreign mulib.uip_arp {
     header "mulib-uip-arp.h";
     unsupported pack = c::mulib_uip_arp_pack reason ambiguous_export;
     unsupported parse = c::mulib_uip_arp_parse reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_uip_arp_pack call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_arp_parse call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

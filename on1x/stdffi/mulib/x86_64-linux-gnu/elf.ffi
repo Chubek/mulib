@@ -13,4 +13,16 @@ foreign mulib.elf {
     unsupported symbol = c::mulib_elf_symbol reason ambiguous_export;
     unsupported symbol_count = c::mulib_elf_symbol_count reason ambiguous_export;
     unsupported symbol_name = c::mulib_elf_symbol_name reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_elf_bytes call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_open call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_program call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_section call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_section_name call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_string call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_symbol call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_symbol_count call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_elf_symbol_name call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

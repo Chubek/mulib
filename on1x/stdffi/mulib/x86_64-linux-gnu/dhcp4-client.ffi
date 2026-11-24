@@ -6,4 +6,9 @@ foreign mulib.dhcp4_client {
     header "mulib-dhcp4-client.h";
     unsupported discover = c::mulib_dhcp4_client_discover reason ambiguous_export;
     unsupported type = c::mulib_dhcp4_client_type reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dhcp4_client_discover call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_dhcp4_client_type call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

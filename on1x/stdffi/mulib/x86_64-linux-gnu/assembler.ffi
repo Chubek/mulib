@@ -8,4 +8,11 @@ foreign mulib.assembler {
     unsupported imm = c::mulib_assembler_imm reason ambiguous_export;
     unsupported reg = c::mulib_assembler_reg reason ambiguous_export;
     unsupported symbol = c::mulib_assembler_symbol reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_assembler_emit call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_assembler_imm call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_assembler_reg call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_assembler_symbol call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

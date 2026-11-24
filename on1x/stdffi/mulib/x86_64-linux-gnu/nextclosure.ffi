@@ -6,4 +6,9 @@ foreign mulib.nextclosure {
     header "mulib-nextclosure.h";
     unsupported first = c::mulib_nextclosure_first reason ambiguous_export;
     unsupported next = c::mulib_nextclosure_next reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_nextclosure_first call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_nextclosure_next call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

@@ -13,4 +13,16 @@ foreign mulib.statsproc {
     unsupported weighted_mean = c::mulib_statsproc_weighted_mean reason ambiguous_export;
     unsupported weighted_quantile = c::mulib_statsproc_weighted_quantile reason ambiguous_export;
     unsupported winsor_mean = c::mulib_statsproc_winsor_mean reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_statsproc_huber call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_kde_mode call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_mad call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_quantile call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_theil_sen call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_trimmed_mean call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_weighted_mean call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_weighted_quantile call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsproc_winsor_mean call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

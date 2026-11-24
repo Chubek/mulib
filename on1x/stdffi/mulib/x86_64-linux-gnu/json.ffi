@@ -24,4 +24,27 @@ foreign mulib.json {
     unsupported stringify = c::mulib_json_stringify reason ambiguous_export;
     unsupported text = c::mulib_json_text reason ambiguous_export;
     unsupported typeof = c::mulib_json_typeof reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_json_append call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_at call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_bool call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_boolean call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_get call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_get_n call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_key call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_new call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_number call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_numeric call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_parse call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_set call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_set_n call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_size call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_string call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_string_n call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_stringify call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_text call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_json_typeof call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

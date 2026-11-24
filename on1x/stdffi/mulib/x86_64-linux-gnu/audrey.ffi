@@ -5,7 +5,7 @@ foreign mulib.audrey {
     provider mulib "audrey";
     header "mulib-audrey.h";
     unsupported cut = c::mulib_audrey_cut reason ambiguous_export;
-    unsupported effect = c::mulib_audrey_effect reason ambiguous_export;
+    unsupported effect = c::mulib_audrey_effect reason taint_function_pointer;
     unsupported fade = c::mulib_audrey_fade reason ambiguous_export;
     unsupported filter_apply = c::mulib_audrey_filter_apply reason ambiguous_export;
     unsupported filter_compile = c::mulib_audrey_filter_compile reason ambiguous_export;
@@ -19,4 +19,22 @@ foreign mulib.audrey {
     unsupported save = c::mulib_audrey_save reason ambiguous_export;
     unsupported score = c::mulib_audrey_score reason ambiguous_export;
     unsupported slice = c::mulib_audrey_slice reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_audrey_cut call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_effect call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_fade call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_filter_apply call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_filter_compile call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_filter_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_insert call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_load call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_lowpass call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_normalize call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_render call-contract (9 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_resample call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_save call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_score call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_audrey_slice call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

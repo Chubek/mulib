@@ -8,4 +8,11 @@ foreign mulib.aes_gcm {
     unsupported init = c::mulib_aes_gcm_init reason ambiguous_export;
     unsupported open = c::mulib_aes_gcm_open reason ambiguous_export;
     unsupported seal = c::mulib_aes_gcm_seal reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_aes_gcm_clear call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_aes_gcm_init call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_aes_gcm_open call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_aes_gcm_seal call-contract (8 false unknown) memory-safety (unknown);
+    }
 }

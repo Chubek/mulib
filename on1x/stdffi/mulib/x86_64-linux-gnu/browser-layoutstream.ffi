@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.browser_layoutstream {
     provider mulib "browser-layoutstream";
     header "mulib-browser-layoutstream.h";
-    unsupported emit = c::mulib_browser_layoutstream_emit reason ambiguous_export;
+    unsupported emit = c::mulib_browser_layoutstream_emit reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_browser_layoutstream_emit call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

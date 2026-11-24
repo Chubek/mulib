@@ -14,4 +14,17 @@ foreign mulib.unit {
     unsupported init = c::mulib_unit_init reason ambiguous_export;
     unsupported parse = c::mulib_unit_parse reason ambiguous_export;
     unsupported register_info = c::mulib_unit_register_info reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_unit_decode call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_document call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_emit call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_enabled call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_encode call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_find call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_init call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_parse call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_unit_register_info call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

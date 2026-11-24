@@ -4,8 +4,15 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.dnsclient {
     provider mulib "dnsclient";
     header "mulib-dnsclient.h";
-    unsupported exchange = c::mulib_dnsclient_exchange reason ambiguous_export;
+    unsupported exchange = c::mulib_dnsclient_exchange reason taint_function_pointer;
     unsupported query = c::mulib_dnsclient_query reason ambiguous_export;
     unsupported validate_query = c::mulib_dnsclient_validate_query reason ambiguous_export;
     unsupported validate_reply = c::mulib_dnsclient_validate_reply reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dnsclient_exchange call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnsclient_query call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnsclient_validate_query call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnsclient_validate_reply call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

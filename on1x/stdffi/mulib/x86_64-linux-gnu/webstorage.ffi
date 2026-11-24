@@ -7,4 +7,10 @@ foreign mulib.webstorage {
     unsupported free = c::mulib_webstorage_free reason ambiguous_export;
     unsupported get = c::mulib_webstorage_get reason ambiguous_export;
     unsupported set = c::mulib_webstorage_set reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_webstorage_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_webstorage_get call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_webstorage_set call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

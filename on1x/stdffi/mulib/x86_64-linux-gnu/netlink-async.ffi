@@ -6,4 +6,9 @@ foreign mulib.netlink_async {
     header "mulib-netlink-async.h";
     unsupported recv = c::mulib_netlink_async_recv reason ambiguous_export;
     unsupported wait = c::mulib_netlink_async_wait reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_netlink_async_recv call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_netlink_async_wait call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

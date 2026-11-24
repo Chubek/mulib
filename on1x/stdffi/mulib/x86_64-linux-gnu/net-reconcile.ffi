@@ -5,4 +5,8 @@ foreign mulib.net_reconcile {
     provider mulib "net-reconcile";
     header "mulib-net-reconcile.h";
     unsupported check = c::mulib_net_reconcile_check reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_net_reconcile_check call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

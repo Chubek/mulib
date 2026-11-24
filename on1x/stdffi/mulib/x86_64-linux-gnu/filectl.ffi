@@ -7,4 +7,10 @@ foreign mulib.filectl {
     unsupported cloexec = c::mulib_filectl_cloexec reason ambiguous_export;
     unsupported lock = c::mulib_filectl_lock reason ambiguous_export;
     unsupported nonblocking = c::mulib_filectl_nonblocking reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_filectl_cloexec call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_filectl_lock call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_filectl_nonblocking call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

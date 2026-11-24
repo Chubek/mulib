@@ -7,4 +7,10 @@ foreign mulib.nvptx {
     unsupported free = c::mulib_nvptx_free reason ambiguous_export;
     unsupported init = c::mulib_nvptx_init reason ambiguous_export;
     unsupported init_ex = c::mulib_nvptx_init_ex reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_nvptx_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_nvptx_init call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_nvptx_init_ex call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

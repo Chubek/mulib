@@ -6,4 +6,9 @@ foreign mulib.vcdiff {
     header "mulib-vcdiff.h";
     unsupported decode = c::mulib_vcdiff_decode reason ambiguous_export;
     unsupported encode = c::mulib_vcdiff_encode reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vcdiff_decode call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcdiff_encode call-contract (7 false unknown) memory-safety (unknown);
+    }
 }

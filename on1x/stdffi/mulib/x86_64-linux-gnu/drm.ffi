@@ -13,4 +13,16 @@ foreign mulib.drm {
     unsupported get_version = c::mulib_drm_get_version reason ambiguous_export;
     unsupported ioctl_request = c::mulib_drm_ioctl_request reason ambiguous_export;
     unsupported open = c::mulib_drm_open reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_drm_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_dumb_create call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_dumb_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_dumb_map call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_dumb_unmap call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_get_cap call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_get_version call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_ioctl_request call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_drm_open call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

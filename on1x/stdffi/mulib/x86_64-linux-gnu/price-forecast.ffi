@@ -5,4 +5,8 @@ foreign mulib.price_forecast {
     provider mulib "price-forecast";
     header "mulib-price-forecast.h";
     unsupported mae = c::mulib_price_forecast_mae reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_price_forecast_mae call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

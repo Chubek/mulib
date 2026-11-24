@@ -7,6 +7,14 @@ foreign mulib.initsysutils {
     unsupported add = c::mulib_initsysutils_add reason ambiguous_export;
     unsupported next = c::mulib_initsysutils_next reason ambiguous_export;
     unsupported path = c::mulib_initsysutils_path reason ambiguous_export;
-    unsupported run = c::mulib_initsysutils_run reason ambiguous_export;
+    unsupported run = c::mulib_initsysutils_run reason taint_function_pointer;
     unsupported validate = c::mulib_initsysutils_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_initsysutils_add call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_initsysutils_next call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_initsysutils_path call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_initsysutils_run call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_initsysutils_validate call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -4,6 +4,11 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.dbquery {
     provider mulib "dbquery";
     header "mulib-dbquery.h";
-    unsupported scan = c::mulib_dbquery_scan reason ambiguous_export;
-    unsupported scan_where = c::mulib_dbquery_scan_where reason ambiguous_export;
+    unsupported scan = c::mulib_dbquery_scan reason taint_function_pointer;
+    unsupported scan_where = c::mulib_dbquery_scan_where reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dbquery_scan call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_dbquery_scan_where call-contract (10 false unknown) memory-safety (unknown);
+    }
 }

@@ -10,4 +10,13 @@ foreign mulib.vcsrepo {
     unsupported put = c::mulib_vcsrepo_put reason ambiguous_export;
     unsupported ref_get = c::mulib_vcsrepo_ref_get reason ambiguous_export;
     unsupported ref_update = c::mulib_vcsrepo_ref_update reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vcsrepo_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcsrepo_get call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcsrepo_init call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcsrepo_put call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcsrepo_ref_get call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vcsrepo_ref_update call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -4,6 +4,11 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.rpc {
     provider mulib "rpc";
     header "mulib-rpc.h";
-    unsupported dispatch = c::mulib_rpc_dispatch reason ambiguous_export;
-    unsupported process = c::mulib_rpc_process reason ambiguous_export;
+    unsupported dispatch = c::mulib_rpc_dispatch reason taint_function_pointer;
+    unsupported process = c::mulib_rpc_process reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_rpc_dispatch call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_rpc_process call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,4 +6,9 @@ foreign mulib.lowopt {
     header "mulib-lowopt.h";
     unsupported evaluate = c::mulib_lowopt_evaluate reason ambiguous_export;
     unsupported run = c::mulib_lowopt_run reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_lowopt_evaluate call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_lowopt_run call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

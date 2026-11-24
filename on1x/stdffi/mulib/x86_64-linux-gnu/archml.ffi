@@ -21,4 +21,24 @@ foreign mulib.archml {
     unsupported register_overlap = c::mulib_archml_register_overlap reason ambiguous_export;
     unsupported root = c::mulib_archml_root reason ambiguous_export;
     unsupported u64 = c::mulib_archml_u64 reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_archml_at call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_child call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_count call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_decode call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_enabled call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_encode call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_find call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_i64 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_load call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_name call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_parse call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_property call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_register_info call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_register_overlap call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_root call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_archml_u64 call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

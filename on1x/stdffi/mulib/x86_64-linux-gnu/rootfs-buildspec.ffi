@@ -9,4 +9,12 @@ foreign mulib.rootfs_buildspec {
     unsupported clone = c::mulib_rootfs_buildspec_clone reason ambiguous_export;
     unsupported free = c::mulib_rootfs_buildspec_free reason ambiguous_export;
     unsupported init = c::mulib_rootfs_buildspec_init reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_rootfs_buildspec_add call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_rootfs_buildspec_apply call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_rootfs_buildspec_clone call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_rootfs_buildspec_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_rootfs_buildspec_init call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

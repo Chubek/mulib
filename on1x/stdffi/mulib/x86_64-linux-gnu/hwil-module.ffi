@@ -7,4 +7,10 @@ foreign mulib.hwil_module {
     unsupported add = c::mulib_hwil_module_add reason ambiguous_export;
     unsupported eval = c::mulib_hwil_module_eval reason ambiguous_export;
     unsupported valid = c::mulib_hwil_module_valid reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_hwil_module_add call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_hwil_module_eval call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_hwil_module_valid call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

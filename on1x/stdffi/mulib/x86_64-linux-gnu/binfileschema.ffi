@@ -6,4 +6,9 @@ foreign mulib.binfileschema {
     header "mulib-binfileschema.h";
     unsupported get = c::mulib_binfileschema_get reason ambiguous_export;
     unsupported validate = c::mulib_binfileschema_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_binfileschema_get call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_binfileschema_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

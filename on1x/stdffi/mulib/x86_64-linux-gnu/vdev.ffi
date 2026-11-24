@@ -8,4 +8,11 @@ foreign mulib.vdev {
     unsupported create = c::mulib_vdev_create reason ambiguous_export;
     unsupported emit = c::mulib_vdev_emit reason ambiguous_export;
     unsupported sync = c::mulib_vdev_sync reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vdev_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_vdev_create call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_vdev_emit call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vdev_sync call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

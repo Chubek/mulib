@@ -7,4 +7,10 @@ foreign mulib.eda_quantity {
     unsupported add = c::mulib_eda_quantity_add reason ambiguous_export;
     unsupported div = c::mulib_eda_quantity_div reason ambiguous_export;
     unsupported mul = c::mulib_eda_quantity_mul reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_eda_quantity_add call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_quantity_div call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_eda_quantity_mul call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

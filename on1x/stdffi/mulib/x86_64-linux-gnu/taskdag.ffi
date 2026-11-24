@@ -4,7 +4,7 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.taskdag {
     provider mulib "taskdag";
     header "mulib-taskdag.h";
-    unsupported add = c::mulib_taskdag_add reason ambiguous_export;
+    unsupported add = c::mulib_taskdag_add reason taint_function_pointer;
     unsupported count = c::mulib_taskdag_count reason ambiguous_export;
     unsupported create = c::mulib_taskdag_create reason ambiguous_export;
     unsupported depend = c::mulib_taskdag_depend reason ambiguous_export;
@@ -12,4 +12,15 @@ foreign mulib.taskdag {
     unsupported order = c::mulib_taskdag_order reason ambiguous_export;
     unsupported result = c::mulib_taskdag_result reason ambiguous_export;
     unsupported run = c::mulib_taskdag_run reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_taskdag_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_count call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_depend call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_order call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_result call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_taskdag_run call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

@@ -21,4 +21,24 @@ foreign mulib.parallel_sh {
     unsupported lua_file = c::mulib_parallel_sh_lua_file reason ambiguous_export;
     unsupported main = c::mulib_parallel_sh_main reason ambiguous_export;
     unsupported run = c::mulib_parallel_sh_run reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_parallel_sh_add call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_add_input call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_add_lua call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_find call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_receive call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_receive_wait call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_send call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_channel_set_limit call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_expand call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_init call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_lua call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_lua_file call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_main call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_parallel_sh_run call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

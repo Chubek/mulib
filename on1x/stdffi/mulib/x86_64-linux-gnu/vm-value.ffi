@@ -7,4 +7,10 @@ foreign mulib.vm_value {
     unsupported bytes = c::mulib_vm_value_bytes reason ambiguous_export;
     unsupported copy = c::mulib_vm_value_copy reason ambiguous_export;
     unsupported free = c::mulib_vm_value_free reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vm_value_bytes call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_vm_value_copy call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_vm_value_free call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

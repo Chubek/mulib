@@ -10,4 +10,13 @@ foreign mulib.microaudio {
     unsupported sine = c::mulib_microaudio_sine reason ambiguous_export;
     unsupported wav_decode = c::mulib_microaudio_wav_decode reason ambiguous_export;
     unsupported wav_encode = c::mulib_microaudio_wav_encode reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_microaudio_create call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_microaudio_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_microaudio_mix call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_microaudio_sine call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_microaudio_wav_decode call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_microaudio_wav_encode call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

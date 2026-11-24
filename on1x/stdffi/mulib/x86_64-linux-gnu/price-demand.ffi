@@ -6,4 +6,9 @@ foreign mulib.price_demand {
     header "mulib-price-demand.h";
     unsupported fit = c::mulib_price_demand_fit reason ambiguous_export;
     unsupported predict = c::mulib_price_demand_predict reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_price_demand_fit call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_price_demand_predict call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

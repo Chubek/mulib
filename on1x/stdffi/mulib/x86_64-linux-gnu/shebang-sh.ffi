@@ -15,4 +15,18 @@ foreign mulib.shebang_sh {
     unsupported process = c::mulib_shebang_sh_process reason ambiguous_export;
     unsupported transform = c::mulib_shebang_sh_transform reason ambiguous_export;
     unsupported undefine = c::mulib_shebang_sh_undefine reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_shebang_sh_add_filter call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_define call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_init call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_lookup call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_lua call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_lua_file call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_main call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_process call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_transform call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_shebang_sh_undefine call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

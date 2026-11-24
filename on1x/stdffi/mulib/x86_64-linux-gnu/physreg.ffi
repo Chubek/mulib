@@ -6,4 +6,9 @@ foreign mulib.physreg {
     header "mulib-physreg.h";
     unsupported pick = c::mulib_physreg_pick reason ambiguous_export;
     unsupported validate = c::mulib_physreg_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_physreg_pick call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_physreg_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

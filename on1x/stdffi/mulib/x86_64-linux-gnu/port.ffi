@@ -11,4 +11,14 @@ foreign mulib.port {
     unsupported mul_size = c::mulib_port_mul_size reason ambiguous_export;
     unsupported os = c::mulib_port_os reason ambiguous_export;
     unsupported secure_zero = c::mulib_port_secure_zero reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_port_add_size call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_align_size call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_cpu call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_little_endian call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_mul_size call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_os call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_port_secure_zero call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

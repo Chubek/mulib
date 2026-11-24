@@ -7,4 +7,10 @@ foreign mulib.importgraph {
     unsupported add = c::mulib_importgraph_add reason ambiguous_export;
     unsupported free = c::mulib_importgraph_free reason ambiguous_export;
     unsupported order = c::mulib_importgraph_order reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_importgraph_add call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_importgraph_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_importgraph_order call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

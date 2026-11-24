@@ -13,4 +13,16 @@ foreign mulib.xlib {
     unsupported window_destroy = c::mulib_xlib_window_destroy reason ambiguous_export;
     unsupported window_map = c::mulib_xlib_window_map reason ambiguous_export;
     unsupported window_title = c::mulib_xlib_window_title reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_xlib_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_display call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_flush call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_open call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_size call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_window_create call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_window_destroy call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_window_map call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_xlib_window_title call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

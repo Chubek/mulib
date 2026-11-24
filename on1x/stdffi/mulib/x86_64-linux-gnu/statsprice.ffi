@@ -7,4 +7,10 @@ foreign mulib.statsprice {
     unsupported estimate = c::mulib_statsprice_estimate reason ambiguous_export;
     unsupported summarize = c::mulib_statsprice_summarize reason ambiguous_export;
     unsupported weighted = c::mulib_statsprice_weighted reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_statsprice_estimate call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsprice_summarize call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_statsprice_weighted call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

@@ -8,6 +8,15 @@ foreign mulib.buildstate {
     unsupported action_validate = c::mulib_buildstate_action_validate reason ambiguous_export;
     unsupported file_fingerprint = c::mulib_buildstate_file_fingerprint reason ambiguous_export;
     unsupported hermetic = c::mulib_buildstate_hermetic reason ambiguous_export;
-    unsupported is_dirty = c::mulib_buildstate_is_dirty reason ambiguous_export;
-    unsupported provenance_fingerprint = c::mulib_buildstate_provenance_fingerprint reason ambiguous_export;
+    unsupported is_dirty = c::mulib_buildstate_is_dirty reason taint_function_pointer;
+    unsupported provenance_fingerprint = c::mulib_buildstate_provenance_fingerprint reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_buildstate_action_fingerprint call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildstate_action_validate call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildstate_file_fingerprint call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildstate_hermetic call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildstate_is_dirty call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_buildstate_provenance_fingerprint call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

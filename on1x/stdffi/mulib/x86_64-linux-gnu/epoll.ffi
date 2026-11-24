@@ -10,4 +10,13 @@ foreign mulib.epoll {
     unsupported modify = c::mulib_epoll_modify reason ambiguous_export;
     unsupported remove = c::mulib_epoll_remove reason ambiguous_export;
     unsupported wait = c::mulib_epoll_wait reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_epoll_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_epoll_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_epoll_create call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_epoll_modify call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_epoll_remove call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_epoll_wait call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -9,4 +9,12 @@ foreign mulib.fca {
     unsupported init = c::mulib_fca_init reason ambiguous_export;
     unsupported intent = c::mulib_fca_intent reason ambiguous_export;
     unsupported set = c::mulib_fca_set reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_fca_closure call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_fca_extent call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_fca_init call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_fca_intent call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_fca_set call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -7,4 +7,10 @@ foreign mulib.matview {
     unsupported avg = c::mulib_matview_avg reason ambiguous_export;
     unsupported delete = c::mulib_matview_delete reason ambiguous_export;
     unsupported insert = c::mulib_matview_insert reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_matview_avg call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_matview_delete call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_matview_insert call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,8 +6,17 @@ foreign mulib.asyncio {
     header "mulib-asyncio.h";
     unsupported create = c::mulib_asyncio_create reason ambiguous_export;
     unsupported destroy = c::mulib_asyncio_destroy reason ambiguous_export;
-    unsupported post = c::mulib_asyncio_post reason ambiguous_export;
+    unsupported post = c::mulib_asyncio_post reason taint_function_pointer;
     unsupported run_once = c::mulib_asyncio_run_once reason ambiguous_export;
     unsupported unwatch = c::mulib_asyncio_unwatch reason ambiguous_export;
-    unsupported watch = c::mulib_asyncio_watch reason ambiguous_export;
+    unsupported watch = c::mulib_asyncio_watch reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_asyncio_create call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_asyncio_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_asyncio_post call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_asyncio_run_once call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_asyncio_unwatch call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_asyncio_watch call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

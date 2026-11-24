@@ -6,4 +6,9 @@ foreign mulib.soc_memorymap {
     header "mulib-soc-memorymap.h";
     unsupported add = c::mulib_soc_memorymap_add reason ambiguous_export;
     unsupported lookup = c::mulib_soc_memorymap_lookup reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_soc_memorymap_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_soc_memorymap_lookup call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

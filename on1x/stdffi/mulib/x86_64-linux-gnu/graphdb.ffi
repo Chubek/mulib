@@ -6,5 +6,11 @@ foreign mulib.graphdb {
     header "mulib-graphdb.h";
     unsupported edge = c::mulib_graphdb_edge reason ambiguous_export;
     unsupported free = c::mulib_graphdb_free reason ambiguous_export;
-    unsupported neighbors = c::mulib_graphdb_neighbors reason ambiguous_export;
+    unsupported neighbors = c::mulib_graphdb_neighbors reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_graphdb_edge call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_graphdb_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_graphdb_neighbors call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

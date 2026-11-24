@@ -5,4 +5,8 @@ foreign mulib.pcb_pnp {
     provider mulib "pcb-pnp";
     header "mulib-pcb-pnp.h";
     unsupported write = c::mulib_pcb_pnp_write reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_pcb_pnp_write call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

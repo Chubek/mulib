@@ -6,5 +6,11 @@ foreign mulib.termscript_state {
     header "mulib-termscript-state.h";
     unsupported find = c::mulib_termscript_state_find reason ambiguous_export;
     unsupported init = c::mulib_termscript_state_init reason ambiguous_export;
-    unsupported send = c::mulib_termscript_state_send reason ambiguous_export;
+    unsupported send = c::mulib_termscript_state_send reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_termscript_state_find call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_termscript_state_init call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_termscript_state_send call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

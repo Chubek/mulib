@@ -7,4 +7,10 @@ foreign mulib.vectorindex {
     unsupported free = c::mulib_vectorindex_free reason ambiguous_export;
     unsupported insert = c::mulib_vectorindex_insert reason ambiguous_export;
     unsupported nearest = c::mulib_vectorindex_nearest reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_vectorindex_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_vectorindex_insert call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_vectorindex_nearest call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

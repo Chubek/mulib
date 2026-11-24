@@ -14,4 +14,17 @@ foreign mulib.checksum {
     unsupported sum8 = c::mulib_checksum_sum8 reason ambiguous_export;
     unsupported update = c::mulib_checksum_update reason ambiguous_export;
     unsupported xor8 = c::mulib_checksum_xor8 reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_checksum_adler32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_adler32_update call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_final call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_init call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_sum16 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_sum32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_sum64 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_sum8 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_update call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_checksum_xor8 call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

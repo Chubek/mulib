@@ -10,4 +10,13 @@ foreign mulib.crawlqueue {
     unsupported position = c::mulib_crawlqueue_position reason ambiguous_export;
     unsupported push = c::mulib_crawlqueue_push reason ambiguous_export;
     unsupported seek = c::mulib_crawlqueue_seek reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_crawlqueue_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_crawlqueue_next call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_crawlqueue_pending call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_crawlqueue_position call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_crawlqueue_push call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_crawlqueue_seek call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

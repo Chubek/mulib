@@ -8,4 +8,11 @@ foreign mulib.geoindex {
     unsupported distance_km = c::mulib_geoindex_distance_km reason ambiguous_export;
     unsupported free = c::mulib_geoindex_free reason ambiguous_export;
     unsupported radius = c::mulib_geoindex_radius reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_geoindex_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_geoindex_distance_km call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_geoindex_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_geoindex_radius call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

@@ -9,4 +9,12 @@ foreign mulib.syscall {
     unsupported pipe = c::mulib_syscall_pipe reason ambiguous_export;
     unsupported read = c::mulib_syscall_read reason ambiguous_export;
     unsupported write = c::mulib_syscall_write reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_syscall_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_syscall_nonblock call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_syscall_pipe call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_syscall_read call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_syscall_write call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

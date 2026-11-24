@@ -7,4 +7,10 @@ foreign mulib.bytecode_builder {
     unsupported add = c::mulib_bytecode_builder_add reason ambiguous_export;
     unsupported free = c::mulib_bytecode_builder_free reason ambiguous_export;
     unsupported patch = c::mulib_bytecode_builder_patch reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_bytecode_builder_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_bytecode_builder_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_bytecode_builder_patch call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

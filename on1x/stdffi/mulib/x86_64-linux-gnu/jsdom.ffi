@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.jsdom {
     provider mulib "jsdom";
     header "mulib-jsdom.h";
-    unsupported invoke = c::mulib_jsdom_invoke reason ambiguous_export;
+    unsupported invoke = c::mulib_jsdom_invoke reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_jsdom_invoke call-contract (8 false unknown) memory-safety (unknown);
+    }
 }

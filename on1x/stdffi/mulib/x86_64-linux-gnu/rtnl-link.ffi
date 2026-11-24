@@ -4,8 +4,15 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.rtnl_link {
     provider mulib "rtnl-link";
     header "mulib-rtnl-link.h";
-    unsupported dump = c::mulib_rtnl_link_dump reason ambiguous_export;
+    unsupported dump = c::mulib_rtnl_link_dump reason taint_function_pointer;
     unsupported index = c::mulib_rtnl_link_index reason ambiguous_export;
     unsupported kind = c::mulib_rtnl_link_kind reason ambiguous_export;
     unsupported set_up = c::mulib_rtnl_link_set_up reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_rtnl_link_dump call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_rtnl_link_index call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_rtnl_link_kind call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_rtnl_link_set_up call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

@@ -12,4 +12,15 @@ foreign mulib.git {
     unsupported pkt_encode = c::mulib_git_pkt_encode reason ambiguous_export;
     unsupported run = c::mulib_git_run reason ambiguous_export;
     unsupported sha1 = c::mulib_git_sha1 reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_git_bind call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_object_id call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_oid_format call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_oid_parse call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_pkt_decode call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_pkt_encode call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_run call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_git_sha1 call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

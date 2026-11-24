@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.rtnl_nexthop {
     provider mulib "rtnl-nexthop";
     header "mulib-rtnl-nexthop.h";
-    unsupported dump = c::mulib_rtnl_nexthop_dump reason ambiguous_export;
+    unsupported dump = c::mulib_rtnl_nexthop_dump reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_rtnl_nexthop_dump call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

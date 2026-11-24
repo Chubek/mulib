@@ -5,4 +5,8 @@ foreign mulib.spice_tran {
     provider mulib "spice-tran";
     header "mulib-spice-tran.h";
     unsupported fixed = c::mulib_spice_tran_fixed reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_spice_tran_fixed call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

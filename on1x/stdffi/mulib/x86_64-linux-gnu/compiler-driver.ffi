@@ -4,7 +4,13 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.compiler_driver {
     provider mulib "compiler-driver";
     header "mulib-compiler-driver.h";
-    unsupported add = c::mulib_compiler_driver_add reason ambiguous_export;
-    unsupported free = c::mulib_compiler_driver_free reason ambiguous_export;
-    unsupported run = c::mulib_compiler_driver_run reason ambiguous_export;
+    unsupported add = c::mulib_compiler_driver_add reason taint_function_pointer;
+    unsupported free = c::mulib_compiler_driver_free reason taint_function_pointer;
+    unsupported run = c::mulib_compiler_driver_run reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_compiler_driver_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_compiler_driver_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_compiler_driver_run call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

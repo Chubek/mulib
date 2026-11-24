@@ -4,8 +4,15 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.xtks {
     provider mulib "xtks";
     header "mulib-xtks.h";
-    unsupported read = c::mulib_xtks_read reason ambiguous_export;
-    unsupported read_exact = c::mulib_xtks_read_exact reason ambiguous_export;
-    unsupported write = c::mulib_xtks_write reason ambiguous_export;
-    unsupported write_all = c::mulib_xtks_write_all reason ambiguous_export;
+    unsupported read = c::mulib_xtks_read reason taint_function_pointer;
+    unsupported read_exact = c::mulib_xtks_read_exact reason taint_function_pointer;
+    unsupported write = c::mulib_xtks_write reason taint_function_pointer;
+    unsupported write_all = c::mulib_xtks_write_all reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_xtks_read call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtks_read_exact call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtks_write call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtks_write_all call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

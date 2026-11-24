@@ -7,4 +7,10 @@ foreign mulib.uip_arp_cache {
     unsupported expire = c::mulib_uip_arp_cache_expire reason ambiguous_export;
     unsupported find = c::mulib_uip_arp_cache_find reason ambiguous_export;
     unsupported store = c::mulib_uip_arp_cache_store reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_uip_arp_cache_expire call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_arp_cache_find call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_arp_cache_store call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

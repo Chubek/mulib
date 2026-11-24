@@ -4,6 +4,11 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.search {
     provider mulib "search";
     header "mulib-search.h";
-    unsupported all = c::mulib_search_all reason ambiguous_export;
+    unsupported all = c::mulib_search_all reason taint_function_pointer;
     unsupported kmp = c::mulib_search_kmp reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_search_all call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_search_kmp call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

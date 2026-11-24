@@ -6,4 +6,9 @@ foreign mulib.uip_tcp {
     header "mulib-uip-tcp.h";
     unsupported pack = c::mulib_uip_tcp_pack reason ambiguous_export;
     unsupported parse = c::mulib_uip_tcp_parse reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_uip_tcp_pack call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_tcp_parse call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

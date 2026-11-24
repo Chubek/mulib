@@ -5,4 +5,8 @@ foreign mulib.ethtool_netlink {
     provider mulib "ethtool-netlink";
     header "mulib-ethtool-netlink.h";
     unsupported family = c::mulib_ethtool_netlink_family reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ethtool_netlink_family call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

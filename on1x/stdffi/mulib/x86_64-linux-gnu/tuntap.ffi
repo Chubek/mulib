@@ -4,7 +4,13 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.tuntap {
     provider mulib "tuntap";
     header "mulib-tuntap.h";
-    unsupported backend = c::mulib_tuntap_backend reason ambiguous_export;
+    unsupported backend = c::mulib_tuntap_backend reason taint_function_pointer;
     unsupported close = c::mulib_tuntap_close reason ambiguous_export;
     unsupported open = c::mulib_tuntap_open reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_tuntap_backend call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_tuntap_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_tuntap_open call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

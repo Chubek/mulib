@@ -8,4 +8,11 @@ foreign mulib.dnscache {
     unsupported get = c::mulib_dnscache_get reason ambiguous_export;
     unsupported init = c::mulib_dnscache_init reason ambiguous_export;
     unsupported put = c::mulib_dnscache_put reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dnscache_expire call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnscache_get call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnscache_init call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dnscache_put call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

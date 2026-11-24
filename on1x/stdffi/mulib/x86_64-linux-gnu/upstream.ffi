@@ -7,4 +7,10 @@ foreign mulib.upstream {
     unsupported acquire = c::mulib_upstream_acquire reason ambiguous_export;
     unsupported available = c::mulib_upstream_available reason ambiguous_export;
     unsupported release = c::mulib_upstream_release reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_upstream_acquire call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_upstream_available call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_upstream_release call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

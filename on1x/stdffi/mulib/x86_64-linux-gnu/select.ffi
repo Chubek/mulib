@@ -6,4 +6,9 @@ foreign mulib.select {
     header "mulib-select.h";
     unsupported limit = c::mulib_select_limit reason ambiguous_export;
     unsupported wait = c::mulib_select_wait reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_select_limit call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_select_wait call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

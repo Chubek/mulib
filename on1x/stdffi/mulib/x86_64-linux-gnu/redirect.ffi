@@ -6,4 +6,9 @@ foreign mulib.redirect {
     header "mulib-redirect.h";
     unsupported post_to_get = c::mulib_redirect_post_to_get reason ambiguous_export;
     unsupported status = c::mulib_redirect_status reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_redirect_post_to_get call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_redirect_status call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

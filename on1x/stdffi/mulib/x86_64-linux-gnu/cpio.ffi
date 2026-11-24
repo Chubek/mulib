@@ -10,4 +10,13 @@ foreign mulib.cpio {
     unsupported record_size = c::mulib_cpio_record_size reason ambiguous_export;
     unsupported sum = c::mulib_cpio_sum reason ambiguous_export;
     unsupported writer_init = c::mulib_cpio_writer_init reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_cpio_add call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cpio_finish call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cpio_next call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_cpio_record_size call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_cpio_sum call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cpio_writer_init call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

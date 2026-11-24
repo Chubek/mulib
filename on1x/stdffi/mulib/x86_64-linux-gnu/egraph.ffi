@@ -8,7 +8,7 @@ foreign mulib.egraph {
     unsupported count = c::mulib_egraph_count reason ambiguous_export;
     unsupported create = c::mulib_egraph_create reason ambiguous_export;
     unsupported destroy = c::mulib_egraph_destroy reason ambiguous_export;
-    unsupported extract = c::mulib_egraph_extract reason ambiguous_export;
+    unsupported extract = c::mulib_egraph_extract reason taint_function_pointer;
     unsupported find = c::mulib_egraph_find reason ambiguous_export;
     unsupported node = c::mulib_egraph_node reason ambiguous_export;
     unsupported rebuild = c::mulib_egraph_rebuild reason ambiguous_export;
@@ -16,4 +16,19 @@ foreign mulib.egraph {
     unsupported status_string = c::mulib_egraph_status_string reason ambiguous_export;
     unsupported tree_free = c::mulib_egraph_tree_free reason ambiguous_export;
     unsupported union = c::mulib_egraph_union reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_egraph_add call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_count call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_create call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_extract call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_find call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_node call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_rebuild call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_revision call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_status_string call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_tree_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_egraph_union call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,4 +6,9 @@ foreign mulib.elfutils {
     header "mulib-elfutils.h";
     unsupported section = c::mulib_elfutils_section reason ambiguous_export;
     unsupported symbol = c::mulib_elfutils_symbol reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_elfutils_section call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_elfutils_symbol call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

@@ -7,4 +7,10 @@ foreign mulib.syntax_tree {
     unsupported add = c::mulib_syntax_tree_add reason ambiguous_export;
     unsupported free = c::mulib_syntax_tree_free reason ambiguous_export;
     unsupported validate = c::mulib_syntax_tree_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_syntax_tree_add call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_syntax_tree_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_syntax_tree_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

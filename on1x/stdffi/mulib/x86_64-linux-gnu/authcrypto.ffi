@@ -10,4 +10,13 @@ foreign mulib.authcrypto {
     unsupported pbkdf2 = c::mulib_authcrypto_pbkdf2 reason ambiguous_export;
     unsupported size = c::mulib_authcrypto_size reason ambiguous_export;
     unsupported wipe = c::mulib_authcrypto_wipe reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_authcrypto_hash call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_authcrypto_hmac call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_authcrypto_hmac_parts call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_authcrypto_pbkdf2 call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_authcrypto_size call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_authcrypto_wipe call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

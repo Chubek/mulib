@@ -6,4 +6,9 @@ foreign mulib.sandbox_profile {
     header "mulib-sandbox-profile.h";
     unsupported default = c::mulib_sandbox_profile_default reason ambiguous_export;
     unsupported validate = c::mulib_sandbox_profile_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_sandbox_profile_default call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_sandbox_profile_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

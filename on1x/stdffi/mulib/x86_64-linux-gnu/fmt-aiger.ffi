@@ -5,4 +5,8 @@ foreign mulib.fmt_aiger {
     provider mulib "fmt-aiger";
     header "mulib-fmt-aiger.h";
     unsupported write_ascii = c::mulib_fmt_aiger_write_ascii reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_fmt_aiger_write_ascii call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

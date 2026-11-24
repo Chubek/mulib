@@ -6,4 +6,9 @@ foreign mulib.uip_route {
     header "mulib-uip-route.h";
     unsupported add = c::mulib_uip_route_add reason ambiguous_export;
     unsupported find = c::mulib_uip_route_find reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_uip_route_add call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_route_find call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

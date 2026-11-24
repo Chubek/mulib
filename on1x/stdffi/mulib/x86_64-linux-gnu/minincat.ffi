@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.minincat {
     provider mulib "minincat";
     header "mulib-minincat.h";
-    unsupported relay = c::mulib_minincat_relay reason ambiguous_export;
+    unsupported relay = c::mulib_minincat_relay reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_minincat_relay call-contract (8 false unknown) memory-safety (unknown);
+    }
 }

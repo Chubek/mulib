@@ -4,5 +4,9 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.sock_diag {
     provider mulib "sock-diag";
     header "mulib-sock-diag.h";
-    unsupported dump = c::mulib_sock_diag_dump reason ambiguous_export;
+    unsupported dump = c::mulib_sock_diag_dump reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_sock_diag_dump call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

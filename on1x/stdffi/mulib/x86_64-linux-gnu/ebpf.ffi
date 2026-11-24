@@ -6,4 +6,9 @@ foreign mulib.ebpf {
     header "mulib-ebpf.h";
     unsupported run = c::mulib_ebpf_run reason ambiguous_export;
     unsupported validate = c::mulib_ebpf_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ebpf_run call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_ebpf_validate call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

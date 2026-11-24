@@ -8,4 +8,11 @@ foreign mulib.inet4 {
     unsupported format = c::mulib_inet4_format reason ambiguous_export;
     unsupported network = c::mulib_inet4_network reason ambiguous_export;
     unsupported parse = c::mulib_inet4_parse reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_inet4_contains call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_inet4_format call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_inet4_network call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_inet4_parse call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

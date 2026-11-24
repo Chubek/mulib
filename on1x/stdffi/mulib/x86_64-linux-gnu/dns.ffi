@@ -16,4 +16,19 @@ foreign mulib.dns {
     unsupported writer_init = c::mulib_dns_writer_init reason ambiguous_export;
     unsupported writer_question = c::mulib_dns_writer_question reason ambiguous_export;
     unsupported writer_rr = c::mulib_dns_writer_rr reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dns_iterator_init call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_message_parse call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_name_decode call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_name_encode call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_name_equal call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_name_normalize call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_next_question call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_next_rr call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_rr_validate call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_writer_init call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_writer_question call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dns_writer_rr call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

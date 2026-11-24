@@ -7,4 +7,9 @@ foreign mulib.container_core {
     fn counter_add(a: u64, b: u64) -> u64 = c::mulib_ct_counter_add
         native internal defined (integer(unsigned-long,4,64,unsigned,8,8), integer(unsigned-long,4,64,unsigned,8,8))
         -> integer(unsigned-long,4,64,unsigned,8,8) profile scalar;
+    evidence c::mulib_ct_counter_add cephyr_c11_v1 (syntax_body);
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ct_counter_add call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

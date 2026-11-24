@@ -7,5 +7,12 @@ foreign mulib.paging {
     unsupported canonical = c::mulib_paging_canonical reason ambiguous_export;
     unsupported entry = c::mulib_paging_entry reason ambiguous_export;
     unsupported index = c::mulib_paging_index reason ambiguous_export;
-    unsupported translate = c::mulib_paging_translate reason ambiguous_export;
+    unsupported translate = c::mulib_paging_translate reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_paging_canonical call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_paging_entry call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_paging_index call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_paging_translate call-contract (7 false unknown) memory-safety (unknown);
+    }
 }

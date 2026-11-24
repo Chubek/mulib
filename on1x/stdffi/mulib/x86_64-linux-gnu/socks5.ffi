@@ -9,4 +9,12 @@ foreign mulib.socks5 {
     unsupported decode = c::mulib_socks5_decode reason ambiguous_export;
     unsupported encode = c::mulib_socks5_encode reason ambiguous_export;
     unsupported negotiate = c::mulib_socks5_negotiate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_socks5_address_decode call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_socks5_address_encode call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_socks5_decode call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_socks5_encode call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_socks5_negotiate call-contract (6 false unknown) memory-safety (unknown);
+    }
 }

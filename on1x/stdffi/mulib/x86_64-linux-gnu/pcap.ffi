@@ -6,4 +6,9 @@ foreign mulib.pcap {
     header "mulib-pcap.h";
     unsupported write_global = c::mulib_pcap_write_global reason ambiguous_export;
     unsupported write_record = c::mulib_pcap_write_record reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_pcap_write_global call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_pcap_write_record call-contract (7 false unknown) memory-safety (unknown);
+    }
 }

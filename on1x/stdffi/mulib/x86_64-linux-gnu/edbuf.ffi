@@ -24,4 +24,27 @@ foreign mulib.edbuf {
     unsupported revision = c::mulib_edbuf_revision reason ambiguous_export;
     unsupported size = c::mulib_edbuf_size reason ambiguous_export;
     unsupported undo = c::mulib_edbuf_undo reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_edbuf_copy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_erase call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_find call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_history_limit call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_insert call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_last_change call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_line_count call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_line_start call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_mark_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_mark_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_mark_offset call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_position call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_read call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_redo call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_replace call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_revision call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_size call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_edbuf_undo call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

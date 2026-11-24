@@ -6,4 +6,9 @@ foreign mulib.spice_independent {
     header "mulib-spice-independent.h";
     unsupported current = c::mulib_spice_independent_current reason ambiguous_export;
     unsupported voltage = c::mulib_spice_independent_voltage reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_spice_independent_current call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_spice_independent_voltage call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

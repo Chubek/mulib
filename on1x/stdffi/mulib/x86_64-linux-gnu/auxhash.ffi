@@ -29,4 +29,32 @@ foreign mulib.auxhash {
     unsupported pjw = c::mulib_auxhash_pjw reason ambiguous_export;
     unsupported rs = c::mulib_auxhash_rs reason ambiguous_export;
     unsupported sdbm = c::mulib_auxhash_sdbm reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_auxhash_ap call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_bkdr call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_buzhash call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_buzhash_roll call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_buzhash_table call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_dek call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_djb2 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_djbx33a call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_djbx33x call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_elf call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_fnv1_32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_fnv1_64 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_fnv1a_32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_fnv1a_64 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_jenkins call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_js call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_knuth32 call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_knuth64 call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_lookup3 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_murmur2 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_murmur2_64a call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_murmur3_32 call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_pjw call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_rs call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_auxhash_sdbm call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

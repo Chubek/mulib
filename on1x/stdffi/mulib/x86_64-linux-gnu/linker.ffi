@@ -11,4 +11,14 @@ foreign mulib.linker {
     unsupported relocate = c::mulib_linker_relocate reason ambiguous_export;
     unsupported relocation_count = c::mulib_linker_relocation_count reason ambiguous_export;
     unsupported symbol_count = c::mulib_linker_symbol_count reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_linker_apply call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_create call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_define call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_relocate call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_relocation_count call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_linker_symbol_count call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

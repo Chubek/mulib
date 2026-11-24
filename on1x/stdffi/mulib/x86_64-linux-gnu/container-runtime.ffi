@@ -4,10 +4,19 @@ target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
 foreign mulib.container_runtime {
     provider mulib "container-runtime";
     header "mulib-container-runtime.h";
-    unsupported close = c::mulib_container_runtime_close reason ambiguous_export;
-    unsupported init = c::mulib_container_runtime_init reason ambiguous_export;
-    unsupported pause = c::mulib_container_runtime_pause reason ambiguous_export;
-    unsupported signal = c::mulib_container_runtime_signal reason ambiguous_export;
-    unsupported start = c::mulib_container_runtime_start reason ambiguous_export;
-    unsupported step = c::mulib_container_runtime_step reason ambiguous_export;
+    unsupported close = c::mulib_container_runtime_close reason taint_function_pointer;
+    unsupported init = c::mulib_container_runtime_init reason taint_function_pointer;
+    unsupported pause = c::mulib_container_runtime_pause reason taint_function_pointer;
+    unsupported signal = c::mulib_container_runtime_signal reason taint_function_pointer;
+    unsupported start = c::mulib_container_runtime_start reason taint_function_pointer;
+    unsupported step = c::mulib_container_runtime_step reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_container_runtime_close call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_container_runtime_init call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_container_runtime_pause call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_container_runtime_signal call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_container_runtime_start call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_container_runtime_step call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

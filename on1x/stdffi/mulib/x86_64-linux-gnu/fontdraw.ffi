@@ -15,4 +15,18 @@ foreign mulib.fontdraw {
     unsupported outline_destroy = c::mulib_fontdraw_outline_destroy reason ambiguous_export;
     unsupported render = c::mulib_fontdraw_render reason ambiguous_export;
     unsupported size = c::mulib_fontdraw_size reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_fontdraw_alpha call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_bitmap_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_glyph call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_metrics call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_native call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_open call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_outline call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_outline_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_render call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_fontdraw_size call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

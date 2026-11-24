@@ -10,4 +10,13 @@ foreign mulib.gssair {
     unsupported permute = c::mulib_gssair_permute reason ambiguous_export;
     unsupported shape = c::mulib_gssair_shape reason ambiguous_export;
     unsupported validate = c::mulib_gssair_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_gssair_edge call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_gssair_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_gssair_lower call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_gssair_permute call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_gssair_shape call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_gssair_validate call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

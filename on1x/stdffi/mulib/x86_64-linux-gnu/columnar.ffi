@@ -7,4 +7,10 @@ foreign mulib.columnar {
     unsupported append = c::mulib_columnar_append reason ambiguous_export;
     unsupported free = c::mulib_columnar_free reason ambiguous_export;
     unsupported get = c::mulib_columnar_get reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_columnar_append call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_columnar_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_columnar_get call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

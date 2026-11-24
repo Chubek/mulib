@@ -5,4 +5,8 @@ foreign mulib.objfileleader {
     provider mulib "objfileleader";
     header "mulib-objfileleader.h";
     unsupported load = c::mulib_objfileleader_load reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_objfileleader_load call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

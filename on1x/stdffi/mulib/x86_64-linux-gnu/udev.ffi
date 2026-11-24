@@ -9,4 +9,12 @@ foreign mulib.udev {
     unsupported monitor_open = c::mulib_udev_monitor_open reason ambiguous_export;
     unsupported monitor_read = c::mulib_udev_monitor_read reason ambiguous_export;
     unsupported parse = c::mulib_udev_parse reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_udev_get call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_udev_monitor_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_udev_monitor_open call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_udev_monitor_read call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_udev_parse call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

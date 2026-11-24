@@ -14,4 +14,17 @@ foreign mulib.dsim_bitvec {
     unsupported parse = c::mulib_dsim_bitvec_parse reason ambiguous_export;
     unsupported shift = c::mulib_dsim_bitvec_shift reason ambiguous_export;
     unsupported xor = c::mulib_dsim_bitvec_xor reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dsim_bitvec_add call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_and call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_bit call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_concat call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_format call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_not call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_or call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_parse call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_shift call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_dsim_bitvec_xor call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

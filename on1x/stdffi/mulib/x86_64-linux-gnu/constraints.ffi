@@ -9,4 +9,12 @@ foreign mulib.constraints {
     unsupported new = c::mulib_constraints_new reason ambiguous_export;
     unsupported type = c::mulib_constraints_type reason ambiguous_export;
     unsupported unify = c::mulib_constraints_unify reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_constraints_bind call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_constraints_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_constraints_new call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_constraints_type call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_constraints_unify call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

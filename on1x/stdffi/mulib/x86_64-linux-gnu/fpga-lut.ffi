@@ -6,4 +6,9 @@ foreign mulib.fpga_lut {
     header "mulib-fpga-lut.h";
     unsupported eval = c::mulib_fpga_lut_eval reason ambiguous_export;
     unsupported from_truth = c::mulib_fpga_lut_from_truth reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_fpga_lut_eval call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_fpga_lut_from_truth call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

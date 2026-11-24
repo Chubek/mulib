@@ -5,4 +5,8 @@ foreign mulib.ecad_symbol {
     provider mulib "ecad-symbol";
     header "mulib-ecad-symbol.h";
     unsupported pin = c::mulib_ecad_symbol_pin reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ecad_symbol_pin call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

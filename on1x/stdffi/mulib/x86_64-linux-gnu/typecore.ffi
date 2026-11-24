@@ -23,4 +23,26 @@ foreign mulib.typecore {
     unsupported u32be = c::mulib_typecore_u32be reason ambiguous_export;
     unsupported u32le = c::mulib_typecore_u32le reason ambiguous_export;
     unsupported utf8 = c::mulib_typecore_utf8 reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_typecore_adler32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_append call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_byte call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_crc32 call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_ends call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_html call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_json call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_latex call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_read16be call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_read32be call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_read32le call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_reserve call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_text call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_u16be call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_u16le call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_u32be call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_u32le call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_typecore_utf8 call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,4 +6,9 @@ foreign mulib.portfolio {
     header "mulib-portfolio.h";
     unsupported gross = c::mulib_portfolio_gross reason ambiguous_export;
     unsupported mark = c::mulib_portfolio_mark reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_portfolio_gross call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_portfolio_mark call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

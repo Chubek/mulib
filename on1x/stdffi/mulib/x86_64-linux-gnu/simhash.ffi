@@ -5,4 +5,8 @@ foreign mulib.simhash {
     provider mulib "simhash";
     header "mulib-simhash.h";
     unsupported distance = c::mulib_simhash_distance reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_simhash_distance call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

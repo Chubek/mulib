@@ -7,4 +7,10 @@ foreign mulib.bitpack {
     unsupported bytes = c::mulib_bitpack_bytes reason ambiguous_export;
     unsupported decode = c::mulib_bitpack_decode reason ambiguous_export;
     unsupported encode = c::mulib_bitpack_encode reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_bitpack_bytes call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_bitpack_decode call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_bitpack_encode call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

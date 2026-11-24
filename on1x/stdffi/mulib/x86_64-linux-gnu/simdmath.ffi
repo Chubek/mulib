@@ -18,4 +18,21 @@ foreign mulib.simdmath {
     unsupported sub = c::mulib_simdmath_sub reason ambiguous_export;
     unsupported transform = c::mulib_simdmath_transform reason ambiguous_export;
     unsupported transform_many = c::mulib_simdmath_transform_many reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_simdmath_add call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_backend call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_div call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_dot call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_load call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_mat4_mul call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_mul call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_normalize call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_splat call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_sqrt call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_store call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_sub call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_transform call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_simdmath_transform_many call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

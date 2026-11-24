@@ -8,4 +8,11 @@ foreign mulib.record {
     unsupported free = c::mulib_record_free reason ambiguous_export;
     unsupported get = c::mulib_record_get reason ambiguous_export;
     unsupported set = c::mulib_record_set reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_record_clone call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_record_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_record_get call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_record_set call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

@@ -23,4 +23,26 @@ foreign mulib.ezjni {
     unsupported static_int = c::mulib_ezjni_static_int reason ambiguous_export;
     unsupported string = c::mulib_ezjni_string reason ambiguous_export;
     unsupported string_copy = c::mulib_ezjni_string_copy reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ezjni_available call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_bytes call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_bytes_copy call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_call call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_clear_exception call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_delete_global call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_delete_local call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_enter call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_exception call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_global call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_leave call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_method call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_method_class call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_method_free call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_register call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_signature call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_static_int call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_string call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_ezjni_string_copy call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

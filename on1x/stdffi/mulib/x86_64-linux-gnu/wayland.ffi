@@ -13,4 +13,16 @@ foreign mulib.wayland {
     unsupported frame_encode = c::mulib_wayland_frame_encode reason ambiguous_export;
     unsupported frame_parse = c::mulib_wayland_frame_parse reason ambiguous_export;
     unsupported roundtrip = c::mulib_wayland_roundtrip reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_wayland_connect call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_disconnect call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_dispatch_pending call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_display call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_fd call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_flush call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_frame_encode call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_frame_parse call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_wayland_roundtrip call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

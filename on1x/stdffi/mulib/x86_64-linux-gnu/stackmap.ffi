@@ -7,4 +7,10 @@ foreign mulib.stackmap {
     unsupported add = c::mulib_stackmap_add reason ambiguous_export;
     unsupported find = c::mulib_stackmap_find reason ambiguous_export;
     unsupported free = c::mulib_stackmap_free reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_stackmap_add call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_stackmap_find call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_stackmap_free call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

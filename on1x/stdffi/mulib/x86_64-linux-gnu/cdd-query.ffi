@@ -7,4 +7,10 @@ foreign mulib.cdd_query {
     unsupported matches = c::mulib_cdd_query_matches reason ambiguous_export;
     unsupported run = c::mulib_cdd_query_run reason ambiguous_export;
     unsupported valid = c::mulib_cdd_query_valid reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_cdd_query_matches call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_cdd_query_run call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_cdd_query_valid call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

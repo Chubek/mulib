@@ -8,4 +8,11 @@ foreign mulib.num_csc {
     unsupported from_triplets = c::mulib_num_csc_from_triplets reason ambiguous_export;
     unsupported matvec = c::mulib_num_csc_matvec reason ambiguous_export;
     unsupported validate = c::mulib_num_csc_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_num_csc_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_num_csc_from_triplets call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_num_csc_matvec call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_num_csc_validate call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

@@ -9,4 +9,12 @@ foreign mulib.superblocks {
     unsupported lower = c::mulib_superblocks_lower reason ambiguous_export;
     unsupported to_gssair = c::mulib_superblocks_to_gssair reason ambiguous_export;
     unsupported validate = c::mulib_superblocks_validate reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_superblocks_build call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_superblocks_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_superblocks_lower call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_superblocks_to_gssair call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_superblocks_validate call-contract (3 false unknown) memory-safety (unknown);
+    }
 }

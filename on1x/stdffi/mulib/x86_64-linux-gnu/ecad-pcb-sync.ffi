@@ -6,4 +6,9 @@ foreign mulib.ecad_pcb_sync {
     header "mulib-ecad-pcb-sync.h";
     unsupported add = c::mulib_ecad_pcb_sync_add reason ambiguous_export;
     unsupported lookup = c::mulib_ecad_pcb_sync_lookup reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_ecad_pcb_sync_add call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_ecad_pcb_sync_lookup call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

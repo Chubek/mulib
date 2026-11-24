@@ -9,4 +9,12 @@ foreign mulib.xsimd {
     unsupported dot = c::mulib_xsimd_dot reason ambiguous_export;
     unsupported mix = c::mulib_xsimd_mix reason ambiguous_export;
     unsupported scale = c::mulib_xsimd_scale reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_xsimd_available call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xsimd_best call-contract (0 false unknown) memory-safety (unknown);
+        analyze c::mulib_xsimd_dot call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_xsimd_mix call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_xsimd_scale call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

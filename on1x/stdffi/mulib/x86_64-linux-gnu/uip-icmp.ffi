@@ -6,4 +6,9 @@ foreign mulib.uip_icmp {
     header "mulib-uip-icmp.h";
     unsupported echo = c::mulib_uip_icmp_echo reason ambiguous_export;
     unsupported verify = c::mulib_uip_icmp_verify reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_uip_icmp_echo call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_uip_icmp_verify call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

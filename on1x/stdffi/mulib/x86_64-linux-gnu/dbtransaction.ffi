@@ -7,4 +7,10 @@ foreign mulib.dbtransaction {
     unsupported abort = c::mulib_dbtransaction_abort reason ambiguous_export;
     unsupported begin = c::mulib_dbtransaction_begin reason ambiguous_export;
     unsupported commit = c::mulib_dbtransaction_commit reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_dbtransaction_abort call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_dbtransaction_begin call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_dbtransaction_commit call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

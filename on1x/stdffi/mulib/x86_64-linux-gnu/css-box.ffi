@@ -7,4 +7,10 @@ foreign mulib.css_box {
     unsupported contains = c::mulib_css_box_contains reason ambiguous_export;
     unsupported valid = c::mulib_css_box_valid reason ambiguous_export;
     unsupported vertical = c::mulib_css_box_vertical reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_css_box_contains call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_css_box_valid call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_css_box_vertical call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,8 +6,17 @@ foreign mulib.xtbb {
     header "mulib-xtbb.h";
     unsupported create = c::mulib_xtbb_create reason ambiguous_export;
     unsupported destroy = c::mulib_xtbb_destroy reason ambiguous_export;
-    unsupported for = c::mulib_xtbb_for reason ambiguous_export;
-    unsupported invoke = c::mulib_xtbb_invoke reason ambiguous_export;
-    unsupported map = c::mulib_xtbb_map reason ambiguous_export;
-    unsupported reduce = c::mulib_xtbb_reduce reason ambiguous_export;
+    unsupported for = c::mulib_xtbb_for reason taint_function_pointer;
+    unsupported invoke = c::mulib_xtbb_invoke reason taint_function_pointer;
+    unsupported map = c::mulib_xtbb_map reason taint_function_pointer;
+    unsupported reduce = c::mulib_xtbb_reduce reason taint_function_pointer;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_xtbb_create call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtbb_destroy call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtbb_for call-contract (8 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtbb_invoke call-contract (5 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtbb_map call-contract (11 false unknown) memory-safety (unknown);
+        analyze c::mulib_xtbb_reduce call-contract (12 false unknown) memory-safety (unknown);
+    }
 }

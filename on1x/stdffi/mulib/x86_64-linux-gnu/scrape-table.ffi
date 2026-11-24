@@ -5,4 +5,8 @@ foreign mulib.scrape_table {
     provider mulib "scrape-table";
     header "mulib-scrape-table.h";
     unsupported cells = c::mulib_scrape_table_cells reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_scrape_table_cells call-contract (1 false unknown) memory-safety (unknown);
+    }
 }

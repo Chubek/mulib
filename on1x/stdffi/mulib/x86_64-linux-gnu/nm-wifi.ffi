@@ -5,4 +5,8 @@ foreign mulib.nm_wifi {
     provider mulib "nm-wifi";
     header "mulib-nm-wifi.h";
     unsupported access_points = c::mulib_nm_wifi_access_points reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_nm_wifi_access_points call-contract (5 false unknown) memory-safety (unknown);
+    }
 }

@@ -6,4 +6,9 @@ foreign mulib.nm_client {
     header "mulib-nm-client.h";
     unsupported devices = c::mulib_nm_client_devices reason ambiguous_export;
     unsupported state = c::mulib_nm_client_state reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_nm_client_devices call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_nm_client_state call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

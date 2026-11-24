@@ -11,4 +11,14 @@ foreign mulib.midi {
     unsupported init = c::mulib_midi_init reason ambiguous_export;
     unsupported note = c::mulib_midi_note reason ambiguous_export;
     unsupported tempo = c::mulib_midi_tempo reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_midi_decode call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_encode call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_event call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_free call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_init call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_note call-contract (7 false unknown) memory-safety (unknown);
+        analyze c::mulib_midi_tempo call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

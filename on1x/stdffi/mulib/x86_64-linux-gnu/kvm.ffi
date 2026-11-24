@@ -13,4 +13,16 @@ foreign mulib.kvm {
     unsupported vcpu_create = c::mulib_kvm_vcpu_create reason ambiguous_export;
     unsupported vm_close = c::mulib_kvm_vm_close reason ambiguous_export;
     unsupported vm_create = c::mulib_kvm_vm_create reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_kvm_check call-contract (3 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_memory call-contract (6 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_open call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_run call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_vcpu_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_vcpu_create call-contract (4 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_vm_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_kvm_vm_create call-contract (2 false unknown) memory-safety (unknown);
+    }
 }

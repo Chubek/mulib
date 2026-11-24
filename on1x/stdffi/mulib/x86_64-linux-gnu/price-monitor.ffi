@@ -5,4 +5,8 @@ foreign mulib.price_monitor {
     provider mulib "price-monitor";
     header "mulib-price-monitor.h";
     unsupported compare = c::mulib_price_monitor_compare reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_price_monitor_compare call-contract (4 false unknown) memory-safety (unknown);
+    }
 }

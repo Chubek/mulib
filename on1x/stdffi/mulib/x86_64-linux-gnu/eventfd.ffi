@@ -8,4 +8,11 @@ foreign mulib.eventfd {
     unsupported create = c::mulib_eventfd_create reason ambiguous_export;
     unsupported read = c::mulib_eventfd_read reason ambiguous_export;
     unsupported write = c::mulib_eventfd_write reason ambiguous_export;
+    analysis cephyr_c11_analysis_v1 {
+        target-properties (8 little 64 twos-complement true);
+        analyze c::mulib_eventfd_close call-contract (1 false unknown) memory-safety (unknown);
+        analyze c::mulib_eventfd_create call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_eventfd_read call-contract (2 false unknown) memory-safety (unknown);
+        analyze c::mulib_eventfd_write call-contract (2 false unknown) memory-safety (unknown);
+    }
 }
