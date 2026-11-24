@@ -989,38 +989,12 @@ def review_subject(report, interface):
 
 def authorize_review(report, key, review, signature, stage):
     """Verify evidence using the operator-selected Ed25519 trust anchor."""
-    def reject(reason):
-        request = report['requests'][0]
-        raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
-                         'ON1X-KERNEL-NOT-ADMITTED: '+reason)
-    raw = contracts.read(review, 1024*1024)
-    public = contracts.read(key, 1024)
-    sig = contracts.read(signature, 1024)
-    # Only DER SubjectPublicKeyInfo for Ed25519; reject alternate algorithms,
-    # private keys, trailing data and ambiguous key encodings.
-    if len(public) != 44 or not public.startswith(bytes.fromhex('302a300506032b6570032100')) or len(sig) != 64:
-        reject('expected an Ed25519 DER public key and 64-byte detached signature')
-    evidence = contracts.loads(raw)
-    if (not isinstance(evidence, dict) or set(evidence) != {'schema', 'reviewer', 'review_reference', 'subject'}
-        or evidence['schema'] != 'on1x.kernel-review/v1'
-        or not isinstance(evidence['subject'], dict)
-        or not all(isinstance(evidence[k], str) and 0 < len(evidence[k].strip()) <= 1024
-                   for k in ('reviewer', 'review_reference'))):
-        reject('invalid independent review schema')
-    for name, data in [('review.ed25519.der', public), ('review.json', raw), ('review.sig', sig)]:
-        (stage/name).write_bytes(data)
-    openssl = executable('openssl')
-    digest = contracts.digest(openssl)
-    verified = subprocess.run([openssl, 'pkeyutl', '-verify', '-pubin', '-keyform', 'DER',
-                               '-inkey', stage/'review.ed25519.der', '-rawin', '-in', stage/'review.json',
-                               '-sigfile', stage/'review.sig'], capture_output=True, timeout=30)
-    if verified.returncode or contracts.digest(openssl) != digest:
-        reject('independent review signature verification failed')
-    if contracts.dumps(evidence['subject']) != contracts.dumps(review_candidate(report)):
-        reject('independent review does not match the current binding inputs')
-    return dict(**evidence, signature_hex=sig.hex(), key_der_hex=public.hex(),
-                review_sha256=hashlib.sha256(raw).hexdigest(), signed_review_hex=raw.hex(),
-                verifier=str(openssl), verifier_sha256=digest)
+    from on1x_ffi_trust import authorize
+    request = report['requests'][0]
+    return authorize(lambda: review_candidate(report), schema='on1x.kernel-review/v1',
+                     key=key, review=review, signature=signature, stage=stage, codec=contracts,
+                     diagnostic=f"{request['file']}:{request['line']}:{request['column']}: "
+                                'ON1X-KERNEL-NOT-ADMITTED: ')
 
 
 def clamp_adapter(interface):
