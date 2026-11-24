@@ -5,9 +5,12 @@ provably redundant fixed-array index and slice checks in direct C11 and
 VM-product MIR. The existing rules and profile identifier are unchanged.
 It covers literal and small closed checked-`i64` bounds expressions; dynamic
 or potentially trapping bounds retain the reference checks.
-Type, ownership, loan, dynamic slice provenance and FFI rules remain design
-descriptions, not compiler plugins or safe-FFI admission. No new syntax or
-runtime ABI is introduced.
+The independent C++ [lexical slot plan](ADAPTER.md#checked-lexical-slots)
+projects certain scalar loan facts from canonical verification, without
+executing authored ownership rules. Those rules and the broader type,
+dynamic slice provenance and FFI rules remain design descriptions, not
+compiler plugins or safe-FFI admission. No new syntax or runtime ABI is
+introduced.
 
 This package is derived from the idiom and real grammar syntax of
 [LibStone cornerstone/LLSynth](https://github.com/Chubek/libstone/tree/master/cornerstone/LLSynth)
@@ -36,6 +39,7 @@ on1x/hir/MEMGraph/
   tools/preview.py            candidate-only (unverified) graph matcher
   tests/test_mmgc.py            parser, determinism and rejection tests
   tests/test_integration.py     strict C11 and VM differential tests
+  tests/test_lexical_slots.cpp  checked scalar lexical plan and negative tests
   tests/fixed-array.on1x        executable array fixture
   tests/demo_graph.json        abstract sample input
   ADAPTER.md                   implemented profile and future proof contract
@@ -47,7 +51,7 @@ From the MuLIB repository root:
 
 ```sh
 cmake -S on1x -B build/on1x -DBUILD_TESTING=ON -DON1X_WITH_MEMGRAPH=ON
-cmake --build build/on1x --target on1xc on1x_memgraph_hir_tests
+cmake --build build/on1x --target on1xc on1x_memgraph_hir_tests on1x_memgraph_lexical_slots_tests
 ctest --test-dir build/on1x -R '^on1x\.memgraph\.' --output-on-failure
 build/on1x/on1xc --dump-memgraph on1x/hir/MEMGraph/tests/fixed-array.on1x
 build/on1x/on1xc --emit-c --enable-opt memgraph-bounds program.on1x -o program.c
@@ -60,7 +64,8 @@ reference output, or to disable the analysis in `--dump-memgraph`. A named
 `memgraph-bounds` selector is not applicable to standard MIR, MIR-native
 emission, or serialized `--ir-input`.
 With `ON1X_WITH_MEMGRAPH=OFF`, direct C11 emits its reference checks and
-`--dump-memgraph` reports that support is unavailable.
+`--dump-memgraph` reports that bounds support is unavailable. The
+`on1x.memgraph.lexical_slots` test remains available in that configuration.
 
 The real driver is under
 `ON1X_LIBSTONE_ROOT/cornerstone/LLSynth/scripts/llsynth.pl` in the bundled
@@ -209,9 +214,10 @@ not the manifest or an arbitrary user-supplied package.
 
 ## Current status / what remains
 
-The HIR adapter admits only the constant fixed-array bounds profile. Dynamic
-slice provenance, ownership and loan traces, FFI review, and general MIR memory/effect
-descriptors still need separate executable profiles. The design-only rules now
+Only the constant fixed-array bounds rules are executable. The host lexical
+slot projection is narrow; dynamic slice provenance, general ownership and
+loan traces, FFI review, and general MIR memory/effect descriptors still
+need separate executable profiles. The design-only rules
 request explicit checks for slice lifetime and range order, current owner
 generation, generic type constraints, and foreign pointer ownership. See
 [ADAPTER.md](ADAPTER.md) for the evidence those profiles would require.

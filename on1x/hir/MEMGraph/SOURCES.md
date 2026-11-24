@@ -17,3 +17,26 @@ The initial design archive did not run LLSynth. The integrated build now runs
 the configured LibStone generator; no generator sources are copied. See
 [README.md](README.md) for regeneration and [verification](../../VERIFICATION.md)
 for the tested On1x and LibStone revisions.
+
+## Checked lexical slot integration
+
+Inspected the actual pinned checkout `3be5e9d7ffde4f97f333365e7080e316396a0e55`:
+
+- `cornerstone/LLSynth/scripts/llsynth.pl` (`--version`: `0.7.0`) and
+  `cornerstone/LLSynth/README.md`: the generator provides the existing
+  MEMGraph grammar parser/table toolchain, not HIR ownership evidence.
+- `moonstone/chisel/include/chisel/Chisel.hpp` exposes `Function`, `Block`,
+  `Instruction`, `State` and `analyze`. Its loan token identifies a place and
+  an exclusive flag; it does not encode On1x lexical binding identity,
+  reborrow ancestry, or parent suspension. `Use` checks liveness but not
+  alias-access conflicts, and token maps are unioned at joins. The existing
+  On1x Chisel adapter deliberately rejects core lexical borrows. A future
+  Chisel cross-check would need a lossless checked projection, explicit
+  token/region handling on control edges, and independent rejection tests.
+- `wetstone/verification/AnalysisSuite.hpp` registers advisory pointer
+  ownership warnings over Wetstone IR, not a verifier for On1x lexical
+  places.
+
+The new host plan therefore exports facts directly from On1x's canonical
+value verifier. None of these upstream APIs grants loan admission, and no
+LibStone sources were changed.

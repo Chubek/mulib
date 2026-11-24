@@ -6,6 +6,7 @@
 #include <on1x/nominal.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/primitives.hpp>
+#include "../../hir/MEMGraph/lexical_slots_detail.hpp"
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -38,6 +39,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
  class Verify {
    const Unit& unit;
    NominalCatalog catalog;
+   memgraph::detail::LexicalSlotBuilder* slots;
   bool unsafe_context=false;
   bool generic_context=false;
    bool loan_tracking=false;
@@ -46,6 +48,11 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     BorrowMode borrow=BorrowMode::Value;
     std::size_t origin=0,root=0;
     bool addressable=true,prototype=false;
+    // Filled only when exporting a plan from executable HIR. The lexical
+    // verifier's own identity/lifetime checks never depend on these pointers.
+    const Stmt* scalar_root_statement=nullptr;
+    const Param* scalar_root_parameter=nullptr;
+    const Stmt* planned_binding=nullptr;
    };
    struct Loan {
     BorrowMode mode=BorrowMode::Value;
@@ -492,6 +499,10 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      scopes.back()[name]={type,mut,storage,id,borrow,origin,root,
                           addressable,prototype};
    }
+    void plan_statement_root(const Stmt& statement,const Type& type){
+     if(slots&&!generic_context&&memgraph::detail::lexical_copy_scalar(type))
+      scopes.back().at(statement.name).scalar_root_statement=&statement;
+    }
    void pattern(const Pattern& p,const Type& t,std::size_t depth=0){
      tick(p.where,depth);source(p.where);checked_type(t,p.where,generic_context);
      if(p.context)fail(p.where,"source pattern context reached canonical HIR");
@@ -528,7 +539,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        auto& local=scopes.back().at(p.name);
        local.borrow=p.borrow;local.origin=local.id;local.root=local.id;
        loan_tracking=true;
-      }
+      }else if(slots&&!generic_context&&memgraph::detail::lexical_copy_scalar(p.type))
+       scopes.back().at(p.name).scalar_root_parameter=&p;
      }
     }
    }
@@ -711,6 +723,16 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     bind(statement.name,borrow.type,false,nullptr,borrow.borrow,true,false,
          source.id,source.root);
     loan_tracking=true;
+    if(slots&&!generic_context&&source.type==borrow.type&&
+       (source.scalar_root_statement||source.scalar_root_parameter)){
+     auto& alias=scopes.back().at(statement.name);
+     alias.scalar_root_statement=source.scalar_root_statement;
+     alias.scalar_root_parameter=source.scalar_root_parameter;
+     alias.planned_binding=&statement;
+     slots->bind({&statement,&source_expression,source.planned_binding,
+                  alias.scalar_root_statement,alias.scalar_root_parameter,
+                  borrow.borrow,borrow.type});
+    }
    }
   const Function* borrower(const Expr& e){
    if(e.kind!=E::Variable||find(e.text))return nullptr;
@@ -901,6 +923,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        if(!place_base)
         fail(e.where,"copy of unique local requires move(local): "+e.text);
       }else if(e.move_out)fail(e.where,"move metadata on a copyable local");
+      if(slots&&!generic_context&&binding->planned_binding)
+       slots->read(e,*binding->planned_binding);
       return true;
     }
     if(e.reference==Expr::Reference::Intrinsic){
@@ -1350,11 +1374,16 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
      if(s.value->type==Type::Void)fail(s.where,"canonical binding has void type");
      if(s.declared!=Type::Invalid&&s.declared!=s.value->type)
       fail(s.where,"canonical binding annotation/type mismatch");
-     if(s.pattern)pattern(*s.pattern,s.value->type);else bind(s.name,s.value->type,s.mutable_binding);
+     if(s.pattern)pattern(*s.pattern,s.value->type);
+     else{
+      bind(s.name,s.value->type,s.mutable_binding);
+      plan_statement_root(s,s.value->type);
+     }
      break;
    case S::Storage:
     if(s.value||s.pattern||s.declared==Type::Invalid||s.declared==Type::Void||s.declared==Type::Json||s.declared==Type::JsonView||s.declared.has_holes()||s.declared.has_generics())fail(s.where,"invalid canonical storage declaration");
-     bind(s.name,s.declared,false,&s);state->initialized.erase(&s);state->maybe_initialized.erase(&s);break;
+     bind(s.name,s.declared,false,&s);plan_statement_root(s,s.declared);
+     state->initialized.erase(&s);state->maybe_initialized.erase(&s);break;
      case S::Initialize:{auto b=find(s.name);if(!b||!b->storage||!s.value||b->type!=s.value->type||state->maybe_initialized.contains(b->storage))fail(s.where,"invalid or repeated canonical initialization");state->initialized.insert(b->storage);state->maybe_initialized.insert(b->storage);clear_moves(*state,b->id);break;}
     case S::Assign:{
      auto b=find(s.name);access(b,s.where,s.name,Access::Write);
@@ -1364,8 +1393,11 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        ref_error(s.where,"invalid checked exclusive-borrow store");
       }else if(!b||!b->mut)fail(s.where,"canonical assignment to missing/immutable binding");
      if(!b||b->type!=s.value->type)fail(s.where,"canonical assignment type mismatch");
-     if(s.ref_store)invalidate_loan_tags(*state,b->root,s.where);
-     else for(auto it=state->tags.begin();it!=state->tags.end();){
+     if(s.ref_store){
+      invalidate_loan_tags(*state,b->root,s.where);
+      if(slots&&!generic_context&&b->planned_binding)
+       slots->store(s,*b->planned_binding);
+     }else for(auto it=state->tags.begin();it!=state->tags.end();){
       if(it->first==b->id)it=state->tags.erase(it);else ++it;
      }
      clear_moves(*state,b->id);
@@ -1417,7 +1449,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
   return state;
  }
  public:
-   explicit Verify(const Unit& source):unit(source),catalog(source){}
+   explicit Verify(const Unit& source,memgraph::detail::LexicalSlotBuilder* plan=nullptr)
+    :unit(source),catalog(source),slots(plan){}
   void run(){
    for(const auto& [schema,instances]:unit.forall_layouts){
     checked_type(schema,{"<forall-layout>"});
@@ -1476,4 +1509,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
 };
 }
 void verify_values(const Unit& unit){Verify(unit).run();}
+void verify_values_with_lexical_slots(const Unit& unit,memgraph::detail::LexicalSlotBuilder& plan){
+ Verify(unit,&plan).run();
+}
 }

@@ -1,6 +1,12 @@
 # MEMGraph rules are compiled at build time; only immutable tables reach C++.
-# The host adapter also provides the disabled-build API.
-target_sources(on1x_frontend PRIVATE memgraph.cpp)
+# Host lexical planning is independent of generated rules.
+target_sources(on1x_frontend PRIVATE memgraph.cpp lexical_slots.cpp)
+if(BUILD_TESTING)
+  add_executable(on1x_memgraph_lexical_slots_tests tests/test_lexical_slots.cpp)
+  target_link_libraries(on1x_memgraph_lexical_slots_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.memgraph.lexical_slots COMMAND on1x_memgraph_lexical_slots_tests)
+  set_tests_properties(on1x.memgraph.lexical_slots PROPERTIES TIMEOUT 60)
+endif()
 find_package(Perl QUIET)
 set(_mmg_driver "")
 foreach(_mmg_root IN ITEMS "${ON1X_LIBSTONE_ROOT}/cornerstone/LLSynth" "${ON1X_LIBSTONE_ROOT}/LLSynth")

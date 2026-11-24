@@ -1,5 +1,39 @@
 # Compiler-side adapter contract
 
+## Checked lexical slots
+
+`plan_lexical_slots` runs the canonical value verifier with a private result
+sink. Only after successful verification does it return a read-only plan for
+the exact input `Unit`. It does not replace any other ingress check or add
+loan authority. It is always built, even with `ON1X_WITH_MEMGRAPH=OFF`; the
+switch controls the optional LLSynth-generated bounds rules, not this plan.
+
+The plan records lexical `let` borrows of ordinary named scalar places
+(`bool`, `i64`, `u8`–`u64`, `f32`, `f64`). A root is a plain `let`, a
+definitely initialized canonical `Storage`, or a named by-value parameter.
+The verifier propagates that exact declaration identity through admitted
+reborrows. Each entry identifies the original binding and operand, immediate
+parent (if a reborrow), root, type, and mode. Read and `:=` store queries are
+by the original expression or assignment identity. Shadowing is resolved by
+the verifier before any entry is recorded. Plan size and work are bounded by
+canonical verification's traversal limits; there is no additional HIR walk.
+
+A consumer can allocate one scalar slot at the original root and use it at
+the original read and store sites. A read must still take a snapshot at that
+site; a store must still evaluate its RHS before writing, with no write on an
+early exit or trap. A `let` borrow is not a copy and does not evaluate the
+root's initializer a second time. Locations, control flow and cleanup stay
+with the original HIR. The plan must not be reused after a transform, clone,
+or change of the input `Unit`.
+
+Aggregate, pointer-bearing and managed values, pattern-bound roots, incoming
+borrowed parameters, and generic proof/non-executable nodes have no plan
+entries. An entry for a binding is not a claim about all uses: borrowed call
+operands and `ref_replace` place operands are **not** ordinary reads and
+are never projected as such. Lowerers must reject or independently support
+those operations. This projection neither changes direct C11 pointer
+lowering nor introduces any new runtime or wire representation.
+
 ## Executable profile: `c11_fixed_array_v1`
 
 After canonical verification, the adapter proves bounds facts on demand from
