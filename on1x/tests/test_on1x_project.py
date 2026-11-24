@@ -314,7 +314,9 @@ class ProjectTests(unittest.TestCase):
         result = json.loads(out)
         self.assertEqual(result['schema'], 'on1x.project-backends/v1')
         rows = {r['name']: r for r in result['backends']}
-        self.assertEqual(set(rows), {'c11', 'mir-c11', 'mir-archon', 'mir-vm'})
+        self.assertEqual(set(rows), {'c11', 'mir-c11', 'mir-archon', 'mir-vm', 'archvirt'})
+        self.assertEqual(rows['archvirt']['available'], OPTIONS.archvirt_enabled)
+        self.assertEqual(rows['archvirt']['root_policy'], ['always', 'opt-in'])
         self.assertTrue(rows['c11']['available'] and rows['mir-c11']['available'])
         for item in rows.values():
             if not item['available']:
@@ -578,7 +580,8 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
         if not OPTIONS.archvirt_enabled:
             self.skipTest('ArchVirt integration not selected')
         source = ('import toolkit.value as V;\n'
-                  'fn main()->i64{println(V.number());return 37;}\n')
+                  'fn item(i:i64)->i64{let a=array[42,0];return a[i];}\n'
+                  'fn main()->i64{println(item(V.number()-42));return 37;}\n')
         for policy in ('always', 'opt-in'):
             with self.subTest(policy=policy):
                 self.library('vendor/toolkit', 'toolkit')
@@ -593,7 +596,12 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
                 self.assertEqual(built.returncode, 0, built.stderr)
                 self.assertEqual(built.stdout.strip(), str(self.output))
                 launcher = self.output / 'sample'
-                self.assertEqual(launcher.read_bytes()[:4], b'\x7fELF')
+                binary = launcher.read_bytes()
+                self.assertEqual(binary[:4], b'\x7fELF')
+                self.assertIn(b'/__on1x__/project/src/main.on1x', binary)
+                rebuilt = self.project_command('build', '--frozen', env=env)
+                self.assertEqual(rebuilt.returncode, 0, rebuilt.stderr)
+                self.assertEqual(launcher.read_bytes(), binary)
                 self.assertFalse(cache.exists(), 'build must not populate the replay cache')
                 if policy == 'opt-in':
                     refused = subprocess.run([launcher], capture_output=True, text=True, timeout=30)
@@ -616,6 +624,7 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
                     sandboxed = self.project_command('run', '--frozen', '--sandbox', env=env)
                     self.assertEqual(sandboxed.returncode, 37, sandboxed.stderr)
                     self.assertEqual(sandboxed.stdout, '42\n')
+                    self.assertIn(key, sandboxed.stderr)
                 self.write('vendor/toolkit/On1xfile', 'this dependency is no longer buildable\n')
                 self.write('src/main.on1x', 'this source is no longer buildable\n')
                 replay = self.project_command('vm-rerun', key, '--frozen', env=env)

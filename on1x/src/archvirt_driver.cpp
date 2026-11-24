@@ -11,8 +11,11 @@
 #include <set>
 #include <system_error>
 #include <vector>
+#include <fcntl.h>
 #include <spawn.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 extern char** environ;
 
@@ -20,6 +23,7 @@ namespace on1x::archvirt_driver {
 namespace {
 namespace fs = std::filesystem;
 constexpr auto profile = "on1x-domios-v1-x86_64-kvm";
+constexpr std::string_view archive_tag = "ON1X-ARCHVIRT-RUNTIME-V1:";
 
 struct Assets {
     fs::path bin = fs::canonical("/proc/self/exe").parent_path();
@@ -34,15 +38,29 @@ struct Assets {
 };
 
 std::string read_binary(const fs::path& path, std::size_t limit, const char* kind) {
-    if (!fs::is_regular_file(path))
-        throw std::runtime_error(std::string("ArchVirt ") + kind + " unavailable: " + path.string());
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    const auto size = file.tellg();
-    if (size <= 0 || size > static_cast<std::streamoff>(limit))
+    struct File {
+        int fd;
+        ~File() { if (fd >= 0) ::close(fd); }
+    } file{::open(path.c_str(), O_RDONLY | O_CLOEXEC | O_NONBLOCK | O_NOFOLLOW)};
+    if (file.fd < 0)
+        throw std::system_error(errno, std::generic_category(), std::string("cannot open ArchVirt ") + kind);
+    struct stat st{};
+    if (::fstat(file.fd, &st) || !S_ISREG(st.st_mode) ||
+        st.st_size <= 0 || static_cast<std::uintmax_t>(st.st_size) > limit)
         throw std::runtime_error(std::string("ArchVirt ") + kind + " is unreadable or exceeds its size limit");
-    std::string bytes(static_cast<std::size_t>(size), '\0');
-    file.seekg(0);
-    if (!file.read(bytes.data(), size) || file.peek() != std::char_traits<char>::eof())
+    std::string bytes(static_cast<std::size_t>(st.st_size), '\0');
+    auto read = [&](char* destination, std::size_t count) {
+        ssize_t n;
+        do { n = ::read(file.fd, destination, count); } while (n < 0 && errno == EINTR);
+        return n;
+    };
+    for (std::size_t offset = 0; offset < bytes.size();) {
+        const auto got = read(bytes.data() + offset, bytes.size() - offset);
+        if (got <= 0) throw std::runtime_error(std::string("cannot read ArchVirt ") + kind);
+        offset += static_cast<std::size_t>(got);
+    }
+    char extra;
+    if (read(&extra, 1) != 0)
         throw std::runtime_error(std::string("cannot read ArchVirt ") + kind);
     return bytes;
 }
@@ -127,7 +145,14 @@ Guest compile_guest(std::string_view generated) {
                  "--archvirt-include", ON1X_ARCHVIRT_INCLUDE, "--runtime-archive", archive.string(),
                  source.string(), "-o", output.string()}))
         throw GuestBuildError("ArchVirt guest build failed; no host executable or VM fallback was produced");
-    return {read_binary(output, ON1X_VM_GUEST_MAX, "guest ELF"), archvirt_cache::sha256(runtime)};
+    auto sha = archvirt_cache::sha256(runtime);
+    auto elf = read_binary(output, ON1X_VM_GUEST_MAX - archive_tag.size() - sha.size(), "guest ELF");
+    // This non-loadable trailer records which exact runtime was linked. It
+    // keeps a separately compiled guest from being assigned to the current
+    // archive on import just because its ELF headers have a similar shape.
+    elf.append(archive_tag);
+    elf.append(sha);
+    return {std::move(elf), std::move(sha)};
 }
 
 std::string linked_program(std::string_view guest, bool always) {
@@ -155,6 +180,8 @@ int run_elf(std::string_view path) {
     if (const auto status = staged.invoke(false))
         return status;
     guest.archive_sha256 = archvirt_cache::sha256(runtime_archive(Assets{}));
+    if (!guest.image.ends_with(std::string(archive_tag) + guest.archive_sha256))
+        throw std::runtime_error("ArchVirt guest ELF does not match the compiler's guest runtime archive");
     return remember_and_run(guest, staged);
 }
 

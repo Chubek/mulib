@@ -1500,6 +1500,14 @@ def backend_inventory(args):
             except (OSError, ValueError) as error:
                 row.update(available=False, reason=str(error).replace(directory, '<probe>'))
             rows.append(row)
+        row = {'name': 'archvirt', 'root_policy': ['always', 'opt-in']}
+        try:
+            run([compiler, '--vm-launcher=always', '--no-prelude', source,
+                 '-o', work / 'archvirt'], work)
+            row['available'] = True
+        except (OSError, ValueError) as error:
+            row.update(available=False, reason=str(error).replace(directory, '<probe>'))
+        rows.append(row)
     print(json.dumps({'schema': 'on1x.project-backends/v1', 'compiler_sha256': tool_digest(compiler),
                       'backends': rows}, indent=2, sort_keys=True))
 
@@ -1614,7 +1622,7 @@ def build(args):
         executor = Execution(args, work, compiler, cc, stdlib, mulib)
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
                         'optimization_helper': Path(optimization.__file__)}
-        if vm_policy and args.sandbox:
+        if vm_policy and (args.sandbox or args.command != 'plan'):
             archvirt_mounts(compiler, executor, chosen_tools)
         if cc is not None:
             chosen_tools['cc'] = cc
@@ -1816,23 +1824,24 @@ def build(args):
             verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
             if args.command == 'plan':
                 continue
-            if backend == 'archvirt':
-                artifact = guest if launching else work / 'artifact' / key
-                mode = '--vm-build' if launching else '--vm-launcher=' + vm_policy
-                executor.run([compiler, mode, entry, '-o', executor.path(artifact),
-                              *loader, *analysis_flags, *opt_flags], timeout=180)
-                outputs[key] = digest(read(artifact, MAX_PROCESS))
-                continue
-            output = executor.path(work / 'artifact' / key)
-            if backend == 'mir-vm':
-                tape = work / 'artifact' / (key + '.o1vm')
-                # The VM keeps diagnostic locations in its bytecode. Map staged
-                # and installed directories to reproducible logical filenames.
+            if backend in ('archvirt', 'mir-vm'):
+                # Source locations in VM artifacts must not pin temporary
+                # build directories or disclose their names at runtime.
                 source_roots = [(executor.path(project_stage), '/__on1x__/project'),
                                 (executor.path(deps_stage), '/__on1x__/deps'),
                                 (standard, '/__on1x__/stdlib'), (stdlib.parent / 'std', '/__on1x__/std')]
                 map_flags = [v for src, dest_root in source_roots
                              for v in ('--vm-source-prefix', src, dest_root)]
+            if backend == 'archvirt':
+                artifact = guest if launching else work / 'artifact' / key
+                mode = '--vm-build' if launching else '--vm-launcher=' + vm_policy
+                executor.run([compiler, mode, entry, '-o', executor.path(artifact),
+                              *loader, *analysis_flags, *opt_flags, *map_flags], timeout=180)
+                outputs[key] = digest(read(artifact, MAX_PROCESS))
+                continue
+            output = executor.path(work / 'artifact' / key)
+            if backend == 'mir-vm':
+                tape = work / 'artifact' / (key + '.o1vm')
                 executor.run([compiler, '--emit-vm', entry, '-o', executor.path(tape),
                               *loader, *analysis_flags, *opt_flags, *map_flags])
                 executor.run([executor.path(bundled), '--verify', executor.path(tape)])

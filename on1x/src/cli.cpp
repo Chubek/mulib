@@ -381,21 +381,9 @@ std::string read_ir(const std::string& name){
  if(!in.eof())throw std::runtime_error("cannot read "+name);
  return text;
 }
-using VmSourcePrefixes=std::map<std::string,std::string>;
-void vm_source_paths(on1x::mir::Module& module,const VmSourcePrefixes& prefixes){
- auto map=[&](on1x::Location& at){
-  const std::string* replacement=nullptr;std::size_t length=0;
-  for(const auto& [from,to]:prefixes){
-   if(from.size()<=length||!at.file.starts_with(from))continue;
-   if(from!="/"&&at.file.size()!=from.size()&&at.file[from.size()]!='/')continue;
-   length=from.size();replacement=&to;
-  }
-  if(replacement){
-   auto suffix=at.file.substr(length);
-   if(!suffix.empty()&&suffix.front()=='/')suffix.erase(0,1);
-   at.file=suffix.empty()?*replacement:(std::filesystem::path(*replacement)/suffix).lexically_normal().generic_string();
-  }
- };
+ using VmSourcePrefixes=on1x::SourcePrefixes;
+ void vm_source_paths(on1x::mir::Module& module,const VmSourcePrefixes& prefixes){
+  auto map=[&](on1x::Location& at){at.file=on1x::remap_source_path(at.file,prefixes);};
  for(auto& f:module.functions){
   map(f.where);for(auto& s:f.slots)map(s.where);
   for(auto& b:f.blocks){
@@ -515,7 +503,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
    "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
-   "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in emitted bytecode\n"
+   "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in VM artifacts\n"
    "       on1xc --vm-build INPUT -o GUEST_ELF | --vm-run INPUT [-o GUEST_ELF] (ArchVirt)\n"
    "       on1xc --vm-run-elf GUEST_ELF | --vm-rerun KEY | --vm-cache-clear (ArchVirt)\n"
    "       on1xc --vm-launcher=always|opt-in INPUT -o EXECUTABLE (linked ArchVirt)\n"
@@ -834,7 +822,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    }
    if(!archvirt_mode.empty()){
     if(mode!="--emit-c"||explicit_c||ir_input||!sdk_mode.empty()||list_opts||cephyr_object||
-       loader.kernel_c11||loader.kernel_stage||!vm_prefixes.empty())
+       loader.kernel_c11||loader.kernel_stage)
      throw std::runtime_error("ArchVirt modes require checked source and cannot be combined with another output mode");
     if(out=="-"||(out.empty()&&archvirt_mode!="--vm-run"))
      throw std::runtime_error("ArchVirt build and launcher modes require -o FILE; binary output to stdout is not supported");
@@ -871,7 +859,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
 #endif
    }
-        if(!vm_prefixes.empty()&&mode!="--emit-vm")throw std::runtime_error("--vm-source-prefix requires --emit-vm");
+         if(!vm_prefixes.empty()&&mode!="--emit-vm"&&archvirt_mode.empty())
+          throw std::runtime_error("--vm-source-prefix requires --emit-vm or ArchVirt source compilation");
          const bool dump_memgraph=mode=="--dump-memgraph";
          if(dump_memgraph&&!on1x::memgraph::available())
           throw std::runtime_error("MEMGraph unavailable: configure with ON1X_WITH_MEMGRAPH=ON and LibStone LLSynth");
@@ -1188,6 +1177,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      std::string bounds_report;
      on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
      c11_options.allow_stackless_timers=!cephyr_object&&archvirt_mode.empty();
+     if(!archvirt_mode.empty()&&!vm_prefixes.empty())c11_options.source_prefixes=&vm_prefixes;
 #ifdef ON1X_WITH_CEPHYR
      std::map<std::size_t,on1x::Location> c11_origins;
      if(cephyr_options.sarif)c11_options.origins=&c11_origins;

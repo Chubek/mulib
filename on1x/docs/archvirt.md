@@ -24,9 +24,11 @@ on1xc --vm-launcher=opt-in main.on1x -o main-opt
 `--vm-build` only writes the guest and does not run or populate the replay
 cache. `--vm-run` can also export the guest with `-o FILE`. Neither command
 makes a guest ELF executable on the host. `--vm-run-elf` accepts the
-same DomIOS profile with no access to source; only use it for trusted On1x
-build artifacts. Replay uses the
-exact previously compiled image without consulting the current source. A
+same DomIOS profile with no access to source. It checks the guest's recorded
+runtime-archive fingerprint against the current compiler installation.
+That metadata is not a signature; only use it for trusted On1x build
+artifacts. Replay uses the exact previously compiled image without consulting
+the current source. A
 missing or incompatible entry is an error. Clearing the
 [private cache](archvirt-cache.md) never deletes an explicitly written
 guest or launcher.
@@ -39,6 +41,18 @@ the On1x program**. `always` enters the VM on every valid invocation;
 supports guest arguments or attempts a host fallback. Stripping or
 rewriting the linked executable after packaging may discard its embedded
 image; the launcher then rejects it.
+
+Put `vm always` or `vm opt-in` in a project's **root** `On1xfile` to use
+linked builds and the `on1xc aux run`, `vm-rerun`, and `vm-cache-clear`
+commands. See the [project policy](../stdlib/on1xfile/README.md#archvirt-launch-policy).
+Project VM builds map staging filenames to stable logical paths for runtime
+diagnostics. `on1xc aux backends` probes build availability, not access to
+`/dev/kvm`.
+
+The [VMM standard-library package](../stdlib/vmm/README.md) checks typed
+configuration without native activation. Its optional trusted C companion
+can also boot bounded software guests. The two profiles are distinct; the
+companion is not a safe-admitted On1x management binding.
 
 ## Build and trust boundary
 
@@ -55,8 +69,10 @@ cmake --build build/on1x-archvirt --parallel
 ctest --test-dir build/on1x-archvirt --output-on-failure -R '^on1x\.archvirt\.'
 ```
 
-Launchers depend on the configured ArchVirt installation or a compatible
-runtime at deployment. The guest can use the [freestanding C11
+Launchers and the compiler's separate execution helper depend on the
+configured ArchVirt installation or a compatible runtime at deployment.
+The compiler itself does not load `libdomvirt` when checking or building.
+The guest can use the [freestanding C11
 profile](../archvirt/README.md): checked integers, booleans, bounded
 aggregate operations, and console output. It receives no host filesystem,
 network, environment, argv, or stdin. Floating-point, arbitrary native

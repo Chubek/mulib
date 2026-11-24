@@ -49,7 +49,8 @@ class Generator {
   const Unit& unit;
   NominalCatalog catalog;
   memgraph::Bounds bounds;
-  std::map<std::size_t,Location>* origins;
+   std::map<std::size_t,Location>* origins;
+   const SourcePrefixes* source_prefixes;
   std::map<std::size_t,const Location*> proto_origins,body_origins;
   const Location* enclosing=nullptr;
  std::ostringstream types,prototypes,helpers,value_helpers,definitions;
@@ -91,7 +92,10 @@ class Generator {
      bool uses_csp=false,uses_group_deadlines=false;
      Type current_result=Type::Void;
       std::size_t cancellation_budget=262144,ownership_cleanup_budget=262144;
-   std::string location(const Location& at)const{return c_string(meta::source_literal(at.file))+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
+    std::string source_literal(const Location& at)const{
+     return c_string(meta::source_literal(source_prefixes?remap_source_path(at.file,*source_prefixes):at.file));
+    }
+    std::string location(const Location& at)const{return source_literal(at)+", "+std::to_string(at.line)+", "+std::to_string(at.column);}
 
  std::string reserve(const std::string& preferred){
   std::string name=preferred;std::size_t suffix=0;
@@ -762,7 +766,7 @@ class Generator {
     auto length=slice?root+".length":"INT64_C("+std::to_string(t.extent())+")";
     if(e.kind==Expr::Kind::Length)return temp(Type::I64,length);
     auto lo=temp(Type::I64,expr(*e.children[1]));
-     auto at=[&]{return c_string(meta::source_literal(e.where.file))+", "+std::to_string(e.where.line);};
+      auto at=[&]{return source_literal(e.where)+", "+std::to_string(e.where.line);};
      if(e.kind==Expr::Kind::Index){
        if(!bounds.omit_check(e))
        definitions<<pad()<<"on1x_bounds_index("<<lo<<", "<<length<<", "<<at()<<");\n";
@@ -1077,7 +1081,7 @@ class Generator {
    case Stmt::Kind::Defer:throw Error(s.where,"unlowered defer");
    case Stmt::Kind::PushDefer:{
     const auto& e=*s.value;const auto& lambda=lambdas.at(lambda_index.at(&e));
-    auto at=c_string(meta::source_literal(s.where.file))+", "+std::to_string(s.where.line)+", "+std::to_string(s.where.column);
+     auto at=location(s.where);
     auto call="on1x_defer_register(&"+defer_stack+", "+(e.captures.empty()?"0":"sizeof(struct "+lambda.environment+")")+", "+lambda.invoke+", "+(e.captures.empty()?"NULL":lambda.destroy)+", "+at+")";
     if(e.captures.empty())definitions<<pad()<<"(void)"<<call<<";\n";
     else{
@@ -1340,7 +1344,8 @@ class Generator {
  public:
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
-        bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins){
+         bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins),
+         source_prefixes(options.source_prefixes){
    for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
      for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
