@@ -238,7 +238,8 @@ def main():
         build("mutated-review-bytes", safe, extra=params(), status=None,
               diagnostic=b"signature verification failed")
         changed = copy.deepcopy(candidate)
-        changed["target"] = "aarch64-linux-gnu"
+        changed["target"] = ("aarch64-linux-gnu" if legacy
+                             else ["aarch64-linux-gnu", "LP64", "AAPCS64", "aapcs64"])
         sign("target-drift", changed)
         build("signed-stale-target", safe, extra=params(), status=None, diagnostic=b"does not match")
         safe_dyn = source("safe-dso", body, safe=True, dynamic=True)
