@@ -168,6 +168,22 @@ cmake --build build/embedding --target on1x_rt_embed_c on1x_rt_embed_cpp on1x_rt
 ctest --test-dir build/embedding -R 'on1x.runtime.embedding_' --output-on-failure
 ```
 
+`on1x_rt_embed_ownership` is a separate fixture for a statically registered
+module. An exact `(i64, i64) -> i64` export calls a generated On1x function that
+boxes a `Cell`, takes shared and exclusive lexical borrows, replaces the payload
+through `ref`, and drops the owner before returning. The fixture checks zero
+live unique allocations after each call and rejects unknown value kinds and
+nonzero signature flags before provider initialization or invocation. ABI 1
+does not transport On1x `own<T>` values or lexical loans, including as pointers
+or as `On1xRT_Buffer` handles. The private C11 runtime retains its ordinary
+failure behavior (including fatal allocation failure); running through On1xRT
+does not make that code recoverable or sandboxed.
+
+```sh
+cmake --build build/embedding --target on1x_rt_embed_ownership
+ctest --test-dir build/embedding -R '^on1x\.runtime\.embedding_ownership$' --output-on-failure
+```
+
 ## Trusted dynamic native module
 
 `on1x_rt_engine_load_authorized_dynamic` takes an absolute UTF-8 path and a

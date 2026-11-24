@@ -1,0 +1,57 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "worker": 3,
+  "task": "Ownership workstream: lexical borrow inspection and runtime embedding",
+  "repository_revision": "825f65857db0b4c03aee860e297a7d1f33401e77",
+  "libstone_revision": "3be5e9d7ffde4f97f333365e7080e316396a0e55",
+  "facilities": [
+    {
+      "id": "frontend.ast.lexical-borrow",
+      "status": "EXECUTABLE",
+      "paths": ["on1x/sdk/src/frontend/Frontend.cpp", "on1x/sdk/include/On1xSDK-AST.h"],
+      "contract": "Borrow tag, identifier operand, shared/exclusive flags and referent type syntax are retained from the canonical parser. No semantic admission is conferred.",
+      "tests": ["on1x.sdk.frontend"]
+    },
+    {
+      "id": "ir.hir.lexical-borrow",
+      "status": "EXECUTABLE",
+      "paths": ["on1x/sdk/src/ir/HIR.cpp", "on1x/sdk/include/On1xSDK-HIR.h"],
+      "contract": "Checked lexical borrow expressions, borrow/ref parameters and exclusive stores retain their mode without changing referent types or record layouts. Wire-v1 inspection validates mode/operand structure and remains candidate-only.",
+      "tests": ["on1x.sdk.semantics_ir", "on1x.sdk.semantics_ir_c"]
+    },
+    {
+      "id": "runtime.static-internal-owner-fixture",
+      "status": "EXECUTABLE",
+      "paths": ["on1x/runtime-sdk/tests/ownership.on1x", "on1x/runtime-sdk/tests/ownership.c", "on1x/runtime-sdk/cmake/Embedding.cmake"],
+      "contract": "An unchanged ABI-1 scalar export calls generated C11 code which boxes a Cell, reborrows it, replaces and reads the payload, drops the owner, and returns a scalar. Signature and call validation reject unsupported owner-like value tags/flags; no general transport.",
+      "tests": ["on1x.runtime.embedding_ownership"]
+    }
+  ],
+  "limits": [
+    "No canonical checker, backend admission, private generated ABI, or public On1xRT ABI changes.",
+    "Old HIR-v1 payloads cannot recover omitted shared parameter flags; older readers reject the new flags and expression kind.",
+    "No On1x own<T> or lexical loan crosses the embedding ABI; private C11 fatal errors remain terminal. The module is not sandboxed."
+  ],
+  "verification": [
+    {
+      "configuration": "Linux x86-64, GCC 16.2.1, CMake 4.4.3, Debug. ON1X_LIBSTONE_ROOT=/mnt/nvme/mulib/on1x/third_party/libstone (read-only). Generated scanner, BUILD_TESTING=ON, ON1X_REQUIRE_LIBSTONE=ON, ON1X_RT_BUILD_SHARED=OFF.",
+      "build_command": "cmake --build /mnt/nvme/on1x-ownership-825f/sdk-build --parallel 3 --target on1x_rt_embed_c on1x_rt_embed_cpp on1x_rt_embed_ownership on1x_rt_test_lifecycle on1x_rt_test_negative on1x_rt_test_fault on1x_rt_test_cpp on1x_rt_test_abi on1x_sdk_test_frontend on1x_sdk_test_frontend_c on1x_sdk_test_scanner_parity on1x_sdk_test_semantics_ir on1x_sdk_test_semantics_ir_c on1x_sdk_header_On1xSDK_HIR_h_c on1x_sdk_header_On1xSDK_HIR_h_cxx17",
+      "command": "ctest --test-dir /mnt/nvme/on1x-ownership-825f/sdk-build --output-on-failure -R '^on1x\\.(runtime\\.embedding_(c|cpp|ownership)|sdk6\\.runtime_(lifecycle|negative|fault|cpp|abi)|sdk\\.(frontend(_c|_scanner_parity|_headers)?|semantics_ir(_c)?|header\\.On1xSDK_HIR_h\\.(c|cxx17)))$'",
+      "result": "16 passed, 0 failed, 0 skipped",
+      "log": "/mnt/nvme/on1x-ownership-825f/sdk-build/focused-ctest.log"
+    },
+    {
+      "configuration": "Same compiler, vendor and build type, with ON1X_USE_FALLBACK_SCANNER=ON and ON1X_REQUIRE_LIBSTONE=OFF.",
+      "build_command": "cmake --build /mnt/nvme/on1x-ownership-825f/sdk-fallback --parallel 3 --target on1x_sdk_test_frontend on1x_sdk_test_semantics_ir on1x_rt_embed_ownership",
+      "command": "ctest --test-dir /mnt/nvme/on1x-ownership-825f/sdk-fallback --output-on-failure -R '^on1x\\.(runtime\\.embedding_ownership|sdk\\.(frontend|semantics_ir))$'",
+      "result": "3 passed, 0 failed, 0 skipped",
+      "log": "/mnt/nvme/on1x-ownership-825f/sdk-fallback/focused-ctest.log"
+    },
+    {
+      "configuration": "Clang 22.1.8 strict C11, ASan/UBSan with leak detection; instruments the emitted C fixture, On1xRT, and private C11 runtime, not the compiler. Dynamic loader not linked.",
+      "command": "B=/mnt/nvme/on1x-ownership-825f/sdk-build; clang -std=c11 -Wall -Wextra -Wpedantic -Werror -g -fsanitize=address,undefined -fno-omit-frame-pointer -I\"$B/sdk\" -Ion1x/runtime-sdk/include -Ion1x/runtime on1x/runtime-sdk/tests/ownership.c on1x/runtime-sdk/src/On1xRT.c on1x/runtime/on1x_runtime.c -pthread -lm -o \"$B/ownership-sanitized\" && ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \"$B/ownership-sanitized\"",
+      "result": "Exit 0; no sanitizer output"
+    }
+  ],
+  "integration_requests": []
+}

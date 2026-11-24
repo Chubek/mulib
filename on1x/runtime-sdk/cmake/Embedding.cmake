@@ -19,6 +19,15 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
         target_link_libraries(on1x_rt_embed_${lang} PRIVATE on1x_rt_choose)
         add_test(NAME on1x.runtime.embedding_${lang} COMMAND on1x_rt_embed_${lang})
     endforeach()
+    set(_rt_ownership "${CMAKE_CURRENT_BINARY_DIR}/ownership.inc")
+    add_custom_command(OUTPUT "${_rt_ownership}"
+        COMMAND on1xc --no-prelude --emit-c "${_rt_root}/tests/ownership.on1x" -o "${_rt_ownership}"
+        DEPENDS on1xc "${_rt_root}/tests/ownership.on1x" VERBATIM)
+    add_executable(on1x_rt_embed_ownership
+        "${_rt_root}/tests/ownership.c" "${_rt_ownership}")
+    target_include_directories(on1x_rt_embed_ownership PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+    target_link_libraries(on1x_rt_embed_ownership PRIVATE On1x::RT on1x_runtime)
+    add_test(NAME on1x.runtime.embedding_ownership COMMAND on1x_rt_embed_ownership)
     if(ON1X_RT_BUILD_SHARED AND NOT CMAKE_CROSSCOMPILING)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         add_library(on1x_rt_python_fixture MODULE)
