@@ -190,8 +190,9 @@ tools are build or launch errors; `plan` reports policy and validates
 inputs but does not build or probe a launcher.
 
 The driver's `--sandbox` still means fail-closed Linux bubblewrap isolation
-for the **build**. The selected compiler reports the regular toolchain files
-it needs for ArchVirt launcher builds; the driver adds only those files as
+for the **build**. After the namespace check succeeds, a trusted host-side
+query to the selected compiler enumerates regular ArchVirt toolchain files
+without project source or policy input. The driver adds those files as
 read-only mounts, not a build tree or a KVM device. It is not
 the same as the opt-in launcher's `--sandbox` switch. The explicit `run`
 command invokes ArchVirt outside the build namespace only after the staged
@@ -625,25 +626,38 @@ pre-materialized local store when remote acquisition is unavailable.
 
 ## What `--sandbox` does and does not guarantee
 
-Default project builds stage only declared inputs (plus access to
-operator-selected SDK libraries), discard ambient environment/search paths,
-verify the module graph, and do not perform network fetching or implicit shell
-interpolation. The default does **not** OS-isolate the compiler or host tools.
-Ordinary source PPX and executable source extensions are rejected; this is a
-restricted build profile rather than a replacement for `on1x-build.py INPUT`.
+Default project builds stage declared inputs and verify the module graph.
+Build subprocesses get a fixed environment, including `PATH=/usr/bin:/bin`,
+not the caller's `PATH`, `CC`, compiler include settings, or library search
+variables. The driver still accepts operator tool selections such as
+`--on1xc` and the SDK's `ON1X_PROJECT_COMPILER`. Bare executable names must be
+found on the fixed `PATH`; for a tool beside the caller, use an explicit
+`./tool` or absolute path. Tools receive separate arguments, without implicit
+shell interpretation. The default does **not** OS-isolate the compiler or host
+tools. Builds do not fetch dependencies; ordinary source PPX and executable
+source extensions are rejected. `--frozen` enforces offline, locked
+dependency resolution; it does not imply `--sandbox`, pin a toolchain, or
+freeze the bytes of local sources. Use both flags to request both behaviors.
 
-`--sandbox` fails closed if Linux bubblewrap cannot create the requested
-namespaces. It runs the compiler, native builder, and selected policy helpers
-with a fixed working layout, a clean environment, read-only staged inputs,
-mounts for the SDK and `/usr` toolchain, isolated network namespace, and
-private `/tmp`, `/proc`, and `/dev`. The host project and home directory are
-not mounted as build inputs. The host driver still performs trusted filesystem
-acquisition, offline Git object validation and output publication outside the
-process sandbox. The pinned On1x SDK/compiler binaries and host `/usr`
-toolchain are trusted and not automatically distributed or version-locked.
-This is process isolation, not a certified reproducible toolchain: artifact
-equality across environments or changes to the SDK/native toolchain is not
-guaranteed. An unoptimized debug build may include ephemeral generated-C
-paths unless the builder is configured to remap them. Script correctness,
-races with untrusted local filesystem writers, and hostile project execution
-after linking are outside the guarantee.
+`--sandbox` checks Linux bubblewrap before starting even the stdlib query.
+A setup or command failure never retries the build on the host. Compiler
+invocations (including the stdlib query), the native builder, and selected
+policy helpers get the isolated network namespace, private `/tmp`, `/proc`,
+and `/dev`, and a fixed working layout: read-only `/work/input`, writable
+`/work/cwd` and `/work/artifact`. The private host staging directory is not
+mounted wholesale. The host driver still performs filesystem acquisition,
+offline Git validation, the ArchVirt file-list query described above, and
+output publication outside the sandbox.
+
+The SDK, selected tools and library roots, and host `/usr` toolchain are
+trusted and visible in the sandbox. The project and home directory are not
+mounted merely because they are the project or home; files already under a
+mounted tree remain visible. Keep private and undeclared project data outside
+these trees. If a compiler wrapper delegates to a binary that is not visible
+inside the sandbox, select the binary directly or install it in the mounted
+toolchain. `tools.bubblewrap` in a sandboxed build report fingerprints the
+launcher but does not pin it; reports are not a complete toolchain lock.
+Artifact equality across hosts or toolchain changes is not guaranteed. See
+[reproducible debug paths](../../docs/reproducible-debug.md) for path remapping.
+Tool correctness, concurrent local changes to trusted mounts, and execution
+after linking are outside the build sandbox guarantee.

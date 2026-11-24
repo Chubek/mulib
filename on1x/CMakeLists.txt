@@ -801,6 +801,10 @@ if(BUILD_TESTING)
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_fetch.py" --on1xc "$<TARGET_FILE:on1xc>"
       --cc "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.project_fetch PROPERTIES TIMEOUT 300)
+    add_test(NAME on1x.project_hermetic COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_hermetic.py" --on1xc "$<TARGET_FILE:on1xc>"
+      --cc "${CMAKE_C_COMPILER}")
+    set_tests_properties(on1x.project_hermetic PROPERTIES TIMEOUT 90)
     add_test(NAME on1x.project_aux COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_aux_cli.py" --on1xc "$<TARGET_FILE:on1xc>"
       --cc "${CMAKE_C_COMPILER}")

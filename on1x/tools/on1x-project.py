@@ -657,8 +657,11 @@ def dependency_modes(args):
 
 def program(value):
     path = Path(value)
-    if not path.is_absolute() and '/' not in value:
-        path = Path(shutil.which(value, path=ENV['PATH']) or value)
+    if not path.is_absolute() and '/' not in os.fspath(value):
+        selected = shutil.which(value, path=ENV['PATH'])
+        if selected is None:
+            fail(f'executable unavailable on the fixed PATH: {value}')
+        path = Path(selected)
     path = path.resolve()
     if not path.is_file() or not os.access(path, os.X_OK):
         fail(f'executable unavailable: {value}')
@@ -918,17 +921,22 @@ def selected_tool(args, field, filename, compiler, *, optional=False):
 
 class Execution:
     """Compiler process envelope; host file acquisition itself is intentionally outside it."""
-    def __init__(self, args, work, compiler, cc, stdlib, mulib):
+    def __init__(self, args, work, compiler, cc, mulib):
         self.work = work
         self.env = ENV
+        self.python = Path(sys.executable)
+        self.bwrap = None
         self.prefix = []
         if args.sandbox:
             if not sys.platform.startswith('linux'):
                 fail('--sandbox requires Linux bubblewrap')
-            self.prefix = [program('bwrap'), '--unshare-all', '--die-with-parent', '--new-session',
+            self.bwrap = program('bwrap')
+            self.prefix = [self.bwrap, '--unshare-all', '--die-with-parent', '--new-session',
                            '--clearenv', '--ro-bind', '/usr', '/usr', '--proc', '/proc', '--dev', '/dev',
-                           '--tmpfs', '/tmp', '--dir', '/etc', '--bind', work, '/work',
-                           '--ro-bind', work / 'input', '/work/input', '--chdir', '/work/cwd']
+                           '--tmpfs', '/tmp', '--dir', '/etc',
+                           '--ro-bind', work / 'input', '/work/input',
+                           '--bind', work / 'cwd', '/work/cwd',
+                           '--bind', work / 'artifact', '/work/artifact', '--chdir', '/work/cwd']
             for alias in ('/bin', '/sbin', '/lib', '/lib64'):
                 path = Path(alias)
                 if path.is_symlink():
@@ -940,16 +948,47 @@ class Execution:
             self.mounts = set()
             for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib',
                          mulib / 'include', mulib / 'manual',
-                         mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc, POLICY):
+                         mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
                 self.mount(path)
             if args.ffi_provider:
                 self.mount(ROOT / 'contracts-exotract/catalog.json')
                 self.mount(ROOT / 'contracts-exoml')
-            if stdlib is not None:
-                self.mount(stdlib)
-                self.mount(stdlib.parent / 'std')
-            # Eligibility is checked before any project-owned Lua can be run.
+            # A failed setup must not even start a compiler discovery process.
             self.run(['/usr/bin/true'], bound=32)
+            # Use the same name for the mount and argv, including when the
+            # driver itself was started via a Python symlink or venv.
+            self.python = program(sys.executable)
+
+    def standard_library(self, compiler, explicit):
+        def query(override):
+            options = ['--stdlib', override] if override is not None else []
+            result = Path(self.run([compiler, '--print-stdlib', *options], bound=4096).decode().strip())
+            if not result.is_absolute() or '..' in result.parts or not result.is_dir():
+                fail(f'compiler did not report a normalized absolute standard library directory: {result}')
+            return result
+
+        override = explicit.resolve(strict=True) if explicit is not None else None
+        if self.prefix:
+            # Make the installed layout visible for on1xc's relative-to-binary
+            # lookup. Its compiled-in fallback can be reported before it is
+            # mounted, even when using a compiler from a different checkout.
+            candidate = override if override is not None else compiler.parent.parent / 'share/on1x/stdlib'
+            previous = len(self.prefix)
+            mounts = self.mounts.copy()
+            self.mount(candidate, exact=True)
+        standard = query(override)
+        if self.prefix:
+            if override is None and not candidate.is_dir():
+                # Resolve a manifest-relative root now that the compiler can
+                # actually inspect its reported fallback directory.
+                self.mount(standard, exact=True)
+                standard = query(None)
+            del self.prefix[previous:]
+            self.mounts = mounts
+        standard = standard.resolve(strict=True)
+        self.mount(standard)
+        self.mount(standard.parent / 'std', exact=True)
+        return standard
 
     def mount(self, path, *, exact=False):
         if not self.prefix or path is None or not path.exists():
@@ -960,10 +999,12 @@ class Execution:
         # not the canonical filename.
         target = path if exact else source
         if ((source.is_relative_to('/usr') and target.is_relative_to('/usr'))
-                or target in self.mounts):
+                 or target in self.mounts):
             return
+        private = ('/work/input', '/work/cwd', '/work/artifact', '/dev', '/proc', '/etc')
         if (source == Path('/') or source.is_relative_to(self.work)
-                or target.is_relative_to(self.work)):
+                or target.is_relative_to(self.work) or target in (Path('/work'), Path('/tmp'))
+                or any(target.is_relative_to(path) for path in private)):
             fail(f'invalid sandbox toolchain mount: {path}')
         self.mounts.add(target)
         self.prefix.extend(('--ro-bind', source, target))
@@ -1440,8 +1481,8 @@ def native_tools(compiler, cc, executor, chosen_tools):
             if not path.is_file():
                 fail(f'missing {path.name}')
             executor.mount(path)
-        executor.mount(Path(sys.executable))
-        command = [sys.executable, helper, '--on1xc', compiler, '--target', native.TARGET,
+        executor.mount(executor.python)
+        command = [executor.python, helper, '--on1xc', compiler, '--target', native.TARGET,
                    '--cc', cc, '--archon-mir', archon, '--scalar-abi', scalar,
                    '--runtime', runtime, '--archon-manifest', manifest]
         probe = json.loads(executor.run([*command, '--probe'], bound=4096))
@@ -1650,21 +1691,23 @@ def build(args):
         disk.exclude.add(dest)
     disk.exclude.update(project / location for _, location, _ in resolved_dependencies.values())
     with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp:
-        work = Path(tmp)
+        work = Path(tmp).resolve()
         (work / 'input/project').mkdir(parents=True)
         (work / 'input/deps').mkdir()
         (work / 'cwd').mkdir()
         (work / 'artifact').mkdir()
-        std_package = config['kind'] == 'library' and config['name'] == 'std'
-        stdlib = None
-        if not std_package:
-            stdlib_args = ['--stdlib', str(args.stdlib.resolve())] if args.stdlib else []
-            stdlib = Path(run([compiler, '--print-stdlib', *stdlib_args], work / 'cwd',
-                              bound=4096).decode().strip()).resolve(strict=True)
-        executor = Execution(args, work, compiler, cc, stdlib, mulib)
+        executor = Execution(args, work, compiler, cc, mulib)
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
-                        'optimization_helper': Path(optimization.__file__)}
-        if vm_policy and (args.sandbox or args.command != 'plan'):
+                         'optimization_helper': Path(optimization.__file__)}
+        if executor.bwrap is not None:
+            chosen_tools['bubblewrap'] = executor.bwrap
+        # A selected ArchVirt compiler wrapper can declare its backend binary
+        # here; make those files available before sandboxed compiler queries.
+        if vm_policy and args.sandbox:
+            archvirt_mounts(compiler, executor, chosen_tools)
+        std_package = config['kind'] == 'library' and config['name'] == 'std'
+        stdlib = None if std_package else executor.standard_library(compiler, args.stdlib)
+        if vm_policy and not args.sandbox and args.command != 'plan':
             archvirt_mounts(compiler, executor, chosen_tools)
         if cc is not None:
             chosen_tools['cc'] = cc
@@ -1883,8 +1926,8 @@ def build(args):
                     fail(f'{source}: project generated FFI supports only explicit unsafe static imports')
                 ffi_args = ['--ffi-provider', args.ffi_provider, '--ffi-static-only']
                 plan_file = work / 'artifact' / (key + '.ffi.json')
-                executor.mount(Path(sys.executable))
-                executor.run([sys.executable, ROOT / 'tools/on1x-build.py', entry,
+                executor.mount(executor.python)
+                executor.run([executor.python, ROOT / 'tools/on1x-build.py', entry,
                               '-o', executor.path(plan_file), '--inspect-ffi', *ffi_args,
                               '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib,
                               *loader, *analysis_flags, *opt_flags, *(f'--cflag={flag}' for flag in cflags)],
@@ -1929,7 +1972,7 @@ def build(args):
                               *(f'--cflag={flag}' for flag in cflags)], timeout=180)
                 outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
                 continue
-            command = [sys.executable, ROOT / 'tools/on1x-build.py', entry, '-o', output,
+            command = [executor.python, ROOT / 'tools/on1x-build.py', entry, '-o', output,
                         '--on1xc', compiler, '--cc', cc, '--mulib-root', mulib, *loader, *analysis_flags,
                         *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
                         *(f'--cflag={flag}' for flag in cflags), *ffi_args]
@@ -1939,7 +1982,7 @@ def build(args):
                 command.extend(('--mulib', kernel))
             if config['kernels']:
                 command.extend(('--mulib-plan', executor.path(work / 'artifact' / (key + '.mulib.json'))))
-            executor.mount(Path(sys.executable))
+            executor.mount(executor.python)
             executor.run(command, timeout=180)
             outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
         if guest is not None:
