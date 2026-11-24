@@ -2,10 +2,38 @@
 #include <cephyr/Cephyr.h>
 
 #include <memory>
+#ifdef ON1X_CEPHYR_SHARED_PATH
+#include <dlfcn.h>
+#include <stdexcept>
+#endif
 
 namespace on1x::cephyr {
 namespace {
 namespace fs = std::filesystem;
+
+// A restricted compiler process can lower portable MIR without mapping any
+// native provider. Keep the selected library live while its results exist.
+struct Api {
+#ifdef ON1X_CEPHYR_SHARED_PATH
+    struct Close { void operator()(void* handle) const { dlclose(handle); } };
+    std::unique_ptr<void, Close> library{dlopen(ON1X_CEPHYR_SHARED_PATH, RTLD_NOW | RTLD_LOCAL)};
+    template<class F> F symbol(const char* name) {
+        if (!library) throw std::runtime_error("could not load the configured Cephyr embedding library");
+        auto address = dlsym(library.get(), name);
+        if (!address) throw std::runtime_error(std::string("Cephyr embedding library lacks ") + name);
+        return reinterpret_cast<F>(address); // POSIX dlsym function address
+    }
+#define ON1X_CEPHYR_ENTRY(name) decltype(&cephyr_##name) name = symbol<decltype(name)>("cephyr_" #name)
+#else
+#define ON1X_CEPHYR_ENTRY(name) decltype(&cephyr_##name) name = cephyr_##name
+#endif
+    ON1X_CEPHYR_ENTRY(abi_version);
+    ON1X_CEPHYR_ENTRY(compile);
+    ON1X_CEPHYR_ENTRY(result_destroy);
+    ON1X_CEPHYR_ENTRY(result_diagnostics);
+    ON1X_CEPHYR_ENTRY(result_output);
+#undef ON1X_CEPHYR_ENTRY
+};
 
 bool exists_as(const fs::path& path, fs::file_type type) {
     if (path.empty() || path.native().find('\0') != std::string::npos) return false;
@@ -21,7 +49,8 @@ Result invalid(std::string message) {
 Result compile_object(const Request& request) {
     if (request.target != "x86_64-linux-gnu")
         return {Status::unsupported_target, {}, "unsupported On1x Cephyr object target: " + request.target};
-    if (cephyr_abi_version() != 1)
+    static const Api api;
+    if (api.abi_version() != 1)
         return invalid("On1x requires Cephyr embedding ABI 1");
     if (request.logical_filename.empty()) return invalid("missing generated C filename");
     std::string input = "#line 1 \"";
@@ -81,11 +110,11 @@ Result compile_object(const Request& request) {
     native.archon_root = request.archon_root.c_str();
 
     cephyr_result* raw = nullptr;
-    const int code = cephyr_compile(&native, &raw);
-    std::unique_ptr<cephyr_result, decltype(&cephyr_result_destroy)> owner(raw, cephyr_result_destroy);
+    const int code = api.compile(&native, &raw);
+    std::unique_ptr<cephyr_result, decltype(&cephyr_result_destroy)> owner(raw, api.result_destroy);
     size_t size = 0;
     std::string diagnostics;
-    if (const char* data = cephyr_result_diagnostics(raw, &size))
+    if (const char* data = api.result_diagnostics(raw, &size))
         diagnostics.assign(data, size);
     if (code != CEPHYR_OK) {
         Status status = Status::internal_error;
@@ -94,7 +123,7 @@ Result compile_object(const Request& request) {
         if (diagnostics.empty()) diagnostics = "cephyr_compile returned status " + std::to_string(code);
         return {status, {}, std::move(diagnostics)};
     }
-    const char* object = cephyr_result_output(raw, &size);
+    const char* object = api.result_output(raw, &size);
     // Guard the publication boundary: ELF64 little-endian ET_REL / EM_X86_64.
     if (!object || size < 64 || std::string_view(object, 6) != "\177ELF\2\1" ||
         object[16] != 1 || object[17] != 0 || object[18] != 62 || object[19] != 0)

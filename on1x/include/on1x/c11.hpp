@@ -16,9 +16,6 @@ struct C11Options {
     bool allow_stackless_timers = true;
     // Optional logical guest debug paths; does not affect semantic locations.
     const SourcePrefixes* source_prefixes = nullptr;
-    // Require checked typed link-only calls on the native driver route.
-    // The verified HIR mode alone controls foreign linkage and lexical unsafe.
-    bool foreign_driver_staging = false;
     // Opt-in placement for a verified, compiler-owned scalar FFI out cell.
     std::optional<std::size_t> memgraph_stack_bytes = std::nullopt;
 };

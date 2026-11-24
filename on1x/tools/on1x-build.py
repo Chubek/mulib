@@ -82,6 +82,21 @@ def build_kernel_shared(exo, report, root, recipe, stage, cephyr):
             raise ValueError('KernelBind dynlib input drift: '+path)
     return source, shared
 
+def builtin_kernel_runtime(on1xc):
+    """Find the kernel runtime built/installed with this compiler, not a guest path."""
+    executable = shutil.which(on1xc)
+    if executable is None:
+        raise ValueError('standard FFI compiler unavailable: ' + on1xc)
+    directory = Path(executable).resolve(strict=True).parent
+    candidates = [directory / 'libon1x_kernel_rt.so']
+    if directory.name == 'bin':
+        candidates.append(directory.parent / 'lib/libon1x_kernel_rt.so')
+    for library in candidates:
+        if library.is_file():
+            return library.resolve(strict=True)
+    raise ValueError('standard FFI requires the Cephyr kernel runtime built with '
+                     'this on1xc (ON1X_WITH_CEPHYR=ON)')
+
 def main():
     if len(sys.argv) > 1 and sys.argv[1] in ('init', 'exec'):
         from on1x_project import main as project_main
@@ -160,34 +175,13 @@ def main():
     cli.add_argument('--kernel-review-signature', type=Path, help='detached Ed25519 signature of the review file bytes')
     cli.add_argument('--exotract', help='trusted Lua-enabled Exotract executable for KernelBind')
     cli.add_argument('--resource-dir', help='Clang resource directory for KernelBind')
-    cli.add_argument('--ffi-provider', choices=('host', 'cephyr'),
-                     help='select the native implementation provider for compiler-owned FFI descriptors')
-    cli.add_argument('--ffi-taint', choices=('reject', 'allow'),
-                     help='override the foreign discovery taint diagnostic (default: reject)')
-    cli.add_argument('--ffi-adapter-provider', choices=('host', 'cephyr'),
-                     help='select the adapter provider (defaults to --ffi-provider)')
-    cli.add_argument('--ffi-cross-runner', type=Path,
-                     help='explicit trusted target QEMU user executable for unsafe static cross builds')
-    cli.add_argument('--ffi-rv64-toolchain', type=Path,
-                     help='absolute installed Cephyr prefix providing RV64IM LP64 C headers and CRT/libc')
-    cli.add_argument('--ffi-rv64-linker', type=Path,
-                     help='absolute trusted LLD executable for static RV64IM LP64 links')
-    cli.add_argument('--inspect-ffi', action='store_true',
-                     help='publish the descriptor-driven native plan, not an admission decision')
-    cli.add_argument('--ffi-review-candidate', action='store_true',
-                     help='build and probe the binding, then publish an unsigned exact review subject')
-    cli.add_argument('--ffi-review', type=Path,
-                     help='signed generated-binding review; -o publishes a new evidence directory')
-    cli.add_argument('--ffi-review-key', type=Path, help='independent Ed25519 DER public trust anchor')
-    cli.add_argument('--ffi-review-signature', type=Path, help='detached signature of the FFI review')
-    cli.add_argument('--ffi-static-only', action='store_true', help=argparse.SUPPRESS)
     args = cli.parse_args()
     args.via_mir = args.backend == 'mir-c11'
     tools = toolchain.resolve(args)
     args.cc = args.cc or os.environ.get('CC', 'cc')
     custom_tools = toolchain.requested(args) or args._cephyr_executable is not None
     if custom_tools and (args.emit_only or args.backend in ('mir-vm', 'mir-archon') or
-                         args.ffi_provider or args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate):
+                         args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate):
         cli.error('native tool options require an ordinary C11 executable build')
     use_cephyr = tools['compiler'] == 'cephyr'
     tool_files, missing_tools = toolchain.resolve_files(tools, args.cephyr_prefix, args._cephyr_executable)
@@ -196,31 +190,6 @@ def main():
                    args.mulib or args.mulib_archive or args.mulib_fixture or args.mulib_plan or
                    any(Path(path).suffix != '.c' for path in args.extra_c)):
         cli.error(f'Cephyr C11 does not qualify those C flags, debug, archives, or runtime options; {toolchain.HOST_HELP}')
-    ffi_review = (args.ffi_review, args.ffi_review_key, args.ffi_review_signature)
-    ffi_options = (args.ffi_adapter_provider, args.ffi_cross_runner, args.ffi_rv64_toolchain,
-                   args.ffi_rv64_linker, args.inspect_ffi, args.ffi_review_candidate,
-                   args.ffi_static_only, *ffi_review)
-    if any(ffi_options) and not args.ffi_provider:
-        cli.error('generated FFI requires explicit --ffi-provider host|cephyr')
-    if args.ffi_provider:
-        from on1x_ffi_native import CFLAGS
-        if (args.backend not in (None, 'c11') or args.emit_only or args.trust_inline_c11 or
-                args.memory_check or args.verify_types or args.admitted_extern or args.enable_pod_fixture or
-                args.extra_c or args.ppx_chain or args.ppx_schema or args.allow_source_ppx or args.enable or
-                args.mulib or args.mulib_path or args.mulib_fixture or args.mulib_archive or args.mulib_plan or
-                args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or
-                args.kernel_review or args.kernel_review_key or args.kernel_review_signature or
-                args.kernel_dynlib_compiler or args.exotract or args.resource_dir or args.debug_build_root or
-                any(option in ('--ppx-path', '--stdppx-path') for option, _ in args.search_chain or [])):
-            cli.error('generated FFI requires direct C11 without user C, PPX, legacy linkage or extension options')
-        if set(args.cflag) - CFLAGS:
-            cli.error('generated FFI only permits documented optimization/debug/sanitizer C flags')
-        if sum(map(bool, (args.inspect_ffi, args.ffi_review_candidate, any(ffi_review)))) > 1:
-            cli.error('FFI inspection, review candidate and signed-review build are mutually exclusive')
-        if any(ffi_review) and not all(ffi_review):
-            cli.error('FFI review, independent public key and detached signature must be supplied together')
-        if args.output.exists() or args.output.is_symlink():
-            cli.error('generated FFI requires fresh output')
     if args.trust_inline_c11 and (args.backend not in (None, 'c11') or args.emit_only or
             args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate or
             args.memory_check or args.admitted_extern):
@@ -319,8 +288,6 @@ def main():
             compiler += ['--scrutiny', args.scrutiny]
         if args.scrutiny_work is not None:
             compiler += ['--scrutiny-work', str(args.scrutiny_work)]
-        if args.ffi_taint is not None:
-            compiler += ['--ffi-taint', args.ffi_taint]
         if args.no_analysis_repairs:
             compiler.append('--no-analysis-repairs')
         if args.diagnostic_catalog:
@@ -351,10 +318,6 @@ def main():
             compiler += ['--disable', name]
         for label, schema in args.ppx_schema:
             compiler += ['--ppx-schema', label, schema]
-        if args.ffi_provider:
-            from on1x_ffi_native import Build, house
-            root = house.kernel_root(args.mulib_root, MULIB, [])
-            return Build(args, compiler, root, Path(temp).resolve()).run()
         kernel_report = kernel_interface = raw_kernel_interface = None
         ipc_raw = False
         dyn_modules = set()
@@ -497,6 +460,12 @@ def main():
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(code)
             return
+        has_stdffi = '#include <On1xKernelRT.h>\n' in code
+        if has_stdffi and use_cephyr:
+            raise ValueError(f'standard FFI requires the host C11 executable link recipe; {toolchain.HOST_HELP}')
+        if has_stdffi and kernel_interface:
+            raise ValueError('KernelBind cannot mix reviewed/raw imports with standard FFI')
+        stdffi_library = builtin_kernel_runtime(args.on1xc) if has_stdffi else None
         args.output.parent.mkdir(parents=True, exist_ok=True)
         spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'stdlib/mulib/housekeeping.py')
         house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
@@ -508,6 +477,8 @@ def main():
             # those search roots to ExoLib's C header search path.
             includes=[mulib_root/'include']
         include_flags=[part for path in includes for part in ['-I',str(path)]]
+        if stdffi_library:
+            include_flags += ['-I', str(ROOT/'runtime-sdk/include')]
         compile_flags = [*STRICT_C11, *include_flags, *args.cflag]
         cmd = [args.cc, *STRICT_C11,
                '-I', str(ROOT / 'runtime'), *include_flags,
@@ -551,6 +522,10 @@ def main():
         if use_cephyr and native:
             raise ValueError(f'this native bridge requires the host C11 runtime and link recipe; {toolchain.HOST_HELP}')
         recipe, fingerprints, native_links = None, {}, []
+        if stdffi_library:
+            native_links += [str(stdffi_library), '-Xlinker', '-rpath', '-Xlinker', str(stdffi_library.parent)]
+            if native:
+                fingerprints[str(stdffi_library)] = house.contracts.digest(stdffi_library)
         if native:
             cc=shutil.which(args.cc)
             if not cc:raise ValueError('C compiler unavailable: '+args.cc)

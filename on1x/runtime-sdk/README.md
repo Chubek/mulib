@@ -187,35 +187,6 @@ cmake --build build/embedding --target on1x_rt_embed_ownership
 ctest --test-dir build/embedding -R '^on1x\.runtime\.embedding_ownership$' --output-on-failure
 ```
 
-### Generated FFI boundary fixture
-
-On native AMD64 Linux builds with the generated clamp catalogue and typed
-native planner, `on1x.runtime.ffi_embedding_static` compiles a checked On1x
-caller with a lexical `unsafe` call to MuLIB clamp, a compiler-emitted adapter,
-the manifest-planned C implementation, and a small C provider shim. The build
-runs the planner's independent native ABI probe before the host invokes the
-module through On1xRT. Static embedding explicitly links those objects into
-the host; registration still requires its AOT descriptor policy.
-
-With a shared `On1x::RT` and the trusted loader enabled,
-`on1x.runtime.ffi_embedding_dynamic` uses a separate native image and the
-same runtime library as the host. The test pins the exact image digest and
-path in the host policy independently of descriptor identity. It denies
-digest drift and wrong paths before descriptor registration, and denies a
-descriptor identity mismatch after artifact approval. Both tests exercise
-callback failure, temporary buffer cleanup, and unload and handle lifecycle.
-
-```sh
-cmake --build build/embedding --target on1xc on1x_rt_sdk
-ctest --test-dir build/embedding --no-tests=error --output-on-failure \
-  -R '^on1x\.runtime\.ffi_embedding_'
-```
-
-This is a test build, not a general AOT module producer or reviewed safe
-import path. Its temporary native build invokes tools before test execution;
-the embedding host itself needs no compiler, extractor, planner, or generator
-at runtime.
-
 ## Trusted dynamic native module
 
 `on1x_rt_engine_load_authorized_dynamic` takes an absolute UTF-8 path and a
@@ -257,3 +228,38 @@ fd. The OS may still keep the image mapped (e.g. `NODELETE` or other owners).
 Module code must not leave background work, registered callbacks, or other
 state pointing into the library after shutdown. This is not a compiler
 generator for On1xRT artifacts and does not export the private generated C ABI.
+
+## Build-pinned Cephyr kernel runtime
+
+With `ON1X_WITH_CEPHYR=ON`, `On1x::KernelRT` builds a separate C11 library for
+native Linux AMD64. `<On1xKernelRT.h>` is its ABI 1 interface; it does not
+require an On1xRT engine. The direct C11 product uses it for
+`stdffi.clamp.{i64,add_i64,sub_i64}`. An ordinary `on1x-build` links the
+runtime belonging to the selected `on1xc`. An On1x build without the adapter
+rejects these calls in the direct C11 product. Portable MIR products use their
+independent checked scalar recipes.
+
+The runtime embeds the MuLIB clamp implementation and fixed Cephyr config
+at build time. No API accepts source, paths, compiler flags, or symbol names
+from a program. At first use, it compiles the pinned TU with libcephyr and
+the selected Cephyr package's assembler/linker, loads the resulting shared
+image, and resolves the fixed typed exports. It does not invoke a host C
+compiler at program run time. The executable still needs the installed
+kernel runtime and the pinned Cephyr dependency and its native resources.
+This is native code in the caller's address space, not a sandbox.
+
+`on1x_kernel_rt_open` publishes an owned module only after compilation,
+loading, and all export lookups succeed. `on1x_kernel_rt_call_i64` checks
+the operation, arity, and clamp interval; a failing call leaves its result
+slot untouched. `on1x_kernel_rt_close` clears the slot and releases the
+loader reference; quiesce calls before closing. The generated-program
+helper instead caches its first initialization result for the process
+lifetime. The adapter keeps the generated program's clamp assertion before
+crossing the native call boundary.
+
+The enabled build runs both the SDK lifecycle test and a generated-program
+test with no compiler on `PATH`:
+
+```sh
+ctest --test-dir build/on1x -R '^on1x\.runtime\.cephyr_' --output-on-failure
+```
