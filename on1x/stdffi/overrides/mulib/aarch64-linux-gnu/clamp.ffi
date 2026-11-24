@@ -1,0 +1,10 @@
+# Target-specific projection of the canonical clamp header. The ordering
+# precondition applies only to the three-argument clamp operation.
+ffi 2;
+target "aarch64-linux-gnu" LP64 "AAPCS64" aapcs64;
+extend mulib.clamp {
+    select c::mulib_clamp_add_i64;
+    select c::mulib_clamp_i64;
+    select c::mulib_clamp_sub_i64;
+    fn c::mulib_clamp_i64 fingerprint "3abc94c6a56223e19accc4bbd1832df7566e7d0e81d556d398834218db94dd4a" requires 1 <= 2;
+}
