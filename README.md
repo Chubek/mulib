@@ -51,7 +51,7 @@ requirements are separate from the core header model.
 [MuLL](mudsl/mull/README.md) includes a native MuLIB bridge. Generated declaration
 inventory and callable wrappers are distinct capabilities.
 
-[On1x](on1x/README.md) is a statically compiled language with a C11 backend.
+[On1x](on1x/docs/architecture.md) is a statically compiled language with a C11 backend.
 Its [SDK](on1x/sdk/README.md) provides compiler extension interfaces, while
 [On1xRT](on1x/runtime-sdk/README.md) provides native embedding. These are
 different interfaces with different trust and lifecycle contracts. LibStone
@@ -61,6 +61,8 @@ The [KernelBind guide](on1x/docs/kernel-bind.md) describes MuLIB declaration
 discovery, explicit raw bindings, and review-gated imports. Discovery, native
 execution, and independently approved safe admission must not be conflated.
 The repository does not grant production approval merely by shipping a test.
+See the [FFI migration guide](on1x/docs/ffi-migration.md) for what stays
+compatible and what is changing.
 
 [Catalogue-driven design](manual/mulib-cdd-catalogue.md) provides bounded
 descriptors, registries, queries, planning, and host-dispatched execution.
