@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "interface_sha256": "a44f9f62a0fe086e0e1a2cf03f3598852e1e8dc27394eac2262412210530cc0a",
+  "symbol": "cephyr_emit_interface",
+  "enum": "cephyr_status",
+  "success": "CEPHYR_OK",
+  "failures": {
+    "CEPHYR_COMPILE_ERROR": "CompileError",
+    "CEPHYR_INVALID_ARGUMENT": "InvalidArgument",
+    "CEPHYR_INTERNAL_ERROR": "InternalError"
+  }
+}

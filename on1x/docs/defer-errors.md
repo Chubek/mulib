@@ -114,8 +114,9 @@ still no general exception/async/effectful-MIR model.
   success payload, not `void` (which is not a data field).
 - Use explicit `match` for recovery. This is a typed-result alternative to
   exceptions, not `try`/`catch`/`throw`/`finally`. Foreign statuses must be explicitly
-  converted to checked result values by existing raw wrappers. No foreign
-  safety admission follows from `?`.
+  converted to checked result values. An [explicit foreign status contract](ffi-foreign-conditions.md)
+  can generate the status classifier without changing the native call or
+  its admission policy. No foreign safety admission follows from `?`.
 - Propagation is expansive/effectful for the value restriction. It lowers to
   existing typed regions, tag tests, payloads and return edges. Tag dominance,
   initialization, move state, function boundaries and exact return types are
