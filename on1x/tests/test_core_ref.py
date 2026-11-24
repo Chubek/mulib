@@ -340,13 +340,13 @@ for mode, expected in (
     assert p.returncode == 1 and expected in p.stderr and not p.stdout, (mode, p.stderr)
 
 lexical_source = t.work / 'core_borrow_joins.on1x'
-for mode, expected in (
-        ('--emit-ir', 'ON1X-MIR-UNSUPPORTED'),
-        ('--emit-ir-c', 'ON1X-MIR-UNSUPPORTED'),
-        ('--emit-ast', 'lexical borrows are not PPX Unit v1 wire data')):
+for mode in ('--emit-ir', '--emit-ir-c'):
     p = run([t.compiler, mode, lexical_source])
-    assert p.returncode == 1 and expected in p.stderr and not p.stdout, \
-        (mode, p.stderr)
+    assert p.returncode == 0 and p.stdout and not p.stderr, (mode, p)
+p = run([t.compiler, '--emit-ast', lexical_source])
+assert p.returncode == 1 and 'lexical borrows are not PPX Unit v1 wire data' in \
+    p.stderr and not p.stdout, p.stderr
+# Scalar lexical MIR and VM lowering is covered in test_mir_borrow.py.
 
 # Optional independent adapters must either be unavailable or reject the loan
 # metadata they do not model. They may not report success over erased referents.

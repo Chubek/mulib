@@ -35,6 +35,30 @@ source order. MIR still checks omitted steps for unsupported types, ownership
 and effects, but emits no edges or instructions for them. Region exit joins
 likewise require an emitted incoming exit rather than a syntactic target alone.
 
+### Scalar lexical loans
+
+Checked `let r = borrow x` and `let r = borrow mut x` can lower when the
+referent is a bool or a supported numeric scalar. This includes ordinary
+by-value parameters as roots and nested reborrows. MIR uses a single typed
+function-local slot for the root; every read of the root or a live alias uses
+that slot. Loan acquisition has no runtime operation and does not copy the
+referent. `r := value` evaluates `value` once, then writes the same slot if
+evaluation completes. If evaluation exits or traps, it does not write the old
+slot. An ordinary by-value read of an alias still takes a scalar snapshot.
+
+The MEMGraph lexical slot plan is derived from canonical HIR verification of
+loan conflicts, scope and control flow. Its root identities refer to specific
+declarations rather than identifier spellings.
+MIR sees only existing typed, effect-ordered `load`/`store` instructions with
+normal slot-initialization verification. There is no pointer ABI, executable
+loan object, cleanup opcode, or wire format change. The same instructions run
+through serialized MIR, the evaluator, MIR-C11, VM, and Archon where configured.
+This does not admit borrowed *function* parameters/calls, `ref_replace`,
+pattern-bound roots, aggregate or unique owner payload loans, managed values,
+or loan operations in non-entered loop latches. VM closure conversion cannot
+turn an unsupported source referent into an admitted scalar; converted HIR
+gets its own verified plan.
+
 [Value loops](value-loops.md) additionally use the existing region/slot bridge:
 typed break operands store a result and leave a checked join. Numeric/scalar
 tuples run through ordinary MIR slots/edges and optimization/serialization without
@@ -157,11 +181,11 @@ An ordinary `i64` main result follows the existing C11 main exit convention.
 | Arithmetic | Checked i64; dedicated f64 operations in v2; all remaining typed numeric operations/conversions in v3 |
 | Control | If/else, while, early return, nested lexical scopes, short-circuit logic |
 | Calls | Direct ordinary On1x calls, recursion, concrete admitted specializations; tuple arguments/results and parameter destructuring in v2 |
-| Observable effects | Scalar `println`, `assert`, checked arithmetic failure, local loads/stores, conservative call barriers |
+| Observable effects | Scalar `println`, `assert`, checked arithmetic failure, local loads/stores (including verified scalar lexical aliases), conservative call barriers |
 | Serialization | Versioned canonical S-expression; checked readback and exact structural comparison |
 | Provenance | Existing file/byte-offset/line/byte-column locations on definitions and terminators |
 | Diagnostics | `ON1X-MIR-VERIFY`, `-DECODE`, `-LOWER`, `-UNSUPPORTED`, `-EVAL`, `-C11` in the existing located diagnostic path |
-| Unsupported | Strings, managed/resource-bearing aggregates, records/ADTs/arrays/slices, first-class functions/closures, staged values, resources/borrows, raw/safe foreign calls, async effects |
+| Unsupported | Strings, managed/resource-bearing aggregates, records/ADTs/arrays/slices, first-class functions/closures, staged values, non-scalar loans and borrowed calls, raw/safe foreign calls, async effects |
 
 Unsupported constructs reject the complete requested MIR artifact, including
 unused concrete definitions, raw extern declarations and non-entered canonical
@@ -172,7 +196,7 @@ decimal float syntax is specified in [numeric semantics](numerics.md).
 This is not equivalence for every HIR program. For example, HIR→C11 can return
 and project a nominal `record Point{x:i64}` or match an `Option<i64>`; MIR lacks
 nominal layout and tagged-payload descriptors. It also lacks addressable places
-and loans, unique moves/drop, defer registration and recoverable cleanup edges.
+and runtime loans, unique moves/drop, defer registration and recoverable cleanup edges.
 An omitted latch does not change these boundaries. Within the admitted subset,
 compare printed traces and the returned/trapped outcome; the reference
 evaluator adds location and resource limits, and its exhaustion is not a C11

@@ -1,4 +1,5 @@
 #include "lower_mir.hpp"
+#include "MEMGraph/lexical_slots.hpp"
 #include "MEMGraph/memgraph.hpp"
 #include <on1x/backend/vm_closures.hpp>
 #include <on1x/sema.hpp>
@@ -7,7 +8,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/canonical/control.hpp>
-#include <on1x/canonical/values.hpp>
 #include <on1x/concurrency.hpp>
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
@@ -18,12 +18,59 @@
 
 namespace on1x::mir {
 namespace {
+[[noreturn]] void unsupported(const Location& at,const std::string& why){
+ throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
+}
+[[noreturn]] void missing_lexical_root(const Location& at){
+ unsupported(at,"lexical borrow requires a verified named scalar bool or numeric root");
+}
+void function_profile(const on1x::Function& f){
+ if(takes_borrows(f))
+  unsupported(f.where,"borrowed parameters require addressable-place and loan MIR descriptors (C11 HIR backend only)");
+}
+memgraph::LexicalSlots verified_places(const Unit& unit){
+ extensions::verify_evidence(unit);
+ inherent::verify_elaborated(unit);
+ cliches::verify_elaborated(unit);
+ csp::verify(unit,true);
+ canonical::verify_control(unit);
+ meta::require_core(unit);
+ auto plan=memgraph::plan_lexical_slots(unit);
+ verify_nominals(unit);
+ return plan;
+}
+
+// Do not let VM closure conversion manufacture a scalar loan from a
+// function-typed source place, or rewrite an unsupported deferred thunk.
+void vm_source_profile(const std::vector<Stmt>&,const memgraph::LexicalSlots&);
+void vm_source_expression(const Expr& e,const memgraph::LexicalSlots& places){
+ if(e.prototype)return;
+ if(e.callee)vm_source_expression(*e.callee,places);
+ for(const auto& child:e.children)vm_source_expression(*child,places);
+ vm_source_profile(e.body,places);
+}
+void vm_source_profile(const std::vector<Stmt>& body,const memgraph::LexicalSlots& places){
+ for(const auto& s:body){
+  if(s.prototype)continue;
+  if(s.kind==Stmt::Kind::Defer||s.kind==Stmt::Kind::PushDefer)
+   unsupported(s.where,"dynamic defer effects require cleanup MIR descriptors");
+  if(s.kind==Stmt::Kind::Let&&s.value&&s.value->kind==Expr::Kind::Borrow&&!places.binding(s))
+   missing_lexical_root(s.value->where);
+  if(s.kind!=Stmt::Kind::Template&&s.value)vm_source_expression(*s.value,places);
+  vm_source_profile(s.body,places);
+  vm_source_profile(s.otherwise,places);
+ }
+}
+
 class Lowering {
  const Unit& unit;Limits limits;Module module;Id serial=1;
+ const memgraph::LexicalSlots& places;
  std::size_t function=0,current=0;
  static constexpr auto ended=std::numeric_limits<std::size_t>::max();
- struct Binding {Id id;Type type;bool slot;};
+ struct Binding {Id id;Type type;bool slot;bool alias=false;};
  std::vector<std::map<std::string,Binding>> scopes;
+ std::map<const Stmt*,Id> statement_slots;
+ std::map<const Param*,Id> parameter_slots;
  std::map<std::string,Id> functions;
  struct LoopTarget {
   std::size_t id,done,header,latch=ended;
@@ -89,9 +136,6 @@ class Lowering {
    layouts.emplace(t,result);
    return result;
   }
- [[noreturn]] void unsupported(const Location& at,const std::string& why){
-  throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
- }
  Id fresh(const Location& at){if(serial>=limits.nodes)throw Error(at,"ON1X-MIR-LOWER: node budget exhausted");return ++serial;}
   unsigned type_version(const Type& t,const Location& at,bool allow_void=false){
    if(vm_products&&t.is_data())return type_version(representation(t,at),at,allow_void);
@@ -143,14 +187,34 @@ class Lowering {
    auto result=emit(Op::Numeric,type,std::move(args),at);block().instructions.back().primitive=name;return result;
   }
    Binding binding(const std::string& name,const Location& at){
-   for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end())return found->second;
+   for(auto it=scopes.rbegin();it!=scopes.rend();++it)if(auto found=it->find(name);found!=it->end()){
+    if(found->second.alias)unsupported(at,"lexical alias access lacks a checked MIR slot plan");
+    return found->second;
+   }
    unsupported(at,"unresolved local "+name);
   }
-  struct Call {Op op;Id target=0;unsigned version=legacy_format_version;};
+   Binding local(Type type,Id value,const Location& at,bool slot){
+    if(!slot)return {value,type,false};
+    auto id=fresh(at);
+    fn().slots.push_back({id,representation(type,at),at});
+    emit(Op::Store,Type::Void,{value},at,id);
+    return {id,type,true};
+   }
+   Id root_slot(const memgraph::LexicalSlot& place,const Location& at){
+    if(place.root_statement){
+     if(auto root=statement_slots.find(place.root_statement);root!=statement_slots.end())return root->second;
+    }else if(place.root_parameter){
+     if(auto root=parameter_slots.find(place.root_parameter);root!=parameter_slots.end())return root->second;
+    }
+    unsupported(at,"checked lexical root was not materialized as a MIR slot");
+   }
+   struct Call {Op op;Id target=0;unsigned version=legacy_format_version;};
   Call call(const Expr& e){
    if(!e.callee||e.callee->kind!=Expr::Kind::Variable)
     unsupported(e.where,"indirect or raw foreign call requires closure/foreign MIR descriptors");
-   const auto& c=*e.callee;
+    const auto& c=*e.callee;
+    if(c.reference==Expr::Reference::BorrowFunction)
+     unsupported(e.where,"borrowed calls require addressable-place and loan MIR descriptors");
    if(c.reference==Expr::Reference::Function){
     if(!functions.contains(c.text))unsupported(e.where,"unresolved direct call");
     return {Op::Call,functions.at(c.text)};
@@ -196,7 +260,6 @@ class Lowering {
     case Stmt::Kind::Range:unsupported(s.where,"unlowered range");
     default:break;
    }
-   if(s.ref_store)unsupported(s.where,"reference stores require loan MIR descriptors");
   }
   // An omitted latch contributes neither blocks nor a wire-version upgrade.
   // Still enforce the source profile there, including nested latch and region
@@ -211,7 +274,9 @@ class Lowering {
    };
    for(const auto& s:statements){
     if(s.prototype)continue;
-    statement_profile(s);
+     statement_profile(s);
+     if(s.ref_store)
+      unsupported(s.where,"reference stores in omitted loop steps cannot be erased");
     if(s.kind==Stmt::Kind::Storage)(void)type_version(s.declared,s.where);
     if(s.value&&s.kind!=Stmt::Kind::Template)visit(visit,*s.value);
     check_omitted(s.body);
@@ -395,8 +460,10 @@ class Lowering {
     std::vector<Id> fields;for(const auto& child:e.children)fields.push_back(expression(*child));
     return emit(Op::Tuple,e.type,std::move(fields),e.where);
    }
-   case Expr::Kind::Variable:{
-    auto b=binding(e.text,e.where);return b.slot?emit(Op::Load,b.type,{},e.where,b.id):b.id;
+    case Expr::Kind::Variable:{
+     if(const auto* place=places.read(e))
+      return emit(Op::Load,place->type,{},e.where,root_slot(*place,e.where));
+     auto b=binding(e.text,e.where);return b.slot?emit(Op::Load,b.type,{},e.where,b.id):b.id;
   }
    case Expr::Kind::Unary:{auto operand=expression(*e.children.at(0));
     if(e.type==Type::F32)return numeric("neg_f32",e.type,{operand},e.where);
@@ -457,18 +524,44 @@ class Lowering {
       case Stmt::Kind::Defer:case Stmt::Kind::PushDefer:
       case Stmt::Kind::TaskGroup:case Stmt::Kind::CspScope:case Stmt::Kind::Range:
        throw std::logic_error("unsupported statement passed MIR profile check");
-   case Stmt::Kind::Let:{
-    auto value=expression(*s.value);scalar(s.value->type,s.where);
-    if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
-    Binding b{value,s.value->type,false};
-     if(s.mutable_binding){b.id=fresh(s.where);b.slot=true;fn().slots.push_back({b.id,representation(b.type,s.where),s.where});emit(Op::Store,Type::Void,{value},s.where,b.id);}
-    scopes.back().emplace(s.name,b);break;
+    case Stmt::Kind::Let:{
+     if(s.value->kind==Expr::Kind::Borrow){
+      const auto* place=places.binding(s);
+      if(!place)missing_lexical_root(s.value->where);
+      (void)root_slot(*place,s.where);
+      // Acquisition is compile-time only; neither load nor copy the root.
+      // The binding only shadows other names. All accesses use the plan.
+      scopes.back().emplace(s.name,Binding{0,place->type,false,true});break;
+     }
+     auto value=expression(*s.value);scalar(s.value->type,s.where);
+     if(current==ended)break;
+     if(s.pattern){bind_pattern(*s.pattern,s.value->type,value);break;}
+     const bool root=places.is_root(s);
+     auto b=local(s.value->type,value,s.where,s.mutable_binding||root);
+     if(root)statement_slots.emplace(&s,b.id);
+     scopes.back().emplace(s.name,b);break;
    }
-   case Stmt::Kind::Storage:{scalar(s.declared,s.where);auto id=fresh(s.where);fn().slots.push_back({id,representation(s.declared,s.where),s.where});scopes.back().emplace(s.name,Binding{id,s.declared,true});break;}
+   case Stmt::Kind::Storage:{
+    scalar(s.declared,s.where);auto id=fresh(s.where);
+    fn().slots.push_back({id,representation(s.declared,s.where),s.where});
+    if(places.is_root(s))statement_slots.emplace(&s,id);
+    scopes.back().emplace(s.name,Binding{id,s.declared,true});break;
+   }
    case Stmt::Kind::Initialize:case Stmt::Kind::Assign:{
-    auto b=binding(s.name,s.where);if(!b.slot)unsupported(s.where,"assignment to immutable HIR binding");
-     auto value=expression(*s.value);
-     if(current!=ended)emit(Op::Store,Type::Void,{value},s.where,b.id);
+     if(s.ref_store){
+      auto value=expression(*s.value);
+      // The canonical plan contains a store only when the RHS can complete.
+      if(current==ended)break;
+      const auto* place=places.store(s);
+      if(!place||place->mode!=BorrowMode::Exclusive)
+       unsupported(s.where,"reference store lacks a checked writable MIR slot plan");
+      emit(Op::Store,Type::Void,{value},s.where,root_slot(*place,s.where));
+     }else{
+      auto b=binding(s.name,s.where);
+      if(!b.slot)unsupported(s.where,"assignment to immutable HIR binding");
+      auto value=expression(*s.value);
+      if(current!=ended)emit(Op::Store,Type::Void,{value},s.where,b.id);
+     }
      break;
    }
    case Stmt::Kind::Return:{auto value=s.value?expression(*s.value):0;if(current!=ended)terminate(Exit::Return,value,{},s.where);break;}
@@ -520,47 +613,46 @@ class Lowering {
   if(scope)scopes.pop_back();
  }
 public:
-  Lowering(const Unit& u,Limits l,bool products=false,bool bounds_opt=false)
-   :unit(u),limits(l),decision_work(std::min<std::size_t>(l.work,262144)),
+   Lowering(const Unit& u,const memgraph::LexicalSlots& p,Limits l,bool products=false,bool bounds_opt=false)
+    :unit(u),limits(l),places(p),decision_work(std::min<std::size_t>(l.work,262144)),
     vm_products(products),bounds(bounds_opt,false),layout_work(l.work){}
    Module run(){
-      inherent::verify_elaborated(unit);
-      cliches::verify_elaborated(unit);
-      csp::verify(unit,true);
      for(const auto& declaration:unit.nominals)
       for(const auto& field:declaration.fields)if(field.contains_unique())
        unsupported(declaration.where,"unique ownership requires typed move/drop and cleanup MIR events (direct C11 HIR backend only)");
      if(csp::present(unit))unsupported(unit.functions.front().where,"cooperative concurrency requires effectful/ownership MIR descriptors (C11 HIR backend only)");
-    canonical::verify_control(unit);
-    meta::require_core(unit);
-    canonical::verify_values(unit);
-    verify_nominals(unit);
   for(const auto& f:unit.functions){
    if(f.prototype)continue;
-    if(takes_borrows(f))
-     unsupported(f.where,
-       "borrowed parameters require addressable-place and loan MIR descriptors "
-       "(C11 HIR backend only)");
+    function_profile(f);
    if(f.external)unsupported(f.where,"raw extern declarations require typed foreign MIR descriptors");
     scalar(f.result,f.where,true);Function target;target.id=fresh(f.where);target.name=f.name;target.result=representation(f.result,f.where);target.where=f.where;
    functions.emplace(f.name,target.id);module.functions.push_back(std::move(target));
   }
-  for(const auto& f:unit.functions){
-   if(f.prototype)continue;
-   current=make_block(f.where);scopes.emplace_back();
-   for(const auto& p:f.params){
-     scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,representation(p.type,p.where),p.where});scopes.back().emplace(p.name,Binding{id,p.type,false});
-    if(p.pattern)bind_pattern(*p.pattern,p.type,id);
+   for(const auto& f:unit.functions){
+    if(f.prototype)continue;
+    current=make_block(f.where);scopes.emplace_back();
+    for(const auto& p:f.params){
+      scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,representation(p.type,p.where),p.where});
+     if(p.pattern)bind_pattern(*p.pattern,p.type,id);
+     else{
+      const bool root=places.is_root(p);
+      auto b=local(p.type,id,p.where,root);
+      if(root)parameter_slots.emplace(&p,b.id);
+      scopes.back().emplace(p.name,b);
+     }
    }
    body(f.body,false);
    if(current!=ended){if(f.result!=Type::Void)unsupported(f.where,"missing return in checked HIR");terminate(Exit::Return,0,{},f.where);}
-   scopes.clear();++function;
+    scopes.clear();statement_slots.clear();parameter_slots.clear();++function;
   }
   verify(module,limits);return std::move(module);
  }
 };
 }
-Module lower(const Unit& unit,Limits limits){extensions::verify_evidence(unit);return Lowering(unit,limits).run();}
+ Module lower(const Unit& unit,Limits limits){
+  const auto places=verified_places(unit);
+  return Lowering(unit,places,limits).run();
+ }
 Module lower_for_vm(const Unit& unit,Limits limits){
  return hir::lower_vm(unit,limits,false);
 }
@@ -569,13 +661,16 @@ Module lower_for_vm(const Unit& unit,Limits limits){
 namespace on1x::hir {
 mir::Module lower_vm(const Unit& unit,mir::Limits limits,bool memgraph_bounds){
  using namespace mir;
- extensions::verify_evidence(unit);canonical::verify_control(unit);canonical::verify_values(unit);
- cliches::verify_elaborated(unit);inherent::verify_elaborated(unit);csp::verify(unit,true);
- verify_nominals(unit);meta::require_core(unit);
- if(auto converted=vm_closures(unit,limits)){
-  recheck_checked_hir(*converted);
-  return Lowering(*converted,limits,true,memgraph_bounds).run();
- }
- return Lowering(unit,limits,true,memgraph_bounds).run();
+  const auto places=verified_places(unit);
+  for(const auto& f:unit.functions)if(!f.prototype){
+   function_profile(f);
+   vm_source_profile(f.body,places);
+  }
+  if(auto converted=vm_closures(unit,limits)){
+   recheck_checked_hir(*converted);
+   const auto converted_places=verified_places(*converted);
+   return Lowering(*converted,converted_places,limits,true,memgraph_bounds).run();
+  }
+  return Lowering(unit,places,limits,true,memgraph_bounds).run();
 }
 }
