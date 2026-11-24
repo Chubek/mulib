@@ -1,4 +1,5 @@
 #include <on1x/concurrency.hpp>
+#include <on1x/c11.hpp>
 #include <on1x/backend/mir.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/meta.hpp>
@@ -38,6 +39,55 @@ int main(){try{
  require(unit.functions[0].body[0].body[0].value->kind==on1x::Expr::Kind::Csp,"channel operation was erased");
   require(on1x::emit_c(unit,"fiber-test").find("on1x_csp_run_v5(")!=std::string::npos,"C11 scheduler not emitted");
  reject([&]{(void)on1x::mir::lower(unit);});
+ constexpr auto frame_source=R"(fn main(){taskgroup{
+  let worker=launch async {
+   let seed=20;
+   await timer(seed-15);
+   await timer(0);
+   seed*2+2
+  };
+  println(join worker);
+ }})";
+ auto frame_wire=on1x::meta::encode(on1x::parse(on1x::scan(frame_source,"frame-test")));
+ auto frames=on1x::meta::decode(frame_wire);on1x::check(frames);
+ auto frame_of=[](on1x::Unit& u)->on1x::Expr&{
+  return *u.functions[0].body[0].body[0].value->children[0];
+ };
+ auto& frame=frame_of(frames);
+ require(frame.captures.empty()&&frame.body.size()==4,"checked timer frame shape");
+ for(std::size_t state=1;state<=2;++state){
+  const auto& wait=*frame.body[state].value;
+  require(wait.kind==on1x::Expr::Kind::Csp&&wait.text=="frame_sleep"&&
+          wait.children.size()==2&&wait.children[1]->type==on1x::Type::I64&&
+          wait.children[1]->text==std::to_string(state),"timer continuation missing from checked HIR");
+ }
+ auto frame_c=on1x::emit_c(frames,"frame-test");
+ require(frame_c.find("switch (frame->state)")!=std::string::npos&&
+         frame_c.find("int64_t slot_0;")!=std::string::npos&&
+         frame_c.find("on1x_async_launch_v1(")!=std::string::npos&&
+         frame_c.find("on1x_csp_launch(")==std::string::npos,
+         "timer frame was not emitted as stackless C11");
+ on1x::C11Options no_frames;no_frames.allow_stackless_timers=false;
+ reject([&]{(void)on1x::emit_c(frames,"frame-test",no_frames);});
+ reject([&]{(void)on1x::mir::lower(frames);});
+ for(int mutation=0;mutation<5;++mutation){
+  std::size_t frame_budget=262144;
+  auto forged=on1x::clone_unit(frames,frame_budget);
+  auto& bad=frame_of(forged);
+  auto& wait=*bad.body[1].value;
+  if(mutation==0)wait.children[1]->text="2";
+  if(mutation==1)wait.children[0]->type=on1x::Type::Bool;
+  if(mutation==2)bad.captures.push_back({"captured",on1x::Type::I64});
+  if(mutation==3)bad.body[0].mutable_binding=true;
+  if(mutation==4){
+   auto& delay=*wait.children[0];
+   delay.kind=on1x::Expr::Kind::Variable;
+   delay.reference=on1x::Expr::Reference::Local;
+   delay.text="uninitialized";delay.children.clear();
+  }
+  reject([&]{on1x::csp::verify(forged,true);});
+  reject([&]{(void)on1x::emit_c(forged,"forged-frame");});
+ }
   auto source_wire=on1x::meta::encode(on1x::parse(on1x::scan(source,"fiber-test")));
   auto round_trip=on1x::meta::decode(source_wire);on1x::check(round_trip);on1x::csp::verify(round_trip,true);
   constexpr auto typed_source=R"(

@@ -230,7 +230,7 @@ ExprPtr read_expression(const SExpr& n){
    const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
       if(k=="SourceCsp"){
        e->kind=K::SourceCsp;e->text=field(n,0).text;e->result=read_type(field(n,1));
-         static const std::set<std::string> ops={"launch","launch_exec","launch_capture","channel","split","join","cancel","send","recv","try_send","try_recv","close","poll","offer_recv","offer_send","offer_after"};
+         static const std::set<std::string> ops={"launch","launch_async","await_timer","launch_exec","launch_capture","channel","split","join","cancel","send","recv","try_send","try_recv","close","poll","offer_recv","offer_send","offer_after"};
        if(!ops.contains(e->text))invalid(n,"unknown concurrency operation");
        for(const auto& arg:field(n,2).items)e->children.push_back(read_expression(arg));
          auto count=e->text=="channel"?3:e->text=="send"||e->text=="try_send"||
@@ -242,7 +242,7 @@ ExprPtr read_expression(const SExpr& n){
           invalid(n,"concurrency operand/payload shape mismatch");
         if(e->text=="poll"&&(e->children.empty()||e->children.size()>18))invalid(n,"poll offer limit exceeded");
         if((e->text=="launch_exec"||e->text=="launch_capture")&&(e->children.empty()||e->children.size()>9))invalid(n,"external argv limit exceeded");
-       if(e->text=="launch"&&(e->children[0]->kind!=K::Lambda||!e->children[0]->parameters.empty()||e->children[0]->result!=Type::I64))invalid(n,"launch requires an i64 source block");
+       if((e->text=="launch"||e->text=="launch_async")&&(e->children[0]->kind!=K::Lambda||!e->children[0]->parameters.empty()||e->children[0]->result!=Type::I64))invalid(n,"launch requires an i64 source block");
       }
       else if(k=="UnitValue")e->kind=K::Unit;
      else if(k=="Propagate"){e->kind=K::Propagate;e->children.push_back(read_expression(field(n,0)));}

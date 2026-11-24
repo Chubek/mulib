@@ -45,6 +45,7 @@ std::string c_string(const std::string& source){
 class Generator {
  struct Owner { Type type; std::string name,cleanup; };
  struct Lambda { const Expr* expression; std::string invoke,make,environment,destroy; bool deferred; };
+ struct AsyncFrame { const Expr* block; std::string type,resume,drop; };
   const Unit& unit;
   NominalCatalog catalog;
   memgraph::Bounds bounds;
@@ -69,6 +70,8 @@ class Generator {
  std::map<std::string,const Function*> borrow_functions;
  std::vector<Lambda> lambdas;
  std::unordered_map<const Expr*,std::size_t> lambda_index;
+ std::vector<AsyncFrame> async_frames;
+ std::unordered_map<const Expr*,std::size_t> async_frame_index;
  std::vector<std::unordered_map<std::string,std::string>> scopes;
   std::vector<std::vector<Owner>> owners;
   struct LoopTarget {std::size_t id,keep;std::string done,latch;};
@@ -284,6 +287,13 @@ class Generator {
   }
   void collect(const Expr& expression,bool deferred=false){
    if(expression.prototype)return;
+   if(expression.kind==Expr::Kind::Csp&&expression.text=="launch_async"){
+    auto index=async_frames.size();auto suffix=std::to_string(index+1);
+    async_frame_index.emplace(&expression,index);
+    async_frames.push_back({expression.children[0].get(),reserve("on1x_async_fields_"+suffix),
+                            reserve("on1x_async_resume_"+suffix),reserve("on1x_async_drop_"+suffix)});
+    return; // Checked frame carrier is not an executable closure.
+   }
     if(expression.type.contains_unique()||expression.result.contains_unique())
      uses_unique=true;
     for(const auto& parameter:expression.parameters)
@@ -518,6 +528,12 @@ class Generator {
           auto fn=expr(*e.children.at(0));
           return temp(e.type,"on1x_csp_launch("+fn+".invoke, "+fn+".environment, "+at+")");
          }
+         if(op=="launch_async"){
+          const auto& frame=async_frames.at(async_frame_index.at(&e));
+          auto raw=unique("async_frame");
+          definitions<<pad()<<"void *"<<raw<<" = on1x_async_frame_alloc_v1(sizeof(struct "<<frame.type<<"), "<<at<<");\n";
+          return temp(e.type,"on1x_async_launch_v1("+frame.resume+", "+frame.drop+", "+raw+", "+at+")");
+         }
          if(op=="launch_exec"){
           auto args=unique("external_argv");definitions<<pad()<<"const char *"<<args<<"["<<(e.children.size()+1)<<"] = {";
           for(const auto& arg:e.children)definitions<<expr(*arg)<<", ";
@@ -553,7 +569,8 @@ class Generator {
            definitions<<pad()<<result<<".element_"<<i<<" = "<<endpoints<<"["<<i<<"];\n";
           return result;
          }
-         if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":"on1x_csp_join(")+handle+", "+at+")");
+         if(op=="join")return temp(e.type,std::string(e.children[0]->type==Type::ExternalFiber?"on1x_csp_process_join(":
+                             async_frames.empty()?"on1x_csp_join(":"on1x_async_join_internal_v1(")+handle+", "+at+")");
           if(op=="cancel")return temp(e.type,std::string(e.children[0]->type==Type::Fiber?"on1x_csp_cancel(":"on1x_csp_process_cancel(")+handle+", "+at+")");
           if(op=="close")return temp(e.type,"on1x_csp_close("+handle+", "+at+")");
           if(op=="send"){
@@ -1230,6 +1247,41 @@ class Generator {
   }
   helpers<<"}\n\n";
  }
+  void async_support(const AsyncFrame& frame){
+   std::size_t slots=0;
+   types<<"struct "<<frame.type<<" {\n  size_t state;\n";
+   for(const auto& s:frame.block->body)
+    if(s.kind==Stmt::Kind::Let)types<<"  int64_t slot_"<<slots++<<";\n";
+   types<<"};\n";
+   definitions<<"static void "<<frame.drop<<"(void *raw) { on1x_async_frame_free_v1(raw); }\n"
+              <<"static on1x_async_step "<<frame.resume<<"(void *raw) {\n"
+              <<"  struct "<<frame.type<<" *frame = raw;\n  switch (frame->state) {\n"
+              <<"  case 0: {\n";
+   scopes.clear();owners.clear();temporary_values.clear();indent=1;push();
+   slots=0;
+   for(const auto& s:frame.block->body){
+    if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=&s.where;
+    if(s.kind==Stmt::Kind::Let){
+     auto rhs=expr(*s.value);
+     auto slot="frame->slot_"+std::to_string(slots++);
+     definitions<<pad()<<slot<<" = "<<rhs<<";\n";
+     scopes.back().emplace(s.name,slot);
+    }else if(s.kind==Stmt::Kind::Expr){
+     const auto& sleep=*s.value;
+     auto delay=expr(*sleep.children[0]);
+     const auto& next=sleep.children[1]->text;
+     definitions<<pad()<<"frame->state = "<<next<<";\n"
+                <<pad()<<"return (on1x_async_step){ON1X_ASYNC_SLEEP_MS, {.milliseconds = "<<delay<<"}};\n"
+                <<"  }\n  case "<<next<<": {\n";
+    }else{
+     auto value=expr(*s.value);
+     definitions<<pad()<<"return (on1x_async_step){ON1X_ASYNC_RETURN_I64, {.i64 = "<<value<<"}};\n";
+    }
+   }
+   pop(false);indent=0;
+   definitions<<"  }\n  default: return (on1x_async_step){0};\n  }\n}\n\n";
+   if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=nullptr;
+  }
   void definition(const std::string& name,const Type& result,const std::vector<Param>& parameters,
                   const std::vector<Stmt>& statements,const Location& at,const Lambda* lambda=nullptr,bool private_function=false){
    scopes.clear();owners.clear();temporary_values.clear();indent=0;current_result=result;
@@ -1309,6 +1361,9 @@ class Generator {
       if(parameter.type.contains_unique())uses_unique=true;
      if(!f.prototype)collect(f.body);
     }
+     if(!options.allow_stackless_timers&&!async_frames.empty())
+      throw Error(async_frames.front().block->where,
+                  "stackless timer frames require the direct C11 runtime profile","ON1X-CSP-UNSUPPORTED");
      ownership_cleanup=uses_unique;
    }
      std::string bounds_report() const {return bounds.report();}
@@ -1361,6 +1416,7 @@ class Generator {
    if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=nullptr;
   }
   for(const auto& lambda:lambdas)lambda_support(lambda);
+  for(const auto& frame:async_frames)async_support(frame);
      for(const auto& f:unit.functions)if(!f.external&&!f.prototype)
       definition(functions.at(f.name),f.result,f.params,f.body,f.where,
                  nullptr,takes_borrows(f));
@@ -1406,6 +1462,7 @@ class Generator {
       +(uses_unsigned?std::string("#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"incompatible On1x unsigned runtime ABI\"\n#endif\n"):std::string{})
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
+          +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
         +kernel_headers+ipc_header+float_guard+types.str()+"\n";
    const auto proto_begin=output.size();
    output+=prototypes.str()+"\n"+value_helpers.str()+helpers.str();

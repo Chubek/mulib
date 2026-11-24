@@ -40,10 +40,16 @@ typedef struct {
  * Fatal runtime failures do not unwind. */
 on1x_csp_task *on1x_async_launch_v1(on1x_async_resume,on1x_async_drop,void *,
                                    const char *,size_t,size_t);
+void *on1x_async_frame_alloc_v1(size_t,const char *,size_t,size_t);
+void on1x_async_frame_free_v1(void *);
 /* Same-parent and consuming (also consumable with on1x_csp_cancel).
  * JOIN_INTERRUPTED withdraws the wait without consuming the child; the
  * cancelling parent's existing taskgroup exit must still drain it. */
 on1x_async_result on1x_async_join_v1(on1x_csp_task *,const char *,size_t,size_t);
+/* Compiler-only join for compatible affine ifiber<i64> handles. An
+ * interrupted join must take the existing generated cancellation edge
+ * before using the returned value. */
+int64_t on1x_async_join_internal_v1(on1x_csp_task *,const char *,size_t,size_t);
 #ifdef __cplusplus
 }
 #endif

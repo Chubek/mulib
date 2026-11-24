@@ -476,11 +476,17 @@ class Parser {
          }
          if(at("launch")&&peek(1).text=="capture"&&!peek(2).text.empty()&&peek(2).text[0]=='`')return shell_launch(true);
          if(at("launch")&&!peek(1).text.empty()&&peek(1).text[0]=='`')return shell_launch(false);
-        if(at("launch")&&peek(1).text=="{"){
-         ++pos;Expr arm;arm.where=t.where;value_block(arm);
+        if(at("await")&&peek(1).text=="timer"&&peek(2).text=="("){
+         pos+=3;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;
+         e->where=t.where;e->text="await_timer";e->children.push_back(expr().node);consume(")");
+         return syntax_bounded(std::move(e));
+        }
+        const bool stackless=at("launch")&&peek(1).text=="async"&&peek(2).text=="{";
+        if(stackless||(at("launch")&&peek(1).text=="{")){
+         pos+=stackless?2:1;Expr arm;arm.where=t.where;value_block(arm);
         auto thunk=std::make_unique<Expr>();thunk->kind=Expr::Kind::Lambda;thunk->where=t.where;thunk->result=Type::I64;thunk->body=std::move(arm.body);
         if(arm.children[0]->kind!=Expr::Kind::Unit){Stmt ret;ret.kind=Stmt::Kind::Return;ret.where=arm.children[0]->where;ret.value=std::move(arm.children[0]);thunk->body.push_back(std::move(ret));}
-         auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch";thunk->syntax_depth=body_expression_depth(thunk->body)+1;e->children.push_back(std::move(thunk));return syntax_bounded(std::move(e));
+         auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text=stackless?"launch_async":"launch";thunk->syntax_depth=body_expression_depth(thunk->body)+1;e->children.push_back(std::move(thunk));return syntax_bounded(std::move(e));
          }
           if(at("launch")&&peek(1).text=="exec"&&peek(2).text=="("){
           pos+=3;auto e=std::make_unique<Expr>();e->kind=Expr::Kind::SourceCsp;e->where=t.where;e->text="launch_exec";

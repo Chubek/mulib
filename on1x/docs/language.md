@@ -525,6 +525,8 @@ ordinary admitted channels; captured stream endpoints remain tied to their
 process pipes. `poll` can mix them with any admitted typed channel. Exact
 limits, close/backpressure behavior,
 cancellation and examples are in the [concurrency contract](concurrency.md).
+The direct C11 backend also admits [stackless timer frames](async-frames.md):
+`launch async { ... }` with an immutable i64 body and `await timer(i64);`.
 
 ## Explicitly absent language facilities
 
@@ -538,8 +540,8 @@ whole places and unique-owner payloads in the synchronous direct-C11 profile,
 but do not introduce first-class reference values. There is no borrowed
 field/index origin or field/element mutation, aggregate
 equality or printing, generic higher-kinded types, module signatures/functors,
-mutable/resource captures, native coroutines, async, polymorphic numeric
-literals, foreign callbacks, foreign aggregate ABI, Option propagation,
+mutable/resource captures, native coroutines, general async functions and
+awaitable tasks, polymorphic numeric literals, foreign callbacks, foreign aggregate ABI, Option propagation,
 general exception/error effects, foreign effect-aware loans, or suspension-aware
 borrow checking. Do not add their names to public supported-feature lists until
 they are implemented with tests.

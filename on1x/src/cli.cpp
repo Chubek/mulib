@@ -1134,6 +1134,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      std::string bounds_report;
      on1x::C11Options c11_options{policy.memgraph_bounds,dump_memgraph?&bounds_report:nullptr};
+     c11_options.allow_stackless_timers=!cephyr_object;
 #ifdef ON1X_WITH_CEPHYR
      std::map<std::size_t,on1x::Location> c11_origins;
      if(cephyr_options.sarif)c11_options.origins=&c11_origins;

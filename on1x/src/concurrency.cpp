@@ -225,6 +225,65 @@ class Verify {
   scopes=std::move(outer);loops=std::move(outer_loops);regions=std::move(outer_regions);
   capture_uses=std::move(used);groups=saved_groups;
  }
+ void frame_scalar(const Expr& e,const std::set<std::string>& slots,std::size_t depth){
+  budget.tick(e.where,depth);
+  if(e.type!=Type::I64||e.prototype||e.callee||!e.body.empty()||
+     !e.parameters.empty()||!e.captures.empty()||!e.proofs.empty()||
+     e.borrow!=BorrowMode::Value||e.move_out)
+   fail(e.where,"stackless timer frame requires pure i64 arithmetic and immutable i64 locals");
+  auto n=e.children.size();
+  if(e.kind==E::Integer&&!n&&e.reference==Expr::Reference::Unresolved){
+   (void)integer_literal_bits(e.text,e.where);return;
+  }
+  if(e.kind==E::Variable&&!n&&e.reference==Expr::Reference::Local&&slots.contains(e.text))return;
+  if(e.reference==Expr::Reference::Unresolved&&
+     ((e.kind==E::Unary&&n==1&&e.text=="-")||
+      (e.kind==E::Binary&&n==2&&(e.text=="+"||e.text=="-"||e.text=="*"||e.text=="/"||e.text=="%")))){
+   for(const auto& child:e.children){
+    if(!child)fail(e.where,"missing stackless arithmetic operand");
+    frame_scalar(*child,slots,depth+1);
+   }
+   return;
+  }
+  fail(e.where,"stackless timer frame requires pure i64 arithmetic and immutable i64 locals");
+ }
+ void timer_frame(const Expr& e,std::size_t depth){
+  if(e.kind!=E::Lambda||e.type!=Type::function({},Type::I64)||e.result!=Type::I64||
+     !e.parameters.empty()||!e.captures.empty()||!e.children.empty()||e.prototype||
+     !e.type_parameters.empty()||!e.constraints.empty())
+   fail(e.where,"stackless timer frame requires an i64 block with no captures");
+  if(e.body.size()>128)fail(e.where,"stackless timer frame statement limit (128) exceeded");
+  std::set<std::string> slots;
+  std::size_t state=0;
+  bool returned=false;
+  for(const auto& s:e.body){
+   budget.tick(s.where,depth);
+   if(returned||s.prototype||!s.value||s.pattern||s.mutable_binding||
+      s.ref_store||!s.body.empty()||!s.otherwise.empty())
+    fail(s.where,"unsupported statement in stackless timer frame");
+   const auto& value=*s.value;
+   if(s.kind==S::Let){
+    if(s.name.empty()||(s.declared!=Type::Invalid&&s.declared!=Type::I64))
+     fail(s.where,"stackless frame slots must be simple immutable i64 bindings");
+    frame_scalar(value,slots,depth+1);
+    if(!slots.insert(s.name).second)fail(s.where,"duplicate stackless frame slot");
+   }else if(s.name.empty()&&s.kind==S::Expr&&operation(value)&&
+            value.text==(canonical?"frame_sleep":"await_timer")){
+    shape(value);
+    ++state;
+    frame_scalar(*value.children[0],slots,depth+1);
+    if(canonical){
+     const auto& next=*value.children[1];
+     if(next.kind!=E::Integer||next.text!=std::to_string(state))
+      fail(value.where,"invalid stackless timer resume state");
+     frame_scalar(next,slots,depth+1);
+    }
+   }else if(s.name.empty()&&s.kind==S::Return){
+    frame_scalar(value,slots,depth+1);returned=true;
+   }else fail(s.where,"stackless timer frame allows only immutable i64 let, await timer, and return");
+  }
+  if(!state||!returned)fail(e.where,"stackless timer frame requires an await timer and final i64 result");
+ }
   void shape(const Expr& e){
   source(e.where);
   if((canonical&&e.kind!=E::Csp)||e.callee||!e.body.empty()||!e.parameters.empty()||!e.labels.empty()||
@@ -232,7 +291,7 @@ class Verify {
      e.projection||e.control_target||e.noreturn||e.statement_match||e.reference!=Expr::Reference::Unresolved)
    fail(e.where,"invalid/private concurrency expression shape");
      auto count=e.text=="channel"?3:e.text=="send"||e.text=="try_send"||
-                e.text=="offer_send"?2:1;
+                e.text=="offer_send"||e.text=="frame_sleep"?2:1;
     if(e.text=="poll")count=static_cast<int>(e.children.size());
      if(e.text=="launch_exec"||e.text=="launch_capture")count=static_cast<int>(e.children.size());
     if(e.children.size()!=static_cast<std::size_t>(count))fail(e.where,"concurrency operand arity mismatch");
@@ -243,8 +302,9 @@ class Verify {
     fail(e.where,"unsupported channel payload annotation: "+payload_diagnostic(e.result));
       Type result=Type::Invalid;
       if(e.text=="poll")result=e.type;
-      else if(e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after")result=Type::Void;
-      else if(e.text=="launch")result=Type::Fiber;
+      else if(e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after"||
+              e.text=="await_timer"||e.text=="frame_sleep")result=Type::Void;
+      else if(e.text=="launch"||e.text=="launch_async")result=Type::Fiber;
       else if(e.text=="launch_exec")result=Type::ExternalFiber;
       else if(e.text=="launch_capture")
        result=Type::tuple({Type::ExternalFiber,Type::sender(Type::U8),
@@ -323,6 +383,8 @@ class Verify {
      return true;
     }
      if(e.text=="offer_recv"||e.text=="offer_send"||e.text=="offer_after")fail(e.where,"poll offer outside a checked poll");
+     if(e.text=="await_timer"||e.text=="frame_sleep")
+      fail(e.where,"await timer is only permitted as a statement in launch async");
       if(e.text=="launch_exec"||e.text=="launch_capture"){
        if(!acquire||!groups||e.children.empty()||e.children.size()>9)fail(e.where,"external launch must bind its capabilities inside a taskgroup (1..9 literal argv items)");
        std::vector<std::string> arguments;std::size_t total=0;
@@ -338,7 +400,10 @@ class Verify {
        return true;
       }
     const auto& operand=*e.children[0];
-   if(e.text=="launch"){
+   if(e.text=="launch_async"){
+    if(!acquire||!groups)fail(e.where,"launch async must bind an ifiber<i64> inside a taskgroup");
+    timer_frame(operand,depth+1);
+   }else if(e.text=="launch"){
     if(!acquire||!groups||operand.kind!=E::Lambda||!operand.parameters.empty()||operand.result!=Type::I64)fail(e.where,"launch must bind an ifiber<i64> inside a taskgroup");
     lambda(operand,state,true,depth+1);
    }else if(e.text=="channel"){
@@ -427,7 +492,7 @@ class Verify {
       }else if(e.text=="launch_capture"){
        if(!s.pattern||!s.pattern->is_tuple()||s.pattern->elements.size()!=4)fail(s.where,"captured shell launch requires exactly (process,stdin,stdout,stderr)");
        for(const auto& p:s.pattern->elements)if(p.kind!=Pattern::Kind::Name||!p.elements.empty())fail(p.where,"captured process capabilities require four simple names");
-      }else if((e.text!="channel"&&e.text!="launch"&&e.text!="launch_exec")||s.pattern)fail(s.where,"invalid affine acquisition binding");
+      }else if((e.text!="channel"&&e.text!="launch"&&e.text!="launch_async"&&e.text!="launch_exec")||s.pattern)fail(s.where,"invalid affine acquisition binding");
     (void)expression(e,*state,depth+1,true);
       if(s.pattern)pattern(*s.pattern,e.type,*state);else bind(s.name,e.type,false,*state,s.where);
     continue;
@@ -576,6 +641,15 @@ void lower(Unit& u){
     auto& marker=*node.children.back();
     if(marker.kind==E::Boolean&&marker.text=="true")
      marker.type=Type::Bool;
+   }
+   if(node.kind==E::SourceCsp&&node.text=="launch_async"&&node.children.size()==1&&node.children[0]){
+    std::size_t state=0;
+    for(auto& s:node.children[0]->body){
+     if(s.kind!=S::Expr||!s.value||s.value->kind!=E::SourceCsp||s.value->text!="await_timer")continue;
+     auto next=std::make_unique<Expr>();next->kind=E::Integer;next->type=Type::I64;
+     next->where=s.value->where;next->text=std::to_string(++state);
+     s.value->text="frame_sleep";s.value->children.push_back(std::move(next));
+    }
    }
    if(node.kind==E::SourceCsp)node.kind=E::Csp;
   }

@@ -1527,7 +1527,11 @@ class Inference {
          auto root=head(left,at);if(nodes[root].parameters.size()!=1)fail(at,"invalid sender payload type");
          unify(operand(1),nodes[root].parameters.front(),at);
          result=annotation(csp::send_result(),at);
-        }else if(e.text=="launch"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
+        }else if(e.text=="launch"||e.text=="launch_async"){unify(operand(0),function({},scalar(Type::I64,at),at),at);result=scalar(Type::Fiber,at);}
+       else if(e.text=="await_timer"){
+        if(e.children.size()!=1)fail(at,"await timer expects one millisecond duration");
+        unify(operand(0),scalar(Type::I64,at),at);result=scalar(Type::Void,at);
+       }
        else if(e.text=="launch_exec"){
         if(e.children.empty()||e.children.size()>9)fail(at,"external argv limit/arity mismatch");
         for(std::size_t i=0;i<e.children.size();++i)unify(operand(i),scalar(Type::String,at),at);

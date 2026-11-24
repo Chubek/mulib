@@ -5,8 +5,8 @@ This is the next vertical implementation of section 2 of
 The earlier Go-style function-scoped defer contract is unchanged.
 The [cancellation/deadline continuation](cancellation-deadlines.md) extends this
 profile with running/blocked cancellation, monotonic `poll after`, and
-`taskgroup within`. Source async/await remains unsupported; see the
-[private stackless frame runtime](async-frames.md) for the C11 runtime slice.
+`taskgroup within`. A separately restricted [stackless timer profile](async-frames.md)
+admits `launch async` with `await timer(...)`, not general async functions.
 
 ## Selected profile
 
@@ -191,7 +191,7 @@ Typed cancelled join results, the full portable shell grammar
 (expansion, environment mutation, command lists,
 pipelines/redirection and portable builtins), duplex channels, endpoint
 cloning, managed/resource-bearing payload transfer,
-async/await, generators, actors, native worker threads, atomics/shared state and
+general async/await, generators, actors, native worker threads, atomics/shared state and
 general error/effect inference remain separate capabilities. Source operations
 outside this profile must reject, never block a native thread as a fake fiber.
 The scalar MIR and independent SDK adapters reject concurrency operations/types.
@@ -217,7 +217,8 @@ single-thread profile. ASan's fiber-switch hooks are used by the actual kernel.
 | `poll` / atomic select | EXECUTABLE heterogeneous typed profile, monotonic `after` and cancellation-aware waits | Recoverable scheduler/allocation errors, managed transfers and strict scheduler-wide fairness |
 | Direct-exec external `xfiber` and consuming `cancel` | EXECUTABLE bounded POSIX profile | Typed exit-status record, recoverable spawn errors and broader targets |
 | Backtick command literals and captured process streams | EXECUTABLE bounded POSIX profile | Full portable command AST/operators/expansion, configurable language-level stream limits and effectful ownership MIR |
-| Async/await, actors, native workers | Unsupported | Suspension frames, ownership/effects and memory model |
+| `launch async` with `await timer` | EXECUTABLE direct C11, straight-line immutable i64 frame | General async/await, task/channel readiness, suspension-aware ownership and MIR |
+| Actors, native workers | Unsupported | Ownership/effects and memory model |
 
 Compatibility: `split!(...)` remains a macro call and `if close { ... }` uses
 the existing identifier `close`. `match <-rx with { ... }` treats `<-` as a

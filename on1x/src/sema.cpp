@@ -394,9 +394,17 @@ class Checker {
           }
           return e.type=Type::data(Type::Sum,std::move(fields),std::move(labels));
          }
-         if(e.text=="launch"){
+         if(e.text=="await_timer"||e.text=="frame_sleep"){
+          arity(e.text=="await_timer"?1:2);
+          equal(child(0),Type::I64,e.where);
+          if(e.text=="frame_sleep")equal(child(1),Type::I64,e.where);
+          return e.type=Type::Void;
+         }
+         if(e.text=="launch"||e.text=="launch_async"){
          arity(1);if(!taskgroups||e.children[0]->kind!=Expr::Kind::Lambda)fail(e.where,"launch requires an enclosing taskgroup and a source block");
          auto saved=launch_body;launch_body=e.children[0].get();equal(child(0),Type::function({},Type::I64),e.where);launch_body=saved;
+           if(e.text=="launch_async"&&!e.children[0]->captures.empty())
+            fail(e.where,"stackless timer frame cannot capture outer bindings");
            for(const auto& c:e.children[0]->captures)
             if(!c.type.is_csp_endpoint()&&!csp::payload_supported(c.type))
              fail(e.where,"launch captures support only immutable fixed-size values or scoped endpoints");

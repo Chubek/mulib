@@ -393,6 +393,16 @@ on1x_csp_task *on1x_async_launch_v1(on1x_async_resume resume,on1x_async_drop dro
  register_task(t,parent->group,at);
  return t;
 }
+void *on1x_async_frame_alloc_v1(size_t size,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};
+ on1x_csp_task *parent=current(at);
+ if(!parent->group||!size)failure(at,"invalid stackless frame allocation");
+ if(current_execution->task_count>=ON1X_CSP_MAX_TASKS)failure(at,"total task budget exhausted");
+ void *frame=ON1X_CSP_CALLOC(1,size);
+ if(!frame)failure(at,"stackless frame allocation failure");
+ return frame;
+}
+void on1x_async_frame_free_v1(void *frame){ON1X_CSP_FREE(frame);}
 static bool cancel_owned(on1x_csp_task *value,source_point at){
  on1x_csp_task *caller=current(at),*t;bool requested;
  tick(at);
@@ -670,13 +680,15 @@ bool on1x_csp_process_cancel(on1x_csp_process *value,const char *file,size_t lin
   tick(at);p=owned_process(value,caller,at);requested=request_process_stop(p,at);
  (void)finish_process(p,caller);return requested;
 }
-static on1x_csp_task *join_owned(on1x_csp_task *value,bool stackless,source_point at){
+enum task_join_kind {JOIN_FIBER,JOIN_FRAME,JOIN_INTERNAL};
+static on1x_csp_task *join_owned(on1x_csp_task *value,enum task_join_kind kind,source_point at){
  on1x_csp_task *caller=current(at),*t;
  tick(at);
  for(t=current_execution->tasks;t&&t!=value;t=t->next){}
  if(!t||t==caller||t->joined||!t->owner||t->owner->owner!=caller||t->joiner)
   failure(at,"invalid, repeated or non-owning join");
- if((t->resume!=NULL)!=stackless)failure(at,"join does not match task kind");
+ const bool stackless=t->resume!=NULL;
+ if(kind!=JOIN_INTERNAL&&(kind==JOIN_FRAME)!=stackless)failure(at,"join does not match task kind");
  t->joiner=caller->fiber;caller->waiting=true;
  /* On the typed frame path, an unshielded parent's cancellation wins even
   * when the child published before the waiter got its next turn. */
@@ -691,14 +703,20 @@ static on1x_csp_task *join_owned(on1x_csp_task *value,bool stackless,source_poin
  ++current_execution->progress;return t;
 }
 int64_t on1x_csp_join(on1x_csp_task *value,const char *file,size_t line,size_t column){
- on1x_csp_task *t=join_owned(value,false,(source_point){file,line,column});
+ on1x_csp_task *t=join_owned(value,JOIN_FIBER,(source_point){file,line,column});
  return t?t->result:0;
 }
 on1x_async_result on1x_async_join_v1(on1x_csp_task *value,const char *file,size_t line,size_t column){
- on1x_csp_task *t=join_owned(value,true,(source_point){file,line,column});
+ on1x_csp_task *t=join_owned(value,JOIN_FRAME,(source_point){file,line,column});
  if(!t)return (on1x_async_result){ON1X_ASYNC_JOIN_INTERRUPTED,0};
  if(t->cancel_requested)return (on1x_async_result){ON1X_ASYNC_CANCELLED,0};
  return (on1x_async_result){ON1X_ASYNC_RETURNED,t->result};
+}
+int64_t on1x_async_join_internal_v1(on1x_csp_task *value,const char *file,size_t line,size_t column){
+ source_point at={file,line,column};
+ on1x_csp_task *t=join_owned(value,JOIN_INTERNAL,at);
+ if(t&&t->resume&&t->cancel_requested)failure(at,"cancelled frame has no join value");
+ return t?t->result:0;
 }
 on1x_csp_channel *on1x_csp_channel_create(size_t element_size,size_t senders,
  size_t receivers,int64_t capacity,const char *file,size_t line,size_t column){

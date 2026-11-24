@@ -1,0 +1,14 @@
+fn main() {
+    taskgroup {
+        let waiter = launch async {
+            let seed = 40;
+            await timer(5);
+            let next = seed + 1;
+            await timer(3);
+            next + 1
+        };
+        let peer = launch { println(7); 6 };
+        println(join waiter);
+        println(join peer);
+    }
+}
