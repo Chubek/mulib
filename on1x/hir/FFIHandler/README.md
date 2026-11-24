@@ -1,8 +1,10 @@
 # Standard FFI recipe compiler
 
 LLSynth parses `.ffi` inputs at build time. The compiler validates their
-closed `ffispec 1` profile and generates immutable typed tables. There are
-no runtime `.ffi` reads, C symbol lookups, or Python/Perl dependencies.
+closed `ffispec 1` profile and generates immutable typed tables. MIR lowering
+materializes only referenced exports; it needs no `.ffi` reads, C symbol
+lookups, Python or Perl at runtime. The separate native C11 runtime resolves
+its typed entry points in a module compiled by Cephyr on first use.
 
 ```text
 (ffispec 1
@@ -14,7 +16,7 @@ no runtime `.ffi` reads, C symbol lookups, or Python/Perl dependencies.
     (guard (le lo hi))
     (body (if (lt x lo) lo (if (gt x hi) hi x)))
     (hint private-code (backend mir-c11))
-    (hint kernel-hot (backend archon) (target x86_64-linux-gnu))
+    (hint kernel-hot (backend mir-c11) (target x86_64-unknown-linux-gnu) (speculative))
     (rewrite fold-identity (speculative))))
 ```
 
