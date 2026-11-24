@@ -49,6 +49,8 @@ def fixture(root):
     (root / "on1x/docs/capability-matrix.md").write_text(
         "| capability | status | blocker |\n| async | ABSENT | verified frames |\n"
         "| scalar | EXECUTABLE | general resources |\n")
+    (root / "on1x/COMPLETION_MATRIX.md").write_text(
+        "| capability | status |\n| async | ABSENT |\n")
     (root / "on1x/contracts-exoml/alpha.exocontract.json").write_text(json.dumps({
         "library": "alpha", "headers": ["mulib-alpha.h"],
         "bundle_provenance": {"revision": "sha256:" + hashlib.sha256(
@@ -59,7 +61,7 @@ def fixture(root):
 
 class CoreTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="on1x-chatgpt-", dir="/tmp/opencode")
+        self.temp = tempfile.TemporaryDirectory(prefix="on1x-chatgpt-")
         self.root = Path(self.temp.name)
         fixture(self.root)
         self.index = core.Index(self.root)
@@ -134,7 +136,9 @@ class CoreTests(unittest.TestCase):
 
     def test_capability_source_claims(self):
         result = self.index.call("inspect_capability", {"query": "async"})
-        self.assertTrue(result["results"])
+        self.assertEqual({r["path"] for r in result["results"]}, {
+            "on1x/COMPLETION_MATRIX.md", "on1x/docs/capability-matrix.md",
+        })
         excerpts = [self.index.fetch(r["id"])["text"] for r in result["results"]]
         self.assertTrue(any("ABSENT" in e for e in excerpts))
         self.assertEqual(result["evidence"]["repository_revision"], "unknown")
@@ -658,7 +662,9 @@ class RepositorySmoke(unittest.TestCase):
         self.assertTrue(index.search("ON1X-KERNEL-NOT-ADMITTED")["results"])
         self.assertTrue(index.search("async", "capability")["results"])
         self.assertTrue(index.search_kernels("clamp")["results"])
-        for path in ("on1x/addons/CLI.md", "on1x/stdlib/on1xfile/README.md"):
+        for path in ("on1x/addons/CLI.md", "on1x/stdlib/on1xfile/README.md",
+                     "on1x/backends/README.md", "on1x/runtime-sdk/README.md",
+                     "on1x/sdk/VERIFICATION.md"):
             self.assertIn(path, index.sources)
         data = index.inspect_kernel("lprowse")
         self.assertEqual(data["manifest"]["implementation"], "static-data")

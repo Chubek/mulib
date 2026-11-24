@@ -211,6 +211,10 @@ The checkout, including allowlisted docs/catalogs, must remain available.
 | `inspect_kernel` | exact `name` | Manifest entry, switch, dependencies, header/manual/contract excerpts, independent status fields |
 | `inspect_capability` | `query`, optional `limit` | Scoped status/verification/blocker records |
 
+Capability lookup searches the On1x completion ledger, capability matrix,
+KernelBind manual and subsystem verification records when present in the
+indexed revision. It cites those records; it does not run the tests itself.
+
 Search is deterministic **keyword token matching**, not semantic search.
 Use short identifiers/keywords; results rank matching tokens, then source path
 and line. Kernel search AND-matches literal name/purpose substrings.

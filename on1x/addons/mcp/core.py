@@ -27,10 +27,19 @@ WARNING = (
     "not findings from this service. Discovery, ABI, implementation, contracts and "
     "On1x admission are independent. No production approval is inferred."
 )
-FIXED = (
-    "README.md", "MANIFEST.yaml", "on1x/README.md", "on1x/VERIFICATION.md",
-    "on1x/COMPLETION.md", "on1x/BACKEND.md", "on1x/KERNEL_DIRECT_USAGE.md",
+CAPABILITY_SOURCES = (
+    "on1x/COMPLETION_MATRIX.md", "on1x/COMPLETION_REPORT.md",
+    "on1x/docs/capability-matrix.md", "on1x/docs/kernel-bind.md",
+    "on1x/sdk/VERIFICATION.md", "on1x/stdlib/VERIFICATION.md",
+    "on1x/stdppx/VERIFICATION.md",
+    # Older snapshots still published these paths.
+    "on1x/VERIFICATION.md", "on1x/COMPLETION.md",
+)
+FIXED = CAPABILITY_SOURCES + (
+    "README.md", "MANIFEST.yaml", "on1x/README.md",
+    "on1x/BACKEND.md", "on1x/KERNEL_DIRECT_USAGE.md",
     "on1x/ON1X_CORE_SYNTAX_ADDITIONS.md", "on1x/addons/CLI.md",
+    "on1x/backends/README.md", "on1x/runtime-sdk/README.md",
     "on1x/stdlib/on1xfile/README.md", "on1x/stdppx/README.md",
     "on1x/backends/mir-vm/README.md", "on1x/backends/mir-archon/DRIVER.md",
     "on1x/contracts-exoml/README.md", "on1x/contracts-exoml/catalog.json",
@@ -406,9 +415,7 @@ class Index:
                 path = self.chunks[identifier]["path"]
                 if scope == "on1x" and not path.startswith("on1x/"):
                     continue
-                if scope == "capability" and path not in (
-                        "on1x/docs/capability-matrix.md", "on1x/VERIFICATION.md",
-                        "on1x/COMPLETION.md", "on1x/docs/kernel-bind.md"):
+                if scope == "capability" and path not in CAPABILITY_SOURCES:
                     continue
                 scores[identifier] = scores.get(identifier, 0) + 1
         ordered = sorted(scores, key=lambda i: (
