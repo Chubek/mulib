@@ -262,6 +262,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
                             std::size_t depth,bool callee_position=false){
     tick(expression.where,depth);source(expression.where);
     verify_foreign_callee(expression,callee_position,control.unsafe);
+    verify_typed_foreign_call(expression,control.unsafe);
     if(expression.unsafe_region&&expression.kind!=E::Region)
      fail(expression.where,"unsafe marker on a retained non-region expression");
     const bool intrinsic=callee_position&&expression.kind==E::Variable&&
@@ -409,9 +410,25 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     if(ffi::requires_unsafe(e.foreign.mode())&&!lexical_unsafe)
      fail(e.where,"unsafe foreign reference must be a direct lexically unsafe call");
    }
+   // This is a structural check, not a flow check. Verify the complete typed
+   // signature before evaluating any operand: an earlier operand can return
+   // or trap, and retained generic bodies do not undergo executable flow.
+   void verify_typed_foreign_call(const Expr& e,bool lexical_unsafe){
+    if(e.kind!=E::Call||!e.callee||!e.callee->foreign)return;
+    verify_foreign_callee(*e.callee,true,lexical_unsafe);
+    const auto& function=*functions.at(e.callee->text);
+    if(e.type!=function.result||e.children.size()!=function.params.size())
+     fail(e.where,"canonical foreign call result/arity mismatch");
+    for(std::size_t i=0;i<e.children.size();++i){
+     if(!e.children[i])fail(e.where,"missing foreign call operand");
+     if(!ffi::argument_type(ffi::argument_policy(function,i),function.params[i].type,e.children[i]->type))
+      fail(e.children[i]->where,"canonical foreign call argument type mismatch");
+    }
+   }
    void expression_header(const Expr& e,std::size_t depth,bool callee_position){
     tick(e.where,depth);source(e.where);
     verify_foreign_callee(e,callee_position,unsafe_context);
+    verify_typed_foreign_call(e,unsafe_context);
     if(e.prototype&&!generic_context&&borrowers.empty())
      fail(e.where,"non-executable prototype marker in executable checked HIR");
     const bool generics=generic_context||e.prototype;

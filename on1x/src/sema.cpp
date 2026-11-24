@@ -789,10 +789,14 @@ class Checker {
           if(policy.mode==ffi::ArgumentPolicy::Mode::ExclusiveOwner&&
              (e.children[i]->kind!=Expr::Kind::Variable||e.children[i]->reference!=Expr::Reference::Local))
            ref_error(e.children[i]->where,"foreign call loan requires a named owner place");
-         if(policy.mode==ffi::ArgumentPolicy::Mode::BoundedSlice){
-         if(!ffi::argument_type(policy,callable.parameters()[i],arg[i]))
-         fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
-        }else if(callee.reference==Expr::Reference::BorrowFunction&&
+          if(policy.mode==ffi::ArgumentPolicy::Mode::BoundedSlice){
+          if(!ffi::argument_type(policy,callable.parameters()[i],arg[i]))
+          fail(e.children[i]->where,"KernelBind requires a bounded slice<f64,N>");
+         }else if(policy.mode==ffi::ArgumentPolicy::Mode::ConsumeOwner||
+                  policy.mode==ffi::ArgumentPolicy::Mode::ExclusiveOwner){
+          if(!ffi::argument_type(policy,callable.parameters()[i],arg[i]))
+           ref_error(e.children[i]->where,"foreign call requires an owner of the exact type");
+         }else if(callee.reference==Expr::Reference::BorrowFunction&&
                  funcs.at(n)->params[i].borrow!=BorrowMode::Value){
          auto referent=arg[i];
          if(ipc_kernel_opaque_owner(referent))ipc_kernel_opaque_error(e.children[i]->where);

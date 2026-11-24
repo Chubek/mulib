@@ -85,6 +85,8 @@ void verify_foreign_reference(const Expr& callee,const Function& declaration){
 
 ArgumentPolicy argument_policy(const Function& declaration,std::size_t index){
  if(index>=declaration.params.size()||declaration.kernel_symbol.empty())return {};
+ if(index==0&&declaration.kernel_symbol==ipc_kernel_roundtrip)
+  return {ArgumentPolicy::Mode::ConsumeOwner};
  if(index==0&&ipc_kernel_session_loan(declaration.kernel_symbol))
   return {ArgumentPolicy::Mode::ExclusiveOwner};
  if(kernel_span_argument(declaration.kernel_symbol,index))
@@ -96,6 +98,8 @@ bool argument_type(ArgumentPolicy policy,const Type& expected,const Type& actual
  if(policy.mode==ArgumentPolicy::Mode::BoundedSlice)
   return actual.kind()==Type::Slice&&expected.kind()==Type::Slice&&
          actual.elements()==expected.elements()&&actual.extent()<=policy.max_extent;
+ if(policy.mode==ArgumentPolicy::Mode::ConsumeOwner||policy.mode==ArgumentPolicy::Mode::ExclusiveOwner)
+  return expected.is_own()&&actual==expected;
  return actual==expected;
 }
 

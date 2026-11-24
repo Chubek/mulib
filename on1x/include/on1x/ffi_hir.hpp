@@ -15,7 +15,9 @@ void verify_foreign_reference(const Expr&,const Function&);
 // parameters are exact values; the retained rich profiles project their
 // existing constraints here until verified rich descriptors replace them.
 struct ArgumentPolicy {
- enum class Mode { Value, BoundedSlice, ExclusiveOwner } mode=Mode::Value;
+ // ConsumeOwner uses normal HIR ownership transfer: an owned temporary or
+ // an explicit move, never a copied or borrowed place.
+ enum class Mode { Value, BoundedSlice, ConsumeOwner, ExclusiveOwner } mode=Mode::Value;
  std::size_t max_extent=0;
 };
 ArgumentPolicy argument_policy(const Function&,std::size_t);

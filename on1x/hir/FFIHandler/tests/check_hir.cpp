@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 namespace {
 using namespace on1x;
@@ -17,10 +18,11 @@ namespace fs=std::filesystem;
 
 void expect(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 
-template<class F> void reject(std::string_view id,F action){
+template<class F> void reject(std::string_view id,F action,std::string_view detail={}){
  try{action();}
  catch(const Error& error){
-  if(error.diagnostic_id!=id||!error.where.line||!error.where.column)throw;
+  if(error.diagnostic_id!=id||!error.where.line||!error.where.column||
+     std::string_view(error.what()).find(detail)==std::string_view::npos)throw;
   return;
  }
  throw std::runtime_error("expected diagnostic "+std::string(id));
@@ -97,14 +99,9 @@ fn main(){
  auto verified_copy=duplicate(unit);
  recheck_checked_hir(verified_copy);
  expect(find_foreign(verified_copy,"sub_i64").foreign==sub.foreign,"clone lost foreign identity");
- const auto c11=emit_c(verified_copy,input.string());
- expect(c11.find("on1x_ffi_v2_"+std::string(add.foreign.descriptor()->id.sha256))!=std::string::npos&&
-        c11.find("#include <mulib-clamp.h>")==std::string::npos,
-        "staged C11 did not retain an unresolved descriptor-ID link");
- auto no_opts=load(source);
- processor::RuleSelection off;off.default_enabled=false;
- check(no_opts,context,off);
- expect(c11==emit_c(no_opts,input.string()),"optional HIR rewrites changed staged C11");
+  auto no_opts=load(source);
+  processor::RuleSelection off;off.default_enabled=false;
+  check(no_opts,context,off);
  reject("ON1X-KERNEL-PPX",[&]{(void)meta::encode(unit);});
  reject("ON1X-MIR-UNSUPPORTED",[&]{(void)mir::lower(unit);});
  reject("ON1X-MIR-UNSUPPORTED",[&]{(void)mir::lower_for_vm(unit);});
@@ -142,9 +139,22 @@ fn main(){
  bad_argument->kind=Expr::Kind::Boolean;bad_argument->type=Type::Bool;
  bad_argument->where=argument->where;bad_argument->text="true";
  unsafe_call.children.push_back(std::move(bad_argument));
- reject("ON1X-VALUES-VERIFY",[&]{canonical::verify_values(unit);});
- unsafe_call.children.back()=std::move(argument);
- canonical::verify_values(unit);
+  reject("ON1X-VALUES-VERIFY",[&]{canonical::verify_values(unit);});
+  unsafe_call.children.back()=std::move(argument);
+  auto first=std::move(unsafe_call.children.front());
+  auto no_result=std::make_unique<Expr>();
+  no_result->kind=Expr::Kind::Region;no_result->where=first->where;
+  no_result->type=Type::Void;no_result->noreturn=true;
+  Stmt trap;trap.kind=Stmt::Kind::Trap;trap.where=first->where;
+  no_result->body.push_back(std::move(trap));
+  auto empty=std::make_unique<Expr>();
+  empty->kind=Expr::Kind::Unit;empty->type=Type::Void;empty->where=first->where;
+  no_result->children.push_back(std::move(empty));
+  unsafe_call.children.front()=std::move(no_result);
+  reject("ON1X-VALUES-VERIFY",[&]{canonical::verify_values(unit);},
+         "canonical foreign call argument type mismatch");
+  unsafe_call.children.front()=std::move(first);
+  canonical::verify_values(unit);
 
  auto wire=meta::encode(parse(scan("extern fn boundary(a:i64)->i64;fn main(){}","wire")));
  auto& external=wire.items.at(2).items.at(0);
@@ -171,8 +181,46 @@ fn main(){
                   "fn main(){if true {let C=42;println(C);} println(unsafe { C.add_i64(1,2) });}");
  check(shadow);
  expect(bool(find_foreign(shadow,"add_i64").foreign),"local shadowing changed enclosing alias");
- options.foreign_target="aarch64-linux-gnu";
- reject("ON1X-FFI-TARGET",[&]{(void)load(source);});
+  options.foreign_target="aarch64-linux-gnu";
+  reject("ON1X-FFI-TARGET",[&]{(void)load(source);});
+  options.foreign_target="x86_64-linux-gnu";
+  options.ffi_stage=false; // retained rich path; no executable rich descriptors
+  auto counter=load("unsafe import kernel mulib.container_core as C;"
+                    "fn main(){println(unsafe { C.counter_add(1u64,2u64) });}");
+  check(counter,context,off);
+  const auto& add_counter=find_foreign(counter,"counter_add");
+  expect(add_counter.foreign.mode()==ffi::ForeignMode::Unsafe&&
+         add_counter.result==Type::U64&&add_counter.params.size()==2&&
+         add_counter.params[0].type==Type::U64&&add_counter.params[1].type==Type::U64,
+         "real inline declaration did not reach HIR as an exact U64 call");
+
+  const std::string ipc_prefix=R"(
+unsafe import kernel mulib.ipc_framed as Framed;
+fn deadline(result: Framed.Result<i64,i64>) -> i64 { return 1000; }
+fn consume(session: own<Framed.Session>) -> i64 { drop(move(session)); return 1000; }
+fn exercise() -> Framed.Result<i64,i64> {
+ let opened=unsafe { Framed.open_session() };
+ let session=opened?;
+ return unsafe { )";
+  const std::string ipc_end=" }; } fn main() {}";
+  auto released=load(ipc_prefix+
+   "let d=deadline(Framed.poll(session,1000)); Framed.poll(session,d)"+ipc_end);
+  check(released,context,off);
+  expect(!registry.has_errors(),"sequential foreign call did not release its loan");
+  for(const auto& [argument,detail]:{
+      std::pair{"deadline(Framed.poll(session,1000))","overlapping exclusive borrow"},
+      std::pair{"consume(move(session))","cannot consume"}}){
+   auto conflicted=load(ipc_prefix+"Framed.poll(session,"+argument+")"+ipc_end);
+   reject("ON1X-REF",[&]{check(conflicted,context,off);},detail);
+  }
+
+  const auto c11=emit_c(verified_copy,input.string());
+  for(const auto* function:{&add,&sub})
+   expect(c11.find("on1x_ffi_v2_"+std::string(function->foreign.descriptor()->id.sha256))!=std::string::npos,
+          "staged C11 did not retain an unresolved descriptor-ID link");
+  expect(c11.find("#include <mulib-clamp.h>")==std::string::npos,
+         "staged C11 emitted a local native wrapper");
+  expect(c11==emit_c(no_opts,input.string()),"optional HIR rewrites changed staged C11");
 
  std::cout<<"typed foreign HIR: exact identities and signatures, staged modes, lexical scopes, wire and backend guards\n";
  return 0;
