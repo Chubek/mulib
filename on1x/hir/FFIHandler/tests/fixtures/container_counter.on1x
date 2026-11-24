@@ -1,0 +1,15 @@
+unsafe import kernel mulib.container_core as Counter;
+
+fn note(x: u64) -> u64 {
+    println(x);
+    return x;
+}
+
+fn main() {
+    unsafe {
+        println(Counter.counter_add(note(2u64), note(40u64)));
+        println(Counter.counter_add(18446744073709551615u64, 1u64));
+        println(Counter.counter_add(9223372036854775808u64, 9223372036854775806u64));
+        println(Counter.counter_add(0u64, 0u64));
+    }
+}
