@@ -140,6 +140,33 @@ fn main(){
 }
 ''', extra=managed_fixtures + ('-O2',))
 
+t.valid('recursive_owning_labelled_exits', '3\n', text=r'''
+record Cell { value:i64 }
+extern fn on1x_unique_live_allocations()->i64;
+extern fn on1x_test_unique_allocator_live()->i64;
+fn main() {
+  let surrounding=box(record<Cell>{value:42});
+  var visits=0;
+  outer:for i in 0..3 {
+    assert(on1x_test_unique_allocator_live()==1);
+    let iteration=box(record<Cell>{value:i});
+    loop {
+      let nested=box(record<Cell>{value:i+1});
+      let view=borrow nested;
+      assert(view["value"]==i+1);
+      assert(on1x_unique_live_allocations()==3);
+      visits=visits+1;
+      if i<2 { continue outer; }
+      break outer;
+    }
+  }
+  assert(on1x_test_unique_allocator_live()==1);
+  assert(take(surrounding)["value"]==42);
+  assert(on1x_test_unique_allocator_live()==0);
+  println(visits);
+}
+''', extra=unique_fixture + ('-O2',))
+
 t.valid('recursive_owning_results', '90\n90\n', text=r'''
 enum Result<T,E> { Ok(T), Err(E) }
 enum List { Nil, Cons(i64, own<List>) }
@@ -480,6 +507,10 @@ negative_cases = (
      ('use after move',)),
     ('loop_move',
      'enum N{Z}fn f(flag:bool){let a=box(variant<N>(Z,record{}));while flag{drop(a);}}fn main(){}',
+     ('repeatable loop',)),
+    ('labelled_continue_move',
+     'record Cell{value:i64}fn f(flag:bool){let a=box(record<Cell>{value:42});'
+     'outer:while flag{loop{drop(a);continue outer;}}}fn main(){}',
      ('repeatable loop',)),
     ('propagate_use_after_move',
      'enum Result<T,E>{Ok(T),Err(E)}enum N{Z}'
