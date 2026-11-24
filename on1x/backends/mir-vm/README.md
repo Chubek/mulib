@@ -6,7 +6,9 @@ loads, re-verifies and executes it. `on1xc --run-vm app.on1x` uses the same
 backend in-process. A program exit value comes from a zero-argument `main`
 returning i64 or void. Arithmetic/assertion failures return 70; execution budget
 exhaustion returns 75. Both preserve stdout already produced and report the
-failing source location. `--steps N` and `--depth N` on the standalone runner
+failing source location. Like the MIR reference evaluator, call-depth and
+frame-storage failures point to the function whose frame could not be entered,
+not the call instruction. `--steps N` and `--depth N` on the standalone runner
 set execution limits. The C++ API also accepts typed arguments and tuple results.
 
 ## What executes

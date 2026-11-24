@@ -104,6 +104,25 @@ src=work/'bounded.on1x'
 src.write_text('fn main(){while true{}}')
 invoke(compiler,'--emit-vm',src,'-o',bad)
 assert b'step budget' in invoke(runner,'--steps','25',bad,status=75).stderr
+
+src = work/'frame-limit.on1x'
+image = work/'frame-limit.o1vm'
+src.write_text('fn descend(n:i64)->i64{\n'
+               '  return descend(n+1);\n'
+               '}\n'
+               'fn main(){println(7);println(descend(0));}\n')
+invoke(compiler, '--emit-vm', src, '-o', image)
+invoke(runner, '--verify', image)
+expected = invoke(compiler, '--run-ir', src, status=75)
+assert expected.stdout == b'7\n'
+assert expected.stderr.startswith(f'{src}:1:'.encode())
+assert expected.stderr.endswith(b': evaluation call-depth budget exhausted\n')
+for argv in [(runner, image), (runner, '--depth', '1', image),
+             (compiler, '--run-vm', src)]:
+    actual = invoke(*argv, status=75)
+    assert actual.stdout == expected.stdout
+    assert actual.stderr == expected.stderr.replace(b': ON1X-MIR-EVAL:', b': ON1X-VM:'), actual.stderr
+
 bad.write_bytes(b'O1VM\x01\r\n\x03'+b'\xff'*10)
 assert b'integer overflow' in invoke(runner,'--verify',bad,status=1).stderr
 print('C11 vs reference MIR vs bytecode (plain/optimized), saved artifacts, bounds and source rejection: PASS')

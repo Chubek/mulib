@@ -125,8 +125,23 @@ void bounds(){
  require(vm::run_main(bytes).output=="0\n","recursive calls");
  Builder wide(2);auto wide_type=Type::tuple(std::vector<Type>(257,Type::I64));
  for(unsigned i=0;i<1020;++i)wide.slot(wide_type);
- wide.end();r=vm::run_main(vm::compile(wide.m));
- require(r.status==Status::BudgetExhausted&&r.diagnostic=="evaluation frame-storage budget exhausted","wide tuple frame limit");
+ wide.end();
+ auto& oversized=wide.m.functions.front();oversized.name="oversized";oversized.where={"callee.on1x",20,5,2};
+ auto callee=oversized.id;auto where=oversized.where;
+ mir::Function caller;caller.id=wide.fresh++;caller.name="main";caller.where=at;
+ Block entry;entry.id=wide.fresh++;entry.effect=wide.fresh++;entry.where=at;
+ auto call=wide.fresh++,after=wide.fresh++;
+ entry.instructions={{call,Type::Void,Op::Call,{},0,callee,entry.effect,after,at}};
+ entry.exit={wide.fresh++,Exit::Return,0,after,{},at};
+ caller.blocks.push_back(std::move(entry));wide.m.functions.push_back(std::move(caller));
+ bytes=vm::compile(wide.m);vm::verify(bytes);
+ for(auto name:{"oversized","main"}){
+  r=vm::run(bytes,name);
+  require(r.status==Status::BudgetExhausted&&r.diagnostic=="evaluation frame-storage budget exhausted",
+          "wide tuple frame limit");
+  require(r.where.file==where.file&&r.where.offset==where.offset&&
+          r.where.line==where.line&&r.where.column==where.column,"wrong rejected frame location");
+ }
  // Keep embedded helpers/closure conversion in the sanitizer path as well.
  u=parse(scan("fn wrap(k:i64)->fn(i64)->i64{return fn(n:i64)->i64{return n+k;};}"
               "fn call(f:fn(i64)->i64)->i64{return f(5);}fn main(){println(call(wrap(37)));}",

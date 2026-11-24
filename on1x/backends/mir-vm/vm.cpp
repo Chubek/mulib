@@ -72,7 +72,7 @@ struct Image {
   }
  }
 };
-struct Stop {Status status;const char* message;};
+struct Stop {Status status;const char* message;const Location* where=nullptr;};
 struct State {
  const Image& image;std::size_t step_limit,depth_limit,live=0;Evaluation result;
  struct Frame {std::vector<V> r;std::size_t cells,dest;bool returns_value;};
@@ -83,8 +83,9 @@ struct State {
  void charge(const V& v){for(const auto& item:v.elements){tick();charge(item);}}
  V copy(const V& v){charge(v);return v;}
  void push(const Layout& f,std::size_t dst,bool returns){
-  if(frames.size()>=depth_limit)throw Stop{Status::BudgetExhausted,"evaluation call-depth budget exhausted"};
-  if(f.cells>frame_limit-live)throw Stop{Status::BudgetExhausted,"evaluation frame-storage budget exhausted"};
+  // Both checks reject entry into f, even when a Call handler triggered them.
+  if(frames.size()>=depth_limit)throw Stop{Status::BudgetExhausted,"evaluation call-depth budget exhausted",&f.at};
+  if(f.cells>frame_limit-live)throw Stop{Status::BudgetExhausted,"evaluation frame-storage budget exhausted",&f.at};
   frames.push_back({std::vector<V>(f.registers),f.cells,dst,returns});live+=f.cells;
  }
  void args(const std::vector<std::size_t>& regs){
@@ -144,9 +145,9 @@ struct State {
  template<unsigned op> std::int64_t handler(std::int64_t index) noexcept {
   const auto& d=image.desc[std::size_t(index)];
   try{return exec<op>(d);}
-  catch(const Stop& e){result.status=e.status;result.diagnostic=e.message;}
-  catch(const std::exception& e){result.status=Status::Trapped;result.diagnostic=e.what();}
-  result.where=d.at;return -2;
+  catch(const Stop& e){result.status=e.status;result.diagnostic=e.message;result.where=e.where?*e.where:d.at;}
+  catch(const std::exception& e){result.status=Status::Trapped;result.diagnostic=e.what();result.where=d.at;}
+  return -2;
  }
 };
 void validate_arg(const V& v,const Type& t,const Location& at){
