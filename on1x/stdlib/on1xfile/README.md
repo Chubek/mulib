@@ -147,13 +147,33 @@ on1xc exec run --frozen --target hello
 
 `on1x-project.py run PROJECT` (also `on1xc exec run`) is the explicit
 build-and-launch command for either policy. It requires one target; use
-`--target NAME` for a multi-target project. It builds into a private
-directory, invokes only the launcher it just built, and returns its exit
-status without replacing an existing build generation. `run` with no root
-VM policy refuses to start anything. The initial guest profile does not
-support argument passing: arguments after `--` are rejected, not dropped or
-reinterpreted as launcher options. The `run` name is reserved for this
-built-in, not a custom project command or profile.
+`--target NAME` for a multi-target project. It compiles a guest ELF in a
+private build directory, then validates, caches and runs that exact image
+through ArchVirt. It returns the guest status without publishing or replacing
+a build generation. `run` with no root VM policy refuses to start anything.
+The initial guest profile does not support argument passing: arguments after
+`--` are rejected, not dropped or reinterpreted as launcher options.
+
+`run` reports the cache key on stderr as `ArchVirt cache key: KEY`. Replay
+the exact cached guest or clear that cache explicitly:
+
+```sh
+on1x-project.py vm-rerun PROJECT KEY --frozen
+on1x-project.py vm-cache-clear PROJECT --frozen
+# From the project root:
+on1xc exec vm-rerun KEY --frozen
+on1xc exec vm-cache-clear --frozen
+```
+
+Replay and clear validate the root manifest and applicable lock, but do not
+compile, load dependency manifests, or read current sources. A missing or
+invalid key fails without rebuilding. These commands use the compiler's
+per-user cache, not a project-owned cache: they honor the caller's absolute
+`XDG_CACHE_HOME` or `HOME`, and `vm-cache-clear` clears that user's ArchVirt
+replay cache, not just keys printed by this project. Neither `build` nor
+invoking a published linked launcher populates the replay cache. A linked
+launcher embeds its guest and does not depend on cached files. `run`,
+`vm-rerun`, and `vm-cache-clear` are reserved command/profile names.
 
 Dependencies, library roots, discovered library package metadata, and
 directory-local `On1xfile.m`/`On1xfile.i` files do not set VM policy.
@@ -172,15 +192,16 @@ for the **build**. The selected compiler reports the regular toolchain files
 it needs for ArchVirt launcher builds; the driver adds only those files as
 read-only mounts, not a build tree or a KVM device. It is not
 the same as the opt-in launcher's `--sandbox` switch. The explicit `run`
-command invokes the generated launcher after the build, with the launcher's
-own ArchVirt requirements; if either stage fails there is no host fallback.
+command invokes ArchVirt outside the build namespace only after the staged
+guest has compiled. Replay and clear do not create a build namespace. A
+failure at any stage does not trigger a host fallback.
 
 `lock` records `vm` in `on1x.lock/v3`, even for projects without Git
-dependencies. `build`, `plan`, and `run` with `--locked` or `--frozen`
-require the lock to match; even ordinary invocations reject a stale lock
-when one is present. Re-lock after adding, changing, or removing `vm`.
-`--frozen` retains the existing offline dependency behavior and does not
-itself launch a target or authorize any host backend.
+dependencies. `build`, `plan`, `run`, `vm-rerun`, and `vm-cache-clear`
+with `--locked` or `--frozen` require the lock to match; even ordinary
+invocations reject a stale lock when one is present. Re-lock after adding,
+changing, or removing `vm`. `--frozen` retains the existing offline dependency
+behavior and does not itself launch a target or authorize any host backend.
 
 ### Compiler optimizations
 

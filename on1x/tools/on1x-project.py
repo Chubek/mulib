@@ -37,6 +37,7 @@ MAX_MANIFEST = 64 * 1024
 BACKENDS = ('c11', 'mir-c11', 'mir-vm', 'mir-archon')
 VM_POLICIES = ('opt-in', 'always')
 VM_DIRECTIVE = re.compile(rb'(?m)^[ \t\r]*vm(?=[ \t\r\n#]|$)')
+VM_COMMANDS = ('run', 'vm-rerun', 'vm-cache-clear')
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
@@ -328,12 +329,13 @@ def root_manifest(payload, origin, dependency=False):
                     fail('dependency kind must be local, git or git-remote')
             elif verb == 'profile' and not dependency:
                 key, path = fields(args, '""')
-                if key in ('dev', 'release', 'run') or not path.endswith('.lua'):
+                if key in ('dev', 'release', *VM_COMMANDS) or not path.endswith('.lua'):
                     fail('use a custom profile name and a local .lua script')
                 unique(profiles, name(key), local(path))
             elif verb == 'command' and not dependency:
                 key, action, target, path = fields(args, '"ww"')
-                if key in ('build', 'release', 'run') or action != 'format' or target not in ('plain', 'latex', 'troff'):
+                if (key in ('build', 'release', *VM_COMMANDS)
+                        or action != 'format' or target not in ('plain', 'latex', 'troff')):
                     fail('expected a custom command of the form: command "name" format plain|latex|troff "source.on1x"')
                 source = local(path)
                 if source.suffix != '.on1x':
@@ -1429,6 +1431,50 @@ def archvirt_mounts(compiler, executor, chosen_tools):
         chosen_tools[f'archvirt_build_input/{i}'] = path
 
 
+def require_vm_policy(config, action):
+    if 'vm' not in config:
+        fail(f'{action} requires vm opt-in or vm always in the root On1xfile; no host execution fallback')
+
+
+def archvirt_exec(compiler, command, *arguments, cwd):
+    # Cache location is a user setting, not project policy. Pass only absolute
+    # ambient cache/home paths and keep the rest of the build environment clean.
+    env = dict(ENV)
+    for key in ('XDG_CACHE_HOME', 'HOME'):
+        value = os.environ.get(key)
+        if value and Path(value).is_absolute():
+            env[key] = value
+    try:
+        completed = subprocess.run([compiler, command, *arguments], cwd=cwd, env=env,
+                                   stdin=subprocess.DEVNULL, timeout=60)
+    except subprocess.TimeoutExpired:
+        fail(f'ArchVirt {command} exceeded the 60-second project command limit')
+    return 128 - completed.returncode if completed.returncode < 0 else completed.returncode
+
+
+def archvirt_cache_command(args):
+    project = args.root.resolve(strict=True)
+    if not project.is_dir():
+        fail(f'{project}: expected project directory')
+    manifest = project / 'On1xfile'
+    config = root_manifest(read(manifest, MAX_MANIFEST), manifest)
+    require_vm_policy(config, args.command)
+    _, locked = dependency_modes(args)
+    entries, _ = read_lock(project, config, required=locked, strict=True)
+    if locked:
+        require_locked(entries, config)
+    arguments = []
+    if args.command == 'vm-rerun':
+        if not re.fullmatch(r'[0-9a-f]{64}', args.key):
+            fail('vm-rerun requires a lowercase 64-hex cache key')
+        arguments.append(args.key)
+    # Do not run dependency discovery here. The compiler revalidates the
+    # exact cached image; neither changed sources nor local policies affect it.
+    compiler = compiler_path(args.on1xc)
+    with tempfile.TemporaryDirectory(prefix='on1x-project-vm-cache-') as work:
+        return archvirt_exec(compiler, '--' + args.command, *arguments, cwd=work)
+
+
 def vm_launcher(key):
     # `name()` restricts the artifact stem to a portable ASCII identifier.
     return ('#!/bin/sh\n'
@@ -1472,8 +1518,7 @@ def build(args):
     vm_policy = config.get('vm')
     launching = args.command == 'run'
     if launching:
-        if vm_policy is None:
-            fail('run requires vm opt-in or vm always in the root On1xfile; no host execution fallback')
+        require_vm_policy(config, args.command)
         if args.output_dir or args.project_command:
             fail('run uses a private build and does not take --output-dir or a project command')
     if vm_policy is not None and (args.backend or args.optimize_ir or args.cc != 'cc'):
@@ -1760,6 +1805,7 @@ def build(args):
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]}
         verify_interfaces(executor, compiler, project_stage, roles, loader, compiler_flags, permitted, trusted_roots)
         outputs = {}
+        guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':
             bundled = work / 'artifact/.on1x-vm-runner'
             shutil.copyfile(runner, bundled)
@@ -1770,12 +1816,14 @@ def build(args):
             verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
             if args.command == 'plan':
                 continue
-            output = executor.path(work / 'artifact' / key)
             if backend == 'archvirt':
-                executor.run([compiler, '--vm-launcher=' + vm_policy, entry, '-o', output,
+                artifact = guest if launching else work / 'artifact' / key
+                mode = '--vm-build' if launching else '--vm-launcher=' + vm_policy
+                executor.run([compiler, mode, entry, '-o', executor.path(artifact),
                               *loader, *analysis_flags, *opt_flags], timeout=180)
-                outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
+                outputs[key] = digest(read(artifact, MAX_PROCESS))
                 continue
+            output = executor.path(work / 'artifact' / key)
             if backend == 'mir-vm':
                 tape = work / 'artifact' / (key + '.o1vm')
                 # The VM keeps diagnostic locations in its bytecode. Map staged
@@ -1813,17 +1861,10 @@ def build(args):
             executor.mount(Path(sys.executable))
             executor.run(command, timeout=180)
             outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
-        if launching:
-            # Only the just-built launcher in the private staging directory may
-            # execute. It supplies the ArchVirt runtime boundary; --sandbox on
-            # this driver independently applies to the preceding build.
-            launcher = work / 'artifact' / next(iter(targets))
-            try:
-                completed = subprocess.run([launcher, *(['--sandbox'] if vm_policy == 'opt-in' else [])],
-                                           cwd=work / 'cwd', env=ENV, stdin=subprocess.DEVNULL, timeout=60)
-            except subprocess.TimeoutExpired:
-                fail('ArchVirt launcher exceeded the 60-second project run limit')
-            return 128 - completed.returncode if completed.returncode < 0 else completed.returncode
+        if guest is not None:
+            # --sandbox controls the build only. The runtime validates and
+            # launches the staged guest, never the raw ELF as a host program.
+            return archvirt_exec(compiler, '--vm-run-elf', guest, cwd=work / 'cwd')
         if config['kind'] == 'library':
             # The language checker requires a main. Validate each project library
             # through a fresh declaration-only carrier, then publish source only.
@@ -1967,7 +2008,18 @@ def main():
                           help='equivalent to --offline --locked')
     commands.add_parser('build', parents=[command])
     commands.add_parser('plan', parents=[command], help='print the resolved build policy and inputs without publishing')
-    commands.add_parser('run', parents=[command], help='build and run one declared ArchVirt target without publishing')
+    commands.add_parser('run', parents=[command], help='build, cache and run one declared ArchVirt target')
+    for action, description in (
+            ('vm-rerun', 'replay an exact cached ArchVirt guest without rebuilding the project'),
+            ('vm-cache-clear', "clear the current user's ArchVirt cache")):
+        cache = commands.add_parser(action, help=description)
+        cache.add_argument('root', type=Path, nargs='?', default=Path('.'))
+        if action == 'vm-rerun':
+            cache.add_argument('key', help='cache key printed by an earlier VM run')
+        cache.add_argument('--on1xc')
+        cache.add_argument('--offline', action='store_true')
+        cache.add_argument('--locked', action='store_true')
+        cache.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     inventory = commands.add_parser('backends', help='probe the actual installed backend tools using fixed input')
     inventory.add_argument('--on1xc')
     inventory.add_argument('--cc', default='cc')
@@ -2003,6 +2055,7 @@ def main():
             return 0
         status = {'build': build, 'plan': build, 'run': build, 'backends': backend_inventory,
                   'format': format_manifest, 'fetch': fetch_dependency,
+                  'vm-rerun': archvirt_cache_command, 'vm-cache-clear': archvirt_cache_command,
                   'lock': lock_dependencies}[arguments.command](arguments)
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)

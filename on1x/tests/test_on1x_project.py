@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -320,11 +321,10 @@ class ProjectTests(unittest.TestCase):
                 self.assertTrue(item['reason'])
         self.assertFalse((self.project/'target').exists())
 
-    def project_command(self, action, *arguments, compiler=None):
+    def project_command(self, action, *arguments, compiler=None, env=None):
         return subprocess.run(
-            [sys.executable, OPTIONS.driver, action, str(self.project),
-             '--on1xc', compiler or OPTIONS.on1xc, *arguments],
-            text=True, capture_output=True, timeout=180)
+            [sys.executable, OPTIONS.driver, action, '--on1xc', compiler or OPTIONS.on1xc,
+             str(self.project), *arguments], env=env, text=True, capture_output=True, timeout=180)
 
     def test_archvirt_root_only(self):
         self.app()
@@ -407,13 +407,17 @@ class ProjectTests(unittest.TestCase):
         alias = trusted / 'guest tool alias'
         alias.symlink_to(tool.name)
         compiler.write_text(f'''#!/usr/bin/python3
-import json, os, sys
+import json, os, subprocess, sys
 from pathlib import Path
 args = sys.argv[1:]
 record = Path({str(log)!r})
 if args[0] == '--print-archvirt-build-inputs':
     print({str(OPTIONS.on1xc)!r}, {str(alias)!r}, sep='\\n')
-elif args[0].startswith('--vm-launcher='):
+    inputs = subprocess.run([{str(OPTIONS.on1xc)!r}, args[0]], capture_output=True, text=True)
+    if inputs.returncode == 0:
+        print(inputs.stdout, end='')
+elif args[0].startswith('--vm-launcher=') or args[0] == '--vm-build':
+    assert 'XDG_CACHE_HOME' not in os.environ and os.environ['HOME'] == '/nonexistent'
     if Path('/work/input/project').is_dir():
         assert Path({str(alias)!r}).read_text() == 'expected tool input'
         assert not Path({str(tool)!r}).exists() and not Path({str(trusted / 'not mounted')!r}).exists()
@@ -423,10 +427,20 @@ elif args[0].startswith('--vm-launcher='):
     if 'FAIL_GUEST_BUILD' in Path(args[1]).read_text():
         sys.exit('guest build unavailable')
     output = Path(args[args.index('-o') + 1])
-    output.write_text("#!/usr/bin/python3\\nimport json, sys\\nwith open(" + repr(str(record)) +
-                      ", 'a') as stream:\\n stream.write(json.dumps(sys.argv[1:]) + '\\\\n')\\n"
-                      "print('launcher executed')\\nraise SystemExit(47)\\n")
-    output.chmod(0o755)
+    if args[0] == '--vm-build':
+        output.write_bytes(b'fixture guest image')
+    else:
+        output.write_text('#!/usr/bin/python3\\nraise SystemExit("unexpected launcher execution")\\n')
+        output.chmod(0o755)
+elif args[0] == '--vm-run-elf':
+    assert len(args) == 2 and Path(args[1]).read_bytes() == b'fixture guest image'
+    assert not Path('/work/input/project').is_dir()
+    assert 'DOMVIRT_KERNEL' not in os.environ
+    with record.open('a') as stream:
+        stream.write(json.dumps([*args, os.environ.get('XDG_CACHE_HOME'), os.environ['HOME']]) + '\\n')
+    print('guest executed')
+    print('ArchVirt cache key: ' + 'a' * 64, file=sys.stderr)
+    sys.exit(47)
 else:
     os.execv({str(OPTIONS.on1xc)!r}, [{str(OPTIONS.on1xc)!r}, *args])
 ''')
@@ -440,14 +454,16 @@ else:
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('no host execution fallback', result.stderr)
         self.assertFalse(log.exists())
-        for policy, expected in [('opt-in', ['--sandbox']), ('always', [])]:
+        env = dict(os.environ, XDG_CACHE_HOME=str(self.root / 'user cache'),
+                   HOME=str(self.root / 'user home'), DOMVIRT_KERNEL='/ambient/untrusted')
+        for policy in ('opt-in', 'always'):
             self.app(extra=f'vm {policy}\n')
             self.lock()
             log.unlink(missing_ok=True)
             planned = self.project_command('plan', '--frozen', compiler=compiler)
             self.assertEqual(planned.returncode, 0, planned.stderr)
             self.assertFalse(log.exists(), planned.stdout)
-            built = self.project_command('build', '--frozen', compiler=compiler)
+            built = self.project_command('build', '--frozen', compiler=compiler, env=env)
             self.assertEqual(built.returncode, 0, built.stderr)
             self.assertEqual(len(records()), 1, records())
             call = records()[0]
@@ -466,17 +482,23 @@ else:
             self.assertNotEqual(rejected.returncode, 0)
             self.assertIn('does not support guest arguments', rejected.stderr)
             self.assertEqual(len(records()), 1, records())
-            invoked = self.project_command('run', '--frozen', '--', compiler=compiler)
+            invoked = self.project_command('run', '--frozen', '--', compiler=compiler, env=env)
             self.assertEqual(invoked.returncode, 47, invoked.stderr)
-            self.assertEqual(invoked.stdout, 'launcher executed\n')
-            self.assertEqual(records()[2:], [expected])
+            self.assertEqual(invoked.stdout, 'guest executed\n')
+            self.assertIn('ArchVirt cache key: ' + 'a' * 64, invoked.stderr)
+            compiled, launched = records()[1:]
+            self.assertEqual(compiled[0], '--vm-build')
+            self.assertEqual(launched, ['--vm-run-elf', compiled[compiled.index('-o') + 1],
+                                        env['XDG_CACHE_HOME'], env['HOME']])
             self.assertEqual((self.output / '.on1x-build.json').read_bytes(), before)
 
         if self.bwrap_available():
-            isolated = self.project_command('run', '--frozen', '--sandbox', compiler=compiler)
+            relative_env = dict(env, XDG_CACHE_HOME='relative-cache', HOME='relative-home')
+            isolated = self.project_command('run', '--frozen', '--sandbox', compiler=compiler, env=relative_env)
             self.assertEqual(isolated.returncode, 47, isolated.stderr)
-            self.assertEqual(isolated.stdout, 'launcher executed\n')
-            self.assertEqual(records()[-1], [])  # Driver --sandbox does not change the launcher's argv.
+            self.assertEqual(isolated.stdout, 'guest executed\n')
+            self.assertEqual(records()[-1][0], '--vm-run-elf')
+            self.assertEqual(records()[-1][2:], [None, '/nonexistent'])
             alias.unlink()
             alias.mkdir()
             refused = self.project_command('build', '--frozen', '--sandbox', compiler=compiler)
@@ -508,37 +530,112 @@ else:
         self.assertEqual(selected.returncode, 47, selected.stderr)
         self.assertTrue(records()[-2][1].endswith('/input/project/src/second.on1x'))
 
+    def test_archvirt_cache_commands(self):
+        key = 'b' * 64
+        log = self.root / 'calls.jsonl'
+        compiler = self.root / 'fixture cache driver'
+        compiler.write_text(f'''#!/usr/bin/python3
+import json, os, sys
+assert sys.argv[1:] in (['--vm-rerun', {key!r}], ['--vm-cache-clear'])
+assert 'ON1X_LIB_PATH' not in os.environ
+with open({str(log)!r}, 'a') as stream:
+    stream.write(json.dumps([*sys.argv[1:], os.environ.get('XDG_CACHE_HOME')]) + '\\n')
+sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
+''')
+        compiler.chmod(0o755)
+        env = dict(os.environ, XDG_CACHE_HOME=str(self.root / 'caller cache'), ON1X_LIB_PATH='/irrelevant')
+
+        def call(action, *options):
+            return self.project_command(action, *([key] if action == 'vm-rerun' else []),
+                                        *options, compiler=compiler, env=env)
+
+        self.app()
+        actions = ('vm-rerun', 'vm-cache-clear')
+        for action in actions:
+            self.assertIn('requires vm opt-in or vm always', call(action).stderr)
+        self.app(extra='vm always\ndependency "toolkit" local "vendor/toolkit"\n')
+        self.write('vendor/toolkit/On1xfile', 'on1xfile 1\nkind library\nname "toolkit"\nvm always\n')
+        (self.project / 'src/main.on1x').unlink()
+        for action in actions:
+            self.assertIn('lockfile is required', call(action, '--frozen').stderr)
+        locked = self.lock()
+        original = locked.read_bytes()
+        result = self.project_command('vm-rerun', '../escape', compiler=compiler, env=env)
+        self.assertIn('requires a lowercase 64-hex cache key', result.stderr)
+        self.assertFalse(log.exists())
+        self.assertEqual(call('vm-rerun', '--frozen').returncode, 37)
+        self.assertEqual(call('vm-cache-clear', '--locked').returncode, 0)
+        self.assertEqual([json.loads(line) for line in log.read_text().splitlines()],
+                         [['--vm-rerun', key, env['XDG_CACHE_HOME']], ['--vm-cache-clear', env['XDG_CACHE_HOME']]])
+        self.app(extra='vm opt-in\ndependency "toolkit" local "vendor/toolkit"\n')
+        for action in actions:
+            self.assertIn('stale vm policy', call(action).stderr)
+        self.assertEqual(len(log.read_text().splitlines()), 2)
+        self.assertEqual(locked.read_bytes(), original)
+        self.assertFalse(self.output.exists())
+
     def test_archvirt_real_compiler(self):
         if not OPTIONS.archvirt_enabled:
             self.skipTest('ArchVirt integration not selected')
-        dependency = self.library('vendor/toolkit', 'toolkit')
-        self.assertTrue(dependency.is_dir())
         source = ('import toolkit.value as V;\n'
                   'fn main()->i64{println(V.number());return 37;}\n')
         for policy in ('always', 'opt-in'):
             with self.subTest(policy=policy):
+                self.library('vendor/toolkit', 'toolkit')
+                cache = self.root / ('cache ' + policy)
+                env = dict(os.environ, XDG_CACHE_HOME=str(cache), HOME=str(self.root))
                 self.app(extra=f'vm {policy}\ndependency "toolkit" local "vendor/toolkit"\n',
                          implementation=source)
                 self.lock()
                 # The installed guest runner is required for this enabled
                 # test. A failed VM setup is not treated as a passing result.
-                built = self.project_command('build', '--frozen')
+                built = self.project_command('build', '--frozen', env=env)
                 self.assertEqual(built.returncode, 0, built.stderr)
                 self.assertEqual(built.stdout.strip(), str(self.output))
                 launcher = self.output / 'sample'
                 self.assertEqual(launcher.read_bytes()[:4], b'\x7fELF')
+                self.assertFalse(cache.exists(), 'build must not populate the replay cache')
                 if policy == 'opt-in':
                     refused = subprocess.run([launcher], capture_output=True, text=True, timeout=30)
                     self.assertEqual(refused.returncode, 2, refused.stderr)
                     self.assertIn('no native payload', refused.stderr)
                     self.assertEqual(refused.stdout, '')
-                ran = self.project_command('run', '--frozen')
+                launch = [launcher] if policy == 'always' else [launcher, '--sandbox']
+                direct = subprocess.run(launch, env=env, capture_output=True, text=True, timeout=30)
+                self.assertEqual(direct.returncode, 37, direct.stderr)
+                self.assertEqual(direct.stdout, '42\n')
+                self.assertFalse(cache.exists(), 'linked launchers do not populate the replay cache')
+
+                ran = self.project_command('run', '--frozen', env=env)
                 self.assertEqual(ran.returncode, 37, ran.stderr)
                 self.assertEqual(ran.stdout, '42\n')
+                match = re.search(r'ArchVirt cache key: ([0-9a-f]{64})\b', ran.stderr)
+                self.assertIsNotNone(match, ran.stderr)
+                key = match[1]
                 if self.bwrap_available():
-                    sandboxed = self.project_command('run', '--frozen', '--sandbox')
+                    sandboxed = self.project_command('run', '--frozen', '--sandbox', env=env)
                     self.assertEqual(sandboxed.returncode, 37, sandboxed.stderr)
                     self.assertEqual(sandboxed.stdout, '42\n')
+                self.write('vendor/toolkit/On1xfile', 'this dependency is no longer buildable\n')
+                self.write('src/main.on1x', 'this source is no longer buildable\n')
+                replay = self.project_command('vm-rerun', key, '--frozen', env=env)
+                self.assertEqual(replay.returncode, 37, replay.stderr)
+                self.assertEqual(replay.stdout, '42\n')
+                alternate = dict(env, XDG_CACHE_HOME=str(self.root / 'other user cache'))
+                miss = self.project_command('vm-rerun', key, '--frozen', env=alternate)
+                self.assertNotEqual(miss.returncode, 37, miss.stderr)
+                self.assertEqual(miss.stdout, '')
+                unrelated = cache / 'unrelated'
+                unrelated.write_text('keep')
+                cleared = self.project_command('vm-cache-clear', '--frozen', env=env)
+                self.assertEqual(cleared.returncode, 0, cleared.stderr)
+                self.assertEqual(unrelated.read_text(), 'keep')
+                miss = self.project_command('vm-rerun', key, '--frozen', env=env)
+                self.assertNotEqual(miss.returncode, 37, miss.stderr)
+                self.assertEqual(miss.stdout, '')
+                direct = subprocess.run(launch, env=env, capture_output=True, text=True, timeout=30)
+                self.assertEqual(direct.returncode, 37, direct.stderr)
+                self.assertEqual(direct.stdout, '42\n')
 
     @staticmethod
     def bwrap_available():

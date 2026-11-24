@@ -71,10 +71,11 @@ def _exec(command, arguments):
         raise ValueError(f'On1xfile engine is unavailable: {engine}')
     compiler = os.environ.get('ON1X_PROJECT_COMPILER')
     options = ['--on1xc', compiler] if compiler else []
-    action = 'run' if command == 'run' else 'build'
+    vm_commands = ('run', 'vm-rerun', 'vm-cache-clear')
+    action = command if command in vm_commands else 'build'
     if command == 'release':
         options.append('--release')
-    elif command not in ('build', 'run'):
+    elif command not in ('build', *vm_commands):
         options.extend(('--project-command', command))
     completed = subprocess.run([sys.executable, engine, action, *options, *arguments])
     return 128 - completed.returncode if completed.returncode < 0 else completed.returncode
@@ -114,7 +115,7 @@ def main(argv):
         root = Path(os.path.abspath(args.directory))
         _create_project(root, {root / path: text for path, text in _scaffold(args.kind, _project_name(root)).items()})
         return 0
-    parser.add_argument('command', help='build, release, run, or a command or profile from the root On1xfile')
+    parser.add_argument('command', help='build, release, run, vm-rerun, vm-cache-clear, or a root command/profile')
     parser.add_argument('arguments', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv[1:])
     return _exec(args.command, args.arguments)

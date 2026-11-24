@@ -138,6 +138,10 @@ with tempfile.TemporaryDirectory(dir=t.work, prefix='projects-') as tmp:
     result = run([sys.executable, tools / 'on1x-build.py', *forwarded], cwd=target)
     assert result.returncode == 41, result
     assert json.loads(result.stdout) == [str(target), 'run', *forwarded[2:]], result
+    for forwarded in (['vm-rerun', 'a' * 64, '--frozen'], ['vm-cache-clear', '--locked']):
+        result = run([sys.executable, tools / 'on1x-build.py', 'exec', *forwarded], cwd=target)
+        assert result.returncode == 41, result
+        assert json.loads(result.stdout) == [str(target), *forwarded], result
 
     if sys.platform.startswith('linux'):
         engine_flags = ['--on1xc', t.compiler, '--cc', t.cc]
