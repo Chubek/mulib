@@ -85,9 +85,15 @@ std::string emit_c(const Module& module){
      if(i.op!=Op::Neg)out<<", "<<c;
      out<<")";break;
     }
-    case Op::Not:out<<"(!"<<a<<")";break;
-    case Op::Eq:case Op::Ne:case Op::Lt:case Op::Le:case Op::Gt:case Op::Ge:{
-     const char* op=i.op==Op::Eq?"==":i.op==Op::Ne?"!=":i.op==Op::Lt?"<":i.op==Op::Le?"<=":i.op==Op::Gt?">":">=";
+     case Op::Not:out<<"(!"<<a<<")";break;
+     case Op::Eq:case Op::Ne:case Op::Lt:case Op::Le:case Op::Gt:case Op::Ge:{
+      // Slot forwarding can turn two scalar reads into the same SSA value.
+      // These non-floating comparisons are reflexive and their operands
+      // have already been evaluated; avoid a tautological C comparison.
+      if(i.operands[0]==i.operands[1]){
+       out<<(i.op==Op::Eq||i.op==Op::Le||i.op==Op::Ge?"true":"false");break;
+      }
+      const char* op=i.op==Op::Eq?"==":i.op==Op::Ne?"!=":i.op==Op::Lt?"<":i.op==Op::Le?"<=":i.op==Op::Gt?">":">=";
      out<<"("<<a<<" "<<op<<" "<<c<<")";break;
     }
     case Op::Load:out<<value(i.target);break;
@@ -107,9 +113,10 @@ std::string emit_c(const Module& module){
      out<<"}";break;
      case Op::Extract:out<<a<<".field_"<<i.immediate;break;
      case Op::Numeric:{
-      if(detail::unsigned_comparison(i.primitive)){
-       auto method=i.primitive.substr(0,i.primitive.find('_'));
-       out<<"("<<a<<" "<<(method=="eq"?"==":method=="ne"?"!=":method=="lt"?"<":method=="le"?"<=":method=="gt"?">":">=")<<" "<<c<<")";
+       if(detail::unsigned_comparison(i.primitive)){
+        auto method=i.primitive.substr(0,i.primitive.find('_'));
+        if(i.operands[0]==i.operands[1])out<<(method=="eq"||method=="le"||method=="ge"?"true":"false");
+        else out<<"("<<a<<" "<<(method=="eq"?"==":method=="ne"?"!=":method=="lt"?"<":method=="le"?"<=":method=="gt"?">":">=")<<" "<<c<<")";
       }else{
        out<<"on1x_"<<i.primitive<<"(";
        for(std::size_t n=0;n<i.operands.size();++n){if(n)out<<", ";out<<value(i.operands[n]);}

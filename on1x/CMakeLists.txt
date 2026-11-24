@@ -800,6 +800,27 @@ if(BUILD_TESTING)
   foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
     list(APPEND _test_c_flags "--cflag=${_flag}")
   endforeach()
+  set(_ownership_backends_test_options)
+  if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
+      AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+    if(TARGET on1x-archon-mir AND ON1X_ARCHON_TARGET_TRIPLE STREQUAL "x86_64-unknown-linux-gnu")
+      list(APPEND _ownership_backends_test_options --archon
+        "$<TARGET_FILE:on1x-archon-mir>" "$<TARGET_FILE:on1x_archon_scalar_abi>")
+    endif()
+    if(ON1X_WITH_CEPHYR)
+      list(APPEND _ownership_backends_test_options --cephyr)
+    endif()
+  endif()
+  add_test(NAME on1x.ownership_backends
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ownership_backends.py"
+      "$<TARGET_FILE:on1xc>" "$<TARGET_FILE:on1x-vm>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/ownership-backends" "${CMAKE_C_COMPILER}"
+      ${_test_c_flags} ${_ownership_backends_test_options})
+  set_tests_properties(on1x.ownership_backends PROPERTIES TIMEOUT 180)
+  add_executable(on1x_mir_borrow_tests tests/test_mir_borrow.cpp)
+  target_link_libraries(on1x_mir_borrow_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.mir_borrow_hir COMMAND on1x_mir_borrow_tests)
+  set_tests_properties(on1x.mir_borrow_hir PROPERTIES TIMEOUT 60)
   add_test(NAME on1x.diagnostic_catalog_runtime COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_catalog_runtime.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/diagnostic-catalog-runtime"
