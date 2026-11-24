@@ -1,4 +1,5 @@
 """Inventory and filesystem transaction tests; no claims about FFI admission."""
+from copy import deepcopy
 import hashlib
 from pathlib import Path
 import sys
@@ -237,33 +238,62 @@ class PublicationTest(unittest.TestCase):
 
 
 class CountsTest(unittest.TestCase):
-    def test_index_reconciles_distinct_populations(self):
+    def setUp(self):
         entries = ('clamp', 'unavailable')
-        inventory = SimpleNamespace(entries=entries, index_metadata={'manifest': {}})
-        index = {
-            'inventory': inventory.index_metadata, 'unattempted': [],
+        self.inventory = SimpleNamespace(
+            entries=entries, index_metadata={'manifest': {}},
+            by_key={key: SimpleNamespace(module='mulib.' + key,
+                                        header_path=f'include/mulib-{key}.h') for key in entries})
+        self.index = {
+            'inventory': self.inventory.index_metadata, 'unattempted': [],
             'modules': [{
-                'key': 'clamp', 'status': 'representable', 'attempted': True, 'projected': True,
+                'key': 'clamp', 'module': 'mulib.clamp', 'header': 'include/mulib-clamp.h',
+                'status': 'representable', 'attempted': True, 'projected': True,
+                'projection_sha256': '0' * 64, 'normalized_signature_sha256': '1' * 64,
                 'function_count': 3, 'symbols': [
-                    {'status': 'representable', 'emitted': True},
-                    {'status': 'discovery_only', 'emitted': True},
+                    {'symbol': 'mulib_clamp_i64', 'status': 'representable',
+                     'ownership': 'audited_selection', 'emitted': True},
+                    {'symbol': 'mulib_clamp_unknown', 'status': 'discovery_only',
+                     'ownership': 'ambiguous_export', 'reason': 'ambiguous_export', 'emitted': True},
                 ],
             }, {
-                'key': 'unavailable', 'status': 'failed', 'attempted': True, 'projected': False,
-                'symbols': [],
+                'key': 'unavailable', 'module': 'mulib.unavailable',
+                'header': 'include/mulib-unavailable.h', 'status': 'failed',
+                'attempted': True, 'projected': False, 'reason': 'interface_limit',
+                'projection_sha256': '2' * 64, 'symbols': [],
             }],
             'counts': {
                 'registered_modules': 2, 'attempted_modules': 2, 'projected_modules': 1,
                 'unattempted_modules': 0, 'module_outcomes': {'representable': 1, 'failed': 1},
                 'symbol_outcomes': {'representable': 1, 'discovery_only': 1},
                 'projected_functions': 3, 'non_candidate_functions': 1,
-                'emitted_scalar_candidates': 1,
+                'owned_functions': 1, 'emitted_scalar_candidates': 1,
             },
         }
-        check_counts(index, inventory)
-        index['counts']['projected_modules'] = 2
-        with self.assertRaisesRegex(ValueError, 'do not reconcile'):
-            check_counts(index, inventory)
+
+    def test_index_reconciles_distinct_populations(self):
+        check_counts(self.index, self.inventory)
+        for field, value in [('projected_modules', 2), ('owned_functions', 2),
+                             ('emitted_scalar_candidates', True)]:
+            index = deepcopy(self.index)
+            index['counts'][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'do not reconcile'):
+                check_counts(index, self.inventory)
+
+    def test_index_refuses_inconsistent_outcomes(self):
+        for row, field, value, message in (
+                (0, 'header', 'include/mulib-wrong.h', 'module identity'),
+                (0, 'projection_sha256', None, 'projection digest'),
+                (1, 'normalized_signature_sha256', '0' * 64, 'projection digest'),
+                (1, 'reason', None, 'module reason')):
+            index = deepcopy(self.index)
+            index['modules'][row][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, message):
+                check_counts(index, self.inventory)
+        first = self.index['modules'][0]['symbols'][0]
+        first['ownership'] = 'ambiguous_export'
+        with self.assertRaisesRegex(ValueError, 'inconsistent stdffi symbol state'):
+            check_counts(self.index, self.inventory)
 
 
 if __name__ == '__main__':
