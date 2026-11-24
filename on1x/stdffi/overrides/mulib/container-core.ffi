@@ -1,0 +1,7 @@
+# Explicitly select the documented saturating metrics counter.
+# This real static-inline declaration uses the historical mulib_ct_ prefix.
+ffi 2;
+target "x86_64-linux-gnu" LP64 "SysVAMD64" sysv;
+extend mulib.container_core {
+    select c::mulib_ct_counter_add;
+}
