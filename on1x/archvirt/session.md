@@ -20,7 +20,8 @@ same session. `--param` is repeatable (up to 64 per invocation) and can also
 be used when attaching a console. Acknowledgment means a whole validated
 batch reached the runner input pipe; it does **not** guarantee the guest
 read or processed those values. The guest must implement the interactive
-parameter interface. A failed or timed-out send is never retried.
+parameter interface (`extern fn on1x_archvirt_read_i64() -> i64;`). A failed
+or timed-out send is never retried. See the [compiler walkthrough](../docs/archvirt.md#interactive-and-detached-sessions).
 
 `on1xc vmm stop ID` terminates a live session and clears its discovery entry;
 it also clears the stale endpoint of a guest that already exited. A failed,
@@ -81,4 +82,4 @@ The test uses an explicit subprocess fixture, not an ArchVirt substitute
 in the installed tools. It covers detached startup, concurrent attachment,
 private staged image unlink, terminal editing and control-byte escaping,
 i64 bounds, oversized packets, stale handling, output limits, and stop.
-Actual guest execution is a separate integration test.
+Actual guest execution is covered by `on1x.archvirt.session_kvm`.

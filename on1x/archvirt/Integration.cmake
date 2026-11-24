@@ -75,6 +75,8 @@ set_target_properties(on1x-archvirt-wrapper PROPERTIES
 add_executable(on1x-archvirt-run archvirt/run_main.c)
 target_link_libraries(on1x-archvirt-run PRIVATE on1x_archvirt_host)
 set_target_properties(on1x-archvirt-run PROPERTIES INSTALL_RPATH "${_archvirt_libdir}")
+add_executable(on1x-vmm-repl archvirt/session_host.cpp archvirt/session_console.c)
+target_include_directories(on1x-vmm-repl PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
 add_library(on1x_archvirt_cache STATIC src/archvirt_cache.cpp)
 target_include_directories(on1x_archvirt_cache PUBLIC include)
@@ -91,9 +93,9 @@ target_compile_definitions(on1xc PRIVATE ON1X_WITH_ARCHVIRT=1
   "ON1X_ARCHVIRT_PYTHON=\"${Python3_EXECUTABLE}\""
   "ON1X_ARCHVIRT_CLANG=\"${ON1X_ARCHVIRT_CLANG}\""
   "ON1X_ARCHVIRT_LLD=\"${ON1X_ARCHVIRT_LLD}\"")
-add_dependencies(on1xc on1x-archvirt-wrapper on1x-archvirt-run on1x_archvirt_runtime)
-install(TARGETS on1x-archvirt-wrapper on1x-archvirt-run RUNTIME DESTINATION libexec/on1x)
-install(FILES "${_archvirt_runtime}" archvirt/compile.py archvirt/guest.ld
+add_dependencies(on1xc on1x-archvirt-wrapper on1x-archvirt-run on1x-vmm-repl on1x_archvirt_runtime)
+install(TARGETS on1x-archvirt-wrapper on1x-archvirt-run on1x-vmm-repl RUNTIME DESTINATION libexec/on1x)
+install(FILES "${_archvirt_runtime}" archvirt/compile.py archvirt/guest.ld archvirt/session.py
   DESTINATION share/on1x/archvirt)
 install(DIRECTORY archvirt/include DESTINATION share/on1x/archvirt)
 
@@ -109,4 +111,10 @@ if(BUILD_TESTING)
     --runtime-include "${CMAKE_CURRENT_SOURCE_DIR}/runtime"
     --archvirt-include "${_archvirt_include}" --work-dir "${CMAKE_CURRENT_BINARY_DIR}")
   set_tests_properties(on1x.archvirt.core PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.archvirt.session_host COMMAND "${Python3_EXECUTABLE}" -IB
+    "${_archvirt_source}/session_test.py" --repl "$<TARGET_FILE:on1x-vmm-repl>"
+    --work-dir "${CMAKE_CURRENT_BINARY_DIR}")
+  add_test(NAME on1x.archvirt.session_kvm COMMAND "${Python3_EXECUTABLE}" -IB
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vmm_sessions.py" "$<TARGET_FILE:on1xc>")
+  set_tests_properties(on1x.archvirt.session_host on1x.archvirt.session_kvm PROPERTIES TIMEOUT 90)
 endif()

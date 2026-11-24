@@ -145,7 +145,7 @@ on1xc exec build --frozen
 on1xc exec run --frozen --target hello
 ```
 
-`on1x-project.py run PROJECT` (also `on1xc exec run`) is the explicit
+`on1xc aux run PROJECT` (also `on1xc exec run` from the root) is the explicit
 build-and-launch command for either policy. It requires one target; use
 `--target NAME` for a multi-target project. It compiles a guest ELF in a
 private build directory, then validates, caches and runs that exact image
@@ -154,8 +154,10 @@ a build generation. `run` with no root VM policy refuses to start anything.
 The initial guest profile does not support argument passing: arguments after
 `--` are rejected, not dropped or reinterpreted as launcher options.
 
-`run` reports the cache key on stderr as `ArchVirt cache key: KEY`. Replay
-the exact cached guest or clear that cache explicitly:
+`run` reports the VM ID on stderr as `ArchVirt cache key: KEY`.
+Use `on1xc aux run PROJECT --prepare --frozen` to register the same image
+and report its ID without starting the VM. Replay the exact cached guest
+or clear that cache explicitly:
 
 ```sh
 on1x-project.py vm-rerun PROJECT KEY --frozen

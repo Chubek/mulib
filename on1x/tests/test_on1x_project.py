@@ -616,12 +616,18 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
                 self.assertEqual(direct.stdout, '42\n')
                 self.assertFalse(cache.exists(), 'linked launchers do not populate the replay cache')
 
+                prepared = self.project_command('run', '--prepare', '--frozen', env=env)
+                self.assertEqual(prepared.returncode, 0, prepared.stderr)
+                self.assertEqual(prepared.stdout, '')
+                registered = re.search(r'ArchVirt VM ID: ([0-9a-f]{64})\b', prepared.stderr)
+                self.assertIsNotNone(registered, prepared.stderr)
                 ran = self.project_command('run', '--frozen', env=env)
                 self.assertEqual(ran.returncode, 37, ran.stderr)
                 self.assertEqual(ran.stdout, '42\n')
                 match = re.search(r'ArchVirt cache key: ([0-9a-f]{64})\b', ran.stderr)
                 self.assertIsNotNone(match, ran.stderr)
                 key = match[1]
+                self.assertEqual(registered[1], key)
                 if self.bwrap_available():
                     sandboxed = self.project_command('run', '--frozen', '--sandbox', env=env)
                     self.assertEqual(sandboxed.returncode, 37, sandboxed.stderr)

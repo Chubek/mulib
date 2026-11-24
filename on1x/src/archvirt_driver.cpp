@@ -3,11 +3,13 @@
 #include "../archvirt/linked_format.h"
 
 #include <cerrno>
+#include <charconv>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <set>
 #include <system_error>
 #include <vector>
@@ -35,6 +37,7 @@ struct Assets {
     fs::path archive = build ? fs::path(ON1X_ARCHVIRT_BUILD_ARCHIVE) : source / "on1x-archvirt-runtime.a";
     fs::path launcher = bin / (build ? "on1x-archvirt-wrapper" : "../libexec/on1x/on1x-archvirt-wrapper");
     fs::path runner = bin / (build ? "on1x-archvirt-run" : "../libexec/on1x/on1x-archvirt-run");
+    fs::path repl = bin / (build ? "on1x-vmm-repl" : "../libexec/on1x/on1x-vmm-repl");
 };
 
 std::string read_binary(const fs::path& path, std::size_t limit, const char* kind) {
@@ -178,7 +181,7 @@ int cache_and_run(const Guest& guest) {
     return remember_and_run(guest, StagedImage(guest.image));
 }
 
-int run_elf(std::string_view path) {
+int register_elf(std::string_view path, bool execute) {
     Guest guest{read_binary(fs::path(path), ON1X_VM_GUEST_MAX, "guest ELF"), {}};
     const StagedImage staged(guest.image);
     if (const auto status = staged.invoke(false))
@@ -186,7 +189,9 @@ int run_elf(std::string_view path) {
     guest.archive_sha256 = archvirt_cache::sha256(runtime_archive(Assets{}));
     if (!guest.image.ends_with(std::string(archive_tag) + guest.archive_sha256))
         throw std::runtime_error("ArchVirt guest ELF does not match the compiler's guest runtime archive");
-    return remember_and_run(guest, staged);
+    if (execute) return remember_and_run(guest, staged);
+    std::cerr << "on1xc: ArchVirt VM ID: " << guest_id(guest, true) << '\n';
+    return 0;
 }
 
 int rerun(std::string_view key) {
@@ -199,10 +204,60 @@ int rerun(std::string_view key) {
 
 void clear_cache() { archvirt_cache::clear(); }
 
+int vmm_command(int argc, char** argv) {
+    if (!argc || (argc == 1 && (std::string_view(argv[0]) == "--help" ||
+                                std::string_view(argv[0]) == "-h"))) {
+        std::cout << "usage: on1xc vmm connect VM_ID [--detached] [--param I64]...\n"
+                     "       on1xc vmm stop VM_ID\n";
+        return 0;
+    }
+    const std::string_view action = argv[0];
+    const bool connect = action == "connect";
+    if (argc < 2 || (!connect && action != "stop") || (!connect && argc != 2))
+        throw std::runtime_error("expected 'on1xc vmm connect VM_ID [OPTIONS]' or 'on1xc vmm stop VM_ID'");
+    const std::string_view key = argv[1];
+    if (!archvirt_cache::valid_key(key))
+        throw std::runtime_error("VMM requires a lowercase 64-hex VM ID");
+    bool detached = false;
+    unsigned count = 0;
+    for (int i = 2; i < argc; ++i) {
+        std::string_view opt = argv[i];
+        if (opt == "--detached" && !detached) { detached = true; continue; }
+        std::string_view token;
+        if (opt == "--param" && i + 1 < argc) token = argv[++i];
+        else if (opt.starts_with("--param=")) token = opt.substr(8);
+        else throw std::runtime_error("expected --detached or --param I64");
+        const auto start = !token.empty() && (token.front() == '+' || token.front() == '-') ? 1u : 0u;
+        if (token.size() <= start || token.size() - start > 19 ||
+            token.find_first_not_of("0123456789", start) != token.npos || ++count > 64)
+            throw std::runtime_error("VMM requires signed decimal i64 parameters (at most 64 per invocation)");
+        if (token.starts_with('+')) token.remove_prefix(1);
+        std::int64_t value;
+        auto [end, error] = std::from_chars(token.begin(), token.end(), value);
+        if (error != std::errc{} || end != token.end())
+            throw std::runtime_error("VMM requires signed decimal i64 parameters (at most 64 per invocation)");
+    }
+    Assets assets;
+    const auto script = (assets.source / "session.py").lexically_normal();
+    std::vector<std::string> args{ON1X_ARCHVIRT_PYTHON, "-IB", script.string(),
+        "--runner", assets.runner.lexically_normal().string(), "--repl", assets.repl.lexically_normal().string()};
+    std::unique_ptr<StagedImage> staged;
+    if (connect) {
+        const auto runtime = runtime_archive(assets);
+        if (auto image = archvirt_cache::find({profile, archvirt_cache::sha256(runtime)}, key)) {
+            staged = std::make_unique<StagedImage>(*image);
+            args.insert(args.end(), {"--image", staged->path.string()});
+        }
+    }
+    for (int i = 0; i < argc; ++i) args.emplace_back(argv[i]);
+    return run_tool(std::move(args));
+}
+
 void print_build_inputs() {
     Assets a;
     std::vector<fs::path> files{
         a.source / "compile.py", a.source / "guest.ld", a.source / "include/string.h",
+        a.source / "include/on1x_archvirt_guest.h",
         a.source.parent_path() / "runtime/on1x_runtime.h", a.archive, a.launcher,
         fs::path(ON1X_ARCHVIRT_INCLUDE) / "archvirt_boot.h",
         ON1X_ARCHVIRT_PYTHON, ON1X_ARCHVIRT_CLANG, ON1X_ARCHVIRT_LLD,

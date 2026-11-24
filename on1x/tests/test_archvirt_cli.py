@@ -40,6 +40,7 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
             ("--vm-rerun", "0" * 64), ("--vm-cache-clear",),
             ("--vm-launcher=always", source, "-o", always),
             ("--vm-run-elf", elf), ("--print-archvirt-build-inputs",),
+            ("--vm-register-elf", elf), ("vmm", "connect", "0" * 64),
         ]:
             on1xc(*args, status=2, stdout=b"", error=b"ArchVirt unavailable")
         assert not (root / "cache").exists() and not elf.exists() and not always.exists()
@@ -74,6 +75,7 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
     assert key, p.stderr
     key = key[1].decode()
     assert key.encode() == id[1]
+    on1xc("--vm-register-elf", elf, stdout=b"", error=key.encode())
     p = on1xc("--vm-run", source, "-o", elf, stdout=b"42\n")
     assert key.encode() in p.stderr
 

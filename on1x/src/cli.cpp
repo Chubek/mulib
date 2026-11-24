@@ -506,8 +506,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in VM artifacts\n"
    "       on1xc --vm-build INPUT -o GUEST_ELF | --vm-run INPUT [-o GUEST_ELF] (ArchVirt)\n"
    "       on1xc --vm-run-elf GUEST_ELF | --vm-rerun KEY | --vm-cache-clear (ArchVirt)\n"
+   "       on1xc --vm-register-elf GUEST_ELF (register a VM ID without running)\n"
    "       on1xc --vm-launcher=always|opt-in INPUT -o EXECUTABLE (linked ArchVirt)\n"
    "         --vm-uncached  emit a VM ID without registering the guest for replay\n"
+   "       on1xc vmm connect ID [--detached] [--param I64]... | on1xc vmm stop ID\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
     "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
@@ -574,7 +576,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     std::string_view command=argv[1];
     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
      return format_command(argc,argv,command);
+    if(command=="vmm"){
+#ifdef ON1X_WITH_ARCHVIRT
+     return on1x::archvirt_driver::vmm_command(argc-2,argv+2);
+#else
+     throw std::runtime_error("ArchVirt unavailable: configure with ON1X_WITH_ARCHVIRT=ON");
+#endif
+    }
     if(command=="--vm-cache-clear"||command=="--vm-rerun"||command=="--vm-run-elf"||
+       command=="--vm-register-elf"||
        command=="--print-archvirt-build-inputs"){
      const bool no_input=command=="--vm-cache-clear"||command=="--print-archvirt-build-inputs";
      if(argc!=(no_input?2:3))
@@ -582,7 +592,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #ifdef ON1X_WITH_ARCHVIRT
      if(command=="--print-archvirt-build-inputs"){on1x::archvirt_driver::print_build_inputs();return 0;}
      if(command=="--vm-cache-clear"){on1x::archvirt_driver::clear_cache();return 0;}
-     if(command=="--vm-run-elf")return on1x::archvirt_driver::run_elf(argv[2]);
+     if(command=="--vm-run-elf"||command=="--vm-register-elf")
+      return on1x::archvirt_driver::register_elf(argv[2],command=="--vm-run-elf");
      return on1x::archvirt_driver::rerun(argv[2]);
 #else
      throw std::runtime_error("ArchVirt unavailable: configure with ON1X_WITH_ARCHVIRT=ON");

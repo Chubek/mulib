@@ -12,6 +12,7 @@ a DomIOS image and is not run by this mode.
 on1xc --vm-build main.on1x -o main.guest
 on1xc --vm-run main.on1x                 # compiles, caches, then runs
 on1xc --vm-run-elf main.guest             # validates, caches, then runs
+on1xc --vm-register-elf main.guest        # register the VM ID without booting
 on1xc --vm-rerun KEY                      # use the cache key reported to stderr
 on1xc --vm-cache-clear
 
@@ -47,6 +48,8 @@ image; the launcher then rejects it.
 Put `vm always` or `vm opt-in` in a project's **root** `On1xfile` to use
 linked builds and the `on1xc aux run`, `vm-rerun`, and `vm-cache-clear`
 commands. See the [project policy](../stdlib/on1xfile/README.md#archvirt-launch-policy).
+For a root project, `on1xc aux run --prepare --frozen` registers a VM ID
+without starting it.
 Project VM builds map staging filenames to stable logical paths for runtime
 diagnostics. `on1xc aux backends` probes build availability, not access to
 `/dev/kvm`.
@@ -55,6 +58,34 @@ The [VMM standard-library package](../stdlib/vmm/README.md) checks typed
 configuration without native activation. Its optional trusted C companion
 can also boot bounded software guests. The two profiles are distinct; the
 companion is not a safe-admitted On1x management binding.
+
+## Interactive and detached sessions
+
+An interactive guest explicitly declares a guest-only scalar input call:
+
+```on1x
+extern fn on1x_archvirt_read_i64() -> i64;
+
+fn main() {
+    let initial = on1x_archvirt_read_i64();
+    let delta = on1x_archvirt_read_i64();
+    println(initial + delta);
+}
+```
+
+```sh
+on1xc --vm-build main.on1x -o main.guest   # reports the VM ID on stderr
+on1xc vmm connect ID --detached --param 9
+on1xc vmm connect ID                      # enter "send 5" in the MuLIB REPL
+on1xc vmm stop ID
+```
+
+Repeat `connect ID --detached --param VALUE` to send more parameters without
+starting a new VM. A detached success acknowledges a queued batch, not guest
+execution of those values. In the REPL, `:quit` disconnects and `:help` lists
+commands. Use `stop` to terminate a live VM or clear a finished session before
+restarting it. Replay-cache clearing does not disconnect existing sessions.
+See the [session transport and limits](../archvirt/session.md).
 
 ## Build and trust boundary
 
@@ -77,11 +108,15 @@ The compiler itself does not load `libdomvirt` when checking or building.
 The guest can use the [freestanding C11
 profile](../archvirt/README.md): checked integers, booleans, bounded
 aggregate operations, and console output. It receives no host filesystem,
-network, environment, argv, or stdin. Floating-point, arbitrary native
+network, environment, or argv. Batch and linked launchers take no input;
+interactive sessions admit only signed decimal `i64` parameter records.
+Floating-point, arbitrary native
 linkage, host runtime features and general stdlib availability are not
 implied. Guest exit statuses are forwarded, including runtime traps;
 runner failures use 125 with a diagnostic. The runner stops an overlong
-guest using a five-second watchdog.
+batch guest using a five-second watchdog. Interactive runs permit at most
+five seconds of active work between input waits, a 60-second input wait,
+and five minutes total.
 
 The VM boundary applies to guest instructions and
 the devices offered by the launcher. It does **not** sandbox `on1xc`, its

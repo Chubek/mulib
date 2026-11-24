@@ -1873,7 +1873,8 @@ def build(args):
         if guest is not None:
             # --sandbox controls the build only. The runtime validates and
             # launches the staged guest, never the raw ELF as a host program.
-            return archvirt_exec(compiler, '--vm-run-elf', guest, cwd=work / 'cwd')
+            command = '--vm-register-elf' if args.prepare else '--vm-run-elf'
+            return archvirt_exec(compiler, command, guest, cwd=work / 'cwd')
         if config['kind'] == 'library':
             # The language checker requires a main. Validate each project library
             # through a fresh declaration-only carrier, then publish source only.
@@ -2017,7 +2018,8 @@ def main():
                           help='equivalent to --offline --locked')
     commands.add_parser('build', parents=[command])
     commands.add_parser('plan', parents=[command], help='print the resolved build policy and inputs without publishing')
-    commands.add_parser('run', parents=[command], help='build, cache and run one declared ArchVirt target')
+    launch = commands.add_parser('run', parents=[command], help='build, cache and run one declared ArchVirt target')
+    launch.add_argument('--prepare', action='store_true', help='cache the VM and print its ID without booting it')
     for action, description in (
             ('vm-rerun', 'replay an exact cached ArchVirt guest without rebuilding the project'),
             ('vm-cache-clear', "clear the current user's ArchVirt cache")):

@@ -93,7 +93,7 @@ bool key_ok(string_view key) {
 string value(string_view text) {
   if (text.empty() || text.size() > 20) fail("expected a signed decimal i64");
   const auto first_digit = text.front() == '-' || text.front() == '+' ? 1u : 0u;
-  if (text.size() == first_digit ||
+  if (text.size() == first_digit || text.size() - first_digit > 19 ||
       text.find_first_not_of("0123456789", first_digit) != text.npos)
     fail("expected a signed decimal i64");
   if (text.front() == '+') text.remove_prefix(1);
@@ -561,7 +561,16 @@ void remove_socket(int dir, const string& id) {
     if (guest_fd >= 0) ::close(guest_fd);
     if (!initial.empty() && !runner.feed(initial)) fail("cannot send initial guest parameters");
     session = Session(std::move(listener));
-    ready = send_packet(setup.get(), "A");
+    if (send_packet(setup.get(), "A")) {
+      // Do not retain a guest when the client times out or is interrupted
+      // during startup. A second acknowledgment confirms it got readiness.
+      const auto deadline = Clock::now() + command_timeout;
+      pollfd status{setup.get(), POLLIN, 0};
+      while (!interrupted && remaining(deadline) &&
+             !poll_retry(&status, 1, remaining(deadline))) {}
+      std::array<char, packet_limit> packet;
+      ready = (status.revents & POLLIN) && recv_packet(setup.get(), packet) == 1 && packet[0] == 'A';
+    }
     if (ready) {
       setup.reset();
       session.run(runner);
@@ -650,27 +659,41 @@ Fd create_session(const string& id, const string& executable, const string& gues
     remove_socket(dir.get(), id);
     throw;
   }
-  const auto daemon = ::fork();
-  if (daemon < 0) {
+  const auto launcher = ::fork();
+  if (launcher < 0) {
     const int error = errno;
     remove_socket(dir.get(), id);
     errno = error;
     system_failure("cannot fork session supervisor");
   }
-  if (daemon == 0) {
+  if (launcher == 0) {
+    const auto daemon = ::fork();
+    if (daemon < 0) ::_exit(125);
+    // The short-lived launcher is reaped by the client. The supervisor
+    // outlives that client without leaving a zombie in a long-lived REPL.
+    if (daemon > 0) ::_exit(0);
     dir.reset();
     supervise(std::move(daemon_dir), std::move(listener), std::move(notify), id,
               executable, pinned, image.get(), initial);
   }
-  dir.reset();
   daemon_dir.reset();
   listener.reset();
   notify.reset();
+  int state;
+  pid_t waited;
+  do { waited = ::waitpid(launcher, &state, 0); } while (waited < 0 && errno == EINTR);
+  if (waited != launcher || !WIFEXITED(state) || WEXITSTATUS(state) != 0) {
+    remove_socket(dir.get(), id);
+    fail("cannot start detached session supervisor");
+  }
+  dir.reset();
   try {
     await_ack(report.get(), no_output);
+    command(report.get(), "A");
   } catch (...) {
-    ::kill(daemon, SIGTERM);
-    while (::waitpid(daemon, nullptr, 0) < 0 && errno == EINTR) {}
+    // Closing the private handshake when the client fails prevents an
+    // unacknowledged supervisor from publishing or keeping a runner.
+    report.reset();
     throw;
   }
   return client;
