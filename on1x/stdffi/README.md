@@ -29,7 +29,7 @@ explicit policy, not on the index or a successful regeneration.
 
 Use `on1x/hir/FFIHandler/tools/ffgen.py` with an explicit Cephyr binary, the
 selected LibStone revision and resource inputs, and a genuine FFIHandler
-LLSynth parser. Run `ffgen.py --help` for the profile inputs. The selection
+LLSynth parser. The selection
 flags are `--all` for a complete refresh and `--kernel <exact-manifest-key>` for
 an incremental update. Run a full refresh after inventory or shared generator
 inputs change. `--check` regenerates and validates a private stage, then
@@ -40,14 +40,34 @@ From the MuLIB checkout root, use the following CI entry point with the same
 explicit projection and parser options used for generation:
 
 ```sh
+ffi=on1x/hir/FFIHandler
+# ABSOLUTE paths to an explicit LibStone source checkout and matching Cephyr build.
+stone=/abs/path/to/libstone
+cephyr_build=/abs/path/to/cephyr-build
+work=/abs/path/to/ffi-work
+mkdir -p "$work/scratch"
+perl "$stone/cornerstone/LLSynth/scripts/llsynth.pl" \
+  --mode=interpret -T python3 -o "$work/FFIHandler.py" "$ffi/FFIHandler.llsynth"
 python3 -B on1x/hir/FFIHandler/tests/check_stdffi.py --mulib-root . -- \
-  --cephyr /abs/path/to/cephyr <remaining-tool-and-profile-options>
+  --cephyr "$cephyr_build/cephyr" --parser "$work/FFIHandler.py" \
+  --libstone-revision "$(git -C "$stone" rev-parse HEAD)" \
+  --scratch-root "$work/scratch" \
+  --system-include-dir "$stone/cornerstone/Cephyr/stdlib/include" \
+  --tool-input "$cephyr_build/libcephyr.so.0.1.0" \
+  --tool-input "$stone/cornerstone/Cephyr/triples" \
+  --tool-input "$stone/cornerstone/Archon/stdspec" --jobs 4
 ```
 
+To publish instead, use `python3 -B "$ffi/tools/ffgen.py" --mulib-root .
+--output "$PWD/on1x/stdffi/mulib" --target x86_64-linux-gnu --all` with the
+same explicit provider/parser arguments after the CI command's `--`.
+
 For a quick check without Cephyr, replace the `--` and everything after it with
-`--inventory-only`. This only checks exact MANIFEST keys and package hashes; it
-does not establish freshness or authenticity. Run the full check against at
-least two different absolute checkout locations when qualifying a profile.
+`--inventory-only`. This checks the source inventory, reconciled counts and
+package hashes; it does not rerun projection or establish authenticity. Run
+the full check against at least two different absolute checkout locations
+when qualifying a profile. A reproducible check needs the same tool binaries
+and resources, not just the same reported version.
 
 Publication validates a private sibling stage and rechecks the generation
 inputs before atomically renaming or exchanging the directory on Linux.

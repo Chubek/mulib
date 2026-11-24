@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 import tempfile
 import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -13,6 +14,7 @@ ROOT = TOOLS.parents[3]
 sys.path.insert(0, str(TOOLS))
 import ffi_inventory  # noqa: E402
 import ffi_publish as publication  # noqa: E402
+from check_stdffi import check_counts  # noqa: E402
 
 
 class InventoryTest(unittest.TestCase):
@@ -211,6 +213,52 @@ class PublicationTest(unittest.TestCase):
         self.assertEqual(publication.bounded_map(generate, [2, 1, 4, 3], 2), [4, 2, 8, 6])
         with self.assertRaisesRegex(ValueError, 'jobs'):
             publication.bounded_map(generate, [], publication.MAX_JOBS + 1)
+
+    def test_full_publication_requires_expected_keys(self):
+        with self.assertRaisesRegex(ValueError, 'exactly the requested manifest keys'):
+            with publication.transaction(self.output, self.target, full=True) as tx:
+                tx.finish({'schema': publication.SCHEMA, 'target': self.target, 'modules': []},
+                          validate=lambda path: None, verify=lambda: None,
+                          expected_keys=['clamp'])
+        self.assertFalse(self.output.exists())
+
+    def test_only_one_writer(self):
+        with publication.transaction(self.output, self.target, full=True) as writer:
+            with self.assertRaisesRegex(ValueError, 'another stdffi transaction'):
+                with publication.transaction(self.output, self.target, full=True):
+                    self.fail('an incompatible writer acquired the lock')
+            writer.finish({'schema': publication.SCHEMA, 'target': self.target, 'modules': []},
+                          validate=lambda path: None, verify=lambda: None)
+
+
+class CountsTest(unittest.TestCase):
+    def test_index_reconciles_distinct_populations(self):
+        entries = ('clamp', 'unavailable')
+        inventory = SimpleNamespace(entries=entries, index_metadata={'manifest': {}})
+        index = {
+            'inventory': inventory.index_metadata, 'unattempted': [],
+            'modules': [{
+                'key': 'clamp', 'status': 'representable', 'attempted': True, 'projected': True,
+                'function_count': 3, 'symbols': [
+                    {'status': 'representable', 'emitted': True},
+                    {'status': 'discovery_only', 'emitted': True},
+                ],
+            }, {
+                'key': 'unavailable', 'status': 'failed', 'attempted': True, 'projected': False,
+                'symbols': [],
+            }],
+            'counts': {
+                'registered_modules': 2, 'attempted_modules': 2, 'projected_modules': 1,
+                'unattempted_modules': 0, 'module_outcomes': {'representable': 1, 'failed': 1},
+                'symbol_outcomes': {'representable': 1, 'discovery_only': 1},
+                'projected_functions': 3, 'non_candidate_functions': 1,
+                'emitted_scalar_candidates': 1,
+            },
+        }
+        check_counts(index, inventory)
+        index['counts']['projected_modules'] = 2
+        with self.assertRaisesRegex(ValueError, 'do not reconcile'):
+            check_counts(index, inventory)
 
 
 if __name__ == '__main__':
