@@ -93,6 +93,9 @@ def verify(parser, capture, key, companion):
     assert mod['native_graphs'] == [{'id': 0, 'tags': tags, 'declaration_source': source}], capture
     assert {e['symbol']: e['native_fingerprint'] for e in mod['entries']} == expected, capture
     assert all(e['profile'] == 'discovery' and 'id' not in e for e in mod['entries'])
+    if key == 'histprice':
+        from test_plan import verify as check_plan
+        check_plan(parser, mod, document[0].removeprefix('ffi 3; '))
     print(f'{key} {target[0]} projection={ffic.sha(raw)} tags={len(tags)} discoveries={len(expected)}')
     for symbol, fingerprint in sorted(expected.items()):
         print(f'  {symbol}: {fingerprint}')

@@ -196,6 +196,14 @@ def reason(node):
     return value
 
 
+def audit_text(node):
+    if node.children:
+        audit = string(lexeme(node.children[1]))
+        require(0 < len(audit) <= 512 and audit.isprintable(), 'invalid discovery audit text')
+        return audit
+    return None
+
+
 def native_type(node, target):
     atom, layout = node.children
     kind = lexeme(atom)
@@ -643,9 +651,11 @@ def parse_overrides(parser, raw, path):
             continue
         if item.symbol == 'Obligation':
             code = reason(c[1])
+            require(not c[2].children, 'audit text requires ffi 3')
             require(code not in obligations, 'duplicate discovery obligation')
             obligations.add(code)
             continue
+        require(item.symbol == 'Override', 'rich marshalling plan requires ffi 3')
         symbol = symbol_name(c[3], module)
         require(symbol not in overrides, 'duplicate override symbol')
         fingerprint = string(lexeme(c[5]))
@@ -676,9 +686,7 @@ def parse_module(m, version, target):
             mod['unavailable'] = reason(body[2])
             if body[3].children:
                 require(version == 3, 'audit text requires ffi 3')
-                audit = string(lexeme(body[3].children[1]))
-                require(0 < len(audit) <= 512 and audit.isprintable(), 'invalid discovery audit text')
-                mod['audit'] = audit
+                mod['audit'] = audit_text(body[3])
             return mod
         require(version == 2, 'ffi 3 modules require a native graph or explicit unavailability')
     functions = (nodes(c[12], 'Function') if version == 1 else

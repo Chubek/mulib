@@ -101,16 +101,55 @@
 'syntax: Overrides OverrideItem | OverrideItem
 .end
 .rule OverrideItem
-'syntax: Override | Selection | Obligation
+'syntax: Override | Selection | Obligation | Adapt
 .end
 .rule Selection
 'syntax: "select" "c" "::" Word ";"
 .end
 .rule Obligation
-'syntax: "obligation" Word ";"
+'syntax: "obligation" Word Audit ";"
 .end
 .rule Override
 'syntax: "fn" "c" "::" Word "fingerprint" STRING Guards ";"
+.end
+.rule Adapt
+'syntax: "adapt" "c" "::" Word "fingerprint" STRING "surface" "(" SurfaceParams ")" "->" SurfaceShape "effects" Word "plan" "{" PlanOps "}"
+.end
+.rule SurfaceParams
+'syntax: SurfaceParam SurfaceTail |
+.end
+.rule SurfaceTail
+'syntax: "," SurfaceParam SurfaceTail |
+.end
+.rule SurfaceParam
+'syntax: Word Word ":" SurfaceShape
+.end
+.rule SurfaceShape
+'syntax: Word SurfaceArgs
+.end
+.rule SurfaceArgs
+'syntax: "(" QualifiedName "," SurfaceShape "," SurfaceShape ")" | "(" QualifiedName ")" | "(" Word "," NUMBER ")" |
+.end
+.rule QualifiedName
+'syntax: Word "." Word "." Word
+.end
+.rule PlanOps
+'syntax: PlanOps PlanOp |
+.end
+.rule PlanOp
+'syntax: Word "(" Operands ")" ";"
+.end
+.rule Operands
+'syntax: Operand OperandTail |
+.end
+.rule OperandTail
+'syntax: "," Operand OperandTail |
+.end
+.rule Operand
+'syntax: SignedNumber | Word OperandIndex
+.end
+.rule OperandIndex
+'syntax: "(" NUMBER ")" |
 .end
 .rule GraphBody
 'syntax: Companion Graphs Discoveries
@@ -214,4 +253,5 @@
 'syntax: NAME | "ffi" | "target" | "foreign" | "provider" | "header" | "fn" | "c" | "inline" | "requires" | "unavailable" | "reason" | "unsupported" | "native" | "profile" | "effects" | "extend" | "fingerprint" | "select" | "obligation"
        | "graph" | "tag" | "none" | "unknown" | "companion" | "complete" | "incomplete" | "field" | "at" | "bit-field" | "flexible" | "underlying" | "case" | "discover" | "specifiers" | "audit"
        | "function-type" | "void" | "integer" | "real" | "pointer" | "array" | "qualified" | "tag-ref"
+       | "adapt" | "surface" | "plan"
 .end
