@@ -1,15 +1,17 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/ffi_scalar.hpp>
 
 namespace on1x {
+// Transitional compatibility for clients of this internal header.
 inline bool clamp_interval_symbol(std::string_view symbol) {
- return symbol=="mulib_clamp_i64";
+ const auto* b=ffi::find_scalar(symbol);
+ return b && b->arity==3 && b->guard_lhs==1 && b->guard_rhs==2;
 }
 inline std::size_t clamp_kernel_arity(std::string_view symbol) {
- if(clamp_interval_symbol(symbol))return 3;
- if(symbol=="mulib_clamp_add_i64"||symbol=="mulib_clamp_sub_i64")return 2;
- return 0;
+ const auto* b=ffi::find_scalar(symbol);
+ return b?b->arity:0;
 }
 inline bool history_kernel_symbol(std::string_view symbol) {
  return symbol=="mulib_histprice_ema"||symbol=="mulib_histprice_holt";
@@ -182,13 +184,14 @@ inline void verify_kernel_shape(const Function& f) {
   }
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal history interface","ON1X-KERNEL-ABI");
  }
- const auto arity=clamp_kernel_arity(f.kernel_symbol);
- if(!arity||
-     f.name!=expected||!f.external||f.prototype||!f.body.empty()||!f.attributes.empty()||
-     f.result!=Type::I64||f.params.size()!=arity)
+ const auto* binding=ffi::find_scalar(f.kernel_symbol);
+ if(!binding||
+     f.name!=expected||!f.external||f.prototype||f.extension_generated||
+     !f.type_parameters.empty()||!f.constraints.empty()||!f.body.empty()||!f.attributes.empty()||
+     f.result!=Type::I64||f.params.size()!=binding->arity)
   throw Error(f.where,"ON1X-KERNEL-ABI: invalid internal scalar interface","ON1X-KERNEL-ABI");
  for(const auto& p:f.params)
-  if(p.type!=Type::I64||p.pattern)
+  if(p.type!=Type::I64||p.pattern||p.borrow!=BorrowMode::Value)
    throw Error(p.where,"ON1X-KERNEL-ABI: invalid internal scalar parameter","ON1X-KERNEL-ABI");
 }
 }

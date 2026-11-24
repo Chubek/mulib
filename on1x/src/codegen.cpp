@@ -917,11 +917,12 @@ class Generator {
                  <<pad()<<"}\n";
       return result;
      }
-    if((callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign)&&
-       clamp_interval_symbol(externs.at(callee.text)->kernel_symbol)){
-     // All arguments are already evaluated once, in source order. Enforce
-     // the canonical C precondition before entering either foreign path.
-     definitions<<pad()<<"on1x_assert("<<args.at(1)<<" <= "<<args.at(2)<<");\n";
+    if(callee.reference==Expr::Reference::ScalarForeign||callee.reference==Expr::Reference::UnsafeForeign){
+     // Operands were evaluated once, in source order; guard references only temporaries.
+     if(const auto* binding=ffi::find_scalar(externs.at(callee.text)->kernel_symbol)){
+      const auto guard=ffi::scalar_guard(*binding,args);
+      if(!guard.empty())definitions<<pad()<<guard;
+     }
     }
     if(callee.reference==Expr::Reference::ScalarForeign&&pricing_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
      const bool candidates=externs.at(callee.text)->kernel_symbol=="mulib_priceopt_candidates";
@@ -1392,22 +1393,23 @@ class Generator {
         prototypes<<"const double *, int64_t, int64_t, int64_t, const double *, int64_t, int64_t, int64_t, ";
        else prototypes<<"int64_t, double, double, double, ";
        prototypes<<"double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);\n";
-      }else prototypes<<"extern int64_t "<<functions.at(f.name)<<"(int64_t, int64_t"
-                      <<(clamp_interval_symbol(f.kernel_symbol)?", int64_t":"")<<");\n";
+      }else {
+       const auto* binding=ffi::find_scalar(f.kernel_symbol);
+       if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
+       prototypes<<ffi::scalar_prototype(*binding,functions.at(f.name));
+      }
       continue;
      }
      if(!f.kernel_symbol.empty()){
-     kernel_headers="#include <limits.h>\n#include <mulib-clamp.h>\n"
+     if(kernel_headers.empty())kernel_headers="#include <limits.h>\n#include <stdint.h>\n"
       "#if !defined(ON1X_KERNEL_ABI_V1) || ON1X_KERNEL_ABI_V1 != 1 || !defined(__linux__) || !defined(__x86_64__)\n"
       "#error \"KernelBind C requires the verified native Linux x86-64 build profile\"\n#endif\n"
       "_Static_assert(CHAR_BIT == 8 && sizeof(int64_t) == 8 && _Alignof(int64_t) == 8 && sizeof(void *) == 8, \"KernelBind target ABI drift\");\n";
-      const auto& symbol=f.kernel_symbol;
-      const bool interval=clamp_interval_symbol(symbol);
-     prototypes<<"/* unsafe_foreign: "<<symbol<<" */\n"
-      <<"_Static_assert(_Generic(&"<<symbol<<", int64_t (*)(int64_t, int64_t"<<(interval?", int64_t":"")
-      <<"): 1, default: 0), \"KernelBind prototype drift\");\n"
-      <<"static int64_t "<<functions.at(f.name)<<"(int64_t a, int64_t b"<<(interval?", int64_t c":"")
-      <<") { return "<<symbol<<"(a, b"<<(interval?", c":"")<<"); }\n";
+      const auto* binding=ffi::find_scalar(f.kernel_symbol);
+      if(!binding)throw Error(f.where,"missing FFIHandler scalar descriptor","ON1X-KERNEL-ABI");
+      const auto include=ffi::scalar_header(*binding);
+      if(kernel_headers.find(include)==std::string::npos)kernel_headers+=include;
+      prototypes<<ffi::scalar_wrapper(*binding,functions.at(f.name));
      continue;
     }
     if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=&f.where;
