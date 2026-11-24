@@ -248,9 +248,27 @@ def git_selector(kind, value):
     return value
 
 
+def profile_argument(args):
+    if len(args) != 4:
+        fail('expected profile-arg "profile" key string|integer|boolean value')
+    kind = args[2][0]
+    scope, key, kind, value = fields(args, '"ww"' if kind == 'string' else '"www')
+    if kind == 'integer':
+        if (not re.fullmatch(r'0|-?[1-9][0-9]{0,18}', value)
+                or not -(1 << 63) <= int(value) < (1 << 63)):
+            fail('profile-arg integer must be a signed 64-bit decimal integer without leading zeros or negative zero')
+    elif kind == 'boolean':
+        if value not in ('true', 'false'):
+            fail('profile-arg boolean must be true or false')
+    elif kind != 'string':
+        fail('profile-arg type must be string, integer or boolean')
+    # The bounded Mune adapter consumes the validated typed literal directly.
+    return name(scope), name(key, IDENT), (kind, value)
+
+
 def root_manifest(payload, origin, dependency=False):
     options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
-    selections, scoped, backend_scopes = {}, {}, {}
+    selections, scoped, backend_scopes, profile_args = {}, {}, {}, {}
     for at, verb, args in rows(payload, origin):
         try:
             if verb == 'kind':
@@ -332,6 +350,11 @@ def root_manifest(payload, origin, dependency=False):
                 if key in ('dev', 'release', *VM_COMMANDS) or not path.endswith('.lua'):
                     fail('use a custom profile name and a local .lua script')
                 unique(profiles, name(key), local(path))
+            elif verb == 'profile-arg' and not dependency:
+                scope, key, value = profile_argument(args)
+                unique(profile_args.setdefault(scope, {}), key, value)
+                if sum(map(len, profile_args.values())) > 64:
+                    fail('profile-arg declaration count budget exceeded')
             elif verb == 'command' and not dependency:
                 key, action, target, path = fields(args, '"ww"')
                 if (key in ('build', 'release', *VM_COMMANDS)
@@ -371,6 +394,9 @@ def root_manifest(payload, origin, dependency=False):
         fail(f'{origin}: declaration count budget exceeded')
     if commands.keys() & profiles.keys():
         fail(f'{origin}: a command cannot have the same name as a profile')
+    unknown = profile_args.keys() - profiles.keys()
+    if unknown:
+        fail(f'{origin}: profile-arg requires a declared Lua profile, got {min(unknown)!r}')
     unknown = scoped.keys() - (profiles.keys() | {'dev', *optimization.PROFILES})
     if unknown:
         fail(f'{origin}: unknown optimization scope {min(unknown)!r}')
@@ -380,7 +406,7 @@ def root_manifest(payload, origin, dependency=False):
     if len(commands) > 32:
         fail(f'{origin}: command declaration count budget exceeded')
     options.update(targets=targets, deps=deps, defines=defines,
-                   profiles=profiles, kernels=list(kernels), commands=commands,
+                   profiles=profiles, profile_args=profile_args, kernels=list(kernels), commands=commands,
                    selections=selections, scoped=scoped, backend_scopes=backend_scopes)
     return options
 
@@ -1671,9 +1697,21 @@ def build(args):
             with tempfile.NamedTemporaryFile(dir=work / 'input', suffix='.lua') as stream:
                 stream.write(data)
                 stream.flush()
+                if mode == 'profile':
+                    mode = 'profile-context'
+                    records = [('data', key, value) for key, value in sorted(model.items())]
+                    records.extend((('context', 'backend', backend),
+                                    ('context', 'directory', directory.as_posix())))
+                    if args.target:
+                        records.append(('context', 'target', args.target))
+                    records.extend(('target', key, path.as_posix()) for key, path in sorted(targets.items()))
+                    records.extend((kind, key, value) for key, (kind, value) in
+                                   sorted(config['profile_args'].get(chosen, {}).items()))
+                else:
+                    records = sorted(model.items())
                 try:
                     return executor.run([runner, mode, executor.path(policy_file), executor.path(Path(stream.name)),
-                                         *(word for pair in sorted(model.items()) for word in pair)],
+                                         *(word for record in records for word in record)],
                                         bound=MAX_MANIFEST, timeout=10)
                 except ValueError as error:
                     fail(f'{origin}: {error}')

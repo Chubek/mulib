@@ -961,10 +961,13 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
     def test_profiles_and_preprocessing(self):
         if not (OPTIONS.mune_runner and OPTIONS.qmr_compiler):
             self.skipTest('requires optional MuLIB Mune and real Moonstone QMR helpers')
-        self.app(extra='profile "small" "profile.lua"\ndefine entry "main.on1x"\n')
+        self.app(extra='profile "small" "profile.lua"\nprofile-arg "small" private boolean true\n'
+                 'define entry "main.on1x"\n')
         self.write('profile.lua', 'assert(io == nil and os == nil and package == nil and math.random == nil)\n'
+                   'assert(on1xfile.argument("private") == true)\n'
                    'return on1xfile.profile { optimize = 1, debug = true }\n')
-        self.write('src/On1xfile.m', 'on1xfile 1\n{% if data.profile == "small" then %}'
+        self.write('src/On1xfile.m', 'on1xfile 1\n'
+                   '{% if data.profile == "small" and data.private == nil and on1xfile == nil then %}'
                    'source {{ data.entry }}\n{% end %}')
         self.write('src/On1xfile.i', 'on1xfile 1\n{# compiled by real QMR, evaluated by Mune #}\n'
                    'interface {{ "main.on1xi" }}\n')
@@ -978,6 +981,110 @@ sys.exit(37 if sys.argv[1] == '--vm-rerun' else 0)
         self.build('--profile', 'small', negative='invalid or exhausted build policy')
         self.write('profile.lua', 'while true do end\n')
         self.build('--profile', 'small', negative='invalid or exhausted build policy')
+
+    def test_typed_profile_arguments_and_context(self):
+        if not OPTIONS.mune_runner:
+            self.skipTest('requires MuLIB Mune helper')
+        self.app(extra='''
+profile-arg "tuned" level integer 2
+profile-arg "tuned" debug boolean false
+profile-arg "tuned" mode string "ffi"
+profile-arg "other" level integer 3
+profile-arg "other" isolated boolean true
+profile "tuned" "profile.lua"
+profile "other" "not-run.lua"
+backend "tuned" mir-c11
+optimization-profile default
+define mode "legacy"
+''')
+        manifest = self.project / 'On1xfile'
+        manifest.write_text(manifest.read_text().replace(
+            'kind executable', 'kind complex\ntarget "second" "src/second.on1x"'))
+        self.write('src/On1xfile.m', 'on1xfile 1\nsource "main.on1x"\nsource "second.on1x"\n')
+        self.write('src/second.on1x', 'fn main() -> i64 { return 0; }\n')
+        script = self.write('profile.lua', '''
+local c = on1xfile.context()
+assert(c.profile == "tuned" and c.project == "sample" and c.kind == "complex")
+assert(c.directory == "src" and c.backend == "mir-c11")
+assert(c.targets.sample == "src/main.on1x")
+if c.target == nil then
+    assert(c.targets.second == "src/second.on1x")
+else
+    assert(c.target == "sample" and c.targets.second == nil)
+end
+assert(os == nil and io == nil and package == nil and math.random == nil)
+assert(data.mode == "legacy" and data.level == nil)
+assert(on1xfile.argument("mode") == "ffi" and on1xfile.argument("isolated") == nil)
+assert(on1xfile.argument("debug") == false and math.type(on1xfile.argument("level")) == "integer")
+data.project = "tampered"
+c.project = "tampered"
+c.targets.sample = "tampered"
+local fresh = on1xfile.context()
+assert(fresh.project == "sample" and fresh.targets.sample == "src/main.on1x")
+return on1xfile.profile {
+    optimize = on1xfile.argument("level"), debug = on1xfile.argument("debug")
+}
+''')
+        self.lock('--on1xc', OPTIONS.on1xc)
+        plan = [sys.executable, OPTIONS.driver, 'plan', str(self.project),
+                '--on1xc', OPTIONS.on1xc, '--mune-runner', OPTIONS.mune_runner, '--frozen']
+        default = json.loads(subprocess.check_output(plan, timeout=30))
+        self.assertNotIn('project/profile.lua', default['inputs'])
+        selected = [*plan, '--profile', 'tuned', '--target', 'sample']
+        first = subprocess.check_output(selected, timeout=30)
+        self.assertEqual(first, subprocess.check_output(selected, timeout=30))
+        report = json.loads(first)
+        self.assertEqual(report['cflags'], ['-O2'])
+        self.assertEqual(report['targets'], {'sample': 'src/main.on1x'})
+        self.assertEqual(report['inputs']['project/On1xfile'],
+                         hashlib.sha256(manifest.read_bytes()).hexdigest())
+        self.assertEqual(report['inputs']['project/profile.lua'],
+                         hashlib.sha256(script.read_bytes()).hexdigest())
+        self.assertNotIn('project/not-run.lua', report['inputs'])
+        all_targets = json.loads(subprocess.check_output([*plan, '--project-command', 'tuned'], timeout=30))
+        self.assertEqual(set(all_targets['targets']), {'sample', 'second'})
+        output = self.build('--frozen', '--profile', 'tuned', '--target', 'sample')
+        self.run_bin(output)
+        self.assertEqual(json.loads((output / '.on1x-build.json').read_bytes())['cflags'], ['-O2'])
+        manifest.write_text(manifest.read_text().replace('optimization-profile default',
+                                                         'optimization-profile release'))
+        script.write_text('error("profile should not run against a stale lock")\n')
+        self.build('--frozen', '--profile', 'tuned', negative='stale optimization policy')
+
+    def test_profile_argument_manifest_validation(self):
+        cases = [
+            ('profile-arg "dev" mode string "x"\n', 'requires a declared Lua profile'),
+            ('profile-arg "missing" mode string "x"\n', 'requires a declared Lua profile'),
+            ('profile-arg "tuned" mode string "a"\nprofile-arg "tuned" mode string "b"\n',
+             'duplicate declaration mode'),
+            ('profile-arg "tuned" mode boolean yes\n', 'boolean must be true or false'),
+            ('profile-arg "tuned" mode boolean "true"\n', 'incorrectly quoted'),
+            ('profile-arg "tuned" mode integer 9223372036854775808\n', 'signed 64-bit'),
+            ('profile-arg "tuned" mode integer 02\n', 'signed 64-bit'),
+            ('profile-arg "tuned" mode number 1\n', 'type must be string, integer or boolean'),
+            ('profile-arg "tuned" wrong-key integer 1\n', 'invalid name'),
+            ('profile-arg "tuned" mode string unquoted\n', 'incorrectly quoted'),
+            (''.join(f'profile-arg "tuned" key{i} boolean true\n' for i in range(65)),
+             'declaration count budget exceeded'),
+        ]
+        for declaration, error in cases:
+            with self.subTest(error=error, declaration=declaration[:100]):
+                self.app(extra='profile "tuned" "do-not-run.lua"\n' + declaration)
+                result = subprocess.run(
+                    [sys.executable, OPTIONS.driver, 'format', self.project / 'On1xfile'],
+                    text=True, capture_output=True, timeout=30)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(error, result.stderr)
+
+        self.app(extra='profile-arg "tuned" bound integer 9223372036854775807\n'
+                 'profile "tuned" "do-not-run.lua"\n')
+        subprocess.run([sys.executable, OPTIONS.driver, 'format', self.project / 'On1xfile', '--check'],
+                       check=True, timeout=30)
+
+        self.app(extra='dependency "toolkit" local "vendor/toolkit"\n')
+        dep = self.library('vendor/toolkit', 'toolkit') / 'On1xfile'
+        dep.write_text(dep.read_text() + 'profile-arg "tuned" x boolean true\n')
+        self.build(negative='unsupported \'profile-arg\' in dependency On1xfile')
 
     def test_explicit_shell(self):
         if not (OPTIONS.mune_runner and OPTIONS.qmr_compiler):

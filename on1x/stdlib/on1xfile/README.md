@@ -344,18 +344,56 @@ A root can select its own policy script:
 
 ```text
 profile "size_debug" "profiles/size_debug.lua"
+profile-arg "size_debug" level integer 1
+profile-arg "size_debug" symbols boolean true
+profile-arg "size_debug" flavor string "ffi"
 define entry "main.on1x"
 ```
 
 ```lua
 -- profiles/size_debug.lua
-return on1xfile.profile { optimize = 1, debug = true }
+local context = on1xfile.context()
+local level = on1xfile.argument("level")
+local symbols = on1xfile.argument("symbols")
+if context.backend == "c11" and on1xfile.argument("flavor") == "ffi" then
+    level = math.min(level, 1)
+end
+return on1xfile.profile { optimize = level, debug = symbols }
 ```
 
 `profiles.lua` defines the profile schema and reusable `on1xfile.profile`
 constructor. The policy must return one table with exactly `optimize` (integer
 0–3) and `debug` (boolean); raw tool commands and arbitrary flags are not
 accepted. A profile is executed only when explicitly selected.
+
+`profile-arg "profile" key TYPE value` declares a root-only argument for a
+named Lua profile in the same manifest. It may appear before or after the
+`profile` declaration. Keys use `[A-Za-z_][A-Za-z0-9_]*` (at most 64 characters),
+must be unique within that profile, and are limited to 64 declarations per
+manifest. The types are `string` (quoted), `integer` (unquoted signed 64-bit
+decimal, no leading zeros or negative zero), and `boolean` (unquoted `true` or
+`false`).
+`on1xfile.argument("key")` returns the typed value or `nil` for a missing key;
+it does not coerce strings or replace `false` with a default. There are no
+command-line or environment overrides. These arguments are separate from
+`data` and are not exposed to QMR.
+
+`on1xfile.context()` returns a fresh snapshot of read-only project metadata:
+
+| Field | Value |
+| --- | --- |
+| `profile`, `project`, `kind` | Selected profile name, manifest project name, and project kind |
+| `backend` | Effective project backend after profile and CLI selection |
+| `directory` | Project-relative source directory, or `"."` |
+| `target` | Name explicitly selected by `--target`, or `nil` |
+| `targets` | Map from selected target names to project-relative entry paths; empty for a library |
+
+Mutating a returned table (including `targets`) does not affect the build or
+future snapshots. A profile runs once per invocation, not once per target.
+Look up targets by name rather than relying on table iteration order. There
+is no host path or target probing in this API. Existing dependency and
+optimization lock checks still apply; the root manifest and selected script
+are recorded in build/plan input digests, not pinned by the lockfile.
 
 Plain local manifests need no optional helper. A local manifest containing QMR
 tags is a trusted template: `on1x-qmr-compile` uses the real LibStone Moonstone
@@ -376,8 +414,9 @@ source "main.on1x"
 ```
 
 Both helpers are looked up next to `on1xc` or in its SDK's `libexec/on1x`;
-otherwise give `--mune-runner` and `--qmr-compiler`. Outside sandbox mode
-`--libstone-root DIR` can compile the actual QMR compiler helper on demand.
+otherwise give `--mune-runner` and `--qmr-compiler` from the matching release.
+Outside sandbox mode `--libstone-root DIR` can compile the actual QMR compiler
+helper on demand.
 Mune runs in a fresh restricted environment with bounded memory, steps,
 duration, and output; there is no module loading, filesystem library, `os`,
 or random API. These restrictions do not make arbitrary scripts trustworthy.

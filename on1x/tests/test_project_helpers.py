@@ -28,6 +28,31 @@ with tempfile.TemporaryDirectory() as directory:
         result = run(*command)
         assert result.returncode != 0 and result.stdout == '', result
 
+    extended = (mune, 'profile-context', stdlib / 'profiles.lua', policy)
+    policy.write_text('''
+assert(on1xfile.argument("n") == math.mininteger)
+assert(on1xfile.argument("empty") == "")
+assert(on1xfile.argument("label") == 'false\\n"\\\\é')
+assert(on1xfile.argument("debug") == false and on1xfile.argument("absent") == nil)
+assert(__on1x_arguments == nil and __on1x_context == nil and __on1x_targets == nil)
+assert(on1xfile.context().backend == "c11")
+return on1xfile.profile { optimize = 1, debug = false }
+''', encoding='utf-8')
+    result = run(*extended, 'integer', 'n', '-9223372036854775808', 'string', 'empty', '',
+                 'string', 'label', 'false\n"\\é', 'boolean', 'debug', 'false',
+                 'context', 'backend', 'c11')
+    assert result.returncode == 0 and result.stdout == '1 0\n', result
+    policy.write_text('return { optimize = 0, debug = false }\n')
+    for records in [
+        ('unknown', 'value', 'true'),
+        ('integer', 'value', '9223372036854775808'),
+        ('integer', 'value', '1more'),
+        ('boolean', 'value', '0'),
+        ('string', 'missing_value'),
+    ]:
+        result = run(*extended, *records)
+        assert result.returncode != 0 and result.stdout == '', result
+
     if qmr:
         result = run(qmr[0], 'fixture.On1xfile.i',
                      input='role = {{ data.role }}\n')

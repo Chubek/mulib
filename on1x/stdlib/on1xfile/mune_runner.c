@@ -15,6 +15,8 @@
 #define MULIB_IMPL_GLOB
 #include "mulib-mune.h"
 
+#include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,15 +85,42 @@ static mulib_mune_status_t write_text(mulib_mune_state_t *state,
         ? MULIB_MUNE_OK : MULIB_MUNE_MEMORY;
 }
 
-static int set_data(mulib_mune_state_t *state, int argc, char **argv)
+static int global_table(mulib_mune_state_t *state, const char *name, mulib_mune_value_t *out)
+{
+    return mulib_mune_make_table(state, out) == MULIB_MUNE_OK &&
+        mulib_mune_set_global(state, name, *out) == MULIB_MUNE_OK;
+}
+
+static int set_data(mulib_mune_state_t *state, int argc, char **argv, int extended)
 {
     mulib_mune_value_t data;
-    if (mulib_mune_make_table(state, &data) != MULIB_MUNE_OK ||
-        mulib_mune_set_global(state, "data", data) != MULIB_MUNE_OK) return 0;
-    for (int i = 0; i + 1 < argc; i += 2) {
-        mulib_mune_value_t value;
-        if (mulib_mune_make_string(state, argv[i + 1], strlen(argv[i + 1]), &value) != MULIB_MUNE_OK ||
-            mulib_mune_set_field(state, data, argv[i], value) != MULIB_MUNE_OK) return 0;
+    if (!global_table(state, "data", &data)) return 0;
+    mulib_mune_value_t context = {0}, targets = {0}, arguments = {0};
+    if (extended &&
+        (!global_table(state, "__on1x_context", &context) ||
+         !global_table(state, "__on1x_targets", &targets) ||
+         !global_table(state, "__on1x_arguments", &arguments))) return 0;
+    for (int i = 0; i < argc;) {
+        const char *tag = extended ? argv[i++] : "data";
+        const char *key = argv[i++], *text = argv[i++];
+        mulib_mune_value_t table = arguments, value;
+        if (!strcmp(tag, "integer")) {
+            char *end;
+            errno = 0;
+            intmax_t n = strtoimax(text, &end, 10);
+            if (errno || end == text || *end || n < INT64_MIN || n > INT64_MAX) return 0;
+            value = mulib_mune_integer((int64_t)n);
+        } else if (!strcmp(tag, "boolean")) {
+            if (strcmp(text, "true") && strcmp(text, "false")) return 0;
+            value = mulib_mune_boolean(!strcmp(text, "true"));
+        } else {
+            if (!strcmp(tag, "data")) table = data;
+            else if (!strcmp(tag, "context")) table = context;
+            else if (!strcmp(tag, "target")) table = targets;
+            else if (strcmp(tag, "string")) return 0;
+            if (mulib_mune_make_string(state, text, strlen(text), &value) != MULIB_MUNE_OK) return 0;
+        }
+        if (mulib_mune_set_field(state, table, key, value) != MULIB_MUNE_OK) return 0;
     }
     return 1;
 }
@@ -118,9 +147,11 @@ static int profile_output(mulib_mune_state_t *state, mulib_mune_value_t table)
 
 int main(int argc, char **argv)
 {
-    if (argc < 4 || (strcmp(argv[1], "profile") && strcmp(argv[1], "render")) ||
-        (argc - 4) % 2) {
-        fputs("usage: on1x-mune-runner profile|render LIBRARY INPUT [KEY VALUE ...]\n", stderr);
+    int extended = argc >= 2 && !strcmp(argv[1], "profile-context");
+    if (argc < 4 || (!extended && strcmp(argv[1], "profile") && strcmp(argv[1], "render")) ||
+        (argc - 4) % (extended ? 3 : 2)) {
+        fputs("usage: on1x-mune-runner profile|render LIBRARY INPUT [KEY VALUE ...]\n"
+              "       on1x-mune-runner profile-context LIBRARY INPUT [TAG KEY VALUE ...]\n", stderr);
         return 2;
     }
     int render = !strcmp(argv[1], "render"), ok = 0;
@@ -128,7 +159,7 @@ int main(int argc, char **argv)
     struct output output = {{0}, 0, 0};
     mulib_mune_state_t *state = mulib_mune_state_create(&limits);
     mulib_mune_result_t *result = NULL;
-    if (!state || !restrict_state(state) || !set_data(state, argc - 4, argv + 4)) goto done;
+    if (!state || !restrict_state(state) || !set_data(state, argc - 4, argv + 4, extended)) goto done;
     if (render && mulib_mune_bind(state, "__qmr_write_native", write_text, &output) != MULIB_MUNE_OK)
         goto done;
     if (!evaluate(state, argv[2], &result)) goto done;
