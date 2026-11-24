@@ -121,6 +121,10 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         dest = self.build(STDLIB)
         package = (dest / 'library').rename(self.work / 'relocated stdlib')
         report = json.loads((dest / '.on1x-build.json').read_bytes())
+        self.assertEqual(report['outputs'], {
+            'library/' + path.relative_to(package).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in package.rglob('*') if path.is_file()
+        })
         # The restricted source package does not distribute the KernelBind
         # daemon, the separately hosted SDK source layer, or test fixtures.
         modules = {p.relative_to(STDLIB).as_posix() for p in STDLIB.rglob('*.on1x')

@@ -436,6 +436,31 @@ class ProjectTests(unittest.TestCase):
                    'on1xfile 1\n{% error("must not execute") %}\nlibrary "value.on1x"\n')
         self.build(negative='dependency manifests must be plain declarative text')
 
+    def test_source_library_reports_published_files(self):
+        library = self.library('toolkit', 'toolkit')
+        self.write('toolkit/lib/On1xfile.m', 'on1xfile 1\n# local note\nlibrary "value.on1x"\n')
+        self.write('toolkit/lib/ignored.on1x', 'not declared, not published\n')
+        relocated = self.root / 'relocated'
+        shutil.copytree(library, relocated)
+
+        output = self.build(root=library)
+        marker = output / '.on1x-build.json'
+        original_report = marker.read_bytes()
+        report = json.loads(original_report)
+        expected_paths = {'library/On1xfile', 'library/lib/On1xfile.m', 'library/lib/On1xfile.i',
+                          'library/lib/value.on1x', 'library/lib/value.on1xi'}
+        self.assertEqual({path.relative_to(output).as_posix() for path in (output / 'library').rglob('*')
+                          if path.is_file()}, expected_paths)
+        expected = {path: hashlib.sha256((output / path).read_bytes()).hexdigest()
+                    for path in expected_paths}
+        self.assertEqual(report['outputs'], expected)
+        self.assertNotEqual(report['inputs']['project/lib/On1xfile.m'],
+                            expected['library/lib/On1xfile.m'])
+        repeated = self.build(root=relocated)
+        self.assertEqual((repeated / marker.name).read_bytes(), original_report)
+        self.assertEqual(self.build(root=library), output)  # Replace a prior generation.
+        self.assertEqual(marker.read_bytes(), original_report)
+
     @unittest.skipUnless(shutil.which('git'), 'Git is unavailable')
     def test_pinned_git_ignores_checkout_and_config(self):
         dependency = self.library('vendor/repository', 'toolkit')

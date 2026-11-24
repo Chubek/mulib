@@ -39,6 +39,8 @@ MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
 MAX_FILES = 4096
+# A source package can record thousands of paths in both inputs and outputs.
+MAX_BUILD_REPORT = 16 * 1024 * 1024
 MAX_PROCESS = 64 * 1024 * 1024
 MAX_GIT_MEMORY = 512 * 1024 * 1024
 MAX_GIT_OBJECT_FILES = 32768
@@ -1320,7 +1322,7 @@ def publish(stage, output, report):
         fail(f'{output}: expected a project output directory')
     if output.is_dir():
         marker = output / '.on1x-build.json'
-        info = json.loads(read(marker, 2 * 1024 * 1024))
+        info = json.loads(read(marker, MAX_BUILD_REPORT))
         if not isinstance(info, dict) or any(info.get(key) != report[key]
                                              for key in ('schema', 'project', 'kind', 'profile')):
             fail(f'{output}: existing directory is not a build output for this project kind/name/profile')
@@ -1737,6 +1739,7 @@ def build(args):
             directory = config.get('directory', Path('.')).as_posix()
             certificate = (f'on1xfile 1\nkind library\nname {json.dumps(config["name"])}\n'
                            f'directory {json.dumps(directory)}\n')
+            package_files = {*roles, Path('On1xfile')}
             stage_bytes(package / 'On1xfile', certificate.encode())
             for directory in sorted({path.parent for path in roles}):
                 for suffix, accepted in (('m', ('library', 'resource')), ('i', ('interface',))):
@@ -1744,8 +1747,11 @@ def build(args):
                                     if path.parent == directory and role in accepted)
                     if inputs:
                         declarations = ''.join(f'{role} {json.dumps(path)}\n' for path, role in inputs)
-                        stage_bytes(package / directory / ('On1xfile.' + suffix),
-                                    ('on1xfile 1\n' + declarations).encode())
+                        manifest = directory / ('On1xfile.' + suffix)
+                        stage_bytes(package / manifest, ('on1xfile 1\n' + declarations).encode())
+                        package_files.add(manifest)
+            for path in sorted(package_files):
+                outputs['library/' + path.as_posix()] = digest(read(package / path, MAX_SOURCE))
 
         report = dict(schema='on1x.project-build/v1', project=config['name'], kind=config['kind'],
                       profile=chosen, cflags=cflags, sandbox=bool(args.sandbox), shell=bool(args.allow_shell),
@@ -1764,8 +1770,10 @@ def build(args):
             del report['outputs']
             print(json.dumps(report, indent=2, sort_keys=True))
             return
-        stage_bytes(work / 'artifact/.on1x-build.json',
-                    (json.dumps(report, indent=2, sort_keys=True) + '\n').encode())
+        report_bytes = (json.dumps(report, indent=2, sort_keys=True) + '\n').encode()
+        if len(report_bytes) > MAX_BUILD_REPORT:
+            fail(f'project build report exceeds {MAX_BUILD_REPORT} bytes')
+        stage_bytes(work / 'artifact/.on1x-build.json', report_bytes)
         dest.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=dest.parent, prefix='.on1x-project-') as publish_dir:
             publish_dir = Path(publish_dir) / 'output'

@@ -64,7 +64,12 @@ tool writes its path to stdout. A Linux atomic rename publishes the complete
 generation, never an incomplete set after error. A directory not created by
 On1xfile is not a valid replacement destination. The `.on1x-build.json`
 report records profile settings, selected source and manifest hashes, direct
-helper executable identities, and executable artifact hashes.
+helper executable identities, and executable artifact hashes. For a source
+library, `outputs` maps every published package file to its SHA-256 digest,
+with paths relative to the output directory (for example,
+`library/lib/value.on1xi`). This includes any registered resources and the
+normalized manifests as published, not the original manifest bytes recorded
+in `inputs`. The report does not hash itself and is limited to 16 MiB.
 
 ### Backend selection
 
