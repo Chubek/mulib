@@ -119,7 +119,7 @@ void require_mapping(SurfaceKind surface,const NativeType& native) {
 
 void require_descriptor(const Descriptor& desc) {
     require_target(desc.target);
-    if(!identifier(desc.symbol)||desc.parameters.size()>16||
+    if(desc.schema_version!=2||!identifier(desc.symbol)||desc.parameters.size()>16||
        (desc.placement!=Placement::External&&desc.placement!=Placement::StaticInline))
         invalid("FFIHandler C11 lowering: invalid scalar descriptor");
     require_mapping(desc.surface_result,desc.native_result);
@@ -209,9 +209,8 @@ std::string scalar_header(const Descriptor& desc) {
     return "#include <"+std::string(desc.header)+">\n";
 }
 
-std::string linked_name(const Descriptor& desc,LinkName kind) {
-    if(!identifier(desc.symbol)) invalid("FFIHandler C11 lowering: invalid native identifier");
-    if(kind==LinkName::Legacy) return "on1x_kernel_scalar_v1_"+std::string(desc.symbol);
+std::string linked_name(const Descriptor& desc) {
+    if(desc.schema_version!=2) invalid("FFIHandler C11 lowering: adapter requires a projected descriptor");
     const auto id=desc.id.sha256;
     if(id.size()!=64||!std::all_of(id.begin(),id.end(),[](char c){
         return (c>='a'&&c<='f')||(c>='0'&&c<='9');
@@ -263,14 +262,12 @@ std::string scalar_wrapper(const Descriptor& desc,std::string_view name,Linkage 
     return out+="}\n";
 }
 
-std::string linked_scalar_tu(std::span<const Descriptor* const> descriptors,LinkName names) {
+std::string linked_scalar_tu(std::span<const Descriptor* const> descriptors) {
     if(descriptors.empty()||descriptors.size()>256)
         invalid("FFIHandler C11 lowering: invalid adapter partition size");
     std::vector<const Descriptor*> sorted;
     for(const auto* desc:descriptors){
         if(!desc) invalid("FFIHandler C11 lowering: missing descriptor");
-        if(names==LinkName::DescriptorId&&desc->schema_version!=2)
-            invalid("FFIHandler C11 lowering: v2 adapter needs a projected descriptor");
         require_descriptor(*desc);
         sorted.push_back(desc);
     }
@@ -284,7 +281,7 @@ std::string linked_scalar_tu(std::span<const Descriptor* const> descriptors,Link
         if(headers.insert(desc->header).second) out+=scalar_header(*desc);
     std::set<std::string> emitted;
     for(const auto* desc:sorted){
-        const auto name=linked_name(*desc,names);
+        const auto name=linked_name(*desc);
         if(!emitted.insert(name).second) invalid("FFIHandler C11 lowering: duplicate adapter name");
         out+=scalar_prototype(*desc,name)+scalar_wrapper(*desc,name,Linkage::External);
     }

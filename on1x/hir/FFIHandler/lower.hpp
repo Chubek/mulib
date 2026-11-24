@@ -7,24 +7,21 @@
 
 namespace on1x::ffi::c11 {
 enum class Linkage { Local, External };
-enum class LinkName { Legacy, DescriptorId };
 
 // Currently only native Linux AMD64/SysV is qualified by this emitter.
 std::string target_requirements(const Target&);
 std::string scalar_header(const Descriptor&);
-std::string linked_name(const Descriptor&, LinkName = LinkName::DescriptorId);
+std::string linked_name(const Descriptor&);
 std::string scalar_prototype(const Descriptor&, std::string_view emitted_name);
 std::string scalar_wrapper(const Descriptor&, std::string_view emitted_name, Linkage);
 
 // Complete separate TU for native planning/review. Link to the real
 // implementation (or compile an internal inline body from its actual header).
 // This emits code, not authority to publish the object.
-std::string linked_scalar_tu(std::span<const Descriptor* const>,
-                             LinkName = LinkName::DescriptorId);
-inline std::string linked_scalar_tu(const Descriptor& descriptor,
-                                    LinkName names = LinkName::DescriptorId) {
+std::string linked_scalar_tu(std::span<const Descriptor* const>);
+inline std::string linked_scalar_tu(const Descriptor& descriptor) {
     const Descriptor* const selected = &descriptor;
-    return linked_scalar_tu(std::span{&selected, 1},names);
+    return linked_scalar_tu(std::span{&selected, 1});
 }
 
 // At the checked application call site, after argument evaluation and

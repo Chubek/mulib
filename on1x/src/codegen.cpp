@@ -54,7 +54,6 @@ class Generator {
   memgraph::Bounds bounds;
   std::map<std::size_t,Location>* origins;
   const SourcePrefixes* source_prefixes;
-  const bool foreign_driver_staging;
   std::map<std::size_t,const Location*> proto_origins,body_origins;
   const Location* enclosing=nullptr;
  std::ostringstream types,prototypes,helpers,value_helpers,definitions;
@@ -110,11 +109,7 @@ class Generator {
   std::string unique(const std::string& name){return reserve("on1x_v"+std::to_string(++serial)+"_"+name);}
   std::string pad()const{return std::string(indent*2,' ');}
   bool linked_foreign(const Function& f)const{
-   return foreign_driver_staging||f.foreign.mode()==ffi::ForeignMode::LinkOnly;
-  }
-  std::string foreign_link_name(const ffi::Descriptor& binding)const{
-   return ffi::c11::linked_name(binding,foreign_driver_staging?ffi::c11::LinkName::DescriptorId:
-                                                             ffi::c11::LinkName::Legacy);
+    return ffi::link_only(f.foreign.mode());
   }
  static bool needs_drop(const Type& type){return type.has_functions()||type.is_move_only();}
  std::string regex_literal(const Expr& e){
@@ -938,6 +933,14 @@ class Generator {
        definitions<<guard;
        if(origins)body_origins[static_cast<std::size_t>(definitions.tellp())]=enclosing;
       }
+     }else if(callee.reference==Expr::Reference::ScalarForeign){
+      // Retained only for the old reviewed, unresolved caller.
+      const auto* f=externs.at(callee.text);
+      if(f->kernel_link_only)
+       if(const auto* legacy=ffi::find_scalar(f->kernel_symbol)){
+        const auto guard=ffi::scalar_guard(*legacy,args);
+        if(!guard.empty())definitions<<pad()<<guard;
+       }
      }
     if(callee.reference==Expr::Reference::ScalarForeign&&pricing_kernel_symbol(externs.at(callee.text)->kernel_symbol)){
      const bool candidates=externs.at(callee.text)->kernel_symbol=="mulib_priceopt_candidates";
@@ -1361,14 +1364,15 @@ class Generator {
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
           bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),origins(options.origins),
-          source_prefixes(options.source_prefixes),foreign_driver_staging(options.foreign_driver_staging){
+          source_prefixes(options.source_prefixes){
     for(const auto& f:unit.functions){
      verify_kernel_shape(f);
      if(const auto* binding=ffi::verify_foreign_declaration(f,"x86_64-linux-gnu")){
-      if(foreign_driver_staging&&binding->schema_version!=2)
-       throw Error(f.where,"native driver staging requires a projected descriptor","ON1X-KERNEL-ABI");
+      if(options.foreign_driver_staging&&!linked_foreign(f))
+       throw Error(f.where,"native driver staging requires a checked link-only descriptor","ON1X-KERNEL-ABI");
       foreign_bindings.emplace(f.name,binding);
-     }
+     }else if(options.foreign_driver_staging&&!f.kernel_symbol.empty())
+      throw Error(f.where,"native driver staging cannot use a legacy kernel symbol","ON1X-KERNEL-ABI");
     }
     uses_csp=csp::present(unit);
       std::set<std::string_view> raw_externs;
@@ -1384,7 +1388,7 @@ class Generator {
         if(raw_externs.contains(binding.symbol))
          throw Error(f.where,"raw extern collides with a typed foreign symbol","ON1X-KERNEL-ABI");
         if(linked_foreign(f)){
-         const auto name=foreign_link_name(binding);
+         const auto name=ffi::c11::linked_name(binding);
          if(raw_externs.contains(name))
           throw Error(f.where,"foreign adapter C name collision","ON1X-KERNEL-ABI");
          identifiers.insert(name);
@@ -1399,7 +1403,7 @@ class Generator {
         if(f.foreign){
          const auto& binding=*foreign_bindings.at(f.name);
          functions.emplace(f.name,linked_foreign(f)
-            ?foreign_link_name(binding):reserve("on1x_ffi_local_"+std::string(binding.symbol)));
+            ?ffi::c11::linked_name(binding):reserve("on1x_ffi_local_"+std::string(binding.symbol)));
         }else functions.emplace(f.name,ipc_kernel_symbol(f.kernel_symbol)?f.kernel_symbol:
            f.kernel_link_only?"on1x_kernel_scalar_v1_"+f.kernel_symbol:
            f.kernel_symbol.empty()&&f.external?f.name:reserve("on1x_fn_"+(f.name.starts_with("@")?f.name.substr(1):f.name)));
@@ -1429,7 +1433,7 @@ class Generator {
         const auto& name=functions.at(f.name);
         if(origins)proto_origins[static_cast<std::size_t>(prototypes.tellp())]=&f.where;
         try{
-         if((foreign_driver_staging||!linked_foreign(f))&&foreign_headers.empty())
+         if(foreign_headers.empty())
           foreign_headers=ffi::c11::target_requirements(binding.target);
          if(linked_foreign(f)){
           if(linked_foreign_prototypes.insert(name).second)
@@ -1461,7 +1465,12 @@ class Generator {
         prototypes<<"const double *, int64_t, int64_t, int64_t, const double *, int64_t, int64_t, int64_t, ";
        else prototypes<<"int64_t, double, double, double, ";
        prototypes<<"double, double, double, double, double, double, double, int64_t, double *, double *, double *, uint64_t *);\n";
-       }else throw Error(f.where,"scalar foreign lowering requires a checked descriptor ID","ON1X-KERNEL-ABI");
+      }else {
+       // Keep the old stub ABI until independent legacy review parity.
+       const auto* legacy=ffi::find_scalar(f.kernel_symbol);
+       if(!legacy)throw Error(f.where,"missing legacy scalar descriptor","ON1X-KERNEL-ABI");
+       prototypes<<ffi::scalar_prototype(*legacy,functions.at(f.name));
+      }
        continue;
       }
      if(!f.kernel_symbol.empty())

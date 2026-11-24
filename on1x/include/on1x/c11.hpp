@@ -15,8 +15,8 @@ struct C11Options {
     bool allow_stackless_timers = true;
     // Optional logical guest debug paths; does not affect semantic locations.
     const SourcePrefixes* source_prefixes = nullptr;
-    // Emit unresolved descriptor-ID wrapper calls for native driver staging.
-    // Does not grant admission or change the checked lexical unsafe context.
+    // Require checked typed link-only calls on the native driver route.
+    // The verified HIR mode alone controls foreign linkage and lexical unsafe.
     bool foreign_driver_staging = false;
 };
 
