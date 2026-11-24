@@ -139,6 +139,8 @@ int main(int argc, char** argv) {
     check(cache::sha256({}) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "SHA-256 empty known answer mismatch");
     cache::clear();
+    check(!cache::find(identity, expected_key), "cache miss returned snapshot bytes");
+    check(cache::identify(identity, elf) == expected_key, "uncached VM ID differs from content key");
     rejects([&] { cache::load(identity, expected_key); }, "not found");
     rejects([&] { cache::publish(identity, {}); }, "empty");
     rejects([&] { cache::publish({identity.profile, "not-a-digest"}, elf); }, "invalid guest profile");
@@ -156,6 +158,7 @@ int main(int argc, char** argv) {
     check(cache::publish(identity, elf) == key, "same build did not reuse its key");
     check(mode(dir) == 0700 && mode(dir / key) == 0600, "namespace or artifact not private");
     check(cache::load(identity, key) == elf, "round trip changed binary bytes");
+    check(cache::find(identity, key) == elf, "optional lookup changed binary bytes");
     check(cache::publish(other_archive, elf) != key, "archive bytes did not change the key");
     check(cache::publish(other_profile, elf) != key, "guest profile did not change the key");
     check(cache::publish(identity, elf + 'x') != key, "ELF bytes did not change the key");
@@ -170,6 +173,7 @@ int main(int argc, char** argv) {
     rejects([&] { cache::load(identity, key); }, "mode-0600");
     check(::chmod((dir / key).c_str(), 0600) == 0, "cannot restore artifact permissions");
     write_file(dir / key, elf + 'x');
+    rejects([&] { cache::find(identity, key); }, "does not match its key");
     rejects([&] { cache::load(identity, key); }, "does not match its key");
     rejects([&] { cache::publish(identity, elf); }, "does not match its key");
 

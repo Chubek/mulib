@@ -1502,7 +1502,7 @@ def backend_inventory(args):
             rows.append(row)
         row = {'name': 'archvirt', 'root_policy': ['always', 'opt-in']}
         try:
-            run([compiler, '--vm-launcher=always', '--no-prelude', source,
+            run([compiler, '--vm-launcher=always', '--vm-uncached', '--no-prelude', source,
                  '-o', work / 'archvirt'], work)
             row['available'] = True
         except (OSError, ValueError) as error:
@@ -1836,7 +1836,7 @@ def build(args):
                 artifact = guest if launching else work / 'artifact' / key
                 mode = '--vm-build' if launching else '--vm-launcher=' + vm_policy
                 executor.run([compiler, mode, entry, '-o', executor.path(artifact),
-                              *loader, *analysis_flags, *opt_flags, *map_flags], timeout=180)
+                              '--vm-uncached', *loader, *analysis_flags, *opt_flags, *map_flags], timeout=180)
                 outputs[key] = digest(read(artifact, MAX_PROCESS))
                 continue
             output = executor.path(work / 'artifact' / key)

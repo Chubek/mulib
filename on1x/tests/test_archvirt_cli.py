@@ -52,7 +52,9 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
     }
     elf.write_bytes(b"existing executable")
     elf.chmod(0o755)
-    on1xc("--vm-build", source, "-o", elf, stdout=b"")
+    emitted = on1xc("--vm-build", source, "--vm-uncached", "-o", elf, stdout=b"")
+    id = re.search(rb"ArchVirt VM ID: ([0-9a-f]{64})\b", emitted.stderr)
+    assert id, emitted.stderr
     assert elf.stat().st_mode & 0o777 == 0o600
     assert not (root / "cache").exists(), "build alone touched the replay cache"
     image = elf.read_bytes()
@@ -71,6 +73,7 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
     key = re.search(rb"ArchVirt cache key: ([0-9a-f]{64})\b", p.stderr)
     assert key, p.stderr
     key = key[1].decode()
+    assert key.encode() == id[1]
     p = on1xc("--vm-run", source, "-o", elf, stdout=b"42\n")
     assert key.encode() in p.stderr
 
@@ -101,6 +104,9 @@ with tempfile.TemporaryDirectory(prefix="on1x-archvirt-") as work:
     on1xc("--vm-rerun", key, status=2, stdout=b"")
     # Linked launchers embed the image; they do not depend on the replay cache.
     expect([always], 0, stdout=b"42\n", env=env, cwd=root)
+    source.write_text("fn main() -> i64 { println(42); return 0; }\n")
+    on1xc("--vm-build", source, "-o", elf, stdout=b"", error=key.encode())
+    on1xc("--vm-rerun", key, stdout=b"42\n")
 
     source.write_text("fn main() { println(true + 1); }\n")
     on1xc("--vm-build", source, "-o", always, status=1, stdout=b"")

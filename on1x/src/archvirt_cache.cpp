@@ -266,10 +266,14 @@ struct CloseDirectory {
 };
 }
 
-std::string publish(const Identity& identity, std::string_view elf) {
+std::string identify(const Identity& identity, std::string_view elf) {
   validate_identity(identity);
   if (elf.empty() || elf.size() > max_elf_size) fail("guest artifact exceeds size limits or is empty");
-  auto key = key_for(identity, elf);
+  return key_for(identity, elf);
+}
+
+std::string publish(const Identity& identity, std::string_view elf) {
+  auto key = identify(identity, elf);
   auto dir = cache_directory(true);
   lock(dir.get(), LOCK_EX);
   if (const auto existing = read_entry(dir.get(), key.c_str())) {
@@ -292,16 +296,21 @@ std::string publish(const Identity& identity, std::string_view elf) {
   return key;
 }
 
-std::string load(const Identity& identity, std::string_view key) {
+std::optional<std::string> find(const Identity& identity, std::string_view key) {
   if (!valid_key(key)) fail("invalid key: expected 64 lowercase hexadecimal characters");
   validate_identity(identity);
   auto dir = cache_directory(false);
-  if (!dir) fail("guest artifact not found");
+  if (!dir) return std::nullopt;
   lock(dir.get(), LOCK_SH);
   auto elf = read_entry(dir.get(), std::string(key).c_str());
-  if (!elf) fail("guest artifact not found");
-  if (key_for(identity, *elf) != key)
+  if (elf && key_for(identity, *elf) != key)
     fail("guest artifact does not match its key or the current guest profile/archive");
+  return elf;
+}
+
+std::string load(const Identity& identity, std::string_view key) {
+  auto elf = find(identity, key);
+  if (!elf) fail("guest artifact not found");
   return std::move(*elf);
 }
 
@@ -331,8 +340,10 @@ void clear() {
   if (!names.empty()) sync(dir.get());
 }
 #else
+std::string identify(const Identity&, std::string_view) { fail("requires POSIX file descriptors and locks"); }
 std::string publish(const Identity&, std::string_view) { fail("requires POSIX file descriptors and locks"); }
 std::string load(const Identity&, std::string_view) { fail("requires POSIX file descriptors and locks"); }
+std::optional<std::string> find(const Identity&, std::string_view) { fail("requires POSIX file descriptors and locks"); }
 void clear() { fail("requires POSIX file descriptors and locks"); }
 #endif
 }

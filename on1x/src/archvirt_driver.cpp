@@ -124,8 +124,7 @@ struct StagedImage {
 };
 
 int remember_and_run(const Guest& guest, const StagedImage& staged) {
-    auto key = archvirt_cache::publish({profile, guest.archive_sha256}, guest.image);
-    std::cerr << "on1xc: ArchVirt cache key: " << key << '\n';
+    std::cerr << "on1xc: ArchVirt cache key: " << guest_id(guest, true) << '\n';
     return staged.invoke(true);
 }
 }
@@ -153,6 +152,11 @@ Guest compile_guest(std::string_view generated) {
     elf.append(archive_tag);
     elf.append(sha);
     return {std::move(elf), std::move(sha)};
+}
+
+std::string guest_id(const Guest& guest, bool remember) {
+    const archvirt_cache::Identity id{profile, guest.archive_sha256};
+    return remember ? archvirt_cache::publish(id, guest.image) : archvirt_cache::identify(id, guest.image);
 }
 
 std::string linked_program(std::string_view guest, bool always) {

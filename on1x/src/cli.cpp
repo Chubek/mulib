@@ -507,6 +507,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --vm-build INPUT -o GUEST_ELF | --vm-run INPUT [-o GUEST_ELF] (ArchVirt)\n"
    "       on1xc --vm-run-elf GUEST_ELF | --vm-rerun KEY | --vm-cache-clear (ArchVirt)\n"
    "       on1xc --vm-launcher=always|opt-in INPUT -o EXECUTABLE (linked ArchVirt)\n"
+   "         --vm-uncached  emit a VM ID without registering the guest for replay\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
     "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
@@ -590,6 +591,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    }
          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
           std::string archvirt_mode;
+          bool archvirt_uncached=false;
           std::string sdk_mode,sdk_name,sdk_target;
           bool native_pic=false,native_no_entry=false;
          std::vector<std::string> plugin_selectors;
@@ -624,6 +626,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           if(!archvirt_mode.empty())throw std::runtime_error("specify one ArchVirt build or launch mode");
           archvirt_mode=arg;continue;
          }
+         if(arg=="--vm-uncached"){archvirt_uncached=true;continue;}
          if(arg=="--vm-source-prefix"){
           if(i+2>=argc||vm_prefixes.size()>=16)
            throw std::runtime_error("--vm-source-prefix needs two absolute paths (maximum 16 maps)");
@@ -820,6 +823,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
    }
+   if(archvirt_uncached&&(archvirt_mode.empty()||archvirt_mode=="--vm-run"))
+    throw std::runtime_error("--vm-uncached requires --vm-build or --vm-launcher");
    if(!archvirt_mode.empty()){
     if(mode!="--emit-c"||explicit_c||ir_input||!sdk_mode.empty()||list_opts||cephyr_object||
        loader.kernel_c11||loader.kernel_stage)
@@ -1194,9 +1199,13 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        auto guest=compile_guest(generated);
        if(archvirt_mode.starts_with("--vm-launcher=")){
         auto executable=linked_program(guest.image,archvirt_mode=="--vm-launcher=always");
+        auto id=guest_id(guest,!archvirt_uncached);
         publish_regular_file(out,executable,"ArchVirt launcher",".on1x-launcher-XXXXXX",OutputPermission::private_executable);
+        std::cerr<<"on1xc: ArchVirt VM ID: "<<id<<'\n';
        }else if(!out.empty()){
+        auto id=archvirt_mode=="--vm-build"?guest_id(guest,!archvirt_uncached):std::string{};
         publish_regular_file(out,guest.image,"ArchVirt guest",".on1x-guest-XXXXXX",OutputPermission::private_data);
+        if(!id.empty())std::cerr<<"on1xc: ArchVirt VM ID: "<<id<<'\n';
        }
        return archvirt_mode=="--vm-run"?cache_and_run(guest):0;
       }

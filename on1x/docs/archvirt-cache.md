@@ -2,15 +2,17 @@
 
 The private `on1xc` cache stores the **final guest ELF**, not source,
 intermediate objects, host executables, or a source-to-artifact index.
-`--vm-run` should build from the current inputs every time; its resulting
-ELF can be published and reported with its key. `--vm-rerun KEY` should use
-only that explicit key, without loading source or rebuilding. It must still
-perform the runner's normal guest ELF and runtime validation.
+The exact content key is also the VM ID. `--vm-run` builds from the current
+inputs every time; emission modes can register the finalized image without
+running. `--vm-uncached` reports its ID without writing the cache.
+`--vm-rerun KEY` uses only that explicit key, without loading source or
+rebuilding. It still performs the runner's normal guest ELF and runtime
+validation.
 
 ## Identity and integration
 
-`on1x/archvirt_cache.hpp` exposes `publish(identity, elf)`, `load(identity,
-key)`, `clear()`, `sha256(bytes)`, and `valid_key(key)` to the CLI. The guest
+`on1x/archvirt_cache.hpp` exposes `identify(identity, elf)`, `publish`, `load`,
+optional `find`, and `clear()` to the CLI. The guest
 identity consists of a versioned target/boot profile (a nonempty string of
 at most 256 bytes without NUL) and the lowercase SHA-256 digest of the
 **exact archive contents used to link** the guest. For an archive given

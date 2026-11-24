@@ -14,6 +14,7 @@ public:
     using std::runtime_error::runtime_error;
 };
 Guest compile_guest(std::string_view generated);
+std::string guest_id(const Guest& guest, bool remember);
 std::string linked_program(std::string_view guest, bool always);
 int cache_and_run(const Guest& guest);
 int run_elf(std::string_view path);

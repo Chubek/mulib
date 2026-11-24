@@ -21,8 +21,10 @@ on1xc --vm-launcher=opt-in main.on1x -o main-opt
 ./main-opt --sandbox
 ```
 
-`--vm-build` only writes the guest and does not run or populate the replay
-cache. `--vm-run` can also export the guest with `-o FILE`. Neither command
+`--vm-build` writes the guest without running it. Guest and launcher emission
+report a stable VM ID and register the guest for replay; `--vm-uncached`
+reports the same ID without registering. Reproducible project builds use the
+uncached route. `--vm-run` can also export the guest with `-o FILE`. Neither command
 makes a guest ELF executable on the host. `--vm-run-elf` accepts the
 same DomIOS profile with no access to source. It checks the guest's recorded
 runtime-archive fingerprint against the current compiler installation.
