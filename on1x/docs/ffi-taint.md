@@ -16,6 +16,13 @@ from resolved types and specifiers, not symbol spellings. Neither a pointer
 alone nor an identifier like `variadic` is sufficient. The generator retains
 the underlying ownership/representation outcome separately.
 
+An enriched Cephyr analysis report can also supply
+`taint_projected_out_of_bounds` when its validated, bounded memory model
+disproves safety for the exact projected definition. FFIHandler checks that
+the directive and catalogue report agree before registering this diagnostic.
+It does not turn `unknown` into a finding, and it does not claim that a
+different linked implementation has the same body.
+
 For a bounded body observation, build the optional Wetstone helper:
 
 ```sh
@@ -45,7 +52,7 @@ failure, or budget exhaustion provides no negative safety evidence.
 ## Policy
 
 The compiler and generated native build driver default to
-`--ffi-taint reject`. A use of a known tainted discovery member reports
+`--ffi-taint reject`. A use of a known tainted member reports
 `ON1X-FFI-TAINT`. If a module has no represented bindings, the generated
 FFI import preflight may diagnose its first known tainted discovery member
 at the import. The index remains available as inventory.

@@ -1119,23 +1119,31 @@ def registry_index(paths, target=None, catalogue=None):
             name, digest = inp['file'], inp['sha256']
             require(name not in inputs, 'duplicate registry input filename: ' + name)
             inputs[name] = digest
+        projected_oob = set()
         for mod in payload['modules']:
             module = mod['module']
             require(module not in seen_modules and len(seen_modules) < MAX_MODULES, 'registry module collision or limit')
             seen_modules.add(module)
             if 'c11_analysis' in mod:
                 analysis[module] = mod['c11_analysis']
+                projected_oob.update(
+                    (module, function['symbol'])
+                    for function in mod['c11_analysis']['functions']
+                    if function['memory_safety']['status'] == 'disproved')
         for row in (*payload['bindings'], *payload['discovery']):
             symbol = row['symbol']
             require(symbol not in seen_symbols, 'registry native symbol collision: ' + symbol)
             seen_symbols.add(symbol)
             if 'c11_evidence' in row:
                 evidence[(row['module'], symbol)] = row['c11_evidence']
+            if (row['module'], symbol) in projected_oob:
+                require(len(taint) < MAX_BINDINGS, 'registry discovery taint limit exceeded')
+                taint[row['module'], row['member']] = 'taint_projected_out_of_bounds'
         for row in payload['discovery']:
             key = (row['module'], row['member'])
             discovery_symbols[key] = row['symbol']
             code = taint_reason(row)
-            if code is not None:
+            if code is not None and key not in taint:
                 require(len(taint) < MAX_BINDINGS, 'registry discovery taint limit exceeded')
                 taint[key] = code
         if payload['bindings']:

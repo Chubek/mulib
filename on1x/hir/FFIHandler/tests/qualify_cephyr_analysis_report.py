@@ -168,8 +168,11 @@ class AnalysisTests(unittest.TestCase):
         def verify(valid):
             if valid:
                 ffic.verify_catalogue(path, inputs, TARGET[0], facts, analysis)
-                _, registry = ffic.registry_index([shard], TARGET[0], path)
+                header, registry = ffic.registry_index([shard], TARGET[0], path)
                 self.assertIs(registry["grants_safe_admission"], False)
+                self.assertIn('"mulib.x", "bad_index", "taint_projected_out_of_bounds"', header)
+                self.assertNotIn('"mulib.x", "lookup", "taint_projected_out_of_bounds"', header)
+                self.assertNotIn('"mulib.x", "opaque", "taint_projected_out_of_bounds"', header)
             else:
                 with self.assertRaisesRegex(ffic.Invalid, "C11 analysis directives differ"):
                     ffic.verify_catalogue(path, inputs, TARGET[0], facts, analysis)
