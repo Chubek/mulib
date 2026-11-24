@@ -36,6 +36,25 @@ exports. For example, the bundled Cephyr header profile cannot project
 `media-timebase` because it lacks `math.h`; generation does not replace it with
 host libc or a synthetic declaration.
 
+## AMD64 coverage
+
+The checked-in catalogue accounts for 2,053 registrations: all were attempted
+and 751 projected successfully. The 2,053 module outcomes are:
+
+| Outcome | Modules | Reason |
+|---|---:|---|
+| Projection failed | 1,302 | `cephyr_failed` under the bundled header profile; no declarations emitted |
+| Discovery only | 634 | Ownership was not established for emitted entries |
+| Unsupported after projection | 115 | 114 `no_owned_exports`; 1 `data_only_module` (`lprowse`) |
+| Scalar candidates | 2 | Three `clamp` functions and `container-core`'s audited static-inline function |
+
+There are 11,606 projected function occurrences across declaration units
+(not distinct library exports): 9,127 non-candidates and 2,479 candidate
+outcomes. Of those candidates, 2,358 are ambiguous, 115 have unrepresentable
+identifiers, 2 are reserved to other modules, and 4 are explicitly selected
+and emitted. These are **not** unsafe or reviewed-safe admission counts.
+The existing tracked v1 seed is not an input to this generated catalogue.
+
 ## Regeneration and CI
 
 Use `on1x/hir/FFIHandler/tools/ffgen.py` with an explicit Cephyr binary, the
@@ -78,10 +97,9 @@ same explicit provider/parser arguments after the CI command's `--`.
 For a quick check without Cephyr, replace the `--` and everything after it with
 `--inventory-only`. This checks the source inventory, generator and grammar
 digests, reconciled counts and package hashes; it does not rerun projection or
-establish authenticity. Run
-the full check against at least two different absolute checkout locations
-when qualifying a profile. A reproducible check needs the same tool binaries
-and resources, not just the same reported version.
+establish authenticity. Run the full check against at least two different
+absolute checkout locations when qualifying a profile. A reproducible check
+needs the same tool binaries and resources, not just the same reported version.
 
 Publication validates a private sibling stage and rechecks the generation
 inputs before atomically renaming or exchanging the directory on Linux.
