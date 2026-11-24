@@ -98,7 +98,16 @@ for name in new:
         assert diagnostic in result.stderr, result
     logical = name.replace('-', '_')
     for unsafe, diagnostic in (('', 'ON1X-KERNEL-NOT-ADMITTED'),
-                               ('unsafe ', 'ON1X-KERNEL-UNSAFE-UNSUPPORTED')):
+                                ('unsafe ', 'ON1X-KERNEL-UNSAFE-UNSUPPORTED')):
+        if name == 'container-core' and unsafe:
+            # The audited inline member does not imply an archive ABI or
+            # authorization for other members of the same module.
+            source = t.source(name+'-inline',
+                              f'{unsafe}import kernel mulib.{logical} as K;\n'
+                              'fn main(){ unsafe { println(K.counter_add(2u64, 40u64)); } }\n')
+            result = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', source])
+            assert result.returncode == 0 and 'mulib_ct_counter_add' in result.stdout, result
+            continue
         source = t.source(name+'-'+str(bool(unsafe)),
                           f'{unsafe}import kernel mulib.{logical} as K;\nfn main(){{}}\n')
         result = run([t.compiler, '--no-prelude', '--emit-c', '--kernel-c11', source])
@@ -133,4 +142,4 @@ for consumer, dependencies in (('container', {'container-core'}),
         assert fixture['implementation_macros'] == plan['implementation_macros']
         assert fixture['link_libraries'] == plan['link_libraries']
 
-print(f'{len(headers)} canonical headers: full registry/native request coverage; new profiles fail closed: PASS')
+print(f'{len(headers)} canonical headers: full registry/native request coverage and bounded inline selection: PASS')
