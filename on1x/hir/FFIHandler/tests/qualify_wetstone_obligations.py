@@ -9,6 +9,8 @@ import sys
 import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from cephyr_interface import decode_interface
+from ffi_obligation_reports import numeric_obligation_report
 from ffi_obligations import ArrayCheck, MAX_QUERIES, RangeCheck, closed_return_check, run_obligations
 from project_interface import CephyrProvider, ProjectionError, TARGET_ABIS
 
@@ -127,6 +129,24 @@ def qualify_target(upstream, provider, helper):
         "proved", "disproved", "unknown", "proved", "disproved", "unknown",
         "disproved", "proved", "proved",
     )
+    interface = decode_interface(projection.output, expected_target=provider.target)
+    rows = [{"symbol": fn.name, "emitted": fn.name != "signed_wide",
+             "surface": {"result": "u64"} if fn.name == "wide" else None}
+            for fn in interface.functions]
+    report = numeric_obligation_report(provider, helper, interface, rows)
+    assert report["status"] == "partial"
+    assert len(report["checks"]) == 14, report
+    assert not any(row["symbol"] == "signed_wide" for row in report["checks"])
+    assert {"symbol": "rows", "kind": "array_minimum_size_t", "scope": "declaration",
+            "site": 0, "parameter": 0, "minimum_elements": 4,
+            "element_bytes": 12, "status": "proved"} in report["checks"]
+    assert {"symbol": "dynamic", "kind": "array_minimum_size_t", "scope": "declaration",
+            "site": 0, "parameter": 1, "minimum_elements": None,
+            "element_bytes": 4, "status": "unknown"} in report["checks"]
+    assert {"symbol": "mask8", "kind": "return_upper_bound", "scope": "this_definition",
+            "bits": 8, "status": "proved"} in report["checks"]
+    assert {"symbol": "wide", "kind": "result_carrier_domain", "scope": "declaration",
+            "carrier": "u64", "status": "proved"} in report["checks"]
     provider.verify_inputs()
     print(f"{provider.target}: checked {len(queries)} numeric obligations/unknown slots")
 

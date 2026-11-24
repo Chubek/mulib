@@ -19,7 +19,8 @@ _SHA256 = re.compile(r'[0-9a-f]{64}')
 _GENERATION_TOOLS = frozenset({
     'ffgen.py', 'ffi_types.py', 'cephyr_interface.py', 'cephyr_syntax.py', 'project_interface.py',
     'ffi_inventory.py', 'ffi_publish.py', 'ffi_plan.py', 'ffi_taint.py',
-    'wetstone_ffi_taint.cpp', 'ffic.py', 'FFIHandler.llsynth',
+    'wetstone_ffi_taint.cpp', 'ffi_obligations.py', 'ffi_obligation_reports.py',
+    'wetstone_ffi_obligations.cpp', 'ffic.py', 'FFIHandler.llsynth',
 })
 
 

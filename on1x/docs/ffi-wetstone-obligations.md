@@ -5,6 +5,21 @@
 for reports. They neither run native calls nor change admission. The reference
 revision is LibStone `6a7d52e866db8eb441bb7a4f86ce91253732e740`.
 
+## Generate reports
+
+Build the optional host tool with
+`cmake --build BUILD --target on1x-wetstone-ffi-obligations`. Pass its absolute
+path, `BUILD/hir/FFIHandler/on1x-wetstone-ffi-obligations`, to
+`ffgen --wetstone-obligations`. The generator validates the enriched Cephyr
+projection, batches supported checks by module, and records their scope
+and statuses in `index.json` alongside the helper's digest. This checks
+representable scalar return domains, bounded return policies for the exact
+projected definition, and whether an array minimum can fit in `size_t`.
+It does not establish that any particular pointer spans that minimum.
+The option is independent of `--wetstone-taint` and does not change the
+compiled bindings or taint policy. If a selected helper fails, the package
+transaction aborts rather than publishing partial subprocess results.
+
 ## Integration contract
 
 Decode and validate the same-target Cephyr `interface 1` with

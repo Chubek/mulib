@@ -493,6 +493,7 @@ def _check_public_header(root, entry, provider):
 
 def _run(args) -> None:
     from cephyr_interface import InterfaceError, decode_interface
+    from ffi_obligation_reports import numeric_obligation_report
     from ffi_taint import callback_sites, wetstone_evidence
     import ffi_inventory
     import ffi_publish
@@ -515,26 +516,34 @@ def _run(args) -> None:
         tools / "ffgen.py", tools / "ffi_types.py", tools / "cephyr_interface.py", tools / "cephyr_syntax.py",
         tools / "project_interface.py", tools / "ffi_inventory.py", tools / "ffi_publish.py",
         tools / "ffi_plan.py", tools / "ffi_taint.py", tools / "wetstone_ffi_taint.cpp",
+        tools / "ffi_obligations.py", tools / "ffi_obligation_reports.py", tools / "wetstone_ffi_obligations.cpp",
         tools / "ffic.py", tools.parent / "FFIHandler.llsynth",
     )
     snapshots = {path: _sha(path.read_bytes()) for path in toolchain}
     parser_source = ffic.read(args.parser, 4 * 1024 * 1024)
     snapshots[args.parser] = _sha(parser_source)
-    wetstone = args.wetstone_taint.resolve(strict=True) if args.wetstone_taint else None
-    wetstone_sha = None
-    if wetstone is not None:
-        if not os.access(wetstone, os.X_OK):
-            raise GenerationError("Wetstone helper is not executable")
-        _, _, wetstone_sha = _file_identity(wetstone, 16 * 1024 * 1024)
+    wetstone_helpers = {}
+    for choice in ("wetstone_taint", "wetstone_obligations"):
+        selected = getattr(args, choice)
+        if selected is not None:
+            selected = selected.resolve(strict=True)
+            if not os.access(selected, os.X_OK):
+                raise GenerationError(f"{choice} helper is not executable")
+            _, _, sha = _file_identity(selected, 16 * 1024 * 1024)
+            wetstone_helpers[choice] = selected, sha
+    wetstone, wetstone_sha = wetstone_helpers.get("wetstone_taint", (None, None))
+    obligations_tool, obligations_sha = wetstone_helpers.get("wetstone_obligations", (None, None))
+    wetstone_inputs = tuple(dict.fromkeys(path for path, _ in wetstone_helpers.values()))
     generation = {
         "tools": {path.name: snapshots[path] for path in toolchain},
         "parser_identity_sha256": _parser_identity(parser_source, snapshots[toolchain[-1]]),
         "wetstone_taint_sha256": wetstone_sha,
+        "wetstone_obligations_sha256": obligations_sha,
     }
     protected_paths = (root, root / "include", root / "MANIFEST.yaml", *protected_overrides,
                         *snapshots, args.cephyr.resolve(), args.scratch_root.resolve(),
                        *(path.resolve() for path in (*args.system_include_dir, *args.tool_input)),
-                       *((wetstone,) if wetstone else ()),
+                        *wetstone_inputs,
                        *((args.sysroot.resolve(),) if args.sysroot else ()))
     if any(path.is_relative_to(output) for path in protected_paths):
         raise GenerationError("output overlaps a protected input or scratch root")
@@ -573,7 +582,7 @@ def _run(args) -> None:
                     args.cephyr, args.target, libstone_revision=args.libstone_revision,
                     scratch_root=args.scratch_root, include_dirs=plan.include_dirs,
                     system_include_dirs=tuple(args.system_include_dir),
-                    tool_inputs=(*args.tool_input, *((wetstone,) if wetstone else ())),
+                    tool_inputs=(*args.tool_input, *wetstone_inputs),
                     defines=plan.defines,
                     sysroot=args.sysroot, freestanding=args.freestanding, require_syntax=True,
                 )
@@ -654,6 +663,7 @@ def _run(args) -> None:
         override = selected_overrides.get(entry.key)
         output, syntax_capture, reason, projection_input, profile_sha = project(entry, plan, provider, key)
         projection_sha = None
+        numeric_obligations = {"status": "unavailable", "reason": "interface_unavailable"}
         if output is None:
             outcome = failed_module(entry, target, reason, override=override)
         else:
@@ -682,6 +692,9 @@ def _run(args) -> None:
                                               owned_headers=plan.metadata["owned_headers"],
                                               reserved_prefixes=prefixes, body_taint=body_report,
                                               callback_taint=findings)
+                    if obligations_tool is not None:
+                        numeric_obligations = numeric_obligation_report(
+                            provider, obligations_tool, interface, outcome.metadata["symbols"])
         row = {
             "key": entry.key, "module": entry.module, "header": entry.header_path,
             "file": entry.filename, "ffi_sha256": _sha(outcome.document),
@@ -691,6 +704,8 @@ def _run(args) -> None:
             "plan": plan.metadata,
             **outcome.metadata,
         }
+        if obligations_tool is not None:
+            row["wetstone_obligations"] = numeric_obligations
         record_bytes = len(json.dumps(row, ensure_ascii=True, separators=(",", ":")))
         with budget_lock:
             staged_bytes["files"] += len(outcome.document)
@@ -724,8 +739,9 @@ def _run(args) -> None:
         inventory.verify_unchanged()
         for provider in providers.values():
             provider.verify_inputs()
-        if wetstone is not None and _file_identity(wetstone, 16 * 1024 * 1024)[2] != wetstone_sha:
-            raise GenerationError("Wetstone helper changed during generation")
+        for name, (helper, sha) in wetstone_helpers.items():
+            if _file_identity(helper, 16 * 1024 * 1024)[2] != sha:
+                raise GenerationError(f"{name} helper changed during generation")
         if select_overrides() != override_dir or raw_overrides != _override_inputs(override_dir, inventory):
             raise GenerationError("authored overrides changed during generation")
         for path, sha in snapshots.items():
@@ -793,6 +809,8 @@ def main(argv=None) -> int:
     parser.add_argument("--scratch-root", required=True, type=_absolute)
     parser.add_argument("--wetstone-taint", type=_absolute,
                         help="trusted wetstone-ffi-taint helper for bounded body observations")
+    parser.add_argument("--wetstone-obligations", type=_absolute,
+                        help="trusted Wetstone helper for numeric Cephyr declaration obligations")
     parser.add_argument("--system-include-dir", action="append", default=[], type=_absolute)
     parser.add_argument("--tool-input", action="append", required=True, type=_absolute,
                         help="repeat for actual compiler libraries and target resources")

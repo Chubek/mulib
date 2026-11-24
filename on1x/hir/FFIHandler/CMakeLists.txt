@@ -161,6 +161,14 @@ if(ON1X_WITH_WETSTONE AND EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/path-analysis/T
   add_executable(on1x-wetstone-ffi-taint EXCLUDE_FROM_ALL tools/wetstone_ffi_taint.cpp)
   target_compile_features(on1x-wetstone-ffi-taint PRIVATE cxx_std_20)
   target_include_directories(on1x-wetstone-ffi-taint SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}")
+  if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/abstract-interp/BitvectorInterval.hpp"
+     AND NOT CMAKE_CROSSCOMPILING)
+    add_executable(on1x-wetstone-ffi-obligations EXCLUDE_FROM_ALL
+      tools/wetstone_ffi_obligations.cpp)
+    target_compile_features(on1x-wetstone-ffi-obligations PRIVATE cxx_std_20)
+    target_include_directories(on1x-wetstone-ffi-obligations SYSTEM PRIVATE
+      "${ON1X_LIBSTONE_ROOT}")
+  endif()
 endif()
 install(FILES ${_ffi_specs} "${_ffi_catalogue_index}"
   DESTINATION "share/on1x/stdffi/mulib/${ON1X_FFI_TARGET}")

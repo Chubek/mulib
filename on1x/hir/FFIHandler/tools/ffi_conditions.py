@@ -10,11 +10,12 @@ from pathlib import Path
 import re
 import sys
 
-from cephyr_interface import MAX_BYTES, IntegerType, decode_interface
+from cephyr_interface import MAX_BYTES, decode_interface
+from ffi_types import native_primitive
 
 
 TARGET = "x86_64-linux-gnu"
-C_INT = IntegerType("int", 3, 32, True, 4, 4)
+C_INT = ["integer", "int", 3, 32, "signed", 4, 4]
 C_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,127}")
 CASE_NAME = re.compile(r"[A-Z][A-Za-z0-9]{0,63}")
 UNRECOGNIZED = "UnrecognizedStatus"
@@ -62,7 +63,7 @@ def generate(projection: bytes, contract: bytes) -> str:
     require(fn is not None and fn.linkage == "external"
             and fn.definition in ("declaration", "defined") and not fn.specifiers
             and fn.calling_convention == "sysv"
-            and fn.type.prototype and not fn.type.variadic and fn.type.result == C_INT,
+            and fn.type.prototype and not fn.type.variadic and native_primitive(fn.type.result) == C_INT,
             "status contract requires an external fixed SysV C int function without specifiers")
     tags = [tag for tag in interface.tags if tag.kind == "enum" and tag.name == enum]
     require(len(tags) == 1 and tags[0].complete, "expected one complete named status enum")
