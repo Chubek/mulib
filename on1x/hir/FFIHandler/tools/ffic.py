@@ -19,6 +19,11 @@ MAX_FILES = 8
 MAX_ENTRIES = 256
 MAX_PARAMS = 16
 MAX_GUARDS = 16
+MAX_TAGS = 128
+MAX_TAG_ITEMS = 128
+MAX_TYPE_DEPTH = 16
+MAX_NATIVE_NODES = 2048
+U64_MAX = (1 << 64) - 1
 MAX_MODULES = 8192
 MAX_BINDINGS = 32768
 MAX_MANIFEST = 32 * 1024 * 1024
@@ -55,6 +60,10 @@ INTEGER_LAYOUTS = {
 }
 # Audited static-inline spelling in include/mulib-container-core.h.
 SYMBOL_EXCEPTIONS = {('mulib.container_core', 'mulib_ct_counter_add')}
+FRAMED_IPC_SYMBOLS = frozenset('on1x_kernel_ipc_v1_' + suffix for suffix in (
+    'open_pair', 'roundtrip', 'open_session', 'register_callback',
+    'revoke', 'send', 'poll', 'finish_send',
+))
 
 class Invalid(ValueError):
     pass
@@ -123,6 +132,10 @@ def string(value):
 
 
 def lexeme(node):
+    # LLSynth may wrap a single terminal in a nonterminal node.
+    while node.token is None and len(node.children) == 1:
+        node = node.children[0]
+    require(node.token is not None, 'expected terminal')
     return node.token.lexeme
 
 
@@ -134,15 +147,15 @@ def parse_root(parser, raw, path):
         raise Invalid(f'{path}:{getattr(exc, "line", 1)}:{getattr(exc, "column", 1)}: {str(exc)[:300]}') from exc
     header, document, _ = root.children
     version = lexeme(header.children[1])
-    require(version in ('1', '2'), 'unsupported FFI schema version')
+    require(version in ('1', '2', '3'), 'unsupported FFI schema version')
     if version == '1':
         require(document.children[0].symbol == 'Modules', 'expected ffi 2; before target')
         return 1, LEGACY_TARGET, document.children[0]
-    require(document.children[0].symbol == 'Target', 'ffi 2 requires an explicit target')
+    require(document.children[0].symbol == 'Target', f'ffi {version} requires an explicit target')
     t = document.children[0].children
     target = string(lexeme(t[1])), lexeme(t[2]), string(lexeme(t[3])), lexeme(t[4])
     require(TARGETS.get(target[0]) == target[1:], 'unsupported or inconsistent target/data model/ABI')
-    return 2, target, document.children[1].children[0]
+    return int(version), target, document.children[1].children[0]
 
 
 def module_name(c):
@@ -268,6 +281,336 @@ def native_fingerprint(target, symbol, linkage, definition, parameters, result):
     return sha(compact(['on1x.ffi-native/v2', list(target), symbol, linkage, definition, parameters, result]))
 
 
+def wire_uint(node, maximum=U64_MAX):
+    text = lexeme(node)
+    require(re.fullmatch(r'0|[1-9][0-9]{0,19}', text), 'invalid canonical graph integer')
+    value = int(text)
+    require(value <= maximum, 'graph integer overflow')
+    return value
+
+
+def layout(node):
+    leaf = node.children[0]
+    return None if lexeme(leaf) == 'unknown' else wire_uint(leaf)
+
+
+def tag_name(node):
+    value = lexeme(node.children[0])
+    return None if value == 'none' else ident(string(value))
+
+
+def rich_type(node, target, depth=1):
+    require(depth <= MAX_TYPE_DEPTH, 'native type nesting limit exceeded')
+    if node.symbol == 'RichType':
+        node = node.children[0]
+    p = node.children
+    if node.symbol == 'RichPrimitive':
+        return native_type(node, target)
+    if node.symbol == 'TagRef':
+        return ['tag-ref', wire_uint(p[2])]
+    if node.symbol in ('Pointer', 'Array'):
+        kind = node.symbol.lower()
+        a, size, align = (layout(p[i]) for i in (2, 4, 6))
+        if kind == 'pointer':
+            require((a, size, align) == (64, 8, 8), 'invalid LP64 pointer layout')
+        return [kind, a, size, align, rich_type(p[8], target, depth + 1)]
+    if node.symbol == 'Qualified':
+        quals = list(tokens(p[2]))[::2]
+        require(quals == sorted(set(quals)) and set(quals) <= {'const', 'restrict', 'volatile'},
+                'invalid or noncanonical qualifiers')
+        inner = rich_type(p[4], target, depth + 1)
+        require(inner[0] not in ('qualified', 'function-type')
+                and ('restrict' not in quals or
+                     (inner[0] == 'pointer' and base_type(inner[4])[0] != 'function-type')),
+                'invalid qualified type')
+        return ['qualified', quals, inner]
+    require(node.symbol == 'RichFunction', 'invalid native type')
+    mode = lexeme(p[2])
+    require(mode in ('fixed', 'variadic', 'unprototyped'), 'unknown prototype kind')
+    result = rich_type(p[8], target, depth + 1)
+    params = []
+    for param in nodes(p[5], 'RichType'):
+        require(len(params) < MAX_PARAMS, 'native parameter limit exceeded')
+        params.append(rich_type(param, target, depth + 1))
+    require((mode != 'unprototyped' or not params) and (mode != 'variadic' or params),
+            'invalid prototype arity')
+    require(result[0] not in ('array', 'function-type', 'qualified')
+            and all(t[0] not in ('void', 'array', 'function-type', 'qualified') for t in params),
+            'invalid native function result or unadjusted parameter')
+    return ['function-type', mode != 'unprototyped', mode == 'variadic', result, params]
+
+
+def base_type(t):
+    return t[2] if t[0] == 'qualified' else t
+
+
+def read_tag(node, target):
+    p = node.children
+    tag_id, kind, name = wire_uint(p[1]), lexeme(p[2]), tag_name(p[3])
+    require(kind in ('struct', 'union', 'enum'), 'invalid tag kind')
+    body = p[4].children
+    complete = lexeme(body[0]) == 'complete'
+    data = dict(id=tag_id, kind=kind, name=name, complete=complete, layout=None,
+                fields=[], underlying=None, enumerators=[])
+    if not complete:
+        require(name is not None, 'incomplete tag needs a name')
+        return data
+    size, align = (layout(body[i]) for i in (2, 4))
+    if kind == 'enum':
+        # Cephyr records the underlying integer, not a separate enum layout.
+        require(size is None and align is None, 'enum layout is supplied by its underlying type')
+    else:
+        require(size is not None and align and not align & (align - 1)
+                and align <= (1 << 32) - 1 and size % align == 0, 'invalid complete tag layout')
+        data['layout'] = [size, align]
+    names = set()
+    for i, item in enumerate(nodes(body[7], 'TagItem')):
+        require(i < MAX_TAG_ITEMS, 'tag item limit exceeded')
+        item = item.children[0]
+        q = item.children
+        if item.symbol == 'Field':
+            require(kind != 'enum', 'enum contains record field')
+            name, offset, t = tag_name(q[1]), layout(q[3]), rich_type(q[5], target)
+            flags = q[6].children
+            flexible = bool(flags and lexeme(flags[0]) == 'flexible')
+            bit = [layout(flags[j]) for j in (2, 4, 6)] if flags and not flexible else None
+            require(offset is not None and (bit is None or None not in bit), 'unknown complete field layout')
+            data['fields'].append(dict(name=name, offset=offset, type=t,
+                                       bit_field=bit, flexible_array=flexible))
+        elif item.symbol == 'Underlying':
+            require(kind == 'enum' and i == 0, 'enum underlying type must occur once before cases')
+            u = rich_type(q[1], target)
+            require(u[0] == 'integer', 'invalid enum underlying type')
+            data['underlying'] = u
+            continue
+        else:
+            require(kind == 'enum' and data['underlying'] is not None, 'misplaced enum case')
+            name = ident(string(lexeme(q[1])))
+            sign_value = q[3].children
+            n = wire_uint(sign_value[-1])
+            if len(sign_value) == 2:
+                require(n != 0, 'noncanonical negative zero')
+                n = -n
+            bits, signed = data['underlying'][3:5]
+            require(-(1 << 31) <= n < (1 << 31) and (
+                (-(1 << (bits - 1)) <= n < (1 << (bits - 1))) if signed == 'signed'
+                else (0 <= n < 1 << bits)), 'enum value outside C int or underlying type')
+            data['enumerators'].append([name, n])
+        require(name is None or name not in names, 'duplicate tag member')
+        names.add(name)
+    require((kind != 'enum' and data['fields']) or data['enumerators'], 'empty complete tag')
+    return data
+
+
+def native_children(t):
+    kind = t[0]
+    if kind in ('pointer', 'array'):
+        return [t[4]]
+    if kind == 'qualified':
+        return [t[2]]
+    if kind == 'function-type':
+        return [t[3], *t[4]]
+    return []
+
+
+def normalize_native_graph(root, tags):
+    """W03 NativeGraph shape; local IDs are renumbered reachable result-first."""
+    order, ids, normalized = [], {}, []
+    remaining = MAX_NATIVE_NODES
+
+    def visit(t):
+        nonlocal remaining
+        remaining -= 1
+        require(remaining >= 0, 'native node limit exceeded')
+        k = t[0]
+        if k == 'tag-ref':
+            old = t[1]
+            require(old in tags, 'dangling tag reference')
+            if old not in ids:
+                ids[old] = len(order)
+                order.append(old)
+            return [k, ids[old]]
+        if k in ('pointer', 'array'):
+            return [*t[:4], visit(t[4])]
+        if k == 'qualified':
+            return [*t[:2], visit(t[2])]
+        if k == 'function-type':
+            return [*t[:3], visit(t[3]), [visit(p) for p in t[4]]]
+        return t
+
+    result = visit(root)
+    for new, old in enumerate(order):
+        tag = tags[old]
+        fields = [dict(f, type=visit(f['type'])) for f in tag['fields']]
+        underlying = visit(tag['underlying']) if tag['underlying'] else None
+        normalized.append(dict(tag, id=new, fields=fields, underlying=underlying))
+    return result, normalized
+
+
+def validate_native_graph(tags, roots, target):
+    """Validate every wire tag, including those not in a fingerprint."""
+    def type_layout(t):
+        t = base_type(t)
+        if t[0] == 'tag-ref':
+            tag = tags[t[1]]
+            return tag['underlying'][-2:] if tag['underlying'] else tag['layout'] or (None, None)
+        if t[0] in ('integer', 'real'):
+            return t[-2:]
+        if t[0] in ('pointer', 'array'):
+            return t[2:4]
+        return None, None
+
+    pending = [*(t for t, _ in roots), *(f['type'] for tag in tags.values() for f in tag['fields'])]
+    arrays = []
+    while pending:
+        t = pending.pop()
+        if t[0] == 'tag-ref':
+            require(t[1] in tags, 'dangling tag reference')
+        if t[0] == 'array':
+            arrays.append(t)
+        pending.extend(native_children(t))
+
+    active, checked, flexible = set(), set(), set()
+
+    def record(tag_id):
+        require(tag_id not in active, 'cyclic by-value tag layout')
+        if tag_id in checked:
+            return
+        active.add(tag_id)
+        tag = tags[tag_id]
+        if tag['fields']:
+            size, align = tag['layout']
+            union = tag['kind'] == 'union'
+            end, visible = 0, False
+            for i, f in enumerate(tag['fields']):
+                name, offset, t, bit, flex = (f[k] for k in
+                    ('name', 'offset', 'type', 'bit_field', 'flexible_array'))
+                t = base_type(t)
+                dep = t
+                while dep[0] == 'array':
+                    dep = base_type(dep[4])
+                if dep[0] == 'tag-ref':
+                    record(dep[1])
+                require(offset <= size and (not union or offset == 0), 'invalid record field offset')
+                start = offset * 8
+                if bit is not None:
+                    width, shift, container = bit
+                    require(t[0] == 'integer' and t[1] in ('bool', 'int', 'unsigned-int'),
+                            'invalid bit-field base type')
+                    require(width <= t[3] and (width > 0 or (name is None and shift == 0 and offset == container))
+                            and container <= offset and container % t[-1] == 0
+                            and (offset - container) * 8 + shift + width <= t[-2] * 8
+                            and (not union or shift == 0)
+                            and ((name is None and target[0] != 'aarch64-linux-gnu') or align >= t[-1]),
+                            'invalid bit-field layout')
+                    start += shift
+                    stop = start + width
+                else:
+                    fs, fa = type_layout(t)
+                    require(fa and align >= fa and offset % fa == 0, 'invalid record field alignment')
+                    if flex:
+                        require(not union and i == len(tag['fields']) - 1 and visible and name
+                                and t[0] == 'array' and t[1:3] == [None, None], 'invalid flexible array member')
+                        flexible.add(tag_id)
+                        stop = start
+                    else:
+                        require(fs is not None, 'incomplete record field')
+                        if t[0] == 'tag-ref' and t[1] in flexible:
+                            require(union, 'structure embeds flexible array member')
+                            flexible.add(tag_id)
+                        stop = start + fs * 8
+                    if name is None:
+                        require(t[0] == 'tag-ref' and tags[t[1]]['kind'] in ('struct', 'union')
+                                and tags[t[1]]['name'] is None, 'invalid anonymous record field')
+                        visible = True
+                visible |= name is not None
+                require(stop <= size * 8 and (union or start >= end), 'record field overlaps or exceeds layout')
+                end = stop
+            require(visible, 'record lacks a named member')
+        active.remove(tag_id)
+        checked.add(tag_id)
+
+    for tid in tags:
+        record(tid)
+    for _, count, size, align, element in arrays:
+        es, ea = type_layout(element)
+        elem = base_type(element)
+        require(es is not None and ea == align and (elem[0] != 'tag-ref' or elem[1] not in flexible)
+                and ((count is None and size is None)
+                     or (count is not None and count * es == size)), 'invalid array layout')
+    for root, definition in roots:
+        if definition != 'declaration':
+            require((root[3][0] == 'void' or type_layout(root[3])[0] is not None)
+                    and all(type_layout(t)[0] is not None for t in root[4]),
+                    'incomplete function definition type')
+
+
+def native_graph_fingerprint(target, source, symbol, linkage, definition, specifiers, root, tags):
+    root, tags = normalize_native_graph(root, tags)
+    value = ['on1x.ffi-native-graph/v3', list(target), source, symbol, linkage,
+             definition, sorted(specifiers), root, tags]
+    return sha(json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(',', ':')).encode('ascii'))
+
+
+def parse_graph_module(body, mod):
+    origin, graph_nodes, discoveries = body.children
+    recipe = lexeme(origin.children[1]) if origin.children else None
+    module, key, header, target = (mod[k] for k in ('module', 'provider', 'header', 'target'))
+
+    def source_for(recipe):
+        require(recipe is None or (recipe == 'framed_ipc_v1' and key == 'ipc-framed'
+                                   and target == LEGACY_TARGET), 'unknown or inapplicable closed companion recipe')
+        return ['companion', key, recipe] if recipe else ['public', key, header]
+
+    default_source = source_for(recipe)
+    graphs, roots, sources = {}, {}, {}
+    for graph in nodes(graph_nodes, 'Graph'):
+        gid = wire_uint(graph.children[1])
+        require(len(graphs) < MAX_ENTRIES and gid not in graphs, 'duplicate graph ID or graph limit')
+        provenance = graph.children[2].children
+        require(not (provenance and recipe), 'graph repeats module companion recipe')
+        sources[gid] = source_for(lexeme(provenance[1])) if provenance else default_source
+        tables = graphs[gid] = {}
+        roots[gid] = []
+        for tag in nodes(graph.children[4], 'Tag'):
+            require(len(tables) < MAX_TAGS, 'graph tag limit exceeded')
+            data = read_tag(tag, target)
+            require(data['id'] not in tables, 'duplicate tag ID')
+            tables[data['id']] = data
+    for d in nodes(discoveries, 'Discovery'):
+        require(len(mod['entries']) < MAX_ENTRIES, 'entry limit exceeded')
+        p = d.children
+        member, symbol = ident(lexeme(p[1])), ident(lexeme(p[5]))
+        linkage, definition = lexeme(p[7]), lexeme(p[8])
+        require(linkage in ('internal', 'external') and definition in ('declaration', 'defined', 'inline-only'),
+                'invalid discovery linkage or definition')
+        gid = wire_uint(p[10])
+        require(gid in graphs, 'unknown wire graph ID')
+        source = sources[gid]
+        require((symbol in FRAMED_IPC_SYMBOLS) if source[0] == 'companion' else symbol_allowed(module, symbol),
+                'C symbol outside declaration source')
+        root = rich_type(p[11], target)
+        specifiers = list(tokens(p[12]))[2:-1]
+        require(len(specifiers) == len(set(specifiers)) and set(specifiers) <= {'inline', 'noreturn'},
+                'invalid function specifiers')
+        require(definition != 'inline-only' or (linkage == 'external' and 'inline' in specifiers),
+                'invalid inline-only declaration')
+        roots[gid].append((root, definition))
+        fingerprint = native_graph_fingerprint(target, source, symbol, linkage, definition, specifiers,
+                                               root, graphs[gid])
+        mod['entries'].append(dict(member=member, symbol=symbol, profile='discovery', reason=reason(p[14]),
+                                   linkage=linkage, definition=definition, graph=gid, native_type=root,
+                                   declaration_source=source,
+                                   specifiers=sorted(specifiers), native_fingerprint=fingerprint))
+    for gid, tags in graphs.items():
+        require(roots[gid], 'unused wire graph')
+        validate_native_graph(tags, roots[gid], target)
+    mod.update(declaration_source=default_source, native_graphs=[
+        dict(id=gid, tags=[tags[i] for i in sorted(tags)], declaration_source=sources[gid])
+        for gid, tags in sorted(graphs.items())])
+    return mod
+
+
 def descriptor_id(row):
     return sha(compact(['on1x.ffi-id/v2', row['version'], row['module'], row['member'],
                         row['provider'], row['header'], row['native_fingerprint'],
@@ -324,9 +667,20 @@ def parse_module(m, version, target):
     require(header == 'mulib-' + key + '.h', 'noncanonical header')
     mod = dict(module=module, provider=key, header=header, version=version, target=target,
                unavailable=None, entries=[])
-    if version == 2 and c[12].children[0].symbol != 'Entries':
-        mod['unavailable'] = reason(c[12].children[2])
-        return mod
+    if version >= 2:
+        body = c[12].children
+        if body[0].symbol == 'GraphBody':
+            require(version == 3, 'native graph requires ffi 3')
+            return parse_graph_module(body[0], mod)
+        if body[0].symbol != 'Entries':
+            mod['unavailable'] = reason(body[2])
+            if body[3].children:
+                require(version == 3, 'audit text requires ffi 3')
+                audit = string(lexeme(body[3].children[1]))
+                require(0 < len(audit) <= 512 and audit.isprintable(), 'invalid discovery audit text')
+                mod['audit'] = audit
+            return mod
+        require(version == 2, 'ffi 3 modules require a native graph or explicit unavailability')
     functions = (nodes(c[12], 'Function') if version == 1 else
                  (entry.children[0] for entry in nodes(c[12], 'Entry')))
     for f in functions:

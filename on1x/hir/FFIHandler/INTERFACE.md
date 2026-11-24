@@ -134,3 +134,67 @@ Package installation includes the built catalogue and index. Build outputs
 are replaced atomically per file after validation; output pairs are not a
 filesystem transaction. The generator and trusted parser are build tools,
 not a sandbox for untrusted Python.
+
+## Native graph discovery v3
+
+`ffi 3;` uses the same target and module/provider/header envelope as v2.
+Its body is either `unavailable reason CODE;` (optionally `audit "text"`
+before the semicolon, at most 512 printable characters), or graph blocks
+followed by `discover` statements. This is discovery only and cannot emit
+an executable descriptor:
+
+```text
+graph 0 {
+    tag 7 struct "node" complete (16,8) {
+        field "value" at 0 : integer(int,3,32,signed,4,4);
+        field "next" at 8 : pointer(64,8,8,tag-ref(7));
+    }
+}
+discover example = c::mulib_example_example native external declaration graph 0
+    function-type(fixed,(pointer(64,8,8,qualified(const,tag-ref(7)))),void)
+    reason rich_lowering_unavailable;
+```
+
+* `tag ID struct|union|enum "CName"|none` ends in `incomplete;` or in
+  `complete (SIZE,ALIGN) { ... }`. An enum's separate layout is always
+  `(unknown,unknown)`: `underlying NATIVE_INTEGER;` gives its representation,
+  followed by ordered `case "ENUMERATOR" = SIGNED_DECIMAL;` items. Same-width
+  but different integer identities remain different. Records use ordered
+  `field "CName"|none at OFFSET : TYPE;`; optional `bit-field(WIDTH,SHIFT,CONTAINER_OFFSET)`
+  or `flexible` appears before the semicolon. All offsets are bytes except
+  the bit field's width and shift. Recursive pointers are legal; by-value
+  cycles, invalid field/array extents and dangling tags are rejected.
+* Native atoms are the v2 primitives, plus `pointer(BITS,SIZE,ALIGN,TYPE)`,
+  `array(COUNT,SIZE,ALIGN,TYPE)`, `tag-ref(ID)`,
+  `qualified(const+restrict+volatile,TYPE)` with a valid nonempty sorted
+  subset, and `function-type(fixed|variadic|unprototyped,(ARGS),RESULT)`.
+  `unknown` denotes absent array size/count where projected. V3 retains,
+  but does not execute, function pointers, enum/aggregate values, variadics,
+  unprototyped declarations, bit fields and flexible array members.
+  `specifiers(inline noreturn)` is optional before `reason`; the markers
+  describe projection facts and do not authorize call or optimization.
+* An `ipc-framed` AMD64 document may use `companion framed_ipc_v1;`
+  before a sequence of private graphs, or `graph ID companion framed_ipc_v1`
+  before the corresponding brace to mix distinct public/private graphs in
+  one module. Only the eight known `on1x_kernel_ipc_v1_*` bridge spellings
+  are recognized for that origin. This does not prove ownership, projection
+  provenance, runtime artifact, callback lifetime, or authorization.
+* Native graph types use the W03 `NativeGraph` type and tag shapes. A
+  native fingerprint hashes compact, recursively key-sorted ASCII JSON
+  `["on1x.ffi-native-graph/v3",target,source,symbol,linkage,definition,
+  sorted_specifiers,normalized_root,normalized_reachable_tags]`, no newline.
+  `source` is `["public",manifest_key,header]` or
+  `["companion",manifest_key,recipe_key]`. Starting at the result and then
+  parameters, assign tag IDs on first use, then visit the tag definitions
+  in the same order. Graph IDs, original tag IDs, parameter names and
+  unreachable tags do not affect a signature's fingerprint.
+* V3 uses the same file and export budgets as v2: at most 128 tags per
+  graph, 128 items per tag (including enum underlying type), 16 parameters
+  per function node, nesting depth 16, and 2048 native type nodes per
+  reachable declaration. The generated shard report retains these graphs
+  and fingerprints for discovery, not for runtime lookup.
+
+V2 remains the only projected executable *representation* supported by
+`<on1x/ffi.hpp>`. No rich `adapt`/plan, record/slice/status adapter, owner or
+callback is currently executable through the typed path. Keep existing
+numerical and framed IPC adapters and their review/admission mechanisms.

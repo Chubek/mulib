@@ -53,7 +53,10 @@
 'syntax: "foreign" Word "." Word "{" "provider" Word STRING ";" "header" STRING ";" TypedBody "}"
 .end
 .rule TypedBody
-'syntax: "unavailable" "reason" Word ";" | Entries
+'syntax: "unavailable" "reason" Word Audit ";" | Entries | GraphBody
+.end
+.rule Audit
+'syntax: "audit" STRING |
 .end
 .rule Entries
 'syntax: Entries Entry |
@@ -109,8 +112,106 @@
 .rule Override
 'syntax: "fn" "c" "::" Word "fingerprint" STRING Guards ";"
 .end
+.rule GraphBody
+'syntax: Companion Graphs Discoveries
+.end
+.rule Companion
+'syntax: "companion" Word ";" |
+.end
+.rule Graphs
+'syntax: Graphs Graph | Graph
+.end
+.rule Graph
+'syntax: "graph" NUMBER GraphOrigin "{" Tags "}"
+.end
+.rule GraphOrigin
+'syntax: "companion" Word |
+.end
+.rule Tags
+'syntax: Tags Tag |
+.end
+.rule Tag
+'syntax: "tag" NUMBER Word TagName TagBody
+.end
+.rule TagName
+'syntax: STRING | "none"
+.end
+.rule TagBody
+'syntax: "incomplete" ";" | "complete" "(" Layout "," Layout ")" "{" TagItems "}"
+.end
+.rule TagItems
+'syntax: TagItems TagItem |
+.end
+.rule TagItem
+'syntax: Field | Underlying | EnumCase
+.end
+.rule Field
+'syntax: "field" TagName "at" Layout ":" RichType FieldFlags ";"
+.end
+.rule FieldFlags
+'syntax: "bit-field" "(" Layout "," Layout "," Layout ")" | "flexible" |
+.end
+.rule Underlying
+'syntax: "underlying" RichType ";"
+.end
+.rule EnumCase
+'syntax: "case" STRING "=" SignedNumber ";"
+.end
+.rule SignedNumber
+'syntax: "-" NUMBER | NUMBER
+.end
+.rule Layout
+'syntax: NUMBER | "unknown"
+.end
+.rule Discoveries
+'syntax: Discoveries Discovery | Discovery
+.end
+.rule Discovery
+'syntax: "discover" Word "=" "c" "::" Word "native" Word Word "graph" NUMBER RichFunction Specifiers "reason" Word ";"
+.end
+.rule Specifiers
+'syntax: "specifiers" "(" Words ")" |
+.end
+.rule Words
+'syntax: Words Word |
+.end
+.rule RichFunction
+'syntax: "function-type" "(" Word "," "(" RichTypes ")" "," RichType ")"
+.end
+.rule RichType
+'syntax: RichPrimitive | Pointer | Array | Qualified | TagRef | RichFunction
+.end
+.rule RichPrimitive
+'syntax: PrimitiveAtom NativeLayout
+.end
+.rule PrimitiveAtom
+'syntax: "void" | "integer" | "real"
+.end
+.rule Pointer
+'syntax: "pointer" "(" Layout "," Layout "," Layout "," RichType ")"
+.end
+.rule Array
+'syntax: "array" "(" Layout "," Layout "," Layout "," RichType ")"
+.end
+.rule Qualified
+'syntax: "qualified" "(" Qualifiers "," RichType ")"
+.end
+.rule Qualifiers
+'syntax: Qualifiers "+" Word | Word
+.end
+.rule TagRef
+'syntax: "tag-ref" "(" NUMBER ")"
+.end
+.rule RichTypes
+'syntax: RichType RichTail |
+.end
+.rule RichTail
+'syntax: "," RichType RichTail |
+.end
 # Contextual keywords: C parameter names and module aliases need not be renamed
 # merely because they share a spelling with a declaration keyword.
 .rule Word
 'syntax: NAME | "ffi" | "target" | "foreign" | "provider" | "header" | "fn" | "c" | "inline" | "requires" | "unavailable" | "reason" | "unsupported" | "native" | "profile" | "effects" | "extend" | "fingerprint" | "select" | "obligation"
+       | "graph" | "tag" | "none" | "unknown" | "companion" | "complete" | "incomplete" | "field" | "at" | "bit-field" | "flexible" | "underlying" | "case" | "discover" | "specifiers" | "audit"
+       | "function-type" | "void" | "integer" | "real" | "pointer" | "array" | "qualified" | "tag-ref"
 .end

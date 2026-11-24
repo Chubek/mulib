@@ -86,4 +86,8 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
       --parser "${_ffi_parser}" --catalogue "${ON1X_FFI_CATALOG}" --work "${CMAKE_CURRENT_BINARY_DIR}"
       --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}")
   set_tests_properties(on1x.ffihandler.scalar PROPERTIES TIMEOUT 90)
+  add_test(NAME on1x.ffihandler.rich_discovery
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_rich.py"
+      --parser "${_ffi_parser}" --work "${CMAKE_CURRENT_BINARY_DIR}")
+  set_tests_properties(on1x.ffihandler.rich_discovery PROPERTIES TIMEOUT 90)
 endif()
