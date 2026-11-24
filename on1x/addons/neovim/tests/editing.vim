@@ -21,7 +21,10 @@ try
   edit On1xfile
   call assert_equal('on1xfile', &filetype)
   call assert_equal('# %s', &l:commentstring)
-  call s:CheckGroup(1, '1', 'on1xfileNumber')
+  call s:CheckGroup(1, 'on1xfile', 'on1xfileDirective')
+  " The first '1' is part of the directive; the version token is the last.
+  let s:version_column = strridx(getline(1), '1') + 1
+  call assert_equal('on1xfileNumber', synIDattr(synID(1, s:version_column, 1), 'name'), 'manifest version')
   call s:CheckGroup(2, 'backend', 'on1xfileDirective')
   call s:CheckGroup(2, 'debug', 'on1xfileString')
   call s:CheckGroup(2, 'mir-vm', 'on1xfileValue')
