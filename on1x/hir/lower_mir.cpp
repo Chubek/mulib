@@ -1,4 +1,6 @@
 #include "lower_mir.hpp"
+#include "analysis_directives.hpp"
+#include "FFIHandler/directives.hpp"
 #include "MEMGraph/lexical_slots.hpp"
 #include "MEMGraph/memgraph.hpp"
 #include <on1x/backend/vm_closures.hpp>
@@ -25,7 +27,7 @@ namespace {
  unsupported(at,"lexical borrow requires a verified named scalar bool or numeric root");
 }
 void function_profile(const on1x::Function& f){
- if(f.foreign||!f.kernel_symbol.empty())
+ if(!f.kernel_symbol.empty())
   unsupported(f.where,"checked foreign calls require typed foreign MIR descriptors (direct C11 only)");
  if(takes_borrows(f))
   unsupported(f.where,"borrowed parameters require addressable-place and loan MIR descriptors (C11 HIR backend only)");
@@ -39,7 +41,7 @@ memgraph::LexicalSlots verified_places(const Unit& unit){
  meta::require_core(unit);
  auto plan=memgraph::plan_lexical_slots(unit);
  verify_nominals(unit);
- for(const auto& f:unit.functions)if(f.foreign||!f.kernel_symbol.empty())function_profile(f);
+ for(const auto& f:unit.functions)if(!f.kernel_symbol.empty())function_profile(f);
  return plan;
 }
 
@@ -186,7 +188,7 @@ class Lowering {
  }
   Id numeric(const std::string& name,Type type,std::vector<Id> args,const Location& at){
    if(!detail::numeric_signature(name))unsupported(at,"unknown numeric operation: "+name);
-   module.version=numeric_format_version;
+    module.version=std::max(module.version,numeric_format_version);
    auto result=emit(Op::Numeric,type,std::move(args),at);block().instructions.back().primitive=name;return result;
   }
    Binding binding(const std::string& name,const Location& at){
@@ -663,7 +665,9 @@ public:
    if(current!=ended){if(f.result!=Type::Void)unsupported(f.where,"missing return in checked HIR");terminate(Exit::Return,0,{},f.where);}
     scopes.clear();statement_slots.clear();parameter_slots.clear();++function;
   }
-  verify(module,limits);return std::move(module);
+   stdffi::attach_directives(module);
+   hir::append_analysis_directives(unit,module);
+   verify(module,limits);return std::move(module);
  }
 };
 }

@@ -1,0 +1,81 @@
+.language "FFIHandler"
+.skip /[ \t\r\n]+/
+.skip /[;#][^\r\n]*/
+.token ATOM: String = /[A-Za-z0-9_*.-]+/
+
+.rule Start
+'syntax: Document EOF
+'semantics: return nil;
+.end
+.rule Document
+'syntax: "(" "ffispec" Atom Declarations ")"
+.end
+.rule Declarations
+'syntax: Declarations Declaration |
+.end
+.rule Declaration
+'syntax: Kernel | Header | Digest | Export | Backend | Target
+.end
+.rule Kernel
+'syntax: "(" "kernel" Atom ")"
+.end
+.rule Header
+'syntax: "(" "header" Atom ")"
+.end
+.rule Digest
+'syntax: "(" "sha256" Atom ")"
+.end
+.rule Export
+'syntax: "(" "export" Atom Atom ExportFields ")"
+.end
+.rule ExportFields
+'syntax: ExportFields ExportField |
+.end
+.rule ExportField
+'syntax: Params | Guard | Body | Backend | Target | Directive
+.end
+.rule Params
+'syntax: "(" "params" Parameters ")"
+.end
+.rule Parameters
+'syntax: Parameters Atom |
+.end
+.rule Guard
+'syntax: "(" "guard" Expression ")"
+.end
+.rule Body
+'syntax: "(" "body" Expression ")"
+.end
+.rule Backend
+'syntax: "(" "backend" Atom ")"
+.end
+.rule Target
+'syntax: "(" "target" Atom ")"
+.end
+.rule Directive
+'syntax: "(" "hint" HintAction DirectiveOptions ")" | "(" "rewrite" RewriteAction DirectiveOptions ")"
+.end
+.rule HintAction
+'syntax: "kernel-hot" | "private-code"
+.end
+.rule RewriteAction
+'syntax: "fold-identity"
+.end
+.rule DirectiveOptions
+'syntax: DirectiveOptions DirectiveOption |
+.end
+.rule DirectiveOption
+'syntax: Backend | Target | Speculative
+.end
+.rule Speculative
+'syntax: "(" "speculative" ")"
+.end
+.rule Expression
+'syntax: Atom | "(" Binary Expression Expression ")" | "(" "if" Expression Expression Expression ")"
+.end
+.rule Binary
+'syntax: "lt" | "le" | "gt" | "ge" | "eq" | "and" | "or" | "add" | "sub"
+.end
+.rule Atom
+'syntax: ATOM | "ffispec" | "kernel" | "header" | "sha256" | "export" | "params" | "guard" | "body" | "backend" | "target" | "hint" | "rewrite" | HintAction | RewriteAction | "speculative" | Binary | "if"
+.end
