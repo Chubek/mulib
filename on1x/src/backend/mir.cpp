@@ -233,16 +233,20 @@ void verify(const Module& module,Limits limits){
   }
   // Forward must-initialization: greatest fixed point, with an empty entry.
   // A loop backedge must never justify an uninitialized first-iteration load.
+  budget.work(f.where,slots.size());
   std::set<Id> all;for(const auto& [id,type]:slots){(void)type;all.insert(id);}
   std::map<Id,std::set<Id>> initialized;
   for(const auto& b:f.blocks){budget.work(b.where,all.size());initialized[b.id]=all;}
   auto incoming=[&](const Block& b){
    std::set<Id> state;
    if(b.id!=f.blocks.front().id){
-    state=all;budget.work(b.where,all.size());
-    for(auto p:predecessors[b.id]){
+    budget.work(b.where,all.size());state=all;
+    for(auto p:predecessors.at(b.id)){
+     if(state.empty())break;
+     budget.work(b.where);
      budget.work(b.where,state.size());
-     for(auto it=state.begin();it!=state.end();)if(!initialized.at(p).contains(*it))it=state.erase(it);else ++it;
+     const auto& prior=initialized.at(p);
+     for(auto it=state.begin();it!=state.end();)if(!prior.contains(*it))it=state.erase(it);else ++it;
     }
    }
    return state;
@@ -253,7 +257,12 @@ void verify(const Module& module,Limits limits){
    for(const auto& b:f.blocks){
     budget.work(b.where);auto state=incoming(b);
     for(const auto& i:b.instructions){budget.work(i.where);if(i.op==Op::Store)state.insert(i.target);}
-    if(state!=initialized.at(b.id)){initialized[b.id]=std::move(state);changed=true;}
+    auto& previous=initialized.at(b.id);
+    if(state.size()==previous.size()){
+     budget.work(b.where,state.size());
+     if(state==previous)continue;
+    }
+    previous=std::move(state);changed=true;
    }
   }
   for(const auto& b:f.blocks){

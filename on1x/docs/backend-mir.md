@@ -304,9 +304,12 @@ paths, so relocation changes artifact hashes. No cache/admission scheme is impli
 
 Default verification limits: 65,536 identities and 4,194,304 work units, charging
 source-path bytes, recursive type admission/equality, operand checks, graph
-traversals and initialization analysis. MIR type nesting is limited to 32;
-equality results for independently decoded aggregate shapes are memoized within
-one verification invocation, with no pointer identity in persistent artifacts.
+traversals and initialization analysis. Definite assignment charges construction
+and copying of slot sets, predecessor intersections and fixed-point comparisons.
+An artifact may require a larger work allowance without changing its MIR.
+MIR type nesting is limited to 32; equality results for independently decoded
+aggregate shapes are memoized within one verification invocation, with no pointer
+identity in persistent artifacts.
 Wire limits: 4 MiB, 262,144 syntax nodes, 256 levels. Evaluation defaults to
 1,000,000 steps; call depth is capped at 256, potential live frame entries at
 262,144, and printed output at 4 MiB. Aggregate frame accounting includes every
@@ -314,8 +317,9 @@ nested field, not just root SSA values. Aggregate copies also consume evaluation
 work. API callers may lower the step/depth limits.
 Exhaustion never reports successful evaluation or verification.
 
-`on1x.mir_hir` tests malformed IR, phi loops, round-trips, deterministic IDs,
-source preservation and independent budgets. `on1x.mir` executes the same corpus
+`on1x.mir_hir` tests malformed IR, including a join with a store missing on one
+incoming edge, phi loops, round-trips, deterministic IDs, source preservation
+and independent budgets. `on1x.mir` executes the same corpus
 through HIR C11, ordinary/optimized MIR C11 and both evaluator modes, including
 saved artifacts, 120 seeded
 arithmetic/comparison cases, ten trap programs, ordered effects, early exits,

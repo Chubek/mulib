@@ -143,6 +143,37 @@ int main(int argc,char** argv){
   auto branches=lower("fn main(){if true{println(11);}else{println(22);}println(33);}");
   malformed(branches,[](auto& m){auto& b=m.functions[0].blocks;b[2].instructions[1].operands[0]=b[1].instructions[0].id;},"does not dominate");
   malformed(branches,[](auto& m){auto& b=m.functions[0].blocks;b[0].exit.edges[1]=b[0].exit.edges[0];},"unreachable");
+  auto join=branches;
+  auto& diamond=join.functions.front();
+  diamond.slots.push_back({100,Type::I64,diamond.where});
+  auto& join_block=diamond.blocks[3];
+  join_block.instructions.insert(join_block.instructions.begin(),
+      {101,Type::I64,m::Op::Load,{},0,100,0,102,join_block.where});
+  join_block.instructions.back().operands={101};
+  rethread(join_block);
+  for(std::size_t arm:{1u,2u}){
+   auto& b=diamond.blocks[arm];
+   b.instructions.push_back({103+2*arm,Type::Void,m::Op::Store,{b.instructions.front().id},
+                             0,100,0,104+2*arm,b.where});
+   rethread(b);
+  }
+  require(m::evaluate(m::deserialize(m::serialize(join))).output=="11\n11\n","join lost definitely initialized slot");
+  diamond.blocks.front().instructions.front().immediate=0;
+  require(m::evaluate(join).output=="22\n22\n","join lost alternate predecessor's store");
+  malformed(join,[](auto& m){
+   auto& arm=m.functions.front().blocks[2];arm.instructions.pop_back();rethread(arm);
+  },"load from possibly uninitialized slot");
+  // Even without instructions, building the slot universe and seeding the
+  // fixed point take work. Use one-byte locations to isolate the analysis:
+  // indexing and reachability take 40 units, before the two eight-slot sets.
+  on1x::Location slot_at{"m",0,1,1};
+  m::Module unused_slots;
+  m::Function unused_function{2,"main",Type::Void,slot_at,{},
+      {{3,4,slot_at,{},{},{5,m::Exit::Return,0,4,{},slot_at}}}};
+  for(m::Id id=100;id<108;++id)unused_function.slots.push_back({id,Type::I64,slot_at});
+  unused_slots.functions.push_back(std::move(unused_function));
+  m::verify(unused_slots);
+  rejected([&]{m::verify(unused_slots,{65536,55});},"analysis budget");
   const auto latch=lower(R"(
    fn step(n:i64)->i64{println(n);return n+1;}
    fn main(){for(var i=0;i<3;i=step(i)){println(10+i);continue;}println(42);}
