@@ -721,21 +721,24 @@ def local_ref_object(repository, kind, value):
     except FileNotFoundError:
         fail(f'{repository}: Git {kind} {value!r} was not found')
     found = None
-    try:
-        lines = payload.decode('ascii').splitlines()
-    except UnicodeError:
-        fail(f'{packed}: malformed packed refs')
+    # Git ref names are bytes; only the On1x selector must be ASCII.
+    wanted = reference.encode('ascii')
+    lines = payload.splitlines()
     if len(lines) > 65536:
         fail(f'{packed}: ref count budget exceeded')
     for line in lines:
-        if not line or line.startswith('#') or line.startswith('^'):
+        if not line or line.startswith((b'#', b'^')):
             continue
-        fields = line.split(' ')
+        fields = line.split(b' ')
         if len(fields) != 2:
             fail(f'{packed}: malformed packed ref')
-        object_id, candidate = fields
+        encoded_id, candidate = fields
+        try:
+            object_id = encoded_id.decode('ascii')
+        except UnicodeError:
+            fail(f'{packed}: malformed packed ref object ID')
         git_object_id(object_id, f'{packed}: malformed packed ref object ID')
-        if candidate == reference:
+        if candidate == wanted:
             if found is not None:
                 fail(f'{packed}: duplicate packed ref {reference}')
             found = object_id

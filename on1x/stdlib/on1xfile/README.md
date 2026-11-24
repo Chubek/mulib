@@ -320,8 +320,10 @@ commit ID (the backwards-compatible final quoted field), `commit "ID"`,
 `branch "NAME"`, or `tag "NAME"`. Branches and lightweight/annotated tags are
 resolved by `on1x-project.py lock` to a commit in `On1xfile.lock`; builds use
 that commit and do not follow a moved ref. Annotated tags are peeled to commits.
-Ref names use a conservative ASCII subset and cannot begin with an option,
-contain traversal/dot-lock syntax, or use Git revision expressions.
+Declared ref names use a conservative ASCII subset and cannot begin with an
+option, contain traversal/dot-lock syntax, or use Git revision expressions.
+An unrelated non-ASCII ref in the local store does not affect resolution:
+packing the refs leaves the lock for the same branch or tag unchanged.
 
 The helper projects regular loose objects and pack files into a fresh bare Git
 store, checks object integrity, and reads pinned commit blobs. It does not use

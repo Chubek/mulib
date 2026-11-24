@@ -527,6 +527,34 @@ class ProjectTests(unittest.TestCase):
         self.build('--frozen')
         self.run_bin()
 
+    @unittest.skipUnless(shutil.which('git'), 'Git is unavailable')
+    def test_offline_lock_survives_packing_unrelated_unicode_refs(self):
+        repository = self.library('vendor/toolkit', 'toolkit')
+        environment = dict(os.environ, GIT_CONFIG_GLOBAL='/dev/null', GIT_CONFIG_NOSYSTEM='1',
+                           GIT_AUTHOR_NAME='Build test', GIT_AUTHOR_EMAIL='build@localhost',
+                           GIT_COMMITTER_NAME='Build test', GIT_COMMITTER_EMAIL='build@localhost')
+
+        def git(*args):
+            return subprocess.check_output(['git', '-C', repository, *args], env=environment,
+                                           text=True, timeout=20).strip()
+
+        git('init', '-q', '--template=', '--initial-branch=main')
+        git('add', '.')
+        git('commit', '-qm', 'library')
+        git('branch', 'café')
+        self.app(extra='dependency "toolkit" git "vendor/toolkit" branch "main"\n')
+        lock = self.lock('--offline')
+        original = lock.read_bytes()
+        self.assertEqual(json.loads(original)['dependencies']['toolkit']['commit'],
+                         git('rev-parse', 'HEAD'))
+        git('pack-refs', '--all', '--prune')
+        self.lock('--offline')
+        self.assertEqual(lock.read_bytes(), original)
+        git('branch', '-m', 'main', 'next')
+        self.lock('--frozen')
+        self.lock('--offline', negative="Git branch 'main' was not found")
+        self.assertEqual(lock.read_bytes(), original)
+
     def test_git_selector_syntax_rejected_before_access(self):
         self.app()
         base = (self.project / 'On1xfile').read_text()
