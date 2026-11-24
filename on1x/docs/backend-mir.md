@@ -84,7 +84,10 @@ The `.o1m` rules still execute and their verified canonical HIR remains intact.
 `tests/test_mir_decision.cpp` checks structural eligibility, malformed input,
 early-return initialization, budgets and round-trips; `test_mir_decision.py`
 compares effect/trap traces through HIR→C11, MIR→C11, evaluation and configured
-native code, with MIR optimization both off and on.
+native code, with MIR optimization both off and on. Its `call_values`,
+`call_first_fault`, and `call_second_fault` fixtures all exit 70: the printed
+argument/callee trace, result and diagnostic distinguish normal return from
+division or modulo traps and check that execution stops at the first fault.
 
 Focused verification (2026-11-21, GCC 16.2.1, Linux x86_64):
 
