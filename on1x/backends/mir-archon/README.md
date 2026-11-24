@@ -14,6 +14,10 @@ assembly through an explicitly selected native path. External plugins gain no
 native artifact authority. The standalone `on1x-archon-mir` tool also works with
 the SDK disabled. See [INTEGRATION.md](INTEGRATION.md) and [DRIVER.md](DRIVER.md).
 
+The standalone tool also has a [Linux/glibc AMD64 stackless timer source
+profile](TIMERS.md). This separate checked-HIR entrypoint emits native resume
+functions and does not extend the serialized MIR or SDK provider profiles.
+
 ## Coverage and contract
 
 - Fully verified MIR v1–v3, using On1x's authoritative `mir::verify`.

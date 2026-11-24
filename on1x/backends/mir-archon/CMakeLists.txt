@@ -6,7 +6,7 @@ if(NOT TARGET on1x_frontend)
   message(FATAL_ERROR "mir-archon must be added by On1x after on1x_frontend")
 endif()
 
-add_library(on1x_archon_bridge STATIC Bridge.cpp)
+add_library(on1x_archon_bridge STATIC Bridge.cpp AsyncPlan.cpp)
 target_compile_features(on1x_archon_bridge PUBLIC cxx_std_20)
 target_include_directories(on1x_archon_bridge PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(on1x_archon_bridge PUBLIC on1x_frontend Archon::Backend)
@@ -30,6 +30,26 @@ if(NOT ON1X_ARCHON_TARGET_TRIPLE)
 endif()
 target_compile_definitions(on1x-archon-mir PRIVATE
   ON1X_ARCHON_TARGET_TRIPLE="${ON1X_ARCHON_TARGET_TRIPLE}")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+    AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$"
+    AND ON1X_ARCHON_TARGET_TRIPLE STREQUAL "x86_64-unknown-linux-gnu")
+  include(CheckCSourceCompiles)
+  check_c_source_compiles("#include <features.h>
+#if !defined(__GLIBC__) || !defined(__x86_64__) || !defined(__LP64__)
+#error not the On1x CSP target ABI
+#endif
+int main(void) { return 0; }" ON1X_ARCHON_HAS_TIMER_ABI)
+  if(ON1X_ARCHON_HAS_TIMER_ABI)
+    find_package(Threads REQUIRED)
+    add_library(on1x_archon_timer_abi STATIC TimerABI.c TimerKernels.c
+      "${PROJECT_SOURCE_DIR}/runtime/on1x_concurrency.c")
+    target_compile_features(on1x_archon_timer_abi PRIVATE c_std_11)
+    target_include_directories(on1x_archon_timer_abi PRIVATE "${PROJECT_SOURCE_DIR}/../include")
+    target_link_libraries(on1x_archon_timer_abi PUBLIC on1x_runtime Threads::Threads)
+    target_compile_definitions(on1x_archon_bridge PRIVATE ON1X_ARCHON_TIMER_TARGET=1)
+    install(TARGETS on1x_archon_timer_abi ARCHIVE DESTINATION lib)
+  endif()
+endif()
 if(ON1X_ARCHON_ENABLE_SDK_ADAPTER)
   if(NOT TARGET On1x::SDK)
     message(FATAL_ERROR "mir-archon SDK adapter requires On1x::SDK")
@@ -55,6 +75,24 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_executable(on1x_archon_tuple_phi_test tests/TestTuplePhi.cpp)
   target_link_libraries(on1x_archon_tuple_phi_test PRIVATE on1x_archon_bridge)
   add_test(NAME on1x.backends.mir_archon_tuple_phi COMMAND on1x_archon_tuple_phi_test)
+  if(TARGET on1x_archon_timer_abi)
+    add_executable(on1x_archon_timer_hir_test tests/TestTimerHIR.cpp)
+    target_link_libraries(on1x_archon_timer_hir_test PRIVATE on1x_archon_bridge)
+    add_test(NAME on1x.backends.mir_archon_timer_hir COMMAND on1x_archon_timer_hir_test)
+    if(Python3_EXECUTABLE)
+      set(_archon_timer_flags)
+      foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
+        list(APPEND _archon_timer_flags "--cflag=${_flag}")
+      endforeach()
+      add_test(NAME on1x.backends.mir_archon_timer_native
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/timer_native.py"
+          --tool "$<TARGET_FILE:on1x-archon-mir>" --on1xc "$<TARGET_FILE:on1xc>"
+          --cc "${CMAKE_C_COMPILER}" --work "${CMAKE_CURRENT_BINARY_DIR}/timer-native"
+          --source "${PROJECT_SOURCE_DIR}" --timer-abi "$<TARGET_FILE:on1x_archon_timer_abi>"
+          --runtime "$<TARGET_FILE:on1x_runtime>" ${_archon_timer_flags})
+      set_tests_properties(on1x.backends.mir_archon_timer_native PROPERTIES TIMEOUT 180)
+    endif()
+  endif()
   if(Python3_EXECUTABLE)
     add_test(NAME on1x.backends.mir_archon_scalar_abi_regen
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_scalar_abi.py" --check)

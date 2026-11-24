@@ -69,4 +69,9 @@ struct Product {
 MachineModule lower(const mir::Module &module, const Options &options = {});
 Product compile(const mir::Module &module, const Options &options = {});
 
+// Standalone executable timer profile. Rechecks canonical HIR, verifies
+// scalar MIR and emits native stackless callbacks plus structured owner CFG.
+// This is not a serialized MIR or SDK provider capability.
+Product compile_timer_hir(const Unit &unit, const Options &options = {});
+
 } // namespace on1x::backends::archon

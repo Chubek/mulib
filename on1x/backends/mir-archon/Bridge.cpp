@@ -1,4 +1,6 @@
 #include "Bridge.hpp"
+#include "AsyncPlan.hpp"
+#include "TimerABI.h"
 
 #include <algorithm>
 #include <bit>
@@ -93,6 +95,10 @@ struct ImportData {
     ArchonMIRType result{};
     std::vector<ArchonMIRType> params;
 };
+struct GlobalData {
+    std::string name;
+    std::vector<std::uint64_t> words;
+};
 } // namespace
 
 struct MachineModule::Impl {
@@ -101,6 +107,8 @@ struct MachineModule::Impl {
     std::map<std::string, ImportData> imports;
     std::vector<ArchonMIRFunction> c_functions;
     std::vector<ArchonMIRImport> c_imports;
+    std::map<std::string, GlobalData> strings;
+    std::vector<ArchonMIRGlobal> c_globals;
     ArchonMIRModule c{};
 
     void import(std::string name, ArchonMIRType result,
@@ -112,6 +120,22 @@ struct MachineModule::Impl {
             return;
         }
         imports.emplace(std::move(name), ImportData{result, std::move(params)});
+    }
+
+    std::string source_string(const Location &at) {
+        const auto &path = at.file;
+        if (path.size() > 8192) fail(at, "native source path is too long", ARCHON_BACKEND_LIMIT);
+        if (path.find('\0') != std::string::npos) fail(at, "NUL in native source path");
+        const auto [it, inserted] = strings.try_emplace(path);
+        auto &data = it->second;
+        if (inserted) {
+            // File names are NUL-terminated byte data, never assembler identifiers.
+            data.name = "on1x_archon_timer_file_" + std::to_string(strings.size() - 1);
+            data.words.resize(1 + path.size() / 8);
+            for (std::size_t i = 0; i < path.size(); ++i)
+                data.words[i / 8] |= std::uint64_t(static_cast<unsigned char>(path[i])) << (8 * (i % 8));
+        }
+        return data.name;
     }
 
     void finalize(const Options &options) {
@@ -147,8 +171,12 @@ struct MachineModule::Impl {
         for (const auto &[name, imp] : imports)
             c_imports.push_back({name.c_str(), imp.result,
                 imp.params.empty() ? nullptr : imp.params.data(), imp.params.size()});
+        c_globals.reserve(strings.size());
+        for (const auto &[_, data] : strings)
+            c_globals.push_back({data.name.c_str(), data.words.data(), data.words.size()});
         c = {ARCHON_MIR_SCHEMA_VERSION, c_functions.data(), c_functions.size(),
-            c_imports.empty() ? nullptr : c_imports.data(), c_imports.size(), nullptr, 0};
+            c_imports.empty() ? nullptr : c_imports.data(), c_imports.size(),
+            c_globals.empty() ? nullptr : c_globals.data(), c_globals.size()};
     }
 };
 
@@ -614,6 +642,226 @@ void build_entrypoint(MachineModule::Impl &m, const mir::Module &source, const O
     b.term = {ARCHON_MIR_RETURN, 0, {0, nullptr, 0}, {0, nullptr, 0}};
     m.functions.push_back(std::move(f));
 }
+
+using detail::Action;
+using detail::Actor;
+using detail::Scalar;
+using detail::TimerProgram;
+
+// Native lowering of the closed timer profile: frame layout, state dispatch
+// and owner cleanup. All scalar code is ordinary MIR lowered by Builder.
+class TimerBuilder {
+    MachineModule::Impl &module_;
+    const Options &options_;
+    const TimerProgram &source_;
+    FunctionData *f_ = nullptr;
+    std::uint32_t block_ = 0;
+    std::size_t instructions_ = 0;
+    Location at_;
+    using K = Action::Kind;
+
+    void function(std::string name, std::vector<ArchonMIRType> params, const Location &where) {
+        at_ = where;
+        poll(options_, at_);
+        auto f = std::make_unique<FunctionData>();
+        f_ = f.get();
+        f_->name = std::move(name);
+        f_->result = ARCHON_MIR_I64;
+        f_->param_count = params.size();
+        f_->types = std::move(params);
+        f_->blocks.emplace_back();
+        module_.functions.push_back(std::move(f));
+        block_ = 0;
+        instructions_ = 0;
+        if (f_->param_count > options_.max_values_per_function)
+            fail(at_, "native timer parameter budget exceeded", ARCHON_BACKEND_LIMIT);
+    }
+    BlockData &block() { return f_->blocks.at(block_); }
+    std::uint32_t new_block() {
+        f_->blocks.emplace_back();
+        return static_cast<std::uint32_t>(f_->blocks.size() - 1);
+    }
+    V instruction(ArchonMIROpcode op, ArchonMIRType type, V a = none, V b = none,
+                  std::uint64_t imm = 0, std::string symbol = {}, std::vector<V> args = {}) {
+        poll(options_, at_);
+        if (instructions_ >= options_.max_instructions_per_function ||
+            module_.instruction_count >= options_.max_instructions_per_module)
+            fail(at_, "native timer instruction budget exceeded", ARCHON_BACKEND_LIMIT);
+        ++instructions_;
+        ++module_.instruction_count;
+        V dst = none;
+        if (type != ARCHON_MIR_VOID) {
+            if (f_->types.size() >= options_.max_values_per_function)
+                fail(at_, "native timer value budget exceeded", ARCHON_BACKEND_LIMIT);
+            dst = static_cast<V>(f_->types.size());
+            f_->types.push_back(type);
+        }
+        block().insts.push_back({{op, dst, a, b, imm, nullptr, nullptr, 0},
+                                 std::move(symbol), std::move(args)});
+        return dst;
+    }
+    V word(std::uint64_t value) { return instruction(ARCHON_MIR_CONST, ARCHON_MIR_I64, none, none, value); }
+    V null_ptr() { return instruction(ARCHON_MIR_INT_TO_PTR, ARCHON_MIR_PTR, word(0)); }
+    V address(std::string name) {
+        return instruction(ARCHON_MIR_FUNC_ADDR, ARCHON_MIR_FUNC_PTR, none, none, 0, std::move(name));
+    }
+    V frame_word(std::size_t slot) {
+        // Parameter zero points to the state word; slots follow it.
+        return slot ? instruction(ARCHON_MIR_PTR_ADD, ARCHON_MIR_PTR, 0, word(slot * 8)) : 0;
+    }
+    V load(std::size_t slot) { return instruction(ARCHON_MIR_LOAD, ARCHON_MIR_I64, frame_word(slot)); }
+    void store(V dest, V val) { instruction(ARCHON_MIR_STORE, ARCHON_MIR_VOID, dest, val); }
+    V call(std::string name, ArchonMIRType result, std::vector<V> args = {}, bool external = true) {
+        if (external) {
+            std::vector<ArchonMIRType> params;
+            for (const auto v : args) params.push_back(f_->types.at(v));
+            module_.import(name, result, std::move(params), at_);
+        }
+        return instruction(ARCHON_MIR_CALL, result, none, none, 0, std::move(name), std::move(args));
+    }
+    V located(std::string name, ArchonMIRType result, std::vector<V> args = {}) {
+        args.push_back(instruction(ARCHON_MIR_GLOBAL_ADDR, ARCHON_MIR_PTR, none, none, 0,
+                                   module_.source_string(at_)));
+        args.push_back(word(at_.line));
+        args.push_back(word(at_.column));
+        return call(std::move(name), result, std::move(args));
+    }
+    V scalar(const Scalar &scalar, const std::vector<V> &locals, bool frame = false) {
+        std::vector<V> args;
+        for (const auto slot : scalar.inputs) args.push_back(frame ? load(slot + 1) : locals.at(slot));
+        return call(source_symbol(source_.scalar.functions.at(scalar.function).id),
+                    ARCHON_MIR_I64, std::move(args), false);
+    }
+    void ret(V value) { block().term = {ARCHON_MIR_RETURN, value, {}, {}}; }
+    void jump(std::uint32_t to) { block().term = {ARCHON_MIR_BR, none, {to, nullptr, 0}, {}}; }
+    void branch(V test, std::uint32_t yes, std::uint32_t no) {
+        block().term = {ARCHON_MIR_CBR, test, {yes, nullptr, 0}, {no, nullptr, 0}};
+    }
+    void cancel_edge(std::uint32_t cleanup) {
+        const auto cont = new_block();
+        branch(call("on1x_archon_timer_cancelled_v1", ARCHON_MIR_I64), cleanup, cont);
+        block_ = cont;
+    }
+    static std::string frame_name(std::size_t i) { return "on1x_archon_timer_resume_" + std::to_string(i); }
+    static std::string peer_name(std::size_t i) { return "on1x_archon_timer_peer_" + std::to_string(i); }
+    void frame(const Actor &actor, std::size_t index) {
+        if (actor.slots >= ON1X_ARCHON_TIMER_MAX_WORDS)
+            fail(actor.where, "native timer frame layout exceeds ABI word budget", ARCHON_BACKEND_LIMIT);
+        function(frame_name(index), {ARCHON_MIR_PTR, ARCHON_MIR_PTR}, actor.where);
+        const V state = load(0);
+        auto dispatch = block_;
+        auto arm = new_block();
+        const auto add_arm = [&](std::size_t n) {
+            block_ = dispatch;
+            const auto next = new_block();
+            const auto equal = instruction(ARCHON_MIR_EQ, ARCHON_MIR_I64, state, word(n));
+            branch(equal, arm, next);
+            dispatch = next;
+            block_ = arm;
+        };
+        add_arm(0);
+        for (const auto &action : actor.actions) {
+            at_ = action.where;
+            const auto value = scalar(action.scalar.value(), {}, true);
+            if (action.kind == K::Let) {
+                store(frame_word(action.index + 1), value);
+            } else if (action.kind == K::Sleep) {
+                store(frame_word(0), word(action.index));
+                store(1, word(ON1X_ARCHON_TIMER_SLEEP));
+                ret(value); // No native stack is retained.
+                arm = new_block();
+                add_arm(action.index);
+            } else {
+                store(1, word(ON1X_ARCHON_TIMER_RETURN));
+                ret(value);
+            }
+        }
+        block_ = dispatch; // Invalid state: shim publishes invalid kind 0.
+        ret(word(0));
+    }
+    void peer(const Actor &actor, std::size_t index) {
+        function(peer_name(index), {ARCHON_MIR_PTR}, actor.where);
+        located("on1x_csp_call_enter", ARCHON_MIR_VOID);
+        const auto cleanup = new_block();
+        cancel_edge(cleanup);
+        std::vector<V> locals;
+        for (const auto &action : actor.actions) {
+            at_ = action.where;
+            const auto value = scalar(action.scalar.value(), locals);
+            if (action.kind == K::Let) {
+                locals.push_back(value);
+            } else if (action.kind == K::Print) {
+                call("on1x_print_i64", ARCHON_MIR_VOID, {value});
+            } else {
+                call("on1x_csp_call_leave", ARCHON_MIR_VOID);
+                ret(value);
+                break;
+            }
+            cancel_edge(cleanup);
+        }
+        block_ = cleanup;
+        call("on1x_csp_call_leave", ARCHON_MIR_VOID);
+        ret(word(0));
+    }
+    void owner() {
+        function("on1x_archon_timer_owner", {ARCHON_MIR_PTR}, source_.entry_at);
+        located("on1x_csp_call_enter", ARCHON_MIR_VOID);
+        at_ = source_.owner.where;
+        const V group = source_.within
+            ? located("on1x_csp_group_enter_within", ARCHON_MIR_PTR, {scalar(*source_.within, {})})
+            : located("on1x_csp_group_enter", ARCHON_MIR_PTR);
+        const auto cleanup = new_block();
+        cancel_edge(cleanup);
+        std::vector<V> locals, children;
+        for (const auto &action : source_.owner.actions) {
+            at_ = action.where;
+            switch (action.kind) {
+            case K::Let: locals.push_back(scalar(action.scalar.value(), locals)); break;
+            case K::Print:
+                call("on1x_print_i64", ARCHON_MIR_VOID, {scalar(action.scalar.value(), locals)});
+                break;
+            case K::LaunchFrame:
+                children.push_back(located("on1x_archon_timer_launch_v1", ARCHON_MIR_PTR,
+                    {address(frame_name(action.index)), word(1 + source_.frames.at(action.index).slots)}));
+                break;
+            case K::LaunchPeer:
+                children.push_back(located("on1x_csp_launch", ARCHON_MIR_PTR,
+                    {address(peer_name(action.index)), null_ptr()}));
+                break;
+            case K::Join: case K::Cancel: {
+                const bool join = action.kind == K::Join;
+                const auto result = located(join ? "on1x_async_join_internal_v1" : "on1x_archon_timer_cancel_v1",
+                                            ARCHON_MIR_I64, {children.at(action.index)});
+                // Interrupted join may not have consumed the task. Do not
+                // use its return value; group_finish drains remaining children.
+                cancel_edge(cleanup);
+                if (action.print)
+                    call(join ? "on1x_print_i64" : "on1x_print_bool", ARCHON_MIR_VOID, {result});
+                if (action.bind_result) locals.push_back(result);
+                break;
+            }
+            default: fail(at_, "invalid timer owner action");
+            }
+            cancel_edge(cleanup);
+        }
+        jump(cleanup);
+        block_ = cleanup;
+        call("on1x_csp_group_finish", ARCHON_MIR_VOID, {group});
+        call("on1x_csp_call_leave", ARCHON_MIR_VOID);
+        ret(word(0));
+    }
+public:
+    TimerBuilder(MachineModule::Impl &module, const Options &options, const TimerProgram &source)
+        : module_(module), options_(options), source_(source) {}
+    void run() {
+        for (std::size_t i = 0; i < source_.frames.size(); ++i) frame(source_.frames[i], i);
+        for (std::size_t i = 0; i < source_.peers.size(); ++i) peer(source_.peers[i], i);
+        owner();
+        function("main", {}, source_.entry_at);
+        ret(located("on1x_csp_run_v5", ARCHON_MIR_I64,
+                    {address("on1x_archon_timer_owner"), null_ptr()}));
+    }
+};
 } // namespace
 
 MachineModule::MachineModule(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
@@ -625,7 +873,8 @@ const ArchonMIRModule &MachineModule::view() const noexcept {
     return impl_ ? impl_->c : empty;
 }
 
-MachineModule lower(const mir::Module &source, const Options &options) {
+namespace {
+std::unique_ptr<MachineModule::Impl> lower_scalar(const mir::Module &source, const Options &options) {
     poll(options, {"<mir>"});
     if (!options.max_values_per_function || !options.max_instructions_per_function ||
         !options.max_local_bytes_per_function || !options.max_instructions_per_module ||
@@ -641,13 +890,10 @@ MachineModule lower(const mir::Module &source, const Options &options) {
         Builder(*owned, options, func, *f).run();
         owned->functions.push_back(std::move(f));
     }
-    if (options.emit_c_entrypoint) build_entrypoint(*owned, source, options);
-    owned->finalize(options);
-    poll(options, {"<mir>"});
-    return MachineModule(std::move(owned));
+    return owned;
 }
 
-Product compile(const mir::Module &source, const Options &options) {
+std::string_view target_for(const Options &options) {
     if (!options.max_assembly_bytes || options.max_assembly_bytes > 256u * 1024u * 1024u)
         fail({"<mir>"}, "invalid assembly output budget");
     const auto target_name = archon_backend_target();
@@ -657,35 +903,15 @@ Product compile(const mir::Module &source, const Options &options) {
         target != "RISCV64I/LP64" && target != "RISCV64IM/LP64")
         fail({"<archon>"}, "unqualified generated target/ABI: " + std::string(target),
              ARCHON_BACKEND_UNSUPPORTED);
-    // Verify before traversing recursive types, even on a rejected FP target.
-    auto module = lower(source, options);
-    // On1x currently qualifies binary32/64 runtime semantics only on its
-    // Linux AMD64/SSE2 target; other Archon scalar targets cannot claim them.
-    if (target != "AMD64/SysVAMD64") {
-        for (const auto &f : source.functions) {
-            poll(options, f.where);
-            if (contains_float(f.result))
-                fail(f.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
-                     ARCHON_BACKEND_UNSUPPORTED);
-            for (const auto &slot : f.slots) if (contains_float(slot.type))
-                fail(slot.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
-                     ARCHON_BACKEND_UNSUPPORTED);
-            for (const auto &b : f.blocks) {
-                poll(options, b.where);
-                for (const auto &p : b.parameters) if (contains_float(p.type))
-                    fail(p.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
-                         ARCHON_BACKEND_UNSUPPORTED);
-                for (const auto &i : b.instructions) if (contains_float(i.type))
-                    fail(i.where, "floating-point On1x runtime requires Linux AMD64/SSE2",
-                         ARCHON_BACKEND_UNSUPPORTED);
-            }
-        }
-    }
+    return target;
+}
+
+Product emit_native(const ArchonMIRModule &module, const Options &options, std::string_view target) {
     const ArchonBackendOptions limits{options.max_assembly_bytes, options.cancelled,
                                       options.cancel_userdata};
     ArchonBackendArtifact output{};
     ArchonBackendDiagnostic diagnostic{};
-    const auto status = archon_backend_compile_ex(&module.view(), &limits,
+    const auto status = archon_backend_compile_ex(&module, &limits,
         options.pic ? static_cast<unsigned>(ARCHON_BACKEND_PIC) : 0u, &output, &diagnostic);
     struct ArtifactCleanup {
         ArchonBackendArtifact *artifact;
@@ -709,6 +935,54 @@ Product compile(const mir::Module &source, const Options &options) {
              ARCHON_BACKEND_INTERNAL);
     poll(options, {"<archon>"});
     return Product{output.size ? std::string(output.data, output.size) : std::string{},
-                   std::string(target)};
+                    std::string(target)};
+}
+} // namespace
+
+MachineModule lower(const mir::Module &source, const Options &options) {
+    auto owned = lower_scalar(source, options);
+    if (options.emit_c_entrypoint) build_entrypoint(*owned, source, options);
+    owned->finalize(options);
+    poll(options, {"<mir>"});
+    return MachineModule(std::move(owned));
+}
+
+Product compile(const mir::Module &source, const Options &options) {
+    const auto target = target_for(options);
+    // Verify before traversing recursive types, even on a rejected FP target.
+    auto module = lower(source, options);
+    if (target != "AMD64/SysVAMD64") {
+        const auto require_qualified = [](const Type &type, const Location &at) {
+            if (contains_float(type))
+                fail(at, "floating-point On1x runtime requires Linux AMD64/SSE2", ARCHON_BACKEND_UNSUPPORTED);
+        };
+        for (const auto &f : source.functions) {
+            poll(options, f.where);
+            require_qualified(f.result, f.where);
+            for (const auto &slot : f.slots) require_qualified(slot.type, slot.where);
+            for (const auto &b : f.blocks) {
+                poll(options, b.where);
+                for (const auto &p : b.parameters) require_qualified(p.type, p.where);
+                for (const auto &i : b.instructions) require_qualified(i.type, i.where);
+            }
+        }
+    }
+    return emit_native(module.view(), options, target);
+}
+
+Product compile_timer_hir(const Unit &unit, const Options &options) {
+    const auto target = target_for(options);
+#ifndef ON1X_ARCHON_TIMER_TARGET
+    fail({"<archon-timer>"}, "native timer ABI was not built for Linux/glibc AMD64",
+         ARCHON_BACKEND_UNSUPPORTED);
+#endif
+    if (target != "AMD64/SysVAMD64" || !options.emit_c_entrypoint)
+        fail({"<archon-timer>"}, "native timer profile requires a Linux/glibc AMD64 executable",
+             ARCHON_BACKEND_UNSUPPORTED);
+    const auto source = detail::project_timer_program(unit, options);
+    auto owned = lower_scalar(source.scalar, options);
+    TimerBuilder(*owned, options, source).run();
+    owned->finalize(options);
+    return emit_native(owned->c, options, target);
 }
 } // namespace on1x::backends::archon

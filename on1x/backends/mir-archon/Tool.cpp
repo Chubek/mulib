@@ -61,9 +61,9 @@ std::string read_all(const std::string &name) {
     try {
         struct stat info{};
         if (::fstat(fd, &info) || !S_ISREG(info.st_mode))
-            throw std::runtime_error("MIR input must be a regular file");
+            throw std::runtime_error("input must be a regular file");
         if (info.st_size < 0 || static_cast<std::uintmax_t>(info.st_size) > max_input)
-            throw std::runtime_error("MIR input too large");
+            throw std::runtime_error("input too large");
         std::string bytes;
         char buffer[8192];
         for (;;) {
@@ -73,7 +73,7 @@ std::string read_all(const std::string &name) {
             if (count < 0) throw std::runtime_error("input read failed");
             if (!count) break;
             const auto n = static_cast<std::size_t>(count);
-            if (n > max_input - bytes.size()) throw std::runtime_error("MIR input too large");
+            if (n > max_input - bytes.size()) throw std::runtime_error("input too large");
             bytes.append(buffer, n);
         }
         ::close(fd);
@@ -91,7 +91,7 @@ std::string read_all(const std::string &name) {
         if (interrupted) throw std::runtime_error("cancelled");
         f.read(buffer, sizeof(buffer));
         const auto n = static_cast<std::size_t>(f.gcount());
-        if (n > max_input - bytes.size()) throw std::runtime_error("MIR input too large");
+        if (n > max_input - bytes.size()) throw std::runtime_error("input too large");
         bytes.append(buffer, n);
     }
     if (!f.eof()) throw std::runtime_error("input read failed");
@@ -138,14 +138,18 @@ void write_all(const std::string &name, std::string_view bytes) {
 void help() {
     std::cerr << "usage: on1x-archon-mir --ir-input FILE [--target TRIPLE] [-o OUTPUT.s]\n"
                  "       [--pic] [--no-entry] [--max-assembly-bytes N]\n"
+                 "       on1x-archon-mir --timer-source FILE [-o OUTPUT.s] [--pic]\n"
                  "       on1x-archon-mir --print-target | --print-backend-target\n"
-                 "The input must be canonical serialized and verified On1x MIR.\n"
-                 "This emits assembly only; link it with ScalarABI.c and on1x_runtime.c.\n";
+                 "--ir-input requires canonical serialized and verified On1x MIR.\n"
+                 "--timer-source checks a standalone timer program (Linux/glibc AMD64 only).\n"
+                 "Link the emitted assembly with on1x_runtime plus on1x_archon_scalar_abi\n"
+                 "for MIR input, or on1x_archon_timer_abi for the timer profile.\n";
 }
 } // namespace
 
 int main(int argc, char **argv) try {
     std::string input;
+    bool timer_source = false;
     std::string output = "-";
     std::string target(target_triple());
     on1x::backends::archon::Options options;
@@ -166,21 +170,31 @@ int main(int argc, char **argv) try {
         if (arg == "--help" || arg == "-h") { help(); return 0; }
         if (arg == "--pic") options.pic = true;
         else if (arg == "--no-entry") options.emit_c_entrypoint = false;
-        else if ((arg == "-o" || arg == "--ir-input" || arg == "--target" ||
+        else if ((arg == "-o" || arg == "--ir-input" || arg == "--timer-source" || arg == "--target" ||
                   arg == "--max-assembly-bytes") && i + 1 < argc) {
             if (arg == "-o") output = argv[++i];
             else if (arg == "--target") target = argv[++i];
             else if (arg == "--max-assembly-bytes") options.max_assembly_bytes = byte_limit(argv[++i]);
             else {
-                if (!input.empty()) throw std::runtime_error("duplicate --ir-input");
+                if (!input.empty()) throw std::runtime_error("specify exactly one input");
+                timer_source = arg == "--timer-source";
                 input = argv[++i];
             }
         } else throw std::runtime_error("unknown or incomplete argument: " + arg);
     }
     if (input.empty()) { help(); return 2; }
     check_target(target);
-    const auto module = on1x::mir::deserialize(read_all(input), input);
-    const auto result = on1x::backends::archon::compile(module, options);
+    const auto bytes = read_all(input);
+    const auto result = [&] {
+        if (!timer_source)
+            return on1x::backends::archon::compile(on1x::mir::deserialize(bytes, input), options);
+        auto unit = on1x::parse(on1x::scan(bytes, input));
+        if (!unit.imports.empty() || !unit.module_imports.empty() || !unit.kernel_imports.empty() ||
+            !unit.ppx.empty() || !unit.extensions.empty())
+            throw on1x::Error({input}, "ON1X-ARCHON-TIMER-UNSUPPORTED: standalone source requires no imports or extensions");
+        on1x::check(unit);
+        return on1x::backends::archon::compile_timer_hir(unit, options);
+    }();
     write_all(output, result.assembly);
     return 0;
 } catch (const on1x::backends::archon::Error &error) {
