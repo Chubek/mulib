@@ -116,7 +116,7 @@ The user separately authorized an SDK follow-up covering `on1x/sdk` and
 directory are `sdk/` and `build/sdk/` in the same workspace. It does not
 replace one of the original twelve assignments or add a trust authority.
 
-## Reviewed worker handoffs (not integrated)
+## Reviewed worker handoffs
 
 | Worker commit | Executed evidence | Qualification still required |
 |---|---|---|
@@ -125,5 +125,7 @@ replace one of the original twelve assignments or add a trust authority.
 | W09 `996566ce` | Worker reports legacy IPC HIR/SDK parity and **3/3** separate-TU native runs (GCC, Clang, Clang ASan/UBSan with leak detection). The prior bridge fails the new nested-cleanup control. | Generic resource, callback, ownership and admission parity. The runtime hardening and recorded discovery obligations do not retire KernelBind. |
 
 Reproduction logs and exact selected flags are in the shared
-`evidence/WORKER-{01,08,09}.md` handoffs. These commits remain on their
-worker branches pending the corresponding integration gates.
+`evidence/WORKER-{01,08,09}.md` handoffs. W01's self-contained decoder and
+tests were integrated in `de287a25`; this did not advance G1 or change any
+application build. W08 and W09 remain on their worker branches pending
+the corresponding integration gates.
