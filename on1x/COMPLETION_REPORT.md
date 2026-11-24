@@ -333,3 +333,7 @@ SIGKILL's kernel parent-death behavior are covered; SIGKILL can leave files
 for operator cleanup. The staged installation also passed the KVM MCP and
 source/installed init fixtures (`build/on1x-mcp-install.log`). No LibStone
 revision or SDK ABI changed.
+
+The full ArchVirt-enabled GCC/generated-scanner integration scheduled 230
+CTests: **229 passed, 0 failed, 1 skipped**. The skip was the
+delegated-cgroup fixture. See `build/on1x-mcp-combined-ctest.log`.
