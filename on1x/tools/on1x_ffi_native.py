@@ -118,7 +118,7 @@ def plan(root, document):
     if set(document) != {'schema', 'requests', 'sources', 'descriptors'} or document['schema'] != 'on1x.ffi-imports/v1':
         raise ValueError('FFI compiler inspection protocol mismatch')
     requests, descriptors = document['requests'], document['descriptors']
-    if not 0 < len(requests) <= 1024 or not 0 < len(descriptors) <= 2048:
+    if not 0 < len(requests) <= 1024 or len(descriptors) > 2048:
         raise ValueError('FFI build requires bounded, typed import requests')
     modules = house.inventory(root, registration=True)
     aliases = c.manifest_aliases(modules)
@@ -128,6 +128,11 @@ def plan(root, document):
         module = request['module']
         if not isinstance(module, str) or not module.startswith('mulib.') or type(request['unsafe']) is not bool:
             raise ValueError('FFI invalid compiler import request')
+        if module == 'mulib.ipc_framed':
+            if not request['unsafe']:
+                raise ValueError('ON1X-KERNEL-NOT-ADMITTED: ' + module + ' is unsafe-only')
+            raise ValueError('ON1X-FFI-ABI: ' + module +
+                             ' has no generated resource ABI; use the static KernelBind adapter (--kernel-bind)')
         names = aliases.get(module.removeprefix('mulib.'), ())
         if len(names) != 1:
             raise ValueError('FFI unknown or ambiguous MANIFEST module: ' + module)

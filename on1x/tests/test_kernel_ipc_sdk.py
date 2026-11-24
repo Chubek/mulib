@@ -45,6 +45,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     data = json.loads(plan.read_text())
     interface = data['kernel_interface']
     assert data['safe_export'] is interface['safe_export'] is False
+    assert interface['import_policy'] == 'unsafe_only'
     assert interface['profile'] == 'unsafe-ipc-framed-local-pair/v1'
     assert set(interface['exports']) == {'open_pair', 'roundtrip', 'open_session',
                                          'register_callback', 'revoke', 'send', 'poll', 'finish_send'}
@@ -71,6 +72,15 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     assert bridge.ipc_raw_interface(report) == interface
     graph = module['metadata']['cdecl']
     send = next(d for d in graph['declarations'] if d['name'] == 'mulib_ipc_send')
+    missing_provenance = copy.deepcopy(report)
+    declarations = missing_provenance['modules']['mulib.ipc_framed']['metadata']['cdecl']['declarations']
+    next(d for d in declarations if d['name'] == 'mulib_ipc_send')['source']['file'] = 'noncanonical.h'
+    try:
+        bridge.ipc_raw_interface(missing_provenance)
+    except ValueError as error:
+        assert 'ON1X-KERNEL-ABI' in str(error)
+    else:
+        raise AssertionError('admitted resource profile with missing declaration provenance')
     for id_, field, value in (
         (send['type'], 'calling_convention', 10),
         (send['type'], 'variadic', True),
@@ -96,7 +106,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
         assert not output.exists()
         return path
 
-    prefix = 'unsafe import kernel mulib.ipc_framed as I;\n'
+    prefix = 'unsafe import foreign stdffi.ipc_framed as I;\n'
     valid = 'fn f(x:i64)->i64 { return x; }\n'
     owner = 'let pair = match I.open_pair() with { Ok(p)=>move(p), Err(e)=>{println(e); return;} };\n'
     denied('context', prefix+'fn main(){ I.open_pair(); }', 'ON1X-KERNEL-CONTEXT')
@@ -112,7 +122,7 @@ with tempfile.TemporaryDirectory(dir=work) as tmp:
     denied('borrow', prefix+'fn main(){ unsafe { '+owner+'let borrow_pair=borrow pair; } }', 'ON1X-KERNEL-OPAQUE')
     denied('bad_callback', prefix+'fn main(){ unsafe { '+owner+
            'I.roundtrip(move(pair),0u8,1000,fn(x:bool)->bool {return x;}); } }', 'i64')
-    safe = denied('safe', 'import kernel mulib.ipc_framed as I;\nfn main(){}',
+    safe = denied('safe', 'import foreign stdffi.ipc_framed as I;\nfn main(){}',
                   'ON1X-KERNEL-NOT-ADMITTED', options=('--kernel-c11', '--kernel-stage'))
     denied('disabled', prefix+'fn main(){}', 'ON1X-KERNEL-UNSAFE-UNSUPPORTED', options=())
     for options in ('--kernel-bind', '--kernel-review-candidate'):

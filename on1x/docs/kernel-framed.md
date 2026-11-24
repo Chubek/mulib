@@ -1,10 +1,12 @@
 # KernelBind: raw framed local transport
 
-On native Linux x86-64, `unsafe import kernel mulib.ipc_framed as Framed;`
+On native Linux x86-64, `unsafe import foreign stdffi.ipc_framed as Framed;`
 projects **adapter** operations from the existing MuLIB framing kernel.
-It does not expose the C functions or a socket descriptor to On1x. Safe
-`import kernel mulib.ipc_framed` fails, even in review staging; the shipped
-sidecar remains unreviewed.
+`unsafe import kernel mulib.ipc_framed` is the equivalent legacy spelling.
+The adapter does not expose the C functions or a socket descriptor to On1x.
+The profile is **unsafe-only**: either safe import spelling fails, even in
+review staging or alongside an unsafe alias. It exposes neither the operations
+nor their types through the safe alias. The shipped sidecar remains unreviewed.
 
 ## One-shot pair
 
@@ -118,6 +120,9 @@ and reports `safe_export:false`; its explicit session loan and callback
 descriptions are adapter policy, not reviewer evidence. `--inspect-kernels` still reports the
 canonical C symbols as unadmitted; `--emit-c --kernel-c11` alone just emits
 an unresolved generated caller. Neither report is a reusable authorization.
+This resource ABI is static and requires `--kernel-bind`; it is not available
+with the generated `--ffi-provider` driver or `kernel[dynlib]`. Other resource
+declarations do not become callable just by changing the spelling of the import.
 
 `on1x.kernel_ipc_hir` also corrupts the checked ABI shape and ownership/loan
 metadata to verify rejection before emission. `on1x.kernel_ipc_sdk` runs both

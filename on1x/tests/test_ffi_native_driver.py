@@ -79,6 +79,17 @@ class Driver(unittest.TestCase):
             with self.subTest(changed=changed), self.assertRaisesRegex(ValueError, diagnostic):
                 ffi.plan(ROOT, inspection([dict(self.clamp, **changed)]))
 
+    def test_resource_cannot_use_generated_scalar_profile(self):
+        fake = descriptor('ipc-framed', 'init', 'mulib_ipc_framed_init', 2)
+        for descriptors in ([], [fake]):
+            doc = inspection(descriptors)
+            doc['requests'] = [dict(module='mulib.ipc_framed', unsafe=True)]
+            with self.assertRaisesRegex(ValueError, 'no generated resource ABI'):
+                ffi.plan(ROOT, doc)
+            doc['requests'][0]['unsafe'] = False
+            with self.assertRaisesRegex(ValueError, 'unsafe-only'):
+                ffi.plan(ROOT, doc)
+
     def test_abi_checks_identity_not_just_equal_layout(self):
         abi = self.work / 'abi.c'
         abi.write_text(ffi.abi_source([self.clamp, self.inline]))

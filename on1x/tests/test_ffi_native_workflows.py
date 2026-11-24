@@ -65,11 +65,21 @@ class Workflows(unittest.TestCase):
 
     def test_lexical_unsafe_and_staging_modes(self):
         source = self.work / 'scope.on1x'
-        source.write_text('unsafe import kernel mulib.clamp as C;\n'
+        source.write_text('unsafe import foreign stdffi.clamp as C;\n'
                           'fn main() { println(C.add_i64(40, 2)); }\n')
         self.native(source, self.work / 'invalid', rejected='unsafe')
         self.run_cmd(OPTIONS.on1xc, '--emit-c', '--kernel-c11', '--ffi-stage', '--kernel-stage',
                      '--no-prelude', source, rejected='excludes --kernel-stage')
+        source.write_text('unsafe import foreign stdffi.clamp as C;\n'
+                          'fn main() { println(unsafe { C.add_i64(40, 2) }); }\n')
+        out = self.work / 'scalar'
+        self.native(source, out)
+        self.assertEqual(self.run_cmd(out), '42\n')
+
+        source.write_text('import foreign stdffi.ipc_framed;\nfn main(){}\n')
+        self.native(source, self.work / 'safe-resource', rejected='unsafe-only')
+        source.write_text('unsafe import foreign stdffi.ipc_framed;\nfn main(){}\n')
+        self.native(source, self.work / 'raw-resource', rejected='no generated resource ABI')
 
     def test_exact_dso_and_independent_inline(self):
         clamp = (ROOT / 'on1x/examples/kernel/clamp.on1x').read_text()

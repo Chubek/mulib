@@ -1,4 +1,4 @@
-unsafe import kernel mulib.ipc_framed as Framed;
+unsafe import foreign stdffi.ipc_framed as Framed;
 
 fn exchange(byte: u8, timeout: i64, offset: i64) -> Framed.Result<i64, i64>
 {

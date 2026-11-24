@@ -8,6 +8,20 @@ catalogue has one file for every non-reserved MANIFEST registration and one
 an audited semantic delta under `overrides/mulib/`; overrides cannot invent
 declarations or grant admission.
 
+In On1x source, `unsafe import foreign stdffi.<alias> as Local;` is a
+contextual spelling of `unsafe import kernel mulib.<alias> as Local;`.
+The suffix is the canonical On1x alias (for example, `ipc_framed`, not
+`ipc-framed`). The parser normalizes the prefix before lookup; manifests,
+descriptors, source request reports and review identities still use `mulib.*`.
+The corresponding `import foreign stdffi.<alias>` requests safe admission; it
+does not fall back to unsafe exports. Calls through unsafe aliases still need
+`unsafe { ... }`.
+
+The static [framed IPC adapter](../docs/kernel-framed.md) is the available
+unsafe-only resource profile. The generated driver has no resource ABI:
+neither an unsafe import nor a pointer/aggregate in the catalogue establishes
+declaration provenance, a valid native ABI or an On1x runtime representation.
+
 `MANIFEST.yaml` and the planner behind `on1x-mulib.py` define the canonical
 header, dependency closure, feature macros and native recipe. Generation
 includes only the canonical public header and uses no implementation switches.

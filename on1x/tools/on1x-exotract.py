@@ -552,12 +552,15 @@ def clamp_scalar_interface(report, *, unsafe):
 
 
 def ipc_raw_interface(report):
-    """Admit only the ABI of the fixed local-pair adapter, never a safe export."""
+    """Admit only the static ABI of the fixed resource adapter, never a safe export."""
     for request in report['requests']:
         if request['unsafe'] is not True or request['module'] != IPC_MODULE:
             code = 'UNSAFE-UNSUPPORTED' if request['unsafe'] else 'NOT-ADMITTED'
             raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
                              f"ON1X-KERNEL-{code}: {request['module']} cannot join the raw framed transport profile")
+        if request.get('linkage', 'static') != 'static':
+            raise ValueError(f"{request['file']}:{request['line']}:{request['column']}: "
+                             f"ON1X-FFI-ABI: {IPC_MODULE} has no dynlib resource ABI")
     module = report['modules']['mulib.ipc_framed']
     cdecl = module['metadata']['cdecl']
     types = {t['id']: t for t in cdecl['types']}
@@ -628,8 +631,9 @@ def ipc_raw_interface(report):
                 len(f['arguments']) == len(arguments) and has_type(types[f['result']], result) and
                 all(has_type(types[t], want) for t, want in zip(f['arguments'], arguments)), name)
         dependencies[name] = dict(declaration_id=decl['id'], c_type_id=f['id'], declaration_source=decl['source'])
-    return dict(schema='on1x.kernel-interface/v1', profile=IPC_RAW_PROFILE, module='mulib.ipc_framed',
-                safe_export=False, target=report['target'], cdecl_fingerprint=cdecl['fingerprint'],
+    return dict(schema='on1x.kernel-interface/v1', profile=IPC_RAW_PROFILE, module=IPC_MODULE,
+                safe_export=False, import_policy='unsafe_only', target=report['target'],
+                cdecl_fingerprint=cdecl['fingerprint'],
                 header=cdecl['header'], header_revision=cdecl['revision'], sidecar=module['sidecar'],
                 imports=report['requests'], c_dependencies=dependencies, exports={
                     'open_pair': dict(c_name='on1x_kernel_ipc_v1_open_pair', parameters=[],

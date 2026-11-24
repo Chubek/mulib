@@ -55,6 +55,17 @@ fs::path canonical(const fs::path& path,const Location& at){
 fs::path module_path(std::string name){std::replace(name.begin(),name.end(),'.',fs::path::preferred_separator);return name;}
 fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_path();}
 
+// The sole compatibility profile with an executable resource ABI. Its
+// opaque owners and companion calls are never available to safe imports.
+constexpr std::string_view ipc_kernel_module="mulib.ipc_framed";
+constexpr std::string_view ipc_kernel_target="x86_64-linux-gnu";
+void require_kernel_import_policy(const KernelImport& request){
+ if(request.module==ipc_kernel_module&&!request.is_unsafe)
+  throw Error(request.where,"ON1X-KERNEL-NOT-ADMITTED: "+request.module+
+               " is unsafe-only; use unsafe import foreign stdffi.ipc_framed",
+              "ON1X-KERNEL-NOT-ADMITTED");
+}
+
 class Loader {
  using Scope=std::set<std::string>;
   const LoaderOptions& options;
@@ -95,7 +106,7 @@ class Loader {
    }
     const std::string_view member=std::string_view(e.text).substr(dot+1);
     const auto& request=found->second;
-    auto* descriptor=ffi::find_descriptor(request.module,member);
+     auto* descriptor=request.module==ipc_kernel_module?nullptr:ffi::find_descriptor(request.module,member);
     if(descriptor&&descriptor->schema_version!=2)descriptor=nullptr;
     // Keep the old reviewed driver/stub subject unchanged. The direct unsafe
     // Calls through an unsafe alias keep their checked descriptor and lexical
@@ -289,21 +300,42 @@ class Loader {
                       "interface verification does not transport intrinsic impl declarations",
                       "ON1X-IMPL-UNSUPPORTED");
       }
-     if(!inspection&&!options.kernel_c11)require_no_kernel_imports(m->unit);
+      if(!inspection){
+       for(const auto& request:m->unit.kernel_imports)require_kernel_import_policy(request);
+       if(!options.kernel_c11){
+        if(!m->unit.kernel_imports.empty()&&m->unit.kernel_imports.front().module==ipc_kernel_module)
+         throw Error(m->unit.kernel_imports.front().where,
+                     "ON1X-KERNEL-UNSAFE-UNSUPPORTED: mulib.ipc_framed requires the static KernelBind adapter (--kernel-bind)",
+                     "ON1X-KERNEL-UNSAFE-UNSUPPORTED");
+        require_no_kernel_imports(m->unit);
+       }
+      }
      if(options.kernel_c11){
        if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||
           !m->unit.features.empty()||!m->unit.cliches.empty()||
           !m->unit.cliche_implementations.empty()||!m->unit.inherent_implementations.empty())
         throw Error(at,"ON1X-KERNEL-PROFILE: this C11 profile does not execute source macros, PPX or extensions","ON1X-KERNEL-PROFILE");
-      for(const auto& request:m->unit.kernel_imports){
-          const auto descriptors=ffi::foreign_descriptors();
+       for(const auto& request:m->unit.kernel_imports){
+           // A scalar catalogue row cannot stand in for the checked resource
+           // ABI, even for an unsafe request. Use the exact companion profile.
+           if(request.module==ipc_kernel_module){
+            if(options.ffi_stage||request.dynlib)
+             throw Error(request.where,"ON1X-FFI-ABI: "+request.module+
+                          " has no generated or dynlib resource ABI; use the static KernelBind adapter",
+                         "ON1X-FFI-ABI");
+            if(options.foreign_target!=ipc_kernel_target)
+             throw Error(request.where,"ON1X-FFI-TARGET: unsupported resource target for "+request.module,
+                         "ON1X-FFI-TARGET");
+            continue;
+           }
+           const auto descriptors=ffi::foreign_descriptors();
           const auto registered=std::find_if(descriptors.begin(),descriptors.end(),[&](const auto& descriptor){
            return descriptor.schema_version==2&&descriptor.module==request.module;
           });
           if(registered!=descriptors.end()&&registered->target.triple!=options.foreign_target)
            throw Error(request.where,"ON1X-FFI-TARGET: unsupported foreign target for "+request.module,"ON1X-FFI-TARGET");
           const bool legacy=!options.ffi_stage&&(request.is_unsafe?
-           (request.module==legacy_scalar_module||request.module=="mulib.ipc_framed"):
+            request.module==legacy_scalar_module:
            options.kernel_stage&&(request.module==legacy_scalar_module||request.module=="mulib.histprice"||request.module=="mulib.priceopt"));
           const bool supported=legacy||
            (registered!=descriptors.end()&&(request.is_unsafe||options.kernel_stage||options.ffi_stage));
@@ -500,8 +532,8 @@ class Loader {
      if(dot!=std::string::npos&&kernel_scope&&found!=kernel_scope->kernels.end()){
       auto member=text.substr(dot+1);
       const bool history=found->second.module=="mulib.histprice", pricing=found->second.module=="mulib.priceopt";
-        if(found->second.module=="mulib.ipc_framed"&&member=="Result")text=ipc_kernel_result_name;
-        else if(found->second.module=="mulib.ipc_framed"&&member=="Session")text=ipc_kernel_session;
+         if(found->second.module==ipc_kernel_module&&member=="Result")text=ipc_kernel_result_name;
+         else if(found->second.module==ipc_kernel_module&&member=="Session")text=ipc_kernel_session;
        else if(!((history||pricing)&&(member=="Error"||member=="Result"))&&!(history&&member=="Forecast")&&
           !(pricing&&(member=="DemandKind"||member=="Objective"||member=="DemandModel"||member=="Constraints"||member=="Decision")))
         throw Error(at,"ON1X-KERNEL-MEMBER: no kernel type "+text,"ON1X-KERNEL-MEMBER");
@@ -857,7 +889,7 @@ public:
       if(!pricing_types&&request.module=="mulib.priceopt"){
        pricing_types=true;append_kernel_nominals(result.unit,kernel_type_prefix(false),false,request.where);
       }
-      if(!ipc_types&&request.module=="mulib.ipc_framed"){
+       if(!ipc_types&&request.module==ipc_kernel_module){
        ipc_types=true;append_ipc_kernel_nominals(result.unit,request.where);
       }
     }

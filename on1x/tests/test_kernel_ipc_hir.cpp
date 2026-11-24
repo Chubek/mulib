@@ -48,6 +48,12 @@ static Expr* find_call(std::vector<Stmt>& body, std::string_view name) {
 
 int main(int argc, char** argv) try {
     if (argc != 2) return 2;
+    LoaderOptions unsupported;
+    unsupported.prelude = false;
+    unsupported.kernel_c11 = true;
+    unsupported.foreign_target = "aarch64-linux-gnu";
+    reject([&] { load_unit(argv[1], unsupported); }, "ON1X-FFI-TARGET");
+
     auto unit = checked(argv[1]);
     const auto c11 = emit_c(unit, argv[1]);
     if (c11.find("#include <on1x_kernel_ipc.h>") == std::string::npos)

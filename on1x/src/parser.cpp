@@ -1600,17 +1600,28 @@ class Parser {
      if(u.ppx.size()>=32)throw Error(where,"PPX program count limit exceeded");
      ++pos;u.ppx.push_back({where,std::move(label),token.text.substr(1,token.text.size()-2)});accept(";");continue;
     }
-    // `kernel` remains an ordinary name in `import kernel;`,
-    // `import kernel.member;` and `import kernel as K;`.
-     bool unsafe_kernel=at("unsafe")&&peek(1).text=="import"&&peek(2).text=="kernel";
-     if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
-        ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')||
-         peek(2).text==".."||peek(2).text=="..."||peek(2).text=="["))){
-     KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_kernel;
-     if(unsafe_kernel)consume("unsafe");
-     consume("import");consume("kernel");
-     if(accept("[")){consume("dynlib");consume("]");item.dynlib=true;}
-     item.module=module_name();
+     // `kernel` and `foreign` are contextual: `import foreign`,
+     // `import foreign.member` and `import foreign as F` are ordinary imports.
+      const bool unsafe_import=at("unsafe")&&peek(1).text=="import";
+      const bool legacy_import=(unsafe_import&&peek(2).text=="kernel")||
+         (at("import")&&peek(1).text=="kernel"&&
+          ((is_ident(peek(2).text)&&peek(2).text!="as")||peek(2).text.starts_with('"')||
+           peek(2).text==".."||peek(2).text=="..."||peek(2).text=="["));
+      const bool standard_foreign=(unsafe_import&&peek(2).text=="foreign")||
+         (at("import")&&peek(1).text=="foreign"&&is_ident(peek(2).text)&&peek(2).text!="as");
+     if(legacy_import||standard_foreign){
+      KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_import;
+      if(unsafe_import)consume("unsafe");
+      consume("import");
+      if(standard_foreign){
+       consume("foreign");consume("stdffi");consume(".");
+       // Keep the canonical descriptor, manifest, and review identity.
+       item.module="mulib."+ident();
+      }else{
+       consume("kernel");
+       if(accept("[")){consume("dynlib");consume("]");item.dynlib=true;}
+       item.module=module_name();
+      }
      if(item.module.size()>4096)throw Error(item.where,"kernel module name exceeds 4096 bytes");
      if(accept("as"))item.alias=ident();
      else item.alias=item.module.substr(item.module.rfind('.')+1);
