@@ -86,6 +86,22 @@ ABI compatibility from size/alignment. Exact named enum declarations,
 conversion domains, and provider-specific ABI and artifact checks are
 separate requirements.
 
+Native **MuLIB-only** baseline (not FFI admission or On1x parity):
+
+| Configuration | Cases run | Outcome |
+|---|---|---|
+| GCC 16.2.1, strict C11 | `mulib_test_histprice`, `mulib_test_priceopt`, `mulib_test_ipc_extensions`, `mulib_media-integration-test`, `mulib_kernelbind_inventory`, `mulib_kernelbind_generator` | 6 passed, 0 failed, 0 skipped |
+| Clang 22.1.8, `MULIB_SANITIZERS=ON` (ASan/UBSan) | Same four native MuLIB fixtures, without the two Python registration-tool tests | 4 passed, 0 failed, 0 skipped |
+
+For each compiler, configure the repository root with `-DMULIB_BUILD_MUW3=OFF
+-DMULIB_BUILD_SHIRAZ=OFF -DMULIB_BUILD_VIRTIO=OFF` and the explicit
+`CMAKE_C_COMPILER` / `CMAKE_CXX_COMPILER` pair. Build the four native test
+targets listed above, then run the selected tests with
+`ctest --test-dir "$build" --output-on-failure --no-tests=error -R
+'^mulib_(test_(histprice|priceopt|ipc_extensions)|media-integration-test|kernelbind_(inventory|generator))$'`
+(omit the last alternative for the sanitizer run). Logs are under
+`build/coordinator/{mulib-gcc,mulib-clang-san}/` in the evidence workspace.
+
 ## Worker isolation
 
 Twelve implementation workers, W01–W12, were launched together on branches
