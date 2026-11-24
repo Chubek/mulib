@@ -117,6 +117,20 @@
       "limits": ["No generic constraint or Category extension"]
     },
     {
+      "id": "M1-FINITE-ITERATION",
+      "contract": "A fixed array or snapshot slice is evaluated once before irrefutable name, wildcard and nested tuple binding; canonical labelled-loop exits run cleanup and continue advances the cursor once.",
+      "owner": "iterator worker",
+      "prerequisites": ["Canonical array/snapshot-slice values", "Checked loop targets and lexical bindings"],
+      "source_paths": ["on1x/src/parser.cpp", "on1x/src/infer.cpp", "on1x/src/sema.cpp", "on1x/tests/test_control.py", "on1x/docs/finite-iteration.md", "on1x/examples/finite_iteration.on1x"],
+      "backends": ["direct C11", "VMWeave plain and optimized", "Cephyr AMD64 for loop-local aggregates"],
+      "positive_tests": ["on1x.control", "on1x.control_hir", "on1x.cephyr.native"],
+      "negative_tests": ["on1x.control (type/pattern, layout and unsupported source scenarios)", "on1x.cephyr.native (by-value aggregate ABI rejection)", "on1x.backends.mir_archon_native_build (unsupported layout and artifact preservation)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-optional-681ceacf --output-on-failure -R '^on1x\\.(cephyr\\.(native|options)|ownership_backends|control(_hir)?)$'", "result": "5/5 integrated optional profile tests; integrated native Archon boundary also passed separately"}, {"command": "ctest --test-dir build/on1x-loans-fallback --output-on-failure -R '^on1x\\.(control(_hir)?|concurrency_hir|ownership_backends|core_ref)$'", "result": "5/5 integrated fallback tests; worker's separate Clang fallback with generated C11 ASan/UBSan passed 10/10 (docs/finite-iteration.md)"}],
+      "revision": "c2d2ccce",
+      "limits": ["No typed lists, cons/tail or general iterator protocol", "Ordinary scalar MIR and Archon reject array/slice layouts", "Cephyr AMD64 does not admit by-value aggregate function ABI"]
+    },
+    {
       "id": "M1-OWNER-LABELLED-EXITS",
       "contract": "Labelled loop exits release nested boxes and loans, preserve outer boxes, and reject consuming an outer box on a repeatable edge.",
       "owner": "03",
@@ -184,7 +198,21 @@
       "status": "VERIFIED",
       "evidence": [{"command": "python3 -B on1x/tests/test_async_frame.py \"$PWD/build/on1x-baseline/on1xc\" \"$PWD/on1x\" \"$PWD/build/on1x-async-frame-final\" clang --cflag=-fsanitize=address,undefined", "result": "Integrated pass; 16 runtime cases and four source rejection cases"}, {"command": "ctest --test-dir build/on1x-baseline --output-on-failure --parallel 3 -R '^on1x\\.(concurrency(_hir)?|stream_poll|cancellation_deadlines|taskgroup_within|install)$'", "result": "6/6 integrated tests passed"}],
       "revision": "bff4cf89",
-      "limits": ["No source async/await or checked HIR frame lowering", "No task/channel wait protocol, public SDK ABI or MIR product admission"]
+      "limits": ["Private runtime; see M3-STACKLESS-TIMER-HIR for compiler admission", "No task/channel wait protocol, public SDK ABI or MIR product admission"]
+    },
+    {
+      "id": "M3-STACKLESS-TIMER-HIR",
+      "contract": "Checked HIR assigns explicit resume states to timer waits in a bounded taskgroup-owned launch async block. Direct C11 emits the typed frame and resume switch; no fiber stack is allocated for the frame.",
+      "owner": "async worker",
+      "prerequisites": ["M3-STACKLESS-FRAME-RUNTIME", "Canonical CSP verifier", "Linux/glibc x86_64 CSP supervisor"],
+      "source_paths": ["on1x/src/concurrency.cpp", "on1x/src/codegen.cpp", "on1x/examples/async_timer.on1x", "on1x/tests/test_async_frame.py", "on1x/tests/test_concurrency.cpp"],
+      "backends": ["direct C11 only"],
+      "positive_tests": ["on1x.concurrency (generated frame timers, peer progress, no extra fiber stack, join/cancel, exactly-once free, PPX round-trip)"],
+      "negative_tests": ["on1x.concurrency_hir (forged states, captures, uninitialized locals)", "on1x.cephyr.native (existing artifact preserved on unsupported request)", "on1x.concurrency (invalid contexts, capture, type and MIR rejection)"],
+      "status": "VERIFIED",
+      "evidence": [{"command": "ctest --test-dir build/on1x-loans-fallback --output-on-failure -R '^on1x\\.concurrency_hir$' && python3 -B on1x/tests/test_async_frame.py \"$PWD/build/on1x-loans-fallback/on1xc\" \"$PWD/on1x\" \"$PWD/build/on1x-async-clang-src\" clang --cflag=-fsanitize=address,undefined", "result": "Clang fallback HIR and generated C11 ASan/UBSan passed"}, {"command": "ctest --test-dir build/on1x-optional-681ceacf --output-on-failure -R '^on1x\\.cephyr\\.native$'", "result": "Passed; no unsupported object publication"}],
+      "revision": "e200c33c",
+      "limits": ["Only straight-line immutable i64 slots and timer waits", "No general async functions, task/channel awaits, ownership across suspension, or MIR lowering"]
     },
     {
       "id": "M4-HIR-SHORT-CIRCUIT",

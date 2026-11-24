@@ -172,9 +172,11 @@ fixed-size pointer-free payloads, blocking and try transfer, last-sender EOF,
 and heterogeneous atomic `poll` reuse the existing MuLIB channel/select and
 fiber kernels. The earlier [cancellation and monotonic deadline](cancellation-deadlines.md)
 profile remains, including `taskgroup within` with terminal timeout after
-cleanup. Managed/resource payload transfer, typed timeout recovery and
-async/await remain absent; async requires verified suspension/frame lowering,
-not a wrapper around stackful fibers.
+cleanup. A [stackless timer profile](async-frames.md) now lowers restricted
+`launch async` blocks through checked HIR into direct C11 resume states,
+without allocating a fiber stack for each block. Managed/resource payload
+transfer, typed timeout recovery, general async functions and task/channel
+await remain absent.
 
 | Area | State | Evidence / limits |
 |---|---|---|
@@ -194,7 +196,7 @@ not a wrapper around stackful fibers.
 | Frontend input limits | Implemented and tested | 2 MiB per file; 256-level parsing/HIR limits including lambdas; bounded capture metadata |
 | Diagnostics and scrutiny | Executable bounded tooling slice | Build-validated JSON v2 owns new identities/presentation/policy/repairs/PPX declarations, with runtime replacement and trusted bootstrap; bounded registry, text/JSON/SARIF with UTF-16 columns, CLI/source/On1xfile precedence, message-free registered PPX sideband, independently checked Syren edits and explicitly advisory Wetstone proposals; legacy compiler text migration, CFG/interprocedural/resource proof and LSP remain open; [manual](diagnostics.md) |
 | Type inference | P1 schemes and explicit universals | Global recursive-component and value-restricted immutable let/pattern generalization, rigid `forall` parameters, bounded C11 specialization/bundles; no defaulting or inferred polymorphic recursion |
-| Shared/exclusive place borrowing | Executable bounded HIR→C11 profile | Non-first-class `borrow T`/`ref T`, lexical `borrow [mut]`, nested reborrows, joins, owner-payload access and move/drop invalidation; direct private calls only. No PPX/interface/MIR/FFI/callback/defer/concurrency transport, field/index origins, separate compilation or independent Chisel/Nerotypical admission; [manual](core-references.md) |
+| Shared/exclusive place borrowing | Executable bounded HIR→C11 profile and lexical scalar MIR subset | Non-first-class `borrow T`/`ref T`, lexical `borrow [mut]`, nested reborrows, joins, owner-payload access and move/drop invalidation in direct C11. MEMGraph resolves scalar lexical aliases to typed MIR slots before backend dispatch; borrowed parameters and owner payloads remain C11-only. No PPX Unit-v1/interface/FFI/callback/defer/concurrency transport or field/index origins; [manual](core-references.md) |
 | Intrinsic core cliches | Executable bounded C11 profile | Generic declarations/implementations/members, associated values, qualified constrained calls, imports, exact-over-blanket coherence, orphan/overlap checks and bounded recursive resolution; static generated functions only. No associated types, dynamic dictionaries, Unit-v1 PPX transport or separate compiled interfaces; [manual](core-cliche.md) |
 | Intrinsic nominal `impl` blocks | Executable bounded C11 profile | Generic targets/members, associated and receiver functions/values, canonical module lookup, enum receivers, deterministic private-function lowering and copy-safe value receivers. Scalar associated members also use existing MIR; `ref self`, `move self`, and managed/resource receivers reject, so owners use explicit non-receiver parameters; no explicit member type arguments, visibility modifiers, Unit-v1 PPX/interfaces or aggregate MIR; [manual](core-impl.md) |
 | Structural function types / values | P1 subset | Monomorphic aliases, parameters/results, indirect/postfix calls and lexical resolution; no foreign callbacks |

@@ -158,9 +158,10 @@ This continuation starts at `825f6585` with the same pinned LibStone,
 GCC 16.2.1 and Clang 22.1.8. It adds the [checked MEMGraph and MIR
 scalar lexical-slot profile](docs/ownership-backends.md), SDK mode
 inspection and an unchanged-ABI On1xRT ownership integration fixture.
-It also adds a [private C11 stackless frame runtime](docs/async-frames.md)
-on the existing taskgroup scheduler. It does not admit source `async` or
-`await`. No LibStone sources or submodule revisions changed.
+It also adds a [stackless timer-frame profile](docs/async-frames.md) on the
+existing taskgroup scheduler. Its `launch async` and `await timer` forms
+lower through checked HIR to direct C11, not to fibers. No LibStone sources
+or submodule revisions changed.
 
 - Optional generated build: **2/2** `ownership_backends` and
   `mir_borrow_hir`, including real AMD64 Archon and Cephyr products
@@ -181,9 +182,25 @@ on the existing taskgroup scheduler. It does not admit source `async` or
   assertion. Commit `a0686063` corrected the test and its full PPX suite
   passed on rerun (`build/on1x-ownership-ppx.log`). The cgroup test still
   requires a delegated parent.
+- At `9d84654b`, the source timer block adds typed HIR slots, checked resume
+  targets, and C11 frame/resume emission. The independent fallback HIR test
+  and generated-frame Clang ASan/UBSan run passed; the C probe measures no
+  extra stack and exactly-once frame free. The optional Cephyr rejection and
+  existing ownership differential passed in `build/on1x-ownership-async-cephyr.log`.
 
 The scoped-loan profile uses existing MIR wire versions and ordinary
 slot initialization checks. SDK borrow flags are additive inspection
 metadata; older HIR readers can reject unfamiliar flags. General managed
-MIR operations, public runtime ownership transport, and checked HIR
-suspension/frame lowering remain open.
+MIR operations, public runtime ownership transport, and async functions
+with task/channel readiness or resource-bearing suspension remain open.
+
+The [finite snapshot iteration profile](docs/finite-iteration.md) uses
+existing checked labelled loops and latches (`8d124ef6`, `0448b733`).
+Integrated fallback and optional configurations passed their 5-test
+selections (`build/on1x-iteration-fallback.log`,
+`build/on1x-iteration-optional.log`). They cover direct C11, plain and
+optimized VM artifacts, and Cephyr AMD64 for local slices. The separate
+Archon driver regression (`c2d2ccce`, `build/on1x-finite-archon-gate.log`)
+rejects the aggregate layout without replacing the existing output.
+Typed lists, cons/tail patterns, and general iterators remain outside
+the profile.
