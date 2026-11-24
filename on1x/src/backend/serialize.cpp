@@ -28,6 +28,10 @@ SExpr block(const Block& b){
  return list({symbol("block"),number(b.id),number(b.effect),location(b.where),sequence(b.parameters,value),sequence(b.instructions,instruction),
   list({symbol("exit"),number(t.id),symbol(std::string(exit_name(t.kind))),number(t.value),number(t.effect),std::move(edges),location(t.where)})});
 }
+SExpr directive(const Directive& d){
+ return list({symbol("directive"),string(d.backend),string(d.target),string(d.kind),string(d.action),
+              number(d.function),symbol(d.speculative?"true":"false")});
+}
 [[noreturn]] void bad(const SExpr& n,const std::string& why){throw Error(n.where,"ON1X-MIR-DECODE: "+why);}
 const std::vector<SExpr>& items(const SExpr& n){if(n.kind!=SExpr::Kind::List)bad(n,"expected list");return n.items;}
 const std::string& atom(const SExpr& n){if(n.kind!=SExpr::Kind::Symbol)bad(n,"expected symbol");return n.text;}
@@ -71,21 +75,34 @@ Block decode_block(const SExpr& n){
  for(const auto& e:items(t.items[5])){shape(e,"edge",3);b.exit.edges.push_back({integer<Id>(e.items[1]),decode_ids(e.items[2])});}
  return b;
 }
+Directive decode_directive(const SExpr& n){
+ shape(n,"directive",7);
+ const auto& speculative=atom(n.items[6]);
+ if(speculative!="true"&&speculative!="false")bad(n.items[6],"expected directive boolean");
+ return {text(n.items[1]),text(n.items[2]),text(n.items[3]),text(n.items[4]),integer<Id>(n.items[5]),speculative=="true"};
+}
 }
 std::string serialize(const Module& module){
  verify(module);
  auto functions=sequence(module.functions,[](const Function& f){return list({symbol("function"),number(f.id),string(f.name),encode_type(f.result),location(f.where),sequence(f.slots,value),sequence(f.blocks,block)});});
- return meta::write_sexpr(list({symbol("on1x.mir"),number(module.version),number(module.id),std::move(functions)}));
+ auto tree=list({symbol("on1x.mir"),number(module.version),number(module.id),std::move(functions)});
+ if(module.version==directive_format_version)tree.items.push_back(sequence(module.directives,directive));
+ return meta::write_sexpr(tree);
 }
 Module deserialize(std::string_view text,const std::string& filename){
- auto tree=meta::read_sexpr(text,filename);shape(tree,"on1x.mir",4);Module m;m.version=integer<unsigned>(tree.items[1]);m.id=integer<Id>(tree.items[2]);
-  if(m.version!=legacy_format_version&&m.version!=format_version&&m.version!=numeric_format_version)bad(tree,"unsupported format version");
+ auto tree=meta::read_sexpr(text,filename);
+ if(items(tree).size()<2||atom(tree.items[0])!="on1x.mir")bad(tree,"expected on1x.mir with a format version");
+ Module m;m.version=integer<unsigned>(tree.items[1]);
+ if(m.version<legacy_format_version||m.version>directive_format_version)bad(tree,"unsupported format version");
+ shape(tree,"on1x.mir",m.version==directive_format_version?5:4);m.id=integer<Id>(tree.items[2]);
  for(const auto& n:items(tree.items[3])){
   shape(n,"function",7);Function f;f.id=integer<Id>(n.items[1]);f.name=::on1x::mir::text(n.items[2]);f.result=type(n.items[3]);f.where=decode_location(n.items[4]);
   for(const auto& s:items(n.items[5]))f.slots.push_back(decode_value(s));
   for(const auto& b:items(n.items[6]))f.blocks.push_back(decode_block(b));
   m.functions.push_back(std::move(f));
  }
+ if(m.version==directive_format_version)
+  for(const auto& n:items(tree.items[4]))m.directives.push_back(decode_directive(n));
  verify(m);return m;
 }
 bool structurally_equal(const Module& a,const Module& b){return serialize(a)==serialize(b);}

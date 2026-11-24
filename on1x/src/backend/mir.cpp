@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <bit>
+#include <tuple>
 #include "numeric.hpp"
 
 namespace on1x::mir {
@@ -22,6 +23,13 @@ struct Budget {
  void node(const Location& at){if(!left.nodes)fail(at,"node budget exhausted");--left.nodes;work(at);}
 };
 struct Definition { Type type; Id block; std::size_t position; };
+bool directive_selector(std::string_view selector){
+ if(selector.empty())return true;
+ if(selector.size()>128)return false;
+ auto alphanumeric=[](unsigned char c){return (c>='a'&&c<='z')||(c>='A'&&c<='Z')||(c>='0'&&c<='9');};
+ if(!alphanumeric(selector.front())&&selector.front()!='_')return false;
+ return std::all_of(selector.begin()+1,selector.end(),[&](unsigned char c){return alphanumeric(c)||c=='_'||c=='-'||c=='.';});
+}
 }
 std::string_view op_name(Op op){
  auto n=static_cast<std::size_t>(op);
@@ -52,7 +60,9 @@ void verify(const Module& module,Limits limits){
   budget.work(at,at.file.size());
   if(!id||!identities.insert(id).second)fail(at,"zero/duplicate identity");
  };
-  if(module.version!=legacy_format_version&&module.version!=format_version&&module.version!=numeric_format_version)fail({"<mir>"},"unsupported format version");
+ const Location module_at{"<mir>"};
+ if(module.version<legacy_format_version||module.version>directive_format_version)fail(module_at,"unsupported format version");
+ if(module.version<directive_format_version&&!module.directives.empty())fail(module_at,"directives require MIR version 4");
   auto admitted=[&](const Type& type,const Location& at){
   auto visit=[&](auto&& self,const Type& t,std::size_t depth)->bool{
    budget.work(at);if(depth>32)fail(at,"type depth budget exhausted");
@@ -88,8 +98,8 @@ void verify(const Module& module,Limits limits){
    for(std::size_t n=0;n<a.size();++n)if(!same(a[n],b[n],at))return false;
    return true;
   };
- identity(module.id,{"<mir>"});
- if(module.functions.empty())fail({"<mir>"},"empty module");
+ identity(module.id,module_at);
+ if(module.functions.empty())fail(module_at,"empty module");
  std::map<Id,const Function*> functions;std::set<std::string> function_names;
  for(const auto& f:module.functions){
   identity(f.id,f.where);
@@ -97,6 +107,25 @@ void verify(const Module& module,Limits limits){
   if(!admitted(f.result,f.where)&&f.result!=Type::Void)fail(f.where,"unsupported function result type");
   if(f.blocks.empty())fail(f.where,"missing entry block");
   functions.emplace(f.id,&f);
+ }
+ using DirectiveKey=std::tuple<std::string_view,std::string_view,std::string_view,std::string_view,Id,bool>;
+ std::set<DirectiveKey> directive_keys;
+ for(const auto& d:module.directives){
+  budget.node(module_at);
+  budget.work(module_at,d.backend.size());
+  budget.work(module_at,d.target.size());
+  budget.work(module_at,d.kind.size());
+  budget.work(module_at,d.action.size());
+  if(!directive_selector(d.backend)||!directive_selector(d.target))fail(module_at,"invalid directive selector");
+  if(d.kind=="hint"){
+   if(d.action!="kernel-hot"&&d.action!="local-memory"&&d.action!="canonicalized"&&d.action!="private-code")
+    fail(module_at,"unknown directive hint action");
+  }else if(d.kind=="rewrite"){
+   if(d.action!="fold-identity")fail(module_at,"unknown directive rewrite action");
+  }else fail(module_at,"unknown directive kind");
+  if(d.function&&!functions.contains(d.function))fail(module_at,"unknown directive function");
+  if(!directive_keys.emplace(d.backend,d.target,d.kind,d.action,d.function,d.speculative).second)
+   fail(module_at,"duplicate directive");
  }
  for(const auto& f:module.functions){
   std::map<Id,const Block*> blocks;std::map<Id,Type> slots;std::map<Id,Definition> defs;

@@ -13,6 +13,9 @@ Reports select `portable-scalar-v1` for legacy modules and
 MIR v3 selects `portable-numeric-v3`; its typed numeric descriptors retain
 conservative trap effects and are not signed-folded. Existing value/slot/CFG
 transformations remain verified before/after and compare typed payloads exactly.
+MIR v4 selects `portable-directives-v4`. Portable passes preserve all
+directives and their order; target-specific rewrites are selected at the
+product boundary described in [the MIR guide](backend-mir.md).
 Preserved effect/barrier identities include the numeric descriptor, so changing
 `add_u8` to same-signature `sub_u8` cannot pass a claimed preservation check.
 The report envelope remains `on1x.mir-passes` version 1. Float arithmetic,

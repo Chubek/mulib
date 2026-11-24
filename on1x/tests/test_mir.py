@@ -2,9 +2,12 @@
 """Five-way execution oracle: HIR C11, plain/optimized MIR C11 and evaluators."""
 import hashlib
 import random
+import sys
 from support import NativeTests, run
 
 tests = NativeTests()
+sys.path.insert(0, str(tests.root/'stdlib'))
+import sexpr
 
 
 def native(path, exe):
@@ -152,8 +155,45 @@ fn main(){println(twice!(1.25));}
 ''', expected='0x1.4000000000000p+1\n')
 compare('float_ppx_fold', 'fn main(){println((1.5+2.5)*2.0);}',
         expected='0x1.0000000000000p+3\n', options=['--stdppx','fold'])
-passes = run([tests.compiler, '--dump-passes', tests.root/'examples/float_tuples.on1x'])
-assert passes.returncode == 0 and '(target "portable-numeric-product-v2")' in passes.stdout, passes.stderr
+# A source with an intentional identity rewrite carries advisory evidence,
+# while its product-type payload is also executable as v2 without the sideband.
+float_source = tests.source('directed_product', '''
+fn add((a,b):(f64,f64))->f64{return a+b;}
+fn main(){let flag=true;if true && flag{println(add((1.5,2.5)));}else{println(1/0);}}
+''')
+float_expected = '0x1.0000000000000p+2\n'
+compare('directed_product', source=float_source, expected=float_expected, saved_native=True)
+float_wire = (tests.work/'directed_product.mir').read_text()
+float_tree = sexpr.loads(float_wire)
+assert len(float_tree) == 5 and float_tree[:2] == ['on1x.mir', '4']
+main_id = next(f[1] for f in float_tree[3] if f[2] == 'main')
+assert ['directive', '', '', 'hint', 'canonicalized', main_id, 'false'] in float_tree[4]
+assert ['directive', '', '', 'rewrite', 'fold-identity', main_id, 'false'] in float_tree[4]
+passes = run([tests.compiler, '--dump-passes', float_source])
+assert passes.returncode == 0, passes.stderr
+report = sexpr.loads(passes.stdout)
+assert report[2] == ['target', 'portable-directives-v4']
+assert report[3] == ['source', float_wire]
+assert sexpr.loads(report[4][1])[4] == float_tree[4]
+
+legacy_v2 = tests.work/'float-compat-v2.mir'
+legacy_wire = sexpr.dumps([float_tree[0], sexpr.Atom('2'), *float_tree[2:4]])
+legacy_v2.write_text(legacy_wire)
+saved = run([tests.compiler, '--ir-input', '--emit-ir', legacy_v2])
+assert saved.returncode == 0 and saved.stdout == legacy_wire, saved.stderr
+passes = run([tests.compiler, '--ir-input', '--dump-passes', legacy_v2])
+assert passes.returncode == 0, passes.stderr
+report = sexpr.loads(passes.stdout)
+assert report[2] == ['target', 'portable-numeric-product-v2']
+assert report[3] == ['source', legacy_wire]
+for opts, suffix in [([], ''), (['--optimize-ir'], '-optimized')]:
+    p = run([tests.compiler, '--ir-input', '--run-ir', legacy_v2, *opts])
+    assert p.returncode == 0 and p.stdout == float_expected, p.stderr
+    path = tests.work/('float-compat-v2'+suffix+'.c')
+    p = run([tests.compiler, '--ir-input', '--emit-ir-c', legacy_v2, *opts, '-o', path])
+    assert p.returncode == 0, p.stderr
+    p = native(path, tests.work/('float-compat-v2'+suffix))
+    assert p.returncode == 0 and p.stdout == float_expected, p.stderr
 tests.source('mir_import', 'fn add(x:i64)->i64{return x+1;}')
 compare('import', 'import "mir_import.on1x"; fn main(){println(add(41));}', expected='42\n')
 tests.source('mir_numeric_import', 'fn duplicate(x)->_{return(x,x);}fn identity(x)->_{return x;}')
@@ -268,20 +308,17 @@ assert p.returncode == 2 and 'requires a MIR mode' in p.stderr
 # Inject a syntactically well-shaped but unreachable block into the actual fixed
 # artifact, rather than allowing lower's omission rule to leak into admission.
 saved = tests.work/'omitted_latch_continue.mir'
-wire = saved.read_text().rstrip()
+wire = sexpr.loads(saved.read_text())
 at = '(at "forged-latch.on1x" 0 1 1)'
-close = '))))'  # block list, function, function list, root
-assert wire.endswith(close)
-forged = (wire.removesuffix(close) + f' (block 90001 90002 {at} () () '
-          f'(exit 90003 return 0 90002 () {at}))' + close)
-malformed.write_text(forged)
+main = next(f for f in wire[3] if f[2] == 'main')
+main[6].append(sexpr.loads(f'(block 90001 90002 {at} () () (exit 90003 return 0 90002 () {at}))'))
+malformed.write_text(sexpr.dumps(wire))
 for mode in ['--emit-ir', '--run-ir', '--emit-ir-c']:
     p = run([tests.compiler, '--ir-input', mode, malformed, '-o', out])
     assert p.returncode == 1 and 'ON1X-MIR-VERIFY: unreachable block' in p.stderr, p.stderr
     assert not p.stdout and out.read_text() == 'keep me'
 
 # Independently invoke the public build helper on the scalar example.
-import sys
 exe = tests.work/'helper-mir'
 p = run([sys.executable, tests.root/'tools/on1x-build.py', tests.root/'examples/mir.on1x',
          '--via-mir', '--on1xc', tests.compiler, '--cc', tests.cc, '-o', exe,

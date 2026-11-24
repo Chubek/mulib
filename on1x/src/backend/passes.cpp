@@ -303,15 +303,16 @@ Views views(const Module& m){
 }
 }
 const Descriptor& descriptor(Pass pass){
+ static constexpr auto profiles="portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3 / portable-directives-v4";
  static const Descriptor descriptors[]={
   {Pass::ConstantFold,"constant-fold",3,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls},
-    {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+     {Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only proven nontrapping integer arithmetic effects",profiles,"shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::SimplifyCFG,"simplify-cfg",2,{"verified-mir"},{Analysis::Signatures},
-    {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+     {Analysis::CFG,Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"remove only statically unreachable paths",profiles,"shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
   {Pass::DeadPure,"dead-pure",2,{"verified-mir"},{Analysis::Signatures,Analysis::CFG,Analysis::Calls,Analysis::Effects},
-    {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
+     {Analysis::Values,Analysis::Liveness},"retain all effect roots and control flow",profiles,"shared work/rewrites; bounded rounds","MIR + preservation + retained source locations"},
    {Pass::LocalSlots,"local-slots",3,{"verified-mir"},{Analysis::Signatures,Analysis::CFG},
-     {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local and unique-predecessor reaching loads; remove same-block overwritten stores","portable-scalar-v1 / portable-numeric-product-v2 / portable-numeric-v3","shared work/rewrites; bounded rounds and predecessor walks","MIR + preservation + retained source locations + slots/nonmemory barriers"}
+      {Analysis::Calls,Analysis::Effects,Analysis::Values,Analysis::Liveness},"forward local and unique-predecessor reaching loads; remove same-block overwritten stores",profiles,"shared work/rewrites; bounded rounds and predecessor walks","MIR + preservation + retained source locations + slots/nonmemory barriers"}
  };
  auto index=static_cast<std::size_t>(pass);if(index>=std::size(descriptors))fail({"<mir-pass>"},"unknown pass");return descriptors[index];
 }
@@ -322,6 +323,9 @@ std::string_view analysis_name(Analysis analysis){
 void verify_transition(const Module& before,const Module& after,Pass pass,mir::Limits limits){
  const auto& d=descriptor(pass);verify(before,limits);verify(after,limits);
  if(before.id!=after.id||before.version!=after.version)fail({"<mir-pass>"},"pass changed module identity/version");
+ auto directive_key=[](const Directive& d){return std::tie(d.backend,d.target,d.kind,d.action,d.function,d.speculative);};
+ if(!std::ranges::equal(before.directives,after.directives,{},directive_key,directive_key))
+  fail({"<mir-pass>"},"portable pass changed backend directives");
  auto a=views(before),b=views(after);
  if(pass==Pass::LocalSlots&&(a.slots!=b.slots||a.barriers!=b.barriers))
   fail({"<mir-pass>"},"local-slots: changed slots/nonmemory barriers");
@@ -343,9 +347,10 @@ void verify_transition(const Module& before,const Module& after,Pass pass,mir::L
  }
 }
 Result run(const Module& module,Options options){
-  if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2"&&options.target!="portable-numeric-v3")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
+   if(options.target!="portable-scalar-v1"&&options.target!="portable-numeric-product-v2"&&options.target!="portable-numeric-v3"&&options.target!="portable-directives-v4")fail({"<mir-pass>"},"unsupported pass target: "+options.target);
   if(module.version==format_version)options.target="portable-numeric-product-v2";
   if(module.version==numeric_format_version)options.target="portable-numeric-v3";
+  if(module.version==directive_format_version)options.target="portable-directives-v4";
  if((options.pipeline.empty()&&!options.allow_empty)||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds unless explicitly disabled");
  for(auto pass:options.pipeline)(void)descriptor(pass);
  verify(module,options.verification);Result result(module,serialize(module),options);

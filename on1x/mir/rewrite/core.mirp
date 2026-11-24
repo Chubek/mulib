@@ -1,0 +1,23 @@
+mir-policy 1;
+
+rewrite "fold-identity" backend * target * enables arithmetic;
+rewrite "fold-identity" backend * target * enables boolean;
+hint "kernel-hot" backend * target * enables arithmetic;
+hint "canonicalized" backend * target * enables boolean;
+hint "local-memory" backend * target * enables slots;
+
+pattern add_zero backend * target * class arithmetic mode safe match "add.checked"($x, 0) replace $x requires identity;
+pattern zero_add backend * target * class arithmetic mode safe match "add.checked"(0, $x) replace $x requires identity;
+pattern sub_zero backend * target * class arithmetic mode safe match "sub.checked"($x, 0) replace $x requires identity;
+pattern sub_self backend * target * class arithmetic mode safe match "sub.checked"($x, $x) replace 0 requires identity;
+pattern mul_one backend * target * class arithmetic mode safe match "mul.checked"($x, 1) replace $x requires identity;
+pattern one_mul backend * target * class arithmetic mode safe match "mul.checked"(1, $x) replace $x requires identity;
+pattern div_one backend * target * class arithmetic mode safe match "div.checked"($x, 1) replace $x requires identity;
+pattern div_self backend * target * class arithmetic mode speculative match "div.checked"($x, $x) replace 1 requires nonzero;
+# Native remainder uses a costly checked division sequence on this product.
+pattern archon_rem_one backend "mir-archon" target "x86_64-unknown-linux-gnu" class arithmetic mode safe match "mod.checked"($x, 1) replace 0 requires identity;
+
+pattern eq_self backend * target * class boolean mode safe match "eq"($x, $x) replace 1 requires identity;
+pattern ne_self backend * target * class boolean mode safe match "ne"($x, $x) replace 0 requires identity;
+
+pattern forward_slot backend * target * class slots mode safe match "load"() replace $stored requires local-slot;

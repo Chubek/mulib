@@ -44,11 +44,33 @@ repeat = run([tests.compiler, '--dump-passes', source])
 assert report.returncode == repeat.returncode == 0 and report.stdout == repeat.stdout
 (tests.work/'example.passes').write_text(report.stdout)
 tree = sexpr.loads(report.stdout)
-assert tree[:2] == ['on1x.mir-passes', '1'] and tree[2] == ['target', 'portable-scalar-v1']
+assert tree[:2] == ['on1x.mir-passes', '1'] and tree[2] == ['target', 'portable-directives-v4']
 assert tree[3] == ['source', original] and tree[4] == ['output', optimized]
+source_tree = sexpr.loads(original)
+assert len(source_tree) == 5 and source_tree[:2] == ['on1x.mir', '4']
+main_id = next(f[1] for f in source_tree[3] if f[2] == 'main')
+assert ['directive', '', '', 'hint', 'canonicalized', main_id, 'false'] in source_tree[4]
+assert ['directive', '', '', 'rewrite', 'fold-identity', main_id, 'false'] in source_tree[4]
+assert sexpr.loads(optimized)[4] == source_tree[4]
 assert tree[6][1] == 'complete'
 assert [d[1] for d in tree[8]] == ['constant-fold', 'simplify-cfg', 'local-slots', 'dead-pure']
 assert any(event[5] == 'committed' for event in tree[9])
+
+# Verify the older scalar pass profile with an explicit saved v1 input, rather
+# than tying the source entry point to the absence of v4 advisory evidence.
+legacy = tests.work/'example-compat-v1.mir'
+legacy_wire = sexpr.dumps([source_tree[0], sexpr.Atom('1'), *source_tree[2:4]])
+legacy.write_text(legacy_wire)
+report = run([tests.compiler, '--ir-input', '--dump-passes', legacy])
+assert report.returncode == 0, report.stderr
+tree = sexpr.loads(report.stdout)
+assert tree[2] == ['target', 'portable-scalar-v1']
+assert tree[3] == ['source', legacy_wire] and tree[6][1] == 'complete'
+legacy_output = sexpr.loads(tree[4][1])
+assert len(legacy_output) == 4 and legacy_output[:2] == ['on1x.mir', '1']
+assert 'div.checked' not in tree[4][1] and 'mul.checked' not in tree[4][1]
+p = run([tests.compiler, '--ir-input', '--run-ir', '--optimize-ir', legacy])
+assert p.returncode == 0 and p.stdout == '1\n43\n42\n', p.stderr
 
 check('slots', tests.root/'examples/slots.on1x', '2\n1\n2\n5\n0\n1\n2\n')
 # Seeded mutation traces have a separate Python state-machine oracle. Captured

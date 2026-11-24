@@ -9,6 +9,7 @@ using Id = std::uint64_t;
 inline constexpr unsigned format_version = 2;
 inline constexpr unsigned legacy_format_version = 1;
 inline constexpr unsigned numeric_format_version = 3;
+inline constexpr unsigned directive_format_version = 4;
 enum class Op { Constant, Add, Sub, Mul, Div, Mod, Neg, Not, Eq, Ne, Lt, Le, Gt, Ge,
                 Load, Store, Call, Print, Assert,
                 FloatAdd, FloatSub, FloatMul, FloatDiv, FloatNeg,
@@ -24,7 +25,7 @@ struct Instruction {
  std::int64_t immediate=0;
  Id target=0, effect_in=0, effect_out=0;
  Location where;
- // v3-only allowlisted scalar numeric operation. Never a foreign symbol.
+ // v3+ allowlisted scalar numeric operation. Never a foreign symbol.
  std::string primitive={};
 };
 struct Edge { Id block=0; std::vector<Id> arguments; };
@@ -45,7 +46,20 @@ struct Function {
  std::vector<Value> slots;
  std::vector<Block> blocks;
 };
-struct Module { unsigned version=legacy_format_version; Id id=1; std::vector<Function> functions; };
+// v4 sideband request. Empty selectors are wildcards; function 0 is module-wide.
+// Nonempty selectors are ASCII [A-Za-z0-9_][A-Za-z0-9_.-]*, up to 128 bytes.
+// Neither an untrusted hint nor a rewrite request confers semantic authority.
+struct Directive {
+ std::string backend,target,kind,action;
+ Id function=0;
+ bool speculative=false;
+};
+struct Module {
+ unsigned version=legacy_format_version; Id id=1;
+ std::vector<Function> functions;
+ // Preserves request order. Exact duplicates are invalid.
+ std::vector<Directive> directives={};
+};
 struct Limits { std::size_t nodes=65536, work=4194304; bool decision_ssa=true; };
 Effect effect(Op op);
 std::string_view op_name(Op op);

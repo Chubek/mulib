@@ -1,4 +1,25 @@
-# Core/MIR: scalar v1, numeric/product v2 and complete scalar numeric v3
+# Core/MIR: scalar, product and directive formats
+
+MIR v4 carries conditional directives alongside the ordinary verified functions.
+It extends v3; programs without directives can still use the earlier wire
+formats. A directive names a backend, target, action, optional function ID
+and whether applying it is speculative. Empty selectors match any product.
+The verifier rejects unknown actions and dangling function IDs. A directive
+cannot supply an instruction, shell argument, library path or foreign symbol.
+
+`--emit-ir` preserves these clauses. When a product is selected, only matching
+directives apply. `--optimize-ir` permits speculative rewrite candidates; a
+matching pattern still has to establish that its change preserves values,
+traps and effects. The pattern language is in
+[`mir/MIR.llsynth`](../mir/MIR.llsynth) and its database is in
+[`mir/rewrite`](../mir/rewrite). For C output use `--emit-ir-c --mir-target
+TRIPLE` when the downstream compiler's target is known. `kernel-hot` controls
+function placement on compilers supporting the hot attribute; `private-code`
+can hide a helper from ELF dynamic symbol export. Neither changes the C call
+signature or grants a module access to native code.
+
+The [foreign interface guide](ffi-migration.md) shows how a standard MuLIB
+kernel becomes an ordinary callable MIR function.
 
 The [defer/Result C11 profile](defer-errors.md) does not widen MIR. Dynamic
 registrations require cleanup/effect descriptors; nominal results require
