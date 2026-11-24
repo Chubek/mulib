@@ -1,5 +1,6 @@
 """Exercise the on1xc aux transport with real and controlled project drivers."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -43,14 +44,20 @@ def exercise(compiler, engine, cc, project, env):
     compare('plan', '--not-a-project-driver-option', status=2)
     compare('format', '--check', '--', project / 'On1xfile')
     compare('fetch', 'not_declared', project, '--frozen', status=1)
+    compare('backends', '--on1xc', project.parent / 'missing executable', status=1)
 
     lock = Path(invoke('lock', project, '--offline').stdout.strip())
     assert lock == project / 'On1xfile.lock' and lock.is_file(), lock
-    inventory = json.loads(invoke('backends', '--on1xc', compiler, '--cc', cc).stdout)
+    inventory = json.loads(invoke('backends', '--cc', cc).stdout)
+    digest = hashlib.sha256()
+    with compiler.open('rb') as binary:
+        for chunk in iter(lambda: binary.read(1024 * 1024), b''):
+            digest.update(chunk)
+    assert inventory['compiler_sha256'] == digest.hexdigest(), inventory
     assert any(row['name'] == 'c11' and row['available'] for row in inventory['backends']), inventory
 
     output = project.parent / (project.name + ' output')
-    args = [project, '--on1xc', compiler, '--cc', cc, '--release', '--frozen',
+    args = [project, '--cc', cc, '--release', '--frozen',
             '--target', 'sample', '--output-dir', output]
     plan = json.loads(invoke('plan', *args).stdout)
     assert plan['profile'] == 'release' and not output.exists(), plan
@@ -75,6 +82,7 @@ def main():
             drivers.append((args.installed_on1xc, installed_tools / 'on1x-project.py', work / 'installed project'))
         # Transport resolves the tool independently of the current project.
         (work / 'On1xfile').write_text('this is not an On1xfile\n')
+        env['ON1X_PROJECT_COMPILER'] = str(work / 'untrusted compiler override')
         for compiler, engine, project in drivers:
             (project / 'src').mkdir(parents=True)
             (project / 'On1xfile').write_text('on1xfile 1\nkind executable\nname "sample"\n'

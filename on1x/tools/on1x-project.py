@@ -638,7 +638,8 @@ def program(value):
 
 
 def compiler_path(explicit):
-    return program(explicit or (str(ROOT / 'build/on1xc') if (ROOT / 'build/on1xc').is_file() else 'on1xc'))
+    selected = explicit or os.environ.get('ON1X_PROJECT_COMPILER')
+    return program(selected or (str(ROOT / 'build/on1xc') if (ROOT / 'build/on1xc').is_file() else 'on1xc'))
 
 
 def validate_locked_names(args, config, project):

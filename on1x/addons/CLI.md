@@ -8,6 +8,8 @@ look up named commands in an On1xfile as `on1xc exec` does. You can also
 invoke the project driver directly with
 `python3 on1x/tools/on1x-project.py COMMAND`, or use
 `python3 on1x/tools/on1x-build.py --help` for single-file builds.
+When a command needs a compiler, `aux` defaults to the invoked `on1xc`;
+an explicit `--on1xc PATH` takes precedence.
 
 ## Source syntax
 
