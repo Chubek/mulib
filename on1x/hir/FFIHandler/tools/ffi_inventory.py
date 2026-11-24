@@ -76,6 +76,16 @@ def _include_snapshot(root):
     return dict(sorted(files.items()))
 
 
+def _tree_metadata(path, files):
+    return {
+        'path': path,
+        'method': 'complete_regular_file_inventory',
+        'sha256': _digest(json.dumps(files, separators=(',', ':'),
+                                     ensure_ascii=True).encode('ascii')),
+        'files': dict(files),
+    }
+
+
 class Inventory:
     def __init__(self, root):
         self.root = Path(root).resolve(strict=True)
@@ -90,6 +100,9 @@ class Inventory:
                      _contracts.EXOTRACT_CATALOG, Path(__file__).resolve()):
             self._remember(path, _contracts.digest(path))
         self._headers = _include_snapshot(self._include)
+        # Registered OCI compatibility headers traverse to ../.deprecated.
+        # Hash the archived tree without adding it to Cephyr's include search.
+        self._archived = self._archive_snapshot()
         reserved = set()
         self._modules = _planner.inventory(self.root, raw=manifest, registration=True,
                                            reservations=reserved)
@@ -114,15 +127,15 @@ class Inventory:
             'manifest': {'path': 'MANIFEST.yaml', 'sha256': _digest(manifest)},
             'registered_modules': len(self.entries),
             'reserved_headers': sorted(reserved),
-            'mulib_include_tree': {
-                'path': 'include',
-                'method': 'complete_regular_file_inventory',
-                'sha256': _digest(json.dumps(self._headers, separators=(',', ':'),
-                                             ensure_ascii=True).encode('ascii')),
-                'files': dict(self._headers),
-            },
+            'mulib_include_tree': _tree_metadata('include', self._headers),
+            'relative_include_roots': [] if self._archived is None else [
+                _tree_metadata('.deprecated', self._archived)],
             'planner_inputs': self._stable_inputs(self._inputs),
         }
+
+    def _archive_snapshot(self):
+        directory = self.root / '.deprecated'
+        return _include_snapshot(directory) if directory.exists() or directory.is_symlink() else None
 
     def _entry(self, key):
         item = self._modules[key]
@@ -254,7 +267,7 @@ class Inventory:
         for name, files in fixtures.items():
             if tuple(_planner.fixture_files(self.root, self._fixtures[name])) != files:
                 raise ValueError('MuLIB fixture inventory drift: ' + name)
-        if _include_snapshot(self._include) != self._headers:
+        if _include_snapshot(self._include) != self._headers or self._archive_snapshot() != self._archived:
             raise ValueError('MuLIB include tree changed during generation')
 
 

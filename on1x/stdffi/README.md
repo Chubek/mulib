@@ -16,7 +16,8 @@ multi-header/native companion recipes retain their distinct inventory facts.
 Companion files are not automatically exports of the requested public module.
 The index records MANIFEST and planner hashes, and a conservative hash
 inventory of the entire MuLIB include root (including unregistered detail
-headers); it does not claim an exact transitive include trace.
+headers) and the archived compatibility headers in `.deprecated/`; it does
+not claim an exact transitive include trace.
 
 Cephyr's semantic projection is discovery, not C symbol ownership or proof of
 linkage, lifetime, effects or safe use. A prefix match by itself does not select
