@@ -121,11 +121,12 @@ replace one of the original twelve assignments or add a trust authority.
 | Worker commit | Executed evidence | Qualification still required |
 |---|---|---|
 | W01 `15a8cad3` | Coordinator re-ran the committed reader against W02's captured projections: **20 passed**, including raw C, preprocessed C, C11Syntax, and SDK input parity per target and real clamp and inline headers. | G1 must also verify generation controls and genuine LLSynth parsing of the generated clamp interface. No executable ABI is established by this reader run. |
+| W02 `8e85b87c` | Coordinator independently re-ran **9 provider tests**, **8 upstream suites**, and the real projection qualifier on each built-in target. The selected Cephyr 0.1.0 executable SHA-256 was `61b0c10a3e64bf11039599063834b1414a31f3548dd8091eb3b2271730c47bb7`. | Canonical `media-timebase` cannot project with this profile (`math.h` unavailable). `container-core` projects a real internal `mulib_ct_counter_add`, but projection is not executable On1x support. C11Syntax's presumed locations alone are not export-ownership evidence. |
 | W08 `1da9d563` | Legacy numerical CTest **3/3 passed** in an isolated reference tree with a byte-copy of the seed at the old CMake path. Extended reviewed tests passed with both GCC and Clang generated/native C. Host C and sanitizer oracles and wrong-output controls passed. | Rich descriptor/adapter support and generic reviewed parity. Pinned Cephyr projects the headers on three targets, but the tested native numerical builds fail on unavailable `math.h`; no mixed PriceOpt enum ABI approval. |
 | W09 `996566ce` | Worker reports legacy IPC HIR/SDK parity and **3/3** separate-TU native runs (GCC, Clang, Clang ASan/UBSan with leak detection). The prior bridge fails the new nested-cleanup control. | Generic resource, callback, ownership and admission parity. The runtime hardening and recorded discovery obligations do not retire KernelBind. |
 
 Reproduction logs and exact selected flags are in the shared
-`evidence/WORKER-{01,08,09}.md` handoffs. W01's self-contained decoder and
-tests were integrated in `de287a25`; this did not advance G1 or change any
-application build. W08 and W09 remain on their worker branches pending
-the corresponding integration gates.
+`evidence/WORKER-{01,02,08,09}.md` handoffs. W01's self-contained decoder
+was integrated in `de287a25` and W02's provider in `6654a083`; neither
+changes an application build nor advances G1 on its own. W08 and W09
+remain on their worker branches pending the corresponding gates.
