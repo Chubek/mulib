@@ -6,9 +6,12 @@ import time
 from pathlib import Path
 from subprocess import DEVNULL
 from support import NativeTests, run
+from test_async_frame import check_async_frames
 
 t = NativeTests()
 helper = t.root / 'tools/on1x-build.py'
+
+check_async_frames(t)
 
 
 def build(name, source, *flags):

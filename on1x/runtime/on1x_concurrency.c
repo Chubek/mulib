@@ -1,7 +1,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include "on1x_concurrency.h"
+#include "on1x_async_frame.h"
 #include <mulib-channel.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -62,6 +62,10 @@ struct on1x_csp_task {
  mulib_fiber_t *fiber,*joiner;
  on1x_csp_callback invoke;
  on1x_env *environment;
+ on1x_async_resume resume;
+ on1x_async_drop drop_frame;
+ void *frame;
+ uint64_t wake_at;
  source_point at;
  int64_t result;
  size_t calls;
@@ -175,8 +179,8 @@ static bool observe_deadlines(void){
  if(!earliest)return false;
  if(monotonic_ms(earliest->at)<earliest->expires)return true;
  /* There is no typed timeout effect in this profile. Latch the first expiry
-  * and stop the entire run, but only report failure after normal stackful
-  * returns have drained cleanup. The list is newest-first; ties prefer older. */
+  * and stop the entire run, but only report failure after task cleanup.
+  * The list is newest-first; ties prefer older. */
  e->expired=earliest->at;
  for(on1x_csp_task *t=e->tasks;t;t=t->next)if(!t->cleanup_work)request_cancel(t);
  for(on1x_csp_process *p=e->processes;p;p=p->next)if(!p->cleanup_work)(void)request_process_stop(p,p->at);
@@ -201,8 +205,10 @@ static void request_cancel(on1x_csp_task *t){
  if(t->done||t->cancel_requested)return;
  t->cancel_requested=true;
  if(!t->started)t->cancel_before_start=true;
- (void)mulib_channel_close(t->cancel_signal);
- mulib_fiber_unpark(t->fiber);
+ if(t->fiber){
+  (void)mulib_channel_close(t->cancel_signal);
+  mulib_fiber_unpark(t->fiber);
+ }
  ++current_execution->progress;
 }
 static on1x_csp_channel *channel(on1x_csp_channel *value,source_point at){
@@ -333,18 +339,30 @@ void on1x_csp_group_finish(on1x_csp_group *g){
   }
   t->group=g->parent;--current_execution->groups;ON1X_CSP_FREE(g);
 }
+static void publish_task(on1x_csp_task *t,int64_t result){
+ t->result=result;
+ t->done=true;--current_execution->active;++current_execution->progress;
+ if(t->joiner)mulib_fiber_unpark(t->joiner);
+}
 static void task_entry(void *arg){
   on1x_csp_task *t=(on1x_csp_task *)arg;
+  int64_t result=0;
   t->started=true;
   if(!t->cancel_before_start){
    on1x_csp_group *g=on1x_csp_group_enter(t->at.file,t->at.line,t->at.column);
-   t->result=t->invoke(t->environment);
+   result=t->invoke(t->environment);
    on1x_csp_group_finish(g);
   }
   if(t->calls||t->shield)failure(t->at,"unbalanced generated function cleanup");
  on1x_env_release(t->environment);t->environment=NULL;
- t->done=true;--current_execution->active;++current_execution->progress;
- if(t->joiner)mulib_fiber_unpark(t->joiner);
+ publish_task(t,result);
+}
+static void register_task(on1x_csp_task *t,on1x_csp_group *owner,source_point at){
+ execution *e=current_execution;
+ t->owner=owner;t->at=at;
+ t->cleanup_work=owner&&(owner->owner->shield||owner->owner->cleanup_work);
+ t->next=e->tasks;e->tasks=t;++e->task_count;++e->active;
+ if(owner){t->sibling=owner->children;owner->children=t;}
 }
 static on1x_csp_task *spawn(on1x_csp_callback invoke,on1x_env *env,on1x_csp_group *owner,source_point at){
  on1x_csp_task *t;execution *e=current_execution;
@@ -353,17 +371,27 @@ static on1x_csp_task *spawn(on1x_csp_callback invoke,on1x_env *env,on1x_csp_grou
  if(e->task_count>=ON1X_CSP_MAX_TASKS)failure(at,"total fiber budget exhausted");
   t=(on1x_csp_task *)ON1X_CSP_CALLOC(1,sizeof(*t));if(!t)failure(at,"fiber record allocation failure");
  if(mulib_channel_create(&t->cancel_signal,1,0)!=MULIB_CHANNEL_OK){ON1X_CSP_FREE(t);failure(at,"cancellation signal allocation failure");}
-  t->invoke=invoke;t->environment=env;t->owner=owner;t->at=at;on1x_env_retain(env);
-  t->cleanup_work=owner&&(owner->owner->shield||owner->owner->cleanup_work);
+  t->invoke=invoke;t->environment=env;on1x_env_retain(env);
  if(mulib_fiber_spawn(e->scheduler,task_entry,t,ON1X_CSP_STACK_BYTES,&t->fiber)!=MULIB_FIBER_OK)failure(at,"fiber stack/context allocation failure");
- t->next=e->tasks;e->tasks=t;++e->task_count;++e->active;
- if(owner){t->sibling=owner->children;owner->children=t;}
+ register_task(t,owner,at);
  return t;
 }
 on1x_csp_task *on1x_csp_launch(on1x_csp_callback invoke,on1x_env *env,const char *file,size_t line,size_t column){
  source_point at={file,line,column};on1x_csp_task *t=current(at);
  if(!t->group)failure(at,"launch outside taskgroup");
  return spawn(invoke,env,t->group,at);
+}
+on1x_csp_task *on1x_async_launch_v1(on1x_async_resume resume,on1x_async_drop drop,void *frame,
+ const char *file,size_t line,size_t column){
+ source_point at={file,line,column};on1x_csp_task *parent=current(at),*t;
+ tick(at);
+ if(!parent->group||!resume||!drop||!frame)failure(at,"invalid stackless frame or taskgroup");
+ if(current_execution->task_count>=ON1X_CSP_MAX_TASKS)failure(at,"total task budget exhausted");
+ t=(on1x_csp_task *)ON1X_CSP_CALLOC(1,sizeof(*t));
+ if(!t)failure(at,"stackless task record allocation failure");
+ t->resume=resume;t->drop_frame=drop;t->frame=frame;
+ register_task(t,parent->group,at);
+ return t;
 }
 static bool cancel_owned(on1x_csp_task *value,source_point at){
  on1x_csp_task *caller=current(at),*t;bool requested;
@@ -642,18 +670,35 @@ bool on1x_csp_process_cancel(on1x_csp_process *value,const char *file,size_t lin
   tick(at);p=owned_process(value,caller,at);requested=request_process_stop(p,at);
  (void)finish_process(p,caller);return requested;
 }
-int64_t on1x_csp_join(on1x_csp_task *value,const char *file,size_t line,size_t column){
- source_point at={file,line,column};on1x_csp_task *caller=current(at),*t;
+static on1x_csp_task *join_owned(on1x_csp_task *value,bool stackless,source_point at){
+ on1x_csp_task *caller=current(at),*t;
  tick(at);
  for(t=current_execution->tasks;t&&t!=value;t=t->next){}
- if(!t||t==caller||t->joined||!t->owner||t->owner->owner!=caller||t->joiner)failure(at,"invalid, repeated or non-owning join");
+ if(!t||t==caller||t->joined||!t->owner||t->owner->owner!=caller||t->joiner)
+  failure(at,"invalid, repeated or non-owning join");
+ if((t->resume!=NULL)!=stackless)failure(at,"join does not match task kind");
  t->joiner=caller->fiber;caller->waiting=true;
- while(!t->done){
-  if(on1x_csp_cancelled()){t->joiner=NULL;caller->waiting=false;mulib_fiber_clear_wake();return 0;}
+ /* On the typed frame path, an unshielded parent's cancellation wins even
+  * when the child published before the waiter got its next turn. */
+ while(stackless||!t->done){
+  if(on1x_csp_cancelled()){
+   t->joiner=NULL;caller->waiting=false;mulib_fiber_clear_wake();return NULL;
+  }
+  if(t->done)break;
   (void)mulib_fiber_park_until(MULIB_XWAIT_FOREVER);
  }
  mulib_fiber_clear_wake();caller->waiting=false;t->joined=true;
- ++current_execution->progress;return t->result;
+ ++current_execution->progress;return t;
+}
+int64_t on1x_csp_join(on1x_csp_task *value,const char *file,size_t line,size_t column){
+ on1x_csp_task *t=join_owned(value,false,(source_point){file,line,column});
+ return t?t->result:0;
+}
+on1x_async_result on1x_async_join_v1(on1x_csp_task *value,const char *file,size_t line,size_t column){
+ on1x_csp_task *t=join_owned(value,true,(source_point){file,line,column});
+ if(!t)return (on1x_async_result){ON1X_ASYNC_JOIN_INTERRUPTED,0};
+ if(t->cancel_requested)return (on1x_async_result){ON1X_ASYNC_CANCELLED,0};
+ return (on1x_async_result){ON1X_ASYNC_RETURNED,t->result};
 }
 on1x_csp_channel *on1x_csp_channel_create(size_t element_size,size_t senders,
  size_t receivers,int64_t capacity,const char *file,size_t line,size_t column){
@@ -819,10 +864,41 @@ void on1x_csp_call_leave(void){
  if(!t->calls)failure(at,"invalid generated function cleanup");
  --t->calls;
 }
+static void finish_frame(on1x_csp_task *t,int64_t result){
+ void *frame=t->frame;
+ t->frame=NULL;t->waiting=false;
+ t->drop_frame(frame);
+ publish_task(t,result);
+}
+static void advance_frame(on1x_csp_task *t){
+ on1x_async_step step;
+ if(current_execution->deadlines)(void)observe_deadlines();
+ if(t->cancel_requested){finish_frame(t,0);return;}
+ if(t->waiting&&monotonic_ms(t->at)<t->wake_at)return;
+ tick(t->at);
+ t->waiting=false;t->started=true;
+ step=t->resume(t->frame);
+ if(current_execution->deadlines)(void)observe_deadlines();
+ if(t->cancel_requested){finish_frame(t,0);return;}
+ switch(step.kind){
+  case ON1X_ASYNC_YIELD:return;
+  case ON1X_ASYNC_SLEEP_MS:{
+   int64_t delay=step.value.milliseconds;
+   uint64_t now;
+   if(delay<0)failure(t->at,"negative stackless frame delay");
+   now=monotonic_ms(t->at);
+   if((uint64_t)delay>UINT64_MAX-now)failure(t->at,"stackless frame deadline overflow");
+   t->wake_at=now+(uint64_t)delay;t->waiting=true;
+   return;
+  }
+  case ON1X_ASYNC_RETURN_I64:finish_frame(t,step.value.i64);return;
+  default:failure(t->at,"invalid stackless frame action");
+ }
+}
 static void supervise(void *arg){
  execution *e=(execution *)arg;uint64_t previous=e->progress;unsigned quiet=0;
   while(e->active){
-   on1x_csp_task *t,*blocked=NULL;on1x_csp_process *p;bool all_waiting=true,progressed;
+   on1x_csp_task *t,*blocked=NULL;on1x_csp_process *p;bool all_waiting=true,frame_timer=false,progressed;
    bool timed_group=observe_deadlines();
   for(p=e->processes;p;p=p->next){
    pump_process(p);reap(p);pump_process(p);
@@ -832,14 +908,22 @@ static void supervise(void *arg){
    }
   }
   {on1x_csp_timer *timer;for(timer=e->timers;timer;timer=timer->next)if(!timer->fired&&monotonic_ms((source_point){"<timer>",1,1})>=timer->expires){timer->fired=true;(void)mulib_channel_close(timer->signal);++e->progress;}}
-  for(t=e->tasks;t;t=t->next)if(!t->done){if(!t->waiting)all_waiting=false;else blocked=t;}
+  /* One bounded sweep; a yielding frame cannot immediately redispatch itself.
+   * Frame code returns here, never parks this supervisor on its behalf. */
+  for(t=e->tasks;t;t=t->next)if(!t->done){
+   if(t->resume)advance_frame(t);
+   if(!t->done){
+    if(!t->waiting)all_waiting=false;
+    else {blocked=t;if(t->resume)frame_timer=true;}
+   }
+  }
   /* A channel/pipe commit may have made a task runnable while its adapter still
    * reports waiting. Allow complete scheduler rounds for it to acknowledge. */
-   if(all_waiting&&previous==e->progress&&!e->process_active&&!e->io_active&&!e->timers&&!timed_group){
+   if(all_waiting&&previous==e->progress&&!e->process_active&&!e->io_active&&!e->timers&&!timed_group&&!frame_timer){
    if(++quiet>=2)failure(blocked?blocked->at:(source_point){"<scheduler>",1,1},"quiescent fiber/channel deadlock");
   }else quiet=0;
   progressed=previous!=e->progress;previous=e->progress;
-   if(all_waiting&&(e->process_active||e->io_active||e->timers||timed_group)&&!progressed){struct timespec idle={0,1000000};(void)nanosleep(&idle,NULL);mulib_fiber_yield();}
+   if(all_waiting&&(e->process_active||e->io_active||e->timers||timed_group||frame_timer)&&!progressed){struct timespec idle={0,1000000};(void)nanosleep(&idle,NULL);mulib_fiber_yield();}
   else mulib_fiber_yield();
  }
 }
@@ -860,7 +944,11 @@ int64_t on1x_csp_run_v5(on1x_csp_callback invoke,on1x_env *env,const char *file,
  if(mulib_fiber_scheduler_destroy(e.scheduler)!=MULIB_FIBER_OK)failure(at,"scheduler destruction failure");
  if(mulib_channel_destroy(e.closed_signal)!=MULIB_CHANNEL_OK)
   failure(at,"live closed-endpoint signal observer");
- while((t=e.tasks)!=NULL){e.tasks=t->next;if(mulib_channel_destroy(t->cancel_signal)!=MULIB_CHANNEL_OK)failure(at,"live cancellation observer");ON1X_CSP_FREE(t);}
+ while((t=e.tasks)!=NULL){
+  e.tasks=t->next;
+  if(t->cancel_signal&&mulib_channel_destroy(t->cancel_signal)!=MULIB_CHANNEL_OK)failure(at,"live cancellation observer");
+  ON1X_CSP_FREE(t);
+ }
  while((c=e.channels)!=NULL){
   e.channels=c->next;if(c->channel)failure(at,"unreleased channel");
   ON1X_CSP_FREE(c->endpoints);ON1X_CSP_FREE(c);

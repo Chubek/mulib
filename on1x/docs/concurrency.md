@@ -5,7 +5,8 @@ This is the next vertical implementation of section 2 of
 The earlier Go-style function-scoped defer contract is unchanged.
 The [cancellation/deadline continuation](cancellation-deadlines.md) extends this
 profile with running/blocked cancellation, monotonic `poll after`, and
-`taskgroup within`. Async/await remains unsupported.
+`taskgroup within`. Source async/await remains unsupported; see the
+[private stackless frame runtime](async-frames.md) for the C11 runtime slice.
 
 ## Selected profile
 
