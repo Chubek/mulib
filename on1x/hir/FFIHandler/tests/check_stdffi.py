@@ -12,7 +12,7 @@ import sys
 TOOLS = Path(__file__).resolve().parents[1] / 'tools'
 sys.path.insert(0, str(TOOLS))
 from ffi_inventory import load  # noqa: E402
-from ffi_publish import DEFAULT_TARGET, TARGETS, check_package  # noqa: E402
+from ffi_publish import DEFAULT_TARGET, TARGETS, catalogue_path, check_package  # noqa: E402
 
 _CODE = re.compile(r'[a-z][a-z0-9_]{0,95}')
 _SHA256 = re.compile(r'[0-9a-f]{64}')
@@ -123,7 +123,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      epilog='Supply explicit ffgen tool/profile flags after --.')
     parser.add_argument('--mulib-root', required=True, type=Path)
-    parser.add_argument('--output', type=Path)
+    parser.add_argument('--output', type=Path,
+                        help='standalone package directory (default: on1x/stdffi/mulib/<target>)')
     parser.add_argument('--target', choices=sorted(TARGETS), default=DEFAULT_TARGET)
     parser.add_argument('--inventory-only', action='store_true',
                         help='check inventory, tools, counts and package digests without projection')
@@ -135,10 +136,8 @@ def main():
             option.startswith(arg.split('=', 1)[0]) for option in fixed)) for arg in generation):
         parser.error('generation options cannot override selection, target, output or check mode')
     root = options.mulib_root.resolve()
-    if options.output is None and options.target != DEFAULT_TARGET:
-        parser.error('non-default target requires --output')
-    output = (options.output or root / 'on1x/stdffi/mulib').absolute()
     try:
+        output = catalogue_path(root, options.target, options.output)
         inventory = load(root)
         index = check_package(output, options.target, inventory.by_key)
         check_counts(index, inventory)

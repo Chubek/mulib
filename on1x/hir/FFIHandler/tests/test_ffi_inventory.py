@@ -1,6 +1,7 @@
 """Inventory and filesystem transaction tests; no claims about FFI admission."""
 from copy import deepcopy
 import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -15,7 +16,10 @@ ROOT = TOOLS.parents[3]
 sys.path.insert(0, str(TOOLS))
 import ffi_inventory  # noqa: E402
 import ffi_publish as publication  # noqa: E402
-from check_stdffi import _GENERATION_TOOLS, check_counts, check_generation_sources  # noqa: E402
+from ffgen import _override_directory  # noqa: E402
+from check_stdffi import (  # noqa: E402
+    _GENERATION_TOOLS, check_counts, check_generation_sources, main as check_stdffi,
+)
 
 
 class InventoryTest(unittest.TestCase):
@@ -201,11 +205,96 @@ class PublicationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'index target mismatch'):
             self.finish({'clamp': b'wrong'})
         self.output = self.root / 'on1x/stdffi/mulib'
-        with self.assertRaisesRegex(ValueError, 'non-default target'):
+        with self.assertRaisesRegex(ValueError, 'catalogue path'):
             self.finish({'clamp': b'wrong'})
         self.assertFalse(self.output.parent.exists())
         self.output = self.root / 'aarch64'
         self.finish({'clamp': b'cross'})
+
+    def test_target_slots_keep_other_packages_and_flat_data_untouched(self):
+        base = self.root / publication.CATALOGUE_ROOT
+        for target in sorted(publication.TARGETS):
+            self.target = target
+            self.output = publication.catalogue_path(self.root, target)
+            self.assertEqual(self.output, base / target)
+            self.finish({'clamp': target.encode()})
+        old_flat = base / 'index.json'
+        old_flat.write_bytes(b'legacy catalogue must not be replaced or read')
+
+        def snapshot(directory):
+            return {p.name: (p.read_bytes(), p.stat().st_ino, p.stat().st_mtime_ns)
+                    for p in directory.iterdir()}
+
+        def drift():
+            raise ValueError('input drift')
+
+        self.target = 'aarch64-linux-gnu'
+        self.output = base / self.target
+        before = {p.name: snapshot(p) for p in base.iterdir() if p.is_dir()}
+        with self.assertRaisesRegex(ValueError, 'input drift'):
+            self.finish({'clamp': b'abort'}, verify=drift)
+        self.assertEqual(snapshot(self.output), before[self.target])
+        with patch.object(publication, '_rename', side_effect=OSError('rename unavailable')):
+            with self.assertRaisesRegex(OSError, 'rename unavailable'):
+                self.finish({'clamp': b'abort'})
+        self.assertEqual(snapshot(self.output), before[self.target])
+        self.finish({'clamp': b'updated'})
+        self.finish({'clamp': b'updated'}, check=True)
+        for target in publication.TARGETS - {self.target}:
+            self.assertEqual(snapshot(base / target), before[target])
+        self.assertEqual(old_flat.read_bytes(), b'legacy catalogue must not be replaced or read')
+        self.assertEqual(set(base.iterdir()), {old_flat, *(base / t for t in publication.TARGETS)})
+
+    def test_named_slots_cannot_be_redirected_or_used_for_another_target(self):
+        base = self.root / publication.CATALOGUE_ROOT
+        base.mkdir(parents=True)
+        arm = base / 'aarch64-linux-gnu'
+        for path in (base, arm, arm / 'nested', base / 'unknown', base.parent):
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'catalogue'):
+                publication.catalogue_path(self.root, self.target, path)
+        outside = self.root / 'outside'
+        outside.mkdir()
+        arm.symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'symlink'):
+            publication.catalogue_path(self.root, arm.name)
+        checkout_alias = self.root / 'alias'
+        checkout_alias.symlink_to(base, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'catalogue path'):
+            publication.catalogue_path(self.root, self.target, checkout_alias / self.target)
+
+    def test_inventory_gate_does_not_fall_back_from_missing_or_mislabeled_target(self):
+        self.output = publication.catalogue_path(self.root, self.target)
+        self.finish({'clamp': b'native'})
+        self.target = 'riscv64-linux-gnu'
+        missing = publication.catalogue_path(self.root, self.target)
+        args = ('check_stdffi', '--mulib-root', str(self.root), '--target', self.target,
+                '--inventory-only')
+        for existing in (False, True):
+            if existing:
+                missing.mkdir()
+                for path in self.output.iterdir():
+                    (missing / path.name).write_bytes(path.read_bytes())
+            with patch.object(sys, 'argv', args), \
+                 patch('check_stdffi.load', return_value=SimpleNamespace(by_key=('clamp',))), \
+                 patch('sys.stderr') as stderr:
+                self.assertEqual(check_stdffi(), 1)
+                self.assertIn('target mismatch' if existing else str(missing),
+                              stderr.write.call_args_list[0].args[0])
+        self.assertEqual(json.loads((missing / 'index.json').read_bytes())['target'],
+                         publication.DEFAULT_TARGET)
+
+    def test_only_amd64_may_read_the_flat_authored_overrides(self):
+        authored = self.root / 'on1x/stdffi/overrides'
+        amd = publication.DEFAULT_TARGET
+        arm = 'aarch64-linux-gnu'
+        flat = authored / 'mulib'
+        flat.mkdir(parents=True)
+        (flat / 'clamp.ffi').write_bytes(b'legacy override')
+        self.assertEqual(_override_directory(authored, amd, None, amd), flat)
+        self.assertEqual(_override_directory(authored, arm, None, amd), flat / arm)
+        (flat / amd).mkdir()
+        self.assertEqual(_override_directory(authored, amd, None, amd), flat / amd)
+        self.assertEqual(_override_directory(authored, arm, self.root, amd), self.root)
 
     def test_refuse_index_drift_or_unindexed_directory(self):
         self.finish({'clamp': b'old'})

@@ -119,10 +119,12 @@ typed exports cannot implicitly enter the legacy path.
 
 ## Build and bounds
 
-The catalogue defaults to `on1x/stdffi/mulib`, with an alternative complete
-target-qualified catalogue selected via `ON1X_FFI_CATALOG`. Its `index.json`
-must match input file identities, hashes and explicit `ON1X_FFI_TARGET` (which
-must match the Linux LP64 build target). The private descriptor reports hash
+The catalogue defaults to `on1x/stdffi/mulib/<target>`, with an alternative
+package directory selected via `ON1X_FFI_CATALOG`. Neither a sibling package
+nor the old flat layout is a fallback. Its `index.json` must match input file
+identities, hashes and `ON1X_FFI_TARGET`, which must match the actual
+little-endian Linux LP64 C and C++ compiler ABIs (soft-float LP64 on RV64).
+The private descriptor reports hash
 parser, validator and input identities, and list discovery separately. These
 reports and the catalogue index are not an external compiler input at runtime
 or a trust grant.
@@ -133,7 +135,9 @@ files at a time; the index has explicit limits of 8192 modules and 32768
 representation-eligible descriptors, and validates duplicates across shards.
 Discovery-only shards are not included in executable C++ tables. Source lists
 are dependencies so removing a file cannot leave it active in the registry.
-Package installation includes the built catalogue and index. Build outputs
+Package installation includes only the selected catalogue and index in
+`share/on1x/stdffi/mulib/<target>/` and its report in `share/on1x/stdffi/<target>/`.
+Build outputs
 are replaced atomically per file after validation; output pairs are not a
 filesystem transaction. The generator and trusted parser are build tools,
 not a sandbox for untrusted Python.

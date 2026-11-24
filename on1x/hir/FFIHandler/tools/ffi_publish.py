@@ -14,6 +14,7 @@ import tempfile
 SCHEMA = 'on1x.stdffi.mulib/v1'
 DEFAULT_TARGET = 'x86_64-linux-gnu'
 TARGETS = {DEFAULT_TARGET, 'aarch64-linux-gnu', 'riscv64-linux-gnu'}
+CATALOGUE_ROOT = Path('on1x/stdffi/mulib')
 MAX_JOBS = 16
 MAX_MODULES = 4096
 MAX_FILE_BYTES = 64 * 1024
@@ -21,6 +22,39 @@ MAX_MODULE_BYTES = 128 * 1024 * 1024
 MAX_INDEX_BYTES = 64 * 1024 * 1024
 _KEY = re.compile(r'[a-z0-9][a-z0-9_+-]{0,95}')
 _DIGEST = re.compile(r'[0-9a-f]{64}')
+
+
+def _package_path(path, target, canonical_root=None):
+    if target not in TARGETS:
+        raise ValueError(f'unsupported stdffi target: {target}')
+    original = Path(path).absolute()
+    if original.is_symlink():
+        raise ValueError('stdffi package cannot be a symlink')
+    try:
+        output = original.resolve()
+        real_root = canonical_root.resolve() if canonical_root is not None else None
+    except RuntimeError as error:
+        raise ValueError(f'cannot resolve stdffi catalogue path: {original}') from error
+    for candidate in (original, output):
+        roots = [p for p in (candidate, *candidate.parents)
+                 if p.parts[-len(CATALOGUE_ROOT.parts):] == CATALOGUE_ROOT.parts]
+        if canonical_root is not None:
+            if any(root != candidate and root.is_relative_to(candidate)
+                   for root in (canonical_root, real_root)):
+                raise ValueError(f'output overlaps the stdffi catalogue root: {canonical_root}')
+            roots += [canonical_root, real_root]
+        for root in roots:
+            if candidate.is_relative_to(root) and (
+                    candidate != root / target or original != output):
+                raise ValueError(f'stdffi catalogue path must be the real {root / target} directory')
+    return output
+
+
+def catalogue_path(root, target, output=None):
+    """Select an exact target slot, or a standalone explicit package directory."""
+    canonical_root = Path(root).resolve() / CATALOGUE_ROOT
+    return _package_path(canonical_root / target if output is None else output,
+                         target, canonical_root)
 
 
 def bounded_map(generate, entries, jobs):
@@ -156,10 +190,10 @@ def _difference(expected, actual):
 
 def check_package(output, target, expected_keys):
     """Check a published complete package against the actual manifest keys."""
-    output = Path(output)
+    output = _package_path(output, target)
     before = _snapshot(output)
     if not before or 'index.json' not in before:
-        raise ValueError('missing stdffi index')
+        raise ValueError(f'missing stdffi index for {target}: {output / "index.json"}')
     index, expected = _load_index(output, target)
     found = {name: digest for name, digest in before.items() if name != 'index.json'}
     if found != expected:
@@ -258,15 +292,11 @@ class _Package:
 @contextmanager
 def transaction(output, target, *, check=False, full=False):
     """Keep the old catalogue visible until a hash-checked stage is committed."""
-    original = Path(output).absolute()
-    output = original.parent.resolve() / original.name
-    if (target not in TARGETS or (target != DEFAULT_TARGET and any(
-            p.parts[-3:] == ('on1x', 'stdffi', 'mulib') for p in (original, output)))):
-        raise ValueError('non-default target requires a separate stdffi output directory')
+    output = _package_path(output, target)
     if not check:
         output.parent.mkdir(parents=True, exist_ok=True)
     elif not output.parent.is_dir():
-        raise ValueError('missing stdffi package: ' + output.name)
+        raise ValueError(f'missing stdffi package for {target}: {output}')
     parent = os.open(output.parent, os.O_RDONLY | os.O_DIRECTORY)
     try:
         try:

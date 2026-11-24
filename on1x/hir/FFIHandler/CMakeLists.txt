@@ -12,8 +12,6 @@ set(_ffi_parser "${_ffi_gen}/FFIHandler.py")
 set(_ffi_header "${_ffi_gen}/on1x_ffi_rules.hpp")
 set(_ffi_manifest "${_ffi_gen}/ffi-manifest.json")
 set(_ffi_compiler "${CMAKE_CURRENT_SOURCE_DIR}/tools/ffic.py")
-set(ON1X_FFI_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/../../stdffi/mulib" CACHE PATH
-    "Target-qualified generated MuLIB FFI catalogue (with index.json)")
 string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _ffi_cpu)
 if(_ffi_cpu STREQUAL "amd64")
   set(_ffi_cpu "x86_64")
@@ -30,13 +28,75 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR
   message(FATAL_ERROR "FFI catalogue target ${ON1X_FFI_TARGET} must match the Linux LP64 compiler target")
 endif()
 
-file(GLOB _ffi_specs CONFIGURE_DEPENDS "${ON1X_FFI_CATALOG}/*.ffi")
+# A toolchain file can name a processor without selecting it in the compilers.
+# In particular the catalogue's RV64 LP64 is not LP64D or LP64F.
+if(_ffi_cpu STREQUAL "x86_64")
+  set(_ffi_arch_condition "defined(__x86_64__)")
+elseif(_ffi_cpu STREQUAL "aarch64")
+  set(_ffi_arch_condition "defined(__aarch64__)")
+else()
+  set(_ffi_arch_condition "defined(__riscv) && __riscv_xlen == 64 && defined(__riscv_float_abi_soft)")
+endif()
+function(_ffi_check_compilers)
+  include(CheckCSourceCompiles)
+  include(CheckCXXSourceCompiles)
+  # Test the C and C++ compilers without linking or running a target executable.
+  set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+  set(CMAKE_REQUIRED_QUIET TRUE)
+  set(_probe "
+#if !defined(__linux__) || !defined(__LP64__) || !defined(__BYTE_ORDER__) || __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ || !(${_ffi_arch_condition})
+#error wrong FFI ABI
+#endif
+int main(void) { return 0; }")
+  unset(_on1x_ffi_c_abi CACHE)
+  unset(_on1x_ffi_cxx_abi CACHE)
+  check_c_source_compiles("${_probe}" _on1x_ffi_c_abi)
+  check_cxx_source_compiles("${_probe}" _on1x_ffi_cxx_abi)
+  if(NOT _on1x_ffi_c_abi OR NOT _on1x_ffi_cxx_abi)
+    message(FATAL_ERROR "C and C++ compilers must both target the FFI ABI ${ON1X_FFI_TARGET} (RV64 requires soft-float LP64)")
+  endif()
+endfunction()
+
+file(REAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../.." _ffi_on1x_root)
+set(_ffi_catalogue_root "${_ffi_on1x_root}/stdffi/mulib")
+set(ON1X_FFI_CATALOG "${_ffi_catalogue_root}/${ON1X_FFI_TARGET}" CACHE PATH
+    "Exact generated MuLIB FFI package directory (with index.json)")
+get_filename_component(_ffi_catalogue "${ON1X_FFI_CATALOG}" ABSOLUTE)
+file(REAL_PATH "${_ffi_catalogue_root}" _ffi_catalogue_root_real)
+file(REAL_PATH "${_ffi_catalogue}" _ffi_catalogue_real)
+foreach(_ffi_root IN ITEMS "${_ffi_catalogue_root}" "${_ffi_catalogue_root_real}")
+  foreach(_ffi_path IN ITEMS "${_ffi_catalogue}" "${_ffi_catalogue_real}")
+    cmake_path(IS_PREFIX _ffi_root "${_ffi_path}" NORMALIZE _ffi_in_tree)
+    if(_ffi_in_tree AND (NOT _ffi_path STREQUAL "${_ffi_root}/${ON1X_FFI_TARGET}"
+                         OR NOT _ffi_catalogue STREQUAL _ffi_catalogue_real))
+      message(FATAL_ERROR "FFI catalogue must use the real ${_ffi_catalogue_root}/${ON1X_FFI_TARGET} directory")
+    endif()
+  endforeach()
+endforeach()
+if(IS_SYMLINK "${_ffi_catalogue}")
+  message(FATAL_ERROR "FFI catalogue directory cannot be a symlink: ${_ffi_catalogue}")
+endif()
+
+file(GLOB _ffi_specs CONFIGURE_DEPENDS "${_ffi_catalogue}/*.ffi")
 list(SORT _ffi_specs)
 list(LENGTH _ffi_specs _ffi_count)
-set(_ffi_catalogue_index "${ON1X_FFI_CATALOG}/index.json")
-if(_ffi_count LESS 1 OR _ffi_count GREATER 8192 OR NOT EXISTS "${_ffi_catalogue_index}")
-  message(FATAL_ERROR "FFIHandler requires an indexed generated catalogue at ${ON1X_FFI_CATALOG}")
+set(_ffi_catalogue_index "${_ffi_catalogue}/index.json")
+if(_ffi_count LESS 1 OR _ffi_count GREATER 8192 OR NOT EXISTS "${_ffi_catalogue_index}"
+   OR IS_DIRECTORY "${_ffi_catalogue_index}" OR IS_SYMLINK "${_ffi_catalogue_index}")
+  message(FATAL_ERROR "FFIHandler requires an indexed ${ON1X_FFI_TARGET} catalogue at ${_ffi_catalogue}")
 endif()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_ffi_catalogue_index}")
+file(SIZE "${_ffi_catalogue_index}" _ffi_index_size)
+if(_ffi_index_size LESS 1 OR _ffi_index_size GREATER 67108864)
+  message(FATAL_ERROR "FFI catalogue index must be nonempty and within the byte limit: ${_ffi_catalogue_index}")
+endif()
+file(READ "${_ffi_catalogue_index}" _ffi_index_json)
+string(JSON _ffi_index_target ERROR_VARIABLE _ffi_index_error GET "${_ffi_index_json}" target)
+if(_ffi_index_error OR NOT _ffi_index_target STREQUAL ON1X_FFI_TARGET)
+  message(FATAL_ERROR "FFI catalogue index target mismatch: expected ${ON1X_FFI_TARGET} in ${_ffi_catalogue_index}")
+endif()
+unset(_ffi_index_json)
+_ffi_check_compilers()
 add_custom_command(OUTPUT "${_ffi_parser}"
   # LLSynth emits some tables in Perl hash order. Stabilize this build tool's
   # output so rebuilding the parser does not change descriptor provenance.
@@ -55,7 +115,7 @@ while(_ffi_offset LESS _ffi_count)
   set(_ffi_unit_stamp "${_ffi_gen}/${_ffi_unit}.sources")
   # The source list is a dependency too: removing a prerequisite otherwise
   # can leave Make/Ninja with a stale header even after CMake reconfiguration.
-  file(GENERATE OUTPUT "${_ffi_unit_stamp}" CONTENT "${_ffi_slice}\n")
+  file(GENERATE OUTPUT "${_ffi_unit_stamp}" CONTENT "${ON1X_FFI_TARGET}\n${_ffi_slice}\n")
   add_custom_command(OUTPUT "${_ffi_unit_header}" "${_ffi_unit_manifest}"
     COMMAND "${Python3_EXECUTABLE}" -B "${_ffi_compiler}" --parser "${_ffi_parser}"
       --target "${ON1X_FFI_TARGET}" --canonical-files --unit "${_ffi_unit}" --header "${_ffi_unit_header}"
@@ -88,19 +148,32 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lower.hpp" OR EXISTS "${CMAKE_CURRENT_SOU
   target_sources(on1x_frontend PRIVATE lower.cpp)
 endif()
 target_include_directories(on1x_frontend PRIVATE "${_ffi_gen}")
-install(FILES ${_ffi_specs} "${_ffi_catalogue_index}" DESTINATION share/on1x/stdffi/mulib)
-install(FILES "${_ffi_manifest}" DESTINATION share/on1x/stdffi)
+install(FILES ${_ffi_specs} "${_ffi_catalogue_index}"
+  DESTINATION "share/on1x/stdffi/mulib/${ON1X_FFI_TARGET}")
+install(FILES "${_ffi_manifest}" DESTINATION "share/on1x/stdffi/${ON1X_FFI_TARGET}")
 set(_ffi_tools "${CMAKE_CURRENT_SOURCE_DIR}/../../tools")
 if(EXISTS "${_ffi_tools}/on1x_ffi_native.py" OR EXISTS "${_ffi_tools}/on1x_ffi_trust.py")
   install(FILES "${_ffi_tools}/on1x_ffi_native.py" "${_ffi_tools}/on1x_ffi_trust.py"
     DESTINATION share/on1x/tools)
 endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
-  add_test(NAME on1x.ffihandler.scalar
-    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi.py"
-      --parser "${_ffi_parser}" --catalogue "${ON1X_FFI_CATALOG}" --work "${CMAKE_CURRENT_BINARY_DIR}"
-      --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}")
-  set_tests_properties(on1x.ffihandler.scalar PROPERTIES TIMEOUT 90)
+  if(ON1X_FFI_TARGET STREQUAL "x86_64-linux-gnu")
+    add_test(NAME on1x.ffihandler.scalar
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi.py"
+        --parser "${_ffi_parser}" --catalogue "${_ffi_catalogue}" --work "${CMAKE_CURRENT_BINARY_DIR}"
+        --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}")
+    set_tests_properties(on1x.ffihandler.scalar PROPERTIES TIMEOUT 90)
+  endif()
+  add_test(NAME on1x.ffihandler.catalogue_inventory
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_ffi_inventory.py")
+  set_tests_properties(on1x.ffihandler.catalogue_inventory PROPERTIES TIMEOUT 90)
+  add_test(NAME on1x.ffihandler.catalogue_cmake
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_catalogue_cmake.py"
+      --work "${CMAKE_CURRENT_BINARY_DIR}" --cmake "${CMAKE_COMMAND}"
+      --libstone-root "${ON1X_LIBSTONE_ROOT}"
+      --cc "${CMAKE_C_COMPILER}" --cxx "${CMAKE_CXX_COMPILER}"
+      "--cflags=${CMAKE_C_FLAGS}" "--cxxflags=${CMAKE_CXX_FLAGS}" --target "${ON1X_FFI_TARGET}")
+  set_tests_properties(on1x.ffihandler.catalogue_cmake PROPERTIES TIMEOUT 180)
   add_test(NAME on1x.ffihandler.rich_discovery
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_rich.py"
       --parser "${_ffi_parser}" --work "${CMAKE_CURRENT_BINARY_DIR}")

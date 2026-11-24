@@ -404,6 +404,17 @@ def _override_inputs(directory: Path, inventory) -> dict[str, bytes]:
     return overrides
 
 
+def _override_directory(authored, target, explicit, default_target):
+    if explicit is not None:
+        return explicit.absolute()
+    mulib_overrides = authored / "mulib"
+    selected = mulib_overrides / target
+    # Keep checked-in AMD64 deltas working until/unless they are moved.
+    if target == default_target and not selected.exists() and not selected.is_symlink():
+        return mulib_overrides
+    return selected
+
+
 def _parse_override(parser, raw, path) -> Override:
     parsed = ffic.parse_overrides(parser, raw, path)
     return Override(parsed.target, parsed.module, tuple(parsed.selections),
@@ -451,12 +462,15 @@ def _run(args) -> None:
 
     target = target_identity(args.target)
     root = args.mulib_root.resolve(strict=True)
-    output = args.output.absolute()
-    if output.is_symlink():
-        raise GenerationError("output must not be a symbolic link")
-    output = output.resolve()
-    override_dir = args.overrides or (root / "on1x/stdffi/overrides/mulib")
-    if output.is_relative_to(override_dir.resolve()):
+    output = ffi_publish.catalogue_path(root, args.target, args.output)
+    authored = root / "on1x/stdffi/overrides"
+
+    def select_overrides():
+        return _override_directory(authored, args.target, args.overrides, ffi_publish.DEFAULT_TARGET)
+
+    override_dir = select_overrides()
+    protected_overrides = (authored.resolve(), override_dir.resolve())
+    if any(output.is_relative_to(path) for path in protected_overrides):
         raise GenerationError("output overlaps authored overrides")
     tools = Path(__file__).resolve().parent
     toolchain = (
@@ -471,8 +485,8 @@ def _run(args) -> None:
         "tools": {path.name: snapshots[path] for path in toolchain},
         "parser_identity_sha256": _parser_identity(parser_source, snapshots[toolchain[-1]]),
     }
-    protected_paths = (root, root / "include", root / "MANIFEST.yaml", override_dir.resolve(),
-                       *snapshots, args.cephyr.resolve(), args.scratch_root.resolve(),
+    protected_paths = (root, root / "include", root / "MANIFEST.yaml", *protected_overrides,
+                        *snapshots, args.cephyr.resolve(), args.scratch_root.resolve(),
                        *(path.resolve() for path in (*args.system_include_dir, *args.tool_input)),
                        *((args.sysroot.resolve(),) if args.sysroot else ()))
     if any(path.is_relative_to(output) for path in protected_paths):
@@ -480,8 +494,6 @@ def _run(args) -> None:
     for path in protected_paths[1:]:
         if path.is_dir() and output.is_relative_to(path):
             raise GenerationError("output is inside a protected input or scratch root")
-    if args.target != "x86_64-linux-gnu" and output == root / "on1x/stdffi/mulib":
-        raise GenerationError("canonical stdffi output only supports x86_64-linux-gnu")
 
     inventory = ffi_inventory.load(root)
     if args.all:
@@ -518,6 +530,14 @@ def _run(args) -> None:
                     defines=plan.defines,
                     sysroot=args.sysroot, freestanding=args.freestanding, require_syntax=True,
                 )
+                # Fail the transaction if the selected frontend cannot project this
+                # ABI at all. Real module failures below are still recorded individually.
+                try:
+                    probe = provider.project(b"extern long on1x_projection_target_probe;\n")
+                    decode_interface(probe.output, expected_target=args.target)
+                except (ProjectionError, InterfaceError) as exc:
+                    raise GenerationError(
+                        f"Cephyr target probe failed for {args.target}: {exc}") from exc
                 providers[key] = provider
             return providers[key], key
 
@@ -633,7 +653,7 @@ def _run(args) -> None:
         inventory.verify_unchanged()
         for provider in providers.values():
             provider.verify_inputs()
-        if raw_overrides != _override_inputs(override_dir, inventory):
+        if select_overrides() != override_dir or raw_overrides != _override_inputs(override_dir, inventory):
             raise GenerationError("authored overrides changed during generation")
         for path, sha in snapshots.items():
             if _sha(path.read_bytes()) != sha:
@@ -703,7 +723,8 @@ def main(argv=None) -> int:
                         help="repeat for actual compiler libraries and target resources")
     parser.add_argument("--sysroot", type=_absolute)
     parser.add_argument("--freestanding", action="store_true")
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--output", type=Path,
+                        help="standalone package directory (default: on1x/stdffi/mulib/<target>)")
     parser.add_argument("--overrides", type=Path, help="target-specific authored override directory")
     scope = parser.add_mutually_exclusive_group(required=True)
     scope.add_argument("--all", action="store_true")

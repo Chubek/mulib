@@ -1,12 +1,19 @@
 # Standard MuLIB FFI
 
-`mulib/` is the generated catalogue for `x86_64-linux-gnu` (LP64, SysVAMD64).
+The generated catalogue lives in `mulib/<target>/`, keyed by the full target
+triple. The supported projection targets are `x86_64-linux-gnu` (SysVAMD64),
+`aarch64-linux-gnu` (AAPCS64), and `riscv64-linux-gnu` (RV64IM, soft-float
+LP64, **not** LP64D or LP64F). Missing target directories are errors, not
+requests to reuse the AMD64 catalogue or the old flat layout.
 The exact MANIFEST key names the file (`media-timebase.ffi`), while the
 canonical On1x alias names the module (`mulib.media_timebase`). A complete
 catalogue has one file for every non-reserved MANIFEST registration and one
 `index.json`. Do not edit generated files. Change the canonical header, or use
-an audited semantic delta under `overrides/mulib/`; overrides cannot invent
-declarations or grant admission.
+an audited semantic delta under `overrides/mulib/<target>/`; overrides cannot
+invent declarations or grant admission. The existing flat `overrides/mulib/`
+files are an AMD64-only compatibility input if that target has no override
+directory. `--overrides` selects an explicit directory; the declarations
+inside must still match the selected target and module.
 
 In On1x source, `unsafe import foreign stdffi.<alias> as Local;` is a
 contextual spelling of `unsafe import kernel mulib.<alias> as Local;`.
@@ -78,13 +85,25 @@ LLSynth parser. The selection
 flags are `--all` for a complete refresh and `--kernel <exact-manifest-key>` for
 an incremental update. Run a full refresh after inventory or shared generator
 inputs change. `--check` regenerates and validates a private stage, then
-compares it without modifying the catalogue. Other targets require a different
-`--output` directory and cannot replace this catalogue.
+compares it without modifying the catalogue. Both generation and CI select
+`on1x/stdffi/mulib/<target>` by default. `--output` remains available for a
+standalone directory (including existing flat fixtures outside the canonical
+tree); it cannot select a different target's slot or replace the shared parent.
 
-From the MuLIB checkout root, use the following CI entry point with the same
-explicit projection and parser options used for generation:
+The pinned LibStone `e10ac69eed7baf91b06d15c4e0d58360097cb5c4` provides all three
+targets through the same host `cephyr --emit-interface=sexp` binary. The
+projection step needs neither a cross compiler, target libc/sysroot, nor an
+emulator with the bundled profile below. It needs Linux `prlimit` and
+`renameat2` (for publication), Python 3.10+, Perl for LLSynth, Cephyr and its
+matching shared library, the pinned headers, target definitions and Archon
+resource bank. Use a build that lists `--emit-interface=sexp` in `--help`; a
+reported `Cephyr 0.1.0` alone does not establish which revision was built.
+Generation probes the selected ABI before accepting any per-module failures.
 
-```sh
+From the MuLIB checkout root, generate a real parser and select the explicit
+projection inputs:
+
+```bash
 ffi=on1x/hir/FFIHandler
 # ABSOLUTE paths to an explicit LibStone source checkout and matching Cephyr build.
 stone=/abs/path/to/libstone
@@ -95,19 +114,20 @@ export TMPDIR="$work"
 PERL_HASH_SEED=0 PERL_PERTURB_KEYS=0 \
   perl "$stone/cornerstone/LLSynth/scripts/llsynth.pl" \
     --mode=interpret -T python3 -o "$work/FFIHandler.py" "$ffi/FFIHandler.llsynth"
-python3 -B on1x/hir/FFIHandler/tests/check_stdffi.py --mulib-root . -- \
-  --cephyr "$cephyr_build/cephyr" --parser "$work/FFIHandler.py" \
-  --libstone-revision "$(git -C "$stone" rev-parse HEAD)" \
-  --scratch-root "$work/scratch" \
-  --system-include-dir "$stone/cornerstone/Cephyr/stdlib/include" \
-  --tool-input "$cephyr_build/libcephyr.so.0.1.0" \
-  --tool-input "$stone/cornerstone/Cephyr/triples" \
-  --tool-input "$stone/cornerstone/Archon/stdspec" --jobs 4
+profile=(
+  --cephyr "$cephyr_build/cephyr" --parser "$work/FFIHandler.py"
+  --libstone-revision "$(git -C "$stone" rev-parse HEAD)"
+  --scratch-root "$work/scratch"
+  --system-include-dir "$stone/cornerstone/Cephyr/stdlib/include"
+  --tool-input "$cephyr_build/libcephyr.so.0.1.0"
+  --tool-input "$stone/cornerstone/Cephyr/triples"
+  --tool-input "$stone/cornerstone/Archon/stdspec" --jobs 2
+)
+for target in x86_64-linux-gnu aarch64-linux-gnu riscv64-linux-gnu; do
+  python3 -B "$ffi/tools/ffgen.py" --mulib-root . --target "$target" --all "${profile[@]}"
+  python3 -B "$ffi/tests/check_stdffi.py" --mulib-root . --target "$target" -- "${profile[@]}"
+done
 ```
-
-To publish instead, use `python3 -B "$ffi/tools/ffgen.py" --mulib-root .
---output "$PWD/on1x/stdffi/mulib" --target x86_64-linux-gnu --all` with the
-same explicit provider/parser arguments after the CI command's `--`.
 
 For a quick check without Cephyr, replace the `--` and everything after it with
 `--inventory-only`. This checks the source inventory, generator and grammar
@@ -117,9 +137,19 @@ absolute checkout locations when qualifying a profile. A reproducible check
 needs the same tool binaries and resources, not just the same reported version.
 
 Publication validates a private sibling stage and rechecks the generation
-inputs before atomically renaming or exchanging the directory on Linux.
+inputs before atomically renaming or exchanging only the selected target
+directory on Linux. Writers sharing `mulib/` are serialized by a parent lock;
+run the loop sequentially. Separate `--output` parents can run concurrently.
 Unexpected validation, input or rename failure leaves the previous output
 untouched. A complete refresh removes stale generated modules from the same
 transaction. Do not treat `index.json` and `.ffi` files opened independently
 across a concurrent refresh as one snapshot: use a stable checkout, or verify
 one index's file digests as a set. No generation tools run in applications.
+
+On1x's CMake build selects the exact package for the Linux compiler target
+(`ON1X_FFI_TARGET`). An explicit `ON1X_FFI_CATALOG` must point directly at the
+matching package, not a root of packages. For a build directory configured
+before the layout change, clear the old cached path with `-UON1X_FFI_CATALOG`.
+Installation includes only the selected `.ffi` files and index under
+`share/on1x/stdffi/mulib/<target>/`, with the generated registry report at
+`share/on1x/stdffi/<target>/ffi-manifest.json`.
