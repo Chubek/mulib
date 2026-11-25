@@ -101,6 +101,16 @@ add_test(NAME consumer COMMAND consumer)
                                    cwd=work, env=dict(os.environ, PYTHONPATH=str(work))).stdout)
         if not validated.get("valid"):
             raise RuntimeError("installed project validator rejected a manifest")
+        lock = work / "On1xfile.lock"
+        lock.write_text(json.dumps({
+            "schema": "on1x.lock/v4",
+            "dependencies": {},
+            "kernel_paths": [{"path": "vendor/kernels", "sha256": "0" * 64}],
+        }), encoding="utf-8")
+        locked = json.loads(run(str(tool), "validate", "lock", str(lock),
+                               cwd=work, env=dict(os.environ, PYTHONPATH=str(work))).stdout)
+        if not locked.get("valid") or locked.get("input_schema") != "on1x.lock/v4":
+            raise RuntimeError("installed project validator did not report the exact lock schema")
 
         binding = relocated / libdir / "on1x-sdk/python"
         snippet = (
