@@ -3967,6 +3967,12 @@
       "macro": "MULIB_IMPL_EVTLOOP",
       "status": "implemented"
     },
+    "evtsched": {
+      "dependencies": [],
+      "header": "kernels/mulib-evtsched.h",
+      "macro": "MULIB_IMPL_EVTSCHED",
+      "status": "implemented"
+    },
     "evtstream": {
       "dependencies": [
         "ast"
@@ -7579,6 +7585,17 @@
       "dependencies": [],
       "header": "kernels/mulib-kmm.h",
       "macro": "MULIB_IMPL_KMM",
+      "status": "implemented"
+    },
+    "kronvm": {
+      "dependencies": [
+        "date",
+        "endian",
+        "evtsched",
+        "kvdb"
+      ],
+      "header": "kernels/mulib-kronvm.h",
+      "macro": "MULIB_IMPL_KRONVM",
       "status": "implemented"
     },
     "kvdb": {

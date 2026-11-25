@@ -1294,4 +1294,6 @@
 #include "mulib-unidiff.h"
 #include "mulib-workspace-edit.h"
 #include "mulib-workspace-fs.h"
+#include "mulib-evtsched.h"
+#include "mulib-kronvm.h"
 int main(void) { return 0; }

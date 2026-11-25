@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 2057
-implemented_module_count: 1555
+module_count: 2059
+implemented_module_count: 1557
 bounded_module_count: 502
 modules:
 - name: container-core
@@ -16039,6 +16039,20 @@ modules:
   status: implemented
   example: examples/process_stream.c
   test: tests/harness-kernels/test_harness.c
+- name: evtsched
+  header: kernels/mulib-evtsched.h
+  manual: manual/mulib-evtsched.md
+  macro: MULIB_IMPL_EVTSCHED
+  purpose: "Stable bucketed event scheduling with absolute deadlines in seconds."
+  dependencies: []
+  status: implemented
+- name: kronvm
+  header: kernels/mulib-kronvm.h
+  manual: manual/mulib-kronvm.md
+  macro: MULIB_IMPL_KRONVM
+  purpose: "Persistent KronQL promises with caller-clocked dispatch."
+  dependencies: [date, endian, evtsched, kvdb]
+  status: implemented
 project_files:
 - file: tests/harness-kernels/implementation.c
   purpose: Shared C11 implementation and dependency closure for the harness-kernel fixtures.
@@ -21040,3 +21054,11 @@ project_files:
   purpose: "Focused regression suite for test_secret_credential_vectors."
 - file: tests/test_quic_http3_stream.c
   purpose: "Focused regression suite for test_quic_http3_stream."
+- file: examples/modules/evtsched.c
+  purpose: "Standalone checked usage example for evtsched."
+- file: examples/modules/kronvm.c
+  purpose: "Standalone checked usage example for kronvm."
+- file: tests/test_evtsched.c
+  purpose: "Focused regression suite for test_evtsched."
+- file: tests/test_kronvm.c
+  purpose: "Focused regression suite for test_kronvm."

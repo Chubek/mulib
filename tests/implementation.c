@@ -1,3 +1,5 @@
+#define MULIB_IMPL_KRONVM
+#define MULIB_IMPL_EVTSCHED
 #define MULIB_IMPL_PROCESS_STREAM
 #define MULIB_IMPL_UNIDIFF
 #define MULIB_IMPL_WORKSPACE_EDIT
@@ -2596,3 +2598,5 @@
 #include "mulib-unidiff.h"
 #include "mulib-workspace-edit.h"
 #include "mulib-workspace-fs.h"
+#include "mulib-evtsched.h"
+#include "mulib-kronvm.h"

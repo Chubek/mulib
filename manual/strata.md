@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 2057 headers, 2751 direct dependency edges.
+Inventory: 2059 headers, 2755 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -17,7 +17,7 @@ Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (420 modules)
+## Stratum 0 (421 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -156,6 +156,7 @@ Compatibility group: `parsec`, `peg`.
 | [euclidean_distance](mulib-euclidean_distance.md) | none |
 | [eventfd](mulib-eventfd.md) | none |
 | [evtloop](mulib-evtloop.md) | none |
+| [evtsched](mulib-evtsched.md) | none |
 | [ezjni](mulib-ezjni.md) | none |
 | [fca](mulib-fca.md) | none |
 | [field-poisson](mulib-field-poisson.md) | none |
@@ -968,7 +969,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (410 modules)
+## Stratum 2 (411 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1125,6 +1126,7 @@ Compatibility group: `parsec`, `peg`.
 | [instrument-scpi](engineering-kernels.md) | `instrument-transport`, `storage-core` |
 | [kernel-ir](mulib-kernel-ir.md) | `media-core` |
 | [kernel-substrates](engineering-kernels.md) | `geom2-core`, `graph-core`, `num-core`, `storage-core` |
+| [kronvm](mulib-kronvm.md) | `date`, `endian`, `evtsched`, `kvdb` |
 | [latex](mulib-latex.md) | `docir`, `tex` |
 | [lir](mulib-lir.md) | `lowopt`, `machine` |
 | [loops](mulib-loops.md) | `dominance` |

@@ -503,6 +503,7 @@
     "mulib-eventfd.h",
     "mulib-evtlistener.h",
     "mulib-evtloop.h",
+    "mulib-evtsched.h",
     "mulib-evtstream.h",
     "mulib-exec.h",
     "mulib-ezjni.h",
@@ -935,6 +936,7 @@
     "mulib-keyremap.h",
     "mulib-kf8write.h",
     "mulib-kmm.h",
+    "mulib-kronvm.h",
     "mulib-kvdb.h",
     "mulib-kvm.h",
     "mulib-kvmcontainer.h",
@@ -2059,9 +2061,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 2058,
+  "libraries": 2060,
   "functions": 5373,
-  "declared_functions": 7733,
+  "declared_functions": 7748,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -2081,7 +2083,7 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "c9075683f0415df7434c9ce6b4663bf1b3eed71a621f2440e49db754ae19b488",
+  "fingerprint": "c0db77c672a1e5cbf8ef2151d5c05beb42bb0c5664ada490bee6179510a80237",
   "legacy_policy": "ece3370fc9b0f8ea47fb57515310c4346e222e5b09d17c1ff52b4a27bb711b5d",
   "modules": {
     "2dgeom": {
@@ -9960,6 +9962,21 @@
         "mulib_evtloop_run"
       ]
     },
+    "evtsched": {
+      "header": "mulib-evtsched.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_evtsched_cancel",
+        "mulib_evtsched_clear",
+        "mulib_evtsched_dispatch",
+        "mulib_evtsched_hold",
+        "mulib_evtsched_peek",
+        "mulib_evtsched_pop",
+        "mulib_evtsched_schedule",
+        "mulib_evtsched_wait_one"
+      ]
+    },
     "evtstream": {
       "header": "mulib-evtstream.h",
       "profile": "legacy-raw",
@@ -15213,6 +15230,20 @@
       ],
       "declarations": [
         "mulib_kmm_fit"
+      ]
+    },
+    "kronvm": {
+      "header": "mulib-kronvm.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_kronvm_close",
+        "mulib_kronvm_delegate",
+        "mulib_kronvm_dispatch",
+        "mulib_kronvm_next",
+        "mulib_kronvm_open",
+        "mulib_kronvm_pull",
+        "mulib_kronvm_signal"
       ]
     },
     "kvdb": {
@@ -30772,7 +30803,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "a14e7b466ee1db3169cbfb40229bd11b250ba23bb440a91aa17b325bac6e4477",
+    "Generated.inc": "80442bc8c8d47bd12e0c1ab187681de517b1bfa9809d7747c4efe2b233ec6b87",
     "Implementation.c": "e8d42736b8b9c6ec9823eef57b1a916f5107ecfb13ff7a33e58863d1ab0425a7"
   }
 }
