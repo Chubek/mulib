@@ -241,9 +241,10 @@ def linear(left, right, sign):
 class I64Proof:
     """Conservative, path-sensitive bounds for the typed, pure recipe subset.
 
-    Facts bound individual parameters and normalized linear forms. We do not
-    derive arbitrary consequences from different forms: lack of a proof is
-    rejection, never implicit C wrapping, On1x trapping, or speculation.
+    Facts bound individual parameters and normalized linear forms. For a
+    single-parameter unit form, an exact equality permits looking up a direct
+    peer's interval. Otherwise we do not combine different forms: lack of a
+    proof is rejection, never implicit C wrapping, On1x trapping, or speculation.
     """
     def __init__(self):
         self.remaining = MAX_PROOF_STEPS
@@ -275,6 +276,30 @@ class I64Proof:
             lo, hi = max(lo, lower), min(hi, upper)
         return lo + offset, hi + offset
 
+    def equality_peer_bounds(self, affine, facts, lo, hi):
+        terms, offset = affine
+        if len(terms) != 1 or abs(terms[0][1]) != 1:
+            return lo, hi
+        ((index, sign),) = terms
+        for pair, interval in facts.items():
+            self.visit()
+            if interval != (0, 0) or len(pair) != 2:
+                continue
+            (a, ca), (b, cb) = pair
+            if (ca, cb) != (1, -1) or index not in (a, b):
+                continue
+            # Only x-y == 0 on this path, and only the peer's own interval.
+            peer = b if index == a else a
+            peer_lo, peer_hi = facts.get(((peer, 1),), (MIN_I64, MAX_I64))
+            if sign < 0:
+                peer_lo, peer_hi = -peer_hi, -peer_lo
+            lower, upper = max(lo, peer_lo + offset), min(hi, peer_hi + offset)
+            if lower <= upper:
+                lo, hi = lower, upper
+                if MIN_I64 <= lo and hi <= MAX_I64:
+                    break
+        return lo, hi
+
     def restrict(self, affine, facts, minimum=None, maximum=None):
         a, b = self.bounds(affine, facts)
         lo = max(a, minimum) if minimum is not None else a
@@ -299,6 +324,8 @@ class I64Proof:
         op, lhs, rhs = expr
         value = linear(self.integer(lhs, facts), self.integer(rhs, facts), 1 if op == "add" else -1)
         lo, hi = self.bounds(value, facts)
+        if lo < MIN_I64 or hi > MAX_I64:
+            lo, hi = self.equality_peer_bounds(value, facts, lo, hi)
         require(MIN_I64 <= lo and hi <= MAX_I64, f"cannot prove signed i64 {op} does not overflow")
         return value
 

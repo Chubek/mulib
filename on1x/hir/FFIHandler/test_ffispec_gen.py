@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from compile_recipes import prove_i64_body
 from generate_portable_recipe import MAX_I64, MIN_I64, Rejection
 from kernel_inputs import Inputs, implementation_macro, roots_for
 from recipe_mir import directives, read_mir, verified_evidence
@@ -33,6 +34,36 @@ class Totality(unittest.TestCase):
         # looking up the exact affine expression in the condition.
         prove_totality(("if", ("and", ("eq", "$0", "$1"), ("lt", "$1", MAX_I64)),
                         ("add", "$0", 1), "$0"), 2)
+
+    def test_direct_equality_peer_bounds_agree_with_independent_totality(self):
+        x, y = "$0", "$1"
+        eq, upper, lower = ("eq", x, y), ("lt", y, MAX_I64), ("gt", y, MIN_I64)
+        for condition, value in [
+            (("and", eq, upper), ("add", x, 1)),
+            (("and", upper, ("eq", y, x)), ("add", x, 1)),
+            (("and", eq, lower), ("sub", x, 1)),
+            (("and", eq, lower), ("sub", 0, x)),
+        ]:
+            body = ("if", condition, value, x)
+            with self.subTest(body=body):
+                prove_totality(body, 2)
+                prove_i64_body(body)
+
+        bump = ("add", x, 1)
+        for body in [
+            ("if", eq, bump, x),  # equality alone cannot exclude INT64_MAX
+            ("if", ("and", eq, ("le", y, MAX_I64)), bump, x),
+            ("if", upper, ("if", eq, x, bump), x),  # upper bound on y, but x != y
+            ("if", ("and", upper, ("eq", x, ("add", y, 1))), bump, x),  # x-y == 1
+            ("if", ("and", upper, ("le", y, x)), bump, x),  # x-y includes zero, but is not zero
+            ("if", ("or", eq, upper), bump, x),
+            ("if", ("and", eq, ("ge", y, MIN_I64)), ("sub", 0, x), x),
+        ]:
+            with self.subTest(body=body):
+                with self.assertRaisesRegex(Rejection, "cannot prove"):
+                    prove_totality(body, 2)
+                with self.assertRaisesRegex(ValueError, "cannot prove"):
+                    prove_i64_body(body)
 
     def test_unreachable_rhs_only_is_safe(self):
         safe = ("if", ("and", ("lt", "$0", MAX_I64), ("eq", ("add", "$0", 1), 4)), 1, 0)
@@ -168,6 +199,30 @@ class Generator(unittest.TestCase):
                 self.assertEqual(entry["complete_profile"], "implementation")
                 self.assertEqual({stage for stage, data in entry["attempts"]["implementation"].items()
                                   if data["status"] == "available"}, {"ast", "interface", "mir"})
+
+    def test_emits_equality_bounded_body_but_catalogues_unbounded_peer(self):
+        self.write("mulib-peer.h", """\
+long mulib_peer_bump(long x, long y) {
+    if (x == y && y < 9223372036854775807L) return x + 1L;
+    return x;
+}
+""")
+        self.write("mulib-unbounded.h", """\
+long mulib_unbounded_bump(long x, long y) {
+    if (x == y) return x + 1L;
+    return x;
+}
+""")
+        index = self.generate()
+        entry, = index["recipes"]
+        self.assertEqual(entry["file"], "recipes/peer.ffi")
+        recipe = (self.output / entry["file"]).read_text(encoding="ascii")
+        self.assertIn("(guard true)", recipe)
+        self.assertIn("(body (if (and (eq x y) (lt y 9223372036854775807)) (add x 1) x))", recipe)
+        rejected = next(header for header in index["headers"] if header["kernel"] == "unbounded")
+        self.assertEqual(rejected["status"], "unsupported")
+        catalogue = (self.output / rejected["file"]).read_text()
+        self.assertIn("cannot prove signed i64 add", catalogue)
 
     def test_catalogues_distinguish_unsupported_malformed_and_missing_views(self):
         self.write("detail/other header.h", "extern int count;\n")
