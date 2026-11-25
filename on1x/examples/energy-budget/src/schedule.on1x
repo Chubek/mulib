@@ -1,0 +1,11 @@
+# Planned run minutes, in order: pump, fan, lights. Day 1 is Monday.
+fn duty_minutes(day: i64) -> (i64, i64, i64) {
+  if day == 1 { return (90, 180, 240); }
+  if day == 2 { return (75, 150, 240); }
+  if day == 3 { return (105, 180, 240); }
+  if day == 4 { return (60, 140, 240); }
+  if day == 5 { return (120, 150, 240); }
+  if day == 6 { return (45, 110, 180); }
+  assert(day == 7);
+  return (80, 170, 220);
+}
