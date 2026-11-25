@@ -384,6 +384,7 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
    return Type::function(std::move(parameters),function.result);
   }
   static Expr::Reference function_reference(const Function& function){
+   if(load_time_kernel_symbol(function.kernel_symbol))return Expr::Reference::Function;
    if(function.kernel_link_only)return Expr::Reference::ScalarForeign;
    if(!function.kernel_symbol.empty())return Expr::Reference::UnsafeForeign;
    if(function.external)return Expr::Reference::Extern;

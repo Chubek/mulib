@@ -4,6 +4,7 @@
 #include "On1xRT-Dynamic.h"
 
 #ifdef ON1X_RT_HAS_DYNAMIC
+#include "../../runtime/on1x_sealed_native.h"
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -100,7 +101,7 @@ On1xRT_Status on1x_rt_dynamic_snapshot_(const char *path, size_t budget,
     goto done;
   }
 
-  image->fd = memfd_create("on1xrt-native", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+  image->fd = on1x_sealed_native_create_("on1xrt-native");
   if (image->fd < 0) {
     *message = "cannot create a sealable native image";
     if (errno == ENOSYS || errno == EINVAL || errno == EPERM || errno == EACCES)
@@ -125,8 +126,7 @@ On1xRT_Status on1x_rt_dynamic_snapshot_(const char *path, size_t budget,
   }
   if (read(source, buffer, 1u) != 0)
     goto done;
-  if (fcntl(image->fd, F_ADD_SEALS,
-            F_SEAL_WRITE | F_SEAL_GROW | F_SEAL_SHRINK | F_SEAL_SEAL) < 0) {
+  if (on1x_sealed_native_seal_(image->fd) < 0) {
     *message = "cannot seal native module image";
     status = ON1X_RT_UNSUPPORTED;
     goto done;
@@ -166,33 +166,11 @@ done:
 On1xRT_Status on1x_rt_dynamic_open_(const On1xRT_DynamicImage *image,
                                    void **library, On1xRT_ModuleEntryFn *entry,
                                    const char **message) {
-  static const char prefix[] = "/proc/self/fd/";
-  char path[sizeof(prefix) + 64u * 4u * 3u + 32u];
-  char *cursor = path + sizeof(prefix) - 1u;
-  struct stat source_stat, path_stat;
+  char path[ON1X_SEALED_NATIVE_PATH_CAP];
   struct link_map *root = NULL;
   Dl_info info;
   void *symbol, *owner_map = NULL, *elf_symbol = NULL;
-  int length;
-
-  /* glibc can cache by the exact requested pathname even after dlclose (e.g.
-   * NODELETE). Give each digest a distinct spelling of the procfd pathname,
-   * so reusing an fd number cannot select cached code with different bytes. */
-  memcpy(path, prefix, sizeof(prefix) - 1u);
-  for (size_t i = 0; i < 64u; ++i) {
-    const unsigned c = (unsigned char)image->sha256[i];
-    const unsigned digit = c <= '9' ? c - '0' : c - 'a' + 10u;
-    for (unsigned bit = 1u; bit <= 8u; bit <<= 1u) {
-      *cursor++ = '.';
-      *cursor++ = '/';
-      if (digit & bit)
-        *cursor++ = '/';
-    }
-  }
-  length = snprintf(cursor, sizeof(path) - (size_t)(cursor - path), "%d", image->fd);
-  if (length < 0 || (size_t)length >= sizeof(path) - (size_t)(cursor - path) ||
-      fstat(image->fd, &source_stat) < 0 || stat(path, &path_stat) < 0 ||
-      source_stat.st_dev != path_stat.st_dev || source_stat.st_ino != path_stat.st_ino) {
+  if (!on1x_sealed_native_proc_path_(image->fd, image->sha256, path)) {
     *message = "procfs access to the sealed native image is unavailable";
     return ON1X_RT_UNSUPPORTED;
   }

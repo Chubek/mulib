@@ -77,6 +77,10 @@ target_compile_definitions(on1x_frontend PRIVATE
   ON1X_BUILT_STDFFI_ROOT="${_ffi_bundle}/recipes")
 install(DIRECTORY "${_ffi_bundle}/recipes/" DESTINATION share/on1x/stdffi/mulib
   OPTIONAL FILES_MATCHING PATTERN "*.ffi")
+install(FILES "${_ffi_parser}" ffispec-gen.py compile_recipes.py generate_portable_recipe.py
+  kernel_inputs.py portable_recipe_contract.py recipe_mir.py recipe_totality.py
+  DESTINATION share/on1x/kernel-package)
+install(FILES contracts/clamp.portable-recipe.json DESTINATION share/on1x/kernel-package/contracts)
 
 if(BUILD_TESTING)
   add_test(NAME on1x.stdffi.cephyr_generator COMMAND "${CMAKE_COMMAND}" -E env
@@ -104,7 +108,8 @@ if(BUILD_TESTING)
     add_executable(on1x_stdffi_${_ffi_test_name}_tests tests/${_ffi_test_name}.cpp
       stdffi.cpp selected_recipe.cpp)
     add_dependencies(on1x_stdffi_${_ffi_test_name}_tests on1x_stdffi_test_tables)
-    target_include_directories(on1x_stdffi_${_ffi_test_name}_tests BEFORE PRIVATE "${_ffi_test}")
+    target_include_directories(on1x_stdffi_${_ffi_test_name}_tests BEFORE PRIVATE
+      "${_ffi_test}" "${On1x_SOURCE_DIR}/runtime")
     target_link_libraries(on1x_stdffi_${_ffi_test_name}_tests PRIVATE on1x_frontend)
   endforeach()
   add_test(NAME on1x.stdffi.mir_directives COMMAND on1x_stdffi_directives_tests

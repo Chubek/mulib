@@ -1,5 +1,6 @@
 #include <on1x/ast.hpp>
 #include <on1x/kernel.hpp>
+#include <on1x/stdffi.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/meta.hpp>
@@ -71,8 +72,9 @@ class Generator {
  std::map<Type,std::string> cleanup_destructor_names;
  std::vector<CleanupDestructor> cleanup_destructors;
  std::set<std::string> identifiers;
- std::map<std::string,std::string> functions,adapters;
-  std::map<std::string,const Function*> externs;
+  std::map<std::string,std::string> functions,adapters;
+   std::map<std::string,const Function*> externs;
+   std::map<std::string,const Function*> load_time_imports;
  std::map<std::string,const Function*> borrow_functions;
  std::vector<Lambda> lambdas;
  std::unordered_map<const Expr*,std::size_t> lambda_index;
@@ -453,7 +455,15 @@ class Generator {
    definitions<<pad()<<"on1x_unique_allocation_fail("<<location(at)<<");\n";
    --indent;definitions<<pad()<<"}\n";
   }
-  std::string global_value(const Expr& expression){
+   bool use_load_time_import(const Expr& expression){
+    if(expression.reference!=Expr::Reference::Function)return false;
+    const auto found=externs.find(expression.text);
+    if(found==externs.end()||!load_time_kernel_symbol(found->second->kernel_symbol))return false;
+    load_time_imports.emplace(found->second->kernel_symbol,found->second);
+    return true;
+   }
+   std::string global_value(const Expr& expression){
+    use_load_time_import(expression);
   auto found=adapters.find(expression.text);
    if(found==adapters.end())found=adapters.emplace(expression.text,reserve("on1x_adapter_"+(expression.text.starts_with("@")?expression.text.substr(1):expression.text))).first;
    return temp(expression.type,"("+ctype(expression.type)+"){"+found->second+", NULL}");
@@ -862,8 +872,8 @@ class Generator {
      return previous;
     }
      const auto* borrower=callee.reference==Expr::Reference::BorrowFunction?borrow_functions.at(callee.text):nullptr;
-     const bool foreign=callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
-                        callee.reference==Expr::Reference::ScalarForeign;
+      const bool foreign=use_load_time_import(callee)||callee.reference==Expr::Reference::Extern||callee.reference==Expr::Reference::UnsafeForeign||
+                         callee.reference==Expr::Reference::ScalarForeign;
      const auto ipc=callee.reference==Expr::Reference::UnsafeForeign?
       std::string_view(externs.at(callee.text)->kernel_symbol):std::string_view{};
     bool direct=builtin||foreign||borrower;
@@ -1358,16 +1368,40 @@ class Generator {
     pop(!terminated);if(!terminated)leave_call();if(result==Type::Void&&!terminated)definitions<<"  return;\n";
   definitions<<"}\n\n";scopes.clear();owners.clear();
  }
-  void adapter(const Function& f,const std::string& name){
+   void adapter(const Function& f,const std::string& name){
   prototypes<<"static "<<ctype(f.result)<<" "<<name<<"(";parameter_types(prototypes,f.params,true);prototypes<<");\n";
   helpers<<"static "<<ctype(f.result)<<" "<<name<<"(on1x_env *on1x_context";
   for(std::size_t i=0;i<f.params.size();++i)helpers<<", "<<ctype(f.params[i].type)<<" on1x_arg_"<<i;
   helpers<<") {\n  (void)on1x_context;\n  ";if(f.result!=Type::Void)helpers<<"return ";
   helpers<<functions.at(f.name)<<"(";
   for(std::size_t i=0;i<f.params.size();++i){if(i)helpers<<", ";helpers<<"on1x_arg_"<<i;}
-   helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
-  }
-  public:
+    helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
+   }
+   std::string emit_load_time_imports(){
+    if(load_time_imports.empty())return {};
+    const auto required=reserve("on1x_kernel_required_imports");
+    prototypes<<"static const struct on1x_kernel_import "<<required<<"[] = {\n";
+    for(const auto& [symbol,f]:load_time_imports){
+     const auto member=std::string_view(symbol).substr(load_time_kernel_prefix.size());
+     const auto pin=stdffi::load_time_pin(member,f->params.size(),f->where);
+     prototypes<<"  { .module = \""<<load_time_kernel_module<<"\", .export_name = \""<<member
+               <<"\", .version = "<<pin.version<<", .arity = "<<f->params.size()
+               <<",\n    .interface_sha256 = \""<<pin.interface_sha256
+               <<"\", .behavior_sha256 = \""<<pin.behavior_sha256<<"\" },\n";
+    }
+    prototypes<<"};\n";
+    std::size_t slot=0;
+    for(const auto& [symbol,f]:load_time_imports){
+     (void)symbol;
+     const bool ternary=f->params.size()==3;
+     // These thunks also back ordinary first-class function values.
+     prototypes<<"static int64_t "<<functions.at(f->name)<<"(int64_t a, int64_t b"
+               <<(ternary?", int64_t c":"")<<") { return on1x_kernel_call"
+               <<f->params.size()<<"("<<slot++<<", a, b"<<(ternary?", c":"")<<"); }\n";
+    }
+    return required;
+   }
+   public:
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
            bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),
@@ -1378,7 +1412,7 @@ class Generator {
       for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
      for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
      for(const auto& f:unit.functions)if(ipc_kernel_symbol(f.kernel_symbol))identifiers.insert(f.kernel_symbol);
-  for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
+   for(const auto& f:unit.functions)if(f.external)externs.emplace(f.name,&f);
    for(const auto& f:unit.functions)
     if(!f.prototype&&takes_borrows(f))borrow_functions.emplace(f.name,&f);
       for(const auto& f:unit.functions)functions.emplace(f.name,ipc_kernel_symbol(f.kernel_symbol)?f.kernel_symbol:
@@ -1399,10 +1433,11 @@ class Generator {
      ownership_cleanup=uses_unique;
    }
      std::string bounds_report() const {return bounds.report();}
-    std::string run(){
-       std::string kernel_headers,ipc_header;
-      for(const auto& f:unit.functions){
-       if(f.prototype)continue;
+     std::string run(){
+        std::string kernel_headers,ipc_header;
+       for(const auto& f:unit.functions){
+        if(f.prototype)continue;
+       if(load_time_kernel_symbol(f.kernel_symbol))continue;
       if(ipc_kernel_symbol(f.kernel_symbol)){
        ipc_header="#include <on1x_kernel_ipc.h>\n";
        continue;
@@ -1454,14 +1489,19 @@ class Generator {
                  nullptr,takes_borrows(f));
    for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,e.where,&lambda);}
   for(const auto& f:unit.functions)if(auto found=adapters.find(f.name);found!=adapters.end())adapter(f,found->second);
-   emit_ownership_helpers();
-   emit_unique_destructors();
+    emit_ownership_helpers();
+    emit_unique_destructors();
+   const auto required_imports=emit_load_time_imports();
   const auto& main=*std::find_if(unit.functions.begin(),unit.functions.end(),[](const auto& f){return f.name=="main";});
   // Only programs using the std.environ argv adapter need the host vector.
   const bool passes_argv=externs.contains("on1x_environ_arg")||externs.contains("on1x_environ_argc");
   if(passes_argv)prototypes<<"extern void on1x_environ_init(int, char **);\n";
-  const auto start_main=[&]{
-   definitions<<(passes_argv?"int main(int argc, char **argv) { on1x_environ_init(argc, argv); ":"int main(void) { ");
+   const auto start_main=[&]{
+    definitions<<(passes_argv?"int main(int argc, char **argv) { ":"int main(void) { ");
+    if(!required_imports.empty())
+     definitions<<"if (on1x_kernel_import_init("<<required_imports<<", "<<load_time_imports.size()
+                <<") != 0) return 1; ";
+    if(passes_argv)definitions<<"on1x_environ_init(argc, argv); ";
   };
    if(uses_csp){
     auto entry=reserve("on1x_csp_entry");
@@ -1495,7 +1535,10 @@ class Generator {
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
           +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
-            +kernel_headers+ipc_header+float_guard+types.str()+"\n";
+             +(required_imports.empty()?"":"#include <on1x_kernel_import.h>\n"
+               "#if !defined(ON1X_KERNEL_IMPORT_TABLE_ABI_VERSION) || ON1X_KERNEL_IMPORT_TABLE_ABI_VERSION != 1\n"
+               "#error \"incompatible On1x kernel import table ABI\"\n#endif\n")
+             +kernel_headers+ipc_header+float_guard+types.str()+"\n";
     if(scratch_layout_used)output+=memgraph::c11_scratch_layout();
     if(!heap_cell_type.empty())output+=memgraph::c11_heap_cells(heap_cell_type);
    const auto proto_begin=output.size();

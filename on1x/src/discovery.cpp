@@ -82,7 +82,7 @@ void package_rows(std::string_view text,const std::string& file,Finish finish_ro
  constexpr std::string_view heads[]={
   "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work",
   "optimization-profile","optimization","backend","target","dependency","profile",
-  "profile-arg","command","define","dotenv","kernel","kernel-path","source","library","resource","interface",
+  "profile-arg","command","define","dotenv","kernel","kernel-path","kernel-link","source","library","resource","interface",
   "compiler","assembler","linker","assembler-arg","linker-arg",
   "proxy-http","proxy-https","proxy-any","proxy-none"
  };

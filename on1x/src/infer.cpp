@@ -939,8 +939,9 @@ class Inference {
    else if(auto found=globals.find(expression.text);found!=globals.end()) {
     if(forced_variables&&!forced_variables->empty())
      fail(expression.where,"generated specialization target is not generic");
-   if(found->second.external&&!call_position)
-    fail(expression.where,"raw extern functions cannot be used as values; write an On1x wrapper");
+    if(found->second.external&&!call_position&&
+       !load_time_kernel_symbol(found->second.definition->kernel_symbol))
+     fail(expression.where,"raw extern functions cannot be used as values; write an On1x wrapper");
    type=found->second.signature;
   } else {
    if(is_intrinsic_name(expression.text))

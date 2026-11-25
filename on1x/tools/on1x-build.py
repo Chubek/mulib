@@ -92,7 +92,7 @@ def main():
         'or "exec COMMAND" to run a command defined by an On1xfile.')
     cli.add_argument('input', type=Path)
     cli.add_argument('-o', '--output', type=Path, required=True)
-    cli.add_argument('--on1xc', default=str(ROOT / 'build' / 'on1xc') if (ROOT / 'build' / 'on1xc').is_file() else shutil.which('on1xc') or 'on1xc')
+    cli.add_argument('--on1xc', default=toolchain.default_compiler(ROOT))
     cli.add_argument('--cc', help='explicit host C driver, otherwise CC or cc')
     toolchain.arguments(cli)
     cli.add_argument('--_cephyr-executable', type=Path, help=argparse.SUPPRESS)
@@ -150,6 +150,8 @@ def main():
     cli.add_argument('--inspect-kernels', action='store_true',
                      help='publish KernelBind discovery JSON without building a program or archive')
     cli.add_argument('--kernel-bind', action='store_true', help='build a supported KernelBind C11 profile')
+    cli.add_argument('--kernel-load-time', action='store_true',
+                     help='emit checked kernel imports for explicit load-time package resolution')
     cli.add_argument('--kernel-dynlib-compiler', choices=('cephyr', 'host'),
                      help='compile trusted [dynlib] kernel implementations with Cephyr (default) or --cc in PIC mode')
     cli.add_argument('--kernel-review-candidate', action='store_true',
@@ -163,6 +165,13 @@ def main():
     args = cli.parse_args()
     args.via_mir = args.backend == 'mir-c11'
     tools = toolchain.resolve(args)
+    if args.kernel_load_time:
+        if args.backend not in (None, 'c11') or not toolchain.is_host(tools):
+            cli.error('--kernel-load-time requires the hosted direct C11 backend')
+        if (args.kernel_bind or args.inspect_kernels or args.kernel_review_candidate
+                or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan
+                or args.mulib_root or args.mulib_path or args.extra_c or args.trust_inline_c11):
+            cli.error('--kernel-load-time cannot be combined with source kernel linkage or extra C')
     args.cc = args.cc or os.environ.get('CC', 'cc')
     custom_tools = toolchain.requested(args) or args._cephyr_executable is not None
     if custom_tools and (args.emit_only or args.backend in ('mir-vm', 'mir-archon') or
@@ -257,6 +266,8 @@ def main():
             generated = Path(temp) / 'program.mir'
         compiler = [args.on1xc, mode, str(args.input), '-o', str(generated),
                     '--ppx-timeout-ms', str(args.ppx_timeout_ms), *opt_flags]
+        if args.kernel_load_time:
+            compiler.append('--kernel-load-time')
         if args.allow_source_ppx:
             compiler.append('--allow-source-ppx')
         if args.optimize_ir:
@@ -448,9 +459,15 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'stdlib/mulib/housekeeping.py')
         house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
-        paths=house.search_paths(args.mulib_path)
-        mulib_root=house.kernel_root(args.mulib_root,MULIB,paths)
-        includes=house.include_paths(mulib_root,paths)
+        if args.kernel_load_time:
+            # Neither MuLIB source discovery nor package discovery belongs
+            # in this link mode. The generated application initializes its
+            # imports at process startup.
+            paths, mulib_root, includes = [], MULIB, []
+        else:
+            paths = house.search_paths(args.mulib_path)
+            mulib_root = house.kernel_root(args.mulib_root, MULIB, paths)
+            includes = house.include_paths(mulib_root, paths)
         if args.kernel_review or ipc_raw or dyn_modules:
             # Discovery checked alternate kernel candidates but did not add
             # those search roots to ExoLib's C header search path.
@@ -494,8 +511,12 @@ def main():
         }
         groups={group for group,(_,symbols) in bridge_groups.items() if any('on1x_mulib_'+s in externs for s in symbols)}
         has_bridge=bool(groups) or 'on1x_mulib_bridge_status' in externs
-        native = (kernel_interface or has_json or has_csp or has_pretty or has_tty or has_environ or has_mulib or
-                   has_bridge or containers or has_shared or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
+        uses_source_kernels = (has_json or has_csp or has_pretty or has_tty or has_mulib or
+                               has_bridge or containers or has_shared)
+        if args.kernel_load_time and uses_source_kernels:
+            raise ValueError('--kernel-load-time cannot link built-in source kernel bridges')
+        native = (args.kernel_load_time or kernel_interface or uses_source_kernels or has_environ
+                  or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
         if use_cephyr and native:
             raise ValueError(f'this native bridge requires the host C11 runtime and link recipe; {toolchain.HOST_HELP}')
         recipe, fingerprints, native_links = None, {}, []
@@ -507,6 +528,11 @@ def main():
             compiler_target=subprocess.check_output([str(cc),'-dumpmachine'],text=True,timeout=30).strip()
             for path in (cc, Path(__file__).resolve(), Path(optimization.__file__).resolve(), Path(house.__file__)):
                 fingerprints[str(path)] = house.contracts.digest(path)
+            if args.kernel_load_time:
+                runtime_archive, link_policy, link_flags = toolchain.kernel_import_link(args.on1xc)
+                for path in (runtime_archive, link_policy):
+                    fingerprints[str(path)] = house.contracts.digest(path)
+                native_links.extend((str(runtime_archive), *link_flags))
             kernels = list(args.mulib)
             if kernel_interface:
                 if has_json or has_csp or has_pretty or has_tty or has_mulib or has_bridge or containers or has_shared:

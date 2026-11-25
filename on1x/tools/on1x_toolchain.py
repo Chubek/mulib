@@ -17,6 +17,15 @@ HOST = dict.fromkeys(CHOICES, 'host')
 DEFAULT = {stage: choices[0] for stage, choices in CHOICES.items()}
 AMD64 = 'x86_64-linux-gnu'
 HOST_HELP = 'select --compiler=host --assembler=host --linker=host (or --cc cc with no explicit stage selections)'
+KERNEL_IMPORT_ARCHIVE = 'libon1x_kernel_import.a'
+KERNEL_IMPORT_LINK_FLAGS = frozenset((b'-lstdc++', b'-lc++', b'-ldl'))
+
+
+def default_compiler(sdk_root):
+    if sdk_root.parent.name == 'share' and not (sdk_root / 'CMakeLists.txt').is_file():
+        return str(sdk_root.parent.parent / 'bin/on1xc')
+    local = sdk_root / 'build/on1xc'
+    return str(local) if local.is_file() and os.access(local, os.X_OK) else 'on1xc'
 
 
 def arguments(parser):
@@ -99,6 +108,32 @@ def validate_manifest(config):
 
 def is_host(tools):
     return all(tools[key] == 'host' for key in CHOICES)
+
+
+def kernel_import_link(compiler):
+    """Locate the SDK importer and read its limited system-library requirements."""
+    executable = shutil.which(compiler)
+    if not executable:
+        raise ValueError(f'compiler unavailable: {compiler}')
+    bin_dir = Path(executable).resolve(strict=True).parent
+    # An installed compiler uses prefix/lib, but a build directory itself
+    # may also be called bin. Check only these two SDK-relative locations.
+    candidates = [bin_dir / KERNEL_IMPORT_ARCHIVE]
+    if bin_dir.name == 'bin':
+        candidates.insert(0, bin_dir.parent / 'lib' / KERNEL_IMPORT_ARCHIVE)
+    archive = next((path for path in candidates if path.is_file()), None)
+    if archive is None:
+        raise ValueError(f'load-time kernel runtime archive unavailable: {candidates[0]}')
+    sidecar = archive.with_name('on1x_kernel_import.link')
+    if not sidecar.is_file():
+        raise ValueError(f'load-time kernel runtime link requirements unavailable: {sidecar}')
+    with sidecar.open('rb') as stream:
+        data = stream.read(128)
+    flags = data.splitlines()
+    if (len(data) == 128 or len(flags) != len(set(flags))
+            or any(flag not in KERNEL_IMPORT_LINK_FLAGS for flag in flags)):
+        raise ValueError(f'invalid load-time kernel runtime link requirements: {sidecar}')
+    return archive.resolve(strict=True), sidecar.resolve(strict=True), [flag.decode('ascii') for flag in flags]
 
 
 def resolve_files(tools, prefix=None, cephyr_path=None):

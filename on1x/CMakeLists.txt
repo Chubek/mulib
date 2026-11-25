@@ -162,6 +162,8 @@ target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")
 target_sources(on1x_frontend PRIVATE src/regex.cpp)
+target_sources(on1x_frontend PRIVATE runtime/on1x_kernel_package.c runtime/on1x_kernel_recipe.c)
+target_include_directories(on1x_frontend PRIVATE runtime)
 if(EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/ThompsonConstruction.hpp" AND
    EXISTS "${ON1X_LIBSTONE_ROOT}/firestone/liblr/UTF8Automaton.hpp")
   target_include_directories(on1x_frontend SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone")
@@ -392,6 +394,7 @@ if(ON1X_WITH_NOVOSTONE)
 endif()
 add_library(on1x_runtime STATIC runtime/on1x_runtime.c)
 target_include_directories(on1x_runtime PUBLIC runtime)
+include(cmake/KernelImports.cmake)
 option(ON1X_BUILD_NATIVE_PPX "Build the self-hosted On1x PPX processors" ON)
 target_compile_definitions(on1x_frontend PRIVATE ON1X_BUILD_NATIVE_PPX=$<BOOL:${ON1X_BUILD_NATIVE_PPX}>)
 if(ON1X_BUILD_NATIVE_PPX)
@@ -464,6 +467,10 @@ install(DIRECTORY stdlib stdffi stdppx runtime grammar contracts-exoml contracts
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE
   REGEX "/stdffi/mulib(/.*)?$" EXCLUDE) # FFIHandler installs only generated executable recipes.
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
+install(PROGRAMS tools/on1x-kernel-package.py DESTINATION bin RENAME on1x-kernel-package)
+install(DIRECTORY examples/kernel/load-time-clamp DESTINATION share/on1x/examples
+  PATTERN "__pycache__" EXCLUDE)
+install(FILES docs/kernel-load-time.md docs/kernel-package.md DESTINATION share/on1x/docs)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
 endif()

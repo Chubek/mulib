@@ -55,6 +55,7 @@ VM_DIRECTIVE = re.compile(rb'^[ \t\r]*vm(?=[ \t\r#]|\\[ \t\r]*$|$)')
 VM_COMMANDS = ('run', 'vm-rerun', 'vm-cache-clear')
 FFI_GENERATE = 'ffi-generate'
 KERNEL_PATH_DIRECTIVE = re.compile(rb'^[ \t\r]*kernel-path(?=[ \t\r#]|\\[ \t\r]*$|$)')
+KERNEL_LINK_DIRECTIVE = re.compile(rb'^[ \t\r]*kernel-link(?=[ \t\r#]|\\[ \t\r]*$|$)')
 MAX_KERNEL_PATHS = 32
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
@@ -78,7 +79,8 @@ TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
 HEADS = frozenset((
     'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work',
     'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
-    'profile-arg', 'command', 'define', 'dotenv', 'kernel', 'kernel-path', 'source', 'library', 'resource', 'interface',
+    'profile-arg', 'command', 'define', 'dotenv', 'kernel', 'kernel-path', 'kernel-link',
+    'source', 'library', 'resource', 'interface',
 )) | toolchain.DIRECTIVES | proxy.DIRECTIVES
 ROW_HINT = ('start each intended directive with a known unquoted head on its own line; '
             'quote string fields, or move a directive-looking bare field to the preceding line '
@@ -310,6 +312,11 @@ def root_only_kernel_path(origin=None):
     fail(f'{at}kernel-path is only allowed in the root project On1xfile')
 
 
+def root_only_kernel_link(origin=None):
+    at = f'{origin}: ' if origin is not None else ''
+    fail(f'{at}kernel-link is only allowed in the root On1xfile of an executable or complex project')
+
+
 def check_nested_authority(payload, origin):
     # Nested manifests are inert and may be templates. Look only for literal
     # root-only heads, honoring explicit continuations we can lex as plain text.
@@ -323,6 +330,8 @@ def check_nested_authority(payload, origin):
                 root_only_vm(f'{origin}:{number}')
             if KERNEL_PATH_DIRECTIVE.match(line):
                 root_only_kernel_path(f'{origin}:{number}')
+            if KERNEL_LINK_DIRECTIVE.match(line):
+                root_only_kernel_link(f'{origin}:{number}')
             if toolchain.ROOT_ONLY.match(line):
                 fail(f'{origin}:{number}: native toolchain directives are only allowed in the root project On1xfile')
         forced = False
@@ -542,6 +551,13 @@ def root_manifest(payload, origin, dependency=False):
                 unique(kernel_paths, local(path), True)
                 if len(kernel_paths) > MAX_KERNEL_PATHS:
                     fail(f'too many kernel-path directives (maximum {MAX_KERNEL_PATHS})')
+            elif verb == 'kernel-link':
+                if dependency:
+                    root_only_kernel_link()
+                mode, = fields(args, 'w')
+                if mode != 'load-time':
+                    fail('kernel-link expects load-time; omit it for normal linkage')
+                unique(options, verb, mode)
             else:
                 fail(f'unsupported {verb!r} in {"dependency" if dependency else "root"} On1xfile')
         except ValueError as error:
@@ -549,6 +565,11 @@ def root_manifest(payload, origin, dependency=False):
     kind = options.get('kind')
     if not options.get('name') or not kind:
         fail(f'{origin}: name and kind are required')
+    if 'kernel-link' in options:
+        if kind == 'library':
+            root_only_kernel_link(origin)
+        if 'vm' in options or kernels:
+            fail(f'{origin}: kernel-link load-time cannot be combined with vm or static kernel declarations')
     if toolchain.DIRECTIVES & options.keys() and (kind == 'library' or 'vm' in options):
         fail(f'{origin}: native toolchain directives require a hosted executable project')
     try:
@@ -869,7 +890,7 @@ def program(value):
 
 def compiler_path(explicit):
     selected = explicit or os.environ.get('ON1X_PROJECT_COMPILER')
-    return program(selected or (str(ROOT / 'build/on1xc') if (ROOT / 'build/on1xc').is_file() else 'on1xc'))
+    return program(selected or toolchain.default_compiler(ROOT))
 
 
 def validate_locked_names(args, config, project):
@@ -1235,7 +1256,7 @@ def dotenv_environment(project, config, args):
 
 class Execution:
     """Compiler process envelope; host file acquisition itself is intentionally outside it."""
-    def __init__(self, args, work, compiler, cc, mulib, *, env=ENV):
+    def __init__(self, args, work, compiler, cc, mulib, *, env=ENV, load_time=False):
         self.work = work
         self.env = env
         self.python = Path(sys.executable)
@@ -1261,16 +1282,18 @@ class Execution:
                 self.prefix.extend(('--setenv', key, value))
             self.mounts = set()
             if compiler is not None:
-                for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib',
-                             mulib / 'kernels', mulib / 'manual',
-                             mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
+                for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib', compiler, cc):
                     self.mount(path)
-                # Mount executable recipes only: the build's sibling catalogue
-                # is metadata and can be much larger. Installed recipes are flat.
-                # Do not pass ambient MULIB_FOREIGNLIB_PATH into isolated builds.
-                for recipes in (compiler.parent / 'stdffi/mulib/recipes',
-                                compiler.parent.parent / 'share/on1x/stdffi/mulib'):
-                    self.mount(recipes, exact=True)
+                if not load_time:
+                    for path in (mulib / 'kernels', mulib / 'manual',
+                                 mulib / 'library', mulib / 'MANIFEST.yaml'):
+                        self.mount(path)
+                    # Mount executable recipes only: the build's sibling
+                    # catalogue is metadata and can be much larger.
+                    # No ambient MULIB_FOREIGNLIB_PATH in isolated builds.
+                    for recipes in (compiler.parent / 'stdffi/mulib/recipes',
+                                    compiler.parent.parent / 'share/on1x/stdffi/mulib'):
+                        self.mount(recipes, exact=True)
             # A failed setup must not even start a compiler discovery process.
             self.run(['/usr/bin/true'], bound=32)
             # Use the same name for the mount and argv, including when the
@@ -1373,6 +1396,8 @@ def local_roles(data, origin, manifest, kind):
                 root_only_vm()
             if role == 'kernel-path':
                 root_only_kernel_path()
+            if role == 'kernel-link':
+                root_only_kernel_link()
             if role in toolchain.DIRECTIVES:
                 fail('native toolchain directives are only allowed in the root project On1xfile')
             if role not in allowed or role == 'source' and kind == 'library':
@@ -2025,6 +2050,7 @@ def build(args):
     config = root_manifest(rootinput, project / 'On1xfile')
     child_env = dotenv_environment(project, config, args)
     vm_policy = config.get('vm')
+    load_time = config.get('kernel-link') == 'load-time'
     launching = args.command == 'run'
     if launching:
         require_vm_policy(config, args.command)
@@ -2058,13 +2084,17 @@ def build(args):
     name(chosen)
     backend = ('archvirt' if vm_policy else
                args.backend or config['backend_scopes'].get(chosen) or config.get('backend', 'c11'))
+    if load_time and (backend != 'c11' or args.mulib_root):
+        fail('kernel-link load-time requires direct C11 without --mulib-root')
     tool_options = toolchain.requested(args) or bool(config.keys() & toolchain.DIRECTIVES)
     uses_c11 = backend in ('c11', 'mir-c11') and config['kind'] != 'library'
     if tool_options and not uses_c11:
         fail('native toolchain directives and options require a hosted C11 build')
     selected, tool_files, missing = None, {}, []
     if uses_c11:
-        selected = toolchain.resolve(args, config)
+        selected = toolchain.resolve(args, {**toolchain.HOST, **config} if load_time else config)
+        if load_time and not toolchain.is_host(selected):
+            fail('kernel-link load-time requires the host compiler, assembler and linker')
         tool_files, missing = toolchain.resolve_files(selected, args.cephyr_prefix)
         if args.sandbox and not toolchain.is_host(selected):
             fail(f'LibStone project tool mounts are not qualified under --sandbox; {toolchain.HOST_HELP}')
@@ -2128,7 +2158,7 @@ def build(args):
         (work / 'input/deps').mkdir()
         (work / 'cwd').mkdir()
         (work / 'artifact').mkdir()
-        executor = Execution(args, work, compiler, cc, mulib, env=child_env)
+        executor = Execution(args, work, compiler, cc, mulib, env=child_env, load_time=load_time)
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
                          'optimization_helper': Path(optimization.__file__)}
         if executor.bwrap is not None:
@@ -2147,6 +2177,11 @@ def build(args):
             chosen_tools['build_helper'] = ROOT / 'tools/on1x-build.py'
             chosen_tools['native_toolchain_helper'] = Path(toolchain.__file__)
             chosen_tools.update(tool_files)
+        if load_time:
+            runtime_archive, link_policy, _ = toolchain.kernel_import_link(compiler)
+            chosen_tools.update(kernel_import_runtime=runtime_archive, kernel_import_link=link_policy)
+            for path in (runtime_archive, link_policy):
+                executor.mount(path)
         model = {'profile': chosen, 'project': config['name'], 'kind': config['kind']}
         for key, (kind, value) in sorted(config['defines'].items()):
             if key in model:
@@ -2336,6 +2371,8 @@ def build(args):
         trusted_roots = () if std_package else (stdlib, stdlib.parent / 'std')
         loader = ['--stdlib', str(standard), '-I', str(executor.path(deps_stage)),
                   '-I', str(executor.path(project_stage))]
+        kernel_flags = ['--kernel-load-time'] if load_time else []
+        graph_loader = [*loader, *kernel_flags]
         analysis_flags = []
         if config.get('scrutiny'):
             analysis_flags.extend(('--project-scrutiny', config['scrutiny']))
@@ -2343,8 +2380,8 @@ def build(args):
             analysis_flags.extend(('--scrutiny', args.scrutiny))
         if analysis_work is not None:
             analysis_flags.extend(('--scrutiny-work', str(analysis_work)))
-        compiler_flags = [*loader, *analysis_flags, *check_flags]
-        dependency_loader = loader[:-2]
+        compiler_flags = [*graph_loader, *analysis_flags, *check_flags]
+        dependency_loader = [*loader[:-2], *kernel_flags]
         dependency_compiler_flags = [*dependency_loader, *analysis_flags, *check_flags]
         for key, modules in dep_modules.items():
             own_files = {executor.path(path) for path in modules}
@@ -2353,7 +2390,8 @@ def build(args):
             verify_interfaces(executor, compiler, deps_stage / key, dep_roles[key],
                               dependency_loader, dependency_compiler_flags, own_files, trusted_roots, graph_checked=own_files)
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]}
-        verify_interfaces(executor, compiler, project_stage, roles, loader, compiler_flags, permitted, trusted_roots)
+        verify_interfaces(executor, compiler, project_stage, roles, graph_loader,
+                          compiler_flags, permitted, trusted_roots)
         outputs = {}
         guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':
@@ -2363,7 +2401,7 @@ def build(args):
             outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
-            verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
+            verify_graph(executor, compiler, entry, graph_loader, permitted | {entry}, trusted_roots)
             if args.command == 'plan':
                 continue
             if backend in ('archvirt', 'mir-vm'):
@@ -2410,7 +2448,9 @@ def build(args):
                 # The project runner does not inherit the operator's PATH.
                 native_args.extend(('--_cephyr-executable', tool_files['cephyr']))
             command = [executor.python, ROOT / 'tools/on1x-build.py', entry, '-o', output,
-                        '--on1xc', compiler, '--mulib-root', mulib, *loader, *analysis_flags, *native_args,
+                        '--on1xc', compiler,
+                        *kernel_flags, *([] if load_time else ['--mulib-root', mulib]),
+                        *loader, *analysis_flags, *native_args,
                         *(['--via-mir'] if backend == 'mir-c11' else []), *opt_flags,
                         *(f'--cflag={flag}' for flag in cflags)]
             if '-g' in cflags:
@@ -2471,6 +2511,8 @@ def build(args):
             report['lockfile'] = digest(lock_payload)
         if kernel_inputs:
             report['kernel_paths'] = kernel_inputs
+        if load_time:
+            report['kernel_link'] = 'load-time'
         if backend == 'mir-vm' and args.command != 'plan' and report['tools']['vm_runner'] != outputs[bundled.name]:
             fail('mir-vm runner changed during project build')
         if args.command == 'plan':

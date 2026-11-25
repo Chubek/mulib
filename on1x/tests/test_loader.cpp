@@ -1,5 +1,6 @@
 #include <on1x/loader.hpp>
 #include <on1x/clone.hpp>
+#include <on1x/stdffi.hpp>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
@@ -56,6 +57,47 @@ int main(int argc,char** argv){
   region.unsafe_region=false; // A transform cannot silently detach the call from its authority.
   rejected=false;
   try{on1x::emit_c(unsafe.unit,"a.on1x");}
-  catch(const on1x::Error& error){rejected=error.diagnostic_id=="ON1X-VALUES-VERIFY";}
-  assert(rejected);
-}
+   catch(const on1x::Error& error){rejected=error.diagnostic_id=="ON1X-VALUES-VERIFY";}
+   assert(rejected);
+   if(!on1x::stdffi::has_kernel("clamp"))return 0;
+
+   options.kernel_c11=false;
+   options.kernel_load_time=true;
+   options.foreign_default_paths={root/"absent-recipes"};
+   std::ofstream(root/"b.on1x")<<"import foreign stdffi.clamp as Local;"
+    "fn via_helper()->i64{let add=Local.add_i64;return add(40,2);}";
+   std::ofstream(root/"a.on1x")<<"import b;import foreign stdffi.clamp as C;"
+    "extern fn on1x_environ_argc()->i64;"
+    "fn main(){println(b.via_helper());println(C.add_i64(1,2));"
+    "println(C.i64(27,0,10));println(on1x_environ_argc());}";
+   auto late=on1x::load_unit(root/"a.on1x",options);
+   on1x::check(late.unit);
+   code=on1x::emit_c(late.unit,"a.on1x");
+   const std::string add_record=".export_name = \"add_i64\"";
+   const auto add_slot=code.find(add_record);
+   assert(add_slot!=std::string::npos&&code.find(add_record,add_slot+1)==std::string::npos);
+   const auto interval_slot=code.find(".export_name = \"i64\"");
+   assert(interval_slot!=std::string::npos&&add_slot<interval_slot);
+   assert(code.find(".export_name = \"sub_i64\"")==std::string::npos);
+   const auto init=code.find("if (on1x_kernel_import_init(on1x_kernel_required_imports, 2) != 0) return 1;");
+   const auto environ_init=code.find("on1x_environ_init(argc, argv);");
+   assert(environ_init!=std::string::npos&&init<environ_init);
+   assert(code.find("on1x_kernel_call2(0, a, b)")!=std::string::npos);
+   assert(code.find("on1x_kernel_call3(1, a, b, c)")!=std::string::npos);
+   assert(code.find("on1x_adapter_kernel_load_time_add_i64")!=std::string::npos);
+   assert(code.find("mulib_clamp")==std::string::npos&&code.find("stdffi_clamp")==std::string::npos);
+
+   std::ofstream(root/"a.on1x")<<"import foreign stdffi.clamp as C;fn main(){}";
+   auto unused=on1x::load_unit(root/"a.on1x",options);
+   on1x::check(unused.unit);
+   assert(on1x::emit_c(unused.unit,"a.on1x").find("on1x_kernel_import")==std::string::npos);
+
+   std::ofstream(root/"a.on1x")<<"import foreign stdffi.clamp as C;fn main(){println(C.unknown(1,2));}";
+   reject("no load-time stdffi export");
+   std::ofstream(root/"a.on1x")<<"import foreign stdffi.clamp as C;fn main(){println(C.i64(1,2));}";
+   auto wrong_arity=on1x::load_unit(root/"a.on1x",options);
+   rejected=false;
+   try{on1x::check(wrong_arity.unit);}
+   catch(const on1x::Error& error){rejected=std::string(error.what()).find("argument")!=std::string::npos;}
+   assert(rejected);
+ }

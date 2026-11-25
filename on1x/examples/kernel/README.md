@@ -8,6 +8,7 @@ bindings or production review evidence.
 | Example | Build requirements |
 | --- | --- |
 | [`portable_clamp.on1x`](portable_clamp.on1x) | `on1xc --run-ir portable_clamp.on1x` or `on1xc --run-vm portable_clamp.on1x`. Uses the portable `stdffi.clamp` import. |
+| [`load-time-clamp`](load-time-clamp/) | [Installed direct-C11 demo](../../docs/kernel-load-time.md): one application loads either a checked recipe or an explicitly approved native package at startup. |
 | [`clamp.on1x`](clamp.on1x) | [Unsafe static clamp](../../docs/kernel-bind.md#existing-static-build). The three calls require lexical `unsafe`; the interval check still runs. |
 | [`clamp_safe.on1x`](clamp_safe.on1x) | [Independently reviewed clamp](../../docs/kernel-review.md#reproducible-workflow). A candidate report alone will not authorize the build. |
 | [`forecast.on1x`](forecast.on1x), [`pricing/main.on1x`](pricing/main.on1x) | [Reviewed numerical profiles](../../docs/kernel-numerics.md). The combined example needs review for the complete selected module set. |

@@ -96,12 +96,32 @@ class Loader {
     const auto alias=e.text.substr(0,dot);
     const auto found=current_module->foreigns.find(alias);
     if(found==current_module->foreigns.end()||locals.contains(alias))return false;
-    const auto& kernel=found->second.kernel;
-    auto key=std::make_pair(kernel,e.text.substr(dot+1));
-    const auto& library=foreign_libraries.at(kernel);
-    auto function=foreign_functions.find(key);
-    if(function==foreign_functions.end()){
-     auto materialized=library.materialize(key.second,e.where);
+     const auto& kernel=found->second.kernel;
+     auto key=std::make_pair(kernel,e.text.substr(dot+1));
+     auto function=foreign_functions.find(key);
+     if(options.kernel_load_time){
+      if(function==foreign_functions.end()){
+       const auto arity=load_time_kernel_arity(key.second);
+       if(!arity)
+        throw Error(e.where,"no load-time stdffi export "+e.text,"ON1X-STDFFI-MEMBER");
+       // Admit only a checked compiler-owned export, including in source-only
+       // checks that never reach C11 lowering.
+       (void)stdffi::load_time_pin(key.second,arity,e.where);
+       Function f;
+       f.name=load_time_kernel_function(key.second);
+       f.where=e.where;
+       f.result=Type::I64;
+       f.external=true;
+       f.kernel_symbol=std::string(load_time_kernel_prefix)+key.second;
+       append_parameters(f,std::vector<Type>(arity,Type::I64));
+       function=foreign_functions.emplace(std::move(key),std::move(f)).first;
+      }
+      e.text=function->second.name;
+      return true;
+     }
+     if(function==foreign_functions.end()){
+      const auto& library=foreign_libraries.at(kernel);
+      auto materialized=library.materialize(key.second,e.where);
      if(!materialized)
       throw Error(e.where,"no portable stdffi export "+e.text+" in "+library.path().string(),"ON1X-STDFFI-MEMBER");
      // Internal identifiers are unspellable in source, and cannot designate a
@@ -116,8 +136,14 @@ class Loader {
     e.text=function->second.name;
     return true;
    }
-    void admit_foreign(const ForeignImport& request){
-     if(foreign_libraries.contains(request.kernel))return;
+     void admit_foreign(const ForeignImport& request){
+      if(options.kernel_load_time){
+       if("stdffi."+request.kernel!=load_time_kernel_module||!stdffi::has_kernel(request.kernel))
+        throw Error(request.where,"no supported load-time stdffi kernel stdffi."+request.kernel,
+                    "ON1X-STDFFI-KERNEL");
+       return;
+      }
+      if(foreign_libraries.contains(request.kernel))return;
      if(!foreign_roots){
       foreign_roots.emplace();
       discovery::environment(*foreign_roots,"MULIB_FOREIGNLIB_PATH");
@@ -335,7 +361,7 @@ class Loader {
                       "interface verification does not transport intrinsic impl declarations",
                       "ON1X-IMPL-UNSUPPORTED");
       }
-      if(!inspection){
+       if(!inspection){
        for(const auto& request:m->unit.kernel_imports)require_kernel_import_policy(request);
         if(!options.kernel_c11&&!m->unit.kernel_imports.empty()){
          if(m->unit.kernel_imports.front().module==ipc_kernel_module)
@@ -344,8 +370,12 @@ class Loader {
                      "ON1X-KERNEL-UNSAFE-UNSUPPORTED");
         require_no_kernel_imports(m->unit);
        }
-      }
-     if(options.kernel_c11){
+       }
+       if(options.kernel_load_time&&
+          (!m->unit.ppx.empty()||!m->unit.extensions.empty()||!m->unit.features.empty()))
+        throw Error({path.string()},"--kernel-load-time does not execute source PPX or declaration extensions",
+                    "ON1X-KERNEL-PROFILE");
+      if(options.kernel_c11){
        if(!m->unit.ppx.empty()||!m->unit.macros.empty()||!m->unit.extensions.empty()||
           !m->unit.features.empty()||!m->unit.cliches.empty()||
           !m->unit.cliche_implementations.empty()||!m->unit.inherent_implementations.empty())
@@ -765,8 +795,13 @@ public:
        if(!ec)shared_sources.emplace(std::move(path),kind);
       }
     }
- LoadedUnit run(const fs::path& input){
-   if(options.interfaces.size()>max_interface_files)
+  LoadedUnit run(const fs::path& input){
+    if(options.kernel_load_time&&
+       (inspection||options.standalone_guest||options.kernel_c11||options.kernel_stage||
+        !options.extensions.enabled.empty()))
+     throw Error({input.string()},"load-time stdffi cannot be combined with KernelBind, guest or declaration extension profiles",
+                 "ON1X-KERNEL-PROFILE");
+    if(options.interfaces.size()>max_interface_files)
     throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
     throw Error({input.string()},"interface verification cannot run with KernelBind or declaration extensions",
@@ -937,8 +972,8 @@ public:
      if(kernel_calls.size()+foreign_functions.size()>16384-count)
       throw Error({input.string()},"loaded function count limit exceeded");
      for(auto& [name,f]:kernel_calls){(void)name;result.unit.functions.push_back(std::move(f));}
-     // These are ordinary definitions rather than externs or special-cased
-     // intrinsics. The normal semantic pipeline must check their bodies.
+      // Portable imports supply ordinary definitions by default. In late mode
+      // the same references resolve to body-free internal typed declarations.
      for(auto& [key,f]:foreign_functions){
       (void)key;
       result.internal_functions.insert(f.name);

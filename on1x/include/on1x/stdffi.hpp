@@ -16,6 +16,14 @@ std::span<const Export> exports();
 bool has_kernel(std::string_view kernel);
 std::optional<Function> materialize(std::string_view kernel,std::string_view member,const Location&);
 
+// Load-time C11 pins are derived from the checked compiler registry; a package
+// or an ffispec on the application's search path cannot set these digests.
+struct LoadTimePin {
+ unsigned version;
+ std::string interface_sha256,behavior_sha256;
+};
+LoadTimePin load_time_pin(std::string_view member,std::size_t arity,const Location&);
+
 // A selected ffispec can only choose exports from the generated immutable table.
 class SelectedLibrary {
  std::filesystem::path path_;

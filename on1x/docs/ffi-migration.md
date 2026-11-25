@@ -35,6 +35,11 @@ The [standard FFI catalogue](../stdffi/README.md) describes generation and
 the supported kernel bodies. An unlisted kernel or untranslatable export
 does not become callable because Cephyr parsed its signature.
 
+Direct hosted C11 also has a separate [load-time clamp profile](kernel-load-time.md).
+With `--kernel-load-time`, the same source spelling produces typed startup
+requirements rather than embedded recipe bodies. The application will not
+start without a compatible package in an explicit host-selected root.
+
 ## Separate native KernelBind workflows
 
 The migration keeps the source spellings `import kernel`, `unsafe import

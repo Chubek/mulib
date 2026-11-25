@@ -1,0 +1,41 @@
+import foreign stdffi.clamp as Clamp;
+import std.environ as Env;
+
+fn main() {
+  # A command-line argument selects the deliberately failing guard probe.
+  if Env.argc() > 1 {
+    println(Clamp.i64(5, 9, 1));
+    return;
+  }
+  let low = -9223372036854775808;
+  let high = 9223372036854775807;
+
+  println(Clamp.i64(27, 0, 10));
+  println(Clamp.i64(-1, 0, 10));
+  println(Clamp.i64(4, 0, 10));
+  println(Clamp.i64(0, 0, 10));
+  println(Clamp.i64(10, 0, 10));
+  println(Clamp.i64(20, -7, -7));
+  println(Clamp.i64(low, low, high));
+  println(Clamp.i64(high, low, high));
+
+  println(Clamp.add_i64(40, 2));
+  println(Clamp.add_i64(high, 1));
+  println(Clamp.add_i64(low, -1));
+  println(Clamp.add_i64(high - 1, 1));
+  println(Clamp.add_i64(low + 1, -1));
+  println(Clamp.add_i64(low, high));
+  println(Clamp.add_i64(high, high));
+  println(Clamp.add_i64(low, low));
+  println(Clamp.add_i64(low, 0));
+
+  println(Clamp.sub_i64(4, -2));
+  println(Clamp.sub_i64(high, -1));
+  println(Clamp.sub_i64(low, 1));
+  println(Clamp.sub_i64(high - 1, -1));
+  println(Clamp.sub_i64(low + 1, 1));
+  println(Clamp.sub_i64(high, low));
+  println(Clamp.sub_i64(low, high));
+  println(Clamp.sub_i64(low, low));
+  println(Clamp.sub_i64(high, 0));
+}

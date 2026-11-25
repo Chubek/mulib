@@ -1,10 +1,47 @@
 #include "directives.hpp"
 #include "tables.hpp"
+#include <on1x/kernel.hpp>
+#include <on1x_kernel_package.h>
+#include <on1x_kernel_recipe.h>
 #include <algorithm>
 
 namespace on1x::stdffi {
 namespace {
 std::string parameter(std::size_t index){return "ffi_arg_"+std::to_string(index);}
+
+// The same ASCII positional expression format is reconstructed by the
+// runtime from its independently checked package recipe.
+void write_canonical_expression(std::string& out,std::size_t index){
+ using enum tables::Code;
+ const auto& node=tables::nodes.at(index);
+ std::string_view op;
+ switch(node.op){
+  case Param:out+="$"+std::to_string(node.immediate);return;
+  case Integer:out+=std::to_string(node.immediate);return;
+  case Bool:out+=node.immediate?"true":"false";return;
+  case Lt:op="lt";break;
+  case Le:op="le";break;
+  case Gt:op="gt";break;
+  case Ge:op="ge";break;
+  case Eq:op="eq";break;
+  case And:op="and";break;
+  case Or:op="or";break;
+  case Add:op="add";break;
+  case Sub:op="sub";break;
+  case If:op="if";break;
+ }
+ out+='(';
+ out+=op;
+ out+=' ';
+ write_canonical_expression(out,node.a);
+ out+=' ';
+ write_canonical_expression(out,node.b);
+ if(node.op==If){
+  out+=' ';
+  write_canonical_expression(out,node.c);
+ }
+ out+=')';
+}
 
 class Materializer {
  const Location& where;
@@ -93,6 +130,37 @@ std::optional<Function> materialize(std::string_view kernel,std::string_view mem
   if(info.kernel==kernel&&info.member==member)return Materializer(where).build(info,tables::recipes[i]);
  }
  return std::nullopt;
+}
+
+LoadTimePin load_time_pin(std::string_view member,std::size_t arity,const Location& where){
+ for(std::size_t i=0;i<tables::exports.size();++i){
+  const auto& info=tables::exports[i];
+  if(info.kernel!="clamp"||info.member!=member||info.arity!=arity)continue;
+  const auto& recipe=tables::recipes[i];
+  std::string guard;
+  write_canonical_expression(guard,recipe.guard);
+  // The v1 load-time profile uses the reviewed clamp companion precondition,
+  // which Cephyr's legacy recipe discovery does not carry. Apply it only to
+  // the exact header revision it covers and do not alter the eager recipe.
+  if(member=="i64"){
+   constexpr std::string_view companion_revision=
+    "cf3d0cf6e27b0d2844e25ea1e5bf7637a34508d29c42411aa855dfe97a1205e0";
+   constexpr std::string_view companion_guard="(le $1 $2)";
+   if(info.sha256!=companion_revision||(guard!="true"&&guard!=companion_guard))break;
+   guard=companion_guard;
+  }
+  std::string canonical="(guard "+guard;
+  canonical+=")\n(body ";
+  write_canonical_expression(canonical,recipe.body);
+  canonical+=")\n";
+  char interface_hash[65],behavior_hash[65];
+  if(on1x_kernel_hash_interface(load_time_kernel_module.data(),std::string(member).c_str(),
+                                static_cast<unsigned>(arity),interface_hash)&&
+     on1x_kernel_sha256(canonical.data(),canonical.size(),behavior_hash))
+   return {ON1X_KERNEL_IMPORT_VERSION,interface_hash,behavior_hash};
+  break;
+ }
+ throw Error(where,"ON1X-KERNEL-ABI: no checked load-time pin for "+std::string(member),"ON1X-KERNEL-ABI");
 }
 
 const Export* SelectedLibrary::find(std::string_view member) const {

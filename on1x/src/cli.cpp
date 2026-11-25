@@ -542,6 +542,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --kernel-imports INPUT [-o OUTPUT] (source requests only; never executes PPX)\n"
     "       on1xc --emit-c --kernel-c11 INPUT (unsafe KernelBind C generation; link with on1x-build.py)\n"
     "       on1xc --emit-c --kernel-c11 --kernel-stage INPUT (unresolved kernel callers; NOT admission)\n"
+    "       on1xc --emit-c --kernel-load-time INPUT (resolve portable kernel imports at program startup)\n"
    "       [-I DIRECTORY | --module-path DIRECTORY] [--stdlib DIRECTORY]\n"
    "       [--lib-path DIR:DIR] [--stdlib-path DIR:DIR]\n"
    "       [--ppx-path DIR:DIR] [--stdppx-path DIR:DIR] [--use-ppx NAME]\n"
@@ -809,6 +810,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
+       if(arg=="--kernel-load-time"){loader.kernel_load_time=true;continue;}
          if(arg=="--check-memory"){mode=arg;memory=true;continue;}
          if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
      if(arg=="--interface"){
@@ -913,6 +915,14 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
    }
+    if(loader.kernel_load_time){
+     if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces")||
+        list_opts||!sdk_mode.empty()||ir_input||memory||type_safety||
+        !archvirt_mode.empty()||cephyr_object||loader.kernel_c11||loader.kernel_stage||
+        !ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||!loader.extensions.enabled.empty())
+      throw std::runtime_error("--kernel-load-time requires direct C11 emission, --deps, or --check-interfaces without KernelBind, PPX or declaration extensions");
+     loader.extensions.execute=false;
+    }
    if(archvirt_uncached&&(archvirt_mode.empty()||archvirt_mode=="--vm-run"))
     throw std::runtime_error("--vm-uncached requires --vm-build or --vm-launcher");
    if(archvirt_standalone){

@@ -248,9 +248,11 @@ class Checker {
      if(!call_position)ref_error(e.where,"functions with borrowed parameters require a direct named call");
     e.reference=Expr::Reference::BorrowFunction;return e.type=signatures.at(e.text);
    }
-   if(found->second->external&&!call_position)
-    fail(e.where,"raw extern functions cannot be used as values; write an On1x wrapper");
-     e.reference=found->second->kernel_link_only?Expr::Reference::ScalarForeign:
+    const bool late=load_time_kernel_symbol(found->second->kernel_symbol);
+    if(found->second->external&&!late&&!call_position)
+     fail(e.where,"raw extern functions cannot be used as values; write an On1x wrapper");
+     e.reference=late?Expr::Reference::Function:
+       found->second->kernel_link_only?Expr::Reference::ScalarForeign:
        !found->second->kernel_symbol.empty()?Expr::Reference::UnsafeForeign:
       found->second->external?Expr::Reference::Extern:Expr::Reference::Function;
     if(e.reference==Expr::Reference::UnsafeForeign&&!unsafe_context)

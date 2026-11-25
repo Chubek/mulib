@@ -4,6 +4,14 @@
 
 namespace on1x {
 inline constexpr std::string_view legacy_scalar_module="mulib.clamp";
+inline constexpr std::string_view load_time_kernel_module="stdffi.clamp";
+inline constexpr std::string_view load_time_kernel_prefix="stdffi.clamp.";
+inline bool load_time_kernel_symbol(std::string_view symbol) {
+ return symbol.starts_with(load_time_kernel_prefix);
+}
+inline std::string load_time_kernel_function(std::string_view member) {
+ return "@kernel_load_time_"+std::string(member);
+}
 inline bool clamp_interval_symbol(std::string_view symbol) {
  return symbol=="mulib_clamp_i64";
 }
@@ -49,6 +57,11 @@ inline std::string_view legacy_kernel_member(std::string_view module,std::string
  for(const auto& entry:legacy_kernel_members)
   if(entry.module==module&&entry.member==member)return entry.symbol;
  return {};
+}
+inline std::size_t load_time_kernel_arity(std::string_view member) {
+ if(member=="i64")return 3;
+ if(member=="add_i64"||member=="sub_i64")return 2;
+ return 0;
 }
 // These identities cannot be spelled by the source parser. The explicit
 // import alias can name Result and the session's opaque nominal identity.
@@ -168,6 +181,19 @@ inline std::vector<Type> history_kernel_parameters(std::string_view symbol) {
 // This is representability checking, not ExoML provenance or semantic approval.
 inline void verify_kernel_shape(const Function& f) {
  if(f.kernel_symbol.empty()&&!f.kernel_link_only)return;
+ if(load_time_kernel_symbol(f.kernel_symbol)){
+  const auto member=std::string_view(f.kernel_symbol).substr(load_time_kernel_prefix.size());
+  const auto arity=load_time_kernel_arity(member);
+  if(!arity||f.name!=load_time_kernel_function(member)||!f.external||f.kernel_link_only||
+     f.prototype||f.extension_generated||f.procedure||!f.type_parameters.empty()||
+     !f.constraints.empty()||!f.body.empty()||!f.attributes.empty()||
+     f.result!=Type::I64||f.params.size()!=arity)
+   throw Error(f.where,"ON1X-KERNEL-ABI: invalid load-time interface","ON1X-KERNEL-ABI");
+  for(const auto& p:f.params)
+   if(p.type!=Type::I64||p.pattern||p.borrow!=BorrowMode::Value)
+    throw Error(p.where,"ON1X-KERNEL-ABI: invalid load-time parameter","ON1X-KERNEL-ABI");
+  return;
+ }
  const auto expected=(f.kernel_link_only?"@kernel_scalar_":"@kernel_")+f.kernel_symbol;
  if(ipc_kernel_symbol(f.kernel_symbol)){
   Unit declarations;
