@@ -5,7 +5,7 @@
 
 namespace on1x::memgraph {
 
-// A lexical alias is represented by the slot of its checked scalar root,
+// A lexical alias is represented by the slot of its checked copy-value root,
 // never by a pointer value or a fresh copy. All provenance is original HIR.
 struct LexicalSlot {
     const Stmt* binding;

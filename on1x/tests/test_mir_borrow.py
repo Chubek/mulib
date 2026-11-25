@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scalar lexical borrows: C11, MIR evaluator/C11, VM wire and Archon parity."""
+"""Copy-value lexical borrows: C11, MIR evaluator/C11, VM wire and Archon parity."""
 from support import NativeTests, run
 
 t = NativeTests()
@@ -189,6 +189,35 @@ fn main() {
 }
 ''', '1\n0\n', status=70, trap='invalid division')
 
+exercise('tuple_loan', '''
+fn mark(n:i64)->i64 { println(n); return n; }
+fn swap(root:(i64,(bool,i64)), early:bool)->i64 {
+  let edit=borrow mut root;
+  let next=borrow mut edit;
+  let old=ref_replace(next,loop{
+    if early{return mark(9);}
+    break with (mark(5),(true,mark(7)));
+  });
+  let (a,(flag,b))=old;
+  let (c,(after,d))=next;
+  println(flag); println(after);
+  return a+b+c+d;
+}
+fn main(){println(swap((1,(false,2)),true));println(swap((1,(false,2)),false));}
+''', '9\n9\n5\n7\nfalse\ntrue\n15\n')
+
+exercise('tuple_loan_trap', '''
+fn mark(n:i64)->i64 { println(n); return n; }
+fn main() {
+  let root=(1,(2,false));
+  let edit=borrow mut root;
+  let old=ref_replace(edit,(mark(4)/mark(0),(mark(99),true)));
+  let (x,(y,b))=old;
+  println(x+y);
+  println(b);
+}
+''', '4\n0\n', status=70, trap='invalid division')
+
 # Exactly one root slot, two stores (initial value and :=), three reads.
 # Acquiring or reborrowing doesn't allocate a slot, perform a load, or bump
 # the wire version of an otherwise v1 program.
@@ -211,10 +240,12 @@ for name, text, diagnostic, checked_hir in [
      'borrowed parameters', True),
     ('aggregate', 'fn main(){let xs=array[1,2];let r=borrow xs;println(r[0]);}',
      '', True),
-    ('tuple', 'fn main(){let x=(1,2);let r=borrow x;let (a,b)=r;println(a+b);}',
-     'scalar bool or numeric root', True),
+    ('managed_tuple', 'fn main(){let x=(1,(2,sx_string("text")));let r=borrow x;'
+     'let (a,(b,c))=r;println(a+b);println(sx_text(c));}', '', True),
+    ('function_tuple', 'fn id(n:i64)->i64{return n;}'
+     'fn main(){let x=(1,(2,id));let r=borrow x;let (a,(b,f))=r;println(f(a+b));}', '', True),
     ('pattern_root', 'fn main(){let (x,y)=(1,2);let r=borrow x;println(r+y);}',
-     'verified named scalar bool or numeric root', True),
+      'verified named copy root', True),
     ('function_layout', 'fn id(n:i64)->i64{return n;}'
      'fn main(){let x=id;let r=borrow x;println(r(3));}',
      '', True),
@@ -250,8 +281,8 @@ for name, text, diagnostic, checked_hir in [
         assert source.name + ':' in p.stderr, p
         if checked_hir:
             assert 'ON1X-MIR-UNSUPPORTED' in p.stderr, p
-        if mode == '--emit-vm' and name in ('aggregate', 'function_layout'):
-            assert 'verified named scalar bool or numeric root' in p.stderr, p
+        if mode == '--emit-vm' and name in ('aggregate', 'function_layout', 'function_tuple'):
+            assert 'verified named copy root' in p.stderr, p
         # Rejecting a new artifact must also leave a previous one untouched.
         previous = t.work / f'{name}{mode}-previous-artifact'
         sentinel = b'previous artifact\x00\xff\n'
@@ -304,4 +335,24 @@ for executable in ([t.build('vm_lifted_local_borrow_c11', source=source)], [vm, 
     p = command(executable)
     assert p.stdout == '13\n' and not p.stderr, p
 
-print(f'scalar lexical borrow differential PASS; Archon={native}')
+source = t.source('vm_captured_tuple_loan', '''
+fn main() {
+  let root=(4,(false,2));
+  let go=fn()->i64 {
+    let captured=root;
+    let next=borrow mut captured;
+    let (a,(flag,b))=ref_replace(next,(1,(true,2)));
+    println(flag);
+    return a+b;
+  };
+  { let edit=borrow mut root; edit:=(99,(true,9)); }
+  println(go());
+}
+''')
+bytecode = t.work / 'vm_captured_tuple_loan.o1vm'
+command([t.compiler, '--emit-vm', source, '-o', bytecode])
+for executable in ([t.build('vm_captured_tuple_loan_c11', source=source)], [vm, bytecode]):
+    p = command(executable)
+    assert p.stdout == 'false\n6\n' and not p.stderr, p
+
+print(f'copy-value lexical borrow differential PASS; Archon={native}')

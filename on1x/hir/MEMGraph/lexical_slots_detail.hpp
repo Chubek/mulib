@@ -1,11 +1,16 @@
 #pragma once
 #include "lexical_slots.hpp"
+#include <algorithm>
 #include <utility>
 
 namespace on1x::memgraph::detail {
 
-inline bool lexical_copy_scalar(const Type& type) {
-    return type == Type::Bool || type.is_numeric();
+// This predicate sees canonical, size-checked types. Admit only layouts that
+// are already MIR values and need no retain/drop at a load or store.
+inline bool lexical_copy_value(const Type& type) {
+    if (type == Type::Bool || type.is_numeric()) return true;
+    if (!type.is_tuple()) return false;
+    return std::all_of(type.elements().begin(), type.elements().end(), lexical_copy_value);
 }
 
 class LexicalSlotBuilder {

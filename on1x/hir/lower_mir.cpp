@@ -24,7 +24,7 @@ namespace {
  throw Error(at,"ON1X-MIR-UNSUPPORTED: "+why,"ON1X-MIR-UNSUPPORTED");
 }
 [[noreturn]] void missing_lexical_root(const Location& at){
- unsupported(at,"lexical borrow requires a verified named scalar bool or numeric root");
+ unsupported(at,"lexical borrow requires a verified named copy root (bool, numeric, or a tuple of those)");
 }
 void function_profile(const on1x::Function& f){
  if(!f.kernel_symbol.empty())
@@ -45,8 +45,8 @@ memgraph::LexicalSlots verified_places(const Unit& unit){
  return plan;
 }
 
-// Do not let VM closure conversion manufacture a scalar loan from a
-// function-typed source place, or rewrite an unsupported deferred thunk.
+ // Do not let VM closure conversion manufacture a copy-value loan from a
+ // function-bearing source place, or rewrite an unsupported deferred thunk.
 void vm_source_profile(const std::vector<Stmt>&,const memgraph::LexicalSlots&);
 void vm_source_expression(const Expr& e,const memgraph::LexicalSlots& places){
  if(e.prototype)return;

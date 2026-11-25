@@ -52,8 +52,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
     bool addressable=true,prototype=false;
     // Filled only when exporting a plan from executable HIR. The lexical
     // verifier's own identity/lifetime checks never depend on these pointers.
-    const Stmt* scalar_root_statement=nullptr;
-    const Param* scalar_root_parameter=nullptr;
+    const Stmt* slot_root_statement=nullptr;
+    const Param* slot_root_parameter=nullptr;
     const Stmt* planned_binding=nullptr;
     const Expr* immutable_string_initializer=nullptr;
    };
@@ -508,8 +508,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
                           addressable,prototype};
    }
     void plan_statement_root(const Stmt& statement,const Type& type){
-     if(slots&&!generic_context&&memgraph::detail::lexical_copy_scalar(type))
-      scopes.back().at(statement.name).scalar_root_statement=&statement;
+      if(slots&&!generic_context&&memgraph::detail::lexical_copy_value(type))
+       scopes.back().at(statement.name).slot_root_statement=&statement;
     }
    void pattern(const Pattern& p,const Type& t,std::size_t depth=0){
      tick(p.where,depth);source(p.where);checked_type(t,p.where,generic_context);
@@ -547,8 +547,8 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
        auto& local=scopes.back().at(p.name);
        local.borrow=p.borrow;local.origin=local.id;local.root=local.id;
        loan_tracking=true;
-      }else if(slots&&!generic_context&&memgraph::detail::lexical_copy_scalar(p.type))
-       scopes.back().at(p.name).scalar_root_parameter=&p;
+       }else if(slots&&!generic_context&&memgraph::detail::lexical_copy_value(p.type))
+        scopes.back().at(p.name).slot_root_parameter=&p;
      }
     }
    }
@@ -736,13 +736,13 @@ Flow merge(Flow a,const Flow& b){if(!a)return b;if(!b)return a;return meet(*a,*b
          source.id,source.root);
     loan_tracking=true;
     if(slots&&!generic_context&&source.type==borrow.type&&
-       (source.scalar_root_statement||source.scalar_root_parameter)){
-     auto& alias=scopes.back().at(statement.name);
-     alias.scalar_root_statement=source.scalar_root_statement;
-     alias.scalar_root_parameter=source.scalar_root_parameter;
-     alias.planned_binding=&statement;
-     slots->bind({&statement,&source_expression,source.planned_binding,
-                  alias.scalar_root_statement,alias.scalar_root_parameter,
+        (source.slot_root_statement||source.slot_root_parameter)){
+      auto& alias=scopes.back().at(statement.name);
+      alias.slot_root_statement=source.slot_root_statement;
+      alias.slot_root_parameter=source.slot_root_parameter;
+      alias.planned_binding=&statement;
+      slots->bind({&statement,&source_expression,source.planned_binding,
+                   alias.slot_root_statement,alias.slot_root_parameter,
                   borrow.borrow,borrow.type});
     }
    }

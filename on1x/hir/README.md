@@ -23,7 +23,7 @@ On1x source -> parse / imports / macros / PPX / staging -> check and canonicaliz
   disable rewrites but cannot disable source admission.
 - [`On1xMETA/`](On1xMETA/) owns the On1xMETA grammar, rule tables, semantic
   constraints, and typed partial evaluator.
-- [`MEMGraph/`](MEMGraph/) projects lexical copy-scalar loan roots from the
+- [`MEMGraph/`](MEMGraph/) projects lexical copy-value loan roots from the
   canonical verifier. Its separate bounds optimization proves redundant
   checks on demand from final verified HIR. Direct C11 and VM-product MIR
   lowering query the bounds proofs in their emission order. Neither plan
@@ -31,14 +31,31 @@ On1x source -> parse / imports / macros / PPX / staging -> check and canonicaliz
 - [`lower_mir.cpp`](lower_mir.cpp) owns HIR-to-MIR lowering and verifies the
   result before dispatch. The VM path can also recheck a private
   [closure conversion](vm_closures.cpp) before lowering finite products.
-  Standard MIR remains numeric/scalar and bounded tuples. Checked scalar
-  lexical aliases are resolved to typed slots before MIR; unsupported
-  aggregates, owner payloads, parameter loans, cleanup, suspension and
-  foreign operations reject rather than silently falling back. Direct C11
-  covers the existing richer
-  language and remains the default. The [MIR optimizer](../docs/backend-passes.md)
+  Standard MIR remains numeric/scalar and bounded tuples. Named lexical
+  aliases to those copy values become typed slot accesses before MIR;
+  other aggregate loans, owner payloads, parameter loans, cleanup,
+  suspension and foreign operations reject rather than silently falling
+  back. Direct C11 covers the existing richer language and remains the
+  default. The [MIR optimizer](../docs/backend-passes.md)
   and [MIR relational analysis](../docs/backend-analysis.md) are separate
   downstream stages.
+
+## What survives into MIR
+
+Source admission and canonicalization run in
+[`check_unit`](../src/sema.cpp). The checked-HIR optimization transaction
+rechecks its private candidate before the source driver hands it to
+`mir::lower` or `hir::lower_vm` in [`cli.cpp`](../src/cli.cpp).
+
+| Source construct | Checked-HIR shape | Executable MIR boundary |
+| --- | --- | --- |
+| Macros, staging, generic definitions | Expanded/residual executable code plus non-executable prototypes; `check_unit` requires core syntax after expansion. | Prototype bodies and template definitions are not emitted; concrete specializations are. See `Lowering::body` and `Lowering::run` in [`lower_mir.cpp`](lower_mir.cpp). |
+| Ranges, labeled loops, `break with`, match and `?` | [`canonical/control.cpp`](../src/canonical/control.cpp) builds scoped bounds/cursor/latches and resolves targets. [`canonical/values.cpp`](../src/canonical/values.cpp) turns value exits, patterns and propagation into regions, typed initialization, tests, projections and explicit exits. | Regions and exits become CFG edges; the selected operand and original side effects remain. Tagged payloads and `Result` layouts need the VM-product route and must be unmanaged. |
+| Scalar/tuple operands and short-circuit decisions | Typed operands, tuple projections and either a logical binary expression or an On1xMETA decision region. | `Lowering::expression` emits ordered operations and branch/merge edges. `boolean_decision` can erase an independent Boolean temporary, not its conditional evaluation. |
+| Named lexical borrow, reborrow, `:=`, `ref_replace` | [`canonical/verify_values.cpp`](../src/canonical/verify_values.cpp) verifies access and records exact roots and use sites in the [lexical-slot plan](MEMGraph/ADAPTER.md). | A named scalar or recursively scalar tuple root uses one typed slot. Acquisitions erase; reads snapshot and writes remain ordered effects. Exchange reads the old value only after the RHS completes. This adds no pointer, cleanup or wire operation. |
+| First-class functions and captures | Typed lambda bodies with checked captures. | Standard MIR rejects closures. The VM may lower closed, eligible closure families through [`vm_closures.cpp`](vm_closures.cpp), then must recheck the converted unit and rebuild its lexical-slot plan. |
+| Records, sums, arrays and slices | Typed data operations, with checked label/tag evidence. | The VM may map finite unmanaged values to products; bounds assertions remain unless separately proved. Standard MIR rejects those data operations. |
+| `defer`, owners, concurrency and FFI | Canonical `PushDefer` holds a thunk with saved arguments; ownership and other effects retain their checked operations. See [`canonical/values.cpp`](../src/canonical/values.cpp) and [`sema.cpp`](../src/sema.cpp). | Not erased to plain calls or copies: the standard and VM source lowerers reject unsupported cleanup, ownership, suspension and foreign operations. The direct C11 path remains distinct. |
 
 ## Extending the MIR route
 

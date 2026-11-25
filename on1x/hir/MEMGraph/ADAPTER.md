@@ -8,9 +8,10 @@ the exact input `Unit`. It does not replace any other ingress check or add
 loan authority. It is always built, even with `ON1X_WITH_MEMGRAPH=OFF`; the
 switch controls the optional LLSynth-generated bounds rules, not this plan.
 
-The plan records lexical `let` borrows of ordinary named scalar places
-(`bool`, `i64`, `u8`–`u64`, `f32`, `f64`). A root is a plain `let`, a
-definitely initialized canonical `Storage`, or a named by-value parameter.
+The plan records lexical `let` borrows of ordinary named places of type
+`bool`, `i64`, `u8`–`u64`, `f32`, `f64`, or tuples recursively containing
+only those types. A root is a plain `let`, a definitely initialized
+canonical `Storage`, or a named by-value parameter.
 The verifier propagates that exact declaration identity through admitted
 reborrows. Each entry identifies the original binding and operand, immediate
 parent (if a reborrow), root, type, and mode. Read and `:=` store queries are
@@ -18,7 +19,7 @@ by the original expression or assignment identity. Shadowing is resolved by
 the verifier before any entry is recorded. Plan size and work are bounded by
 canonical verification's traversal limits; there is no additional HIR walk.
 
-A consumer can allocate one scalar slot at the original root and use it at
+A consumer can allocate one typed slot at the original root and use it at
 the original read and store sites. A read must still take a snapshot at that
 site; a store must still evaluate its RHS before writing, with no write on an
 early exit or trap. A `let` borrow is not a copy and does not evaluate the
@@ -26,17 +27,20 @@ root's initializer a second time. Locations, control flow and cleanup stay
 with the original HIR. The plan must not be reused after a transform, clone,
 or change of the input `Unit`.
 
-Aggregate, pointer-bearing and managed values, pattern-bound roots, incoming
-borrowed parameters, and generic proof/non-executable nodes have no plan
-entries. An entry for a binding is not a claim about all uses: calls with
-borrowed parameters remain outside the plan. For `ref_replace`, query
+Records, sums, arrays, slices, pointer-bearing and managed values,
+pattern-bound roots, incoming borrowed parameters, and generic
+proof/non-executable nodes have no plan entries. An entry for a binding
+is not a claim about all uses: calls with borrowed parameters remain outside
+the plan. For `ref_replace`, query
 `exchange` by the original intrinsic call, never `read` by its first operand.
 The plan records an exchange only for a planned exclusive alias, after the
 verifier checks the RHS under the temporary exclusive reborrow and finds a
 completing path. A consumer must take the old value and install the replacement
 at the original exchange site, only after the RHS succeeds. An early exit must
 not modify the root. This projection neither changes direct C11 pointer
-lowering nor introduces any new runtime or wire representation.
+lowering nor introduces any new runtime or wire representation. Tuple
+slots may trigger the same existing MIR analysis directives as ordinary
+tuple storage.
 
 ## Executable profile: `c11_fixed_array_v1`
 
