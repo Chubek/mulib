@@ -35,6 +35,7 @@ static void provider_language(void) {
   char url[8192],src[1024];
   assert(mulib_elvi_scrape_compile(dsl,sizeof dsl-1,&p,&error));
   assert(!error.line && !error.message[0] && !strcmp(p.name,"Offline provider"));
+  assert(p.mode==MULIB_ELVI_MODE_SEARCH && p.cookies.kind==MULIB_ELVI_STAGE_NONE);
   assert(p.max_results==20 && p.anchor_mode==MULIB_ELVI_ANCHOR_ANY);
   assert(mulib_elvi_scrape_url(&p,"",20,url,sizeof url));
   assert(!strcmp(url,"https://example.org/start"));
@@ -53,6 +54,143 @@ static void provider_language(void) {
     assert(!mulib_elvi_scrape_compile(src,(size_t)len,&p,&error));
     assert(error.line==invalid[i].error_line && error.message[0]);
     assert(!memcmp(&p,&before,sizeof p));
+  }
+}
+
+static void script_language(void) {
+  static const char canonical[]=
+    "elvi booking\n"
+    "host booking.com\n"
+    "home https://booking.com\n"
+    "mode scrape\n"
+    "cookies provide{$HOME/.mulib/elvi/cookies/BookingCookies.json}\n"
+    "xpath provide{mulib-xpath}\n"
+    "artifacts discard\n"
+    "logic lua{$HOME/.mulib/elvi/logic/BookingDotCom.lua}\n"
+    "forward ipc{/dev/shm/elv-scrape/BookingDotCom}";
+  static const char grouped[]=
+    "elvi fixture\r\nhost example.org\r\nhome https://example.org\r\n"
+    "logic lua{ # argument begins on next line\r\n"
+    "    ${HOME}/data{v{1}}/'x#} y'/\"z's\"/\\{q\\}\\#\\\\\\\"\\' # line comment\r\n"
+    "}\r\nxpath provide{ \"mulib-xpath\" } # comment\r\n"
+    "artifacts discard\r\nmode scrape\r\nforward ipc{/run/fixture}";
+  static const char prefix[]=
+    "elvi fixture\nhost example.org\nhome https://example.org\nmode scrape\n"
+    "xpath provide{mulib-xpath}\nartifacts discard\nforward ipc{/run/fixture}\n";
+  static const struct {const char *suffix,*message;size_t line;} invalid[]={
+    {"", "requires", 7},
+    {"logic other{/a}\n", "expected logic", 8},
+    {"logic lua{}\n", "expected logic", 8},
+    {"logic lua{\"\"}\n", "expected logic", 8},
+    {"logic lua{\"/open}\n", "expected logic", 8},
+    {"logic lua{/open{}}\ntrailing\n", "unknown directive", 9},
+    {"logic lua{/open{\n  /unfinished\n", "expected logic", 10},
+    {"logic lua{/a\\t}\n", "expected logic", 8},
+    {"logic lua{/a\\", "expected logic", 8},
+    {"logic lua{/a} tail\n", "expected logic", 8},
+    {"logic lua{/a}}\n", "expected logic", 8},
+    {"logic lua{$USER/a}\n", "unsupported variable", 8},
+    {"logic lua{$HOMELY/a}\n", "unsupported variable", 8},
+    {"logic lua{${HOME:-fallback}/a}\n", "unsupported variable", 8},
+    {"logic lua{/a/$HOME/b}\n", "unsupported variable", 8},
+    {"logic lua{$HOME/$USER}\n", "unsupported variable", 8},
+    {"logic lua{$(cmd)}\n", "unsupported variable", 8},
+    {"logic lua{/a}\nlogic lua{/b}\n", "duplicate", 9},
+    {"logic lua{/a}\nmode scrape\n", "duplicate", 9},
+    {"logic lua{/a}\nsearch https://example.org/{query}\n", "search directive", 9},
+    {"logic lua{/a}\nformat json\n", "search directive", 9},
+    {"logic lua{/a}\nexclude_host example.net\n", "search directive", 9}
+  };
+  static const char *const denied_urls[]={
+    "http://booking.com/", "https://www.booking.com/", "https://booking.com.evil.test/",
+    "https://booking.com@evil.test/", "https://booking.com:443/", "https://booking.com./",
+    "https://booking.com/#frag", "https://booking.com/%0a", "https://booking.com/%5c",
+    "https://booking.com/%ff%", "https://booking.com/ space", "https://127.0.0.1/"
+  };
+  mulib_elvi_scrape_program_t p,before;
+  mulib_elvi_scrape_error_t error;
+  char out[4096],src[4096];
+  size_t count=71;
+  assert(mulib_elvi_scrape_compile(canonical,sizeof canonical-1,&p,&error));
+  assert(!error.line && !error.message[0]);
+  assert(p.mode==MULIB_ELVI_MODE_SCRAPE && !strcmp(p.name,"booking"));
+  assert(p.cookies.kind==MULIB_ELVI_STAGE_COOKIE_FILE && p.cookies.line==5);
+  assert(!strcmp(p.cookies.argument,"$HOME/.mulib/elvi/cookies/BookingCookies.json"));
+  assert(p.xpath.kind==MULIB_ELVI_STAGE_XPATH && p.xpath.line==6);
+  assert(!strcmp(p.xpath.argument,"mulib-xpath"));
+  assert(p.artifacts.kind==MULIB_ELVI_STAGE_DISCARD && p.artifacts.line==7 &&
+    !p.artifacts.argument[0]);
+  assert(p.logic.kind==MULIB_ELVI_STAGE_LUA && p.logic.line==8);
+  assert(!strcmp(p.logic.argument,"$HOME/.mulib/elvi/logic/BookingDotCom.lua"));
+  assert(p.forward.kind==MULIB_ELVI_STAGE_IPC && p.forward.line==9);
+  assert(!strcmp(p.forward.argument,"/dev/shm/elv-scrape/BookingDotCom"));
+  assert(mulib_elvi_script_url_allowed(&p,p.home));
+  assert(mulib_elvi_script_url_allowed(&p,"https://Booking.Com/path?q=%23"));
+  for(size_t i=0;i<sizeof denied_urls/sizeof *denied_urls;i++)
+    assert(!mulib_elvi_script_url_allowed(&p,denied_urls[i]));
+  strcpy(out,"unchanged");
+  assert(!mulib_elvi_scrape_url(&p,"",1,out,sizeof out) && !strcmp(out,"unchanged"));
+  assert(!mulib_elvi_scrape_parse(&p,"",0,NULL,0,&count) && count==71);
+  assert(mulib_elvi_script_resolve(p.cookies.argument,"/approved/",out,sizeof out));
+  assert(!strcmp(out,"/approved/.mulib/elvi/cookies/BookingCookies.json"));
+  assert(mulib_elvi_script_resolve(p.forward.argument,NULL,out,sizeof out));
+  assert(!strcmp(out,p.forward.argument));
+  assert(mulib_elvi_script_resolve("$HOME","/",out,2) && !strcmp(out,"/"));
+  strcpy(out,"unchanged");
+  assert(!mulib_elvi_script_resolve(p.cookies.argument,NULL,out,sizeof out));
+  assert(!mulib_elvi_script_resolve(p.cookies.argument,"relative",out,sizeof out));
+  assert(!mulib_elvi_script_resolve(p.cookies.argument,"/with\ncontrol",out,sizeof out));
+  assert(!mulib_elvi_script_resolve(p.cookies.argument,"/approved",out,9));
+  assert(!mulib_elvi_script_resolve("$TMPDIR/foo","/approved",out,sizeof out));
+  assert(!mulib_elvi_script_resolve("",NULL,out,sizeof out));
+  assert(!strcmp(out,"unchanged"));
+
+  assert(mulib_elvi_scrape_compile(grouped,sizeof grouped-1,&p,&error));
+  assert(p.cookies.kind==MULIB_ELVI_STAGE_NONE && !p.cookies.line && !p.cookies.argument[0]);
+  assert(p.logic.line==4 && p.xpath.line==7 && p.forward.line==10);
+  assert(!strcmp(p.logic.argument,"${HOME}/data{v{1}}/x#} y/z's/{q}#\\\"'"));
+  assert(mulib_elvi_script_resolve(p.logic.argument,"/approved",out,sizeof out));
+  assert(!strcmp(out,"/approved/data{v{1}}/x#} y/z's/{q}#\\\"'"));
+  memcpy(&before,&p,sizeof p);
+  for(size_t i=0;i<sizeof invalid/sizeof *invalid;i++) {
+    int n=snprintf(src,sizeof src,"%s%s",prefix,invalid[i].suffix);
+    assert(n>0 && (size_t)n<sizeof src);
+    assert(!mulib_elvi_scrape_compile(src,(size_t)n,&p,&error));
+    assert(error.line==invalid[i].line && strstr(error.message,invalid[i].message));
+    assert(!memcmp(&p,&before,sizeof p));
+  }
+  { static const char legacy[]=
+      "elvi fixture\nhost example.org\nhome https://example.org\nmode search\n"
+      "search https://example.org/{query}\nanchor any\n";
+    int n=snprintf(src,sizeof src,"%scookies provide{/tmp/cookies}\n",legacy);
+    assert(n>0 && (size_t)n<sizeof src);
+    assert(!mulib_elvi_scrape_compile(src,(size_t)n,&p,&error));
+    assert(error.line==7 && strstr(error.message,"requires mode scrape"));
+    assert(!memcmp(&p,&before,sizeof p));
+    assert(mulib_elvi_scrape_compile(legacy,sizeof legacy-1,&p,&error));
+    assert(p.mode==MULIB_ELVI_MODE_SEARCH && mulib_elvi_scrape_url(&p,"x",1,out,sizeof out));
+    assert(!strcmp(out,"https://example.org/x"));
+  }
+  { static const char *const bad_directives[]={
+      "mode bad", "xpath provide{other}", "artifacts save", "forward file{/run/foo}"
+    };
+    for(size_t i=0;i<sizeof bad_directives/sizeof *bad_directives;i++) {
+      int n=snprintf(src,sizeof src,"elvi fixture\nhost example.org\nhome https://example.org\n%s",
+        bad_directives[i]);
+      assert(n>0 && (size_t)n<sizeof src);
+      assert(!mulib_elvi_scrape_compile(src,(size_t)n,&p,&error) && error.line==4);
+    }
+  }
+  { size_t n=strlen(prefix);
+    memcpy(src,prefix,n);memcpy(src+n,"logic lua{",10);n+=10;
+    memset(src+n,'a',1023);
+    src[n+1023]='}';
+    assert(mulib_elvi_scrape_compile(src,n+1024,&p,&error));
+    assert(strlen(p.logic.argument)==1023);
+    src[n+1023]='a';src[n+1024]='}';
+    assert(!mulib_elvi_scrape_compile(src,n+1025,&p,&error) && error.line==8);
+    memset(src+n,'{',32);memset(src+n+32,'}',33);
+    assert(!mulib_elvi_scrape_compile(src,n+65,&p,&error) && error.line==8);
   }
 }
 
@@ -279,6 +417,7 @@ int main(int argc,char **argv) {
   mulib_elvi_scrape_program_t p={0};mulib_elvi_scrape_error_t err={0};
   mulib_elvi_scrape_result_t out[10]={0};size_t count=0;char url[8192];
   provider_language();
+  script_language();
   anchor_attributes();
   anchor_classes();
   relative_links();

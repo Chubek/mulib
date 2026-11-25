@@ -485,3 +485,4 @@ Thumbs.db
 
 # Offline ElviScrape regression fixtures
 !tests/fixtures/elvi-scrape/*.html
+!tests/fixtures/elvi-script/*.html

@@ -1,6 +1,6 @@
 {
  "schema_version":2,"library":"mune","headers":["mulib-mune.h"],"state":"annotated",
- "bundle_provenance":{"header":"mulib-mune.h","revision":"sha256:de1ec25f294edf20c11fa6359382711aa287c62a2942efbefe577641b93e456d","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts-exoml/obligations.json; tests/fixtures/mune_semantics.c; tests/test_mune_runtime.c; tests/test_mune_runtime_alloc.c; tools/check_mune_runtime.py. Not an independent safety review."},
+ "bundle_provenance":{"header":"mulib-mune.h","revision":"sha256:380c07a00dfb561d13a6290625d960fb88946484fa5108c429779528d9990a43","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source/manual audit; contracts-exoml/obligations.json; tests/fixtures/mune_semantics.c; tests/test_mune_runtime.c; tests/test_mune_runtime_alloc.c; tests/test-elvi-script-logic.c; tools/check_mune_runtime.py. Not an independent safety review."},
  "functions":[
   {"c_name":"mulib_mune_version","return":{"kind":"value","nullable":false},"parameters":[],"errors":{"kind":"none"},"effects":{"effects":[],"unknown":false},
    "concurrency":{"thread_safety":"thread_safe","blocking_behavior":"constant return; no allocation","suspension_safe":true},
@@ -51,6 +51,10 @@
    "destructors":[{"function_name":"mulib_mune_state_destroy","allocator_family":"mune-state","null_safe":true,"idempotent":false}],
    "concurrency":{"thread_safety":"single_thread","blocking_behavior":"synchronous allocation and library setup; reads host time/environment and refers to standard streams","suspension_safe":false},
    "provenance":{"header":"mulib-mune.h","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"mulib_mune_state_create installs Lua 5.4 libraries/registry/searchers and copied options; partial states are destroyed on allocation failure"}},
+  {"c_name":"mulib_mune_state_create_bare","return":{"kind":"owned","nullable":true,"destroy_with":"mulib_mune_state_destroy","deallocator_family":"mune-state"},"parameters":[{"index":0,"name":"options","ownership":"borrowed_immutable","nullable":true}],"errors":{"kind":"null_on_failure"},"effects":{"effects":["read","write","allocate","free"],"unknown":false},
+   "destructors":[{"function_name":"mulib_mune_state_destroy","allocator_family":"mune-state","null_safe":true,"idempotent":false}],
+   "concurrency":{"thread_safety":"single_thread","blocking_behavior":"synchronous allocation without standard library setup","suspension_safe":false},
+   "provenance":{"header":"mulib-mune.h","author":"OpenCode (AI-authored)","review_status":"unreviewed","evidence_method":"Source and offline ElviScript tests: copies options, skips library installation, destroys partial state on allocation failure; not process isolation"}},
   {"c_name":"mulib_mune_state_destroy","return":{"kind":"value","nullable":false},"parameters":[{"index":0,"name":"state","ownership":"consumed","nullable":true}],"errors":{"kind":"none"},"effects":{"effects":["read","write","allocate","free","io","thread","suspend","foreign_call"],"unknown":true},
    "invalidations":[{"kind":"owner_drop","description":"Must be outside execution; first destroy all caller-owned result roots. Invalidates every state value, userdata pointer, diagnostic and native closure; runs finalizers and releases threads/libraries. External callback user pointers are not automatically freed."}],
    "concurrency":{"thread_safety":"single_thread","callback_origin":"host/coroutine cleanup threads and arbitrary finalizers","blocking_behavior":"may run Lua/native finalizers, close files/libraries and join coroutine threads; shared host locale/environment/streams need synchronization","suspension_safe":false},

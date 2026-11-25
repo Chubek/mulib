@@ -101,7 +101,7 @@ def exotract_catalog():
             or not isinstance(data['profiles'], dict) or not isinstance(data['discovery_only_prefixes'], dict)):
         reject('unsupported Exotract catalog')
     for prefix, reason in data['discovery_only_prefixes'].items():
-        if not re.fullmatch(r'[a-z][a-z0-9]*-', prefix) or not isinstance(reason, str) or not reason:
+        if not re.fullmatch(r'[a-z][a-z0-9]*(?:-[a-z0-9]+)*-?', prefix) or not isinstance(reason, str) or not reason:
             reject('invalid discovery-only kernel policy')
     if any(discovery_only_reason(name, data) for name in data['profiles']):
         reject('discovery-only kernel cannot have an archive profile')
@@ -109,8 +109,10 @@ def exotract_catalog():
 
 
 def discovery_only_reason(name, data):
+    # A trailing dash matches descendants only; an undashed family name
+    # covers the root kernel too. Neither form matches sibling families.
     return next((reason for prefix, reason in data['discovery_only_prefixes'].items()
-                 if name.startswith(prefix)), None)
+                 if name == prefix or name.startswith(prefix if prefix.endswith('-') else prefix+'-')), None)
 
 
 def kernel_auto_catalog(manifest):

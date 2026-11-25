@@ -5,8 +5,9 @@ Implemented source annotations and verification tooling:
 - `json.exocontract.json`: all 20 core JSON functions;
 - `vec.exocontract.json`: all 7 byte-vector functions;
 - `parsec.exocontract.json`: all 18 borrowed combinator functions;
-- `elvi-scrape.exocontract.json`: all 6 provider/extraction/HTTPS functions;
-- `mune.exocontract.json`: all 52 Lua runtime/frontend/C integration functions,
+- `elvi-scrape.exocontract.json`: the six legacy functions, lexical validation
+  helpers and verified TLS connector; ElviScript execution has no checked route;
+- `mune.exocontract.json`: all 53 Lua runtime/frontend/C integration functions,
   including GC roots, retained coroutine-thread callbacks and AOT entry lifetimes;
 - `quic.exocontract.json` and `http3.exocontract.json`: all 20 codec and native
   client functions, including input/client-borrowed views, output ownership,

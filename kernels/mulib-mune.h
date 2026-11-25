@@ -130,8 +130,12 @@ extern "C"
   typedef mulib_mune_status_t (*mulib_mune_native_fn) (
       mulib_mune_state_t *, const mulib_mune_value_t *, size_t,
       mulib_mune_result_t *, void *);
-  /** Create an independent Lua state. Zero options select documented defaults. */
-  mulib_mune_state_t *mulib_mune_state_create (const mulib_mune_runtime_options_t *options);
+   /** Create an independent Lua state. Zero options select documented defaults. */
+   mulib_mune_state_t *mulib_mune_state_create (const mulib_mune_runtime_options_t *options);
+   /** Create a tree-mode state with an empty global environment. Does not
+    * install standard libraries, their type metatables, or package paths.
+    * Only explicitly supplied C bindings become visible to Lua. */
+   mulib_mune_state_t *mulib_mune_state_create_bare (const mulib_mune_runtime_options_t *options);
   void mulib_mune_state_destroy (mulib_mune_state_t *state);
   /** Execute checked source. *result must be NULL; success transfers an owned,
    * GC-rooted result list. Runtime errors preserve preceding Lua side effects.
@@ -3260,8 +3264,8 @@ extern "C"
   }
   static int mulib_mune_rt_library_ (mulib_mune_state_t *);
   static mulib_mune_object_t *mulib_mune_rt_thread_create_ (mulib_mune_state_t *, mulib_mune_value_t, int);
-  mulib_mune_state_t *
-  mulib_mune_state_create (const mulib_mune_runtime_options_t *options)
+  static mulib_mune_state_t *
+  mulib_mune_state_create_ (const mulib_mune_runtime_options_t *options, int libraries)
   {
     mulib_mune_state_t *s = (mulib_mune_state_t *)calloc (1, sizeof (*s));
     if (!s) return NULL;
@@ -3276,8 +3280,18 @@ extern "C"
     s->globals = mulib_mune_rt_allocate_ (s, MULIB_MUNE_TABLE, 0);
     s->environment = mulib_mune_rt_environment_ (s, NULL, "_ENV", 4, mulib_mune_rt_object_ (s->globals), 0, 0);
     s->main_thread = s->current_thread = mulib_mune_rt_thread_create_ (s, mulib_mune_rt_nil_ (), 1);
-    if (!s->globals || !s->environment || !s->main_thread || !mulib_mune_rt_library_ (s)) { mulib_mune_state_destroy (s); return NULL; }
+    if (!s->globals || !s->environment || !s->main_thread || (libraries && !mulib_mune_rt_library_ (s))) { mulib_mune_state_destroy (s); return NULL; }
     return s;
+  }
+  mulib_mune_state_t *
+  mulib_mune_state_create (const mulib_mune_runtime_options_t *options)
+  {
+    return mulib_mune_state_create_ (options, 1);
+  }
+  mulib_mune_state_t *
+  mulib_mune_state_create_bare (const mulib_mune_runtime_options_t *options)
+  {
+    return mulib_mune_state_create_ (options, 0);
   }
   void
   mulib_mune_state_destroy (mulib_mune_state_t *s)

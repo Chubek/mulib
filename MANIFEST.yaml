@@ -7,8 +7,8 @@ inspiration:
 - ctl (user-supplied)
 - klib (user-supplied)
 license: MIT
-module_count: 2053
-implemented_module_count: 1551
+module_count: 2057
+implemented_module_count: 1555
 bounded_module_count: 502
 modules:
 - name: container-core
@@ -115,6 +115,43 @@ modules:
   dependencies: [fetch, https, json, url]
   status: implemented
   example: examples/elvi-scrape.c
+- name: elvi-script
+  header: kernels/mulib-elvi-script.h
+  manual: manual/mulib-elvi-script.md
+  macro: MULIB_IMPL_ELVI_SCRIPT
+  purpose: Explicitly authorized scrape coordinator with bounded FIFO and in-memory artifact discard.
+  dependencies: [elvi-scrape, elvi-script-ipc, elvi-script-logic, elvi-script-transport]
+  status: implemented
+  profile: engineering
+  test: tests/test-elvi-script.c
+- name: elvi-script-ipc
+  header: kernels/mulib-elvi-script-ipc.h
+  manual: manual/mulib-elvi-script-ipc.md
+  macro: MULIB_IMPL_ELVI_SCRIPT_IPC
+  purpose: Bounded versioned result streams over explicitly authorized connected Unix descriptors.
+  dependencies: [ipc-framed, utf8]
+  status: implemented
+  profile: engineering
+  example: examples/elvi-script-receiver.c
+  test: tests/test-elvi-script.c
+- name: elvi-script-logic
+  header: kernels/mulib-elvi-script-logic.h
+  manual: manual/elvi-script-logic.md
+  macro: MULIB_IMPL_ELVI_SCRIPT_LOGIC
+  purpose: Restricted Lua hooks and document-scoped XPath handles for offline scrape fixtures.
+  dependencies: [fetch-policy, html, html-textstream, mune, xpath]
+  status: implemented
+  profile: engineering
+  test: tests/test-elvi-script-logic.c
+- name: elvi-script-transport
+  header: kernels/mulib-elvi-script-transport.h
+  manual: manual/elvi-script-transport.md
+  macro: MULIB_IMPL_ELVI_SCRIPT_TRANSPORT
+  purpose: Scoped synthetic or caller-authorized cookie input with caller-provided verified HTTPS.
+  dependencies: [elvi-scrape]
+  status: implemented
+  profile: engineering
+  test: tests/test-elvi-script-transport.c
 - name: markup-tree
   header: kernels/mulib-markup-tree.h
   manual: manual/mulib-markup-tree.md
@@ -20695,6 +20732,40 @@ project_files:
   purpose: Verified kernel behavior, requirements, skips and outstanding sandbox work.
 - file: tests/test-elvi-scrape-providers.c
   purpose: "Focused regression suite for test-elvi-scrape-providers."
+- file: tests/test-elvi-script.c
+  purpose: "Offline canonical profile, authorization, receiver, malformed IPC and deadline regression suite."
+- file: tests/test-elvi-script-logic.c
+  purpose: "Focused ElviScript extraction and restricted logic regression suite."
+- file: tests/test-elvi-script-transport.c
+  purpose: "Focused ElviScript cookie and verified transport regression suite."
+- file: tests/test_elvi_script_named_ipc.c
+  purpose: "Optional Linux named Unix stream authorized-host regression suite."
+- file: tests/fuzz_elvi_script_ipc.c
+  purpose: "LibFuzzer target for one framed ElviScript IPC message."
+- file: tests/fuzz_elvi_script_cookies.c
+  purpose: "LibFuzzer target for ElviScript cookie JSON loaded from memory."
+- file: tests/fixtures/elvi-script/booking-home.html
+  purpose: "Synthetic offline lodging-card and pagination document."
+- file: tests/fixtures/elvi-script/booking-page-2.html
+  purpose: "Synthetic second document with an optional field omitted."
+- file: tests/fixtures/elvi-script/booking-cookies.json
+  purpose: "Synthetic offline cookie fixture; not a credential."
+- file: library/elvis/BookingDotCom.elvs
+  purpose: "Canonical ElviScript scrape profile, exercised offline only."
+- file: library/elvis/logic/BookingDotCom.lua
+  purpose: "Canonical restricted-Lua fixture for XPath-based result extraction."
+- file: library/elvis/Agoda.elvs
+  purpose: "Cookie-free ElviScript profile for static Agoda property listings, tested offline."
+- file: library/elvis/logic/Agoda.lua
+  purpose: "Restricted Lua extraction of Agoda property names, links, prices and locations."
+- file: tests/fixtures/elvi-script/agoda-listings.html
+  purpose: "Synthetic Agoda property-card extraction fixture."
+- file: examples/elvi-script-receiver.c
+  purpose: "Receive one ElviScript transaction on an inherited Unix stream."
+- file: examples/elvi-script-named-ipc.h
+  purpose: "Optional Linux host example for connecting to a separately authorized named Unix socket."
+- file: manual/elvi-script-mailbox/README.md
+  purpose: "Coordination archive, interface fingerprints and focused offline verification of ElviScript."
 - file: examples/cdd-pipeline.c
   purpose: Standalone catalogue-driven compiler pipeline example.
 - file: tests/cdd-test.c

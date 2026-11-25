@@ -64,7 +64,7 @@ for name,libraries,source,expected in [
         assert len(symbols['parsec']['archive_exports'])==18
         assert 'mulib_parser_from_peg' in symbols['parsec']['declaration_only']
     elif name=='elvi-scrape':
-        assert len(symbols['elvi-scrape']['archive_exports'])==6 and not symbols['elvi-scrape']['declaration_only']
+        assert len(symbols['elvi-scrape']['archive_exports'])==9 and not symbols['elvi-scrape']['declaration_only']
         recipe=json.loads((dest/'build-plan.json').read_text())
         assert 'MULIB_IMPL_PARSER' not in recipe['implementation_macros']
         evidence=json.loads((a.root/'contracts-exoml/catalog.json').read_text())['profiles']['elvi-scrape']['evidence_sha256']
@@ -73,7 +73,7 @@ for name,libraries,source,expected in [
         assert [f['path'] for f in recipe['files']]==expected_files
         for path,digest in evidence.items():assert lock['inputs'][str((a.root.parent/path).resolve())]==digest
     elif name=='mune':
-        assert len(symbols['mune']['archive_exports'])==52 and not symbols['mune']['declaration_only']
+        assert len(symbols['mune']['archive_exports'])==53 and not symbols['mune']['declaration_only']
         recipe=json.loads((dest/'build-plan.json').read_text())
         assert recipe['implementation_macros'].count('MULIB_IMPL_PARSER')==1
         for path in ['kernels/mulib-mune.h','manual/mulib-mune.md','tests/test_mune_runtime.c',

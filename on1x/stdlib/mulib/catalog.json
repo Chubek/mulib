@@ -9,7 +9,12 @@
   "fixtures": {
     "archml": {"kernels": ["archml", "unit", "isel"], "kind": "profiles", "files": ["library/archml/*.am", "library/archml/*.aml"], "checks": ["tools/embed_units.py"]},
     "dsymspec": {"kernels": ["dsymspec"], "kind": "profiles", "files": ["library/dsymspec/*.yaml"]},
-    "elvis": {"kernels": ["elvi-scrape"], "kind": "profiles", "files": ["library/elvis/*.elvs"]},
+    "elvis": {"kernels": ["elvi-scrape"], "kind": "profiles", "files": [
+      "library/elvis/Bing.elvs", "library/elvis/Crossref.elvs", "library/elvis/DuckDuckGo.elvs",
+      "library/elvis/FDroid.elvs", "library/elvis/Google.elvs", "library/elvis/Hex.elvs",
+      "library/elvis/LibRS.elvs", "library/elvis/MDN.elvs", "library/elvis/OpenLibrary.elvs",
+      "library/elvis/Packagist.elvs", "library/elvis/Scholar.elvs"
+    ]},
     "git": {"kernels": ["git"], "kind": "runtime", "files": ["library/git/*.lua"]},
     "glx": {"kernels": ["glx-core"], "kind": "test-data", "files": ["library/glx/**/*.lua"]},
     "gui": {"kernels": ["gui-core"], "kind": "test-data", "files": ["library/gui/**/*.lua"]},

@@ -258,10 +258,12 @@ through `--mulib-archive`, with no manually specified bridge TU or duplicate
 implementation switches. This verifies raw linkage, not general foreign safety.
 
 `plan elvi-scrape` and `build elvi-scrape` use the pinned complete one-TU
-recipe and require all six exported symbols. `examples/elvi-scrape.c` executes
+recipe and require the six legacy entry points plus shared lexical validation
+and TLS connector symbols. `examples/elvi-scrape.c` executes
 offline provider compilation, URL expansion and extraction against that archive.
-The archive includes canonical `library/elvis/*.elvs` profiles and the legacy
-Google and Bing fixture paths.
+The archive includes the pinned legacy search profiles and the legacy
+Google and Bing fixture paths. The programmable ElviScript execution
+subsystems are not admitted by this profile.
 TLS session fixtures test the adapter independently; typed imports remain unsafe.
 
 ## Sandbox kernel profiles

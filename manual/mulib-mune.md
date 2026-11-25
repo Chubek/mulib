@@ -63,6 +63,13 @@ if (state) {
 Use adjacent C string literals for multiline inline source, `mulib_mune_run_file`
 for `.lua` files, or `mulib_mune_parse` followed by repeated `mulib_mune_run`
 calls to reuse a checked chunk. Runtime errors retain earlier Lua side effects.
+
+`mulib_mune_state_create_bare` creates an independent state with the same
+runtime options but does not install standard libraries, package searchers,
+or the standard string metatable. An embedder can explicitly bind only its
+approved native functions. This does not isolate the process or prevent a
+host-provided binding from performing I/O. The ordinary constructor above
+still installs the normal Lua libraries.
 Execution results preserve nil values and multiple returns. `*result` must be
 NULL on entry; failure leaves it NULL. A returned result list is owned by the
 caller and is a GC root until destroyed. Destroy all results before their state.

@@ -478,6 +478,10 @@
     "mulib-elfbuilder.h",
     "mulib-elfutils.h",
     "mulib-elvi-scrape.h",
+    "mulib-elvi-script-ipc.h",
+    "mulib-elvi-script-logic.h",
+    "mulib-elvi-script-transport.h",
+    "mulib-elvi-script.h",
     "mulib-embeddingsdb.h",
     "mulib-emitter.h",
     "mulib-encoding.h",
@@ -2055,9 +2059,9 @@
     "mulib-zstd.h",
     "mune-opencode-client.h"
   ],
-  "libraries": 2054,
+  "libraries": 2058,
   "functions": 5373,
-  "declared_functions": 7701,
+  "declared_functions": 7733,
   "types": 8927,
   "constants": 2802,
   "preprocessor_only": [
@@ -2077,8 +2081,8 @@
     "MULIB_XATOMIC_DECLARE_",
     "MULIB_XATOMIC_INIT"
   ],
-  "fingerprint": "64a654f0d49303ab39996379781ca10584ecb7355c62438f14e8253f756296c2",
-  "legacy_policy": "f998e3c5709003f8315112125a9d167550f096a614f5d514a7eadff86def08e0",
+  "fingerprint": "c9075683f0415df7434c9ce6b4663bf1b3eed71a621f2440e49db754ae19b488",
+  "legacy_policy": "ece3370fc9b0f8ea47fb57515310c4346e222e5b09d17c1ff52b4a27bb711b5d",
   "modules": {
     "2dgeom": {
       "header": "mulib-2dgeom.h",
@@ -9590,11 +9594,56 @@
       ],
       "declarations": [
         "mulib_elvi_scrape_compile",
+        "mulib_elvi_scrape_https_connect_verified",
         "mulib_elvi_scrape_https_transport",
         "mulib_elvi_scrape_load",
         "mulib_elvi_scrape_parse",
         "mulib_elvi_scrape_search",
-        "mulib_elvi_scrape_url"
+        "mulib_elvi_scrape_url",
+        "mulib_elvi_script_resolve",
+        "mulib_elvi_script_url_allowed"
+      ]
+    },
+    "elvi-script": {
+      "header": "mulib-elvi-script.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_elvi_script_run",
+        "mulib_elvi_script_run_https"
+      ]
+    },
+    "elvi-script-ipc": {
+      "header": "mulib-elvi-script-ipc.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_elvi_ipc_init",
+        "mulib_elvi_ipc_receive",
+        "mulib_elvi_ipc_result_valid",
+        "mulib_elvi_ipc_send"
+      ]
+    },
+    "elvi-script-logic": {
+      "header": "mulib-elvi-script-logic.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_elvi_script_logic_create",
+        "mulib_elvi_script_logic_destroy",
+        "mulib_elvi_script_logic_finish",
+        "mulib_elvi_script_logic_response"
+      ]
+    },
+    "elvi-script-transport": {
+      "header": "mulib-elvi-script-transport.h",
+      "profile": "discovery-only",
+      "functions": [],
+      "declarations": [
+        "mulib_elvi_script_cookies_destroy",
+        "mulib_elvi_script_cookies_load",
+        "mulib_elvi_script_cookies_parse",
+        "mulib_elvi_script_fetch_https"
       ]
     },
     "embeddingsdb": {
@@ -13057,7 +13106,13 @@
       ],
       "declarations": [
         "mulib_http3_frame_read",
-        "mulib_http3_frame_write"
+        "mulib_http3_frame_write",
+        "mulib_http3_get",
+        "mulib_http3_qpack_literal_read",
+        "mulib_http3_qpack_literal_write",
+        "mulib_http3_stream_finish",
+        "mulib_http3_stream_init",
+        "mulib_http3_stream_next"
       ]
     },
     "http_request": {
@@ -17840,6 +17895,7 @@
         "mulib_mune_set_mode",
         "mulib_mune_set_uservalue",
         "mulib_mune_state_create",
+        "mulib_mune_state_create_bare",
         "mulib_mune_state_destroy",
         "mulib_mune_table_next",
         "mulib_mune_value_string",
@@ -21660,6 +21716,14 @@
         "mulib_quic_stream_write"
       ],
       "declarations": [
+        "mulib_quic_ack_read",
+        "mulib_quic_ack_write",
+        "mulib_quic_client_close",
+        "mulib_quic_client_connect",
+        "mulib_quic_client_poll",
+        "mulib_quic_client_send",
+        "mulib_quic_client_stream",
+        "mulib_quic_packet_stream_read",
         "mulib_quic_stream_read",
         "mulib_quic_stream_write",
         "mulib_quic_varint_read",
@@ -30708,7 +30772,7 @@
     }
   },
   "artifacts": {
-    "Generated.inc": "f2b6a423177428fbbaa45c56afbf392bd10549afaf5b9581c3e04d2d1f996b7d",
+    "Generated.inc": "a14e7b466ee1db3169cbfb40229bd11b250ba23bb440a91aa17b325bac6e4477",
     "Implementation.c": "e8d42736b8b9c6ec9823eef57b1a916f5107ecfb13ff7a33e58863d1ab0425a7"
   }
 }

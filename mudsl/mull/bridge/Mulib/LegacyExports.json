@@ -1,6 +1,10 @@
 {
   "snapshot": "ca60216",
   "surface_sha256": "e65cc3bed8d94420d0f580989ce5236133336ae9e5a7ae0529e154ac6436a5ee",
+  "inactive_implementation_macros": ["MULIB_IMPL_HTTP3_CLIENT", "MULIB_IMPL_QUIC_CLIENT"],
+  "record_fields": {
+    "mulib_elvi_scrape_program_t": ["name", "host", "home", "search_template", "anchor_tag", "excluded_hosts", "excluded_count", "max_results", "anchor_mode", "rewrite", "format", "anchor_class", "json_results", "json_title", "json_url"]
+  },
   "headers": {
     "mulib-2dgeom.h": {"functions": ["mulib_2dgeom_valid", "mulib_2dgeom_evaluate", "mulib_2dgeom_derivatives", "mulib_2dgeom_tangent", "mulib_2dgeom_curvature", "mulib_2dgeom_split", "mulib_2dgeom_bounds", "mulib_2dgeom_length", "mulib_2dgeom_flatten", "mulib_2dgeom_polyline_free", "mulib_2dgeom_path_free", "mulib_2dgeom_path_append", "mulib_2dgeom_path_count", "mulib_2dgeom_path_at", "mulib_2dgeom_path_bounds", "mulib_2dgeom_path_transform", "mulib_2dgeom_path_split", "mulib_2dgeom_path_area", "mulib_2dgeom_path_parse"], "types": ["mulib_2dgeom_point_t", "mulib_2dgeom_curve_t", "mulib_2dgeom_box_t", "mulib_2dgeom_segment_t", "mulib_2dgeom_path_t", "mulib_2dgeom_polyline_t", "mulib_2dgeom_error_t"], "constants": []},
     "mulib-aarch64.h": {"functions": ["mulib_aarch64_init", "mulib_aarch64_init_ex", "mulib_aarch64_free"], "types": ["mulib_aarch64_t"], "constants": []},

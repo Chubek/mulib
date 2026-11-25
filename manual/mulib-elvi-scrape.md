@@ -1,9 +1,29 @@
-# MuLIB ElviScrape — `.elvs` search-provider DSL
+# MuLIB ElviScrape — `.elvs` provider DSL
 
-ElviScrape is a Surfraw-inspired, **C11 header-only** provider interpreter. Surfraw's
-elvi primarily dispatch a query URL to a browser; this module also extracts a
-bounded list of `{title, url}` records from supplied HTML or JSON search
-responses. It neither embeds Surfraw/SearXNG nor executes provider code.
+ElviScrape is a Surfraw-inspired, **C11 header-only** provider compiler.
+Existing `.elvs` files default to `search` mode: render a query URL and extract a
+bounded list of `{title, url}` records from HTML or JSON. The legacy search
+entry points do not execute provider code. Explicit `scrape` profiles are
+descriptions for the separate ElviScript coordinator, which adds typed cookie,
+XPath, Mune Lua and IPC stages. Neither mode embeds Surfraw or SearXNG.
+
+For programmable scraping, start with the
+[ElviScript grammar](elvi-script-grammar.md),
+[transport contract](elvi-script-transport.md) and
+[logic contract](elvi-script-logic.md). The
+[BookingDotCom profile](../library/elvis/BookingDotCom.elvs) is paired with
+[fixture logic](../library/elvis/logic/BookingDotCom.lua); this is an offline
+integration example, not a claim that it works against the live site.
+
+The host independently authorizes the cookie, Lua and IPC paths. ElviScript
+does not connect to a socket merely because a profile names it. A host can
+pass an inherited connected Unix descriptor, as the fixtures do, or use
+the [optional Linux named-endpoint helper](../examples/elvi-script-named-ipc.h)
+to connect to the independently approved path. The named helper requires an
+effective-UID-owned private directory, a private socket, and matching peer
+credentials. For the canonical path, the receiver must bind
+`/dev/shm/elv-scrape/BookingDotCom` in an owned `0700` directory with umask
+`077`. Do not reuse a socket path from an untrusted profile as its own approval.
 
 ## What this takes from SearXNG
 
@@ -48,13 +68,14 @@ Offline compilation and extraction never open a connection. The HTTPS adapter
 composes MuLIB HTTPS, HTTP and TSL kernels with an application-supplied blocking
 TLS connector and authenticated-peer inspector; it adds no external dependency.
 
-## `.elvs` grammar
+## `.elvs` search grammar
 
 One directive per line. `#` begins comments outside quoted strings. Values may
 be unquoted single tokens or double-quoted strings; in quotes `\\` and `\"`
-are valid escapes. Directive names are lowercase and case-sensitive. `elvi`,
-`host`, `home`, and `search` are always required. Only `exclude_host` can
-repeat, up to eight times. HTML is the default; prior HTML profiles still work.
+are valid escapes. Directive names are lowercase and case-sensitive. In
+`search` mode, `elvi`, `host`, `home`, and `search` are required. Only
+`exclude_host` can repeat, up to eight times. HTML is the default; prior
+HTML profiles still work.
 
 ```text
 elvi NAME
@@ -110,10 +131,12 @@ rejected. Invalid numeric character references in URL attributes are rejected,
 not silently passed through. Request `home` and rendered `search` URLs must not
 contain fragments: a fragment is not sent to the provider as a query.
 
-The DSL is **declarative and non-Turing-complete**: no commands, process execution,
-Lua, embedded JavaScript, or arbitrary memory access. A provider file can alter
-its configured remote host, however, so load provider files only from locations
-you trust. The fetch wrapper intersects the caller's policy with HTTPS-only, no private
+The DSL itself is **declarative and non-Turing-complete**. It performs no shell
+expansion or process execution. The `logic` directive names external Lua
+source in scrape mode; compilation does not read or execute that file. A
+provider file can alter its configured remote host, so load profiles and
+authorize network, local files, and IPC only as trusted host inputs. The legacy
+fetch wrapper intersects the caller's policy with HTTPS-only, no private
 hosts, max 2 MiB response data and max 8191 URL bytes (plus NUL). It preserves
 an explicit `allow_https = 0`, and smaller caller limits. Zero limits retain
 MuLIB default semantics, bounded by these module limits. Host checks reject
@@ -285,28 +308,43 @@ make build/test-elvi-scrape build/test-elvi-scrape-https build/test-elvi-scrape-
 CTest supplies the source directory when running from an isolated work directory.
 Enable `MULIB_SANITIZERS` for ASan/UBSan. With Clang and `MULIB_BUILD_FUZZER`,
 `mulib_fuzz_elvi_scrape` fuzzes the DSL compiler, HTML/JSON extractor and URL/redirect
-processing. Seed it with the providers from `library/elvis` and
-`tests/fixtures/elvi-scrape` files.
+processing, including scrape-mode provider arguments. Seed it with the providers
+from `library/elvis` and `tests/fixtures/elvi-scrape` files. The IPC decoder can
+also be fuzzed offline on Linux:
+
+```sh
+clang -std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -Ikernels \
+  -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=all \
+  tests/fuzz_elvi_script_ipc.c -o /tmp/mulib-fuzz-elvi-ipc
+/tmp/mulib-fuzz-elvi-ipc -runs=30000 -max_len=2950
+
+clang -std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -Ikernels \
+  -fsanitize=fuzzer,address,undefined -fno-sanitize-recover=all \
+  tests/fuzz_elvi_script_cookies.c -lm -o /tmp/mulib-fuzz-elvi-cookies
+/tmp/mulib-fuzz-elvi-cookies -runs=30000 -max_len=4096
+```
 
 `MANIFEST.yaml` and both On1x catalogs register `elvi-scrape`. The ExoML v2
-sidecar records all six exported functions, caller-owned outputs, transactional
+sidecar records the six legacy functions plus lexical validation and verified
+connector helpers,
+caller-owned outputs, transactional
 failure behavior, and unknown effects of indirect transport callbacks. Its
 header/manual hashes and one-TU dependency recipe are pinned, together with the
 shared scanner, offline providers/HTML fixtures, allocator tests and fuzz harness
 as source evidence. Annotations remain
 **unreviewed**, and neither extraction nor successful tests imply safe On1x ABI
-lowering. Exotract requires the six symbols from the generated archive.
+lowering. Exotract requires the nine symbols from the generated archive.
 [`on1x/stdlib/mulib/catalog.json`](../on1x/stdlib/mulib/catalog.json) registers
-`elvis` for the profiles in `library/elvis/`. Explicit fixture selection
-preserves the same source-pinned recipe as kernel selection (including leaving
-optional `MULIB_IMPL_PARSER` off).
+`elvis` for the legacy provider fixtures. Explicit fixture selection preserves
+the same source-pinned recipe as kernel selection (including leaving optional
+`MULIB_IMPL_PARSER` off).
 The generated On1x acceptance client compiles the embedded provider data offline
-through a test-only scalar C adapter; no general safe FFI is claimed.
+through a test-only scalar C adapter. The programmable pipeline is not
+covered by that acceptance client; no general safe FFI is claimed.
 
-Composable CSS selectors, provider pagination offsets and rate scheduling remain
-future work. The offline fixtures ensure pagination links are not mistaken for
-results and no automatic pagination or retries occur. Keep the module together
-until reusable compiler/selector/runner APIs have stable tests.
+Legacy search does not automatically paginate or retry. Scrape profiles can
+request a bounded number of same-host pages through the host's request queue.
+No mode bypasses authentication, CAPTCHAs, or provider rate limits.
 
 <!-- manual-reference -->
 ## Source and build reference

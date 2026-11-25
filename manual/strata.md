@@ -8,7 +8,7 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 2053 headers, 2739 direct dependency edges.
+Inventory: 2057 headers, 2751 direct dependency edges.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -968,7 +968,7 @@ Compatibility group: `parsec`, `peg`.
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (409 modules)
+## Stratum 2 (410 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1045,6 +1045,7 @@ Compatibility group: `parsec`, `peg`.
 | [eda-parametric](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
 | [eda-store](engineering-kernels.md) | `geom2-core`, `graph-core`, `storage-core` |
 | [elfutils](mulib-elfutils.md) | `elf` |
+| [elvi-script-ipc](mulib-elvi-script-ipc.md) | `ipc-framed`, `utf8` |
 | [ethtool-netlink](mulib-ethtool-netlink.md) | `netlink-genl` |
 | [etl-transform](mulib-etl-transform.md) | `record` |
 | [evtstream](mulib-evtstream.md) | `ast` |
@@ -2060,10 +2061,11 @@ Compatibility group: `parsec`, `peg`.
 | [websocket](mulib-websocket.md) | `base64`, `buffer`, `http`, `uri`, `utf8` |
 | [xll](mulib-xll.md) | `json`, `layout`, `strbuf` |
 
-## Stratum 9 (27 modules)
+## Stratum 9 (28 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
+| [elvi-script-logic](elvi-script-logic.md) | `fetch-policy`, `html`, `html-textstream`, `mune`, `xpath` |
 | [fetch](mulib-fetch.md) | `bounded-text`, `fetch-policy` |
 | [fileserver](mulib-fileserver.md) | `webframework` |
 | [http_response](mulib-http_response.md) | `webframework` |
@@ -2107,11 +2109,12 @@ Compatibility group: `parsec`, `peg`.
 | [retgtk-window](graphics-overlay.md) | `glx-window`, `retgtk-event`, `retgtk-scene` |
 | [static_file](mulib-static_file.md) | `http_response`, `mime`, `vfs` |
 
-## Stratum 11 (13 modules)
+## Stratum 11 (14 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-documentload](mulib-browser-documentload.md) | `browser-fetch`, `html-treebuilder` |
+| [elvi-script-transport](elvi-script-transport.md) | `elvi-scrape` |
 | [grpc](mulib-grpc.md) | `buffer`, `muw3` |
 | [muw3-mune](mulib-muw3-mune.md) | `microchan`, `mune`, `muw3`, `yaml` |
 | [openai-client](mulib-openai-client.md) | `multipart`, `muw3`, `openai`, `sse` |
@@ -2125,11 +2128,12 @@ Compatibility group: `parsec`, `peg`.
 | [soap](mulib-soap.md) | `muw3`, `xml` |
 | [sse-client](mulib-sse-client.md) | `muw3`, `sse`, `utf8` |
 
-## Stratum 12 (4 modules)
+## Stratum 12 (5 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
 | [browser-engine](mulib-browser-engine.md) | `browser-documentload`, `browser-fetch`, `browser-limits`, `browser-navigation`, `browser-stream` |
+| [elvi-script](mulib-elvi-script.md) | `elvi-scrape`, `elvi-script-ipc`, `elvi-script-logic`, `elvi-script-transport` |
 | [graphql](mulib-graphql.md) | `rest` |
 | [jsonrpc](mulib-jsonrpc.md) | `rest` |
 | [retgtk-toolbar](graphics-overlay.md) | `retgtk-menu` |

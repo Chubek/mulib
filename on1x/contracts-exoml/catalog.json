@@ -57,16 +57,17 @@
     "mune": {
       "contract": "mune.exocontract.json",
       "header": "kernels/mulib-mune.h",
-      "header_sha256": "de1ec25f294edf20c11fa6359382711aa287c62a2942efbefe577641b93e456d",
+      "header_sha256": "380c07a00dfb561d13a6290625d960fb88946484fa5108c429779528d9990a43",
       "manual": "manual/mulib-mune.md",
-      "manual_sha256": "33c899954b6f7b2b101cbb82759f14c437b67413167967e863b9974454c84c73",
+      "manual_sha256": "c724c612cf1bdf9b125b9e10c2c8b70fbea3dd0873ca51487ab62b0040e00ec6",
       "evidence_sha256": {
         "tests/test_mune_runtime.c": "7f211038c40ddeff24a7cdaa6049c4cb79c6569ccc1a189e7517b253e573604a",
-        "tests/test_mune_runtime_alloc.c": "7528ea59e13270c829f11af6290ccab1832792e8f1e78fada5be5d7697fad35d",
+        "tests/test_mune_runtime_alloc.c": "e37bb1b26f073a3848c7e151292559c8106a1e24a5fb77b4dc8c7feab80b6d2b",
+        "tests/test-elvi-script-logic.c": "e44a5189f8cb81ee961d953bd48ddb68a8bf53885a0599a5ecdd8f4485a2ab5f",
         "tools/check_mune_runtime.py": "9d36a66a1b862e4b708891d3648f78a81606654448c7de196d806f4ef3c2fbd5"
       },
       "function_prefix": "mulib_mune_",
-      "function_count": 52,
+      "function_count": 53,
       "implementation_modules": [
         "dynload", "dyncall", "mir", "egraph", "rewrite", "vmweave", "jit",
         "strbuf", "ast", "peg", "glob", "parsec", "mune"
@@ -131,16 +132,17 @@
     "elvi-scrape": {
       "contract": "elvi-scrape.exocontract.json",
       "header": "kernels/mulib-elvi-scrape.h",
-      "header_sha256": "7f9816e0f5738f62b6f4ae1525bae2e44be175e72b9b9a8a4b17239dcf385dd2",
+      "header_sha256": "7b0c89cf5d12fad38c286f1df7c5e5abbb814cc41737a02fdb76764f2e87fb63",
       "manual": "manual/mulib-elvi-scrape.md",
-      "manual_sha256": "964bcfdffe64ac9b47b73b092b7c227bb6ecb51f19a5ec33157213cda372fca1",
+      "manual_sha256": "c23fe2a2cb30f2ca9d8e5f12c9fc30853155faa44405689954792314590fd63c",
       "evidence_sha256": {
         "kernels/detail/mulib-webscan.h": "2c185aa14836e655c0e66273c4ec64840537f1bc77ba545fd000e37f92ba4a29",
         "kernels/mulib-json.h": "3b5c762603f570a7699316a97d52290ecbe63f06f63440e09bbe0c764b8ccbbe",
-        "tests/test-elvi-scrape.c": "83461041f6a8481ecc3b433590cb3d36f268917dfc786a8501882ed99dd4dd7f",
+        "tests/test-elvi-scrape.c": "0c38a5239b44357af86a843c8ccc1137db898532dabd9e61477abe02d5e6f9f8",
         "tests/test-elvi-scrape-https.c": "39d0abf03b49db6c642f5193c2975a707151413035a7383082df1a4c52d1ed68",
         "tests/test-elvi-scrape-alloc.c": "4b06b5be77ad7f327054763503d6825cde64a8b8f0bd0c07e4105d5b3e88e92c",
-        "tests/fuzz_elvi_scrape.c": "df89460c956400741f9909c80483d7118798c9767673400b8082e91d0fb585ee",
+        "tests/fuzz_elvi_scrape.c": "252ff04f748962ac5e1483f2c8728aa93269f64d7efe672627925e927cc55b7d",
+        "manual/elvi-script-grammar.md": "904cceaa4b683ce522985479a65bf66f6b1fede1d1d762cea30d4fac5a4035b4",
         "tests/test_parsers.c": "28f4a59f12ec65c25897a89d915a4cf4e745d70277056f43c53115b08a40c515",
         "on1x/tests/mulib/elvi-scrape.c": "e1c2b90fab8e73842873949b56661d9cf5736490e5b413db971e4c74772b2bb7",
         "on1x/tests/mulib/elvi-scrape.on1x": "fb8e492262067f27fe2eac10dd151f02fb858a7c6ebfe75699993f947a2459fb",
@@ -174,8 +176,8 @@
         "library/elvis/Packagist.elvs": "971c53806fd121bda962613ae8500239e747accf75efbff907b4e2ae40b0ca48",
         "library/elvis/Scholar.elvs": "ed182e637b05de8adcf9e28007f000269248b78412e81d67afcf55c4c8340f78"
       },
-      "function_prefix": "mulib_elvi_scrape_",
-      "function_count": 6,
+      "function_prefix": "mulib_elvi_",
+      "function_count": 9,
       "implementation_modules": [
         "parsec",
         "strbuf",

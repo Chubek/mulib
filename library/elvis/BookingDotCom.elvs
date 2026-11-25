@@ -1,0 +1,9 @@
+elvi booking
+host booking.com
+home https://booking.com
+mode scrape
+cookies provide{$HOME/.mulib/elvi/cookies/BookingCookies.json}
+xpath provide{mulib-xpath}
+artifacts discard
+logic lua{$HOME/.mulib/elvi/logic/BookingDotCom.lua}
+forward ipc{/dev/shm/elv-scrape/BookingDotCom}

@@ -37,6 +37,15 @@ int main(void)
         mulib_mune_state_destroy(s);
         assert(!live);
     }
+    calls=fail_at=0;
+    s=mulib_mune_state_create_bare(NULL); assert(s); allocations=calls;
+    mulib_mune_state_destroy(s); assert(!live);
+    for(k=1;k<=allocations;++k) {
+        calls=0; fail_at=k;
+        s=mulib_mune_state_create_bare(NULL);
+        mulib_mune_state_destroy(s);
+        assert(!live);
+    }
     fail_at=0;
     chunk=mulib_mune_parse(valid,sizeof(valid)-1,NULL,&error); assert(chunk);
     baseline=live;

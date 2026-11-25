@@ -3784,6 +3784,46 @@
       "macro": "MULIB_IMPL_ELVI_SCRAPE",
       "status": "implemented"
     },
+    "elvi-script": {
+      "dependencies": [
+        "elvi-scrape",
+        "elvi-script-ipc",
+        "elvi-script-logic",
+        "elvi-script-transport"
+      ],
+      "header": "kernels/mulib-elvi-script.h",
+      "macro": "MULIB_IMPL_ELVI_SCRIPT",
+      "status": "implemented"
+    },
+    "elvi-script-ipc": {
+      "dependencies": [
+        "ipc-framed",
+        "utf8"
+      ],
+      "header": "kernels/mulib-elvi-script-ipc.h",
+      "macro": "MULIB_IMPL_ELVI_SCRIPT_IPC",
+      "status": "implemented"
+    },
+    "elvi-script-logic": {
+      "dependencies": [
+        "fetch-policy",
+        "html",
+        "html-textstream",
+        "mune",
+        "xpath"
+      ],
+      "header": "kernels/mulib-elvi-script-logic.h",
+      "macro": "MULIB_IMPL_ELVI_SCRIPT_LOGIC",
+      "status": "implemented"
+    },
+    "elvi-script-transport": {
+      "dependencies": [
+        "elvi-scrape"
+      ],
+      "header": "kernels/mulib-elvi-script-transport.h",
+      "macro": "MULIB_IMPL_ELVI_SCRIPT_TRANSPORT",
+      "status": "implemented"
+    },
     "embeddingsdb": {
       "dependencies": [],
       "header": "kernels/mulib-embeddingsdb.h",

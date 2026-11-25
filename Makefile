@@ -22,6 +22,18 @@ EXAMPLES += build/kernel-substrates
 check-media:
 	python3 tools/media_inventory.py --check
 	python3 tools/check_media.py
+.PHONY: check-elvi-script
+ELVI_SCRIPT_TESTS := build/test-elvi-script-transport build/test-elvi-script-logic build/test-elvi-script
+build/test-elvi-script build/test-elvi-script-logic: LDLIBS += -pthread -ldl
+build/elvi-script-receiver: examples/elvi-script-receiver.c $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
+check-elvi-script: $(ELVI_SCRIPT_TESTS) build/elvi-script-receiver build/test_elvi_script_named_ipc
+	./build/test-elvi-script-transport
+	./build/test-elvi-script-logic
+	./build/test-elvi-script . ./build/elvi-script-receiver
+	./build/test_elvi_script_named_ipc
+build/test_elvi_script_named_ipc: tests/test_elvi_script_named_ipc.c examples/elvi-script-named-ipc.h $(HEADERS) | build
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LDLIBS) -o $@
 .PHONY: check-harness-kernels
 HARNESS_CPPFLAGS := -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L
 HARNESS_TESTS := build/harness-test_harness build/harness-test_rollback build/harness-fuzz_unidiff build/harness-test_process_start

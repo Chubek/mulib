@@ -1,0 +1,8 @@
+elvi agoda
+host www.agoda.com
+home https://www.agoda.com/city/singapore-sg.html
+mode scrape
+xpath provide{mulib-xpath}
+artifacts discard
+logic lua{$HOME/.mulib/elvi/logic/Agoda.lua}
+forward ipc{/dev/shm/elv-scrape/Agoda}

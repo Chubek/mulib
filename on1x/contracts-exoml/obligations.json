@@ -112,7 +112,7 @@
       "GC root regions, cross-state identity, aggregate enum/union ABI and nested borrowed object fields require field-sensitive ownership/ABI lowering.",
       "Conditional owned result outputs, runtime-vs-static diagnostic lifetimes, reference-counted chunks and finalizer resurrection are not ordinary scalar error/ownership protocols.",
       "Retained/reentrant coroutine-thread callbacks, AOT function-pointer arrays and arbitrary Lua/native/OS effects need reviewed adapters and usage/effect proofs.",
-      "All 52 functions remain raw/unreviewed metadata and are ineligible for the current signed-integer/void scalar emitter; passing Gate B is not safe export."
+      "All 53 functions remain raw/unreviewed metadata and are ineligible for the current signed-integer/void scalar emitter; passing Gate B is not safe export. The bare constructor skips standard libraries; this is not an isolation boundary."
     ]
   },
   "quic": {
@@ -158,7 +158,7 @@
       "kernels/mulib-elvi-scrape.h (public API and MULIB_IMPL_ELVI_SCRAPE implementation)",
       "kernels/detail/mulib-webscan.h (iterative scanner and explicit work accounting), kernels/mulib-json.h (bounded JSON tree construction)",
       "tests/test-elvi-scrape{,-providers,-https,-alloc}.c, tests/fuzz_elvi_scrape.c and tests/fixtures/elvi-scrape (offline/allocator/fuzzer evidence)",
-      "library/elvis/*.elvs and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
+      "Pinned legacy library/elvis profiles and on1x/tests/mulib/elvi-scrape.{on1x,c} (trusted declarative providers, offline On1x acceptance)"
     ],
     "preconditions": [
       "Programs originate from compile/load and remain unmodified during use. All C pointers and capacities denote live, correctly sized, nonoverlapping storage.",
@@ -169,7 +169,7 @@
       "Compile/url/parse preserve outputs on failure except compile diagnostics; search may report status on a later failure. Zero parse results is success.",
       "An empty query selects the validated provider homepage. A nonempty query expands into a literal, exact-host HTTPS template with complete percent escapes and no fragment.",
       "HTTPS transport preserves caller outputs on failure; successful append may reallocate body. Every created session is closed and temporary allocations are freed.",
-      "HTTPS prohibition and tighter fetch limits are preserved. No redirect, pagination or rate-limit retry is performed.",
+      "HTTPS prohibition and tighter fetch limits are preserved. No redirect, pagination or rate-limit retry is performed by legacy search. The verified connector is not an endpoint policy; its HTTPS caller closes any started session even on failure.",
       "Scanner work exhaustion and allocation failures preserve all caller results/count. HTML stages output and ignores opaque/inert containers; JSON validates the tree and result schema before emitting any output.",
       "Extraction uses the first href attribute (quoted or unquoted) and preserves the UTF-8 title prefix across text spans when clipping.",
       "Google targets are unambiguous/nonempty and stop before wrapper fragments; invalid numeric URL entities and request fragments reject. Exact-byte destination duplicates are removed without changing URL path/query meaning.",

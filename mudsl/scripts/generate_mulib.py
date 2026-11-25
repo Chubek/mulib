@@ -61,6 +61,14 @@ def main():
     policy_text = (args.bindings / 'LegacyExports.json').read_bytes()
     legacy = json.loads(policy_text)
     policy = legacy['headers']
+    record_fields = legacy.get('record_fields', {})
+    if (not isinstance(record_fields, dict)
+            or any(not isinstance(fields, list) or not fields
+                   or not all(isinstance(f, str) and f.isidentifier() for f in fields)
+                   or len(fields) != len(set(fields))
+                   for fields in record_fields.values())):
+        parser.error('legacy record_fields must list unique C field names')
+    seen_record_fields = set()
     missing = sorted(set(policy) - set(headers))
     if missing:
         parser.error(f'legacy bridge headers removed: {missing}')
@@ -161,7 +169,16 @@ def main():
                 declaration = canon.get_declaration()
                 path = Path(declaration.location.file.name) if declaration.location.file else None
                 public = path and path.parent == include and path.name in policy
-                for field in (canon.get_fields() if public else []):
+                fields = list(canon.get_fields()) if public else []
+                if public and spelling in record_fields:
+                    # Keep append-only C fields out of an existing raw Lua ABI.
+                    # sizeof/alignof still come from the current C definition.
+                    requested = set(record_fields[spelling])
+                    fields = [f for f in fields if f.spelling in requested]
+                    if [f.spelling for f in fields] != record_fields[spelling]:
+                        raise RuntimeError('Legacy record field list does not match ' + spelling)
+                    seen_record_fields.add(spelling)
+                for field in fields:
                     if not field.spelling:
                         continue
                     ft = add(field.type, f'((mb_t{i}*)0)->{field.spelling}')
@@ -391,6 +408,11 @@ def main():
 
     macros = sorted(set(re.findall(r'(?:defined\s*\(?\s*|#\s*ifdef\s+)(MULIB_IMPL_\w+)', '\n'.join(
         (include / h).read_text() for h in sorted(policy)))))
+    inactive = legacy.get('inactive_implementation_macros', [])
+    if (not isinstance(inactive, list) or not all(isinstance(m, str) for m in inactive)
+            or len(inactive) != len(set(inactive)) or not set(inactive) <= set(macros)):
+        raise RuntimeError('Legacy policy references invalid or unknown implementation macros')
+    macros = [m for m in macros if m not in inactive]
     implementation = ('/* Generated implementation switches for the legacy MuLL bridge. */\n'
                       '#if defined(__linux__) && !defined(_GNU_SOURCE)\n'
                       '#define _GNU_SOURCE\n#endif\n'
@@ -411,6 +433,8 @@ def main():
                                    'declarations': sorted(declarations[m['header']])}
                              for name,m in sorted(modules.items())}}
     generated = '\n'.join(out)+'\n'
+    if seen_record_fields != set(record_fields):
+        raise RuntimeError('Legacy record_fields references an unknown record')
     _, digest = bridge_surface(generated.encode())
     if digest != legacy['surface_sha256']:
         raise RuntimeError('Generated C legacy surface changed; this is not a discovery-only refresh. '

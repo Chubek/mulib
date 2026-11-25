@@ -17,7 +17,7 @@ tool = t.root/'tools/on1x-contracts.py'
 p = run([sys.executable, tool, 'lint'])
 assert p.returncode == 0, p.stderr
 lint = json.loads(p.stdout)
-assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':6, 'mune':52,
+assert lint['profiles'] == {'json':20, 'vec':7, 'parsec':18, 'elvi-scrape':9, 'mune':53,
                             'quic':12, 'http3':8} and not lint['safe_export'] and not lint['gate_b']
 exo = t.root/'tools/on1x-exotract.py'
 p = run([sys.executable, tool, '--root', root, 'list'])
@@ -43,6 +43,9 @@ pretty_revision = 'sha256:'+hashlib.sha256((root/'kernels/mulib-prettysexpr.h').
 assert coverage['prettysexpr']['sidecar_header_matches'] is True
 assert pretty['bundle_provenance']['revision'] == pretty_revision
 assert coverage['elvi-scrape']['archive_recipe'] == 'exoml-core'
+for name in ['elvi-script', 'elvi-script-ipc', 'elvi-script-logic', 'elvi-script-transport']:
+    assert not coverage[name]['snapshot_profile'] and coverage[name]['archive_recipe'] is None
+    assert coverage[name]['discovery_only_reason'] and coverage[name]['semantic_sidecar'] is None
 for name in ['quic', 'http3']:
     assert coverage[name] == dict(semantic_sidecar=name+'.exocontract.json',
                                  sidecar_header_matches=True, snapshot_profile=True,

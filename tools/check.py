@@ -288,8 +288,11 @@ def main():
                     if execute and not compile_only:
                         arguments = ([str(root / 'library')] if sources and len(sources) == 1
                                       and sources[0].name in ('immgtk.c', 'test_immgtk.c') else [])
-                        if source_name == 'test_imtui_mune.c':
+                        if source_name in ('test_imtui_mune.c', 'test-elvi-scrape.c',
+                                            'test-elvi-scrape-providers.c', 'test-elvi-script.c'):
                             arguments = [str(root)]
+                        if source_name == 'test-elvi-script-logic.c':
+                            arguments = [str(root / 'library/elvis/logic/BookingDotCom.lua')]
                         expected_output = None
                         if sources == [root / 'examples/parallel.c']:
                             arguments = ['-k', "printf '%s\\n' {}", ':::', 'alpha', 'beta']
@@ -306,6 +309,8 @@ def main():
                             patch.write_bytes(b'--- a/hello.txt\n+++ b/hello.txt\n'
                                               b'@@ -1 +1 @@\n-old\n+new\n')
                             arguments = [work, str(patch)]
+                        elif sources == [root / 'examples/elvi-scrape.c']:
+                            arguments = [str(root / 'library/elvis/Google.elvs'), 'offline']
                         if sources and len(sources) == 1 and sources[0].name == 'build-publication.c':
                             arguments = ['.']
                         test = subprocess.run([str(binary)] + arguments, cwd=work, capture_output=True,
@@ -446,9 +451,12 @@ def main():
              + sorted((root / 'tests').glob('test-*.c'))),
         ]:
             passed = check_many([
-                dict(label=str(p.relative_to(root)),
-                     sources=[p] + focused_peers.get(p.name, []))
-                for p in sources])
+                 dict(label=str(p.relative_to(root)),
+                      sources=[p] + focused_peers.get(p.name, []),
+                      # The focused CMake/Make integration runs this program
+                      # with an inherited authenticated-by-host Unix stream.
+                      execute=p.name != 'elvi-script-receiver.c')
+                 for p in sources])
             counts[category] = (passed, len(sources))
             print(f'MuLIB {category}: {passed}/{len(sources)} passed', flush=True)
         integration = [

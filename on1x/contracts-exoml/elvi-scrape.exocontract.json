@@ -7,7 +7,7 @@
   "state": "annotated",
   "bundle_provenance": {
     "header": "mulib-elvi-scrape.h",
-    "revision": "sha256:7f9816e0f5738f62b6f4ae1525bae2e44be175e72b9b9a8a4b17239dcf385dd2",
+    "revision": "sha256:7b0c89cf5d12fad38c286f1df7c5e5abbb814cc41737a02fdb76764f2e87fb63",
     "author": "Codex (AI-authored)",
     "review_status": "unreviewed",
     "evidence_method": "Source/manual audit; contracts-exoml/obligations.json; real-kernel offline extraction and HTTPS adapter tests. Independent review pending."
@@ -438,6 +438,64 @@
           "description": "Successful body append may invalidate pointers into body->data. The buffer itself remains caller-owned."
         }
       ]
+    },
+    {
+      "c_name": "mulib_elvi_script_resolve",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "argument", "ownership": "borrowed_immutable", "nullable": false,
+         "encoding": "NUL-terminated nonempty stage argument; does not itself authorize a path"},
+        {"index": 1, "name": "home", "ownership": "borrowed_immutable", "nullable": true,
+         "encoding": "Caller-approved NUL-terminated absolute HOME; required when argument contains its supported prefix"},
+        {"index": 2, "name": "out", "ownership": "out", "nullable": false, "length_parameter": 3,
+         "encoding": "Capacity includes terminating NUL; storage disjoint from input strings"},
+        {"index": 3, "name": "capacity", "ownership": "scalar", "nullable": false}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read", "write"], "unknown": false},
+      "concurrency": {"thread_safety": "single_thread", "blocking_behavior": "Synchronous lexical substitution; no I/O", "suspension_safe": false},
+      "provenance": {
+        "header": "mulib-elvi-scrape.h", "author": "Codex (AI-authored)", "review_status": "unreviewed",
+        "evidence_method": "Source, grammar, compiler regression tests: only a supported leading HOME component; transactional output, no variable lookup, shell or file access."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_script_url_allowed",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "p", "ownership": "borrowed_immutable", "nullable": false,
+         "encoding": "Compiled unmodified program"},
+        {"index": 1, "name": "url", "ownership": "borrowed_immutable", "nullable": false,
+         "encoding": "NUL-terminated candidate URL"}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": false},
+      "effects": {"effects": ["read"], "unknown": false},
+      "concurrency": {"thread_safety": "single_thread", "blocking_behavior": "Synchronous lexical validation; no DNS or socket operations", "suspension_safe": false},
+      "provenance": {
+        "header": "mulib-elvi-scrape.h", "author": "Codex (AI-authored)", "review_status": "unreviewed",
+        "evidence_method": "Source and compiler regression tests: exact HTTPS profile host, public lexical policy and no fragment. Does not prove the peer or resolved address."
+      }
+    },
+    {
+      "c_name": "mulib_elvi_scrape_https_connect_verified",
+      "return": {"kind": "value", "nullable": false},
+      "parameters": [
+        {"index": 0, "name": "ctx", "ownership": "opaque_unsafe", "nullable": false,
+         "encoding": "Borrowed HTTPS connector, peer inspector, and transitive context"},
+        {"index": 1, "name": "endpoint", "ownership": "borrowed_immutable", "nullable": false,
+         "encoding": "Already authorized and validated HTTPS endpoint with live URI spans"},
+        {"index": 2, "name": "session", "ownership": "inout", "nullable": false,
+         "encoding": "Initialized zero state before use; HTTPS caller owns close even on failure"}
+      ],
+      "errors": {"kind": "boolean_return", "out_valid_on_failure": false, "cleanup_required_on_failure": true},
+      "effects": {"effects": ["read", "write", "io", "foreign_call"], "unknown": true},
+      "concurrency": {"thread_safety": "single_thread", "blocking_behavior": "Synchronous; TLS handshake and host callbacks may block", "suspension_safe": false},
+      "provenance": {
+        "header": "mulib-elvi-scrape.h",
+        "author": "Codex (AI-authored)",
+        "review_status": "unreviewed",
+        "evidence_method": "Source and offline TLS fixtures: performs negotiation and peer/authentication checks. Does not authorize endpoint or close the session. Effects of callbacks not inferred."
+      }
     }
   ]
 }

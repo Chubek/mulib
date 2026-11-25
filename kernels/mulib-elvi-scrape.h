@@ -1,12 +1,12 @@
 /** @file mulib-elvi-scrape.h
- * @brief Declarative search providers and bounded HTML/JSON link extraction.
+ * @brief Compile Elvi profiles and extract bounded legacy search results.
  * ISO C11; no third-party libraries. MuLIB dependencies: mulib-fetch,
  * mulib-url, mulib-https, mulib-json, and detail/mulib-webscan.
  * Define MULIB_IMPL_ELVI_SCRAPE in one TU.
  *
  * The HTTPS adapter composes MuLIB HTTPS/TSL with application-owned TLS
  * connection and authenticated peer inspection callbacks.
- * See manual/mulib-elvi-scrape.md for the .elvs language and limitations.
+ * See manual/mulib-elvi-scrape.md and manual/elvi-script-grammar.md.
  */
 #ifndef MULIB_ELVI_SCRAPE_H
 #define MULIB_ELVI_SCRAPE_H
@@ -32,6 +32,23 @@ typedef enum mulib_elvi_format {
   MULIB_ELVI_FORMAT_HTML = 0,
   MULIB_ELVI_FORMAT_JSON = 1
 } mulib_elvi_format_t;
+typedef enum mulib_elvi_mode {
+  MULIB_ELVI_MODE_SEARCH = 0,
+  MULIB_ELVI_MODE_SCRAPE
+} mulib_elvi_mode_t;
+typedef enum mulib_elvi_stage_kind {
+  MULIB_ELVI_STAGE_NONE = 0,
+  MULIB_ELVI_STAGE_COOKIE_FILE,
+  MULIB_ELVI_STAGE_XPATH,
+  MULIB_ELVI_STAGE_DISCARD,
+  MULIB_ELVI_STAGE_LUA,
+  MULIB_ELVI_STAGE_IPC
+} mulib_elvi_stage_kind_t;
+typedef struct mulib_elvi_stage {
+  mulib_elvi_stage_kind_t kind;
+  char argument[1024];            /* decoded text, with HOME still unexpanded */
+  size_t line;                    /* one-based opening directive line; 0 if absent */
+} mulib_elvi_stage_t;
 typedef struct mulib_elvi_scrape_program {
   char name[64];
   char host[256];                 /* exact HTTPS request host */
@@ -46,6 +63,8 @@ typedef struct mulib_elvi_scrape_program {
   mulib_elvi_format_t format;
   char anchor_class[128];        /* optional case-sensitive HTML class token */
   char json_results[256], json_title[256], json_url[256]; /* selector paths */
+  mulib_elvi_mode_t mode;
+  mulib_elvi_stage_t cookies, xpath, artifacts, logic, forward;
 } mulib_elvi_scrape_program_t;
 typedef struct mulib_elvi_scrape_result {
   char title[512];
@@ -56,7 +75,7 @@ typedef struct mulib_elvi_scrape_error {
   char message[160];
 } mulib_elvi_scrape_error_t;
 
-/* Parse a NUL-free buffer; on failure *out is unchanged. */
+/* Parse a NUL-free buffer (<=64 KiB) without I/O; *out is unchanged on failure. */
 int mulib_elvi_scrape_compile(const char *src, size_t len,
                              mulib_elvi_scrape_program_t *out,
                              mulib_elvi_scrape_error_t *error);
@@ -64,9 +83,18 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
 int mulib_elvi_scrape_load(const char *path,
                           mulib_elvi_scrape_program_t *out,
                           mulib_elvi_scrape_error_t *error);
+/* Resolve a nonempty stage argument as text. Leading $HOME or ${HOME}, as a
+ * whole path component, uses only the supplied absolute home. A literal
+ * argument needs no home. Strings must not overlap out; out is unchanged
+ * on failure. This neither canonicalizes paths nor authorizes I/O. */
+int mulib_elvi_script_resolve(const char *argument, const char *home,
+                             char *out, size_t capacity);
+/* Both modes: public HTTPS, exact profile host, no fragment; no I/O. */
+int mulib_elvi_script_url_allowed(const mulib_elvi_scrape_program_t *p,
+                                 const char *url);
 /* Percent-encode a nonempty query with mulib-url; "" selects the provider
  * home URL. In both cases limit is 1..max_results. Output is unchanged on
- * failure. */
+ * failure. This and the legacy parse/search APIs require search mode. */
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                          const char *query, unsigned limit,
                          char *out, size_t capacity);
@@ -97,6 +125,11 @@ typedef struct mulib_elvi_scrape_https {
   int (*peer)(void *, const mulib_tsl_t *, mulib_elvi_scrape_peer_t *);
   void *context;
 } mulib_elvi_scrape_https_t;
+/* A mulib_https_connect_fn. ctx points to a borrowed mulib_elvi_scrape_https_t.
+ * Use with a validated endpoint and mulib_https_request, which owns cleanup
+ * of the session even if peer validation fails here. This is not a URL gate. */
+int mulib_elvi_scrape_https_connect_verified(void *ctx, const mulib_uri_t *endpoint,
+                                             mulib_tsl_t *session);
 /* A mulib_fetch_transport_fn. ctx points to mulib_elvi_scrape_https_t.
  * Enforces public HTTPS, verified peer identity, TLS >=1.2 and HTTP/1.1.
  * Never follows redirects or retries rate limits. Body must be initialized;
@@ -186,7 +219,8 @@ static int melvi_pointer_syntax_(const char *s,size_t cap) {
 }
 /* Public structs are caller-owned: validate extents before string operations. */
 static int melvi_program_(const mulib_elvi_scrape_program_t *p) {
-  if(!p || p->excluded_count>8 || p->max_results<1 || p->max_results>64 ||
+  if(!p || p->mode!=MULIB_ELVI_MODE_SEARCH ||
+     p->excluded_count>8 || p->max_results<1 || p->max_results>64 ||
      (p->rewrite!=MULIB_ELVI_REWRITE_DIRECT && p->rewrite!=MULIB_ELVI_REWRITE_GOOGLE &&
       p->rewrite!=MULIB_ELVI_REWRITE_RELATIVE) ||
      !memchr(p->name,0,sizeof p->name) || !memchr(p->host,0,sizeof p->host) ||
@@ -209,6 +243,11 @@ static int melvi_program_(const mulib_elvi_scrape_program_t *p) {
 }
 static int melvi_same_host_(const char *url, const char *host) {
   char parsed[256]; return melvi_host_(url,parsed,sizeof parsed) && !strcmp(parsed,host);
+}
+int mulib_elvi_script_url_allowed(const mulib_elvi_scrape_program_t *p,
+                                 const char *url) {
+  return p && url && memchr(p->host,0,sizeof p->host) &&
+    melvi_same_host_(url,p->host) && !strchr(url,'#');
 }
 /* Match the literal template authority, independently of any expansion. */
 static int melvi_template_host_(const mulib_elvi_scrape_program_t *p) {
@@ -251,6 +290,83 @@ static int melvi_token_(const char **cursor, const char *end,
   *cursor=p;
   return n?1:-1;
 }
+/* Provider expressions have their own grammar; legacy tokens (notably search
+ * placeholders and JSON paths) are not interpreted as provider expressions. */
+static int melvi_hspace_(char c) { return c==' ' || c=='\t' || c=='\r'; }
+static int melvi_provider_(const char **cursor,const char *line_end,const char *end,
+                            const char *provider,char *out,size_t cap,size_t *line) {
+  const char *p=*cursor;size_t prefix=strlen(provider),n=0;
+  unsigned depth=1;char quote=0;int space=0;
+  while(p<line_end && melvi_hspace_(*p))p++;
+  if((size_t)(line_end-p)<=prefix || memcmp(p,provider,prefix) || p[prefix]!='{')return 0;
+  p+=prefix+1;
+  while(p<end) {
+    char c=*p++;
+    if(!quote && (melvi_hspace_(c) || c=='\n' || c=='#')) {
+      if(c=='#')while(p<end && *p!='\n')p++;
+      if(c=='\n')(*line)++;
+      if(n)space=1;
+      continue;
+    }
+    if(c=='\\') {
+      if(p==end || !strchr("\\\"'{}# ",*p))return 0;
+      c=*p++;
+    } else if(quote) {
+      if(c==quote) {quote=0;continue;}
+    } else if(c=='"' || c=='\'') {
+      quote=c;continue;
+    } else if(c=='{') {
+      if(++depth>32)return 0;
+    } else if(c=='}' && --depth==0) {
+      while(p<end && melvi_hspace_(*p))p++;
+      if(p<end && *p=='#')while(p<end && *p!='\n')p++;
+      if(!n || (p<end && *p!='\n'))return 0;
+      out[n]=0;*cursor=p;return 1;
+    }
+    if((unsigned char)c<32 || (unsigned char)c==127)return 0;
+    if(space) {
+      if(n+1>=cap)return 0;
+      out[n++]=' ';space=0;
+    }
+    if(n+1>=cap)return 0;
+    out[n++]=c;
+  }
+  return 0;
+}
+static int melvi_argument_(const char *argument,size_t *prefix) {
+  const char *p=argument;
+  if(!p || !*p)return 0;
+  *prefix=0;
+  if(*p=='$') {
+    if(!strncmp(p,"$HOME",5)) *prefix=5;
+    else if(!strncmp(p,"${HOME}",7)) *prefix=7;
+    else return 0;
+    p+=*prefix;
+    if(*p && *p!='/')return 0;
+  }
+  for(;*p;p++)
+    if((unsigned char)*p<32 || (unsigned char)*p==127 || *p=='$')return 0;
+  return 1;
+}
+int mulib_elvi_script_resolve(const char *argument, const char *home,
+                             char *out, size_t capacity) {
+  size_t prefix,n,base=0;
+  if(!out || !capacity || !melvi_argument_(argument,&prefix))return 0;
+  if(prefix) {
+    if(!home || home[0]!='/')return 0;
+    while(home[base]) {
+      unsigned char c=(unsigned char)home[base];
+      if(c<32 || c==127 || base==capacity-1)return 0;
+      base++;
+    }
+  }
+  argument+=prefix;n=strlen(argument);
+  /* Elide the boundary separator if the supplied base already ends in one. */
+  if(base && home[base-1]=='/' && *argument=='/') {argument++;n--;}
+  if(n>=capacity-base)return 0;
+  if(base)memcpy(out,home,base);
+  memcpy(out+base,argument,n+1);return 1;
+}
 static int melvi_uint_(const char *s, unsigned *out) {
   unsigned x=0;
   if(!*s) return 0;
@@ -262,10 +378,12 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
                               mulib_elvi_scrape_program_t *out,
                               mulib_elvi_scrape_error_t *error) {
   enum { M_NAME, M_HOST, M_HOME, M_SEARCH, M_ANCHOR, M_REWRITE, M_EXCLUDE,
-         M_MAX_RESULTS, M_FORMAT, M_CLASS, M_RESULTS, M_TITLE, M_URL, M_DIRECTIVES };
+         M_MAX_RESULTS, M_FORMAT, M_CLASS, M_RESULTS, M_TITLE, M_URL,
+         M_MODE, M_COOKIES, M_XPATH, M_ARTIFACTS, M_LOGIC, M_FORWARD, M_DIRECTIVES };
   static const char *const keys[M_DIRECTIVES]={
     "elvi","host","home","search","anchor","rewrite","exclude_host","max_results",
-    "format","anchor_class","results","title","url"
+    "format","anchor_class","results","title","url","mode","cookies","xpath",
+    "artifacts","logic","forward"
   };
   mulib_elvi_scrape_program_t v;
   size_t at=0,line=0,lines[M_DIRECTIVES]={0};
@@ -274,23 +392,59 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
   }
   memset(&v,0,sizeof v);v.max_results=20;
   while(at<len) {
-    size_t start=at;const char *cur,*end;
+    size_t start=at;const char *cur,*end;mulib_elvi_stage_t *stage=NULL;
+    mulib_elvi_stage_kind_t stage_kind=MULIB_ELVI_STAGE_NONE;
+    const char *provider=NULL,*stage_error=NULL;
     char k[64],a[4096],b[256];int nk,na,nb,extra,kind;
     while(at<len && src[at]!='\n') at++;
     end=src+at;cur=src+start;line++;
     if(at<len) at++;
     nk=melvi_token_(&cur,end,k,sizeof k);
     if(nk==0) continue;
-    na=melvi_token_(&cur,end,a,sizeof a);
-    nb=melvi_token_(&cur,end,b,sizeof b);
-    {char unused[2];extra=melvi_token_(&cur,end,unused,sizeof unused);}
-    if(nk<0||na!=1||nb<0||extra!=0) goto syntax;
+    if(nk<0) goto syntax;
     for(kind=0;kind<M_DIRECTIVES && !melvi_eq_(k,keys[kind]);kind++) {}
-    if(kind==M_DIRECTIVES || (kind!=M_ANCHOR && nb!=0)) goto syntax;
+    if(kind==M_DIRECTIVES) goto syntax;
     if(kind!=M_EXCLUDE && lines[kind]) {
       melvi_error_(error,line,"duplicate directive");return 0;
     }
     lines[kind]=line;
+    switch(kind) {
+    case M_COOKIES:
+      stage=&v.cookies;stage_kind=MULIB_ELVI_STAGE_COOKIE_FILE;provider="provide";
+      stage_error="expected cookies provide{PATH}";break;
+    case M_XPATH:
+      stage=&v.xpath;stage_kind=MULIB_ELVI_STAGE_XPATH;provider="provide";
+      stage_error="expected xpath provide{mulib-xpath}";break;
+    case M_LOGIC:
+      stage=&v.logic;stage_kind=MULIB_ELVI_STAGE_LUA;provider="lua";
+      stage_error="expected logic lua{PATH}";break;
+    case M_FORWARD:
+      stage=&v.forward;stage_kind=MULIB_ELVI_STAGE_IPC;provider="ipc";
+      stage_error="expected forward ipc{PATH}";break;
+    default: break;
+    }
+    if(stage) {
+      size_t prefix;
+      if(!melvi_provider_(&cur,end,src+len,provider,stage->argument,sizeof stage->argument,&line)) {
+        melvi_error_(error,line,stage_error);return 0;
+      }
+      if(kind==M_XPATH) {
+        if(!melvi_eq_(stage->argument,"mulib-xpath")) {
+          melvi_error_(error,lines[kind],stage_error);return 0;
+        }
+      } else if(!melvi_argument_(stage->argument,&prefix)) {
+        melvi_error_(error,lines[kind],"invalid path or unsupported variable; only leading HOME is allowed");
+        return 0;
+      }
+      stage->kind=stage_kind;stage->line=lines[kind];
+      at=(size_t)(cur-src);
+      if(at<len)at++;
+      continue;
+    }
+    na=melvi_token_(&cur,end,a,sizeof a);
+    nb=melvi_token_(&cur,end,b,sizeof b);
+    {char unused[2];extra=melvi_token_(&cur,end,unused,sizeof unused);}
+    if(na!=1||nb<0||extra!=0||(kind!=M_ANCHOR && nb!=0))goto syntax;
     switch(kind) {
     case M_NAME:
       if(!melvi_copy_(v.name,sizeof v.name,a)) goto syntax;
@@ -303,6 +457,16 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     case M_HOME:
       if(!melvi_copy_(v.home,sizeof v.home,a)) goto syntax;
       break;
+    case M_MODE:
+      if(melvi_eq_(a,"search"))v.mode=MULIB_ELVI_MODE_SEARCH;
+      else if(melvi_eq_(a,"scrape"))v.mode=MULIB_ELVI_MODE_SCRAPE;
+      else {melvi_error_(error,line,"expected mode search or mode scrape");return 0;}
+      break;
+    case M_ARTIFACTS:
+      if(!melvi_eq_(a,"discard")) {
+        melvi_error_(error,line,"expected artifacts discard");return 0;
+      }
+      v.artifacts.kind=MULIB_ELVI_STAGE_DISCARD;v.artifacts.line=line;break;
     case M_SEARCH:
       if(!melvi_copy_(v.search_template,sizeof v.search_template,a)) goto syntax;
       break;
@@ -354,23 +518,39 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     continue;
   syntax: melvi_error_(error,line,"unknown directive or invalid arguments");return 0;
   }
-  if(!lines[M_NAME] || !lines[M_HOST] || !lines[M_HOME] || !lines[M_SEARCH] ||
-     (v.format==MULIB_ELVI_FORMAT_HTML && !lines[M_ANCHOR]) ||
-     (v.format==MULIB_ELVI_FORMAT_JSON && (!lines[M_RESULTS] || !lines[M_TITLE] || !lines[M_URL]))) {
-    melvi_error_(error,line,"required directives missing");return 0;
+  if(!lines[M_NAME] || !lines[M_HOST] || !lines[M_HOME]) {
+    melvi_error_(error,line,"required elvi, host or home directive missing");return 0;
   }
-  if(v.format==MULIB_ELVI_FORMAT_HTML) {
-    for(int kind=M_RESULTS;kind<=M_URL;kind++)if(lines[kind]) {
-      melvi_error_(error,lines[kind],"JSON selector requires format json");return 0;
+  if(v.mode==MULIB_ELVI_MODE_SCRAPE) {
+    for(int kind=M_SEARCH;kind<=M_URL;kind++)if(lines[kind]) {
+      melvi_error_(error,lines[kind],"search directive not supported in scrape mode");return 0;
     }
-  } else if(lines[M_ANCHOR] || lines[M_CLASS] || v.rewrite==MULIB_ELVI_REWRITE_GOOGLE) {
-    melvi_error_(error,lines[M_ANCHOR]?lines[M_ANCHOR]:lines[M_CLASS]?lines[M_CLASS]:lines[M_REWRITE],
-                 "HTML selector or rewrite not supported for JSON");return 0;
+    if(!lines[M_XPATH] || !lines[M_ARTIFACTS] || !lines[M_LOGIC] || !lines[M_FORWARD]) {
+      melvi_error_(error,line,"scrape mode requires xpath, artifacts, logic and forward");return 0;
+    }
+  } else {
+    for(int kind=M_COOKIES;kind<=M_FORWARD;kind++)if(lines[kind]) {
+      melvi_error_(error,lines[kind],"stage directive requires mode scrape");return 0;
+    }
+    if(!lines[M_SEARCH] ||
+       (v.format==MULIB_ELVI_FORMAT_HTML && !lines[M_ANCHOR]) ||
+       (v.format==MULIB_ELVI_FORMAT_JSON && (!lines[M_RESULTS] || !lines[M_TITLE] || !lines[M_URL]))) {
+      melvi_error_(error,line,"required directives missing");return 0;
+    }
+    if(v.format==MULIB_ELVI_FORMAT_HTML) {
+      for(int kind=M_RESULTS;kind<=M_URL;kind++)if(lines[kind]) {
+        melvi_error_(error,lines[kind],"JSON selector requires format json");return 0;
+      }
+    } else if(lines[M_ANCHOR] || lines[M_CLASS] || v.rewrite==MULIB_ELVI_REWRITE_GOOGLE) {
+      melvi_error_(error,lines[M_ANCHOR]?lines[M_ANCHOR]:lines[M_CLASS]?lines[M_CLASS]:lines[M_REWRITE],
+                   "HTML selector or rewrite not supported for JSON");return 0;
+    }
   }
-  if(strchr(v.home,'#') || !melvi_same_host_(v.home,v.host)) {
+  if(!mulib_elvi_script_url_allowed(&v,v.home)) {
     melvi_error_(error,lines[M_HOME],"invalid HTTPS home URL or host mismatch");return 0;
   }
-  { /* Render with a nonempty probe to validate placeholders and URL syntax. */
+  if(v.mode==MULIB_ELVI_MODE_SEARCH) {
+    /* Render with a nonempty probe to validate placeholders and URL syntax. */
     char url[8192];
     if(!strstr(v.search_template,"{query}") || !mulib_elvi_scrape_url(&v,"x",1,url,sizeof url)) {
       melvi_error_(error,lines[M_SEARCH],"invalid HTTPS search template");return 0;
@@ -399,14 +579,13 @@ static int melvi_append_(char *s,size_t cap,size_t *used,const char *p,size_t n)
 }
 int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
                           const char *query, unsigned limit, char *out, size_t cap) {
-  char num[24],host[256],*enc=NULL,*tmp=NULL;
+  char num[24],*enc=NULL,*tmp=NULL;
   size_t qlen,used=0; const char *fmt;int ok=0;
   if(!melvi_program_(p)||!query||!out||!cap||!limit||limit>p->max_results ||
      !melvi_template_host_(p)) return 0;
   if(cap>8192)cap=8192;
   if(!*query)
-    return !strchr(p->home,'#') && melvi_same_host_(p->home,p->host) &&
-      melvi_copy_(out,cap,p->home);
+    return mulib_elvi_script_url_allowed(p,p->home) && melvi_copy_(out,cap,p->home);
   qlen=0;while(qlen<=2048 && query[qlen])qlen++;
   if(qlen>2048||qlen>(SIZE_MAX-1)/3) return 0;
   enc=(char*)malloc(qlen*3+1);tmp=(char*)malloc(cap);
@@ -429,7 +608,7 @@ int mulib_elvi_scrape_url(const mulib_elvi_scrape_program_t *p,
     } else if (*fmt=='}') goto done;
     else if(!melvi_append_(tmp,cap,&used,fmt++,1)) goto done;
   }
-  if(strchr(tmp,'#')||!melvi_host_(tmp,host,sizeof host)||strcmp(host,p->host)) goto done;
+  if(!mulib_elvi_script_url_allowed(p,tmp)) goto done;
   memcpy(out,tmp,used+1);ok=1;
  done:free(enc);free(tmp);return ok;
 }
@@ -819,10 +998,12 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
                               cap<limit?cap:limit,count);
  done:mulib_bounded_text_buffer_free(&body);return ok;
 }
-static int melvi_connect_(void *ctx,const mulib_uri_t *endpoint,mulib_tsl_t *session) {
-  mulib_elvi_scrape_https_t *tls=(mulib_elvi_scrape_https_t *)ctx;
+int mulib_elvi_scrape_https_connect_verified(void *ctx,const mulib_uri_t *endpoint,
+                                             mulib_tsl_t *session) {
+  const mulib_elvi_scrape_https_t *tls=(const mulib_elvi_scrape_https_t *)ctx;
   mulib_elvi_scrape_peer_t peer={0};
-  if(tls->connect(tls->context,endpoint,session)!=1 ||
+  if(!tls || !tls->connect || !tls->peer || !endpoint || !endpoint->host.data ||
+     !endpoint->host.length || !session || tls->connect(tls->context,endpoint,session)!=1 ||
      mulib_tsl_handshake(session)!=MULIB_TSL_OK ||
      tls->peer(tls->context,session,&peer)!=1 ||
      peer.certificate_verified!=1 || peer.hostname_verified!=1 ||
@@ -847,7 +1028,7 @@ int mulib_elvi_scrape_https_transport(void *ctx,const char *url,
   options.http.max_header_bytes=32768;options.http.max_headers=100;
   options.max_response_bytes=options.http.max_body_bytes+65536;
   if(mulib_https_request(url,"GET",NULL,0,NULL,0,&options,
-       melvi_connect_,tls,&message)!=MULIB_WEBCLIENT_OK)goto done;
+        mulib_elvi_scrape_https_connect_verified,tls,&message)!=MULIB_WEBCLIENT_OK)goto done;
   ct=mulib_http_header_next(&message,"Content-Type",&cursor);
   if(mulib_http_header_next(&message,"Content-Type",&cursor))goto done;
   cursor=0;encoding=mulib_http_header_next(&message,"Content-Encoding",&cursor);

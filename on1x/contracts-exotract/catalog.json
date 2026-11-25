@@ -5,7 +5,8 @@
   "implementation_translation_units": 1,
   "safe_export": false,
   "discovery_only_prefixes": {
-    "cdd-": "CDD requires checked accessors for fixed arrays, explicit counts and borrowed lifetimes before semantic contracts or bindings"
+    "cdd-": "CDD requires checked accessors for fixed arrays, explicit counts and borrowed lifetimes before semantic contracts or bindings",
+    "elvi-script": "ElviScript execution requires separately reviewed transport, script capability, response lifetime and IPC effect contracts"
   },
   "profiles": {
     "json": {
@@ -44,7 +45,7 @@
         "mulib_mune_version", "mulib_mune_create", "mulib_mune_destroy", "mulib_mune_eval", "mulib_mune_get",
         "mulib_mune_parse", "mulib_mune_parse_file", "mulib_mune_chunk_ast", "mulib_mune_chunk_destroy",
         "mulib_mune_set_mode", "mulib_mune_emit_c", "mulib_mune_run_aot",
-        "mulib_mune_state_create", "mulib_mune_state_destroy", "mulib_mune_run", "mulib_mune_run_source", "mulib_mune_run_file",
+        "mulib_mune_state_create", "mulib_mune_state_create_bare", "mulib_mune_state_destroy", "mulib_mune_run", "mulib_mune_run_source", "mulib_mune_run_file",
         "mulib_mune_result_count", "mulib_mune_result_get", "mulib_mune_result_push", "mulib_mune_result_destroy",
         "mulib_mune_value_string", "mulib_mune_make_string", "mulib_mune_get_global", "mulib_mune_set_global",
         "mulib_mune_bind", "mulib_mune_result_create", "mulib_mune_call", "mulib_mune_make_table",
@@ -64,7 +65,10 @@
         "mulib_elvi_scrape_url",
         "mulib_elvi_scrape_parse",
         "mulib_elvi_scrape_search",
-        "mulib_elvi_scrape_https_transport"
+        "mulib_elvi_scrape_https_transport",
+        "mulib_elvi_scrape_https_connect_verified",
+        "mulib_elvi_script_resolve",
+        "mulib_elvi_script_url_allowed"
       ]
     },
     "quic": {
