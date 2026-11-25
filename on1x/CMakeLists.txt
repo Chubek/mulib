@@ -801,6 +801,12 @@ if(BUILD_TESTING)
   target_link_libraries(on1x_mir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_hir COMMAND on1x_mir_tests)
   set_tests_properties(on1x.mir_hir PROPERTIES TIMEOUT 40)
+  add_test(NAME on1x.backend_phase_routes
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_backend_phase_routes.py"
+      "$<TARGET_FILE:on1xc>" "$<TARGET_FILE:on1x-vm>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/backend-phase-routes" "${CMAKE_C_COMPILER}"
+      ${_test_c_flags})
+  set_tests_properties(on1x.backend_phase_routes PROPERTIES TIMEOUT 120)
   find_package(Threads REQUIRED)
   add_executable(on1x_scanner_tests tests/test_scanner.cpp src/lexer.cpp src/source.cpp)
   target_include_directories(on1x_scanner_tests PRIVATE include)
@@ -936,6 +942,11 @@ if(BUILD_TESTING)
   target_link_libraries(on1x_mir_borrow_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_borrow_hir COMMAND on1x_mir_borrow_tests)
   set_tests_properties(on1x.mir_borrow_hir PROPERTIES TIMEOUT 60)
+  add_test(NAME on1x.mir_borrow_products
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mir_borrow.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/mir-borrow" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.mir_borrow_products PROPERTIES TIMEOUT 240)
   add_test(NAME on1x.diagnostic_catalog_runtime COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_catalog_runtime.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/diagnostic-catalog-runtime"

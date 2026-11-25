@@ -170,7 +170,10 @@ def main(argv=None):
     parser.add_argument("--scalar-abi", type=Path)
     parser.add_argument("--runtime", type=Path)
     parser.add_argument("--ir-input", action="store_true", help="input is serialized MIR")
-    parser.add_argument("--optimize-ir", action="store_true")
+    parser.add_argument("--optimize-ir", action="store_true",
+                        help="enable MIR passes and opt into speculative Archon directives")
+    parser.add_argument("--speculate", action="store_true",
+                        help="opt into speculative Archon directives without enabling MIR passes")
     optimization.arguments(parser)
     parser.add_argument("--pic", action="store_true", help="emit PIC and link a PIE")
     parser.add_argument("--emit-only", action="store_true", help="publish assembly")
@@ -272,6 +275,8 @@ def main(argv=None):
         assembly = stage / "program.s"
         command = [archon, "--ir-input", mir, "--target", args.target, "-o", assembly,
                    "--max-assembly-bytes", args.max_assembly_bytes]
+        if args.optimize_ir or args.speculate:
+            command.append("--speculate")
         if args.pic:
             command.append("--pic")
         if args.no_entry:

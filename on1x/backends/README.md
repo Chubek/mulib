@@ -5,6 +5,9 @@ and lowers to verified MIR before dispatch to a `mir-*` backend. Direct C11
 continues to consume checked HIR as the reference path. Serialized MIR starts
 at MIR verification and does not run HIR passes.
 
+See the [backend phase audit](../docs/backend-phase-audit.md) for actual
+driver routes, regression commands, and remaining coverage gaps.
+
 In SDK-enabled builds, the compiler dispatches these existing modes through
 the extension SDK registry and artifact sink:
 

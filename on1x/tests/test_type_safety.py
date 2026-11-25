@@ -23,7 +23,7 @@ for options in [
     assert p.returncode==2 and 'structural type checking requires elaborated source HIR' in p.stderr,(options,p.stderr)
     assert not p.stdout and out.read_text()=='keep',options
 p=run([t.compiler,'--check-types','--deps',scalar])
-assert p.returncode==2 and not p.stdout and 'structural type checking requires elaborated source HIR' in p.stderr,p.stderr
+assert p.returncode==2 and not p.stdout and 'conflicting compiler modes' in p.stderr,p.stderr
 p=run([t.compiler,'--check-types',example])
 assert p.returncode==0 and 'well_typed concrete HIR' in p.stdout,p.stderr
 assert p.stdout==run([t.compiler,'--check-types',example]).stdout

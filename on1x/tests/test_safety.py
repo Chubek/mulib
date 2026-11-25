@@ -23,7 +23,7 @@ for options in [
     assert p.returncode == 2 and 'memory checking requires checked source HIR' in p.stderr, (options, p.stderr)
     assert not p.stdout and out.read_text() == 'keep', options
 p = run([t.compiler, '--check-memory', '--deps', scalar])
-assert p.returncode == 2 and not p.stdout and 'memory checking requires checked source HIR' in p.stderr, p.stderr
+assert p.returncode == 2 and not p.stdout and 'conflicting compiler modes' in p.stderr, p.stderr
 report = run([t.compiler, '--check-memory', source])
 assert report.returncode == 0 and 'on1x.memory/v1' in report.stdout, report.stderr
 assert report.stdout == run([t.compiler, '--check-memory', source]).stdout

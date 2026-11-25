@@ -56,6 +56,24 @@ def main():
         with_add = assembly.read_bytes()
         run(build_asm + ["--enable-opt", "integer_add_zero_right"])
         assert assembly.read_bytes() != with_add
+        # This portable directive is interpreted only at the Archon product
+        # boundary, not by the compiler's ordinary MIR pass pipeline.
+        portable = work / "scoped.mir"
+        portable.write_text("""(on1x.mir 4 1
+          ((function 2 "keep" i64 (at "fixture" 0 1 1) ()
+            ((block 4 5 (at "fixture" 0 1 1) ((value 6 i64 (at "fixture" 0 1 1)))
+              ((instruction 7 neg.checked i64 (6) 0 0 5 8 (at "fixture" 0 1 1))
+               (instruction 9 neg.checked i64 (7) 0 0 8 10 (at "fixture" 0 1 2)))
+              (exit 11 return 9 10 () (at "fixture" 0 1 1))))))
+          ((directive "mir-archon" "x86_64-unknown-linux-gnu" "rewrite" "meta-canonical" 2 true)))
+        """, encoding="utf-8")
+        build_scoped = base + [portable, "--ir-input", "--emit-only", "--no-entry", "-o", assembly]
+        run(build_scoped)
+        assert assembly.read_bytes().count(b"on1x_neg_i64") == 2
+        run(build_scoped + ["--optimize-ir"])
+        assert assembly.read_bytes().count(b"on1x_neg_i64") == 1
+        run(build_scoped + ["--speculate"])
+        assert assembly.read_bytes().count(b"on1x_neg_i64") == 1
         run(base + [source, "--emit-only", "--no-entry", "-o", assembly])
         assert b"\nmain:" not in assembly.read_bytes()
         marker = b"previous complete output\n"

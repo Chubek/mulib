@@ -664,9 +664,17 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           bool archvirt_standalone=false;
            std::string sdk_mode,sdk_name,sdk_target,mir_target;
           bool native_pic=false,native_no_entry=false;
-         std::vector<std::string> plugin_selectors;
-         bool explicit_c=false;
-         bool cephyr_object=false;
+          std::vector<std::string> plugin_selectors;
+          bool explicit_c=false;
+          bool explicit_mode=false;
+          auto select_mode=[&](const std::string& requested){
+           if(explicit_mode&&mode!=requested)
+            throw std::runtime_error("conflicting compiler modes: "+mode+" and "+requested);
+           mode=requested;
+           explicit_mode=true;
+           explicit_c=mode=="--emit-c";
+          };
+          bool cephyr_object=false;
          std::string cephyr_target;
 #ifdef ON1X_WITH_CEPHYR
          on1x::cephyr::Options cephyr_options;
@@ -754,15 +762,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(++i>=argc)throw std::runtime_error(arg+" requires registered feature names");
        on1x::extensions::select(arg=="--enable"?loader.extensions.enabled:loader.extensions.disabled,argv[i],{"<command-line>"});continue;
       }
-       if(arg=="--list-extensions"){mode=arg;continue;}
+       if(arg=="--list-extensions"){select_mode(arg);continue;}
       if(arg=="--explain-extension"){
        if(++i>=argc)throw std::runtime_error("--explain-extension requires a feature name");
-        explain_extension=argv[i];mode=arg;continue;
+        explain_extension=argv[i];select_mode(arg);continue;
       }
-       if(arg=="--repair"||arg=="--print-stdlib"){mode=arg;continue;}
+       if(arg=="--repair"||arg=="--print-stdlib"){select_mode(arg);continue;}
       if(arg=="--stdlib-resource"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty relative path");
-        stdlib_resource=argv[i];mode=arg;continue;
+        stdlib_resource=argv[i];select_mode(arg);continue;
       }
       if(arg=="--lib-path"||arg=="--stdlib-path"||arg=="--ppx-path"||arg=="--stdppx-path"){
        if(++i>=argc||!argv[i][0])throw std::runtime_error(arg+" requires a nonempty search list");
@@ -811,8 +819,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
        if(arg=="--kernel-load-time"){loader.kernel_load_time=true;continue;}
-         if(arg=="--check-memory"){mode=arg;memory=true;continue;}
-         if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
+         if(arg=="--check-memory"){select_mode(arg);memory=true;continue;}
+         if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){select_mode(arg);continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -855,10 +863,10 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       throw std::runtime_error("--cephyr-target requires one target triple");
      cephyr_target=argv[i];continue;
     }
-      if(arg=="--check-types"){mode=arg;type_safety=true;continue;}
-     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
+      if(arg=="--check-types"){select_mode(arg);type_safety=true;continue;}
+     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){select_mode(arg);continue;}
         if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-hir"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
-        mode=arg;explicit_c=explicit_c||arg=="--emit-c";
+        select_mode(arg);
       }
       else if(arg=="--no-prelude")loader.prelude=false;
       else if(arg=="-I"||arg=="--module-path"||arg=="--stdlib"||arg=="--prelude"||arg=="--stdppx"||arg=="--use-ppx"){

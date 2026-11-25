@@ -439,9 +439,10 @@ def main():
             if not cc:
                 raise ValueError('native C toolchain unavailable: ' + args.cc)
             subprocess.run([sys.executable, ROOT / 'tools/on1x-native-build.py',
-                            '--on1xc', args.on1xc, '--target', 'x86_64-unknown-linux-gnu',
-                            '--cc', str(Path(cc).resolve()), '--ir-input', generated, '-o', args.output,
-                            *(['--emit-only'] if args.emit_only else []),
+                             '--on1xc', args.on1xc, '--target', 'x86_64-unknown-linux-gnu',
+                             '--cc', str(Path(cc).resolve()), '--ir-input', generated, '-o', args.output,
+                             *(['--speculate'] if args.optimize_ir else []),
+                             *(['--emit-only'] if args.emit_only else []),
                             *(f'--cflag={flag}' for flag in args.cflag)], check=True)
             return
         if kernel_interface:
