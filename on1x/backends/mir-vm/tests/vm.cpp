@@ -1,4 +1,5 @@
 #include <on1x/backend/vm.hpp>
+#include <on1x/backend/mir_directives.hpp>
 #include "numeric.hpp"
 #include <bit>
 #include <iostream>
@@ -12,6 +13,13 @@ const Location at{"vm-conformance.on1x",12,3,4};
 void require(bool x,const std::string& why){if(!x)throw std::runtime_error(why);}
 template<class F> void rejects(F f,const std::string& why){
  try{f();}catch(const Error&){return;}throw std::runtime_error("accepted "+why);
+}
+template<class F> void rejects_version(F f,const std::string& diagnostic){
+ try{f();}catch(const Error& e){
+  require(e.diagnostic_id=="ON1X-VM-VERIFY"&&e.what()==diagnostic,"wrong VM version diagnostic");
+  return;
+ }
+ throw std::runtime_error("accepted unsupported VM version");
 }
 std::set<Op> covered;
 std::set<std::string> descriptors;
@@ -34,6 +42,12 @@ struct Builder{
   m.functions[0].result=type;m.functions[0].blocks[0].exit={fresh++,Exit::Return,result,token,{},at};
  }
 };
+Module vm_product(Module m){
+ // Source lowering can return portable directives. Select the same product
+ // as --emit-vm before handing it to the executable writer.
+ if(m.version==directive_format_version)return specialize(m,"mir-vm","");
+ return m;
+}
 Evaluation differential(const Module& m,std::size_t steps=1000000,std::size_t depth=256){
  auto bytes=vm::compile(m);vm::verify(bytes);require(bytes==vm::compile(m),"nondeterministic bytecode");
  auto a=evaluate(m,"main",{},steps,depth),b=vm::run(bytes,"main",{},steps,depth);
@@ -72,6 +86,38 @@ void instructions(){
  }
  x.end();auto r=differential(x.m);require(r.status==Status::Returned&&descriptors.size()==155,"not all numeric descriptors executed");
 }
+void versions(){
+ constexpr std::string_view envelope="O1VM\x01\r\n";
+ constexpr auto unsupported="ON1X-VM: unsupported executable MIR version";
+ Builder x(1);auto result=x.constant(Type::I64,42);x.end(result,Type::I64);
+ for(unsigned version:{1u,2u,3u}){
+  x.m.version=version;
+  auto saved=vm::compile(x.m);
+  require(saved.starts_with(envelope)&&saved.size()>envelope.size()&&
+          saved[envelope.size()]==char(version),"wrong VM envelope or version byte");
+  vm::verify(saved);
+  auto r=vm::run_main(saved);
+  require(r.status==Status::Returned&&r.value==42,"VM version round trip");
+ }
+ auto saved=vm::compile(x.m);
+ for(unsigned version:{0u,4u,5u,255u}){
+  auto image=saved;image[envelope.size()]=static_cast<char>(version);
+  rejects_version([&]{vm::verify(image);},unsupported);
+  rejects_version([&]{vm::run_main(image);},unsupported);
+ }
+ // In-memory versions must be checked before narrowing to the wire byte.
+ for(unsigned version:{0u,5u,255u,257u}){
+  x.m.version=version;
+  rejects_version([&]{vm::compile(x.m);},unsupported);
+ }
+ x.m.version=directive_format_version;
+ x.m.directives={{"mir-vm","","hint","kernel-hot"}};
+ verify(x.m);
+ rejects_version([&]{vm::compile(x.m);},"ON1X-VM: portable MIR must be specialized before VM encoding");
+ auto product=vm_product(x.m);
+ require(product.version==legacy_format_version&&product.directives.empty(),"wrong specialized VM product");
+ require(differential(product).value==42,"specialized VM result");
+}
 void diamonds(){
  // Swap the same loop's block arguments on the backedge. Serial assignments
  // would print 20,20. The done block physically precedes the loop on tape.
@@ -85,11 +131,6 @@ void diamonds(){
  done.exit={24,Exit::Return,0,23,{},at};f.blocks.push_back(done);f.blocks.push_back(loop);
  require(differential(x.m).output=="20\n10\n","parallel edge copy");
  auto saved=vm::compile(x.m);
- auto portable=x.m;portable.version=directive_format_version;
- portable.directives={{"mir-vm","","hint","kernel-hot"}};
- rejects([&]{vm::compile(portable);},"unspecialized portable MIR");
- auto unsupported=saved;unsupported[std::string_view("O1VM\x01\r\n").size()]=directive_format_version;
- rejects([&]{vm::verify(unsupported);},"portable MIR version in executable VM wire");
  // IDs here fit a single varint. Locate the branch record via independent
  // wire marker [branch,exitID,condition,effect,edge count,first block].
  std::string marker{43,15,13,10,2,9};auto pos=saved.find(marker);require(pos!=saved.npos,"branch marker");
@@ -100,7 +141,7 @@ void diamonds(){
 }
 void calls(){
  auto u=parse(scan("fn double(x:i64)->i64{return x*2;}fn main(){println(double(double(5)));}","calls.on1x"));
- check(u);auto m=lower(u);
+ check(u);auto m=vm_product(lower(u));
  require(differential(m).output=="20\n","nested VM calls");covered.insert(Op::Call);
  auto s=vm::compile(m);
  auto id=m.functions.front().id;
@@ -124,7 +165,7 @@ void bounds(){
  // Each register fits independently, but aggregate frame widths, not module
  // node counts or host machine stack exhaustion, bound recursive execution.
  auto u=parse(scan("fn deep(n:i64)->i64{if n==0{return n;}return deep(n-1);}fn main(){println(deep(50));}","depth.on1x"));
- check(u);auto m=lower(u);
+ check(u);auto m=vm_product(lower(u));
  auto bytes=vm::compile(m);auto r=vm::run_main(bytes,100000,8);
  require(r.status==Status::BudgetExhausted&&r.diagnostic=="evaluation call-depth budget exhausted","recursive frame limit");
  require(vm::run_main(bytes).output=="0\n","recursive calls");
@@ -151,11 +192,11 @@ void bounds(){
  u=parse(scan("fn wrap(k:i64)->fn(i64)->i64{return fn(n:i64)->i64{return n+k;};}"
               "fn call(f:fn(i64)->i64)->i64{return f(5);}fn main(){println(call(wrap(37)));}",
               "captured.on1x"));check(u);
- m=lower_for_vm(u);require(differential(m).output=="42\n","VM closure lowering");
+ m=vm_product(lower_for_vm(u));require(differential(m).output=="42\n","VM closure lowering");
 }
 }
 int main(){
- try{instructions();diamonds();calls();bounds();require(covered.size()==40,"missing MIR opcode");
+  try{versions();instructions();diamonds();calls();bounds();require(covered.size()==40,"missing MIR opcode");
   std::cout<<covered.size()<<" MIR opcodes, "<<descriptors.size()<<" numeric descriptors, calls/tuples/parallel CFG, traps, malformed tapes: PASS\n";
  }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

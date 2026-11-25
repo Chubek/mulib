@@ -93,6 +93,22 @@ fn main(){let scale=3;
 ''','42\n',mir_source=False)
 
 bad=work/'preserved.o1vm'
+future_ir=work/'future.mir'
+words=(work/'recursion.mir').read_bytes().split(maxsplit=2)
+assert words[0]==b'(on1x.mir' and words[1] in (b'1',b'2',b'3',b'4')
+future_ir.write_bytes(b' '.join((words[0],b'5',words[2])))
+bad.write_bytes(b'preserve')
+p=invoke(compiler,'--emit-vm','--ir-input',future_ir,'-o',bad,status=1)
+assert b'unsupported format version' in p.stderr and not p.stdout and bad.read_bytes()==b'preserve'
+
+future_image=work/'future.o1vm'
+saved=(work/'recursion.o1vm').read_bytes()
+version_offset=len(b'O1VM\x01\r\n')
+future_image.write_bytes(saved[:version_offset]+b'\x05'+saved[version_offset+1:])
+for argv in [(runner,'--verify',future_image),(runner,future_image)]:
+    p=invoke(*argv,status=1)
+    assert b'unsupported executable MIR version' in p.stderr and not p.stdout
+
 for text in ['fn main(){println(false && missing);}',
              'fn main(){var x=3;let f=fn()->i64{return x;};println(f());}',
              'fn main(){let n=3;let f=fn()->i64{return n;};let g=fn()->i64{return f();};println(g());}',

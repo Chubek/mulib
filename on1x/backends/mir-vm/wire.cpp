@@ -8,6 +8,10 @@ namespace on1x::vm {
 namespace {
 using namespace mir;
 constexpr std::string_view magic="O1VM\x01\r\n";
+// Portable MIR admission can grow independently of the O1VM envelope.
+constexpr bool executable_version(unsigned version){
+ return version==legacy_format_version||version==format_version||version==numeric_format_version;
+}
 // Same aggregate table bound on both producer and consumer. Node identities
 // have a separate MIR verification budget; repeated operands are not nodes.
 constexpr std::size_t max_items=4194304;
@@ -108,8 +112,9 @@ struct Reader {
 };
 }
 std::string compile(const mir::Module& m){
- mir::verify(m);
  if(m.version==directive_format_version)bad("portable MIR must be specialized before VM encoding");
+ if(!executable_version(m.version))bad("unsupported executable MIR version");
+ mir::verify(m);
  Writer w;w.raw(magic);w.byte(m.version);w.num(m.id);
  w.list(m.functions,[&](const mir::Function& f){
   w.num(f.id);w.text(f.name);w.type(f.result);w.loc(f.where);
@@ -119,8 +124,7 @@ std::string compile(const mir::Module& m){
 mir::Module decode(std::string_view bytes){
  if(bytes.size()>max_artifact_bytes||!bytes.starts_with(magic))bad("invalid magic/version or oversized artifact");
  Reader r{bytes,magic.size()};mir::Module m;m.version=r.byte();
- if(m.version<legacy_format_version||m.version>numeric_format_version)
-  r.fail("unsupported executable MIR version");
+  if(!executable_version(m.version))r.fail("unsupported executable MIR version");
  m.id=r.num();
  m.functions=r.list([&]{return r.function();});if(r.off!=bytes.size())r.fail("trailing bytes");
  // Treat all persisted IDs, effects, calls, descriptor names, block arguments,
