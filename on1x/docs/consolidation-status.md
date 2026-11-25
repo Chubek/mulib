@@ -33,7 +33,11 @@ between checked source, MIR, and executable products.
   affine signed-i64 bound using the peer's direct interval. The lookup
   spends from its existing work budget. Optional bounds, the non-equal
   branch, and bounds not proved for all inputs still reject. FFIHandler v1,
-  runtime linkage, and native admission are unchanged. At baseline, the
+  runtime linkage, and native admission are unchanged. The FFI worker
+  compared six endpoint/equality cases through an isolated generated
+  recipe using `--run-ir` against its C definition. Independent review
+  reproduced generation and table compilation, not that client run.
+  At baseline, the
   real Cephyr scan found 2,071 headers: 1,748 missing views, 322 unsupported
   and one generated kernel (`clamp`, three callable exports). Those counts
   are for these roots and this configuration, not supported-kernel counts
@@ -73,6 +77,8 @@ between checked source, MIR, and executable products.
   and `test_mir_decision.py` passed with runtime Cephyr/Archon disabled.
   The flags instrumented the generated C and runtime C compiled by those
   tests, not the GCC-built compiler, VM, or LibStone dependencies.
+  The VM backend source test and the regular Archon differential have
+  separate registrations and are not covered by this CMake flag fix.
   A separate Clang ASan/UBSan run instrumented `src/backend/mir.cpp`
   and `tests/test_mir.cpp` and passed; linked frontend, scanner and
   Aurocks fault-runtime archives were not instrumented.
@@ -83,7 +89,7 @@ between checked source, MIR, and executable products.
   managed, concurrent and metaprogramming applications; and compiler
   bootstrap work. The existing `on1x.selfhost`
   fixture passed at baseline; it exercises native PPX, not a self-hosted
-  compiler. No performance measurements or new native-target claims.
+  compiler. No performance improvement or new native-target claim.
 
 ## Baseline and reproduction
 
@@ -120,6 +126,22 @@ passed. Do not use the SDK source-tree tool result as installed SDK evidence.
 The first integrated targeted run passed all 11 tests: MIR verifier and
 lexical-loan HIR, MIR decision differential, VM data and `Result`,
 cross-backend ownership, the SDK tool, and the four FFISpec tests.
+The full integrated Release build finished. Its CTest suite finished with
+**244 passed, 1 skipped, 2 failed out of 247**. The numeric v3/v4,
+MIR wire-grammar, O1VM opcode, SDK tool and relocated SDK consumer tests
+that failed at baseline all passed. The same two unchanged failures remain:
+
+- `on1x.stdlib_project`: the test counts undeclared empty
+  `stdlib/mcp/__init__.on1x` as a package member. The packager only stages
+  declared module inputs. Determine whether the directory is a placeholder
+  or a real module; do not widen packaging to arbitrary discovered files.
+- `on1x.processor.snapshots`: the checked-in On1xMETA bootstrap parser
+  differs from fresh LLSynth output at the pinned dependency (including
+  generator/runtime drift and embedded source paths). Resolve reproducible
+  snapshot inputs and check bootstrap parity before regenerating it.
+
+The cgroup fixture remained skipped. Neither failure nor the skip was
+suppressed or counted as a pass.
 
 For the generated-C sanitizer differential, with a built `B`:
 
@@ -139,6 +161,32 @@ clang++ -std=c++20 -O1 -g -Wall -Wextra -Wpedantic -Werror \
   "$B/libstone-aurocks/libaurocks_fault_runtime.a" -o "$B/mir-verifier-sanitized"
 "$B/mir-verifier-sanitized"
 ```
+
+## Benchmark smoke
+
+The MuLL benchmark project built with GCC 16.2.1 and passed all nine CTests.
+The following used the separately qualified *baseline* native Debug build
+(`ARCHON_BUILD`) and GCC `-O2` for emitted programs:
+
+```sh
+cmake -S on1x/benchmark -B "$BENCH_BUILD" -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release
+cmake --build "$BENCH_BUILD" --parallel 2
+ctest --test-dir "$BENCH_BUILD" --output-on-failure
+"$BENCH_BUILD/on1x-benchmark" run \
+  --compiler "$ARCHON_BUILD/on1xc" \
+  --archon "$ARCHON_BUILD/backends/mir-archon/on1x-archon-mir" \
+  --backend cross --optimization both --cases recurrence,branches,tuple,trap \
+  --iterations 1500 --seed 1729 --warmups 1 --repeats 3 \
+  --compile-warmups 0 --compile-repeats 2 --timeout-ms 30000 \
+  --cc /usr/bin/cc --cflags '["-O2"]' --output "$BENCH_OUTPUT"
+```
+
+All 12 fixture/backend oracle rows passed, including the untimed ordered
+trap. For example, recurrence median wall time was 0.452 ms for C11,
+0.446 ms for Archon and 0.479 ms for optimized Archon. Median compile/link
+time was 46.0, 34.8 and 38.9 ms respectively, and executables were 51,688,
+70,680 and 70,680 bytes. These short, process-inclusive smoke samples do
+not establish a performance ranking or measure the consolidation changes.
 
 ## Next decision gate
 
