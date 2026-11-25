@@ -4,6 +4,26 @@ import sys
 from support import NativeTests, run
 t = NativeTests()
 source = t.root/'examples/memory.on1x'
+scalar = t.source('memory_gate_modes', 'fn main(){println(7);}')
+mir = t.work/'memory-gate.mir'
+p = run([t.compiler, '--emit-ir', '--memory-check', scalar, '-o', mir])
+assert p.returncode == 0, p.stderr
+out = t.work/'memory-inspection.out'
+for options in [
+    ['--tokens', scalar], ['--emit-ast', scalar], ['--deps', scalar],
+    ['--kernel-imports', scalar], ['--list-extensions'],
+    ['--explain-extension', 'Protocols'], ['--print-stdlib'],
+    ['--stdlib-resource', 'core/Bool.on1x'], ['--ir-input', '--emit-ir', mir],
+]:
+    args = [t.compiler, *options, '-o', out]
+    p = run(args)
+    assert p.returncode == 0, (options, p.stderr)
+    out.write_text('keep')
+    p = run([*args, '--memory-check'])
+    assert p.returncode == 2 and 'memory checking requires checked source HIR' in p.stderr, (options, p.stderr)
+    assert not p.stdout and out.read_text() == 'keep', options
+p = run([t.compiler, '--check-memory', '--deps', scalar])
+assert p.returncode == 2 and not p.stdout and 'memory checking requires checked source HIR' in p.stderr, p.stderr
 report = run([t.compiler, '--check-memory', source])
 assert report.returncode == 0 and 'on1x.memory/v1' in report.stdout, report.stderr
 assert report.stdout == run([t.compiler, '--check-memory', source]).stdout
@@ -78,8 +98,6 @@ for old_schema in ['v1','v2']:
     admission.write_text(extended_wire.replace('v3',old_schema,1))
     p=run([t.compiler,'--check-memory','--admitted-extern',admission,extended])
     assert p.returncode==1 and 'unsupported scalar type' in p.stderr,p.stderr
-for options in [['--tokens'],['--emit-ast'],['--ir-input','--emit-ir']]:
-    p=run([t.compiler,*options,'--memory-check',source]);assert p.returncode==2,p.stderr
 for name,text in [('numeric_tuple','fn pair(x:u64)->(u64,f32){return(x,1.5f32);}fn main(){let(a,b)=pair(42u64);println(a);println(b);}'),
                    ('numeric_parameter_pattern','fn take((a,b):(u8,(f32,u64)))->u64{println(a);return a64(b);}fn a64((x,y):(f32,u64))->u64{println(x);return y;}fn main(){println(take((1u8,(2f32,3u64))));}')]:
     p=run([t.compiler,'--check-memory',t.source(name,text)])
@@ -94,4 +112,9 @@ p=run([t.compiler,'--check-memory',owning])
 assert p.returncode==1 and \
        'unique ownership is outside the Chisel resource adapter' in p.stderr, \
        p.stderr
+# Unlike raw inspection modes, checked-HIR inspection must run the gate.
+p=run([t.compiler,'--emit-hir',owning])
+assert p.returncode==0 and p.stdout,p.stderr
+p=run([t.compiler,'--emit-hir','--memory-check',owning])
+assert p.returncode==1 and not p.stdout and 'outside the Chisel resource adapter' in p.stderr,p.stderr
 print('Chisel checked HIR, deterministic admission, output preservation and real MuLIB execution PASS')

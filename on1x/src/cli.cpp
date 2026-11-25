@@ -809,7 +809,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        if(arg=="--memory-check"){memory=true;continue;}
        if(arg=="--kernel-c11"){loader.kernel_c11=true;continue;}
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
-        if(arg=="--check-memory"||arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
+         if(arg=="--check-memory"){mode=arg;memory=true;continue;}
+         if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){mode=arg;continue;}
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -852,7 +853,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       throw std::runtime_error("--cephyr-target requires one target triple");
      cephyr_target=argv[i];continue;
     }
-     if(arg=="--check-types"){mode=arg;continue;}
+      if(arg=="--check-types"){mode=arg;type_safety=true;continue;}
      if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
         if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-hir"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
         mode=arg;explicit_c=explicit_c||arg=="--emit-c";
@@ -1026,11 +1027,21 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          const bool interface_mode=mode=="--check-interfaces";
         if(interface_mode==loader.interfaces.empty())
          throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
-        if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
-           analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||
-           loader.kernel_c11||loader.kernel_stage||!loader.extensions.enabled.empty()))
-         throw std::runtime_error("--check-interfaces requires plain source without output, PPX, declaration extensions or other checker options");
-        if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
+         if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
+            analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||
+            loader.kernel_c11||loader.kernel_stage||!loader.extensions.enabled.empty()))
+          throw std::runtime_error("--check-interfaces requires plain source without output, PPX, declaration extensions or other checker options");
+         // Metadata modes can return before loading any source. Reject an
+         // explicit check request before those modes publish their output.
+#ifndef ON1X_WITH_NEROTYPICAL
+         if(type_safety)throw std::runtime_error("structural type checking unavailable: configure with ON1X_WITH_NEROTYPICAL=ON");
+#endif
+         if(type_safety&&!checked_source)throw std::runtime_error("structural type checking requires elaborated source HIR");
+#ifndef ON1X_WITH_CHISEL
+         if(memory)throw std::runtime_error("memory checking unavailable: configure with ON1X_WITH_CHISEL=ON");
+#endif
+         if(memory&&!checked_source)throw std::runtime_error("memory checking requires checked source HIR");
+         if(mode=="--list-extensions"){write_all(out,on1x::extensions::describe(loader.extensions));return 0;}
        if(mode=="--explain-extension"){write_all(out,on1x::extensions::describe(loader.extensions,explain_extension));return 0;}
        loader.paths.insert(loader.paths.begin(),import_paths.begin(),import_paths.end());
        loader.stdlib_paths.insert(loader.stdlib_paths.begin(),stdlib_paths.begin(),stdlib_paths.end());
@@ -1075,17 +1086,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
       // Executable-relative native tools are an ordinary explicitly selected PPX
       // fallback, never an override of the pinned Category extension registry.
       if(!loader.extensions.directory.empty())ppx.paths.push_back(loader.extensions.directory);
-     memory=memory||mode=="--check-memory";
-     type_safety=type_safety||mode=="--check-types";
-#ifndef ON1X_WITH_NEROTYPICAL
-     if(type_safety)throw std::runtime_error("structural type checking unavailable: configure with ON1X_WITH_NEROTYPICAL=ON");
-#endif
-     if(type_safety&&(ir_input||mode=="--tokens"||mode=="--emit-ast"))throw std::runtime_error("structural type checking requires elaborated source HIR");
-#ifndef ON1X_WITH_CHISEL
-     if(memory)throw std::runtime_error("memory checking unavailable: configure with ON1X_WITH_CHISEL=ON");
-#endif
-     if(memory&&(ir_input||mode=="--tokens"||mode=="--emit-ast"))throw std::runtime_error("memory checking requires checked source HIR");
-     if(!admission_files.empty()&&!memory)throw std::runtime_error("--admitted-extern requires --check-memory or --memory-check");
+      if(!admission_files.empty()&&!memory)throw std::runtime_error("--admitted-extern requires --check-memory or --memory-check");
 #ifdef ON1X_WITH_CHISEL
      std::map<std::string,on1x::safety::AdmittedExtern> admitted;
      if(memory)for(const auto& file:admission_files){

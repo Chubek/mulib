@@ -4,6 +4,26 @@ import sys
 from support import NativeTests, run
 t=NativeTests()
 example=t.root/'examples/type-safety.on1x'
+scalar=t.source('type_gate_modes','fn main(){println(7);}')
+mir=t.work/'type-gate.mir'
+p=run([t.compiler,'--emit-ir','--verify-types',scalar,'-o',mir])
+assert p.returncode==0,p.stderr
+out=t.work/'type-inspection.out'
+for options in [
+    ['--tokens', scalar], ['--emit-ast', scalar], ['--deps', scalar],
+    ['--kernel-imports', scalar], ['--list-extensions'],
+    ['--explain-extension', 'Protocols'], ['--print-stdlib'],
+    ['--stdlib-resource', 'core/Bool.on1x'], ['--ir-input', '--emit-ir', mir],
+]:
+    args=[t.compiler,*options,'-o',out]
+    p=run(args)
+    assert p.returncode==0,(options,p.stderr)
+    out.write_text('keep')
+    p=run([*args,'--verify-types'])
+    assert p.returncode==2 and 'structural type checking requires elaborated source HIR' in p.stderr,(options,p.stderr)
+    assert not p.stdout and out.read_text()=='keep',options
+p=run([t.compiler,'--check-types','--deps',scalar])
+assert p.returncode==2 and not p.stdout and 'structural type checking requires elaborated source HIR' in p.stderr,p.stderr
 p=run([t.compiler,'--check-types',example])
 assert p.returncode==0 and 'well_typed concrete HIR' in p.stdout,p.stderr
 assert p.stdout==run([t.compiler,'--check-types',example]).stdout
@@ -47,8 +67,6 @@ for name,text in [
     path=t.source(name,text);out=t.work/'sentinel.c';out.write_text('keep')
     p=run([t.compiler,'--emit-c','--verify-types',path,'-o',out])
     assert p.returncode==1 and out.read_text()=='keep',(name,p.stderr)
-for mode in ['--tokens','--emit-ast']:
-    p=run([t.compiler,mode,'--verify-types',example]);assert p.returncode==2,p.stderr
 owning=t.source(
     'unsupported_unique_type_safety',
     'enum N{Z}fn main(){let n=box(variant<N>(Z,record{}));drop(n);}')
@@ -56,4 +74,9 @@ p=run([t.compiler,'--check-types',owning])
 assert p.returncode==1 and \
        'unique ownership is outside the independent structural adapter' in p.stderr, \
        p.stderr
+# Unlike raw inspection modes, checked-HIR inspection must run the gate.
+p=run([t.compiler,'--emit-hir',owning])
+assert p.returncode==0 and p.stdout,p.stderr
+p=run([t.compiler,'--emit-hir','--verify-types',owning])
+assert p.returncode==1 and not p.stdout and 'outside the independent structural adapter' in p.stderr,p.stderr
 print('Nerotypical checked compilation, execution, helper and output preservation PASS')
