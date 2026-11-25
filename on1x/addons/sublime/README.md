@@ -7,8 +7,9 @@ plain `On1xfile`, `On1xfile.m`, or `On1xfile.i`. The syntax menu lists
 **On1x** and **On1xfile**. Toggle Comment uses `#`.
 
 This is lexical highlighting, with local approximations for contextual
-keywords and opaque strings for both forms of backtick command literal. The
-same syntax files are used by [bat](../bat/README.md).
+keywords and opaque strings for both forms of backtick command literal.
+Manifest highlighting does not check file roles or continued statement fields.
+The same syntax files are used by [bat](../bat/README.md).
 
 ## Optional language server
 
@@ -37,7 +38,8 @@ from projects you have not reviewed.
 
 ## Verify
 
-To verify scopes in Sublime Text, also copy `syntax_test_on1x.on1x` into
-`Packages/On1x`, open it, and run **Tools → Build** (Automatic build system). The
+To verify scopes in Sublime Text, also copy `syntax_test_on1x.on1x` and
+`syntax_test_on1xfile.On1xfile` into `Packages/On1x`, open each, and run
+**Tools → Build** (Automatic build system). The
 `../bat/test_bat.py` smoke test checks the shared syntax with bat's syntect engine;
 it is not a substitute for running Sublime's own scope assertions.

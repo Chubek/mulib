@@ -48,3 +48,46 @@ unsafe import kernel [ dynlib ] mulib.clamp as Clamp;
 #                      ^^^^^^ storage.modifier.on1x
 let dynlib = kernel[dynlib];
 #   ^^^^^^ - storage.modifier.on1x
+
+import foreign stdffi.clamp as Clamp;
+#      ^^^^^^^ keyword.control.on1x
+#              ^^^^^^ entity.name.namespace.on1x
+#                     ^^^^^ entity.name.module.on1x
+import foreign as Source;
+#      ^^^^^^^ - keyword.control.on1x
+unsafe import foreign stdffi.clamp;
+# <- invalid.illegal.import.on1x
+#             ^^^^^^^ invalid.illegal.import.on1x
+proc greet() { return; }
+#    ^^^^^ entity.name.function.on1x
+let c: char = #\pound; let b = b!#\x7f;
+#      ^^^^ support.type.on1x
+#             ^^^^^^^ constant.character.on1x
+#                              ^^^^^^^ constant.character.on1x
+let number = 0o17u32 + 0B11;
+#            ^^^^^^^ constant.numeric.integer.octal.on1x
+#                      ^^^^ constant.numeric.integer.binary.on1x
+let raw = r!"\0 $name";
+#            ^^^^^^^^ string.quoted.double.raw.on1x - constant.character.escape.on1x - variable.other.interpolated.on1x
+let bytes = b!"\0\xff $name";
+#              ^^^^^^ constant.character.escape.on1x
+#                     ^^^^^ string.quoted.double.buffer.on1x - variable.other.interpolated.on1x
+let text = "$name ${add(1, 2)} \$ \0";
+#           ^^^^^ variable.other.interpolated.on1x
+#                 ^^ punctuation.section.interpolation.begin.on1x
+#                   ^^^ meta.interpolation.on1x
+#                              ^^ constant.character.escape.on1x
+#                                 ^^ invalid.illegal.escape.on1x
+let strip = '''text
+  # literal data \' ''';
+# ^^^^^^^^^^^^^^ string.quoted.single.block.on1x - comment
+#                ^^ constant.character.escape.on1x
+{- outer {@Name(foo) nested @} still outer -} let after = 0;
+#                    ^^^^^^ comment.block.on1x
+#                              ^^^^^^^^^^^ comment.block.on1x
+#                                             ^^^ storage.type.on1x - comment
+{! metadata {- opaque } let after = 0;
+#  ^^^^^^^^ comment.block.documentation.on1x
+#                       ^^^ storage.type.on1x - comment
+let run = proc() {@Name()};
+#                  ^^^^ entity.name.function.preprocessor.on1x - comment

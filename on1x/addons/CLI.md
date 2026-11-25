@@ -14,13 +14,26 @@ an explicit `--on1xc PATH` takes precedence.
 ## Source syntax
 
 ```on1x
+import foreign stdffi.clamp as Clamp;
+```
+
+`foreign` is contextual here. Write `import foreign stdffi.<kernel>;`, with
+an optional `as <alias>`. The compiler must already have a validated recipe
+for the kernel. These portable imports do not require an `unsafe` block;
+`unsafe import foreign` is rejected. See the [FFI migration
+guide](../docs/ffi-migration.md) and the [standard FFI
+catalogue](../stdffi/README.md).
+
+Native KernelBind imports are separate:
+
+```on1x
 import kernel[dynlib] mulib.clamp as Clamp;
 ```
 
-The bracketed modifier selects shared-library linkage. The explicitly unsafe
-form starts with `unsafe import`. Plain `import kernel mulib.clamp as Clamp;`
-selects static linkage. `on1xc --kernel-imports INPUT` reports the requests
-without running PPX, while `on1x-build.py --inspect-kernels` inspects
+The bracketed modifier selects shared-library linkage. The native unsafe
+form starts with `unsafe import kernel`. Plain `import kernel mulib.clamp as Clamp;`
+selects static linkage. `on1xc --kernel-imports INPUT` reports native kernel
+requests without running PPX, while `on1x-build.py --inspect-kernels` inspects
 declarations. Callable imports still need the applicable
 [KernelBind profile](../docs/kernel-bind.md). With `--kernel-bind` or
 `--kernel-review-candidate`, `--kernel-dynlib-compiler cephyr|host`
@@ -30,6 +43,11 @@ selects the implementation compiler. Cephyr is the default.
 [InlineC11 processor](../stdppx/README.md#trusted-inline-c11). Select it with
 `on1x-build.py --trust-inline-c11` in a direct C11 executable build. This flag
 authorizes C from the entire source graph, including macro and PPX expansions.
+
+See [core literals](../docs/core-literals.md) for characters, integer bases,
+raw and multiline strings, buffers, and interpolation, and the
+[language manual](../docs/language.md) for block comments and `proc`
+definitions. Only `fn(...) -> void`, not `proc`, spells a procedure type.
 
 ## Compiler and build flags
 
@@ -43,6 +61,7 @@ authorizes C from the entire source graph, including macro and PPX expansions.
 | Cephyr object emission | `on1xc --emit-cephyr-object INPUT -o OUTPUT.o` requires a Cephyr-enabled native AMD64 Linux build. Optional `--cephyr-target x86_64-linux-gnu` selects the supported target. |
 | Cephyr policy | `--cephyr-profile scalar`, `--cephyr-qml-pass NAME`, `--cephyr-trusted-qml-file FILE`, `--cephyr-qml-fuel N`, `--cephyr-qml-param PHASE.fuel=N`, and on/off switches `--cephyr-blackstone`, `--cephyr-factir`, `--cephyr-sandslab`. See [Cephyr optimization](../docs/cephyr-optimization.md). |
 | Cephyr reports | `--cephyr-sarif FILE` writes compile diagnostics. With `--cephyr-factir on`, `--cephyr-factir-facts NEWFILE` and `--cephyr-factir-smtlib NEWFILE` request create-only evidence files. |
+| Lexical diagnostics and proposals | `on1xc --syntax-faults INPUT.on1x` requires the generated Aurocks scanner. It writes messages to stderr and any successfully rescanned proposal to stdout, without changing `INPUT` or running PPX. This is a separate lexical check, not parser or type validation. See [Aurocks lexical faults](../docs/aurocks.md#runtime-lexical-faults). |
 | Single-file build backend | `on1x-build.py --backend c11\|mir-c11\|mir-vm\|mir-archon INPUT -o OUTPUT`. `--via-mir` selects `mir-c11`. For `mir-vm`, the output is bytecode. For `mir-archon`, `--emit-only` outputs assembly. |
 
 ## On1xfile build policy
@@ -81,6 +100,8 @@ The root `On1xfile` declares targets and compiler policy. `On1xfile.m`
 declares directory roles (`source`, `library`, and restricted `resource`),
 and `On1xfile.i` declares `interface` files. Each plain manifest starts with
 `on1xfile 1` and uses JSON-escaped double quotes and `#` comments.
+A trailing backslash outside quotes and comments continues a line; see the
+[manifest reference](../stdlib/on1xfile/README.md) for exact grouping rules.
 
 ```text
 on1xfile 1
@@ -91,6 +112,8 @@ target "hello" "src/main.on1x"
 backend c11
 backend "debug" mir-vm
 optimization-profile default
+optimization "integer_add_zero_right" on
+optimization "debug" "all" off
 optimization "debug" "integer_add_zero_right" on
 scrutiny standard
 scrutiny-work 8192
@@ -104,8 +127,11 @@ scrutiny-work 8192
 - `optimization-profile default|debug|release` sets the compiler preset.
   `optimization "NAME" on|off` applies across the project, while
   `optimization "BUILD_PROFILE" "NAME" on|off` applies in one build
-  profile. CLI `--opt-profile`, `--enable-opt`, and `--disable-opt`
-  override manifest settings. The checked HIR passes `firestone-hir` and
+  profile. `"all"` sets the baseline within a layer; named selections
+  override it. Apply project-wide selections, then build-profile selections,
+  then CLI `--enable-opt` and `--disable-opt`; `--opt-profile` overrides
+  the manifest preset. Use `on1xc --list-optimizations` to check names in
+  the selected compiler. The checked HIR passes `firestone-hir` and
   `novostone-hir` remain opt-in on builds that include them.
   `--profile` selects the **build profile**
   in the project driver and aliases `--opt-profile` in the single-file
@@ -114,13 +140,31 @@ scrutiny-work 8192
   (`1` through `10000000`). CLI `--scrutiny-work N` overrides it for a
   project build. `--scrutiny LEVEL` overrides the analysis level. These policy
   declarations belong to the root project.
+- `kernel-path "ffi/headers"` adds an ordered, project-relative header
+  search root for build-host FFI generation. It is not a native `kernel`
+  request, runtime search path, or admission rule. See
+  [build-host FFI inputs](../stdlib/on1xfile/README.md#build-host-cephyr-ffi-inputs)
+  for `ffi-generate`, locking, and the separate compiler build step.
+- `proxy-http "URL"` and `proxy-https "URL"` override `proxy-any "URL"` for
+  their respective schemes. `proxy-none` takes no fields and cannot be combined
+  with the other proxy directives. These are root settings for explicit remote
+  acquisition, not sandbox permissions.
+- `dotenv ".env"` (or `dotenv ".env" override`) supplies literal environment
+  values for build subprocesses. Use `dotenv ".env" preserve` to keep existing
+  values. Dotenv is root-only and unavailable for `--sandbox`, `--locked`, or
+  `--frozen` builds.
+- `vm opt-in` and `vm always` are root ArchVirt launch policies, not synonyms
+  for the `mir-vm` backend. The root also has typed Lua `profile-arg` fields
+  and [native toolchain directives](../docs/native-project-toolchain.md) for
+  supported hosted projects.
 - `on1xc aux plan PROJECT` shows resolved settings. Use
   `on1xc aux backends` to probe installed backends and
   `on1xc aux format PATH --check` to check a plain manifest. Use
   `on1xc aux lock PROJECT` and `on1xc aux fetch DEPENDENCY PROJECT` to
   manage locked dependencies, then `on1xc aux build PROJECT --frozen`
   to build without acquiring dependencies.
-  Backend or optimization declarations use the `on1x.lock/v2` lock format.
+   Backend or optimization declarations require a v2-or-later lockfile;
+   VM policy uses v3 and `kernel-path` uses v4.
 
 See the [On1xfile reference](../stdlib/on1xfile/README.md) for file roles,
 QMR templates, scoped policy, backend requirements, and lockfile behavior.

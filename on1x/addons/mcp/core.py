@@ -47,6 +47,7 @@ FIXED = CAPABILITY_SOURCES + (
     "on1x/contracts-exoml/obligations.json", "on1x/contracts-exotract/README.md",
     "on1x/contracts-exotract/catalog.json", "on1x/stdlib/CATALOG.json",
     "on1x/stdlib/mulib/README.md", "on1x/stdlib/mulib/catalog.json",
+    "on1x/hir/README.md", "on1x/hir/FFIHandler/README.md", "on1x/stdffi/README.md",
     "on1x/grammar/On1x.g", "on1x/grammar/On1x.asdl",
     "on1x/third_party/libstone/README.md",
     "on1x/third_party/libstone/moonstone/plaid/STATUS.yaml",
@@ -402,9 +403,7 @@ class Index:
                 self.postings.setdefault(token, []).append(identifier)
             begin = end
 
-    def search(self, query, scope="all", limit=5, path_filter=None):
-        text_arg(query)
-        number(limit, 1, MAX_RESULTS)
+    def _search_scores(self, query, scope="all", path_filter=None, content_only=False):
         tokens = sorted(set(re.findall(r"[a-z0-9_+-]{1,64}", query.lower())))
         if len(tokens) > 16:
             fail("QUERY_LIMIT", "At most 16 distinct search tokens.")
@@ -424,13 +423,47 @@ class Index:
                 if scope == "capability" and path not in CAPABILITY_SOURCES:
                     continue
                 scores[identifier] = scores.get(identifier, 0) + 1
-        ordered = sorted(scores, key=lambda i: (
+        if content_only:
+            terms = set(tokens)
+            scores = {i: len(terms.intersection(re.findall(
+                r"[a-z0-9_+-]{1,64}", self.chunks[i]["text"].lower()))) for i in scores}
+            scores = {i: score for i, score in scores.items() if score}
+        return sorted(scores, key=lambda i: (
             -scores[i], self.chunks[i]["path"], self.chunks[i]["line_start"]))
+
+    def search(self, query, scope="all", limit=5, path_filter=None):
+        text_arg(query)
+        number(limit, 1, MAX_RESULTS)
+        ordered = self._search_scores(query, scope, path_filter)
         return {"results": [
             {k: v for k, v in self.chunks[i].items() if k != "text"}
             for i in ordered[:limit]
         ], "matches": len(ordered), "truncated": len(ordered) > limit,
             "evidence": self.meta}
+
+    def search_files(self, query, mode="filename", limit=5):
+        text_arg(query)
+        number(limit, 1, MAX_RESULTS)
+        if mode == "filename":
+            needle = query.casefold()
+            matches = {
+                path: next(iter(self.by_path[path]), None) for path in sorted(
+                    self.sources, key=lambda path: (Path(path).name.casefold() != needle, path))
+                if needle in path.casefold()
+            }
+        elif mode == "content":
+            matches = {}
+            for identifier in self._search_scores(query, content_only=True):
+                matches.setdefault(self.chunks[identifier]["path"], identifier)
+        else:
+            fail("INVALID_ARGUMENT", "File search mode must be filename or content.")
+        return {
+            "results": [
+                {"path": path, "source_sha256": self.sources[path]["sha256"],
+                 "id": matches[path]} for path in list(matches)[:limit]
+            ],
+            "matches": len(matches), "truncated": len(matches) > limit, "evidence": self.meta,
+        }
 
     def fetch(self, identifier):
         text_arg(identifier, 32)
@@ -545,6 +578,8 @@ class Index:
                 text_arg(value, field["maxLength"])
                 if len(value) < field.get("minLength", 1):
                     fail("INVALID_ARGUMENT", "Text shorter than required length.")
+                if "enum" in field and value not in field["enum"]:
+                    fail("INVALID_ARGUMENT", "Argument is not one of the allowed values.")
             else:
                 number(value, field["minimum"], field["maximum"])
         if name == "fetch":
@@ -553,6 +588,8 @@ class Index:
             result = self.inspect_kernel(arguments["name"])
         elif name == "search_kernels":
             result = self.search_kernels(arguments["query"], arguments.get("limit", 5))
+        elif name == "search_files":
+            result = self.search_files(**arguments)
         elif name == "list_headers":
             result = self.list_headers(**arguments)
         elif name == "inspect_header":
@@ -570,6 +607,10 @@ def tools():
     limit = {"type": "integer", "minimum": 1, "maximum": MAX_RESULTS, "default": 5}
     definitions = [
         ("search", "Search canonical repository evidence; fetch returned excerpt IDs.", {"query": query}, ["query"]),
+        ("search_files", "Find distinct allowlisted snapshot files by literal path substring or content keywords.",
+         {"query": {**query, "description": "Literal path substring or content keywords; no glob or filesystem read."},
+          "mode": {"type": "string", "maxLength": 8, "enum": ["filename", "content"], "default": "filename"},
+          "limit": limit}, ["query"]),
         ("fetch", "Retrieve the complete bounded excerpt identified by search. IDs are not filesystem paths.",
          {"id": {"type": "string", "minLength": 32, "maxLength": 32}}, ["id"]),
         ("search_on1x", "Find On1x syntax, semantics, examples, compiler phases and diagnostics.",
@@ -635,7 +676,9 @@ def output_schema(name):
             })
         return {"type": "object", "properties": properties, "required": list(properties),
                 "additionalProperties": False}
-    properties = ({"name": string, "purpose": string, "header": string,
+    properties = ({"path": string, "source_sha256": string, "id": {"type": ["string", "null"]}}
+                  if name == "search_files" else
+                  {"name": string, "purpose": string, "header": string,
                    "implementation_claim": string} if name == "search_kernels" else {
         "id": string, "title": string, "url": string, "path": string,
         "line_start": {"type": "integer"}, "line_end": {"type": "integer"},

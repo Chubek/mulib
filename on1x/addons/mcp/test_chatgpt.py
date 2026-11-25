@@ -265,8 +265,8 @@ class CoreTests(unittest.TestCase):
 
     def test_schema_and_protocol(self):
         descriptors = core.tools()
-        self.assertEqual(len(descriptors), 9)
-        self.assertEqual(len({d["name"] for d in descriptors}), 9)
+        self.assertEqual(len(descriptors), 10)
+        self.assertEqual(len({d["name"] for d in descriptors}), len(descriptors))
         for desc in descriptors:
             self.assertFalse(desc["inputSchema"]["additionalProperties"])
             self.assertTrue(desc["annotations"]["readOnlyHint"])
@@ -281,6 +281,8 @@ class CoreTests(unittest.TestCase):
                 arguments = {"id": self.index.search("checked")["results"][0]["id"]}
             elif desc["name"] == "search_kernels":
                 arguments = {"query": "alpha"}
+            elif desc["name"] == "search_files":
+                arguments = {"query": "mulib-alpha.h"}
             elif desc["name"] == "inspect_header":
                 arguments = {"path": "mulib-alpha.h"}
             data = self.index.call(desc["name"], arguments)
@@ -683,7 +685,8 @@ class HTTPTests(unittest.TestCase):
     def test_http_flow(self):
         status, result = self.request()
         self.assertEqual(status, 200)
-        self.assertEqual(len(result["result"]["tools"]), 9)
+        self.assertEqual({tool["name"] for tool in result["result"]["tools"]},
+                         {tool["name"] for tool in core.tools()})
         self.assertEqual(self.request(core.encode({
             "jsonrpc": "2.0", "method": "notifications/initialized"}))[0], 202)
         status, result = self.request(core.encode({
@@ -692,16 +695,20 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertTrue(result["result"]["structuredContent"]["results"])
         for name, arguments in (("list_headers", {"limit": 1}),
-                                ("inspect_header", {"path": "mulib-alpha.h", "line": 2})):
+                                 ("inspect_header", {"path": "mulib-alpha.h", "line": 2}),
+                                 ("search_files", {"query": "mulib-alpha.h"})):
             status, result = self.request(core.encode({
                 "jsonrpc": "2.0", "id": 5, "method": "tools/call",
                 "params": {"name": name, "arguments": arguments}}))
             self.assertEqual(status, 200)
             self.assertFalse(result["result"]["isError"])
-        status, result = self.request(core.encode({
-            "jsonrpc": "2.0", "id": 6, "method": "tools/call",
-            "params": {"name": "vm_compile", "arguments": {"source": "fn main() {}"}}}))
-        self.assertEqual((status, result["error"]["code"]), (200, -32602))
+        hits = result["result"]["structuredContent"]["results"]
+        self.assertEqual([hit["path"] for hit in hits], ["kernels/mulib-alpha.h"])
+        for name in ("vm_compile", "compile_on1x", "inspect_on1x", "cephyr_extract"):
+            status, result = self.request(core.encode({
+                "jsonrpc": "2.0", "id": 6, "method": "tools/call",
+                "params": {"name": name, "arguments": {"source": "fn main() {}"}}}))
+            self.assertEqual((status, result["error"]["code"]), (200, -32602))
 
     def test_deploy_probe_respects_exact_host(self):
         deploy_probe.probe(self.http.server_port)

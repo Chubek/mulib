@@ -10,6 +10,7 @@ variables:
 contexts:
   main:
     - include: comments
+    - include: characters
     - include: strings
     - include: declarations
     - include: metaprogramming
@@ -18,27 +19,111 @@ contexts:
     - include: punctuation
 
   comments:
-    - match: '#'
+    - match: '#(?!\\)'
       scope: punctuation.definition.comment.on1x
       push:
         - meta_scope: comment.line.number-sign.on1x
         - match: $
           pop: true
+    - match: '\{-'
+      push: dash-comment
+    # A compact block starting with a PPX invocation is not a comment.
+    - match: '\{@(?!{{ident}}[ \t]*\()'
+      push: at-comment
+    - match: '\{[!>]'
+      push:
+        - meta_scope: comment.block.documentation.on1x
+        - match: '\}'
+          pop: true
+
+  dash-comment:
+    - meta_scope: comment.block.on1x
+    - match: '-\}'
+      pop: true
+    - include: nested-comments
+
+  at-comment:
+    - meta_scope: comment.block.on1x
+    - match: '@\}'
+      pop: true
+    - include: nested-comments
+
+  nested-comments:
+    - match: '\{-'
+      push: dash-comment
+    - match: '\{@'
+      push: at-comment
+
+  characters:
+    - match: '(?:(?<![A-Za-z0-9_])b!)?#\\(?:(?:[uU]\+[0-9A-Fa-f]+|[xX][0-9A-Fa-f]+|[oO][0-7]+|space|newline|tab|return|alarm|backspace|escape|delete|nul|null|pound|[A-Za-z0-9_])(?![A-Za-z0-9_])|[^A-Za-z0-9_ \t\r\n])'
+      scope: constant.character.on1x
 
   strings:
+    - match: '(?<![A-Za-z0-9_])r!"""'
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.double.raw.on1x
+        - match: '"""'
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+    - match: "(?<![A-Za-z0-9_])r!'''"
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.single.raw.on1x
+        - match: "'''"
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+    - match: '(?<![A-Za-z0-9_])r!"'
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.double.raw.on1x
+        - include: single-line-double-end
+    - match: '(?<![A-Za-z0-9_])b!"""'
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.double.buffer.on1x
+        - match: '"""'
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+        - include: buffer-escapes
+    - match: "(?<![A-Za-z0-9_])b!'''"
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.single.buffer.on1x
+        - match: "'''"
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+        - include: apostrophe-escape
+        - include: buffer-escapes
+    - match: '(?<![A-Za-z0-9_])b!"'
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.double.buffer.on1x
+        - include: single-line-double-end
+        - include: buffer-escapes
+    - match: '"""'
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.double.block.on1x
+        - match: '"""'
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+        - include: text-body
+    - match: "'''"
+      scope: punctuation.definition.string.begin.on1x
+      push:
+        - meta_scope: string.quoted.single.block.on1x
+        - match: "'''"
+          scope: punctuation.definition.string.end.on1x
+          pop: true
+        - include: apostrophe-escape
+        - include: text-body
     - match: '"'
       scope: punctuation.definition.string.begin.on1x
       push:
         - meta_scope: string.quoted.double.on1x
-        - match: '"'
-          scope: punctuation.definition.string.end.on1x
-          pop: true
-        - match: '\\["\\nrt0]'
-          scope: constant.character.escape.on1x
-        - match: '\\(?:[^\r\n]|(?=[\r\n]|$))'
-          scope: invalid.illegal.escape.on1x
-        - match: '(?=[\r\n]|$)'
-          pop: true
+        - include: single-line-double-end
+        - include: text-body
     # Triple backticks can span lines; the lexer does not interpret escapes here.
     - match: '```'
       scope: punctuation.definition.string.begin.on1x
@@ -59,8 +144,54 @@ contexts:
         - match: '(?=[\r\n]|$)'
           pop: true
 
+  single-line-double-end:
+    - match: '"'
+      scope: punctuation.definition.string.end.on1x
+      pop: true
+    - match: '(?=[\r\n]|$)'
+      pop: true
+
+  apostrophe-escape:
+    - match: "\\\\'"
+      scope: constant.character.escape.on1x
+
+  buffer-escapes:
+    - match: '\\(?:["\\nrt0]|x[0-9A-Fa-f]{2})'
+      scope: constant.character.escape.on1x
+    - include: invalid-escape
+
+  text-body:
+    - match: '\\["\\nrt$]|\$\$'
+      scope: constant.character.escape.on1x
+    - include: invalid-escape
+    - match: '\$\{'
+      scope: punctuation.section.interpolation.begin.on1x
+      push:
+        - meta_scope: meta.interpolation.on1x
+        - match: '\}'
+          scope: punctuation.section.interpolation.end.on1x
+          pop: true
+        - include: interpolation-source
+    - match: '\${{ident}}'
+      scope: variable.other.interpolated.on1x
+
+  invalid-escape:
+    - match: '\\(?:[^\r\n]|(?=[\r\n]|$))'
+      scope: invalid.illegal.escape.on1x
+
+  interpolation-source:
+    - include: comments
+    - match: '\{'
+      scope: punctuation.section.group.begin.on1x
+      push:
+        - match: '\}'
+          scope: punctuation.section.group.end.on1x
+          pop: true
+        - include: interpolation-source
+    - include: main
+
   declarations:
-    - match: '\b(fn|proc)[ \t]+({{ident}})(?=[ \t]*\()'
+    - match: '\b(fn|proc)[ \t]+({{ident}})(?=[ \t]*[<(])'
       captures:
         1: storage.type.function.on1x
         2: entity.name.function.on1x
@@ -95,6 +226,15 @@ contexts:
         2: entity.name.function.preprocessor.on1x
 
   keywords:
+    - match: '\bunsafe[ \t]+import[ \t]+foreign\b'
+      scope: invalid.illegal.import.on1x
+    - match: '\b(import)[ \t]+(foreign)[ \t]+(stdffi)[ \t]*(\.)[ \t]*({{ident}})(?![A-Za-z0-9_]|[ \t]*\.)'
+      captures:
+        1: keyword.control.on1x
+        2: keyword.control.on1x
+        3: entity.name.namespace.on1x
+        4: punctuation.separator.on1x
+        5: entity.name.module.on1x
     - match: '\b(import)[ \t]+(kernel)[ \t]*(\[)[ \t]*(dynlib)[ \t]*(\])'
       captures:
         1: keyword.control.on1x
@@ -102,6 +242,10 @@ contexts:
         3: punctuation.section.group.begin.on1x
         4: storage.modifier.on1x
         5: punctuation.section.group.end.on1x
+    - match: '\b(import)[ \t]+(kernel)(?=[ \t]+(?!as\b){{ident}})'
+      captures:
+        1: keyword.control.on1x
+        2: keyword.control.on1x
     - match: '\b(true|false)\b'
       scope: constant.language.boolean.on1x
     - match: '\b(if|else|while|return|import)\b'
@@ -113,9 +257,9 @@ contexts:
     - match: '\b(block|expression|syntax_block)(?=[ \t]*\{)|\b(syntax_literal)(?=[ \t]*\()|\b(vector)(?=[ \t]*\[)'
       scope: keyword.other.metaprogramming.on1x
     # Parser-contextual words have local cues, not global keyword status.
-    - match: '\b(from)(?=[ \t]+[.A-Za-z_])|\b(as|in)(?=[ \t]+[A-Za-z_0-9(])|\b(kernel)(?=[ \t]+(?!as\b){{ident}})'
+    - match: '\b(from)(?=[ \t]+[.A-Za-z_])|\b(as|in)(?=[ \t]+[A-Za-z_0-9(])'
       scope: keyword.control.on1x
-    - match: '\b(unsafe)(?=[ \t]*(?:\{|import\b))|\b(loop|poll)(?=[ \t]*\{)|\b(for)(?=[ \t]*(?:\([^)]*;|{{ident}}[ \t]+in\b))'
+    - match: '\b(unsafe)(?=[ \t]*(?:\{|import[ \t]+kernel\b))|\b(loop|poll)(?=[ \t]*\{)|\b(for)(?=[ \t]*(?:\([^)]*;|{{ident}}[ \t]+in\b))'
       scope: keyword.control.on1x
     - match: '\b(match)(?=[ \t]+(?=[A-Za-z_0-9("!@-]|<-)[^#;]*?[ \t]+with\b|[ \t]*\([^#;\r\n]*?\)[ \t]*\{)|\b(with)(?=[ \t]*\{)'
       scope: keyword.control.on1x
@@ -127,12 +271,16 @@ contexts:
       scope: keyword.control.on1x
     - match: '\b(recv)(?=[ \t]+{{ident}}[ \t]+as\b)|\b(send)(?=[ \t]+{{ident}}[ \t]*<-)|\b(closed)(?=[ \t]+{{ident}}[ \t]*=>)|\b(default)(?=[ \t]*=>)|\b(after)(?=[ \t]+[^#;]*?=>)'
       scope: keyword.control.on1x
-    - match: '\b(i64|f32|f64|u8|u16|u32|u64|bool|string|void|json|json_view|sexpr|buffer|xfiber)\b|\b(array)(?=[ \t]*[<\[])|\b(record|sum)(?=[ \t]*[<{])|\b(slice|variant|code|ifiber|channel|sender|receiver)(?=[ \t]*<)'
+    - match: '\b(i64|f32|f64|u8|u16|u32|u64|bool|char|string|void|json|json_view|sexpr|buffer|xfiber)\b|\b(array)(?=[ \t]*[<\[])|\b(record|sum)(?=[ \t]*[<{])|\b(slice|variant|code|ifiber|channel|sender|receiver)(?=[ \t]*<)'
       scope: support.type.on1x
 
   literals:
     - match: '(?<![A-Za-z0-9_])0[xX][0-9a-fA-F]+(?:u8|u16|u32|u64)?\b'
       scope: constant.numeric.integer.hexadecimal.on1x
+    - match: '(?<![A-Za-z0-9_])0[oO][0-7]+(?:u8|u16|u32|u64)?\b'
+      scope: constant.numeric.integer.octal.on1x
+    - match: '(?<![A-Za-z0-9_])0[bB][01]+(?:u8|u16|u32|u64)?\b'
+      scope: constant.numeric.integer.binary.on1x
     - match: '(?<![A-Za-z0-9_])(?:[0-9]+\.[0-9]+(?:[eE][+-]?[0-9]+)?(?:f32|f64)?|[0-9]+[eE][+-]?[0-9]+(?:f32|f64)?|[0-9]+(?:f32|f64))\b'
       scope: constant.numeric.float.on1x
     - match: '(?<![A-Za-z0-9_])[0-9]+(?:u8|u16|u32|u64)?\b'
@@ -143,7 +291,7 @@ contexts:
       scope: keyword.operator.ellipsis.on1x
     - match: '\.\.=|\.\.'
       scope: keyword.operator.range.on1x
-    - match: '<-|->|=>|==|!=|<=|>=|&&|\|\||[+*/%<>=!|?-]'
+    - match: '<-|->|=>|:=|==|!=|<=|>=|&&|\|\||[+*/%<>=!|?~-]'
       scope: keyword.operator.on1x
     - match: '::|[.,:;]'
       scope: punctuation.separator.on1x

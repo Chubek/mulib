@@ -15,6 +15,7 @@ import unittest
 SERVER = Path(__file__).resolve().with_name("on1x-lsp.py")
 REAL_COMPILER = None
 REAL_SYREN = True
+REAL_FOREIGNLIB = None
 
 
 def frame(body):
@@ -22,8 +23,10 @@ def frame(body):
 
 
 class Wire:
-    def __init__(self, case, compiler, work, env=None):
+    def __init__(self, case, compiler, work, env=None, foreignlib=None):
         args = ["--on1xc", str(compiler)] if compiler else []
+        if foreignlib:
+            args.extend(("--foreignlib-path", str(foreignlib)))
         self.child = subprocess.Popen([sys.executable, str(SERVER), *args], cwd=work,
                                       env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE, bufsize=0)
@@ -150,6 +153,7 @@ mode, *args, name = sys.argv[1:]
 path = Path(name)
 assert path.is_absolute()
 assert set(os.environ).isdisjoint(("ON1X_PPX_PATH", "ON1X_STDLIB", "LD_PRELOAD"))
+assert os.environ.get("MULIB_FOREIGNLIB_PATH") != "/ambient-ignored"
 assert Path.cwd() == Path(os.environ["TMPDIR"])
 text = path.read_bytes()
 if mode == "fmt":
@@ -207,6 +211,15 @@ elif mode == "--deps":
     print(json.dumps({"schema": "on1x.diagnostics/v1", "dropped": 0, "diagnostics": records}),
           file=sys.stderr)
     sys.exit(1)
+elif mode == "aux":
+    assert args == ["format"]
+    assert path.name in ("On1xfile", "On1xfile.m", "On1xfile.i")
+    assert path.parent == Path.cwd()
+    assert "MULIB_FOREIGNLIB_PATH" not in os.environ
+    if b"bad-policy" in text:
+        print(f"on1x-project: {path}:2-3: invalid manifest policy", file=sys.stderr)
+        sys.exit(1)
+    sys.stdout.buffer.write(text.replace(b"  ", b" "))
 else:
     sys.exit("unexpected compiler mode")
 '''
@@ -236,7 +249,35 @@ class Protocol(Base):
 
     def launch(self):
         return Wire(self, self.compiler, self.work,
-                    {**os.environ, "ON1X_PPX_PATH": "/invalid", "ON1X_STDLIB": "/invalid"})
+                    {**os.environ, "ON1X_PPX_PATH": "/invalid", "ON1X_STDLIB": "/invalid",
+                     "MULIB_FOREIGNLIB_PATH": "/ambient-ignored"})
+
+    def test_manifest_diagnostics_and_buffer_format(self):
+        wire = self.launch()
+        wire.initialize()
+        path = self.work / "On1xfile"
+        uri = path.as_uri()
+        text = 'on1xfile 1\r\n# bad-policy\r\nname "🙂"\r\n'
+        path.write_bytes(text.encode())
+        wire.open(uri, text)
+        wire.document("didSave", uri)
+        diagnostic, = wire.diagnostics(uri, 1)
+        self.assertEqual(diagnostic, {
+            "source": "on1x-project", "severity": 1, "code": "ON1XFILE", "message": "invalid manifest policy",
+            "range": {"start": {"line": 1, "character": 0}, "end": {"line": 2, "character": 9}},
+        })
+        self.assertEqual(wire.actions(uri), {"result": []})
+        wire.change(uri, 2, [{"text": 'on1xfile  1\nname "test"\n'}])
+        self.assertEqual(wire.diagnostics(uri, 2), [])
+        self.assertEqual(wire.format(uri)["result"][0]["newText"], 'on1xfile 1\nname "test"\n')
+        self.assertEqual(path.read_bytes(), text.encode())
+        qmr = self.work / "On1xfile.m"
+        qmr.write_text("{{ never_render_qmr() }}")
+        wire.open(qmr.as_uri(), qmr.read_text())
+        wire.document("didSave", qmr.as_uri())
+        self.assertIn("QMR manifests are not inspected", wire.log())
+        self.assertEqual(wire.diagnostics(qmr.as_uri(), 1), [])
+        wire.finish()
 
     def test_framing_and_lifecycle(self):
         wire = self.launch()
@@ -464,7 +505,8 @@ class RealCompiler(Base):
             self.skipTest("pass --on1xc PATH to run the real compiler smoke")
         super().setUp()
         self.wire = Wire(self, REAL_COMPILER, self.work,
-                         {**os.environ, "ON1X_STDLIB": "/not-a-real-stdlib"})
+                         {**os.environ, "ON1X_STDLIB": "/not-a-real-stdlib",
+                          "MULIB_FOREIGNLIB_PATH": "/ambient-ignored"}, REAL_FOREIGNLIB)
         self.wire.initialize(self.work.as_uri())
 
     def test_untouched_source_format(self):
@@ -536,12 +578,59 @@ class RealCompiler(Base):
         self.assertIn("cannot resolve import", self.wire.diagnostics(self.uri, 1)[0]["message"])
         self.wire.finish()
 
+    def test_plain_manifest_driver(self):
+        supports_aux = subprocess.run([REAL_COMPILER, "aux", "format", "--help"],
+                                      capture_output=True, timeout=5)
+        if supports_aux.returncode:
+            self.skipTest("requires on1xc aux format")
+        path = self.work / "On1xfile"
+        uri = path.as_uri()
+        text = ('on1xfile 1\nkind  executable\nname "hello"\ndirectory "src"\n'
+                'target "hello" "src/main.on1x"\nbackend "release" mir-vm\n'
+                'optimization-profile debug\noptimization "release" "integer_add_zero_right" on\n')
+        self.wire.open(uri, text)
+        self.assertEqual(self.wire.format(uri)["result"][0]["newText"], text.replace("  ", " "))
+        invalid = text.replace("optimization-profile debug", "optimization-profile nope")
+        self.wire.change(uri, 2, [{"text": invalid}])
+        path.write_text(invalid)
+        self.wire.document("didSave", uri)
+        report, = self.wire.diagnostics(uri, 2)
+        self.assertEqual(report["range"]["start"]["line"], 6)
+        self.assertIn("optimization", report["message"])
+        self.wire.finish()
+
+    def test_foreign_and_kernel_save(self):
+        if not REAL_SYREN or REAL_FOREIGNLIB is None:
+            self.skipTest("requires Syren and --foreignlib-path with the generated clamp.ffi")
+        portable = 'import foreign stdffi.clamp as Clamp;\nfn main() { println(Clamp.add_i64(40, 2)); }\n'
+        self.write(portable)
+        self.wire.open(self.uri, portable)
+        self.wire.document("didSave", self.uri)
+        self.assertEqual(self.wire.diagnostics(self.uri, 1), [])
+        invalid = portable.replace("add_i64", "missing")
+        self.wire.change(self.uri, 2, [{"text": invalid}])
+        self.write(invalid)
+        self.wire.document("didSave", self.uri)
+        report, = self.wire.diagnostics(self.uri, 2)
+        self.assertEqual(report["code"], "ON1X-STDFFI-MEMBER")
+        native = 'unsafe import kernel[dynlib] mulib.clamp as Clamp;\nfn main() {}\n'
+        self.wire.change(self.uri, 3, [{"text": native}])
+        self.assertEqual(self.wire.diagnostics(self.uri, 3), [])
+        self.write(native)
+        self.wire.document("didSave", self.uri)
+        report, = self.wire.diagnostics(self.uri, 3)
+        self.assertEqual(report["severity"], 3)
+        self.assertIn("not checked", report["message"])
+        self.wire.finish()
+
 
 if __name__ == "__main__":
     opts = argparse.ArgumentParser()
     opts.add_argument("--on1xc", type=Path)
+    opts.add_argument("--foreignlib-path", type=Path, help="generated stdffi directory with clamp.ffi")
     opts.add_argument("--no-syren", action="store_true", help="expect a compiler without diagnostic JSON")
     args, unittest_args = opts.parse_known_args()
     REAL_COMPILER = args.on1xc.resolve(strict=True) if args.on1xc else None
+    REAL_FOREIGNLIB = args.foreignlib_path.resolve(strict=True) if args.foreignlib_path else None
     REAL_SYREN = not args.no_syren
     unittest.main(argv=[sys.argv[0], *unittest_args])

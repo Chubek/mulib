@@ -34,7 +34,8 @@ The source filetype plugin sets 'commentstring' to `# %s`, continues `#` line
 comments where enabled by 'formatoptions', and disables automatic wrapping
 of plain code. Indentation follows braces, parentheses and brackets using
 your 'shiftwidth'. With On1x syntax highlighting active, indentation ignores
-delimiters in literals/comments and leaves multiline backtick content alone.
+delimiters in literals/comments and preserves the contents of multiline
+strings and backtick commands.
 Without that syntax state, it falls back to ordinary autoindent.
 It is not a parser or a formatter; complex continuations and malformed
 source may need manual indentation. Contextual highlighting is approximate.

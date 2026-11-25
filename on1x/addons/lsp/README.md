@@ -13,6 +13,10 @@ looked up on absolute `PATH` entries only, ignoring the server's working
 directory and candidates under recognized workspace roots or source
 directories (including symlink targets). Do not put untrusted locations
 on the launcher's `PATH` or point `--on1xc` at an untrusted executable.
+If using generated `import foreign stdffi.*` recipes outside the compiler's
+default location, add `--foreignlib-path /absolute/generated/stdffi/mulib`.
+Repeat it for multiple trusted recipe directories. The adapter does not
+inherit `MULIB_FOREIGNLIB_PATH` or run a recipe generator.
 The server uses only the Python 3.8+ standard library and POSIX
 process/resource APIs. It has been tested on Linux, not on Windows.
 
@@ -23,9 +27,13 @@ process/resource APIs. It has been tested on Linux, not on Windows.
   This reports real scanner, parser and module-loading errors that the
   compiler encounters without expanding PPX. It does not type check,
   expand macros, elaborate native extensions or diagnose their generated
-  declarations. A project that relies on generated declarations, kernel
-  imports or project-specific search paths may not be inspectable in
-  this mode. An empty diagnostics list does not mean a program builds.
+   declarations. It resolves portable `import foreign stdffi.*` imports
+   and reports loader findings such as missing recipes or exports. Native
+   `import kernel` declarations (including `unsafe` and `[dynlib]`) are
+   separate: when the loader stops because this mode cannot admit KernelBind
+   imports, the adapter reports that limitation as information rather than
+   treating the request as invalid syntax. An empty diagnostics list does
+   not mean a program builds.
 - Diagnostics require **`ON1X_WITH_SYREN=ON`** in `on1xc`. A compiler
   without JSON diagnostics can still format; save inspection logs the
   compiler's failure rather than parsing text into made-up diagnostics.
@@ -47,6 +55,14 @@ process/resource APIs. It has been tested on Linux, not on Windows.
   invalid syntax. It uses compiler defaults (not workspace `.on1xfmt`
   or the client's tab settings) and can normalize line endings. Source
   preservation directives such as `# on1xfmt: off` still apply.
+- **Plain On1xfile support.** `On1xfile`, `On1xfile.m`, and `On1xfile.i`
+  use the current `on1xc aux format` driver for formatting and save-time
+  diagnostics. The adapter passes a private copy with its original basename
+  and maps any reported line span back to the editor. This checks the plain
+  directives and policy syntax, including backend and optimization profiles,
+  not the project graph, optimizer inventory, actual targets or build results.
+  It never runs actions or renders QMR templates. Save inspection skips
+  QMR manifests and formatting rejects them.
 - **Revision-bound quick fixes.** Bounded compiler-reported repair edits with
   status `validated` are exposed after save as quick fixes tied to the open
   document version. Repairs reported only as `candidate` are visible as
@@ -67,8 +83,10 @@ loaded graph and returns before ordinary PPX rewriting. The adapter never
 uses `--allow-source-ppx`, selects PPX processors, invokes `--check`,
 runs a project's build scripts, or forwards compiler arguments from the
 workspace. `fmt` parses a single copied buffer without loading imports or
-running PPX. Neither command uses a shell. The subprocess gets a private
-working directory and a minimal environment, without inherited `ON1X_*`
+running PPX. `aux format` invokes the trusted project's plain-manifest
+formatter bundled with the compiler, not a project command or template.
+Neither uses a shell. The subprocess gets a private working directory and a
+minimal environment, without inherited `ON1X_*` or `MULIB_FOREIGNLIB_PATH`
 search paths. Update the adapter and compiler together if these CLI
 guarantees change.
 
@@ -98,6 +116,8 @@ Run from the repository root:
 ```sh
 python3 on1x/addons/lsp/test_lsp.py -v
 python3 on1x/addons/lsp/test_lsp.py --on1xc build/on1x/on1xc -v
+python3 on1x/addons/lsp/test_lsp.py --on1xc build/on1x/on1xc \
+    --foreignlib-path build/on1x/stdffi/mulib -v
 ```
 
 The first command runs protocol and subprocess-boundary tests and skips

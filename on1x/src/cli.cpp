@@ -16,6 +16,7 @@
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #include "proxy_policy.hpp"
+#include "../hir/inspect_hir.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
 #include "archvirt_driver.hpp"
 #endif
@@ -523,7 +524,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  return out.str();
 }
 void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
- "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast] INPUT.on1x [-o OUTPUT]\n"
+  "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast | --emit-hir] INPUT.on1x [-o OUTPUT]\n"
 #ifdef ON1X_WITH_CEPHYR
  "       on1xc --emit-cephyr-object INPUT.on1x -o OUTPUT.o [--cephyr-target x86_64-linux-gnu]\n"
  "       [--cephyr-factir on|off] [--cephyr-blackstone on|off] [--cephyr-sandslab on|off]\n"
@@ -593,7 +594,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     "       on1xc aux COMMAND [ARGS ...] (project driver; see on1xc aux --help)\n"
     "       on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
    "       on1xc (--format | --emit-latex | --emit-troff) INPUT [-o OUTPUT]\n"
-  "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
+   "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
+   "--emit-hir exports checked source as an inspection S-expression.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"
   "--run-ir is a bounded reference evaluator, not a native or VM backend.\n"
   "--ir-input reads verified serialized MIR instead of On1x source (MIR modes only).\n"
@@ -852,7 +854,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
      if(arg=="--check-types"){mode=arg;continue;}
      if(arg=="--emit-category-plan"||arg=="--kernel-imports"){mode=arg;continue;}
-       if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
+        if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-hir"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
         mode=arg;explicit_c=explicit_c||arg=="--emit-c";
       }
       else if(arg=="--no-prelude")loader.prelude=false;
@@ -1248,7 +1250,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
        else publish_regular_file(out,text,"processor",".on1x-processor-XXXXXX");
        return 0;
       }
-     if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
+      if(mode=="--emit-category-plan"){publish_diagnostics();write_all(out,category_plan);return 0;}
+      if(mode=="--emit-hir"){publish_diagnostics();write_all(out,on1x::hir::inspection::write_checked(unit));return 0;}
       if(mode=="--check"){publish_diagnostics();std::cout<<"OK: "<<unit.functions.size()<<" functions\n";return 0;}
        if(mir_mode){
            auto module=vm_mode

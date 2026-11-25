@@ -17,7 +17,13 @@ try
   call s:CheckGroup(1, 'on1xi', 'on1xDirective')
   call s:CheckGroup(2, 'greet', 'on1xFunction')
   call writefile(['on1xfile 1', 'backend "debug" mir-vm', 'optimization-profile default',
-        \ 'optimization "all" off', 'scrutiny-work 8192', 'name "foo#\u0042" # policy'], 'On1xfile')
+        \ 'optimization "all" off', 'scrutiny-work 8192', 'name "foo#\u0042" # policy',
+        \ 'optimization "debug" "integer_add_zero_right" on', 'kernel-path "ffi/primary"',
+        \ 'proxy-http "http://proxy.example:8080"', 'proxy-https "http://proxy.example:8080"',
+        \ 'proxy-any "http://proxy.example:8080"', 'dotenv ".env" preserve',
+        \ 'profile-arg "size" level integer -2', 'vm opt-in', 'compiler cephyr',
+        \ 'assembler sandas', 'linker yellowstone', 'assembler-arg "-g"', 'linker-arg "--gc-sections"',
+        \ 'optimization \', '  "release" "all" off', 'proxy-https-extra "not a directive"'], 'On1xfile')
   edit On1xfile
   call assert_equal('on1xfile', &filetype)
   call assert_equal('# %s', &l:commentstring)
@@ -34,6 +40,23 @@ try
   call s:CheckGroup(6, '#\u', 'on1xfileString')
   call s:CheckGroup(6, '\u0042', 'on1xfileEscape')
   call s:CheckGroup(6, '# policy', 'on1xfileComment')
+  call s:CheckGroup(7, 'integer_add_zero_right', 'on1xfileString')
+  call assert_equal('on1xfileValue', synIDattr(synID(7, match(getline(7), 'on$') + 1, 1), 'name'))
+  for [s:line, s:directive] in [[8, 'kernel-path'], [9, 'proxy-http'], [10, 'proxy-https'],
+        \ [11, 'proxy-any'], [12, 'dotenv'], [13, 'profile-arg'], [14, 'vm'], [15, 'compiler'],
+        \ [16, 'assembler'], [17, 'linker'], [18, 'assembler-arg'], [19, 'linker-arg']]
+    call s:CheckGroup(s:line, s:directive, 'on1xfileDirective')
+  endfor
+  call s:CheckGroup(12, 'preserve', 'on1xfileValue')
+  call s:CheckGroup(13, '-2', 'on1xfileNumber')
+  call s:CheckGroup(14, 'opt-in', 'on1xfileValue')
+  call s:CheckGroup(20, '\', 'on1xfileContinuation')
+  call s:CheckGroup(21, 'off', 'on1xfileValue')
+  call s:CheckGroup(22, 'proxy-https-extra', '')
+  call setline(9, 'proxy-none# no fields')
+  call s:CheckGroup(9, 'proxy-none', 'on1xfileDirective')
+  call s:CheckGroup(9, '# no fields', 'on1xfileComment')
+  setlocal nomodified
   call writefile(['on1xfile 1', 'library "messages.on1x"'], 'On1xfile.m')
   edit On1xfile.m
   call assert_equal('on1xfile', &filetype)
@@ -82,6 +105,28 @@ try
         \ 'match_count for_each breaker launcher',
         \ 'unsafe import kernel [ dynlib ] mulib.clamp as Clamp;',
         \ 'let dynlib = kernel[dynlib];',
+        \ 'import foreign stdffi . clamp as Clamp;',
+        \ 'import foreign as F;',
+        \ 'import foreign.clamp;',
+        \ 'unsafe import foreign stdffi.clamp;',
+        \ 'import foreign mulib.clamp;',
+        \ 'import foreign stdffi.clamp.extra;',
+        \ 'proc hello() { return; }',
+        \ 'let n = 0o17u32 + 0B10;',
+        \ 'let c: char = #\Ｂ; let byte = b!#\pound;',
+        \ 'let text = "$name ${f("value")} $$ \$ \0";',
+        \ 'let raw = r!"$name \0 #";',
+        \ 'let bytes = b!"\0\xff $name";',
+        \ 'let triple = """alpha',
+        \ '  # literal } """;',
+        \ "let stripped = '''alpha",
+        \ "  # literal \\' ''';",
+        \ '{- outer {@name(n) nested @} still outer -}',
+        \ '{@ space after opener @}',
+        \ '{! metadata {- no nesting } let final = 0;',
+        \ '{> more metadata }',
+        \ 'let p = proc() {@Name()};',
+        \ 'let text = "${match true with {true => "inside", false => ""}} finish";',
         \ ])
   call s:CheckGroup(1, '@scrutiny', 'on1xDirective')
   call s:CheckGroup(2, 'macro', 'on1xMacroKeyword')
@@ -116,6 +161,45 @@ try
   call s:CheckGroup(24, 'kernel', 'on1xKernelImport')
   call s:CheckGroup(24, 'dynlib', 'on1xKernelModifier')
   call s:CheckGroup(25, 'dynlib', '')
+  call s:CheckGroup(26, 'foreign', 'on1xForeignImport')
+  call s:CheckGroup(26, 'stdffi', 'on1xForeignNamespace')
+  call s:CheckGroup(26, 'clamp', 'on1xForeignKernel')
+  call s:CheckGroup(26, 'as', 'on1xImportAlias')
+  call s:CheckGroup(27, 'foreign', '')
+  call s:CheckGroup(28, 'foreign', '')
+  call s:CheckGroup(29, 'foreign', 'on1xRemovedImport')
+  call s:CheckGroup(30, 'foreign', '')
+  call s:CheckGroup(31, 'foreign', '')
+  call s:CheckGroup(32, 'hello', 'on1xFunction')
+  call s:CheckGroup(33, '0o17u32', 'on1xNumber')
+  call s:CheckGroup(33, '0B10', 'on1xNumber')
+  call s:CheckGroup(34, 'char', 'on1xType')
+  call s:CheckGroup(34, '#\Ｂ', 'on1xCharacter')
+  call s:CheckGroup(34, 'b!#\pound', 'on1xCharacter')
+  call s:CheckGroup(35, '$name', 'on1xInterpolationName')
+  call s:CheckGroup(35, '${', 'on1xInterpolationDelimiter')
+  call s:CheckGroup(35, 'value', 'on1xString')
+  call s:CheckGroup(35, '$$', 'on1xEscape')
+  call s:CheckGroup(35, '\$', 'on1xEscape')
+  call s:CheckGroup(35, '\0', 'on1xBadEscape')
+  call s:CheckGroup(36, '$name', 'on1xString')
+  call s:CheckGroup(36, '\0', 'on1xString')
+  call s:CheckGroup(37, '\0', 'on1xByteEscape')
+  call s:CheckGroup(37, '\xff', 'on1xByteEscape')
+  call s:CheckGroup(37, '$name', 'on1xString')
+  call s:CheckGroup(39, '# literal', 'on1xLongString')
+  call s:CheckGroup(41, "\\'", 'on1xApostropheEscape')
+  call s:CheckGroup(42, 'nested', 'on1xNestedComment')
+  call s:CheckGroup(42, 'still outer', 'on1xBlockComment')
+  call s:CheckGroup(43, 'space after opener', 'on1xBlockComment')
+  call s:CheckGroup(44, 'metadata', 'on1xDocstring')
+  call s:CheckGroup(44, 'let final', 'on1xDeclaration')
+  call s:CheckGroup(45, 'more metadata', 'on1xDocstring')
+  call s:CheckGroup(46, '@Name', 'on1xDirective')
+  call s:CheckGroup(47, 'inside', 'on1xString')
+  call s:CheckGroup(47, '}}', 'on1xDelimiter')
+  call assert_equal('on1xInterpolationDelimiter', synIDattr(synID(47, stridx(getline(47), '}}') + 2, 1), 'name'))
+  call s:CheckGroup(47, 'finish', 'on1xString')
 
   " Match the file's code indentation but preserve raw command bytes.
   normal! gg=G
@@ -123,6 +207,8 @@ try
         \ map(range(1, 20), {_, line -> indent(line)}))
   call assert_equal(' # these bytes are part of the command: } ) ]', getline(13))
   call assert_equal('  ```;', getline(14))
+  call assert_equal('  # literal } """;', getline(39))
+  call assert_equal("  # literal \\' ''';", getline(41))
 
   if has('nvim-0.10')
     lua assert(#vim.lsp.get_clients() == 0, 'LSP started by default')

@@ -8,7 +8,10 @@ from urllib.parse import urlsplit
 import zipfile
 
 FILES = ("README.md", "SECURITY.md", "VERIFICATION.md", "core.py", "server.py", "deploy_probe.py",
-         "vmm.py", "test_chatgpt.py", "test_vmm.py", "plugin.json", "mcp.json", "package.py", "package.sh")
+         "vmm.py", "web-agents.py", "test_chatgpt.py", "test_vmm.py", "test_web_agents.py",
+         "cephyr_tools.py", "cephyr_worker.py", "compiler_sandbox.py", "test_cephyr_tools.py",
+         "on1x_tools.py", "test_on1x_tools.py",
+         "test_private_tools.py", "plugin.json", "mcp.json", "package.py", "package.sh")
 
 
 def package(output, endpoint):

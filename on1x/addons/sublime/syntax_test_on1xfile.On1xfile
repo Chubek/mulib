@@ -1,0 +1,41 @@
+# SYNTAX TEST "Packages/On1x/On1xfile.sublime-syntax"
+on1xfile 1
+# <- keyword.control.directive.on1xfile
+#        ^ constant.numeric.integer.decimal.on1xfile
+optimization-profile release
+# <- keyword.control.directive.on1xfile
+#                    ^^^^^^^ constant.language.on1xfile
+optimization "integer_add_zero_right" on
+# <- keyword.control.directive.on1xfile
+#             ^^^^^^^^^^^^^^^^^^^^^^ string.quoted.double.on1xfile
+#                                     ^^ constant.language.on1xfile
+optimization "debug" "all" off
+# <- keyword.control.directive.on1xfile
+#                          ^^^ constant.language.on1xfile
+kernel-path "ffi/headers"
+# <- keyword.control.directive.on1xfile
+#            ^^^^^^^^^^^ string.quoted.double.on1xfile
+dotenv ".env" preserve
+# <- keyword.control.directive.on1xfile
+#             ^^^^^^^^ constant.language.on1xfile
+proxy-http "http://proxy.example:8080"
+# <- keyword.control.directive.on1xfile
+proxy-https "http://proxy.example:8080"
+# <- keyword.control.directive.on1xfile
+proxy-any "http://proxy.example:8080"
+# <- keyword.control.directive.on1xfile
+# Alternative to the URL settings:
+proxy-none# comment
+# <- keyword.control.directive.on1xfile
+#         ^ comment.line.number-sign.on1xfile
+proxy-none-extra
+# <- - keyword.control.directive.on1xfile
+profile-arg "size" level integer -2
+# <- keyword.control.directive.on1xfile
+#                                ^^ constant.numeric.integer.decimal.on1xfile
+compiler cephyr
+# <- keyword.control.directive.on1xfile
+#        ^^^^^^ constant.language.on1xfile
+vm opt-in
+# <- keyword.control.directive.on1xfile
+#  ^^^^^^ constant.language.on1xfile

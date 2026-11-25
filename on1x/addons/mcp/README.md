@@ -139,6 +139,82 @@ with SIGKILL cannot delete its files, but the kernel kills its runners on
 parent death. Only remove such leftover directories after confirming their
 server processes are gone. For scope and limitations, see [SECURITY.md](SECURITY.md).
 
+## Private graphics and interactive documents
+
+Start the server with `--stdio --graphics --root /absolute/path/to/mulib`
+to opt into graphics for a local MCP client. These tools are not exposed by
+the public HTTP profile.
+
+- `render_graphics(program, format)` accepts a declarative drawing. Use
+  `svg` for colorful geometric shapes and labels, or `html` for a standalone
+  document with an optional keyboard-sortable bar chart. The tool returns a
+  connection-local `document_id`.
+- `measure_text(text, font, size)` returns an estimate in CSS pixels, not
+  browser- or font-engine-calibrated metrics.
+- `display_graphics(document_id)` returns a text summary and an embedded
+  resource with the generated SVG or HTML. The MCP client decides whether
+  to preview or export it; automatic rendering is not required.
+
+For example, call `render_graphics` with:
+
+```json
+{
+  "format": "svg",
+  "program": {
+    "width": 200,
+    "height": 100,
+    "background": "#19233A",
+    "shapes": [
+      {"type": "circle", "cx": 100, "cy": 50, "r": 28, "fill": "#35D0BA"}
+    ]
+  }
+}
+```
+
+No submitted JavaScript or HTML is evaluated. The interactive chart uses
+fixed bundled JavaScript and a restrictive content security policy. Preview
+HTML only in an isolated frame without `allow-same-origin`; render SVG as
+an image, not by injecting its markup into the host page. Documents stay in
+memory and are limited to eight per connection; nothing is posted to a web URL.
+
+## File search and private On1x compilation
+
+Use `search_files(query, mode, limit)` to search the server's allowlisted
+snapshot by path or content, then `fetch` an excerpt ID. The tool cannot
+read a new path, search outside the snapshot, or open private project files.
+
+Pass `--stdio --compiler-on1xc /absolute/path/to/on1xc` on Linux to enable:
+
+- `compile_on1x(source, profile?)`: generate C11 text without linking it.
+- `inspect_on1x(source, phase, profile?)`: return a real S-expression for
+  `ast` (pre-PPX), `hir` (checked), or `mir` (verified). This requires a
+  compiler with `--emit-hir` for the HIR phase.
+
+These tools accept standalone On1x text only. They use fail-closed
+bubblewrap isolation, run as a non-root user, and do not run the generated
+program. An operator can mount required trusted shared libraries individually
+with `--compiler-runtime`; callers cannot select compiler flags or paths.
+
+## Private Cephyr C inspection
+
+On Linux, run as a non-root user with bubblewrap and seccomp available:
+
+```sh
+python3 server.py --root /path/to/mulib --stdio \
+  --cephyr-bindings /path/to/Cephyr/python/cephyr/__init__.py \
+  --cephyr-library /path/to/libcephyr.so \
+  --cephyr-resource-root /path/to/Cephyr \
+  --cephyr-archon-root /path/to/Archon
+```
+
+Call `cephyr_extract` with `source` (standalone C11, up to 8 KiB of UTF-8)
+and `operation`: `parse_c11` returns an AST S-expression,
+`emit_interface` returns the resolved semantic interface S-expression, and
+`emit_mir` returns Cephyr's Archon MachineIR text. The target is fixed to
+`x86_64-linux-gnu`; requests cannot set flags, read project or system
+headers, or execute code. The server invokes the Python bindings in an
+isolated child and fails closed if isolation is unavailable.
+
 ## Deploy and connect in ChatGPT web
 
 **A local folder/ZIP is not a direct ChatGPT web installation and does not deploy

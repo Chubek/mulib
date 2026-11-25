@@ -27,6 +27,9 @@ MAX_SOURCE = 2 * MIB
 MAX_DOCUMENTS = 64
 MAX_DOCUMENT_BYTES = 16 * MIB
 MAX_CLI_OUTPUT = 4 * MIB  # Per stream.
+MAX_MANIFEST = 64 * 1024  # on1x-project.py's plain manifest limit.
+MANIFESTS = ("On1xfile", "On1xfile.m", "On1xfile.i")
+QMR_TAG = re.compile(rb"\{[{%#]")
 MAX_CODE_ACTIONS = 256
 MAX_CODE_ACTION_BYTES = 2 * MIB
 CLI_TIMEOUT = 5
@@ -194,8 +197,10 @@ def kill_child(child):
         pass
 
 
-def run_cli(compiler, args, cwd):
+def run_cli(compiler, args, cwd, foreignlibs=()):
     env = {"PATH": os.defpath, "LC_ALL": "C", "TMPDIR": str(cwd)}
+    if foreignlibs:
+        env["MULIB_FOREIGNLIB_PATH"] = os.pathsep.join(map(str, foreignlibs))
     with tempfile.TemporaryFile(dir=cwd) as stdout, tempfile.TemporaryFile(dir=cwd) as stderr:
         try:
             with subprocess.Popen([str(compiler), *args], cwd=cwd, env=env,
@@ -223,6 +228,30 @@ def run_cli(compiler, args, cwd):
 def concise(data):
     text = data[:512].decode("utf-8", errors="replace")
     return " ".join("".join(c if c.isprintable() else " " for c in text).split())
+
+
+def manifest_diagnostic(data, path, source, encoding):
+    # The plain manifest driver reports one error and an optional line span.
+    # Never attach tool startup errors or locations for a different file.
+    text = data[:4096].decode("utf-8", errors="replace").split("\n", 1)[0]
+    match = re.fullmatch(r"on1x-project: " + re.escape(str(path))
+                         + r"(?::([0-9]{1,6})(?:-([0-9]{1,6}))?)?: (.+)", text)
+    if not match:
+        raise ToolError(f"on1xc aux format failed: {concise(data)}")
+    start, end, message = match.groups()
+    begin, finish = int(start or "1"), int(end or start or "1")
+    breaks = [m.end() for m in re.finditer(b"\n", source)]
+    offsets = [0, *breaks]
+    if not 1 <= begin <= finish <= len(offsets):
+        raise ToolError("project driver reported an invalid manifest line")
+    last = source.find(b"\n", offsets[finish - 1])
+    last = len(source) if last < 0 else last
+    if last and source[last - 1:last] == b"\r":
+        last -= 1
+    return {"range": {"start": position(source, offsets[begin - 1], encoding),
+                      "end": position(source, last, encoding)},
+            "source": "on1x-project", "severity": 1, "code": "ON1XFILE",
+            "message": concise(message.encode("utf-8"))}
 
 
 def compiler_diagnostics(data, path, source, encoding):
@@ -263,6 +292,16 @@ def compiler_diagnostics(data, path, source, encoding):
                       "message": message, "severity": SEVERITIES[severity]}
         if isinstance(item.get("id"), str) and item["id"]:
             diagnostic["code"] = item["id"]
+        kernel_code = message.partition(":")[0]
+        if (kernel_code in ("ON1X-KERNEL-NOT-ADMITTED", "ON1X-KERNEL-UNSAFE-UNSUPPORTED")
+                and item.get("id") in (kernel_code, "ON1X-SOURCE")
+                and message.endswith("; use --kernel-imports to inspect source requests")):
+            # --deps has no KernelBind authority. Preserve other compiler
+            # policy diagnostics with the same IDs (e.g. unsafe-only modules).
+            diagnostic["severity"] = 3
+            diagnostic["code"] = kernel_code
+            diagnostic["message"] = ("KernelBind admission was not checked by the LSP. "
+                                     "Use the project's KernelBind build workflow for validation.")
         action_ids = []
         repairs = item.get("repairs", [])
         if isinstance(repairs, list) and len(repairs) <= 64:
@@ -350,7 +389,7 @@ class Document:
 
 
 class Server:
-    def __init__(self, compiler, out, scratch):
+    def __init__(self, compiler, out, scratch, foreignlibs=()):
         self.compiler = compiler
         self.out = out
         self.scratch = scratch
@@ -358,6 +397,7 @@ class Server:
         self.encoding = "utf-16"
         self.documents = {}
         self.roots = []
+        self.foreignlibs = foreignlibs
 
     def send(self, **message):
         body = json.dumps({"jsonrpc": "2.0", **message},
@@ -431,19 +471,27 @@ class Server:
             },
         }, "serverInfo": {"name": "on1x-lsp"}}
 
+    def format_copy(self, compiler, name, source):
+        manifest = name in MANIFESTS
+        if manifest and len(source) > MAX_MANIFEST:
+            raise ToolError("expected a manifest no larger than 64 KiB")
+        input_path = self.scratch / (name if manifest else "buffer.on1x")
+        input_path.write_bytes(source)
+        try:
+            args = ["aux", "format"] if manifest else ["fmt", "--target", "plain"]
+            return input_path, *run_cli(compiler, [*args, str(input_path)], self.scratch)
+        finally:
+            input_path.unlink()
+
     def formatting(self, doc):
         if not doc or doc.source is None:
             raise RequestError(-32602, "formatting requires an open local On1x document within limits")
         try:
             compiler = self.compiler_for(doc)
-            input_path = self.scratch / "buffer.on1x"
-            input_path.write_bytes(doc.source)
-            try:
-                code, formatted, errors = run_cli(compiler, ["fmt", "--target", "plain", str(input_path)],
-                                                  self.scratch)
-            finally:
-                input_path.unlink()
+            input_path, code, formatted, errors = self.format_copy(compiler, doc.path.name, doc.source)
             if code:
+                if doc.path.name in MANIFESTS:
+                    raise ToolError(manifest_diagnostic(errors, input_path, doc.source, self.encoding)["message"])
                 raise ToolError(f"on1xc fmt failed (exit {code}): {concise(errors)}")
             if len(formatted) > MAX_SOURCE or (doc.source.strip() and not formatted):
                 raise ToolError("on1xc fmt returned missing or oversized output")
@@ -466,15 +514,26 @@ class Server:
             if before[0] != doc.source and normalized_eols(before[0]) != normalized_eols(doc.source):
                 raise ToolError("saved file does not match the open document")
             compiler = self.compiler_for(doc)
-            # --deps loads the real source graph, but disables native declaration
-            # extension execution and exits before ordinary PPX/macro rewriting.
-            code, _, errors = run_cli(compiler, ["--deps", "--diagnostics", "json",
-                                                 "--color", "never", str(path)], self.scratch)
+            manifest = doc.path.name in MANIFESTS
+            manifest_path = self.scratch / doc.path.name
+            if manifest:
+                if doc.path.name != "On1xfile" and QMR_TAG.search(before[0]):
+                    raise ToolError("QMR manifests are not inspected or executed")
+                manifest_path, code, _, errors = self.format_copy(compiler, doc.path.name, before[0])
+            else:
+                # --deps loads the real source graph, but disables native declaration
+                # extension execution and exits before ordinary PPX/macro rewriting.
+                code, _, errors = run_cli(compiler, ["--deps", "--diagnostics", "json",
+                                                     "--color", "never", str(path)], self.scratch,
+                                          self.foreignlibs)
             if doc.path.resolve(strict=True) != path or read_saved(path) != before:
                 raise ToolError("saved file changed during inspection")
-            if code not in (0, 1) or (code == 1 and not errors):
+            if manifest:
+                if code:
+                    diagnostics = [manifest_diagnostic(errors, manifest_path, before[0], self.encoding)]
+            elif code not in (0, 1) or (code == 1 and not errors):
                 raise ToolError(f"on1xc --deps failed (exit {code}): {concise(errors)}")
-            if errors:
+            elif errors:
                 diagnostics, actions, elsewhere, dropped = compiler_diagnostics(
                     errors, path, before[0], self.encoding)
                 for report in elsewhere[:3]:
@@ -527,7 +586,8 @@ class Server:
         if method == "textDocument/didOpen":
             path = file_uri(uri)
             version = document_id.get("version")
-            if (doc or not path or path.suffix != ".on1x" or not valid_version(version)
+            if (doc or not path or (path.suffix != ".on1x" and path.name not in MANIFESTS)
+                    or not valid_version(version)
                     or len(self.documents) >= MAX_DOCUMENTS):
                 return
             doc = Document(path, version, None)
@@ -615,9 +675,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--on1xc", metavar="PATH",
                         help="trusted compiler executable (default: on1xc on PATH)")
+    parser.add_argument("--foreignlib-path", metavar="PATH", action="append", type=Path, default=[],
+                        help="trusted absolute generated stdffi recipe directory (repeatable)")
     args = parser.parse_args()
     if os.name != "posix":
         parser.error("this adapter requires POSIX process and resource limits")
+    if len(args.foreignlib_path) > 16 or any(not p.is_absolute() for p in args.foreignlib_path):
+        parser.error("--foreignlib-path requires up to 16 existing absolute directories without ':'")
+    try:
+        foreignlibs = [p.resolve(strict=True) for p in args.foreignlib_path]
+    except (OSError, RuntimeError, ValueError):
+        parser.error("cannot resolve configured --foreignlib-path directories")
+    if any(os.pathsep in str(p) or not p.is_dir() for p in foreignlibs):
+        parser.error("--foreignlib-path directories must not contain ':'")
 
     def stop(_signum, _frame):
         raise StopServer()
@@ -629,7 +699,7 @@ def main():
         with tempfile.TemporaryDirectory(prefix="on1x-lsp-", dir="/tmp") as temporary:
             scratch = Path(temporary)
             (scratch / ".on1xfmt").write_bytes(b"")
-            server = Server(args.on1xc, sys.stdout.buffer, scratch)
+            server = Server(args.on1xc, sys.stdout.buffer, scratch, foreignlibs)
             while (body := read_frame(sys.stdin.buffer)) is not None:
                 status = server.receive(body)
                 if status is not None:
