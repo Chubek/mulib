@@ -22,6 +22,8 @@ def exercise(name, text, trace, *, status=0, trap=None):
         variant = 'opt' if option else 'plain'
         mir = t.work / f'{name}-{variant}.mir'
         command([t.compiler, '--emit-ir', *option, source, '-o', mir])
+        roundtrip = command([t.compiler, '--ir-input', '--emit-ir', mir])
+        assert roundtrip.stdout == mir.read_text(encoding='utf-8'), (name, variant, roundtrip)
         outputs['eval-' + variant] = run([t.compiler, '--ir-input', '--run-ir', mir])
         c = t.work / f'{name}-{variant}.c'
         exe = c.with_suffix('')
@@ -242,13 +244,21 @@ for name, text, diagnostic, checked_hir in [
         command([t.compiler, '--check', source])
     for mode in ('--emit-ir', '--emit-ir-c', '--emit-vm'):
         output = t.work / 'must_not_be_written'
-        p = run([t.compiler, mode, source, '-o', output])
-        assert p.returncode != 0 and diagnostic in p.stderr and not output.exists(), (mode, p)
+        args = [t.compiler, mode, source, '-o', output]
+        p = run(args)
+        assert p.returncode == 1 and diagnostic in p.stderr and not output.exists(), (name, mode, p)
         assert source.name + ':' in p.stderr, p
         if checked_hir:
             assert 'ON1X-MIR-UNSUPPORTED' in p.stderr, p
         if mode == '--emit-vm' and name in ('aggregate', 'function_layout'):
             assert 'verified named scalar bool or numeric root' in p.stderr, p
+        # Rejecting a new artifact must also leave a previous one untouched.
+        previous = t.work / f'{name}{mode}-previous-artifact'
+        sentinel = b'previous artifact\x00\xff\n'
+        previous.write_bytes(sentinel)
+        rejected = run([*args[:-1], previous])
+        assert (rejected.returncode, rejected.stderr) == (1, p.stderr), (name, mode, rejected)
+        assert previous.is_file() and previous.read_bytes() == sentinel, (name, mode, previous)
 
 # Existing VM-only unmanaged Result layout can propagate an error through
 # the RHS of a scalar loan store. This does not admit managed Result payloads
