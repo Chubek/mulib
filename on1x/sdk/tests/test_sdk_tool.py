@@ -122,36 +122,72 @@ class Tool(unittest.TestCase):
         )
         report, _ = self.run_tool("validate", "on1xfile", manifest)
         self.assertEqual(report["input_schema"], "on1xfile/1")
-        lock = self.write_json("On1xfile.lock", {
-            "schema": "on1x.lock/v1",
-            "dependencies": {
-                "dep": {
-                    "kind": "git",
-                    "source": "cache/dep.git",
-                    "selector": {"kind": "branch", "value": "main"},
-                    "commit": "1" * 40,
-                }
-            },
-        })
-        report, _ = self.run_tool("validate", "lock", lock)
-        self.assertEqual(report["input_schema"], "on1x.lock/v1")
-        lock = self.write_json("On1xfile.lock", {
-            "schema": "on1x.lock/v2", "dependencies": {},
-            "optimization": {"scoped": {"release": {"local-slots": False}}},
-        })
-        report, _ = self.run_tool("validate", "lock", lock)
-        self.assertEqual(report["input_schema"], "on1x.lock/v2")
-        for vm in ("always", "opt-in"):
-            lock = self.write_json("On1xfile.lock", {
-                "schema": "on1x.lock/v3", "dependencies": {}, "vm": vm,
-            })
-            report, _ = self.run_tool("validate", "lock", lock)
-            self.assertEqual(report["input_schema"], "on1x.lock/v3")
-        lock = self.write_json("On1xfile.lock", {
-            "schema": "on1x.lock/v3", "dependencies": {}, "vm": "fallback",
-        })
+
+    def test_lock_reports_exact_validated_schema(self):
+        dependencies = {"dep": {
+            "kind": "git",
+            "source": "cache/dep.git",
+            "selector": {"kind": "branch", "value": "main"},
+            "commit": "1" * 40,
+        }}
+        optimization = {"scoped": {"release": {"local-slots": False}}}
+        kernel_paths = [{"path": "vendor/kernels", "sha256": "0" * 64}]
+        cases = (
+            (1, {"dependencies": dependencies}),
+            (2, {"optimization": optimization}),
+            (3, {"vm": "always"}),
+            (3, {"vm": "opt-in"}),
+            (4, {"kernel_paths": kernel_paths}),
+            (4, {"kernel_paths": kernel_paths, "vm": "opt-in",
+                 "optimization": optimization}),
+        )
+        for version, members in cases:
+            with self.subTest(version=version, members=members):
+                schema = f"on1x.lock/v{version}"
+                lock = self.write_json("On1xfile.lock", {
+                    "schema": schema, "dependencies": {}, **members,
+                })
+                data = lock.read_bytes()
+                report, _ = self.run_tool("validate", "lock", lock)
+                self.assertEqual(report, {
+                    "schema": "on1x.sdk.validation/1",
+                    "family": "lock",
+                    "input_schema": schema,
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                    "size": len(data),
+                    "valid": True,
+                    "authority": "inspection-only",
+                    "code_loaded": False,
+                    "capabilities_granted": False,
+                })
+
+    def test_lock_preserves_canonical_rejections(self):
+        kernel = {"path": "vendor/kernels", "sha256": "0" * 64}
+        cases = (
+            (3, {"vm": "fallback"}, "invalid locked vm policy"),
+            (4, {"kernel_paths": [kernel, kernel]}, "duplicate locked kernel-path"),
+            (4, {"kernel_paths": []}, "invalid locked kernel paths"),
+            (4, {"kernel_paths": [{**kernel, "sha256": "not-a-hash"}]},
+             "invalid locked kernel-path fingerprint"),
+            (3, {"vm": "always", "kernel_paths": [kernel]}, "expected an on1x.lock"),
+            (4, {"vm": "always"}, "expected an on1x.lock"),
+            (5, {}, "expected an on1x.lock"),
+        )
+        for version, members, diagnostic in cases:
+            with self.subTest(version=version, members=members):
+                lock = self.write_json("On1xfile.lock", {
+                    "schema": f"on1x.lock/v{version}", "dependencies": {}, **members,
+                })
+                report, _ = self.run_tool("validate", "lock", lock, expected=2)
+                self.assertEqual(report["schema"], "on1x.sdk.error/1")
+                self.assertEqual(report["status"], "INVALID_ARGUMENT")
+                self.assertNotIn("valid", report)
+                self.assertIn(diagnostic, report["message"])
+
+        lock.write_text('{"schema":"on1x.lock/v1","dependencies":', encoding="ascii")
         report, _ = self.run_tool("validate", "lock", lock, expected=2)
-        self.assertIn("invalid locked vm policy", report["message"])
+        self.assertEqual(report["status"], "INVALID_ARGUMENT")
+        self.assertIn("invalid lockfile JSON", report["message"])
 
     def test_malformed_oversized_duplicate_and_symlink_inputs(self):
         duplicate = self.work / "duplicate.json"

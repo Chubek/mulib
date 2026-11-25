@@ -307,10 +307,9 @@ def validate_project(family, path, data):
         engine.root_manifest(data, path)
         return "on1xfile/1"
     if family == "lock":
-        _, policy, vm = engine.parse_lock(data, path)
-        if vm is not None:
-            return "on1x.lock/v3"
-        return "on1x.lock/v2" if policy else "on1x.lock/v1"
+        engine.parse_lock(data, path)
+        # Report the schema from the same bytes the project parser accepted.
+        return json.loads(data.decode("utf-8"))["schema"]
     raise AssertionError(family)
 
 
