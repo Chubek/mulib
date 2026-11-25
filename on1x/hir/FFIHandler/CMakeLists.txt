@@ -63,7 +63,8 @@ add_custom_command(OUTPUT "${_ffi_parser}"
 add_custom_target(on1x_stdffi_tables
   COMMAND "${CMAKE_COMMAND}" -E env "PYTHONPATH=${_ffi_cephyr}/python"
     "${Python3_EXECUTABLE}" -sB "${CMAKE_CURRENT_SOURCE_DIR}/ffispec-gen.py"
-    --cephyr-library "${_ffi_library}" --config "${_ffi_config}" --output-dir "${_ffi_bundle}"
+    --cephyr-library "${_ffi_library}" --cephyr-resource-root "${_ffi_cephyr}"
+    --config "${_ffi_config}" --output-dir "${_ffi_bundle}"
   COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/compile_recipes.py"
     --parser "${_ffi_parser}" --generated-index "${_ffi_bundle}/index.json" --output "${_ffi_tables}"
   BYPRODUCTS "${_ffi_tables}" "${_ffi_bundle}/index.json"
@@ -80,6 +81,7 @@ install(DIRECTORY "${_ffi_bundle}/recipes/" DESTINATION share/on1x/stdffi/mulib
 if(BUILD_TESTING)
   add_test(NAME on1x.stdffi.cephyr_generator COMMAND "${CMAKE_COMMAND}" -E env
     "PYTHONPATH=${_ffi_cephyr}/python" "CEPHYR_LIBRARY=${_ffi_library}"
+    "ON1X_STDFFI_CEPHYR_RESOURCE_ROOT=${_ffi_cephyr}"
     "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/test_ffispec_gen.py")
   add_test(NAME on1x.stdffi.recipe_compiler
     COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/tests/compiler.py"
