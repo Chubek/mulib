@@ -1,4 +1,5 @@
 #include <on1x/backend/mir.hpp>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <limits>
@@ -12,9 +13,11 @@ namespace m=on1x::mir;
 using on1x::Type;
 void require(bool value,const char* message){if(!value)throw std::runtime_error(message);}
 m::Module lower(const std::string& source){auto u=on1x::parse(on1x::scan(source,"mir-test.on1x"));on1x::check(u);return m::lower(u);}
-template<class F>void rejected(F operation,const std::string& reason){
+template<class F>void rejected(F operation,const std::string& reason,const on1x::Location* at=nullptr){
  try{operation();}catch(const on1x::Error& e){
   if(std::string(e.what()).find(reason)==std::string::npos)throw std::runtime_error("expected "+reason+", got "+e.what());
+  if(at)require(e.where.file==at->file&&e.where.offset==at->offset&&e.where.line==at->line&&
+                e.where.column==at->column,"diagnostic has wrong source location");
   return;
  }
  throw std::runtime_error("expected rejection: "+reason);
@@ -26,6 +29,24 @@ void rethread(m::Block& b){
  auto token=b.effect;
  for(auto& i:b.instructions)if(m::effect(i.op)!=m::Effect::Pure){i.effect_in=token;token=i.effect_out;}
  b.exit.effect=token;
+}
+void call_signature_budget(){
+ const on1x::Location at{"m"},call_at{"m",4,2,3};
+ m::Module module;
+ module.functions={
+  {2,"main",Type::Void,at,{},{{3,4,at,{},
+    {{5,Type::Void,m::Op::Call,{},0,8,4,6,call_at}},{7,m::Exit::Return,0,6,{},at}}}},
+  {8,"callee",Type::Void,at,{},{{9,10,at,{},{},{11,m::Exit::Return,0,10,{},at}}}}
+ };
+ // 37 work units verifies the valid no-argument call, including the result
+ // and list checks. Preserve that charge and test exhaustion at 36.
+ m::verify(module,{65536,37});
+ rejected([&]{m::verify(module,{65536,36});},"analysis budget");
+ auto& parameters=module.functions.back().blocks.front().parameters;
+ for(m::Id id=12;id<12+1024;++id)parameters.push_back({id,Type::I64,at});
+ // 24 covers indexing and reachability up to the forward call, but not
+ // a type comparison or a walk of the callee's parameter list.
+ rejected([&]{m::verify(module,{65536,24});},"opcode type/arity mismatch",&call_at);
 }
 }
 int main(int argc,char** argv){
@@ -65,6 +86,15 @@ int main(int argc,char** argv){
    rejected([&]{m::evaluate(extended,"flip",{0});},"tuple argument shape");
    malformed(extended,[](auto& m){m.version=1;},"unsupported");
    auto change_op=[](auto& m,m::Op op,auto change){for(auto& f:m.functions)for(auto& b:f.blocks)for(auto& i:b.instructions)if(i.op==op){change(i);return;}throw std::runtime_error("missing fixture opcode");};
+   auto forward=extended;
+   std::reverse(forward.functions.begin(),forward.functions.end());
+   require(m::evaluate(m::deserialize(m::serialize(forward))).output=="true\n-0x1.8000000000000p+0\n",
+           "forward tuple call failed after round-trip");
+   malformed(forward,[&](auto& m){change_op(m,m::Op::Call,[](auto& i){auto arg=i.operands.front();i.operands.push_back(arg);});},"opcode type/arity mismatch");
+   malformed(forward,[](auto& m){m.functions.back().blocks.front().parameters.front().type=Type::tuple({Type::F64,Type::I64});},
+             "opcode type/arity mismatch");
+   malformed(forward,[&](auto& m){change_op(m,m::Op::Call,[](auto& i){i.type=Type::I64;});},"opcode type/arity mismatch");
+   call_signature_budget();
    malformed(extended,[&](auto& m){change_op(m,m::Op::Extract,[](auto& i){i.immediate=-1;});},"index out of bounds");
    malformed(extended,[&](auto& m){change_op(m,m::Op::Extract,[](auto& i){i.type=Type::I64;});},"extract result type");
    malformed(extended,[&](auto& m){change_op(m,m::Op::Tuple,[](auto& i){i.operands.pop_back();});},"tuple field type/arity");
@@ -210,6 +240,27 @@ int main(int argc,char** argv){
   done.instructions={{20,Type::Void,m::Op::Print,{18},0,0,17,21,at},{22,Type::Void,m::Op::Print,{19},0,0,21,23,at}};
   done.exit={24,m::Exit::Return,0,23,{},at};f.blocks={entry,done,loop};phi.functions={f};
    m::verify(phi);require(m::evaluate(phi).output=="20\n10\n","parallel loop phi copy failed");
+    auto slot_loop=phi;
+    auto& slot_function=slot_loop.functions.front();
+    slot_function.slots.push_back({25,Type::I64,at});
+    auto& header=slot_function.blocks[2];
+    // This is also the latch: the store on its self-edge cannot initialize the
+    // load at the top of the first iteration.
+    header.instructions.insert(header.instructions.begin(),{26,Type::I64,m::Op::Load,{},0,25,0,27,at});
+    header.instructions.push_back({28,Type::Void,m::Op::Store,{11},0,25,0,29,at});
+    rethread(header);
+    rejected([&]{m::verify(slot_loop);},"load from possibly uninitialized slot");
+    auto& preheader=slot_function.blocks.front();
+    preheader.instructions.push_back({30,Type::Void,m::Op::Store,{5},0,25,0,31,at});
+    rethread(preheader);
+    m::verify(slot_loop);
+    std::swap(slot_function.blocks[1],slot_function.blocks[2]);
+    require(m::evaluate(m::deserialize(m::serialize(slot_loop))).output=="20\n10\n",
+            "preheader store did not initialize the slot for the loop");
+    slot_loop.functions.push_back({32,"other",Type::Void,at,{{33,Type::I64,at}},
+                                  {{34,35,at,{},{},{36,m::Exit::Return,0,35,{},at}}}});
+    m::verify(slot_loop);
+    malformed(slot_loop,[&](auto& m){change_op(m,m::Op::Load,[](auto& i){i.target=33;});},"unknown local slot");
    // Test the edge/parameter type invariant on an explicit phi. Source logical
    // expressions may legitimately lower through canonical initialized slots.
    malformed(phi,[](auto& m){m.functions[0].blocks[1].parameters[0].type=Type::Bool;},"argument type");

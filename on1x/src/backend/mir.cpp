@@ -233,9 +233,15 @@ void verify(const Module& module,Limits limits){
      break;
     case Op::Call:{
      require(functions.contains(i.target),"unknown call target");
-     const auto& callee=*functions.at(i.target);std::vector<Type> parameters;
-     for(const auto& p:callee.blocks.front().parameters)parameters.push_back(p.type);
-     signature(callee.result,std::move(parameters));break;
+     const auto& callee=*functions.at(i.target);
+     const auto& parameters=callee.blocks.front().parameters;
+     // A forward callee's parameters may not have been budgeted yet.
+     require(args.size()==parameters.size(),"opcode type/arity mismatch");
+     require(same(i.type,callee.result,i.where),"opcode type/arity mismatch");
+     budget.work(i.where); // Same list-check charge as the other signatures.
+     for(std::size_t n=0;n<args.size();++n)
+      require(same(args[n],parameters[n].type,i.where),"opcode type/arity mismatch");
+     break;
     }
      case Op::Print:require(i.type==Type::Void&&args.size()==1&&(scalar(args[0])||args[0].is_numeric()),"invalid print signature");break;
     case Op::Assert:signature(Type::Void,{Type::Bool});break;
