@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -11,7 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from compile_recipes import prove_i64_body
-from generate_portable_recipe import MAX_I64, MIN_I64, Rejection
+from generate_portable_recipe import CEPHYR_CONFIG, MAX_I64, MIN_I64, Rejection
 from kernel_inputs import Inputs, implementation_macro, roots_for
 from recipe_mir import directives, read_mir, verified_evidence
 from recipe_totality import prove_totality
@@ -20,6 +21,7 @@ from recipe_totality import prove_totality
 SCRIPT = Path(__file__).resolve().with_name("ffispec-gen.py")
 ROOT = SCRIPT.parents[3]
 LIBRARY = os.environ.get("CEPHYR_LIBRARY")
+RESOURCE_ROOT = Path(os.environ.get("ON1X_STDFFI_CEPHYR_RESOURCE_ROOT", CEPHYR_CONFIG.parent)).resolve()
 
 
 class Totality(unittest.TestCase):
@@ -170,9 +172,9 @@ class Generator(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         return path
 
-    def generate(self, *options, expected=0):
+    def generate(self, *options, expected=0, resource_root=RESOURCE_ROOT):
         result = subprocess.run([sys.executable, "-B", str(SCRIPT), "--output-dir", str(self.output),
-                                 "--cephyr-library", LIBRARY, *options],
+                                 "--cephyr-library", LIBRARY, "--cephyr-resource-root", str(resource_root), *options],
                                 env={**os.environ, "MULIB_KERNELS_PATH": self.paths},
                                 capture_output=True, text=True)
         self.assertEqual(result.returncode, expected, result.stderr)
@@ -291,7 +293,7 @@ long work(void) { return 1; }
     def test_same_translation_unit_and_cache_skips_cephyr(self):
         self.write("mulib-unit.h", "long mulib_unit_zero(void) { return 0; }\n")
         generator = runpy.run_path(str(SCRIPT))
-        sys.path.insert(0, str(generator["CEPHYR"] / "python"))
+        sys.path.insert(0, str(RESOURCE_ROOT / "python"))
         self.addCleanup(sys.path.remove, sys.path[0])
         from cephyr import Compiler
 
@@ -301,12 +303,58 @@ long work(void) { return 1; }
              patch.object(compiler, "emit_mir", wraps=compiler.emit_mir) as mir:
             for _ in range(2):
                 self.output.mkdir(exist_ok=True)
-                generator["generate"](compiler, generator["CEPHYR_CONFIG"], [self.first], self.output, LIBRARY)
+                generator["generate"](compiler, RESOURCE_ROOT / "Cephyr.toml", RESOURCE_ROOT,
+                                      [self.first], self.output, LIBRARY)
             self.assertEqual(ast.call_count, 2)  # infrastructure probe and the uncached header
             self.assertTrue((self.output / "recipes/unit.ffi").is_file())
             self.assertEqual([call.args for call in ast.call_args_list], [call.args for call in interface.call_args_list])
             self.assertEqual([call.args for call in ast.call_args_list], [call.args for call in mir.call_args_list])
             self.assertTrue(all(call.kwargs["format"] == "sexp" for call in ast.call_args_list))
+            for view in (ast, interface, mir):
+                self.assertTrue(all(call.kwargs["resource_root"] == RESOURCE_ROOT for call in view.call_args_list))
+
+    def test_external_resources_are_fingerprinted_separately_from_config(self):
+        header = "ffispec_resource_fixture.h"
+        self.write("mulib-external.h", f"#include <{header}>\n"
+                   "long mulib_external_value(void) { return FFI_RESOURCE_VALUE; }\n")
+        config = self.root / "custom.toml"
+        config.write_text('target = "x86_64-linux-gnu"\n', encoding="ascii")
+
+        def fingerprint():
+            return json.loads((self.output / ".state.json").read_bytes())["fingerprint"]
+
+        keys = []
+        for value in (17, 29):
+            resource = self.root / f"cephyr-{value}"
+            for subtree in ("python/cephyr", "triples", "stdlib/include"):
+                shutil.copytree(RESOURCE_ROOT / subtree, resource / subtree)
+            (resource / "stdlib/include" / header).write_text(f"#define FFI_RESOURCE_VALUE {value}\n",
+                                                            encoding="ascii")
+            index = self.generate("--config", str(config), resource_root=resource)
+            self.assertEqual(index["config"], str(config))
+            entry, = index["recipes"]
+            self.assertIn(f"(body {value})", (self.output / entry["file"]).read_text(encoding="ascii"))
+            keys.append(fingerprint())
+        self.assertNotEqual(*keys)
+
+        (resource / "stdlib/include" / header).write_text("#define FFI_RESOURCE_VALUE 31\n", encoding="ascii")
+        index = self.generate("--config", str(config), resource_root=resource)
+        entry, = index["recipes"]
+        self.assertIn("(body 31)", (self.output / entry["file"]).read_text(encoding="ascii"))
+        self.assertEqual(fingerprint(), keys[-1])  # The per-header input fingerprint changed.
+
+        binding = resource / "python/cephyr/__init__.py"
+        with binding.open("a", encoding="utf-8") as stream:
+            stream.write("\n# change the selected Python binding\n")
+        self.generate("--config", str(config), resource_root=resource)
+        self.assertNotEqual(fingerprint(), keys[-1])
+
+    def test_incomplete_explicit_root_does_not_fall_back(self):
+        self.write("mulib-unit.h", "long mulib_unit_zero(void) { return 0; }\n")
+        result = self.generate("--config", str(RESOURCE_ROOT / "Cephyr.toml"), expected=1,
+                               resource_root=self.root)
+        self.assertIn("invalid Cephyr resource root", result.stderr)
+        self.assertFalse(self.output.exists())
 
     def test_invalid_config_is_fatal(self):
         self.write("mulib-unit.h", "long mulib_unit_zero(void) { return 0; }\n")

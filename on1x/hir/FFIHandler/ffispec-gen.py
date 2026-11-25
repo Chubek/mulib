@@ -23,7 +23,7 @@ from recipe_mir import directives, read_mir, verified_evidence
 from recipe_totality import prove_totality
 
 
-CEPHYR = CEPHYR_CONFIG.parent
+DEFAULT_CEPHYR_ROOT = CEPHYR_CONFIG.parent
 MALFORMED = (Rejection, UnicodeError)
 RECIPE_LIMIT = 65536
 CATALOGUE_VIEW_LIMIT = 65536
@@ -41,12 +41,12 @@ def find_kernel(header):
     return None
 
 
-def attempt(compiler, args, source):
+def attempt(compiler, args, source, resource_root):
     views, documents, messages = {}, {}, {}
     stages = ((lambda argv, tu, **kw: compiler.parse_c11(argv, tu, format="sexp", **kw), read_ast),
               (compiler.emit_interface, read_interface), (compiler.emit_mir, read_mir))
     for stage, (invoke, parse) in zip(STAGES, stages):
-        result = invoke(args, source, resource_root=CEPHYR)
+        result = invoke(args, source, resource_root=resource_root)
         status = int(result.status)
         detail = result.diagnostics.decode("utf-8", "replace").strip()[:8192]
         if status not in (0, 1):
@@ -180,7 +180,7 @@ def catalogue(entry, details):
     return "\n".join([*lines, ")", ""]).encode("utf-8")
 
 
-def extract(header, compiler, args, data, sha, trusted_origin, provenance):
+def extract(header, compiler, args, data, sha, trusted_origin, provenance, resource_root):
     entry = {"header": str(header.path), "relative": header.relative,
              "shadowed": [str(path) for path in header.aliases], "attempts": {},
              "status": "malformed-input"}
@@ -210,7 +210,7 @@ def extract(header, compiler, args, data, sha, trusted_origin, provenance):
         first_documents = {}
         for profile, switch in candidates:
             source = (f"#define {switch} 1\n" if switch else "") + f'#include "{include}"\n'
-            views, documents, messages = attempt(compiler, args, source)
+            views, documents, messages = attempt(compiler, args, source, resource_root)
             entry["attempts"][profile] = views
             details.append((profile, switch, documents, messages))
             if profile == candidates[0][0]:
@@ -251,7 +251,7 @@ def file_stamp(path):
     return [stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns]
 
 
-def compiler_inputs(config, library, compiler, roots):
+def compiler_inputs(config, resource_root, library, compiler, roots):
     config_bytes = config.read_bytes()
     settings = tomllib.loads(config_bytes.decode("utf-8"))
 
@@ -269,11 +269,11 @@ def compiler_inputs(config, library, compiler, roots):
             raise ValueError(f"expected Cephyr preprocess.{key} to be an array of paths")
         return [config.parent / path for path in values]
 
-    includes = [*paths("include_dirs"), *paths("system_include_dirs"), CEPHYR / "stdlib/include"]
+    includes = [*paths("include_dirs"), *paths("system_include_dirs"), resource_root / "stdlib/include"]
     forced = paths("forced_includes")
     triple_script = table("paths").get("triple_script")
     tracked = [*(HERE / name for name in GENERATOR_FILES),
-               *(CEPHYR / "python/cephyr").rglob("*.py"), *(CEPHYR / "triples").rglob("*.lua")]
+               *(resource_root / "python/cephyr").rglob("*.py"), *(resource_root / "triples").rglob("*.lua")]
     if triple_script is not None:
         if not isinstance(triple_script, str):
             raise ValueError("expected Cephyr paths.triple_script to be a path")
@@ -288,7 +288,7 @@ def compiler_inputs(config, library, compiler, roots):
         # invocation; don't reuse its results based on version text alone.
         return None, includes, forced, reproducible
     ids = [file_id(path) for path in sorted(tracked)]
-    key = [str(config), digest(config_bytes), file_id(Path(external)), compiler.version,
+    key = [str(config), digest(config_bytes), str(resource_root), file_id(Path(external)), compiler.version,
            [str(root) for root in roots], ids, sys.version_info[:3]]
     return (digest(json_bytes(key)) if reproducible else None), includes, forced, reproducible
 
@@ -328,8 +328,8 @@ def managed_path(output, name):
     return path
 
 
-def generate(compiler, config, roots, output, library):
-    global_key, includes, forced, reproducible = compiler_inputs(config, library, compiler, roots)
+def generate(compiler, config, resource_root, roots, output, library):
+    global_key, includes, forced, reproducible = compiler_inputs(config, resource_root, library, compiler, roots)
     args = ["--config", config, "--stdlib=cephyr", "--no-factir", "--no-blackstone", "--no-mir-opt"]
     for root in roots:
         args.extend(("-I", root))
@@ -349,7 +349,8 @@ def generate(compiler, config, roots, output, library):
     preflight = False
 
     def probe():
-        views, docs, messages = attempt(compiler, args, "long mulib_generator_probe(void) { return 0L; }\n")
+        views, docs, messages = attempt(compiler, args, "long mulib_generator_probe(void) { return 0L; }\n",
+                                        resource_root)
         if docs.keys() != set(STAGES):
             raise RuntimeError(f"Cephyr preflight failed: {views}, {messages}")
 
@@ -380,7 +381,7 @@ def generate(compiler, config, roots, output, library):
             probe()
             preflight = True
         entry, payload = extract(header, compiler, args, data, sha, trusted and cacheable,
-                                 provenance | forced_sources)
+                                 provenance | forced_sources, resource_root)
         if not header.error:
             after = Inputs(roots, includes)
             if (after.read(header.path)[1] != sha or after.fingerprint(header.path) != (fingerprint, trusted, provenance)
@@ -420,23 +421,33 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--cephyr-library", type=Path, help="Cephyr shared library (or set CEPHYR_LIBRARY)")
-    parser.add_argument("--config", type=Path, default=CEPHYR_CONFIG, help="Cephyr driver configuration")
+    parser.add_argument("--cephyr-resource-root", type=Path, default=DEFAULT_CEPHYR_ROOT,
+                        help="Cephyr checkout with Python bindings, target scripts and stdlib (default: vendored)")
+    parser.add_argument("--config", type=Path, help="Cephyr driver configuration (default: Cephyr.toml in resource root)")
     options = parser.parse_args(argv)
     try:
-        config = options.config.resolve(strict=True)
+        resource_root = options.cephyr_resource_root.resolve()
+        binding = resource_root / "python/cephyr/__init__.py"
+        if not binding.is_file() or not all((resource_root / name).is_dir() for name in ("triples", "stdlib/include")):
+            raise ValueError(f"invalid Cephyr resource root (expected python/cephyr, triples and stdlib/include): "
+                             f"{resource_root}")
+        config = (options.config or resource_root / "Cephyr.toml").resolve(strict=True)
         roots = roots_for(os.environ.get("MULIB_KERNELS_PATH"), ROOT / "kernels")
         output = options.output_dir.resolve()
         if output == ROOT or output.is_relative_to((ROOT / "on1x/stdffi/mulib").resolve()) or any(
                 output.is_relative_to(root) for root in roots):
             raise ValueError("generate into a build directory outside kernel and stdffi source directories")
-        sys.path.insert(0, str(CEPHYR / "python"))
-        from cephyr import Compiler
+        sys.path.insert(0, str(resource_root / "python"))
+        import cephyr
 
-        compiler = Compiler(options.cephyr_library)
+        loaded = getattr(cephyr, "__file__", None)
+        if loaded is None or Path(loaded).resolve() != binding.resolve():
+            raise ImportError(f"Cephyr Python binding is not from the selected resource root: {resource_root}")
+        compiler = cephyr.Compiler(options.cephyr_library)
         output.mkdir(parents=True, exist_ok=True)
         with (output / ".lock").open("ab") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            generate(compiler, config, roots, output, options.cephyr_library)
+            generate(compiler, config, resource_root, roots, output, options.cephyr_library)
     except (ImportError, OSError, RuntimeError, ValueError) as error:
         parser.exit(1, f"ffispec-gen: {error}\n")
     return 0
