@@ -1,5 +1,8 @@
 # On1x language reference — implemented milestone
 
+See the [versioned profile reference](profile-reference.md) for the distinction
+between checked source features and the capabilities of each executable product.
+
 The intrinsic [control/matching increment](core-syntax.md) adds statement loops,
 ascending i64 ranges, lexical loop exits, guarded structural match statements
 and expressions, and [value loops](value-loops.md) with typed `break with`
@@ -10,8 +13,10 @@ Intrinsic [nominal declarations](nominal-adts.md) add module-level
 `record Point { x:i64, y:i64 }` and `enum Option<T> { None, Some(T) }`.
 Use `record<Point>{x:40,y:2}` or `variant<Option<i64>>(Some,42)`;
 empty payloads are `record{}` and multi-field payloads are tuples. Type arguments
-and nominal identities remain exact through inference, imports and C11. Only
-nonrecursive, bounded, trivially copied fields are admitted.
+and nominal identities remain exact through inference, imports and C11. The
+copyable profile admits bounded, nonrecursive fields. The [unique-owner
+extension](recursive-owning-adts.md) permits recursion only across admitted
+owning indirection on checked C11.
 
 Intrinsic [core cliches](core-cliche.md) declare statically selected functions
 and associated values with `cliche`, implement them with coherent `impl` heads,
@@ -46,14 +51,18 @@ For the pervasive `Result<T,E>` (or an equivalently defined nominal
 `enum Result<T,E>{Ok(T),Err(E)}`), `value?` evaluates once and yields the `Ok`
 payload or returns `Err` from the current function/lambda, running its defers and
 early-return cleanup. The return must use the same nominal declaration and exact
-error type; its success type may differ. Recover explicitly with `match`. Result
-fields retain the bounded trivial-value restrictions of nominal data.
+error type; its success type may differ. Recover explicitly with `match`.
+Checked C11 also supports the [bounded owner-bearing Result
+profile](recursive-owning-adts.md#recoverable-construction-and-result).
 
 These are intrinsic C11 features, not macros or C++ exceptions. Fatal arithmetic,
-assertion, bounds and allocation failures remain terminal and do not promise
-cleanup. `defer { ... }`, using, exception handlers, Option propagation and task
-cancellation are unsupported. MIR/SDK requests reject unsupported defer/result
-profiles. See [the exact syntax, limits and migration contract](defer-errors.md).
+assertion and bounds traps do not unwind. Allocation failure is also terminal;
+the bounded [owning C11 allocation path](recursive-owning-adts.md) has specific
+cleanup behavior, not a guarantee of arbitrary trap unwinding. `defer { ... }`,
+using, exception handlers and Option propagation are unsupported. Cooperative
+task cancellation has a [separate restricted profile](cancellation-deadlines.md).
+MIR/SDK requests reject unsupported defer/result profiles. See
+[the exact syntax, limits and migration contract](defer-errors.md).
 
 ## Lexical conventions
 

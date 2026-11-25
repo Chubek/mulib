@@ -40,6 +40,11 @@ The [defer/Result C11 profile](defer-errors.md) does not widen MIR. Dynamic
 registrations require cleanup/effect descriptors; nominal results require
 aggregate descriptors. Requested MIR emission/evaluation rejects both rather
 than dropping deferred effects or approximating an error value as a scalar.
+The separate checked-source VM path can project copy-only `Result<i64,i64>`
+and `Result<bool,i64>` into existing products. `on1x.vm_result` compares ordinary
+and optimized saved VM execution with direct C11 and a fixed oracle, including
+early error propagation during argument evaluation and short-circuit evaluation.
+It does not establish nominal `Result` typing at MIR ingress or admit owner payloads.
 
 The later [nonrecursive nominal-data profile](nominal-adts.md) retains nominal
 identity on the existing bounded record/sum HIR representation. It executes only
@@ -350,15 +355,19 @@ no cleanup or recoverable error semantics are claimed for this scalar subset.
 
 ## Format, budgets and testing
 
-The wire root is `(on1x.mir VERSION MODULE_ID (FUNCTIONS...))`, VERSION 1, 2 or 3.
+The wire root is `(on1x.mir VERSION MODULE_ID (FUNCTIONS...))` for versions
+1–3. Version 4 adds a required final list:
+`(on1x.mir 4 MODULE_ID (FUNCTIONS...) (DIRECTIVES...))`. The list may be empty;
+it is not optional. The directives are requests, not executable instructions.
 Fixed-shape tagged
 records describe functions, blocks, instructions, exits, edges, values and `at`
 locations. Operands/references are IDs; immediates preserve all signed 64 bits.
-In v2, tuple type fields use `(tuple (TYPE...))`; an f64 `const` immediate is the
+In v2 and later, tuple type fields use `(tuple (TYPE...))`; an f64 `const` immediate is the
 signed two's-complement encoding of its IEEE bits. NaNs must use the canonical
 positive quiet payload. `extract` uses its immediate as a nonnegative field
-index. v1 rejects extended types/opcodes; unknown versions remain errors. Old
-readers must reject v2 rather than reinterpret its payloads.
+index. v1 rejects extended types/opcodes; unknown versions remain errors. A
+reader must reject any newer format that it does not support rather than
+reinterpret its payloads.
 The existing bounded S-expression codec is reused, including ASDL-backed tree
 validation in generated builds. Unknown fields/tags/versions, oversized input,
 out-of-range integers and malformed IR are rejected. `serialize(deserialize(x))`
