@@ -8,9 +8,10 @@ expected='18446744073709551615\n255\n0x1.800000p+1\n0\n1\n2\n1065353217\n'
 t.valid('numeric_literals',expected)
 source=t.root/'examples/numeric_literals.on1x'
 
-def differential(path,expected):
+def differential(path,expected,version=3):
     wire=run([t.compiler,'--emit-ir',path])
-    assert wire.returncode==0 and wire.stdout.startswith('(on1x.mir 3 '),wire.stderr
+    assert wire.returncode==0,wire.stderr
+    assert wire.stdout.startswith(f'(on1x.mir {version} '),wire.stdout[:100]
     saved=t.work/(path.stem+'.mir');saved.write_text(wire.stdout)
     printed=run([t.compiler,'--ir-input','--emit-ir',saved])
     assert printed.returncode==0 and printed.stdout==wire.stdout,printed.stderr
@@ -24,7 +25,11 @@ def differential(path,expected):
         p=run([exe]);assert p.returncode==0 and p.stdout==expected,p.stderr
     return wire.stdout
 
-wire=differential(source,expected)
+# The example now has typed slots that trigger the compiler's v4 MEMGraph
+# request. Keep a separate real v3 source fixture, and round-trip both forms.
+differential(t.source('numeric_v3_wire','fn main(){println(255u8);}'),'255\n')
+wire=differential(source,expected,version=4)
+assert '"rewrite" "memgraph-local"' in wire,wire
 for mode in ['--check-types','--check-memory']:
     p=run([t.compiler,mode,source])
     assert p.returncode==0 or (p.returncode==2 and 'unavailable' in p.stderr),p.stderr

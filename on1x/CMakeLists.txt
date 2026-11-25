@@ -560,6 +560,12 @@ if(UNIX)
 endif()
 
 if(BUILD_TESTING)
+  # These are flags for generated programs compiled by the Python runners.
+  # Populate them before registering any of those tests.
+  set(_test_c_flags)
+  foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
+    list(APPEND _test_c_flags "--cflag=${_flag}")
+  endforeach()
   if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
       AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     add_test(NAME on1x.toolchain_probe COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
@@ -729,15 +735,11 @@ if(BUILD_TESTING)
       "${CMAKE_C_COMPILER}" ${_test_c_flags})
   set_tests_properties(on1x.optimization_cli PROPERTIES TIMEOUT 240)
   if(ON1X_WITH_FIRESTONE_HIR AND NOT CMAKE_CROSSCOMPILING)
-    set(_firestone_test_flags)
-    foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
-      list(APPEND _firestone_test_flags "--cflag=${_flag}")
-    endforeach()
     add_test(NAME on1x.firestone_hir
       COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_firestone_hir.py"
         "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
         "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/firestone-hir" "${CMAKE_C_COMPILER}"
-        ${_firestone_test_flags})
+        ${_test_c_flags})
     set_tests_properties(on1x.firestone_hir PROPERTIES TIMEOUT 120)
   endif()
   target_link_libraries(on1x_pass_tests PRIVATE on1x_frontend)
@@ -751,10 +753,7 @@ if(BUILD_TESTING)
     if(NOT CMAKE_CROSSCOMPILING)
       add_executable(on1x_hir_action_oracle tests/hir_action_oracle.cpp)
       target_link_libraries(on1x_hir_action_oracle PRIVATE Novostone::ActionSemantics)
-      set(_hir_test_options)
-      foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
-        list(APPEND _hir_test_options "--cflag=${_flag}")
-      endforeach()
+      set(_hir_test_options ${_test_c_flags})
       if(ON1X_NOVOSTONE_PROVIDER STREQUAL "SOURCE" AND NOVOSTONE_PCC_REQUIRE_SATIE)
         list(APPEND _hir_test_options --expect-smt)
       endif()
@@ -782,7 +781,10 @@ if(BUILD_TESTING)
   add_test(NAME on1x.vm_data COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vm_data.py" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/vm-data" "${CMAKE_C_COMPILER}" ${_test_c_flags})
-  set_tests_properties(on1x.vm_data PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.vm_result COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_vm_result.py" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/vm-result" "${CMAKE_C_COMPILER}" ${_test_c_flags})
+  set_tests_properties(on1x.vm_data on1x.vm_result PROPERTIES TIMEOUT 120)
   add_test(NAME on1x.acceptance.slice_snapshots
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_acceptance_slice_snapshots.py"
       "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -906,10 +908,6 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_relational.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/relational" ${_novostone_test_options})
   set_tests_properties(on1x.relational PROPERTIES TIMEOUT 60)
-  set(_test_c_flags)
-  foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
-    list(APPEND _test_c_flags "--cflag=${_flag}")
-  endforeach()
   set(_ownership_backends_test_options)
   if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
       AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
