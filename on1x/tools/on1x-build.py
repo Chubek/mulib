@@ -82,21 +82,6 @@ def build_kernel_shared(exo, report, root, recipe, stage, cephyr):
             raise ValueError('KernelBind dynlib input drift: '+path)
     return source, shared
 
-def builtin_kernel_runtime(on1xc):
-    """Find the kernel runtime built/installed with this compiler, not a guest path."""
-    executable = shutil.which(on1xc)
-    if executable is None:
-        raise ValueError('standard FFI compiler unavailable: ' + on1xc)
-    directory = Path(executable).resolve(strict=True).parent
-    candidates = [directory / 'libon1x_kernel_rt.so']
-    if directory.name == 'bin':
-        candidates.append(directory.parent / 'lib/libon1x_kernel_rt.so')
-    for library in candidates:
-        if library.is_file():
-            return library.resolve(strict=True)
-    raise ValueError('standard FFI requires the Cephyr kernel runtime built with '
-                     'this on1xc (ON1X_WITH_CEPHYR=ON)')
-
 def main():
     if len(sys.argv) > 1 and sys.argv[1] in ('init', 'exec'):
         from on1x_project import main as project_main
@@ -460,12 +445,6 @@ def main():
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(code)
             return
-        has_stdffi = '#include <On1xKernelRT.h>\n' in code
-        if has_stdffi and use_cephyr:
-            raise ValueError(f'standard FFI requires the host C11 executable link recipe; {toolchain.HOST_HELP}')
-        if has_stdffi and kernel_interface:
-            raise ValueError('KernelBind cannot mix reviewed/raw imports with standard FFI')
-        stdffi_library = builtin_kernel_runtime(args.on1xc) if has_stdffi else None
         args.output.parent.mkdir(parents=True, exist_ok=True)
         spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'stdlib/mulib/housekeeping.py')
         house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
@@ -477,8 +456,6 @@ def main():
             # those search roots to ExoLib's C header search path.
             includes=[mulib_root/'kernels']
         include_flags=[part for path in includes for part in ['-I',str(path)]]
-        if stdffi_library:
-            include_flags += ['-I', str(ROOT/'runtime-sdk/include')]
         compile_flags = [*STRICT_C11, *include_flags, *args.cflag]
         cmd = [args.cc, *STRICT_C11,
                '-I', str(ROOT / 'runtime'), *include_flags,
@@ -522,10 +499,6 @@ def main():
         if use_cephyr and native:
             raise ValueError(f'this native bridge requires the host C11 runtime and link recipe; {toolchain.HOST_HELP}')
         recipe, fingerprints, native_links = None, {}, []
-        if stdffi_library:
-            native_links += [str(stdffi_library), '-Xlinker', '-rpath', '-Xlinker', str(stdffi_library.parent)]
-            if native:
-                fingerprints[str(stdffi_library)] = house.contracts.digest(stdffi_library)
         if native:
             cc=shutil.which(args.cc)
             if not cc:raise ValueError('C compiler unavailable: '+args.cc)

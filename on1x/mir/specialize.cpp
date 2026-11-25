@@ -13,13 +13,18 @@ struct Selector {
         return (backend.empty() || backend == product) && (target.empty() || target == triple);
     }
 };
-enum class Group : unsigned { Arithmetic = 1, Boolean = 2, Slots = 4 };
+enum class Bank : unsigned; // Defined by the generated policy database.
 enum class AtomKind { Capture, Literal };
-enum class Proof { Identity, Nonzero, LocalSlot };
+enum class Proof {
+    Identity, Nonzero, LocalStore, LocalLoad, DoubleNot, BoolOperands,
+    DoubleCheckedNeg, BoolComplement, NonzeroComparison,
+    LocalStoreWord, LocalLoadWord, LocalStoreF32, LocalLoadF32,
+    LocalStoreF64, LocalLoadF64, LocalStoreTuple, LocalLoadTuple, RedundantStore
+};
 struct Activation {
     std::string_view kind, action;
     Selector when;
-    Group group;
+    Bank bank;
 };
 struct Atom {
     AtomKind kind;
@@ -27,7 +32,7 @@ struct Atom {
 };
 struct Pattern {
     Selector when;
-    Group group;
+    Bank bank;
     bool speculative;
     Op op;
     std::size_t arity;
@@ -37,13 +42,19 @@ struct Pattern {
 };
 
 #include "mir_policy_db.hpp"
+#include "mir_policy_memgraph.hpp"
+#include "mir_policy_meta.hpp"
 
-using Constants = std::map<Id, std::int64_t>;
+struct Constant {
+    std::int64_t value;
+    bool boolean;
+};
+using Constants = std::map<Id, Constant>;
 using Aliases = std::map<Id, Id>;
 using Rules = std::map<Op, std::vector<const Pattern*>>;
 
-// Every alias points to a verified dominating operand (or to the operand of a
-// preceding local store). No CFG edges or parameter definitions are removed.
+// Every alias points to a verified dominating definition. No CFG edges or
+// parameter definitions are removed.
 // Path compression prevents long chains of identities from costing quadratic
 // work, including when blocks appear in arbitrary order in the wire form.
 Id resolve(Aliases& aliases, Id id) {
@@ -59,10 +70,45 @@ Id resolve(Aliases& aliases, Id id) {
 }
 
 struct Facts {
-    Aliases slots;
+    struct SlotValue {
+        Id value;
+        Proof source;
+    };
+    std::map<Id, SlotValue> slots;
+    Aliases negations;
+    Aliases checked_negations;
     Aliases zero_tests;
     std::set<Id> nonzero;
 };
+
+bool is_nonzero(Id id, const Constants& constants, const Facts& facts) {
+    auto known = constants.find(id);
+    return facts.nonzero.contains(id) || (known != constants.end() && known->second.value != 0);
+}
+
+// These proofs use a completed store/load of the same verified frame slot.
+// Only the local MIR value is forwarded; nothing reads or moves backing storage.
+std::optional<Proof> slot_source(Proof proof, const Type& type) {
+    switch (proof) {
+    case Proof::LocalStore: case Proof::LocalLoad:
+        if (type == Type::I64 || type == Type::Bool) return proof;
+        break;
+    case Proof::LocalStoreWord: case Proof::LocalLoadWord:
+        if (type.is_unsigned()) return proof == Proof::LocalStoreWord ? Proof::LocalStore : Proof::LocalLoad;
+        break;
+    case Proof::LocalStoreF32: case Proof::LocalLoadF32:
+        if (type == Type::F32) return proof == Proof::LocalStoreF32 ? Proof::LocalStore : Proof::LocalLoad;
+        break;
+    case Proof::LocalStoreF64: case Proof::LocalLoadF64:
+        if (type == Type::F64) return proof == Proof::LocalStoreF64 ? Proof::LocalStore : Proof::LocalLoad;
+        break;
+    case Proof::LocalStoreTuple: case Proof::LocalLoadTuple:
+        if (type.is_tuple()) return proof == Proof::LocalStoreTuple ? Proof::LocalStore : Proof::LocalLoad;
+        break;
+    default: break;
+    }
+    return {};
+}
 
 std::optional<Atom> match(const Pattern& p, const Instruction& i,
                          const Constants& constants, const Facts& facts, Id (&captures)[2]) {
@@ -72,38 +118,69 @@ std::optional<Atom> match(const Pattern& p, const Instruction& i,
         auto arg = p.args[n];
         if (arg.kind == AtomKind::Literal) {
             auto known = constants.find(id);
-            if (known == constants.end() || known->second != arg.payload) return {};
+            if (known == constants.end() || known->second.value != arg.payload ||
+                (p.proof == Proof::BoolOperands && !known->second.boolean)) return {};
         } else {
             auto& captured = captures[arg.payload];
             if (captured && captured != id) return {};
             captured = id;
         }
     }
-    if (p.proof == Proof::Nonzero) {
-        auto id = i.operands[1];
-        auto known = constants.find(id);
-        if (!facts.nonzero.contains(id) && (known == constants.end() || !known->second)) return {};
+    if (p.proof == Proof::Nonzero && !is_nonzero(i.operands[1], constants, facts)) return {};
+    if (p.proof == Proof::NonzeroComparison) {
+        const auto literal = p.args[0].kind == AtomKind::Literal ? 0u : 1u;
+        if (constants.at(i.operands[literal]).boolean ||
+            !is_nonzero(i.operands[1 - literal], constants, facts)) return {};
     }
-    if (p.proof == Proof::LocalSlot) {
-        // Slots are initialized/non-addressable in verified MIR. The last
-        // same-block store supplies this load's exact scalar value; calls
-        // cannot access a caller's frame, and no instruction can alias slots.
-        // Deliberately avoid forwarding aggregate copies in this profile.
-        if (i.type != Type::I64 && i.type != Type::Bool) return {};
+    if (i.op == Op::Load) {
+        // The last observed same-block store or load supplies this load's
+        // exact value. Calls cannot access a caller's frame, and no instruction
+        // can alias slots. A newer same-slot store always replaces the fact.
+        const auto source = slot_source(p.proof, i.type);
+        if (!source) return {};
         auto found = facts.slots.find(i.target);
-        if (found == facts.slots.end()) return {};
-        captures[0] = found->second;
+        if (found == facts.slots.end() || found->second.source != *source) return {};
+        captures[p.result.payload] = found->second.value;
+    }
+    if (p.proof == Proof::RedundantStore) {
+        // Never drop initialization. A retained same-block store must already
+        // have written this exact immutable SSA value to this very slot.
+        auto found = facts.slots.find(i.target);
+        if (found == facts.slots.end() || found->second.source != Proof::LocalStore ||
+            found->second.value != i.operands[0]) return {};
+    }
+    if (p.proof == Proof::DoubleNot || p.proof == Proof::DoubleCheckedNeg) {
+        // A completed checked negation's result cannot be INT64_MIN. The
+        // first check stays in the block; only its trap-free inverse goes.
+        const auto& seen = p.proof == Proof::DoubleNot ? facts.negations : facts.checked_negations;
+        auto found = seen.find(i.operands[0]);
+        if (found == seen.end()) return {};
+        captures[p.result.payload] = found->second;
+    }
+    if (p.proof == Proof::BoolComplement) {
+        auto complements = [&](Id a, Id b) {
+            auto it = facts.negations.find(a);
+            return it != facts.negations.end() && it->second == b;
+        };
+        if (!complements(i.operands[0], i.operands[1]) &&
+            !complements(i.operands[1], i.operands[0])) return {};
     }
     return p.result;
 }
 
 void observe(Facts& facts, const Instruction& i, const Constants& constants) {
     if (i.op == Op::Store) {
-        facts.slots[i.target] = i.operands[0];
+        facts.slots[i.target] = {i.operands[0], Proof::LocalStore};
+    } else if (i.op == Op::Load) {
+        facts.slots[i.target] = {i.id, Proof::LocalLoad};
+    } else if (i.op == Op::Not) {
+        facts.negations.emplace(i.id, i.operands[0]);
+    } else if (i.op == Op::Neg) {
+        facts.checked_negations.emplace(i.id, i.operands[0]);
     } else if (i.op == Op::Ne) {
         for (unsigned n = 0; n < 2; ++n) {
             auto known = constants.find(i.operands[n]);
-            if (known != constants.end() && known->second == 0)
+            if (known != constants.end() && !known->second.boolean && known->second.value == 0)
                 facts.zero_tests.emplace(i.id, i.operands[1 - n]);
         }
     } else if (i.op == Op::Assert) {
@@ -122,7 +199,7 @@ void rewrite(Function& f, const Rules& rules) {
     // verification proves that each operand dominates even such a use.
     for (const auto& b : f.blocks)
         for (const auto& i : b.instructions)
-            if (i.op == Op::Constant) constants.emplace(i.id, i.immediate);
+            if (i.op == Op::Constant) constants.emplace(i.id, Constant{i.immediate, i.type == Type::Bool});
 
     for (auto& b : f.blocks) {
         Facts facts;
@@ -132,20 +209,22 @@ void rewrite(Function& f, const Rules& rules) {
             auto& i = b.instructions[n];
             for (auto& operand : i.operands) operand = resolve(aliases, operand);
             bool remove = false;
-            if (auto group = rules.find(i.op); group != rules.end()) {
-                for (auto p : group->second) {
+            if (auto candidates = rules.find(i.op); candidates != rules.end()) {
+                for (auto p : candidates->second) {
                     Id captures[2]{};
                     auto replacement = match(*p, i, constants, facts, captures);
                     if (!replacement) continue;
                     if (replacement->kind == AtomKind::Capture) {
-                        aliases.emplace(i.id, captures[replacement->payload]);
+                        // A redundant store has no SSA result to substitute.
+                        if (p->proof != Proof::RedundantStore)
+                            aliases.emplace(i.id, captures[replacement->payload]);
                         remove = true;
                     } else {
                         i.op = Op::Constant;
                         i.operands.clear();
                         i.immediate = replacement->payload;
                         i.effect_in = i.effect_out = 0;
-                        constants.emplace(i.id, i.immediate);
+                        constants.emplace(i.id, Constant{i.immediate, i.type == Type::Bool});
                     }
                     break;
                 }
@@ -207,31 +286,47 @@ Module specialize(const Module& module, std::string_view backend,
                   std::string_view target, bool speculate) {
     verify(module);
     Module result = module;
-    std::map<Id, unsigned> groups;
+    // Legacy banks keep their existing activation/host-opt-in semantics.
+    // The new actions require a matching directive of the pattern's mode for
+    // that exact function; a safe request never silently unlocks speculation.
+    struct Scope { unsigned safe = 0, speculative = 0; };
+    std::map<Id, Scope> scoped_banks;
     unsigned global = 0;
     for (const auto& d : module.directives) {
         if ((d.speculative && !speculate) || !Selector{d.backend, d.target}.matches(backend, target))
             continue;
+        if (d.kind == "rewrite" && (d.action == memgraph_local_action || d.action == meta_canonical_action)) {
+            auto& scope = scoped_banks[d.function]; // Verification requires a nonzero, existing ID.
+            const auto bank = d.action == memgraph_local_action ? Bank::MemgraphLocal : Bank::MetaCanonical;
+            (d.speculative ? scope.speculative : scope.safe) |= static_cast<unsigned>(bank);
+            continue;
+        }
         for (const auto& activation : activations) {
             if (activation.kind != d.kind || activation.action != d.action ||
                 !activation.when.matches(backend, target)) continue;
-            (d.function ? groups[d.function] : global) |= static_cast<unsigned>(activation.group);
+            (d.function ? scoped_banks[d.function].safe : global) |= static_cast<unsigned>(activation.bank);
         }
     }
-    // Hints opt functions into task-specific optimization groups. In particular,
+    // Hints opt functions into task-specific rewrite banks. In particular,
     // a local-memory hint does not enable arithmetic/speculation, nor does a
     // canonicalized hint bypass checked arithmetic or effect proofs.
-    std::map<unsigned, Rules> plans;
+    std::map<std::pair<unsigned, unsigned>, Rules> plans;
     for (auto& f : result.functions) {
-        auto group = groups.find(f.id);
-        unsigned enabled = global | (group == groups.end() ? 0u : group->second);
-        if (!enabled) continue;
-        auto [plan, fresh] = plans.try_emplace(enabled);
-        if (fresh)
-            for (const auto& p : patterns)
-                if ((enabled & static_cast<unsigned>(p.group)) && (!p.speculative || speculate) &&
-                    p.when.matches(backend, target))
+        auto scope = scoped_banks.find(f.id);
+        unsigned safe = global | (scope == scoped_banks.end() ? 0u : scope->second.safe);
+        unsigned speculative = scope == scoped_banks.end() ? 0u : scope->second.speculative;
+        if (!(safe | speculative)) continue;
+        auto [plan, fresh] = plans.try_emplace(std::pair{safe, speculative});
+        if (fresh) {
+            auto add = [&](const Pattern& p, unsigned enabled) {
+                if ((enabled & static_cast<unsigned>(p.bank)) && p.when.matches(backend, target))
                     plan->second[p.op].push_back(&p);
+            };
+            for (const auto& p : patterns)
+                if (!p.speculative || speculate) add(p, safe);
+            for (const auto& p : MemgraphLocalPatterns) add(p, p.speculative ? speculative : safe);
+            for (const auto& p : MetaCanonicalPatterns) add(p, p.speculative ? speculative : safe);
+        }
         rewrite(f, plan->second);
     }
     result.directives.clear();

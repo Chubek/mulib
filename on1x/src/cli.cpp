@@ -15,6 +15,7 @@
 #include "../hir/MEMGraph/storage.hpp"
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
+#include "proxy_policy.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
 #include "archvirt_driver.hpp"
 #endif
@@ -444,7 +445,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
      if(prefixes.empty()&&module.version!=on1x::mir::directive_format_version)
       return on1x::vm::compile(module);
      auto selected=module.version==on1x::mir::directive_format_version
-      ?on1x::mir::specialize(module,"mir-vm",{},optimization!=nullptr):module;
+       ?on1x::mir::specialize(module,"mir-vm",target,optimization!=nullptr):module;
      vm_source_paths(selected,prefixes);return on1x::vm::compile(selected);
    }();
    if(mode=="--emit-vm"){
@@ -480,7 +481,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
    for(const auto& f:module.functions)if(f.name=="main"&&(!f.blocks.front().parameters.empty()||(f.result!=on1x::Type::I64&&f.result!=on1x::Type::Void)))
     throw on1x::Error(f.where,"ON1X-MIR-EVAL: main must have no parameters and return i64 or void");
    auto result=module.version==on1x::mir::directive_format_version
-    ?on1x::mir::evaluate(on1x::mir::specialize(module,"mir-eval",{},optimization!=nullptr))
+     ?on1x::mir::evaluate(on1x::mir::specialize(module,"mir-eval",target,optimization!=nullptr))
     :on1x::mir::evaluate(module);
    write_all(out,result.output);
   if(result.status!=on1x::mir::Status::Returned){
@@ -490,7 +491,7 @@ int mir_output(const on1x::mir::Module& input,const std::string& mode,const std:
   return static_cast<int>(result.value);
  }
    if(mode=="--ir-cfg"&&module.version==on1x::mir::directive_format_version)
-    write_all(out,on1x::mir::cfg_dot(on1x::mir::specialize(module,"mir-cfg",{},optimization!=nullptr)));
+     write_all(out,on1x::mir::cfg_dot(on1x::mir::specialize(module,"mir-cfg",target,optimization!=nullptr)));
    else write_all(out,mode=="--emit-ir"?on1x::mir::serialize(module):mode=="--ir-cfg"?on1x::mir::cfg_dot(module):on1x::mir::emit_directed_c(module,stack_bytes,target,optimization!=nullptr));
    return 0;
 #endif
@@ -567,7 +568,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
   "       on1xc [--emit-ir-facts | --analyze-ir] INPUT [-o OUTPUT] [--ir-input]\n"
   "       [--analysis-work UNITS] (Novostone opt-in build; --analyze-ir only)\n"
     "       [--optimize-ir] [--opt-work UNITS] [--opt-rewrites COUNT] (MIR modes only)\n"
-    "       [--mir-target TRIPLE] (select target-specific directives for --emit-ir-c)\n"
+     "       [--mir-target TRIPLE] (select target-specific directives for C11, VM, evaluator or CFG)\n"
    "       [--opt-profile default|debug|release] [--enable-opt NAME] [--disable-opt NAME]\n"
    "       on1xc --list-optimizations (JSON; accepts profile and selection flags)\n"
    "         --profile aliases --opt-profile; --all-optimizations / --no-optimizations select all\n"
@@ -963,8 +964,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
          if(dump_memgraph&&!on1x::memgraph::available())
           throw std::runtime_error("MEMGraph unavailable: configure with ON1X_WITH_MEMGRAPH=ON and LibStone LLSynth");
          const auto policy=requested_opts.resolve(legacy_optimize||mode=="--dump-passes",dump_memgraph);
-        if(!mir_target.empty()&&mode!="--emit-ir-c")
-         throw std::runtime_error("--mir-target requires --emit-ir-c");
+         const bool vm_mode=mode=="--emit-vm"||mode=="--run-vm";
+         if(!mir_target.empty()&&mode!="--emit-ir-c"&&mode!="--run-ir"&&mode!="--ir-cfg"&&!vm_mode)
+          throw std::runtime_error("--mir-target requires --emit-ir-c, --emit-vm, --run-vm, --run-ir, or --ir-cfg");
         if(list_opts){
         if(mode!="--emit-c"||explicit_c||!source.empty()||!sdk_mode.empty()||ir_input||opt_limit||
            !sdk_target.empty()||native_pic||native_no_entry||!plugin_selectors.empty()||
@@ -974,7 +976,6 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         write_all(out,policy.listing());return 0;
        }
         const bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
-        const bool vm_mode=mode=="--emit-vm"||mode=="--run-vm";
         const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
            mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
        const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
@@ -1045,7 +1046,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         }
         write_all(out,roots.front().string()+"\n");return 0;
        }
-       if(source.empty()){usage();return 2;}
+        if(source.empty()){usage();return 2;}
+        on1x::proxy::apply(on1x::proxy::current_project());
         loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");

@@ -53,7 +53,7 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
    if(stack_bytes&&*stack_bytes>memgraph::max_stack_bytes)
     throw std::invalid_argument("MEMGraph scratch stack byte budget exceeds 65536");
  std::optional<Module> selected;
- std::set<Id> hot,hidden;
+ std::set<Id> hot,hidden,cold,no_inline;
  if(input.version==directive_format_version){
   selected=specialize(input,"mir-c11",target,speculate);
   for(const auto& d:input.directives){
@@ -61,6 +61,8 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
       (!d.target.empty()&&d.target!=target)||(d.speculative&&!speculate))continue;
    if(d.action=="kernel-hot")hot.insert(d.function);
    if(d.action=="private-code")hidden.insert(d.function);
+   if(d.action=="cold-code")cold.insert(d.function);
+   if(d.action=="no-inline")no_inline.insert(d.function);
   }
  }else verify(input);
  const auto& module=selected?*selected:input;
@@ -93,15 +95,26 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
   if(types.singles)out<<"#if !defined(ON1X_F32_ABI_VERSION) || ON1X_F32_ABI_VERSION != 1\n#error \"unsupported On1x f32 runtime ABI\"\n#endif\n";
   if(types.words)out<<"#if !defined(ON1X_UNSIGNED_ABI_VERSION) || ON1X_UNSIGNED_ABI_VERSION != 1\n#error \"unsupported On1x unsigned runtime ABI\"\n#endif\n";
  out<<types.declarations.str();
-  if(!hot.empty()||!hidden.empty())
+  if(!hot.empty()||!hidden.empty()){
    out<<"#if defined(__GNUC__) || defined(__clang__)\n"
         "#define ON1X_MIR_HOT __attribute__((hot))\n"
         "#else\n#define ON1X_MIR_HOT\n#endif\n"
         "#if defined(__ELF__) && (defined(__GNUC__) || defined(__clang__))\n"
         "#define ON1X_MIR_PRIVATE __attribute__((visibility(\"hidden\")))\n"
         "#else\n#define ON1X_MIR_PRIVATE\n#endif\n";
+  }
+  auto emit_attribute=[&](std::string_view macro,std::string_view attribute){
+   out<<"#if defined(__has_attribute)\n#if __has_attribute("<<attribute<<")\n"
+        "#define "<<macro<<" __attribute__(("<<attribute<<"))\n#endif\n#endif\n"
+        "#ifndef "<<macro<<"\n#define "<<macro<<"\n#endif\n";
+  };
+  if(!cold.empty())emit_attribute("ON1X_MIR_COLD","cold");
+  if(!no_inline.empty())emit_attribute("ON1X_MIR_NOINLINE","noinline");
   for(const auto& f:module.functions){
-   if(hot.contains(f.id)||hot.contains(0))out<<"ON1X_MIR_HOT ";
+   // Cold wins over hot placement, not hot's MIR rewrite policy.
+   if(cold.contains(f.id))out<<"ON1X_MIR_COLD ";
+   else if(hot.contains(f.id)||hot.contains(0))out<<"ON1X_MIR_HOT ";
+   if(no_inline.contains(f.id))out<<"ON1X_MIR_NOINLINE ";
    if(hidden.contains(f.id)||hidden.contains(0))out<<"ON1X_MIR_PRIVATE ";
    signature(out,f,types);out<<";\n";
   }

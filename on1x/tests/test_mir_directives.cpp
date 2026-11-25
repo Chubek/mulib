@@ -1,4 +1,6 @@
 #include <on1x/backend/mir.hpp>
+#include <on1x/backend/mir_c11.hpp>
+#include <on1x/backend/mir_directives.hpp>
 #include <iostream>
 #include <limits>
 
@@ -59,17 +61,21 @@ int main(){
    {"mir-archon","rv64-linux-gnu","hint","local-memory",0,false},
    {"","","hint","canonicalized",0,false},
    {"mir-c11","x86_64-linux-gnu","hint","private-code",function,true},
+   {"mir-c11","x86_64-linux-gnu","hint","cold-code",function,false},
+   {"","x86_64-linux-gnu","hint","no-inline",function,true},
   };
   const auto field_text=std::string(R"(((directive "" "x86_64-linux-gnu" "hint" "kernel-hot" )")+
    std::to_string(function)+R"( true) (directive "mir-c11" "" "rewrite" "fold-identity" 0 false))"
    R"( (directive "mir-archon" "rv64-linux-gnu" "hint" "local-memory" 0 false))"
    R"( (directive "" "" "hint" "canonicalized" 0 false))"
    R"( (directive "mir-c11" "x86_64-linux-gnu" "hint" "private-code" )"+
+   std::to_string(function)+R"( true) (directive "mir-c11" "x86_64-linux-gnu" "hint" "cold-code" )"+
+   std::to_string(function)+R"( false) (directive "" "x86_64-linux-gnu" "hint" "no-inline" )"+
    std::to_string(function)+R"( true)))";
   auto wire=m::serialize(module);
   require(wire==v4_wire(legacy,field_text),"v4 wire changed function payload or directive order");
   auto decoded=m::deserialize(wire);
-  require(decoded.directives.size()==5&&decoded.directives.front().function==function&&
+  require(decoded.directives.size()==7&&decoded.directives.front().function==function&&
           decoded.directives.front().speculative&&decoded.directives.front().backend.empty()&&
           decoded.directives.front().target=="x86_64-linux-gnu","directive fields did not round-trip");
   require(m::structurally_equal(module,decoded)&&m::serialize(decoded)==wire,"noncanonical v4 round-trip");
@@ -79,6 +85,35 @@ int main(){
   auto no_directives=decoded;
   no_directives.directives.clear();
   require(!m::structurally_equal(decoded,no_directives),"structural equality ignored directives");
+
+  auto hints=no_directives;
+  hints.directives.assign(decoded.directives.end()-2,decoded.directives.end());
+  constexpr std::string_view triple="x86_64-linux-gnu";
+  const auto signature="int64_t on1x_mir_f"+std::to_string(function)+"(";
+  auto select=[&](std::string_view target,bool speculate){return m::emit_directed_c(hints,std::nullopt,target,speculate);};
+  const auto baseline=m::emit_c(no_directives);
+  require(select("",true)==baseline&&select("x86_64-unknown-linux-gnu",true)==baseline,
+          "nonmatching target enabled C11 hints");
+  const auto selected=select(triple,false);
+  require(selected.find("ON1X_MIR_COLD "+signature)!=std::string::npos&&
+          selected.find("ON1X_MIR_NOINLINE")==std::string::npos,"C11 speculation or cold hint was not respected");
+  const auto opted_in=select(triple,true);
+  require(opted_in.find("ON1X_MIR_COLD ON1X_MIR_NOINLINE "+signature)!=std::string::npos,
+          "matching speculative no-inline hint did not reach its C11 prototype");
+  require(opted_in.find("ON1X_MIR_COLD void ")==std::string::npos&&
+          opted_in.find("ON1X_MIR_NOINLINE void ")==std::string::npos,
+          "function-scoped hints escaped the chosen function");
+  for(auto& d:hints.directives)d.backend="mir-vm";
+  require(select(triple,true)==baseline,"nonmatching backend enabled C11 hints");
+  for(auto& d:hints.directives)d.backend.clear();
+  for(auto backend:{"mir-vm","mir-archon"})
+   require(m::structurally_equal(m::specialize(hints,backend,triple,true),m::deserialize(legacy)),
+           "C11-only hints changed another executable MIR product");
+  hints.directives.push_back({"","","hint","kernel-hot",0,false});
+  const auto combined=select(triple,true);
+  require(combined.find("ON1X_MIR_COLD ON1X_MIR_NOINLINE "+signature)!=std::string::npos&&
+          combined.find("ON1X_MIR_HOT ON1X_MIR_COLD ")==std::string::npos&&
+          combined.find("ON1X_MIR_HOT void ")!=std::string::npos,"cold must override hot only on the selected function");
 
   auto decode=[&](std::string_view fields){return m::deserialize(v4_wire(legacy,fields),"malformed-directives.mir");};
   auto missing=legacy;
@@ -101,6 +136,18 @@ int main(){
   rejected([&]{decode(R"(((directive "" "" "rewrite" "kernel-hot" 0 false)))");},"rewrite action");
   rejected([&]{decode(R"(((directive "" "" "hint" "fold-identity" 0 false)))");},"hint action");
   rejected([&]{decode(R"(((directive "" "" "hint" "kernel-hot" 1 false)))");},"directive function");
+   for(std::string action:{"cold-code","no-inline"}){
+   rejected([&]{decode("((directive \"mir-c11\" \"\" \"hint\" \""+action+"\" 0 false))");},"requires function scope");
+   rejected([&]{decode("((directive \"unselected\" \"\" \"hint\" \""+action+"\" 1 true))");},"directive function");
+   rejected([&]{decode("((directive \"\" \"\" \"rewrite\" \""+action+"\" "+
+                       std::to_string(function)+" false))");},"rewrite action");
+   }
+   for(std::string action:{m::memgraph_local_action,m::meta_canonical_action}){
+    rejected([&]{decode("((directive \"mir-c11\" \"\" \"rewrite\" \""+action+"\" 0 false))");},"requires function scope");
+    rejected([&]{decode("((directive \"unselected\" \"\" \"rewrite\" \""+action+"\" 1 true))");},"directive function");
+    rejected([&]{decode("((directive \"\" \"\" \"hint\" \""+action+"\" "+
+                        std::to_string(function)+" false))");},"hint action");
+   }
   auto future=wire;
   future[std::string_view("(on1x.mir ").size()]='5';
   rejected([&]{m::deserialize(future);},"unsupported format version");

@@ -1,0 +1,5 @@
+mir-bank 1 boolean-negation;
+
+pattern not_false backend * target * mode safe match "not"(0) replace 1 requires identity;
+pattern not_true backend * target * mode safe match "not"(1) replace 0 requires identity;
+pattern not_not backend * target * mode safe match "not"($x) replace $original requires double-not;

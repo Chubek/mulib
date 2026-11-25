@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "library": "clamp",
+  "revision": "sha256:cf3d0cf6e27b0d2844e25ea1e5bf7637a34508d29c42411aa855dfe97a1205e0",
+  "functions": {
+    "mulib_clamp_i64": {
+      "guard": ["le", "$1", "$2"],
+      "directives": [
+        {"kind": "hint", "action": "kernel-hot", "target": "x86_64-unknown-linux-gnu", "speculative": true},
+        {"kind": "hint", "action": "private-code", "backend": "mir-c11"},
+        {"kind": "rewrite", "action": "fold-identity", "speculative": true}
+      ]
+    },
+    "mulib_clamp_add_i64": {
+      "guard": "true",
+      "directives": [
+        {"kind": "hint", "action": "kernel-hot", "target": "x86_64-unknown-linux-gnu", "speculative": true},
+        {"kind": "hint", "action": "private-code", "backend": "mir-c11"},
+        {"kind": "rewrite", "action": "fold-identity", "speculative": true}
+      ]
+    },
+    "mulib_clamp_sub_i64": {
+      "guard": "true",
+      "directives": [
+        {"kind": "hint", "action": "kernel-hot", "target": "x86_64-unknown-linux-gnu", "speculative": true},
+        {"kind": "hint", "action": "private-code", "backend": "mir-c11"},
+        {"kind": "rewrite", "action": "fold-identity", "speculative": true}
+      ]
+    }
+  }
+}

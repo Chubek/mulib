@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build a declared On1x project without running dependency build programs."""
 import argparse
+from contextlib import contextmanager
 import ctypes
 from dataclasses import dataclass
 import errno
@@ -29,6 +30,14 @@ _tools_spec = importlib.util.spec_from_file_location(
     '_on1x_toolchain', Path(__file__).resolve().with_name('on1x_toolchain.py'))
 toolchain = importlib.util.module_from_spec(_tools_spec)
 _tools_spec.loader.exec_module(toolchain)
+_dotenv_spec = importlib.util.spec_from_file_location(
+    '_on1x_dotenv', Path(__file__).resolve().with_name('on1x_dotenv.py'))
+dotenv = importlib.util.module_from_spec(_dotenv_spec)
+_dotenv_spec.loader.exec_module(dotenv)
+_proxy_spec = importlib.util.spec_from_file_location(
+    '_on1x_proxy', Path(__file__).resolve().with_name('on1x_proxy.py'))
+proxy = importlib.util.module_from_spec(_proxy_spec)
+_proxy_spec.loader.exec_module(proxy)
 
 try:
     import fcntl
@@ -37,11 +46,16 @@ except ImportError:  # Non-POSIX hosts can still validate/format manifests.
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / 'stdlib/on1xfile'
+FFI_HANDLER = ROOT / 'hir/FFIHandler'
+FFI_CEPHYR = ROOT / 'third_party/libstone/cornerstone/Cephyr'
 MAX_MANIFEST = 64 * 1024
 BACKENDS = ('c11', 'mir-c11', 'mir-vm', 'mir-archon')
 VM_POLICIES = ('opt-in', 'always')
 VM_DIRECTIVE = re.compile(rb'^[ \t\r]*vm(?=[ \t\r#]|\\[ \t\r]*$|$)')
 VM_COMMANDS = ('run', 'vm-rerun', 'vm-cache-clear')
+FFI_GENERATE = 'ffi-generate'
+KERNEL_PATH_DIRECTIVE = re.compile(rb'^[ \t\r]*kernel-path(?=[ \t\r#]|\\[ \t\r]*$|$)')
+MAX_KERNEL_PATHS = 32
 MAX_LOCKFILE = 256 * 1024
 MAX_SOURCE = 2 * 1024 * 1024
 MAX_INPUT = 64 * 1024 * 1024
@@ -64,8 +78,8 @@ TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
 HEADS = frozenset((
     'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work',
     'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
-    'profile-arg', 'command', 'define', 'kernel', 'source', 'library', 'resource', 'interface',
-)) | toolchain.DIRECTIVES
+    'profile-arg', 'command', 'define', 'dotenv', 'kernel', 'kernel-path', 'source', 'library', 'resource', 'interface',
+)) | toolchain.DIRECTIVES | proxy.DIRECTIVES
 ROW_HINT = ('start each intended directive with a known unquoted head on its own line; '
             'quote string fields, or move a directive-looking bare field to the preceding line '
             'or use a trailing backslash on that line')
@@ -137,10 +151,10 @@ def local(value, *, dot=False, single=False):
     return Path(value)
 
 
-def read(path, limit):
+def read(path, limit, *, dir_fd=None):
     # No following the final component, and no blocking on pipes. Parent paths
     # are checked separately; this is not a concurrent-worktree security lock.
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=dir_fd)
     with os.fdopen(fd, 'rb') as stream:
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
@@ -158,6 +172,10 @@ def contained(root, relative):
         if path.is_symlink():
             fail(f'{path}: symlinks are not allowed in declared inputs')
     return path
+
+
+def paths_overlap(a, b):
+    return a.is_relative_to(b) or b.is_relative_to(a)
 
 
 def manifest_span(origin, start, end):
@@ -287,6 +305,11 @@ def root_only_vm(origin=None):
     fail(f'{at}vm policy is only allowed in the root On1xfile of an executable or complex project')
 
 
+def root_only_kernel_path(origin=None):
+    at = f'{origin}: ' if origin is not None else ''
+    fail(f'{at}kernel-path is only allowed in the root project On1xfile')
+
+
 def check_nested_authority(payload, origin):
     # Nested manifests are inert and may be templates. Look only for literal
     # root-only heads, honoring explicit continuations we can lex as plain text.
@@ -298,6 +321,8 @@ def check_nested_authority(payload, origin):
         if not forced:
             if VM_DIRECTIVE.match(line):
                 root_only_vm(f'{origin}:{number}')
+            if KERNEL_PATH_DIRECTIVE.match(line):
+                root_only_kernel_path(f'{origin}:{number}')
             if toolchain.ROOT_ONLY.match(line):
                 fail(f'{origin}:{number}: native toolchain directives are only allowed in the root project On1xfile')
         forced = False
@@ -370,6 +395,7 @@ def profile_argument(args):
 def root_manifest(payload, origin, dependency=False):
     options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
     selections, scoped, backend_scopes, profile_args = {}, {}, {}, {}
+    kernel_paths = {}
     for start, end, verb, args in rows(payload, origin):
         at = manifest_span(origin, start, end)
         try:
@@ -381,6 +407,23 @@ def root_manifest(payload, origin, dependency=False):
             elif verb in ('name', 'directory'):
                 value, = fields(args, '"')
                 unique(options, verb, name(value) if verb == 'name' else local(value, dot=True))
+            elif verb == 'dotenv' and not dependency:
+                if len(args) == 1:
+                    path, = fields(args, '"')
+                    mode = 'override'
+                else:
+                    path, mode = fields(args, '"w')
+                    if mode not in ('override', 'preserve'):
+                        fail('dotenv mode must be override or preserve')
+                unique(options, verb, (dotenv.local_path(path), mode))
+            elif verb in proxy.DIRECTIVES and not dependency:
+                if verb == 'proxy-none':
+                    fields(args, '')
+                    unique(options, verb, True)
+                else:
+                    value, = fields(args, '"')
+                    unique(options, verb, proxy.manifest_url(verb, value))
+                proxy.validate_manifest(options)
             elif verb in toolchain.DIRECTIVES:
                 if dependency:
                     fail('native toolchain directives are only allowed in the root project On1xfile')
@@ -463,7 +506,7 @@ def root_manifest(payload, origin, dependency=False):
                     raise ManifestFieldsError('dependency kind must be local, git or git-remote')
             elif verb == 'profile' and not dependency:
                 key, path = fields(args, '""')
-                if key in ('dev', 'release', *VM_COMMANDS) or not path.endswith('.lua'):
+                if key in ('dev', 'release', *VM_COMMANDS, FFI_GENERATE) or not path.endswith('.lua'):
                     fail('use a custom profile name and a local .lua script')
                 unique(profiles, name(key), local(path))
             elif verb == 'profile-arg' and not dependency:
@@ -473,7 +516,7 @@ def root_manifest(payload, origin, dependency=False):
                     fail('profile-arg declaration count budget exceeded')
             elif verb == 'command' and not dependency:
                 key, action, target, path = fields(args, '"ww"')
-                if (key in ('build', 'release', *VM_COMMANDS)
+                if (key in ('build', 'release', *VM_COMMANDS, FFI_GENERATE)
                         or action != 'format' or target not in ('plain', 'latex', 'troff')):
                     fail('expected a custom command of the form: command "name" format plain|latex|troff "source.on1x"')
                 source = local(path)
@@ -492,6 +535,13 @@ def root_manifest(payload, origin, dependency=False):
                 if not re.fullmatch(r'[a-z0-9][a-z0-9_+-]{0,63}', key):
                     fail('invalid MuLIB kernel name')
                 unique(kernels, key, True)
+            elif verb == 'kernel-path':
+                if dependency:
+                    root_only_kernel_path()
+                path, = fields(args, '"')
+                unique(kernel_paths, local(path), True)
+                if len(kernel_paths) > MAX_KERNEL_PATHS:
+                    fail(f'too many kernel-path directives (maximum {MAX_KERNEL_PATHS})')
             else:
                 fail(f'unsupported {verb!r} in {"dependency" if dependency else "root"} On1xfile')
         except ValueError as error:
@@ -527,8 +577,14 @@ def root_manifest(payload, origin, dependency=False):
         fail(f'{origin}: unknown backend scope {min(unknown)!r}')
     if len(commands) > 32:
         fail(f'{origin}: command declaration count budget exceeded')
+    # Do not let a parent root pull checkout data into the independent FFI
+    # generation process, or let a path point inside a dependency store.
+    if any(paths_overlap(root, dependency.source) for root in kernel_paths
+           for dependency in deps.values() if dependency.kind != 'git-remote'):
+        fail(f'{origin}: kernel-path cannot overlap a declared dependency store')
     options.update(targets=targets, deps=deps, defines=defines,
-                   profiles=profiles, profile_args=profile_args, kernels=list(kernels), commands=commands,
+                   profiles=profiles, profile_args=profile_args, kernels=list(kernels),
+                   kernel_paths=list(kernel_paths), commands=commands,
                    selections=selections, scoped=scoped, backend_scopes=backend_scopes)
     return options
 
@@ -561,13 +617,15 @@ def declared_policy(config):
     return policy
 
 
-def lock_bytes(entries, policy, vm_policy):
+def lock_bytes(entries, policy, vm_policy, kernel_inputs):
     document = {'schema': 'on1x.lock/v1',
                 'dependencies': {key: entries[key] for key in sorted(entries)}}
     if policy:
         document.update(schema='on1x.lock/v2', optimization=policy)
     if vm_policy is not None:
         document.update(schema='on1x.lock/v3', vm=vm_policy)
+    if kernel_inputs:
+        document.update(schema='on1x.lock/v4', kernel_paths=kernel_inputs)
     return (json.dumps(document, indent=2, sort_keys=True, ensure_ascii=True) + '\n').encode()
 
 
@@ -588,15 +646,31 @@ def parse_lock(payload, origin):
     if not isinstance(document, dict) or not isinstance(document.get('dependencies'), dict):
         fail(f'{origin}: expected an On1x lock object')
     schema = document.get('schema')
-    vm_policy = None
-    if schema == 'on1x.lock/v3' and set(document) in (
-            {'schema', 'dependencies', 'vm'}, {'schema', 'dependencies', 'optimization', 'vm'}):
-        vm_policy = document['vm']
-        if vm_policy not in VM_POLICIES:
-            fail(f'{origin}: invalid locked vm policy')
-    elif not (schema == 'on1x.lock/v1' and set(document) == {'schema', 'dependencies'}
-              or schema == 'on1x.lock/v2' and set(document) == {'schema', 'dependencies', 'optimization'}):
-        fail(f'{origin}: expected an on1x.lock/v1, on1x.lock/v2 or on1x.lock/v3 object')
+    keys = set(document) - {'schema', 'dependencies'}
+    valid = (schema == 'on1x.lock/v1' and not keys
+             or schema == 'on1x.lock/v2' and keys == {'optimization'}
+             or schema == 'on1x.lock/v3' and 'vm' in keys and keys <= {'optimization', 'vm'}
+             or schema == 'on1x.lock/v4' and 'kernel_paths' in keys
+             and keys <= {'optimization', 'vm', 'kernel_paths'})
+    if not valid:
+        fail(f'{origin}: expected an on1x.lock/v1, on1x.lock/v2, on1x.lock/v3 or on1x.lock/v4 object')
+    vm_policy = document.get('vm')
+    if 'vm' in keys and vm_policy not in VM_POLICIES:
+        fail(f'{origin}: invalid locked vm policy')
+    kernel_inputs = document.get('kernel_paths', [])
+    if 'kernel_paths' in keys:
+        if not isinstance(kernel_inputs, list) or not 1 <= len(kernel_inputs) <= MAX_KERNEL_PATHS:
+            fail(f'{origin}: invalid locked kernel paths')
+        seen = set()
+        for entry in kernel_inputs:
+            if (not isinstance(entry, dict) or set(entry) != {'path', 'sha256'}
+                    or not isinstance(entry['path'], str) or not isinstance(entry['sha256'], str)
+                    or not re.fullmatch(r'[0-9a-f]{64}', entry['sha256'])):
+                fail(f'{origin}: invalid locked kernel-path fingerprint')
+            path = local(entry['path'])
+            if path in seen:
+                fail(f'{origin}: duplicate locked kernel-path {path}')
+            seen.add(path)
     policy = {}
     if 'optimization' in document:
         policy = document['optimization']
@@ -651,10 +725,10 @@ def parse_lock(payload, origin):
             result[key] = entry
         except ValueError as error:
             fail(f'{origin}: dependency {key!r}: {error}')
-    return result, policy, vm_policy
+    return result, policy, vm_policy, kernel_inputs
 
 
-def read_lock(project, config, *, required=False, strict=True, snapshot=None):
+def read_lock(project, config, *, required=False, strict=True, snapshot=None, kernel_inputs=None):
     path = project / 'On1xfile.lock'
     try:
         mode = path.lstat().st_mode
@@ -665,11 +739,14 @@ def read_lock(project, config, *, required=False, strict=True, snapshot=None):
     if not stat.S_ISREG(mode):
         fail(f'{path}: expected a regular lockfile')
     payload = read(path, MAX_LOCKFILE)
-    entries, policy, vm_policy = parse_lock(payload, path)
+    entries, policy, vm_policy, locked_kernels = parse_lock(payload, path)
     if strict and vm_policy != config.get('vm'):
         fail(f'{path}: stale vm policy does not match On1xfile; run on1x-project.py lock')
     if strict and policy != declared_policy(config):
         fail(f'{path}: stale optimization policy does not match On1xfile')
+    if strict and ([item['path'] for item in locked_kernels] != [p.as_posix() for p in config['kernel_paths']]
+                   or kernel_inputs is not None and locked_kernels != kernel_inputs):
+        fail(f'{path}: stale kernel-path declarations or contents; run on1x-project.py lock')
     if snapshot is not None:
         snapshot.record('project/On1xfile.lock', payload)
     git_dependencies = {key: dependency for key, dependency in config['deps'].items()
@@ -703,7 +780,7 @@ def require_locked(entries, config, keys=None):
         fail('lockfile is missing Git dependencies: ' + ', '.join(missing))
 
 
-def write_lock(project, entries, config):
+def write_lock(project, entries, config, kernel_inputs):
     path = project / 'On1xfile.lock'
     try:
         mode = path.lstat().st_mode
@@ -711,7 +788,7 @@ def write_lock(project, entries, config):
             fail(f'{path}: refusing to replace a non-regular lockfile')
     except FileNotFoundError:
         pass
-    payload = lock_bytes(entries, declared_policy(config), config.get('vm'))
+    payload = lock_bytes(entries, declared_policy(config), config.get('vm'), kernel_inputs)
     descriptor, temporary = tempfile.mkstemp(dir=project, prefix='.On1xfile.lock-')
     temporary = Path(temporary)
     try:
@@ -847,6 +924,95 @@ class Snapshot:
             fail('project snapshot exceeds its file/byte budget')
         self.inputs[label] = digest(data)
         return data
+
+
+@contextmanager
+def open_directory(root, relative):
+    # Anchor descendant opens to directory descriptors so a concurrent link
+    # swap cannot redirect a kernel input outside the project's directory.
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    fd = os.open(root, flags)
+    try:
+        for part in relative.parts:
+            child = os.open(part, flags, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        yield fd
+    finally:
+        os.close(fd)
+
+
+def regular_tree(directory, origin, *, limit):
+    """Yield sorted relative directory/file records without following links."""
+    entries = 0
+
+    def walk(fd, relative):
+        nonlocal entries
+        if len(relative.parts) > 32:
+            fail(f'{origin}: tree discovery depth exceeded')
+        children = []
+        with os.scandir(fd) as stream:
+            for entry in stream:
+                entries += 1
+                if entries > 32768:
+                    fail(f'{origin}: tree discovery budget exceeded')
+                children.append(entry.name)
+        for child in sorted(children):
+            path = relative / child
+            # Names may contain + (as MuLIB headers do), etc. Reject control
+            # characters and paths not representable in a UTF-8 fingerprint.
+            child.encode('utf-8')
+            if any(ord(char) < 32 or ord(char) == 127 for char in child):
+                fail(f'{origin}: invalid tree entry name: {child!r}')
+            flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+            mode = os.stat(child, dir_fd=fd, follow_symlinks=False).st_mode
+            if stat.S_ISDIR(mode):
+                subdir = os.open(child, flags, dir_fd=fd)
+                try:
+                    yield path, None
+                    yield from walk(subdir, path)
+                finally:
+                    os.close(subdir)
+            elif stat.S_ISREG(mode):
+                yield path, read(child, limit, dir_fd=fd)
+            else:
+                fail(f'{origin / path}: expected a regular file or directory; symlinks are not allowed')
+
+    yield from walk(directory, Path('.'))
+
+
+def kernel_path_inputs(project, config, snapshot=None, *, stage=None):
+    if snapshot is None:
+        snapshot = Snapshot()
+    roots = []
+    for number, root in enumerate(config['kernel_paths']):
+        origin = project / root
+        contents = {}
+        try:
+            with open_directory(project, root) as directory:
+                dest = stage / str(number) if stage is not None else None
+                if dest is not None:
+                    dest.mkdir(parents=True)
+                # Stage the whole declared tree (not just .h): Cephyr can
+                # read transitive includes with other extensions. Discovery
+                # and any duplicate-kernel policy are the generator's job.
+                for path, data in regular_tree(directory, origin, limit=MAX_SOURCE):
+                    key = path.as_posix()
+                    if data is None:
+                        contents[key + '/'] = None
+                        if dest is not None:
+                            (dest / path).mkdir()
+                    else:
+                        label = f'kernel-path/{number}/{key}'
+                        snapshot.record(label, data)
+                        contents[key] = snapshot.inputs[label]
+                        if dest is not None:
+                            stage_bytes(dest / path, data)
+        except (OSError, UnicodeError) as error:
+            fail(f'{origin}: kernel-path requires a real directory tree without symlinks: {error}')
+        roots.append({'path': root.as_posix(),
+                      'sha256': digest(json.dumps(contents, sort_keys=True).encode('ascii'))})
+    return roots
 
 
 class Disk:
@@ -1041,11 +1207,37 @@ def selected_tool(args, field, filename, compiler, *, optional=False):
     return None
 
 
+def dotenv_environment(project, config, args):
+    if 'dotenv' in config and (args.sandbox or dependency_modes(args)[1]):
+        fail('dotenv is unavailable with --sandbox, --locked or --frozen')
+    if args.sandbox:
+        return ENV
+    # Opt in only names declared by the file; do not import ambient compiler,
+    # loader or search-path policy into the clean project environment.
+    values = {}
+    if 'dotenv' in config:
+        path, mode = config['dotenv']
+        values = dotenv.load(project, path, {})
+        if mode == 'preserve':
+            values.update((key, os.environ[key]) for key in values if key in os.environ)
+    for key in values:
+        if (key in ENV or key in {'BASH_ENV', 'ENV', 'SHELLOPTS', 'CDPATH', 'IFS', 'TMPDIR'}
+                or key.startswith(('LD_', 'DYLD_', 'GIT_', 'PYTHON', 'ON1X_', 'MULIB_'))):
+            fail(f'dotenv cannot override reserved environment key {key}')
+    proxy_keys = {'http_proxy', 'https_proxy', 'any_proxy', 'all_proxy', 'no_proxy'}
+    ambient = {key: value for key, value in os.environ.items() if key.lower() in proxy_keys}
+    for key in tuple(values):
+        if key.lower() in proxy_keys:
+            ambient = {name: value for name, value in ambient.items() if name.lower() != key.lower()}
+            ambient[key] = values.pop(key)
+    return {**ENV, **values, **proxy.compiler_environment(config, ambient)}
+
+
 class Execution:
     """Compiler process envelope; host file acquisition itself is intentionally outside it."""
-    def __init__(self, args, work, compiler, cc, mulib):
+    def __init__(self, args, work, compiler, cc, mulib, *, env=ENV):
         self.work = work
-        self.env = ENV
+        self.env = env
         self.python = Path(sys.executable)
         self.bwrap = None
         self.prefix = []
@@ -1068,10 +1260,17 @@ class Execution:
             for key, value in ENV.items():
                 self.prefix.extend(('--setenv', key, value))
             self.mounts = set()
-            for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib',
-                         mulib / 'kernels', mulib / 'manual',
-                         mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
-                self.mount(path)
+            if compiler is not None:
+                for path in (ROOT / 'tools', ROOT / 'runtime', ROOT / 'stdlib/mulib',
+                             mulib / 'kernels', mulib / 'manual',
+                             mulib / 'library', mulib / 'MANIFEST.yaml', compiler, cc):
+                    self.mount(path)
+                # Mount executable recipes only: the build's sibling catalogue
+                # is metadata and can be much larger. Installed recipes are flat.
+                # Do not pass ambient MULIB_FOREIGNLIB_PATH into isolated builds.
+                for recipes in (compiler.parent / 'stdffi/mulib/recipes',
+                                compiler.parent.parent / 'share/on1x/stdffi/mulib'):
+                    self.mount(recipes, exact=True)
             # A failed setup must not even start a compiler discovery process.
             self.run(['/usr/bin/true'], bound=32)
             # Use the same name for the mount and argv, including when the
@@ -1131,9 +1330,14 @@ class Execution:
     def path(self, path):
         return Path('/work') / path.relative_to(self.work) if self.prefix else path
 
-    def run(self, command, **kwargs):
-        return run([*self.prefix, *(['--'] if self.prefix else []), *command],
-                   self.work / 'cwd', env=self.env, **kwargs)
+    def run(self, command, *, extra_env=None, **kwargs):
+        # Only the explicit FFI generator may receive its staged kernel roots.
+        # Neither bwrap nor ordinary compiler/build subprocesses inherit them.
+        prefix = self.prefix
+        if prefix and extra_env:
+            prefix = [*prefix, *(arg for key, value in extra_env.items() for arg in ('--setenv', key, value))]
+        env = dict(self.env, **extra_env) if extra_env and not prefix else self.env
+        return run([*prefix, *(['--'] if prefix else []), *command], self.work / 'cwd', env=env, **kwargs)
 
 
 def stage_bytes(path, data):
@@ -1167,6 +1371,8 @@ def local_roles(data, origin, manifest, kind):
         try:
             if role == 'vm':
                 root_only_vm()
+            if role == 'kernel-path':
+                root_only_kernel_path()
             if role in toolchain.DIRECTIVES:
                 fail('native toolchain directives are only allowed in the root project On1xfile')
             if role not in allowed or role == 'source' and kind == 'library':
@@ -1257,16 +1463,19 @@ def git_diagnostic(error):
                    for c in str(error))
 
 
-def download_git(url, revision, ca_file, work, *, reference=None, selector=None):
+def download_git(url, revision, ca_file, work, *, reference=None, selector=None, proxy_env=None):
     repository = work / 'download.git'
     cwd = work / 'cwd'
     home = work / 'home'
     home.mkdir()
     env = dict(GIT_ENV, HOME=str(home), GIT_ALLOW_PROTOCOL='https', NETRC='/dev/null',
                GIT_ASKPASS='/bin/false', SSH_ASKPASS='/bin/false', GIT_CEILING_DIRECTORIES=str(work))
+    env.update(proxy_env or {})
     options = ['protocol.allow=never', 'protocol.https.allow=always', 'protocol.version=2',
-               'http.sslVerify=true', 'http.followRedirects=false', 'http.proxy=',
+               'http.sslVerify=true', 'http.followRedirects=false',
                'credential.helper=', 'fetch.fsckObjects=true', 'fetch.unpackLimit=1']
+    if not proxy_env:
+        options.append('http.proxy=')
     if ca_file is not None:
         trusted_ca = work / 'ca.pem'
         stage_bytes(trusted_ca, read(ca_file.resolve(strict=True), 1024 * 1024))
@@ -1282,6 +1491,8 @@ def download_git(url, revision, ca_file, work, *, reference=None, selector=None)
         except ValueError as error:
             if 'failed (2)' in str(error):
                 fail(f'remote Git {selector} was not found')
+            if proxy_env:
+                fail('HTTPS Git ref discovery failed through the configured proxy')
             fail(f'HTTPS Git ref discovery failed: '
                  f'{git_diagnostic(error).replace(url, "<git-remote>")}')
         records = advertised.rstrip(b'\n').split(b'\n')
@@ -1310,6 +1521,8 @@ def download_git(url, revision, ca_file, work, *, reference=None, selector=None)
               '--depth=2147483647', '--keep', '--', url, request], cwd, env=env,
              bound=4096, timeout=GIT_FETCH_TIMEOUT, memory=MAX_GIT_MEMORY)
     except ValueError as error:
+        if proxy_env:
+            fail('HTTPS Git fetch failed through the configured proxy')
         fail(f'HTTPS Git fetch of {selector or revision} failed: '
              f'{git_diagnostic(error).replace(url, "<git-remote>")}')
     if (repository / 'shallow').exists():
@@ -1350,7 +1563,7 @@ def atomic_publish_store(checked, destination):
     return True
 
 
-def materialize_remote(project, key, dependency, commit, *, refresh, offline, ca_file):
+def materialize_remote(project, key, dependency, commit, *, refresh, offline, ca_file, config):
     if dependency.kind != 'git-remote':
         fail('internal error: expected a remote Git dependency')
     if not refresh:
@@ -1373,14 +1586,15 @@ def materialize_remote(project, key, dependency, commit, *, refresh, offline, ca
     with tempfile.TemporaryDirectory(dir=cache_parent, prefix='.fetch-') as temporary:
         work = Path(temporary)
         (work / 'cwd').mkdir()
+        proxy_env = proxy.git_environment(config)
         if refresh:
             reference = git_ref(dependency.selector_kind, dependency.selector)
             repository, requested = download_git(
                 dependency.source, None, ca_file, work, reference=reference,
-                selector=f'{dependency.selector_kind} {dependency.selector!r}')
+                selector=f'{dependency.selector_kind} {dependency.selector!r}', proxy_env=proxy_env)
             peel = dependency.selector_kind == 'tag'
         else:
-            repository, requested = download_git(dependency.source, commit, ca_file, work)
+            repository, requested = download_git(dependency.source, commit, ca_file, work, proxy_env=proxy_env)
             peel = False
         resolved, checked = inspect_git_dependency(repository, requested, key,
                                                    work / 'candidate', peel=peel)
@@ -1429,7 +1643,8 @@ def fetch_dependency(args):
     with DependencyCacheLock(project):
         if read(manifest, MAX_MANIFEST) != manifest_payload:
             fail(f'{manifest}: changed while waiting for the dependency cache lock')
-        entries, _ = read_lock(project, config, required=locked, strict=locked)
+        kernel_inputs = kernel_path_inputs(project, config)
+        entries, _ = read_lock(project, config, required=locked, strict=locked, kernel_inputs=kernel_inputs)
         if locked:
             require_locked(entries, config, (key,))
         existing = entries.get(key)
@@ -1443,11 +1658,11 @@ def fetch_dependency(args):
             commit, refresh = None, True
         resolved, destination = materialize_remote(
             project, key, dependency, commit, refresh=refresh, offline=offline,
-            ca_file=args.ca_file)
+            ca_file=args.ca_file, config=config)
         updated = dict(entries)
         updated[key] = lock_entry(dependency, resolved)
         if not locked:
-            write_lock(project, updated, config)
+            write_lock(project, updated, config, kernel_inputs)
     print(destination)
 
 
@@ -1465,7 +1680,8 @@ def lock_dependencies(args):
     with DependencyCacheLock(project):
         if read(manifest, MAX_MANIFEST) != manifest_payload:
             fail(f'{manifest}: changed while waiting for the dependency cache lock')
-        entries, _ = read_lock(project, config, required=locked, strict=locked)
+        kernel_inputs = kernel_path_inputs(project, config)
+        entries, _ = read_lock(project, config, required=locked, strict=locked, kernel_inputs=kernel_inputs)
         if locked:
             require_locked(entries, config)
         resolved_entries = {}
@@ -1488,10 +1704,10 @@ def lock_dependencies(args):
                     commit, refresh = None, True
                 resolved, _ = materialize_remote(
                     project, key, dependency, commit, refresh=refresh, offline=offline,
-                    ca_file=args.ca_file)
+                    ca_file=args.ca_file, config=config)
             resolved_entries[key] = lock_entry(dependency, resolved)
         if not locked:
-            path = write_lock(project, resolved_entries, config)
+            path = write_lock(project, resolved_entries, config, kernel_inputs)
         else:
             path = project / 'On1xfile.lock'
     print(path)
@@ -1703,6 +1919,99 @@ def backend_inventory(args):
                       'backends': rows}, indent=2, sort_keys=True))
 
 
+def ffi_generator(args):
+    """Feed the canonical build-host generator an ordered, verified snapshot."""
+    project = args.root.resolve(strict=True)
+    if not project.is_dir():
+        fail(f'{project}: expected project directory')
+    manifest = project / 'On1xfile'
+    snapshot = Snapshot()
+    config = root_manifest(snapshot.record('project/On1xfile', read(manifest, MAX_MANIFEST)), manifest)
+    if not config['kernel_paths']:
+        fail(f'{manifest}: {FFI_GENERATE} requires at least one kernel-path declaration')
+    dest = args.output_dir.parent.resolve() / args.output_dir.name
+    if any(paths_overlap(dest, project / root) for root in config['kernel_paths']):
+        fail(f'{dest}: FFI output cannot overlap a declared kernel-path')
+    if dest.exists() or dest.is_symlink():
+        fail(f'{dest}: FFI output must not already exist')
+
+    script = FFI_HANDLER / 'ffispec-gen.py'
+    if not script.is_file():
+        fail(f'{FFI_GENERATE} requires an On1x source checkout with {script.name}')
+    config_path = (args.config or FFI_CEPHYR / 'Cephyr.toml').resolve(strict=True)
+    library = args.cephyr_library.resolve(strict=True)
+    if not config_path.is_file() or not library.is_file():
+        fail('--config and --cephyr-library must name regular toolchain files')
+    mounts = (FFI_HANDLER, FFI_CEPHYR / 'python', FFI_CEPHYR / 'triples', FFI_CEPHYR / 'stdlib/include',
+              config_path, library)
+    tools = {'project': Path(__file__).resolve(), 'cephyr_config': config_path, 'cephyr_library': library}
+    # Fingerprint the checked-out generator and its canonical helper, policy
+    # and Cephyr data inputs. Ignore incidental files such as __pycache__.
+    for subtree, patterns in (
+            (FFI_HANDLER, ('*.py',)),
+            (FFI_CEPHYR, ('python/cephyr/*.py', 'triples/*.lua', 'stdlib/include/**/*.h'))):
+        for pattern in patterns:
+            for path in sorted(subtree.glob(pattern)):
+                tools[path.relative_to(ROOT).as_posix()] = path
+
+    _, locked = dependency_modes(args)
+    with tempfile.TemporaryDirectory(prefix='on1x-project-ffi-') as tmp:
+        work = Path(tmp).resolve()
+        staged, artifact = work / 'input/kernel-inputs', work / 'artifact'
+        (work / 'cwd').mkdir()
+        artifact.mkdir()
+        kernel_inputs = kernel_path_inputs(project, config, snapshot, stage=staged)
+        entries, lock_payload = read_lock(project, config, required=locked, snapshot=snapshot,
+                                          kernel_inputs=kernel_inputs)
+        if locked:
+            require_locked(entries, config)
+        executor = Execution(args, work, None, None, None, env=dotenv_environment(project, config, args))
+        for item in (*mounts, executor.python):
+            executor.mount(item)
+        tools['python'] = executor.python
+        if executor.bwrap is not None:
+            tools['bubblewrap'] = executor.bwrap
+        tool_hashes = {key: tool_digest(path) for key, path in tools.items()}
+        root_names = [f'kernel-inputs/{i}' for i in range(len(kernel_inputs))]
+        # A relative path anchored at the private cwd avoids separators in
+        # the operator's temp-directory path; sandbox paths are fixed.
+        roots = [str(executor.path(work / 'input' / item)) if args.sandbox else f'../input/{item}'
+                 for item in root_names]
+        executor.run([executor.python, '-sB', script, '--output-dir', executor.path(artifact),
+                      '--cephyr-library', library, '--config', config_path],
+                     extra_env={'MULIB_KERNELS_PATH': os.pathsep.join(roots), 'PYTHONHASHSEED': '0'},
+                     timeout=180)
+        index = json.loads(read(artifact / 'index.json', MAX_BUILD_REPORT))
+        if not isinstance(index, dict) or not isinstance(index.get('recipes'), (list, dict)):
+            fail(f'{script.name}: expected index.json with the canonical recipes manifest')
+        outputs = Snapshot()
+        with open_directory(artifact, Path('.')) as directory:
+            for path, data in regular_tree(directory, artifact, limit=MAX_PROCESS):
+                if data is not None:
+                    outputs.record(path.as_posix(), data)
+        report = {'schema': 'on1x.project-ffi/v1', 'project': config['name'], 'sandbox': bool(args.sandbox),
+                  'kernel_paths': kernel_inputs, 'generation_roots': root_names,
+                  'inputs': snapshot.inputs, 'tools': tool_hashes, 'outputs': outputs.inputs}
+        if lock_payload is not None:
+            report['lockfile'] = digest(lock_payload)
+        report_bytes = (json.dumps(report, indent=2, sort_keys=True) + '\n').encode()
+        if len(report_bytes) > MAX_BUILD_REPORT:
+            fail(f'project FFI report exceeds {MAX_BUILD_REPORT} bytes')
+        shutil.copytree(staged, artifact / 'kernel-inputs')
+        stage_bytes(artifact / '.on1x-ffi.json', report_bytes)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=dest.parent, prefix='.on1x-project-ffi-') as publish_dir:
+            bundle = Path(publish_dir) / 'output'
+            shutil.copytree(artifact, bundle)
+            rename = getattr(ctypes.CDLL(None, use_errno=True), 'renameat2', None)
+            if rename is None:
+                fail('atomic FFI output publication requires Linux renameat2')
+            if rename(-100, os.fsencode(bundle), -100, os.fsencode(dest), 1):  # RENAME_NOREPLACE
+                code = ctypes.get_errno() or errno.EIO
+                raise OSError(code, os.strerror(code), dest)
+    print(dest)
+
+
 def build(args):
     if args.sandbox and args.allow_shell:
         fail('--sandbox cannot be combined with --allow-shell')
@@ -1714,6 +2023,7 @@ def build(args):
     disk = Disk(project)
     rootinput = snapshot.record('project/On1xfile', disk.get(Path('On1xfile'), MAX_MANIFEST))
     config = root_manifest(rootinput, project / 'On1xfile')
+    child_env = dotenv_environment(project, config, args)
     vm_policy = config.get('vm')
     launching = args.command == 'run'
     if launching:
@@ -1739,7 +2049,7 @@ def build(args):
                 fail(f'{source}: formatter input is outside the declared project directory')
             input_path = contained(project, source)
             disk.get(source, MAX_SOURCE)  # Reject non-regular, oversized or linked inputs before invoking the compiler.
-            sys.stdout.buffer.write(run([compiler, 'fmt', input_path, '--target', target], project))
+            sys.stdout.buffer.write(run([compiler, 'fmt', input_path, '--target', target], project, env=child_env))
             return
         args.profile = args.project_command
     analysis_work = (scrutiny_work(args.scrutiny_work) if args.scrutiny_work is not None
@@ -1769,9 +2079,10 @@ def build(args):
     _, locked = dependency_modes(args)
     git_keys = {key for key, dependency in config['deps'].items()
                 if dependency.kind in ('git', 'git-remote')}
+    kernel_inputs = kernel_path_inputs(project, config, snapshot)
     lock_entries, lock_payload = read_lock(
-        project, config, required=locked and bool(git_keys or declared_policy(config) or vm_policy),
-        strict=True, snapshot=snapshot)
+        project, config, required=locked and bool(git_keys or declared_policy(config) or vm_policy or kernel_inputs),
+        strict=True, snapshot=snapshot, kernel_inputs=kernel_inputs)
     if locked:
         require_locked(lock_entries, config)
     resolved_dependencies = {}
@@ -1807,6 +2118,8 @@ def build(args):
         dest = dest.parent.resolve() / dest.name
         if dest == project or project.is_relative_to(dest):
             fail(f'invalid output directory: {dest}')
+        if any(paths_overlap(dest, project / root) for root in config['kernel_paths']):
+            fail(f'{dest}: project output cannot overlap a declared kernel-path')
         disk.exclude.add(dest)
     disk.exclude.update(project / location for _, location, _ in resolved_dependencies.values())
     with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp:
@@ -1815,7 +2128,7 @@ def build(args):
         (work / 'input/deps').mkdir()
         (work / 'cwd').mkdir()
         (work / 'artifact').mkdir()
-        executor = Execution(args, work, compiler, cc, mulib)
+        executor = Execution(args, work, compiler, cc, mulib, env=child_env)
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
                          'optimization_helper': Path(optimization.__file__)}
         if executor.bwrap is not None:
@@ -2156,6 +2469,8 @@ def build(args):
             report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
             report['lockfile'] = digest(lock_payload)
+        if kernel_inputs:
+            report['kernel_paths'] = kernel_inputs
         if backend == 'mir-vm' and args.command != 'plan' and report['tools']['vm_runner'] != outputs[bundled.name]:
             fail('mir-vm runner changed during project build')
         if args.command == 'plan':
@@ -2253,6 +2568,15 @@ def main():
                           help='equivalent to --offline --locked')
     commands.add_parser('build', parents=[command])
     commands.add_parser('plan', parents=[command], help='print the resolved build policy and inputs without publishing')
+    ffi = commands.add_parser(FFI_GENERATE, help='generate build-host FFI material using declared kernel paths')
+    ffi.add_argument('root', type=Path, nargs='?', default=Path('.'))
+    ffi.add_argument('--output-dir', type=Path, required=True, help='new directory for the generated FFI bundle')
+    ffi.add_argument('--cephyr-library', type=Path, required=True, help='trusted build-host Cephyr shared library')
+    ffi.add_argument('--config', type=Path, help='trusted Cephyr configuration (default: checkout Cephyr.toml)')
+    ffi.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
+    ffi.add_argument('--offline', action='store_true', help='do not fetch dependencies (the default)')
+    ffi.add_argument('--locked', action='store_true', help='require a complete, current On1xfile.lock')
+    ffi.add_argument('--frozen', action='store_true', help='equivalent to --offline --locked')
     launch = commands.add_parser('run', parents=[command], help='build, cache and run one declared ArchVirt target')
     launch.add_argument('--prepare', action='store_true', help='cache the VM and print its ID without booting it')
     for action, description in (
@@ -2301,6 +2625,7 @@ def main():
             return 0
         status = {'build': build, 'plan': build, 'run': build, 'backends': backend_inventory,
                   'format': format_manifest, 'fetch': fetch_dependency,
+                  FFI_GENERATE: ffi_generator,
                   'vm-rerun': archvirt_cache_command, 'vm-cache-clear': archvirt_cache_command,
                   'lock': lock_dependencies}[arguments.command](arguments)
     except (ValueError, OSError, KeyError, TypeError) as error:

@@ -18,6 +18,18 @@ expressions before the authored rules. Its report is available with
 The [Firestone pass](../README.md#firestone) can expose additional `i64`
 rewrites before the authored rules, including full-width constant arithmetic.
 
+## Canonicalization requests in lowered MIR
+
+MIR lowering preserves the legacy `canonicalized` and `fold-identity`
+records for completed HIR rewrites. It separately looks for canonicalization
+candidates left in lowered MIR, such as complementary boolean operands, a
+strict i64 bound comparison, double checked negation, or a comparison against
+i64 zero. The function-scoped `meta-canonical` requests select `mir-c11` and
+`mir-archon` for the exact `x86_64-unknown-linux-gnu` target, and `mir-vm` with
+a wildcard target. Safe and speculative requests are separate records; a
+speculative request requires host opt-in and never substitutes for a proof
+such as nonzero evidence. No host target is inferred at lowering time.
+
 ## Authoring
 
 Each module starts with the same version and runtime budgets:

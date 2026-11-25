@@ -289,7 +289,33 @@
       "category": "ffi",
       "phase": "frontend",
       "guidance": "A native kernel's availability does not imply a portable implementation.",
-      "remediation": "Select a kernel present in the compiler's portable stdffi registry.",
+      "remediation": "Select an executable recipe for a reviewed kernel and check MULIB_FOREIGNLIB_PATH.",
+      "repair": "none"
+    },
+    {
+      "id": "ON1X-STDFFI-SPEC",
+      "role": 0,
+      "provider": "compiler",
+      "match": "ON1X-STDFFI-SPEC",
+      "level": "error",
+      "message": "{message}",
+      "category": "ffi",
+      "phase": "frontend",
+      "guidance": "The first matching path must contain an executable recipe that agrees with the compiled review.",
+      "remediation": "Correct the selected ffispec 1 file or adjust MULIB_FOREIGNLIB_PATH.",
+      "repair": "none"
+    },
+    {
+      "id": "ON1X-STDFFI-CATALOGUE",
+      "role": 0,
+      "provider": "compiler",
+      "match": "ON1X-STDFFI-CATALOGUE",
+      "level": "error",
+      "message": "{message}",
+      "category": "ffi",
+      "phase": "frontend",
+      "guidance": "A generated header catalogue records declarations, not executable portable FFI behavior.",
+      "remediation": "Select a reviewed ffispec 1 recipe instead of the generated catalogue.",
       "repair": "none"
     },
     {

@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """Portable import syntax, lexical resolution, and legacy build separation."""
 import json
+import os
+import shutil
 import sys
+import tempfile
+from pathlib import Path
 
 from support import NativeTests, run
 
 t = NativeTests()
+path_key = 'MULIB_FOREIGNLIB_PATH'
+env = {key: val for key, val in os.environ.items() if key != path_key}
 
 
-def compile_source(mode, source, *flags):
-    return run([t.compiler, '--no-prelude', mode, *flags, source])
+def compile_source(mode, source, *flags, search=None):
+    process_env = env if search is None else {**env, path_key: search}
+    return run([t.compiler, '--no-prelude', mode, *flags, source], env=process_env)
 
 
 def good(mode, source, *flags):
@@ -70,14 +77,90 @@ assert good('--run-ir', quoted) == '42\n'
 # compiled by the ordinary build driver.
 product = t.work / 'portable_driver'
 p = run([sys.executable, t.root / 'tools/on1x-build.py',
-         entry, '--on1xc', t.compiler, '--cc', t.cc, '--no-prelude', '--via-mir', '-o', product,
-         *[f'--cflag={flag}' for flag in t.flags]])
+          entry, '--on1xc', t.compiler, '--cc', t.cc, '--no-prelude', '--via-mir', '-o', product,
+          *[f'--cflag={flag}' for flag in t.flags]], env=env)
 assert p.returncode == 0, p
 p = run([product])
 assert p.returncode == 0 and p.stdout == '1\n42\n', p
 
 unused = t.source('portable_unused', 'import foreign stdffi.clamp; fn main(){}')
 assert good('--check', unused) == 'OK: 1 functions\n'
+
+with tempfile.TemporaryDirectory(dir=t.work, prefix='search-') as temporary:
+    first, second, missing = (Path(temporary) / name for name in ('first', 'second', 'missing'))
+    for root in (first, second, missing):
+        root.mkdir()
+    stdffi = t.root / 'stdffi/mulib'
+    standard_spec = Path(os.environ.get('ON1X_TEST_STDFFI_SPEC',
+                                       t.compiler.parent / 'stdffi/mulib/clamp.ffi')).read_text()
+    first_spec = first / 'clamp.ffi'
+    second_spec = second / 'clamp.ffi'
+    second_spec.write_text(standard_spec)
+
+    for search in ('', ':::', f':{missing}::{second}:'):
+        p = compile_source('--run-ir', entry, search=search)
+        assert (p.returncode, p.stdout) == (0, '1\n42\n'), p
+    p = compile_source('--check', unused, search=str(missing))
+    assert p.returncode == 1 and 'ON1X-STDFFI-KERNEL' in p.stderr, p
+
+    # Omit reviewed exports, reformat the document, and rename parameters:
+    # selection is structural, not an exact-copy test or a registry fallback.
+    only_clamp = standard_spec.split('  (export add_i64 ', 1)[0] + ')\n'
+    only_clamp = '# one public export\n' + only_clamp.replace(' x ', ' input ').replace(' x)', ' input)')
+    first_spec.write_text(only_clamp)
+    clamp_only = t.source('portable_selected_subset',
+                          'import foreign stdffi.clamp as C; fn main(){println(C.i64(7,1,4));}')
+    for search in (f'{first}:{second}', f'{second}:{first}'):
+        p = compile_source('--run-ir', clamp_only, search=search)
+        assert (p.returncode, p.stdout) == (0, '4\n'), p
+    p = compile_source('--check', entry, search=f'{first}:{second}')
+    assert p.returncode == 1 and 'ON1X-STDFFI-MEMBER' in p.stderr and str(first_spec) in p.stderr, p
+    p = compile_source('--run-ir', entry, search=f'{second}:{first}')
+    assert (p.returncode, p.stdout) == (0, '1\n42\n'), p
+
+    for text, message in (
+        ('(ffispec 1', 'expected a recipe atom'),
+        (standard_spec + '(ffispec 1)', 'trailing input'),
+        (standard_spec.replace('(kernel clamp)', '(kernel not_clamp)'), 'does not match'),
+        (standard_spec.replace('(params x lo hi)', '(params x lo)'), 'signature differs'),
+        (standard_spec.replace('(guard (le lo hi))', '(guard true)'), 'guard or body differs'),
+        (standard_spec.replace('(body (if (lt x lo) lo (if (gt x hi) hi x)))',
+                               '(body x)'), 'guard or body differs'),
+        (standard_spec.replace('hint private-code', 'hint no-inline'), 'directives differ'),
+        (standard_spec + ' ' * 65536, 'byte limit'),
+        (standard_spec + '\0', 'NUL'),
+    ):
+        first_spec.write_text(text)
+        p = compile_source('--check', unused, search=f'{first}:{second}')
+        assert p.returncode == 1 and 'ON1X-STDFFI-SPEC' in p.stderr and message in p.stderr and str(first_spec) in p.stderr, p
+        # KernelBind inspection must not try to execute or admit portable files.
+        p = compile_source('--kernel-imports', unused, search=f'{first}:{second}')
+        assert p.returncode == 0 and not json.loads(p.stdout)['requests'], p
+
+    unreviewed_spec = first / 'unknown.ffi'
+    unreviewed_spec.write_text(standard_spec.replace('(kernel clamp)', '(kernel unknown)'))
+    unreviewed = t.source('portable_unreviewed', 'import foreign stdffi.unknown; fn main(){}')
+    p = compile_source('--check', unreviewed, search=str(first))
+    assert p.returncode == 1 and 'no compiled review' in p.stderr and str(unreviewed_spec) in p.stderr, p
+
+    first_spec.unlink()
+    metadata = stdffi / 'generated/mulib-clamp.ffi'
+    catalogue_only = first / metadata.name
+    shutil.copyfile(metadata, catalogue_only)
+    p = compile_source('--check', unused, search=f'{first}:{second}')
+    assert p.returncode == 1 and 'ON1X-STDFFI-CATALOGUE' in p.stderr and str(catalogue_only) in p.stderr, p
+    first_spec.write_text(standard_spec)
+    p = compile_source('--run-ir', entry, search=str(first))
+    assert (p.returncode, p.stdout) == (0, '1\n42\n'), p
+
+    first_spec.unlink()
+    first_spec.mkdir()
+    p = compile_source('--check', unused, search=f'{first}:{second}')
+    assert p.returncode == 1 and 'not a regular file' in p.stderr and str(first_spec) in p.stderr, p
+
+header_only = t.source('portable_default_catalogue', 'import foreign stdffi.json; fn main(){}')
+p = compile_source('--check', header_only)
+assert p.returncode == 1 and 'ON1X-STDFFI-CATALOGUE' in p.stderr and 'mulib-json.ffi' in p.stderr, p
 
 # An admitted export is an ordinary function value, not an extern or a
 # capability. A local binder still shadows the module alias lexically.

@@ -73,6 +73,8 @@ class Loader {
    bool unsafe_context=false;
    std::size_t kernel_requests=0;
    std::map<std::string,Function> kernel_calls;
+   std::optional<std::vector<fs::path>> foreign_roots;
+   std::map<std::string,stdffi::SelectedLibrary> foreign_libraries;
    std::map<std::pair<std::string,std::string>,Function> foreign_functions;
    std::set<std::string> foreign_function_names;
   static void append_parameters(Function& f,const std::vector<Type>& parameters){
@@ -96,11 +98,12 @@ class Loader {
     if(found==current_module->foreigns.end()||locals.contains(alias))return false;
     const auto& kernel=found->second.kernel;
     auto key=std::make_pair(kernel,e.text.substr(dot+1));
+    const auto& library=foreign_libraries.at(kernel);
     auto function=foreign_functions.find(key);
     if(function==foreign_functions.end()){
-     auto materialized=stdffi::materialize(kernel,key.second,e.where);
+     auto materialized=library.materialize(key.second,e.where);
      if(!materialized)
-      throw Error(e.where,"no portable stdffi export "+e.text,"ON1X-STDFFI-MEMBER");
+      throw Error(e.where,"no portable stdffi export "+e.text+" in "+library.path().string(),"ON1X-STDFFI-MEMBER");
      // Internal identifiers are unspellable in source, and cannot designate a
      // function from the disjoint native KernelBind namespace.
      if(!materialized->name.starts_with("@stdffi_")||materialized->external||
@@ -113,6 +116,43 @@ class Loader {
     e.text=function->second.name;
     return true;
    }
+    void admit_foreign(const ForeignImport& request){
+     if(foreign_libraries.contains(request.kernel))return;
+     if(!foreign_roots){
+      foreign_roots.emplace();
+      discovery::environment(*foreign_roots,"MULIB_FOREIGNLIB_PATH");
+      if(foreign_roots->empty())*foreign_roots=options.foreign_default_paths;
+      if(foreign_roots->empty()){
+#ifdef ON1X_BUILT_STDFFI_ROOT
+        foreign_roots->emplace_back(ON1X_BUILT_STDFFI_ROOT);
+#endif
+      }
+      if(foreign_roots->size()>256)throw Error(request.where,"foreign library search path count limit exceeded");
+     }
+     auto absent=[&]{
+      throw Error(request.where,"no portable stdffi kernel stdffi."+request.kernel+
+                  " (looked for "+request.kernel+".ffi in MULIB_FOREIGNLIB_PATH or the standard FFI directories)",
+                  "ON1X-STDFFI-KERNEL");
+     };
+     // Source identifiers are single components; additionally cap filename
+     // length so an overlong identifier never becomes a filesystem lookup.
+     if(request.kernel.size()>128)absent();
+     const auto recipe=request.kernel+".ffi", catalogue="mulib-"+recipe;
+     for(const auto& root:*foreign_roots)
+      for(const auto* file:{&recipe,&catalogue}){
+       auto path=root/(*file);
+       std::error_code ec;
+       auto status=fs::status(path,ec);
+       if(ec==std::errc::no_such_file_or_directory||ec==std::errc::not_a_directory)continue;
+       if(ec)throw Error(request.where,"cannot inspect stdffi file '"+path.string()+"': "+ec.message(),"ON1X-STDFFI-SPEC");
+       if(!fs::exists(status))continue;
+       if(!fs::is_regular_file(status))
+        throw Error(request.where,"stdffi file is not a regular file: "+path.string(),"ON1X-STDFFI-SPEC");
+       foreign_libraries.emplace(request.kernel,stdffi::SelectedLibrary::load(path,request.kernel,request.where));
+       return;
+      }
+     absent();
+    }
    bool kernel_reference(Expr& e,const Scope& values,bool direct){
     if(!current_module||e.kind!=Expr::Kind::Variable)return false;
     const auto dot=e.text.find('.');
@@ -407,8 +447,7 @@ class Loader {
      // inputs. Portable definitions neither require linking nor participate in
      // that protocol; admission happens during ordinary source loading.
      if(!inspection){
-      if(!stdffi::has_kernel(request.kernel))
-       throw Error(request.where,"no portable stdffi kernel stdffi."+request.kernel,"ON1X-STDFFI-KERNEL");
+      admit_foreign(request);
       m->foreigns.emplace(request.alias,request);
      }
     }
@@ -962,6 +1001,12 @@ LoaderOptions default_loader_options(const std::string& executable){
    while(std::getline(search,dir,':'))if(!dir.empty()&&regular(fs::path(dir)/binary)){binary=fs::path(dir)/binary;break;}
   }
    std::error_code ec;auto resolved=fs::canonical(binary,ec);
+   if(!ec){
+    const auto share=(resolved.parent_path()/"../share/on1x").lexically_normal();
+    auto ffi=share/"stdffi/mulib";
+    if(directory(ffi)||regular(share/"stdlib/On1xfile"))
+      options.foreign_default_paths={ffi};
+   }
    // Native authorization must not inherit argv[0], PATH, ON1X_STDLIB or CWD.
    // Other hosts need an audited executable-location API before auto-activation.
 #if defined(__linux__)

@@ -9,6 +9,7 @@ struct LoaderOptions {
  std::filesystem::path stdlib;
  std::vector<std::filesystem::path> paths;
  std::vector<std::filesystem::path> stdlib_paths;
+ std::vector<std::filesystem::path> foreign_default_paths; // Used without an explicit MULIB_FOREIGNLIB_PATH.
  bool stdlib_explicit=false;
   bool prelude=true;
   bool kernel_c11=false; // Explicit unsafe-only C11 compilation profile.

@@ -17,6 +17,9 @@ the SDK disabled. See [INTEGRATION.md](INTEGRATION.md) and [DRIVER.md](DRIVER.md
 Both entry points accept portable MIR v4 and specialize it for `mir-archon`
 and the exact configured target before invoking the bridge. A directive is
 not an opt-in for native execution, provider trust, or speculative rewriting.
+For standalone serialized MIR input, `--speculate` enables the speculative
+policy; it does not run the generic MIR pass pipeline or relax native admission.
+The compiler-linked CLI uses `--optimize-ir` for its explicit opt-in.
 
 The standalone tool also has a [Linux/glibc AMD64 stackless timer source
 profile](TIMERS.md). This separate checked-HIR entrypoint emits native resume

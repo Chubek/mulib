@@ -1,0 +1,5 @@
+mir-bank 1 scalar-equality;
+
+# These are MIR's i64/bool opcodes, not the IEEE float or numeric opcodes.
+pattern eq_self backend * target * mode safe match "eq"($x, $x) replace 1 requires identity;
+pattern ne_self backend * target * mode safe match "ne"($x, $x) replace 0 requires identity;

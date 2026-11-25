@@ -9,17 +9,20 @@
 .token STRING: String = /"([\x20-\x21\x23-\x5b\x5d-\x7e]|\\(["\\nrt]|x[0-9A-Fa-f][0-9A-Fa-f]))*"/
 
 .rule Start
-'syntax: PolicyDocument EOF | MirEnvelope EOF
+'syntax: PolicyDocument EOF | BankDocument EOF | MirEnvelope EOF
 'semantics: return nil;
 .end
 .rule PolicyDocument
-'syntax: "mir-policy" Integer ";" Declarations
+'syntax: "mir-policy" Integer ";" Activations
 .end
-.rule Declarations
-'syntax: Declarations Declaration |
+.rule Activations
+'syntax: Activations Activation |
 .end
-.rule Declaration
-'syntax: Activation | Pattern
+.rule BankDocument
+'syntax: "mir-bank" Integer PolicyName ";" Patterns
+.end
+.rule Patterns
+'syntax: Patterns Pattern |
 .end
 .rule Activation
 'syntax: Kind STRING Condition "enables" PolicyName ";"
@@ -34,7 +37,7 @@
 'syntax: "*" | STRING
 .end
 .rule Pattern
-'syntax: "pattern" PolicyName Condition "class" PolicyName "mode" Mode "match" STRING "(" Arguments ")" "replace" Atom "requires" PolicyName ";"
+'syntax: "pattern" PolicyName Condition "mode" Mode "match" STRING "(" Arguments ")" "replace" Atom "requires" PolicyName ";"
 .end
 .rule Mode
 'syntax: "safe" | "speculative"

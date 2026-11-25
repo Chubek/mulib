@@ -1,0 +1,7 @@
+mir-bank 1 guarded-division;
+
+# These shapes also rule out the INT64_MIN / -1 (or remainder) overflow.
+pattern div_self backend * target * mode speculative match "div.checked"($x, $x) replace 1 requires nonzero;
+pattern zero_div backend * target * mode speculative match "div.checked"(0, $x) replace 0 requires nonzero;
+pattern rem_self backend * target * mode speculative match "mod.checked"($x, $x) replace 0 requires nonzero;
+pattern zero_rem backend * target * mode speculative match "mod.checked"(0, $x) replace 0 requires nonzero;

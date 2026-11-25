@@ -23,6 +23,19 @@ LLSynth and compiles its parse trees into immutable tables for the compiler.
 The `.mmg` files declare passes; `.mmgi` includes contain patterns.
 Emitted programs do not need LLSynth, Perl or Python.
 
+## Local rewrites in lowered MIR
+
+MIR lowering retains the legacy `local-memory` hint for straight-line i64
+scratch use. Separately, it requests the scoped `memgraph-local` bank when a
+typed slot load has an earlier access to that slot in the same block, or
+two stores in that block write the same SSA value to the same slot. The bank
+currently selects `mir-c11` with the exact target `x86_64-unknown-linux-gnu`:
+unsigned and IEEE scalar loads request safe rules; tuple loads and repeated
+stores request speculative rules. A function can request both.
+The specializer must still prove the reaching value, and speculative
+requests need host opt-in. These requests neither assert ownership or
+placement nor depend on the optional bounds profile.
+
 ## Layout
 
 ```

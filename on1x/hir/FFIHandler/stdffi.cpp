@@ -1,21 +1,6 @@
-#include <on1x/stdffi.hpp>
 #include "directives.hpp"
+#include "tables.hpp"
 #include <algorithm>
-#include <array>
-
-namespace on1x::stdffi::tables {
-enum class Code { Bool, Integer, Param, Lt, Le, Gt, Ge, Eq, And, Or, Add, Sub, If };
-struct Node {
- Code op;
- bool boolean;
- std::size_t a,b,c;
- std::int64_t immediate;
-};
-struct Recipe { std::size_t guard,body,directives_begin,directives_count; };
-struct Directive { std::string_view backend,target,kind,action; bool speculative; };
-}
-
-#include "on1x_stdffi_tables.hpp"
 
 namespace on1x::stdffi {
 namespace {
@@ -110,7 +95,27 @@ std::optional<Function> materialize(std::string_view kernel,std::string_view mem
  return std::nullopt;
 }
 
+const Export* SelectedLibrary::find(std::string_view member) const {
+ for(const auto index:exports_)
+  if(tables::exports[index].member==member)return &tables::exports[index];
+ return nullptr;
+}
+
+std::optional<Function> SelectedLibrary::materialize(std::string_view member,const Location& where) const {
+ for(const auto index:exports_)
+  if(tables::exports[index].member==member)
+   return Materializer(where).build(tables::exports[index],tables::recipes[index]);
+ return std::nullopt;
+}
+
+bool is_recipe_function(std::string_view name){
+ return name.starts_with("@stdffi_")&&
+  std::any_of(tables::exports.begin(),tables::exports.end(),[&](const auto& info){return info.function==name;});
+}
+
 void attach_directives(mir::Module& module){
+ // Map each generated request to the id assigned to the actual lowered
+ // function. The materializer never uses requests to change recipe semantics.
  for(const auto& f:module.functions)
   for(std::size_t i=0;i<tables::exports.size();++i){
    if(f.name!=tables::exports[i].function)continue;

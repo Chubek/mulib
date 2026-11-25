@@ -62,6 +62,10 @@ if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
     add_executable(on1x_test_analysis_directives tests/analysis_directives.cpp)
     target_link_libraries(on1x_test_analysis_directives PRIVATE on1x_frontend)
     add_test(NAME on1x.hir.analysis_directives COMMAND on1x_test_analysis_directives)
+    add_test(NAME on1x.hir.analysis_directives_cli
+      COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/analysis_directives_cli.py"
+        "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" "${PROJECT_SOURCE_DIR}/runtime"
+        "${CMAKE_CURRENT_BINARY_DIR}" ${ON1X_TEST_C_FLAGS})
   endif()
   add_test(NAME on1x.processor.include_precedence
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_include_precedence.py"

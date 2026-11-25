@@ -94,6 +94,14 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     endif()
   endif()
   if(Python3_EXECUTABLE)
+    set(_archon_directives_test_args)
+    if(ON1X_ARCHON_ENABLE_SDK_ADAPTER)
+      list(APPEND _archon_directives_test_args sdk)
+    endif()
+    add_test(NAME on1x.backends.mir_archon_scoped_directives
+      COMMAND "${Python3_EXECUTABLE}" -B "${PROJECT_SOURCE_DIR}/mir/rewrite/test_dispatch.py"
+        "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}"
+        "$<TARGET_FILE:on1x-archon-mir>" ${_archon_directives_test_args})
     add_test(NAME on1x.backends.mir_archon_scalar_abi_regen
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_scalar_abi.py" --check)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux"

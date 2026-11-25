@@ -1,0 +1,7 @@
+mir-bank 1 multiplicative-identities;
+
+# Replacing a multiply by zero does not remove/trivialize the producer of $x.
+pattern mul_zero backend * target * mode safe match "mul.checked"($x, 0) replace 0 requires identity;
+pattern zero_mul backend * target * mode safe match "mul.checked"(0, $x) replace 0 requires identity;
+pattern mul_one backend * target * mode safe match "mul.checked"($x, 1) replace $x requires identity;
+pattern one_mul backend * target * mode safe match "mul.checked"(1, $x) replace $x requires identity;

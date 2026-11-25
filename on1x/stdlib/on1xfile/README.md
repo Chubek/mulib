@@ -250,8 +250,8 @@ command invokes ArchVirt outside the build namespace only after the staged
 guest has compiled. Replay and clear do not create a build namespace. A
 failure at any stage does not trigger a host fallback.
 
-`lock` records `vm` in `on1x.lock/v3`, even for projects without Git
-dependencies. `build`, `plan`, `run`, `vm-rerun`, and `vm-cache-clear`
+`lock` records `vm` in `on1x.lock/v3` (or v4 when `kernel-path` is present),
+even for projects without Git dependencies. `build`, `plan`, `run`, `vm-rerun`, and `vm-cache-clear`
 with `--locked` or `--frozen` require the lock to match; even ordinary
 invocations reject a stale lock when one is present. Re-lock after adding,
 changing, or removing `vm`. `--frozen` retains the existing offline dependency
@@ -389,6 +389,40 @@ command "listing" format latex "src/main.on1x"
 without evaluating project policy. Available targets are `plain`, `latex`,
 and `troff`. This is separate from formatting the manifest text itself.
 
+## Proxy settings
+
+The root manifest can set `proxy-http "URL"`, `proxy-https "URL"`, or
+`proxy-any "URL"`. A scheme-specific entry wins over `proxy-any`; both
+override ambient settings. Write `proxy-none` by itself to disable proxies
+for the project. The compiler also reads these declarations when invoked
+directly in the directory containing the `On1xfile`.
+
+`HTTP_PROXY`, `HTTPS_PROXY`, `ANY_PROXY`, and `NO_PROXY` are matched without
+regard to case. A lowercase setting wins over an uppercase one for the same
+key; mixed-case alternatives are used when neither is present. `NO_PROXY`
+is the ambient bypass list. These settings affect explicitly requested HTTPS
+Git acquisition, not the project sandbox or its network permissions. Avoid
+putting proxy credentials in a project manifest checked into source control.
+
+## Dotenv
+
+Declare a literal environment file in the root manifest:
+
+```text
+dotenv ".env"
+```
+
+Values in the file override existing environment values for the declared keys.
+Use `dotenv ".env" preserve` to keep existing values, including empty ones.
+Only the keys declared by the file are passed to project build subprocesses;
+the project driver keeps its own environment unchanged. Files are relative to
+the project root and must not be symlinks. Values are literal: variables,
+commands, and shell expressions are never expanded.
+
+The driver reserves its toolchain, loader, and search-path variables. Dotenv is
+not available for `--sandbox`, `--locked`, or `--frozen` builds, and its values
+are not recorded in build reports or locks.
+
 ## Profiles and manifest preprocessing
 
 The built-in `dev` and `release` correspond to `-O0 -g` and `-O3`.
@@ -523,6 +557,68 @@ builder and the canonical one-TU MuLIB planner. `--mulib-root` selects the
 operator's MuLIB SDK. Native requests produce `<target>.mulib.json` with the
 canonical link plan. This is not independent KernelBind/FFI admission.
 
+### Build-host Cephyr FFI inputs
+
+Declare ordered MuLIB C header search roots in the project root `On1xfile`:
+
+```text
+kernel-path "ffi/primary"
+kernel-path "ffi/vendor"
+```
+
+Declare up to 32 distinct, normalized project-relative directories in search
+order. Paths are anchored at the project root, not at `directory`. Keep only
+intended preprocessing inputs in these trees: the driver snapshots all regular
+files, including transitive includes with extensions other than `.h`. It
+rejects symlinks, special files, and overlap with declared dependency stores
+or build outputs. Project inputs are limited to 2 MiB per file and 4,096
+files/64 MiB total. Dependencies, nested root manifests and directory-local
+manifests cannot set `kernel-path`. Source library packages do not include this
+root policy or these C inputs.
+
+From an On1x source checkout, run generation against the locked snapshot:
+
+```sh
+python3 on1x/tools/on1x-project.py lock /path/to/project
+python3 on1x/tools/on1x-project.py ffi-generate /path/to/project --frozen --sandbox \
+  --cephyr-library /path/to/libcephyr.so --output-dir /path/to/new-ffi-bundle
+```
+
+The driver calls the canonical `hir/FFIHandler/ffispec-gen.py` once, passing
+only the staged roots in `MULIB_KERNELS_PATH`. It does not inherit ambient
+kernel or foreign-library paths, run project profile/shell policy, or fetch
+dependencies. `--config FILE` selects an operator-trusted Cephyr configuration
+(the default is the checkout's `Cephyr.toml`). `--sandbox` uses a network
+namespace and read-only staging; use a compatible build-host Cephyr shared
+library whose system dependencies are visible in the sandbox. Without
+`--sandbox`, the trusted toolchain is not filesystem- or network-isolated.
+
+The generator writes `index.json` and any generated recipes under `recipes/`;
+metadata-only results are not executable. The driver atomically publishes the
+new directory without overwriting or implicitly reusing an old generation.
+`.on1x-ffi.json` fingerprints the inputs, tools and generator outputs. Its
+`generation_roots` are ordered relative paths to the included header snapshots.
+To supply these copies to a compiler build, use the
+[FFIHandler build instructions](../../hir/FFIHandler/README.md) with, for example:
+
+```sh
+export MULIB_KERNELS_PATH=/path/to/new-ffi-bundle/kernel-inputs/0:/path/to/new-ffi-bundle/kernel-inputs/1
+```
+
+**`kernel-path` is not `kernel`, a runtime search path, or an admission rule.**
+An existing `on1xc` only accepts portable recipes validated against its
+compiled registry. `build` and `plan` record the roots and hashes but do not
+generate recipes, pass these roots to `on1xc`, or authorize kernels that were
+not compiled into it. For a new recipe, the FFIHandler in a matching compiler
+build must validate and compile it.
+
+`lock` records the ordered roots and tree hashes in `on1x.lock/v4`. With
+these roots, `build`, `plan`, `run`, and `ffi-generate` require a matching lock
+under `--locked` or `--frozen`, and reject a stale lock even if neither option
+is given. Re-lock after changing root order, names or input bytes. The lock
+pins the declared header snapshot, not the external toolchain or ordinary
+On1x source. `ffi-generate` is a reserved project command and profile name.
+
 ### Locking and explicit remote Git acquisition
 
 ```text
@@ -548,8 +644,10 @@ merges its entry into the lockfile. `PROJECT` defaults to the current directory.
 Both commands accept `--ca-file PEM`. They run on the host, not in the build
 sandbox; review each endpoint before authorizing network access.
 
-The dependency-only lockfile has schema `on1x.lock/v1`; a v2 lock also pins
-the [compiler policy](#compiler-optimizations). Each dependency entry records the dependency kind,
+The dependency-only lockfile has schema `on1x.lock/v1`; v2 pins
+[compiler policy](#compiler-optimizations), v3 includes VM policy, and v4
+includes [build-host FFI inputs](#build-host-cephyr-ffi-inputs).
+Each dependency entry records the dependency kind,
 exact source, manifest selector, and resolved full commit ID. It is intended to
 be committed. For example:
 
@@ -639,8 +737,9 @@ found on the fixed `PATH`; for a tool beside the caller, use an explicit
 shell interpretation. The default does **not** OS-isolate the compiler or host
 tools. Builds do not fetch dependencies; ordinary source PPX and executable
 source extensions are rejected. `--frozen` enforces offline, locked
-dependency resolution; it does not imply `--sandbox`, pin a toolchain, or
-freeze the bytes of local sources. Use both flags to request both behaviors.
+dependency resolution and checks any declared `kernel-path` tree hashes.
+It does not imply `--sandbox`, pin a toolchain, or freeze ordinary local
+On1x source bytes. Use both flags to request both behaviors.
 
 `--sandbox` checks Linux bubblewrap before starting even the stdlib query.
 A setup or command failure never retries the build on the host. Compiler

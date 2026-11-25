@@ -1,8 +1,15 @@
 #include <on1x/discovery.hpp>
+#include "proxy_policy.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <set>
+#if defined(__unix__) || defined(__APPLE__)
+#include <cerrno>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 namespace on1x::discovery {
 namespace {
@@ -61,34 +68,81 @@ std::string_view trim(std::string_view text){
  if(start==std::string_view::npos)return {};
  return text.substr(start,text.find_last_not_of(" \t\r\n")-start+1);
 }
-// Compiler discovery only reads literal package identity. Project commands,
-// profiles, templates, and directory roles are owned by the build engine.
-Manifest parse_package(std::string_view text,const std::string& file){
- auto fail=[&](std::string message)->void{throw Error({file},"invalid On1xfile manifest: "+message);};
- Manifest result;
- std::set<std::string> fields;
- bool header=false,forced=false;
+void row_error(const std::string& file,std::string message,std::size_t first,std::size_t last){
+ throw Error({file,0,first},"invalid On1xfile manifest: "+message+
+             (first==last?"":" (lines "+std::to_string(first)+"-"+std::to_string(last)+")"));
+}
+template<class Finish>
+void package_rows(std::string_view text,const std::string& file,Finish finish_row){
+ bool forced=false;
  std::string row;
- std::size_t start=0,end=0,vm_start=0,vm_end=0;
- auto row_error=[&](std::string message,std::size_t first,std::size_t last)->void{
-  throw Error({file,0,first},"invalid On1xfile manifest: "+message+
-              (first==last?"":" (lines "+std::to_string(first)+"-"+std::to_string(last)+")"));
- };
+ std::size_t start=0,end=0;
  // Match the build driver's head words, including directives not evaluated
  // by discovery. An explicit physical continuation can mask one head.
  constexpr std::string_view heads[]={
   "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work",
   "optimization-profile","optimization","backend","target","dependency","profile",
-  "profile-arg","command","define","kernel","source","library","resource","interface",
-  "compiler","assembler","linker","assembler-arg","linker-arg"
+  "profile-arg","command","define","dotenv","kernel","kernel-path","source","library","resource","interface",
+  "compiler","assembler","linker","assembler-arg","linker-arg",
+  "proxy-http","proxy-https","proxy-any","proxy-none"
  };
  auto finish=[&](){
   if(row.empty())return;
   const auto line=std::string_view(row);
   const auto word_end=line.find_first_of(" \t\r");
   const auto key=line.substr(0,word_end);
-  auto value=word_end==std::string_view::npos?std::string_view{}:trim(line.substr(word_end));
-  auto invalid=[&](std::string message){row_error(std::move(message),start,end);};
+  const auto value=word_end==std::string_view::npos?std::string_view{}:trim(line.substr(word_end));
+  finish_row(key,value,start,end);
+ };
+ if(text.find('\0')!=std::string_view::npos)
+  throw Error({file},"invalid On1xfile manifest: contains NUL");
+ for(std::size_t number=1;!text.empty();++number){
+  const auto newline=text.find('\n');
+  auto line=trim(text.substr(0,newline));
+  text=newline==std::string_view::npos?std::string_view{}:text.substr(newline+1);
+  if(line.empty()||line.front()=='#')continue;
+  const auto word_end=line.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-");
+  const auto key=line.substr(0,word_end);
+  const bool head=!forced&&std::find(std::begin(heads),std::end(heads),key)!=std::end(heads);
+  if(head){finish();row.clear();}
+  if(row.empty())start=number;
+  end=number;
+  if(head&&word_end!=std::string_view::npos&&std::string_view(" \t\r#\\").find(line[word_end])==std::string_view::npos)
+   row_error(file,"manifest fields must be separated",start,end);
+  bool quoted=false,continued=false;
+  for(std::size_t i=0;i<line.size();++i){
+   if(line[i]=='"')quoted=!quoted;
+   else if(line[i]=='\\'){
+    if(quoted){if(i+1<line.size())++i;}
+    else{
+     if(i+1!=line.size())row_error(file,"a continuation backslash must be followed only by whitespace",start,end);
+     if(i==0)row_error(file,"a continuation backslash must follow a field on the same line",start,end);
+     line=trim(line.substr(0,i));
+     continued=true;
+     break;
+    }
+   }else if(line[i]=='#'&&!quoted){
+    line=trim(line.substr(0,i));
+    break;
+   }
+  }
+  if(quoted)row_error(file,"unterminated quoted string",start,end);
+  if(!row.empty())row+=' ';
+  row+=line;
+  forced=continued;
+ }
+ if(forced)row_error(file,"dangling continuation backslash",start,end);
+ finish();
+}
+// Import discovery reads literal package identity, not root-only policy.
+Manifest parse_package(std::string_view text,const std::string& file){
+ auto fail=[&](std::string message)->void{throw Error({file},"invalid On1xfile manifest: "+message);};
+ Manifest result;
+ std::set<std::string> fields;
+ bool header=false;
+ std::size_t vm_start=0,vm_end=0;
+ package_rows(text,file,[&](std::string_view key,std::string_view value,std::size_t start,std::size_t end){
+  auto invalid=[&](std::string message){row_error(file,std::move(message),start,end);};
   if(!header){
    if(key!="on1xfile"||value!="1")invalid("expected on1xfile 1");
    header=true;
@@ -118,54 +172,107 @@ Manifest parse_package(std::string_view text,const std::string& file){
    result.name=value;
   }
   else result.root=value;
- };
- if(text.find('\0')!=std::string_view::npos)fail("contains NUL");
- for(std::size_t number=1;!text.empty();++number){
-  const auto newline=text.find('\n');
-  auto line=trim(text.substr(0,newline));
-  text=newline==std::string_view::npos?std::string_view{}:text.substr(newline+1);
-  if(line.empty()||line.front()=='#')continue;
-  const auto word_end=line.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-");
-  const auto key=line.substr(0,word_end);
-  const bool head=!forced&&std::find(std::begin(heads),std::end(heads),key)!=std::end(heads);
-  if(head){finish();row.clear();}
-  if(row.empty())start=number;
-  end=number;
-  if(head&&word_end!=std::string_view::npos&&std::string_view(" \t\r#\\").find(line[word_end])==std::string_view::npos)
-   row_error("manifest fields must be separated",start,end);
-  bool quoted=false,continued=false;
-  for(std::size_t i=0;i<line.size();++i){
-   if(line[i]=='"')quoted=!quoted;
-   else if(line[i]=='\\'){
-    if(quoted){if(i+1<line.size())++i;}
-    else{
-     if(i+1!=line.size())row_error("a continuation backslash must be followed only by whitespace",start,end);
-     if(i==0)row_error("a continuation backslash must follow a field on the same line",start,end);
-     line=trim(line.substr(0,i));
-     continued=true;
-     break;
-    }
-   }else if(line[i]=='#'&&!quoted){
-    line=trim(line.substr(0,i));
-    break;
-   }
-  }
-  if(quoted)row_error("unterminated quoted string",start,end);
-  if(!row.empty())row+=' ';
-  row+=line;
-  forced=continued;
- }
- if(forced)row_error("dangling continuation backslash",start,end);
- finish();
+ });
  if(!header)fail("expected on1xfile 1");
  if(result.name.empty())fail("invalid package name");
  if(result.kind.empty())fail("invalid project kind");
  // An executable's root may also be on an import search path, but only the
  // project driver can interpret its launch policy. Libraries cannot declare it.
  if(vm_start&&result.kind=="library")
-  row_error("vm policy is only allowed in the root On1xfile of an executable or complex project",vm_start,vm_end);
+  row_error(file,"vm policy is only allowed in the root On1xfile of an executable or complex project",vm_start,vm_end);
  return result;
 }
+#if defined(__unix__) || defined(__APPLE__)
+std::string read_root_project(){
+ constexpr std::size_t limit=65536;
+ const auto fd=::open("On1xfile",O_RDONLY|O_NOFOLLOW|O_NONBLOCK|O_CLOEXEC);
+ if(fd<0){
+  if(errno==ENOENT)return {};
+  throw Error({"On1xfile"},"cannot open root On1xfile for proxy policy (expected a regular file)");
+ }
+ struct Close {int fd;~Close(){::close(fd);}} close{fd};
+ struct stat info{};
+ if(::fstat(fd,&info)<0||!S_ISREG(info.st_mode)||info.st_size>static_cast<off_t>(limit))
+  throw Error({"On1xfile"},"expected a regular root On1xfile of at most 65536 bytes");
+ std::string text;
+ char buffer[4096];
+ for(;;){
+  const auto n=::read(fd,buffer,sizeof buffer);
+  if(!n)return text;
+  if(n<0){
+   if(errno==EINTR)continue;
+   throw Error({"On1xfile"},"cannot read root On1xfile for proxy policy");
+  }
+  if(static_cast<std::size_t>(n)>limit-text.size())
+   throw Error({"On1xfile"},"root On1xfile byte limit exceeded");
+  text.append(buffer,static_cast<std::size_t>(n));
+ }
+}
+
+// Decode the JSON spelling of a quoted proxy field. Proxy URLs are printable
+// ASCII (non-ASCII characters in the URI must be percent-encoded).
+std::string proxy_field(std::string_view value){
+ if(value.size()<2||value.front()!='"'||value.back()!='"')return {};
+ value=value.substr(1,value.size()-2);
+ std::string out;
+ for(std::size_t i=0;i<value.size();++i){
+  unsigned char c=value[i];
+  if(c=='"')return {};
+  if(c=='\\'){
+   if(++i==value.size())return {};
+   c=value[i];
+   if(c=='u'){
+    if(value.size()-i<=4)return {};
+    unsigned n=0;
+    for(unsigned j=0;j<4;++j){
+     const auto hex=value[++i];
+     unsigned digit=hex>='0'&&hex<='9'?hex-'0':hex>='a'&&hex<='f'?hex-'a'+10:
+                    hex>='A'&&hex<='F'?hex-'A'+10:16;
+     if(digit>15)return {};
+     n=(n<<4)+digit;
+    }
+    if(n>0x7e)return {};
+    c=static_cast<unsigned char>(n);
+   }else if(c!='"'&&c!='\\'&&c!='/')return {};
+  }
+  if(c<0x21||c>0x7e||out.size()==4096)return {};
+  out+=static_cast<char>(c);
+ }
+ return out;
+}
+proxy::Policy root_proxy_policy(){
+ auto text=read_root_project();
+ const auto begin=trim(text);
+ if(begin.starts_with('(')||begin.starts_with(';')||text.find("proxy-")==std::string::npos)return {};
+ const std::string file="On1xfile";
+ proxy::Policy result;
+ bool header=false;
+ package_rows(text,file,[&](std::string_view key,std::string_view value,std::size_t start,std::size_t end){
+  auto invalid=[&](std::string message){row_error(file,std::move(message),start,end);};
+  if(!header){
+   if(key!="on1xfile"||value!="1")invalid("expected on1xfile 1");
+   header=true;
+   return;
+  }
+  if(key=="on1xfile")invalid("duplicate on1xfile header");
+  if(key=="proxy-none"){
+   if(!value.empty())invalid("proxy-none takes no fields");
+   if(result.none)invalid("duplicate proxy-none");
+   if(!result.http.empty()||!result.https.empty()||!result.any.empty())
+    invalid("proxy-none cannot be combined with other proxy directives");
+   result.none=true;
+   return;
+  }
+  auto* field=key=="proxy-http"?&result.http:key=="proxy-https"?&result.https:key=="proxy-any"?&result.any:nullptr;
+  if(!field)return;
+  if(result.none)invalid("proxy-none cannot be combined with other proxy directives");
+  if(!field->empty())invalid("duplicate "+std::string(key));
+  *field=proxy_field(value);
+  if(field->empty())invalid(std::string(key)+" requires one nonempty quoted proxy URL");
+ });
+ return result;
+}
+#endif
 fs::path local(const fs::path& base,const std::string& value,bool file){
  auto path=fs::path(value);
  if(path.is_absolute()||std::find(path.begin(),path.end(),fs::path(".."))!=path.end())
@@ -267,5 +374,20 @@ Ppx ppx(const std::string& requested,const std::vector<fs::path>& roots,const Lo
   }
  }
  throw Error(at,"PPX not found in configured search paths: "+requested);
+}
+}
+
+namespace on1x::proxy {
+Policy current_project(){
+#if defined(__unix__) || defined(__APPLE__)
+ try{return discovery::root_proxy_policy();}
+ catch(const Error& error){
+  // A source diagnostic would quote the manifest line, which could contain
+  // proxy credentials. The parser's reason itself never includes any field.
+  throw std::runtime_error("On1xfile:"+std::to_string(error.where.line)+": "+error.what());
+ }
+#else
+ return {};
+#endif
 }
 }

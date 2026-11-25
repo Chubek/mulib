@@ -15,6 +15,9 @@ index returns `ON1X_SDK_INVALID_ARGUMENT`; an incompatible version or short
 view returns `ON1X_SDK_ABI_MISMATCH`. Returned strings are length-aware,
 borrowed from the exact snapshot, and valid while that snapshot is retained.
 Function ID `0` denotes module scope. The views do not allocate or mutate IR.
+The `cold-code` and `no-inline` hints require a nonzero existing function ID.
+They add actions to the MIR v4 allowlist without changing the wire shape; older
+readers may reject those action names.
 
 Serialization through either SDK MIR wire mode and through the `mir-text`
 built-in preserves all clauses. Decoded snapshots remain candidates and cannot
@@ -31,11 +34,14 @@ require explicit selection and the configured, ABI-checked exact triple.
 
 Compiler-linked built-ins specialize a private copy for the selected product;
 the original portable snapshot is unchanged. `mir-c11` receives the portable
-module so its emitter can also consider emitter-specific hints such as
-`private-code` for hidden visibility on supported C toolchains. The public
-backend request has no speculation-enabling flag: a speculative clause is not
-an opt-in. The compiler's private dispatcher may opt in, but matching patterns
-still require their canonical proof and verifier checks.
+module so its emitter can consider hints such as `private-code` for hidden
+visibility on supported C toolchains. When selected, `cold-code` marks the
+function as cold and `no-inline` prevents C inlining on toolchains advertising
+the corresponding attribute. Neither affects other executable products. For C
+placement, `cold-code` wins if `kernel-hot` also matches the function.
+The public backend request has no speculation-enabling flag: a speculative
+clause is not an opt-in. The compiler's private dispatcher may opt in, but
+matching patterns still require their canonical proof and verifier checks.
 
 A hint may guide an already-admitted built-in's policy. It cannot select,
 register, or activate a provider, grant an extension access to private compiler

@@ -71,6 +71,7 @@ class Lowering {
  const Unit& unit;Limits limits;Module module;Id serial=1;
  const memgraph::LexicalSlots& places;
  std::size_t function=0,current=0;
+ bool recipe_function=false;
  static constexpr auto ended=std::numeric_limits<std::size_t>::max();
  struct Binding {Id id;Type type;bool slot;bool alias=false;};
  std::vector<std::map<std::string,Binding>> scopes;
@@ -527,6 +528,37 @@ class Lowering {
    default:unsupported(e.where,"expression requires aggregate, closure, resource or stage lowering");
    }
   }
+  // Reviewed recipe predicates are bounded trees. In branch position,
+  // send each short-circuit edge directly to its continuation instead of
+  // materializing a boolean join only to branch again. Leaves still use
+  // ordinary expression lowering, including all checked arithmetic effects.
+  void recipe_branch(const Expr& e,std::size_t yes,std::size_t no){
+   // The checked-HIR desugar pass may already have converted the logical
+   // operator to a bool decision. Reuse the same storage/ownership proof as
+   // value-position SSA lowering before bypassing its temporary here.
+   if(e.kind==Expr::Kind::Region&&limits.decision_ssa&&boolean_decision(e)){
+    const auto& branch=e.body[1];
+    const auto& yes_value=*branch.body[0].value;
+    const auto& no_value=*branch.otherwise[0].value;
+    const bool yes_identity=yes_value.kind==Expr::Kind::Boolean&&yes_value.text=="true";
+    const bool no_identity=no_value.kind==Expr::Kind::Boolean&&no_value.text=="false";
+    const auto take_yes=yes_identity?yes:make_block(branch.where);
+    const auto take_no=no_identity?no:make_block(branch.where);
+    recipe_branch(*branch.value,take_yes,take_no);
+    if(!yes_identity){current=take_yes;recipe_branch(yes_value,yes,no);}
+    if(!no_identity){current=take_no;recipe_branch(no_value,yes,no);}
+    return;
+   }
+   if(e.kind==Expr::Kind::Binary&&(e.text=="&&"||e.text=="||")){
+    auto rhs=make_block(e.where);
+    if(e.text=="&&")recipe_branch(*e.children.at(0),rhs,no);
+    else recipe_branch(*e.children.at(0),yes,rhs);
+    current=rhs;recipe_branch(*e.children.at(1),yes,no);
+    return;
+   }
+   const auto condition=expression(e);
+   terminate(Exit::Branch,condition,{edge(yes),edge(no)},e.where);
+  }
   void bind_pattern(const Pattern& pattern,Type type,Id value){
    if(!pattern.is_tuple()){scopes.back().emplace(pattern.name,Binding{value,type,false});return;}
    for(std::size_t i=0;i<pattern.elements.size();++i){
@@ -589,8 +621,10 @@ class Lowering {
    case Stmt::Kind::Block:body(s.body);break;
    case Stmt::Kind::Template:body(s.body,false);break;
    case Stmt::Kind::If:{
-    auto condition=expression(*s.value);auto yes=make_block(s.where),no=make_block(s.where);
-    terminate(Exit::Branch,condition,{edge(yes),edge(no)},s.where);
+    const auto condition=recipe_function?Id{0}:expression(*s.value);
+    auto yes=make_block(s.where),no=make_block(s.where);
+    if(recipe_function)recipe_branch(*s.value,yes,no);
+    else terminate(Exit::Branch,condition,{edge(yes),edge(no)},s.where);
     current=yes;body(s.body);auto yes_tail=current;
     current=no;body(s.otherwise);auto no_tail=current;
     if(yes_tail==ended&&no_tail==ended){current=ended;break;}
@@ -650,6 +684,7 @@ public:
   }
    for(const auto& f:unit.functions){
     if(f.prototype)continue;
+    recipe_function=stdffi::is_recipe_function(f.name);
     current=make_block(f.where);scopes.emplace_back();
     for(const auto& p:f.params){
       scalar(p.type,p.where);auto id=fresh(p.where);block().parameters.push_back({id,representation(p.type,p.where),p.where});

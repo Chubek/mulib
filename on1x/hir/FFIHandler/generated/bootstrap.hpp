@@ -1,4 +1,4 @@
-// FFIHandler bootstrap 29df96451274592752eaf0980899cc233fdff2641ec80c57177d0bce38280472 4c83bd13cfe2aeffaf5892c4c900a3fec152a5ca8e42ca020dd5dcbe898276c8
+// FFIHandler bootstrap 624be0fa46d36e0b3133fcbe4388b5bee860d026d45a6d4b3ad0504285b208f8 4c83bd13cfe2aeffaf5892c4c900a3fec152a5ca8e42ca020dd5dcbe898276c8
 // Generated from reviewed FFI recipes. Do not edit.
 #pragma once
 namespace on1x::stdffi::tables {

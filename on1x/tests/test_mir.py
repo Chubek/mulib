@@ -10,10 +10,10 @@ sys.path.insert(0, str(tests.root/'stdlib'))
 import sexpr
 
 
-def native(path, exe):
+def native(path, exe, *options):
     p = run([tests.cc, '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
              '-I', tests.root/'runtime', path, tests.root/'runtime/on1x_runtime.c',
-             *tests.flags, '-o', exe])
+             *options, *tests.flags, '-o', exe])
     assert p.returncode == 0, p.stderr
     return run([exe])
 
@@ -194,6 +194,45 @@ for opts, suffix in [([], ''), (['--optimize-ir'], '-optimized')]:
     assert p.returncode == 0, p.stderr
     p = native(path, tests.work/('float-compat-v2'+suffix))
     assert p.returncode == 0 and p.stdout == float_expected, p.stderr
+
+# Feed both codegen hints through saved canonical MIR. Compile the selected C
+# strictly, and ask compilers with attribute reflection what each callee got.
+hint_source = tests.source('codegen_hints', '''
+fn rarely(n:i64){println(n);}
+fn keep_call(n:i64){println(n);}
+fn main(){rarely(19);keep_call(42);}
+''')
+emitted = run([tests.compiler, '--emit-ir', hint_source])
+assert emitted.returncode == 0, emitted.stderr
+hint_tree = sexpr.loads(emitted.stdout)
+callee_ids = {f[2]: f[1] for f in hint_tree[3]}
+hint_clauses = [
+    [sexpr.Atom('directive'), 'mir-c11', '', 'hint', action, callee_ids[function],
+     sexpr.Atom('false')]
+    for action, function in [('cold-code', 'rarely'), ('no-inline', 'keep_call')]
+]
+hint_tree = [hint_tree[0], sexpr.Atom('4'), *hint_tree[2:4], hint_clauses]
+hint_ir = tests.work/'codegen_hints.mir'
+hint_ir.write_text(sexpr.dumps(hint_tree))
+emitted = run([tests.compiler, '--ir-input', '--emit-ir-c', hint_ir])
+assert emitted.returncode == 0, emitted.stderr
+cold_name, no_inline_name = ('on1x_mir_f' + callee_ids[name] for name in ['rarely', 'keep_call'])
+assert f'ON1X_MIR_COLD void {cold_name}(' in emitted.stdout
+assert f'ON1X_MIR_NOINLINE void {no_inline_name}(' in emitted.stdout
+hint_c = tests.work/'codegen_hints.c'
+hint_c.write_text(emitted.stdout + f'''
+#if defined(__has_builtin) && defined(__has_attribute)
+#if __has_builtin(__builtin_has_attribute) && __has_attribute(cold) && __has_attribute(noinline)
+_Static_assert(__builtin_has_attribute({cold_name}, cold), "missing cold attribute");
+_Static_assert(!__builtin_has_attribute({cold_name}, noinline), "stray noinline attribute");
+_Static_assert(__builtin_has_attribute({no_inline_name}, noinline), "missing noinline attribute");
+_Static_assert(!__builtin_has_attribute({no_inline_name}, cold), "stray cold attribute");
+#endif
+#endif
+''')
+p = native(hint_c, tests.work/'codegen_hints', '-O2')
+assert p.returncode == 0 and p.stdout == '19\n42\n', p.stderr
+
 tests.source('mir_import', 'fn add(x:i64)->i64{return x+1;}')
 compare('import', 'import "mir_import.on1x"; fn main(){println(add(41));}', expected='42\n')
 tests.source('mir_numeric_import', 'fn duplicate(x)->_{return(x,x);}fn identity(x)->_{return x;}')

@@ -1,4 +1,4 @@
-#include <on1x/backend/mir.hpp>
+#include <on1x/backend/mir_directives.hpp>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -118,10 +118,14 @@ void verify(const Module& module,Limits limits){
   budget.work(module_at,d.action.size());
   if(!directive_selector(d.backend)||!directive_selector(d.target))fail(module_at,"invalid directive selector");
   if(d.kind=="hint"){
-   if(d.action!="kernel-hot"&&d.action!="local-memory"&&d.action!="canonicalized"&&d.action!="private-code")
+   const bool function_hint=d.action=="cold-code"||d.action=="no-inline";
+   if(!function_hint&&d.action!="kernel-hot"&&d.action!="local-memory"&&d.action!="canonicalized"&&d.action!="private-code")
     fail(module_at,"unknown directive hint action");
-  }else if(d.kind=="rewrite"){
-   if(d.action!="fold-identity")fail(module_at,"unknown directive rewrite action");
+   if(function_hint&&!d.function)fail(module_at,"directive hint "+d.action+" requires function scope");
+   }else if(d.kind=="rewrite"){
+    const bool scoped=d.action==memgraph_local_action||d.action==meta_canonical_action;
+    if(!scoped&&d.action!="fold-identity")fail(module_at,"unknown directive rewrite action");
+    if(scoped&&!d.function)fail(module_at,"directive rewrite "+d.action+" requires function scope");
   }else fail(module_at,"unknown directive kind");
   if(d.function&&!functions.contains(d.function))fail(module_at,"unknown directive function");
   if(!directive_keys.emplace(d.backend,d.target,d.kind,d.action,d.function,d.speculative).second)

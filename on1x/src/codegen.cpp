@@ -26,16 +26,6 @@
 
 namespace on1x {
 namespace {
-struct StdFFIScalar {
- const char* operation;
- std::size_t arity;
-};
-std::optional<StdFFIScalar> stdffi_scalar(std::string_view name){
- if(name=="@stdffi_clamp_i64")return StdFFIScalar{"ON1X_KERNEL_RT_CLAMP_I64",3};
- if(name=="@stdffi_clamp_add_i64")return StdFFIScalar{"ON1X_KERNEL_RT_ADD_I64",2};
- if(name=="@stdffi_clamp_sub_i64")return StdFFIScalar{"ON1X_KERNEL_RT_SUB_I64",2};
- return std::nullopt;
-}
 std::string c_string(const std::string& source){
  std::string out="\"";
  for(std::size_t i=1;i+1<source.size();++i){
@@ -1377,41 +1367,13 @@ class Generator {
   for(std::size_t i=0;i<f.params.size();++i){if(i)helpers<<", ";helpers<<"on1x_arg_"<<i;}
    helpers<<");\n";if(f.result==Type::Void)helpers<<"  return;\n";helpers<<"}\n\n";
   }
-  void stdffi_definition(const Function& f,const StdFFIScalar& scalar){
-   definitions<<"int64_t "<<functions.at(f.name)<<"(int64_t a, int64_t b";
-   if(scalar.arity==3)definitions<<", int64_t c";
-   definitions<<") {\n";
-   if(scalar.arity==3)
-    definitions<<"  on1x_assert(b <= c);\n";
-   definitions<<"  const int64_t args[] = {a, b"<<(scalar.arity==3?", c":"")<<"};\n"
-              <<"  int64_t result = 0;\n"
-              <<"  On1xKernelRT_Status status = on1x_kernel_rt_builtin_i64("
-              <<scalar.operation<<", args, "<<scalar.arity<<", &result);\n"
-              <<"  if (status != ON1X_KERNEL_RT_OK) on1x_tool_fail(on1x_kernel_rt_status_message(status));\n"
-              <<"  return result;\n}\n\n";
-  }
   public:
      explicit Generator(const Unit& source,const C11Options& options)
        :unit(source),catalog(source),
            bounds(options.memgraph_bounds,options.memgraph_report!=nullptr),
            scratch_stack_bytes(options.memgraph_stack_bytes),origins(options.origins),
           source_prefixes(options.source_prefixes){
-    for(const auto& f:unit.functions){
-     verify_kernel_shape(f);
-     if(const auto scalar=stdffi_scalar(f.name)){
-#ifndef ON1X_HAS_CEPHYR_KERNEL_RT
-      throw Error(f.where,"standard FFI requires the Cephyr kernel runtime (ON1X_WITH_CEPHYR=ON)",
-                  "ON1X-STDFFI-RUNTIME");
-#endif
-      if(f.external||f.prototype||!f.kernel_symbol.empty()||f.kernel_link_only||
-         !f.type_parameters.empty()||!f.constraints.empty()||
-         f.result!=Type::I64||f.params.size()!=scalar->arity||
-         std::any_of(f.params.begin(),f.params.end(),[](const auto& p){
-          return p.type!=Type::I64||p.borrow!=BorrowMode::Value||p.pattern;
-         }))
-       throw Error(f.where,"invalid internal standard FFI scalar signature","ON1X-STDFFI-DEFINITION");
-     }
-    }
+     for(const auto& f:unit.functions)verify_kernel_shape(f);
    uses_csp=csp::present(unit);
       for(const auto& f:unit.functions)if(f.external&&f.kernel_symbol.empty())identifiers.insert(f.name);
      for(const auto& f:unit.functions)if(f.kernel_link_only)identifiers.insert("on1x_kernel_scalar_v1_"+f.kernel_symbol);
@@ -1429,7 +1391,7 @@ class Generator {
      if(f.result.contains_unique())uses_unique=true;
      for(const auto& parameter:f.params)
       if(parameter.type.contains_unique())uses_unique=true;
-      if(!f.prototype&&!stdffi_scalar(f.name))collect(f.body);
+       if(!f.prototype)collect(f.body);
     }
      if(!options.allow_stackless_timers&&!async_frames.empty())
       throw Error(async_frames.front().block->where,
@@ -1438,18 +1400,9 @@ class Generator {
    }
      std::string bounds_report() const {return bounds.report();}
     std::string run(){
-      std::string kernel_headers,ipc_header,stdffi_header;
+       std::string kernel_headers,ipc_header;
       for(const auto& f:unit.functions){
        if(f.prototype)continue;
-       if(const auto scalar=stdffi_scalar(f.name)){
-        stdffi_header="#include <On1xKernelRT.h>\n"
-         "#if !defined(ON1X_KERNEL_RT_ABI_VERSION) || ON1X_KERNEL_RT_ABI_VERSION != 1\n"
-         "#error \"incompatible On1x standard FFI runtime ABI\"\n#endif\n";
-        prototypes<<"int64_t "<<functions.at(f.name)<<"(int64_t, int64_t"
-                  <<(scalar->arity==3?", int64_t":"")<<");\n";
-        stdffi_definition(f,*scalar);
-        continue;
-       }
       if(ipc_kernel_symbol(f.kernel_symbol)){
        ipc_header="#include <on1x_kernel_ipc.h>\n";
        continue;
@@ -1496,7 +1449,7 @@ class Generator {
   }
   for(const auto& lambda:lambdas)lambda_support(lambda);
   for(const auto& frame:async_frames)async_support(frame);
-      for(const auto& f:unit.functions)if(!f.external&&!f.prototype&&!stdffi_scalar(f.name))
+       for(const auto& f:unit.functions)if(!f.external&&!f.prototype)
       definition(functions.at(f.name),f.result,f.params,f.body,f.where,
                  nullptr,takes_borrows(f));
    for(const auto& lambda:lambdas){const auto& e=*lambda.expression;definition(lambda.invoke,e.result,e.parameters,e.body,e.where,&lambda);}
@@ -1542,7 +1495,7 @@ class Generator {
        +(uses_defer?std::string("#if !defined(ON1X_DEFER_ABI_VERSION) || ON1X_DEFER_ABI_VERSION != 1\n#error \"incompatible On1x defer runtime ABI\"\n#endif\n"):std::string{})
           +(uses_csp?std::string("#include <on1x_concurrency.h>\n#if !defined(ON1X_CSP_ABI_VERSION) || ON1X_CSP_ABI_VERSION != 5\n#error \"unsupported On1x cooperative fiber target or runtime ABI\"\n#endif\n"):std::string{})
           +(async_frames.empty()?std::string{}:std::string("#include <on1x_async_frame.h>\n#if !defined(ON1X_ASYNC_FRAME_ABI_VERSION) || ON1X_ASYNC_FRAME_ABI_VERSION != 1\n#error \"incompatible On1x stackless frame runtime ABI\"\n#endif\n"))
-           +kernel_headers+ipc_header+stdffi_header+float_guard+types.str()+"\n";
+            +kernel_headers+ipc_header+float_guard+types.str()+"\n";
     if(scratch_layout_used)output+=memgraph::c11_scratch_layout();
     if(!heap_cell_type.empty())output+=memgraph::c11_heap_cells(heap_cell_type);
    const auto proto_begin=output.size();

@@ -1,6 +1,7 @@
 # MuLIB foreign interfaces: migration guide
 
-For a portable kernel, import its standard module directly:
+For a kernel admitted by the [build-time FFI pipeline](../hir/FFIHandler/README.md),
+import its generated module directly:
 
 ```on1x
 import foreign stdffi.clamp as Clamp;
@@ -15,11 +16,11 @@ fn main() {
 directives. Pass that file to `on1xc --ir-input --emit-ir-c program.mir` or
 `on1xc --ir-input --run-vm program.mir` to select a product later. No target
 catalogue, native review file or `unsafe` block is part of this import.
-`Clamp.i64(value, low, high)` still checks `low <= high`; a failing call traps
-after evaluating its arguments once in source order.
+Generated recipes follow the translated C definition. They do not invent
+guards from kernel names or documentation; callers still need to respect the
+documented input contract.
 
-For a native direct-C11 executable configure On1x with `ON1X_WITH_CEPHYR=ON`
-and the installed `Cephyr_DIR`. Then:
+For a native direct-C11 executable, use the same generated recipe:
 
 ```sh
 python3 on1x/tools/on1x-build.py program.on1x --on1xc /path/to/on1xc \
@@ -27,11 +28,8 @@ python3 on1x/tools/on1x-build.py program.on1x --on1xc /path/to/on1xc \
 ./program
 ```
 
-On AMD64 Linux, the first native kernel call compiles the embedded MuLIB
-implementation with Cephyr and loads its shared module. The program reuses
-that module for later calls. With Cephyr disabled, the evaluator, VM, and
-`--backend mir-c11` can still execute the portable body. See the
-[runtime SDK](../runtime-sdk/README.md) for the native API.
+Cephyr is a build-host dependency for recipe generation; the resulting
+executable does not compile or load MuLIB kernel code on first use.
 
 The [standard FFI catalogue](../stdffi/README.md) describes generation and
 the supported kernel bodies. An unlisted kernel or untranslatable export

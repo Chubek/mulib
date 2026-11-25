@@ -2,7 +2,8 @@
 #include <on1x/backend/mir.hpp>
 
 namespace on1x::stdffi {
-// The recipes' private HIR names are not source-addressable. Only functions
-// that have actually been materialized and lowered receive metadata.
+// The recipes' private HIR names are not source-addressable.
+bool is_recipe_function(std::string_view name);
+// Only functions that have actually been materialized and lowered receive metadata.
 void attach_directives(mir::Module&);
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile reviewed ffispec v1 recipes without embedding source text."""
+"""Compile the generated executable ffispec index into immutable tables."""
 from __future__ import annotations
 
 import argparse
@@ -9,12 +9,22 @@ import json
 from pathlib import Path
 import re
 import sys
+import tempfile
 
 MAX_FILE = 65536
-KERNEL = re.compile(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
+MAX_INDEX = 8 * 1024 * 1024
+MAX_RECIPES = 1024
+MAX_EXPRESSION_NODES = 512
+MAX_PROOF_STEPS = 8192
+MAX_TABLE_EXPORTS = 4096
+MAX_TABLE_NODES = 131072
+MAX_TABLE_DIRECTIVES = 32768
+MIN_I64, MAX_I64 = -(1 << 63), (1 << 63) - 1
+KERNEL = re.compile(r"(?=.{1,128}\Z)[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 IDENT = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]{0,63}")
 SELECTOR = re.compile(r"[a-zA-Z_0-9][a-zA-Z_0-9.-]{0,127}")
 INTEGER = re.compile(r"-?(?:0|[1-9][0-9]{0,18})")
+DIGEST = re.compile(r"[0-9a-f]{64}")
 OPS = {
     "lt": ("Lt", "bool", "i64", "i64"),
     "le": ("Le", "bool", "i64", "i64"),
@@ -27,7 +37,22 @@ OPS = {
     "sub": ("Sub", "i64", "i64", "i64"),
     "if": ("If", "i64", "bool", "i64", "i64"),
 }
-DIRECTIVES = {"hint": {"kernel-hot", "private-code"}, "rewrite": {"fold-identity"}}
+# Action -> required effective backend, or None for portable selectors.
+DIRECTIVES = {
+    "hint": {
+        "kernel-hot": None,
+        "canonicalized": None,
+        "local-memory": None,
+        "private-code": None,
+        "cold-code": "mir-c11",
+        "no-inline": "mir-c11",
+    },
+    "rewrite": {
+        "fold-identity": None,
+        "memgraph-local": None,
+        "meta-canonical": None,
+    },
+}
 
 
 def require(condition, message):
@@ -47,34 +72,62 @@ def sha256(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def inputs(grammar, review_path, include, specs):
-    review_bytes = read(review_path)
-    review = json.loads(review_bytes)
-    require(isinstance(review, dict) and review, "expected a nonempty review lock")
-    headers = []
-    for kernel, approved in sorted(review.items()):
-        require(KERNEL.fullmatch(kernel) and approved.get("header") == f"mulib-{kernel}.h",
-                "invalid reviewed kernel or noncanonical header name")
-        header = approved["header"]
-        digest = sha256(read(include / header, 8 * 1024 * 1024))
-        require(digest == approved["sha256"], f"pinned header SHA-256 mismatch: {header}")
-        headers.append([header, digest])
-    sources = sorted((read(path), path) for path in specs)
-    stamp = ["FFIHandler-bootstrap-v1", sha256(read(Path(__file__))), sha256(read(grammar)), sha256(review_bytes),
-             [sha256(content) for content, _ in sources], headers]
-    return review, sources, sha256(json.dumps(stamp, separators=(",", ":")).encode("ascii"))
+def unique_fields(pairs):
+    result = {}
+    for name, value in pairs:
+        require(name not in result, f"duplicate JSON field {name!r}")
+        result[name] = value
+    return result
 
 
-def snapshot(stamp, payload):
-    return f"// FFIHandler bootstrap {stamp} {sha256(payload)}\n".encode("ascii") + payload
+def invalid_constant(value):
+    raise ValueError(f"invalid JSON constant {value!r}")
 
 
-def check_snapshot(path, stamp):
-    data = read(path, 2 * 1024 * 1024)
-    _, separator, payload = data.partition(b"\n")
-    require(separator and data == snapshot(stamp, payload),
-            "stale FFIHandler bootstrap; regenerate on1x_stdffi_regenerate with LibStone LLSynth")
-    return data
+def generated_recipes(index_path):
+    """Only the generator's executable manifest is a build input; ignore catalogues."""
+    index = json.loads(read(index_path, MAX_INDEX).decode("utf-8"),
+                       object_pairs_hook=unique_fields, parse_constant=invalid_constant)
+    require(isinstance(index, dict) and type(index.get("version")) is int and index["version"] == 1,
+            "expected generated recipe index version 1")
+    records = index.get("recipes")
+    require(isinstance(records, list) and len(records) <= MAX_RECIPES, "expected bounded recipes array")
+    root = index_path.parent.resolve(strict=True)
+    result = {}
+    for record in records:
+        require(isinstance(record, dict), "expected generated recipe object")
+        name, identity = record.get("file"), record.get("header")
+        require(isinstance(name, str) and isinstance(identity, str), "expected recipe file and header identity")
+        match = re.fullmatch(r"recipes/([a-z][a-z0-9-]{0,127})\.ffi", name)
+        require(match is not None and KERNEL.fullmatch(match[1]), f"invalid recipe path: {name!r}")
+        kernel = match[1]
+        require(kernel not in result, f"duplicate generated recipe for {kernel}")
+        path = root / name
+        require(path.resolve(strict=True) == path, f"not a canonical recipe path: {path}")
+        header = Path(identity)
+        require(header.is_absolute() and str(header) == identity and header.name == f"mulib-{kernel}.h"
+                and header.resolve(strict=True) == header, f"not a canonical header path for {kernel}: {identity!r}")
+        digest = sha256(read(header, MAX_INDEX))
+        if "sha256" in record:
+            require(record["sha256"] == digest, f"header SHA-256 mismatch: {header}")
+        result[kernel] = (path, header.name, digest)
+    return sorted(result.items())
+
+
+def bound_document(text):
+    """Use the same document limits as the runtime structural matcher, before LR parsing."""
+    nodes, depth = -1, 0  # The runtime counts all nodes except the outer list.
+    for token in re.finditer(r"[;#][^\r\n]*|[()]|[^ \t\r\n();#]+", text):
+        first = token[0][0]
+        if first == "(":
+            depth += 1
+        elif first == ")":
+            depth -= 1
+            continue
+        elif first in ";#":
+            continue
+        nodes += 1
+        require(nodes <= 16384 and depth <= 41, "FFI recipe exceeds document depth or node limit")
 
 
 def load_parser(path):
@@ -83,6 +136,23 @@ def load_parser(path):
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def write_if_changed(output, content):
+    try:
+        with output.open("rb") as stream:
+            if stream.read(len(content) + 1) == content:
+                return
+    except FileNotFoundError:
+        pass
+    with tempfile.NamedTemporaryFile(dir=output.parent, delete=False) as stream:
+        temporary = Path(stream.name)
+        try:
+            stream.write(content)
+            stream.close()
+            temporary.replace(output)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def list_items(tail):
@@ -99,12 +169,15 @@ def spelling(node):
     return node.token.lexeme
 
 
-def expression_tree(node, depth=0):
-    require(depth <= 32, "FFI recipe exceeds nesting limit")
+def expression_tree(node, depth=0, budget=None):
+    if budget is None:
+        budget = [MAX_EXPRESSION_NODES]
+    require(depth <= 32 and budget[0], "FFI recipe exceeds expression depth or node limit")
+    budget[0] -= 1
     if len(node.children) == 1:
         return spelling(node.children[0])
     _, op, *operands, _ = node.children
-    return [spelling(op), *(expression_tree(child, depth + 1) for child in operands)]
+    return [spelling(op), *(expression_tree(child, depth + 1, budget) for child in operands)]
 
 
 def field_tree(choice):
@@ -158,12 +231,125 @@ def selectors(values, parent):
     return output
 
 
+def linear(left, right, sign):
+    terms = dict(left[0])
+    for index, coefficient in right[0]:
+        terms[index] = terms.get(index, 0) + sign * coefficient
+    return tuple(sorted((i, n) for i, n in terms.items() if n)), left[1] + sign * right[1]
+
+
+class I64Proof:
+    """Conservative, path-sensitive bounds for the typed, pure recipe subset.
+
+    Facts bound individual parameters and normalized linear forms. We do not
+    derive arbitrary consequences from different forms: lack of a proof is
+    rejection, never implicit C wrapping, On1x trapping, or speculation.
+    """
+    def __init__(self):
+        self.remaining = MAX_PROOF_STEPS
+
+    def visit(self):
+        self.remaining -= 1
+        require(self.remaining >= 0, "FFI overflow proof exceeds work limit")
+
+    @staticmethod
+    def orientation(terms):
+        if terms and terms[0][1] < 0:
+            return tuple((i, -n) for i, n in terms), -1
+        return terms, 1
+
+    def bounds(self, affine, facts):
+        terms, offset = affine
+        lo = hi = 0
+        for index, coefficient in terms:
+            a, b = facts.get(((index, 1),), (MIN_I64, MAX_I64))
+            if coefficient < 0:
+                a, b = b, a
+            lo += a * coefficient
+            hi += b * coefficient
+        key, sign = self.orientation(terms)
+        if key in facts:
+            lower, upper = facts[key]
+            if sign < 0:
+                lower, upper = -upper, -lower
+            lo, hi = max(lo, lower), min(hi, upper)
+        return lo + offset, hi + offset
+
+    def restrict(self, affine, facts, minimum=None, maximum=None):
+        a, b = self.bounds(affine, facts)
+        lo = max(a, minimum) if minimum is not None else a
+        hi = min(b, maximum) if maximum is not None else b
+        if lo > hi:
+            return []
+        if (lo, hi) == (a, b):
+            return [facts]
+        terms, offset = affine
+        key, sign = self.orientation(terms)
+        lo, hi = lo - offset, hi - offset
+        if sign < 0:
+            lo, hi = -hi, -lo
+        return [{**facts, key: (lo, hi)}]
+
+    def integer(self, expr, facts):
+        self.visit()
+        if type(expr) is int:
+            return (), expr
+        if isinstance(expr, str):
+            return ((int(expr[1:]), 1),), 0
+        op, lhs, rhs = expr
+        value = linear(self.integer(lhs, facts), self.integer(rhs, facts), 1 if op == "add" else -1)
+        lo, hi = self.bounds(value, facts)
+        require(MIN_I64 <= lo and hi <= MAX_I64, f"cannot prove signed i64 {op} does not overflow")
+        return value
+
+    def branch(self, expr, facts):
+        self.visit()
+        if isinstance(expr, str):
+            return ([facts], []) if expr == "true" else ([], [facts])
+        op, lhs, rhs = expr
+        if op == "and" or op == "or":
+            yes, no = self.branch(lhs, facts)
+            reachable = yes if op == "and" else no
+            out_yes, out_no = ([], no) if op == "and" else (yes, [])
+            for earlier in reachable:
+                rhs_yes, rhs_no = self.branch(rhs, earlier)
+                out_yes.extend(rhs_yes)
+                out_no.extend(rhs_no)
+            return out_yes, out_no
+        diff = linear(self.integer(lhs, facts), self.integer(rhs, facts), -1)
+        if op == "eq":
+            return (self.restrict(diff, facts, 0, 0),
+                    self.restrict(diff, facts, maximum=-1) + self.restrict(diff, facts, minimum=1))
+        if op in ("gt", "ge"):
+            diff = linear(((), 0), diff, -1)
+        cap = -1 if op in ("lt", "gt") else 0
+        return self.restrict(diff, facts, maximum=cap), self.restrict(diff, facts, minimum=cap + 1)
+
+    def result(self, expr, facts):
+        self.visit()
+        if isinstance(expr, (list, tuple)) and expr[0] == "if":
+            _, cond, then, otherwise = expr
+            yes, no = self.branch(cond, facts)
+            for earlier in yes:
+                self.result(then, earlier)
+            for earlier in no:
+                self.result(otherwise, earlier)
+        else:
+            self.integer(expr, facts)
+
+
+def prove_i64_body(body):
+    """Check an already typed canonical body (parameters represented as '$N')."""
+    I64Proof().result(body, {})
+
+
 class RecipeTable:
     def __init__(self):
         self.nodes = []
         self.exports = []
         self.recipes = []
         self.directives = []
+        self.names = set()
 
     def expression(self, expr, params, expected, tail=False):
         if isinstance(expr, str):
@@ -175,7 +361,7 @@ class RecipeTable:
             else:
                 require(expected == "i64" and INTEGER.fullmatch(expr), f"invalid {expected} operand {expr!r}")
                 n = int(expr)
-                require(-(1 << 63) <= n < 1 << 63, "i64 literal out of range")
+                require(MIN_I64 <= n <= MAX_I64, "i64 literal out of range")
                 op, args, immediate, canonical = "Integer", [], n, n
         else:
             name, children = form(expr)
@@ -189,43 +375,50 @@ class RecipeTable:
             immediate = 0
             canonical = [name, *(pair[1] for pair in pairs)]
         pos = len(self.nodes)
+        require(pos < MAX_TABLE_NODES, "generated executable table exceeds node limit")
         self.nodes.append((op, expected, *(args + [0] * (3 - len(args))), immediate))
         return pos, canonical
 
-    def document(self, doc, review, seen):
+    def document(self, doc, kernel, header, digest):
         tag, items = form(doc)
         require(tag == "ffispec" and items and items[0] == "1", "expected ffispec version 1")
         scope = fields(items[1:], {"kernel", "header", "sha256", "backend", "target"}, {"export"})
-        kernel = atom(scope.get("kernel", []), "kernel", KERNEL)
-        require(kernel in review and kernel not in seen, f"unreviewed or duplicate kernel {kernel!r}")
-        seen.add(kernel)
-        approved = review[kernel]
-        header = atom(scope.get("header", []), "header")
-        digest = atom(scope.get("sha256", []), "sha256", re.compile("[0-9a-f]{64}"))
-        require(header == approved["header"] and digest == approved["sha256"],
-                f"unreviewed header or SHA-256 for {kernel}")
+        require(atom(scope.get("kernel", []), "kernel", KERNEL) == kernel,
+                "recipe kernel differs from its generated index path")
+        require(atom(scope.get("header", []), "header") == header,
+                f"recipe header differs from the indexed header for {kernel}")
+        require(atom(scope.get("sha256", []), "sha256", DIGEST) == digest,
+                f"recipe header SHA-256 mismatch for {kernel}")
         parent = selectors(scope, {"backend": "", "target": ""})
-        members = set()
-        for export in scope.get("export", []):
+        members, symbols = set(), set()
+        require(scope.get("export"), "expected at least one executable export")
+        for export in scope["export"]:
+            require(len(self.exports) < MAX_TABLE_EXPORTS, "generated executable table exceeds export limit")
             require(len(export) >= 2, "export requires member and symbol")
             member = atom(export[:1], "member", IDENT)
             symbol = atom(export[1:2], "C symbol", IDENT)
-            require(member in approved["exports"] and member not in members,
-                    f"unreviewed or duplicate export {kernel}.{member}")
+            require(member not in members and symbol not in symbols,
+                    f"duplicate export member or C symbol for {kernel}.{member}")
             members.add(member)
-            identity = approved["exports"][member]
-            require(symbol == identity["symbol"], f"unreviewed C symbol for {kernel}.{member}")
+            symbols.add(symbol)
             options = fields(export[2:], {"params", "guard", "body", "backend", "target"}, DIRECTIVES)
-            params = options.get("params", [])
-            require(len(params) == identity["arity"] and
-                    all(isinstance(p, str) and IDENT.fullmatch(p) and p not in {"true", "false"} for p in params)
-                    and len(set(params)) == len(params), f"invalid parameters for {kernel}.{member}")
+            # ffispec v1 has exactly one function type family: a fixed list of
+            # signed i64 parameters and a signed i64 result. No C ABI is loaded.
+            params = options.get("params")
+            require(params is not None and len(set(params)) == len(params)
+                    and all(IDENT.fullmatch(p) and p not in {"true", "false"} for p in params),
+                    f"invalid signed i64 signature for {kernel}.{member}")
             require(len(options.get("guard", [])) == 1 and len(options.get("body", [])) == 1,
-                    f"expected one guard and body for {kernel}.{member}")
+                     f"expected one guard and body for {kernel}.{member}")
             guard, guard_identity = self.expression(options["guard"][0], params, "bool")
             body, body_identity = self.expression(options["body"][0], params, "i64", tail=True)
-            require((guard_identity, body_identity) == (identity["guard"], identity["body"]),
-                    f"unreviewed guard or body for {kernel}.{member}")
+            try:
+                I64Proof().branch(guard_identity, {})
+                # Guards (and MIR directives) do not prove C arithmetic safe.
+                # The body must be defined on the entire i64 input domain.
+                prove_i64_body(body_identity)
+            except ValueError as error:
+                raise ValueError(f"{kernel}.{member}: {error}") from error
             inherited = selectors(options, parent)
             start = len(self.directives)
             directives = set()
@@ -236,15 +429,20 @@ class RecipeTable:
                     scoped = fields(args[1:], {"backend", "target", "speculative"})
                     require(not scoped.get("speculative"), "speculative marker takes no arguments")
                     actual = selectors(scoped, inherited)
+                    backend = accepted_actions[action]
+                    require(backend is None or actual["backend"] == backend,
+                            f"{kind} {action} requires effective backend {backend}")
                     entry = (actual["backend"], actual["target"], kind, action, "speculative" in scoped)
                     require(entry not in directives, "duplicate FFI directive")
                     directives.add(entry)
+            require(start + len(directives) <= MAX_TABLE_DIRECTIVES,
+                    "generated executable table exceeds directive limit")
             self.directives.extend(sorted(directives))
             name = f"@stdffi_{kernel.replace('-', '_')}_{member}"
-            require(all(item[3] != name for item in self.exports), f"duplicate internal function {name}")
+            require(name not in self.names, f"duplicate internal function {name}")
+            self.names.add(name)
             self.exports.append((kernel, member, symbol, name, header, digest, len(params)))
             self.recipes.append((guard, body, start, len(self.directives) - start))
-        require(members == approved["exports"].keys(), f"missing approved exports for {kernel}")
 
     def header(self):
         def quote(item):
@@ -266,7 +464,7 @@ class RecipeTable:
                     str(a), str(b), str(c), value)
 
         return "\n".join([
-            "// Generated from reviewed FFI recipes. Do not edit.",
+            "// Generated from the executable FFI recipe index. Do not edit.",
             "#pragma once",
             "namespace on1x::stdffi::tables {",
             *table("Node", "nodes", [format_node(n) for n in self.nodes]),
@@ -280,38 +478,28 @@ class RecipeTable:
 
 def main():
     cli = argparse.ArgumentParser(description=__doc__)
-    mode = cli.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--parser", type=Path)
-    mode.add_argument("--bootstrap", type=Path)
-    cli.add_argument("--grammar", type=Path, required=True)
-    cli.add_argument("--review", type=Path, required=True)
-    cli.add_argument("--include", type=Path, required=True)
+    cli.add_argument("--parser", type=Path, required=True)
+    cli.add_argument("--generated-index", type=Path, required=True)
     cli.add_argument("--output", type=Path, required=True)
-    cli.add_argument("specs", type=Path, nargs="+")
     args = cli.parse_args()
-    path = args.review
+    path = args.generated_index
     try:
-        review, sources, stamp = inputs(args.grammar, args.review, args.include, args.specs)
-        if args.bootstrap:
-            result = check_snapshot(args.bootstrap, stamp)
-        else:
-            parser = load_parser(args.parser)
-            tables, seen = RecipeTable(), set()
-            for content, path in sources:
-                try:
-                    parsed, _ = parser.parse(content.decode("ascii")).children
-                except parser.LanguageError as exc:
-                    raise ValueError(str(exc)) from exc
-                _, tag, version, clauses, _ = parsed.children
-                tables.document([spelling(tag), spelling(version), *map(field_tree, list_items(clauses))],
-                                review, seen)
-            require(seen == review.keys(), "missing reviewed kernel specifications")
-            result = snapshot(stamp, tables.header().encode("ascii"))
-        # Only replace the output after every file has passed admission.
-        temporary = args.output.with_suffix(".tmp")
-        temporary.write_bytes(result)
-        temporary.replace(args.output)
-    except (AttributeError, KeyError, TypeError, ValueError, OSError) as exc:
+        parser = load_parser(args.parser)
+        tables = RecipeTable()
+        for kernel, (path, header, digest) in generated_recipes(args.generated_index):
+            source = read(path).decode("ascii")
+            bound_document(source)
+            try:
+                parsed, _ = parser.parse(source).children
+            except parser.LanguageError as exc:
+                raise ValueError(str(exc)) from exc
+            _, tag, version, clauses, _ = parsed.children
+            tables.document([spelling(tag), spelling(version), *map(field_tree, list_items(clauses))],
+                            kernel, header, digest)
+        # A failed admission leaves the old output intact, and an unchanged
+        # registry must not force dependent C++ objects to be rebuilt.
+        write_if_changed(args.output, tables.header().encode("ascii"))
+    except (AttributeError, KeyError, TypeError, ValueError, OSError, RuntimeError) as exc:
         cli.exit(1, f"{path}: invalid standard FFI recipe: {exc}\n")
 
 

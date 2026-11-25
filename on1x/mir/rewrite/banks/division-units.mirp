@@ -1,0 +1,5 @@
+mir-bank 1 division-units;
+
+pattern div_one backend * target * mode safe match "div.checked"($x, 1) replace $x requires identity;
+# Native remainder uses a costly checked division sequence on this product.
+pattern archon_rem_one backend "mir-archon" target "x86_64-unknown-linux-gnu" mode safe match "mod.checked"($x, 1) replace 0 requires identity;

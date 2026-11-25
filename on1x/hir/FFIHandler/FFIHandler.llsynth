@@ -60,10 +60,10 @@
 'syntax: "(" "hint" HintAction DirectiveOptions ")" | "(" "rewrite" RewriteAction DirectiveOptions ")"
 .end
 .rule HintAction
-'syntax: "kernel-hot" | "private-code"
+'syntax: "kernel-hot" | "canonicalized" | "local-memory" | "private-code" | "cold-code" | "no-inline"
 .end
 .rule RewriteAction
-'syntax: "fold-identity"
+'syntax: "fold-identity" | "memgraph-local" | "meta-canonical"
 .end
 .rule DirectiveOptions
 'syntax: DirectiveOptions DirectiveOption |

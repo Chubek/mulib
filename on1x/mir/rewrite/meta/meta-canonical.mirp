@@ -1,0 +1,17 @@
+mir-bank 1 meta-canonical;
+
+# Safe canonicalizations. The runtime checks complementary boolean SSA
+# definitions; the ordered i64 predicates are false at the strict bounds.
+pattern negate_zero backend * target * mode safe match "neg.checked"(0) replace 0 requires identity;
+pattern equal_bool_complement backend * target * mode safe match "eq"($lhs, $rhs) replace 0 requires bool-complement;
+pattern unequal_bool_complement backend * target * mode safe match "ne"($lhs, $rhs) replace 1 requires bool-complement;
+pattern less_than_i64_min backend * target * mode safe match "lt"($x, -9223372036854775808) replace 0 requires identity;
+pattern greater_than_i64_max backend * target * mode safe match "gt"($x, 9223372036854775807) replace 0 requires identity;
+pattern at_least_i64_min backend * target * mode safe match "ge"($x, -9223372036854775808) replace 1 requires identity;
+
+# Only remove the second checked negation; the first can still trap.
+pattern cancel_double_checked_neg backend * target * mode speculative match "neg.checked"($negated) replace $original requires double-checked-neg;
+
+# Equality and inequality against zero require a MIR-proven nonzero i64.
+pattern equal_zero_when_nonzero backend * target * mode speculative match "eq"($x, 0) replace 0 requires nonzero-comparison;
+pattern unequal_zero_when_nonzero backend * target * mode speculative match "ne"($x, 0) replace 1 requires nonzero-comparison;

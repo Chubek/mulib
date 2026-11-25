@@ -5,7 +5,7 @@ endif
 syntax case match
 syntax iskeyword 48-57,65-90,95,97-122,45
 syntax match on1xfileValue /\<\%(executable\|complex\|library\|local\|git\|git-remote\|commit\|branch\|tag\|format\|plain\|latex\|troff\|shell\|off\|standard\|strict\|c11\|mir-c11\|mir-vm\|mir-archon\|default\|debug\|release\|on\)\>/
-syntax match on1xfileDirective /^\s*\zs\%(on1xfile\|kind\|name\|directory\|target\|dependency\|profile\|command\|define\|kernel\|scrutiny\|scrutiny-work\|backend\|optimization-profile\|optimization\|source\|library\|resource\|interface\)\>/
+ syntax match on1xfileDirective /^\s*\zs\%(on1xfile\|kind\|name\|directory\|target\|dependency\|profile\|command\|define\|kernel-path\|kernel\|scrutiny\|scrutiny-work\|backend\|optimization-profile\|optimization\|source\|library\|resource\|interface\)\>/
 syntax match on1xfileNumber /\<[0-9]\+\>/
 syntax match on1xfileComment /#.*/
 syntax match on1xfileBadEscape /\\./ contained

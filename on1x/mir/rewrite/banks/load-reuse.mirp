@@ -1,0 +1,3 @@
+mir-bank 1 load-reuse;
+
+pattern reuse_slot backend * target * mode safe match "load"() replace $loaded requires local-load;

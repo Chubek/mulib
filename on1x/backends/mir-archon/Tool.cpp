@@ -138,7 +138,7 @@ void write_all(const std::string &name, std::string_view bytes) {
 #endif
 }
 void help() {
-    std::cerr << "usage: on1x-archon-mir --ir-input FILE [--target TRIPLE] [-o OUTPUT.s]\n"
+    std::cerr << "usage: on1x-archon-mir --ir-input FILE [--target TRIPLE] [--speculate] [-o OUTPUT.s]\n"
                  "       [--pic] [--no-entry] [--max-assembly-bytes N]\n"
                  "       on1x-archon-mir --timer-source FILE [-o OUTPUT.s] [--pic]\n"
                  "       on1x-archon-mir --print-target | --print-backend-target\n"
@@ -152,6 +152,7 @@ void help() {
 int main(int argc, char **argv) try {
     std::string input;
     bool timer_source = false;
+    bool speculate = false;
     std::string output = "-";
     std::string target(target_triple());
     on1x::backends::archon::Options options;
@@ -171,6 +172,7 @@ int main(int argc, char **argv) try {
         const std::string arg = argv[i];
         if (arg == "--help" || arg == "-h") { help(); return 0; }
         if (arg == "--pic") options.pic = true;
+        else if (arg == "--speculate") speculate = true;
         else if (arg == "--no-entry") options.emit_c_entrypoint = false;
         else if ((arg == "-o" || arg == "--ir-input" || arg == "--timer-source" || arg == "--target" ||
                   arg == "--max-assembly-bytes") && i + 1 < argc) {
@@ -185,13 +187,14 @@ int main(int argc, char **argv) try {
         } else throw std::runtime_error("unknown or incomplete argument: " + arg);
     }
     if (input.empty()) { help(); return 2; }
+    if (speculate && timer_source) throw std::runtime_error("--speculate requires --ir-input");
     check_target(target);
     const auto bytes = read_all(input);
     const auto result = [&] {
         if (!timer_source) {
             auto module = on1x::mir::deserialize(bytes, input);
             if (module.version == on1x::mir::directive_format_version)
-                module = on1x::mir::specialize(module, "mir-archon", target);
+                module = on1x::mir::specialize(module, "mir-archon", target, speculate);
             return on1x::backends::archon::compile(module, options);
         }
         auto unit = on1x::parse(on1x::scan(bytes, input));

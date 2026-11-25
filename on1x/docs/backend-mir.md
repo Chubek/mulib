@@ -12,11 +12,26 @@ directives apply. `--optimize-ir` permits speculative rewrite candidates; a
 matching pattern still has to establish that its change preserves values,
 traps and effects. The pattern language is in
 [`mir/MIR.llsynth`](../mir/MIR.llsynth) and its database is in
-[`mir/rewrite`](../mir/rewrite). For C output use `--emit-ir-c --mir-target
-TRIPLE` when the downstream compiler's target is known. `kernel-hot` controls
-function placement on compilers supporting the hot attribute; `private-code`
-can hide a helper from ELF dynamic symbol export. Neither changes the C call
-signature or grants a module access to native code.
+[`mir/rewrite`](../mir/rewrite). Use `--mir-target TRIPLE` with `--emit-ir-c`,
+`--emit-vm`, `--run-vm`, `--run-ir`, or `--ir-cfg` to select directives for an
+explicit target. The option does not infer a host target or change the product's
+ABI. `kernel-hot` requests
+hot function placement, and `private-code` can hide a helper from ELF dynamic
+symbol export. `cold-code` requests cold-function optimization and placement;
+`no-inline` prevents the downstream C compiler from inlining the function.
+These two hints require an existing function ID, not module scope, and affect
+only `mir-c11` when backend, target and speculation settings match. Each emits
+its C attribute only if the downstream compiler advertises support. A matching
+`cold-code` hint takes precedence over `kernel-hot` for C placement only, not
+for MIR rewrites. These hints do not change the C call signature, effects, or
+admission to native code.
+
+`rewrite memgraph-local` and `rewrite meta-canonical` are function-scoped
+MIR v4 optimization requests. Their speculation bits select the safe or
+speculative pattern sets respectively; the latter also require `--optimize-ir`
+or another explicit compiler-side opt-in. Unknown or missing proof, a missing
+target for a target-specific request, or an unmatched product leaves a request
+inactive. See the [scoped rewrite contract](../mir/README.md#scoped-rewrite-actions-for-hir-producers).
 
 The [foreign interface guide](ffi-migration.md) shows how a standard MuLIB
 kernel becomes an ordinary callable MIR function.

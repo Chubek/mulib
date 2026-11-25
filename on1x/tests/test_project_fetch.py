@@ -166,17 +166,17 @@ class FetchTests(unittest.TestCase):
         self.server.head = self.git('-C', self.source, 'rev-parse', 'HEAD').decode()
         return pinned
 
-    def manifest(self, pin, url=None, *, kind='git-remote'):
+    def manifest(self, pin, url=None, *, kind='git-remote', proxy_policy='proxy-none'):
         (self.project / 'On1xfile').write_text(
             'on1xfile 1\nkind executable\nname "sample"\ndirectory "src"\n'
-            'target "sample" "src/main.on1x"\n'
+            f'target "sample" "src/main.on1x"\n{proxy_policy}\n'
             f'dependency "toolkit" {kind} {json.dumps(url or self.base + "/lib.git")} "{pin}"\n')
         return self.project / '.on1x-deps/toolkit' / pin
 
     def selector_manifest(self, selector, value, url=None):
         (self.project / 'On1xfile').write_text(
             'on1xfile 1\nkind executable\nname "sample"\ndirectory "src"\n'
-            'target "sample" "src/main.on1x"\n'
+            'target "sample" "src/main.on1x"\nproxy-none\n'
             f'dependency "toolkit" git-remote {json.dumps(url or self.base + "/lib.git")} '
             f'{selector} {json.dumps(value)}\n')
 
@@ -249,8 +249,8 @@ class FetchTests(unittest.TestCase):
         self.assertFalse(self.server.requests)
         valid = manifest.read_text()
         manifest.write_text(valid + 'misspelt-head "not ignored"\n')
-        self.fetch(negative='On1xfile:6-9:', env=env)
-        self.driver('lock', negative='On1xfile:6-9:')
+        self.fetch(negative='On1xfile:7-10:', env=env)
+        self.driver('lock', negative='On1xfile:7-10:')
         self.assertFalse(self.server.requests)
         self.assertFalse((self.project / 'On1xfile.lock').exists())
         manifest.write_text(valid)
@@ -379,6 +379,21 @@ class FetchTests(unittest.TestCase):
                                 self.server.requests)
                 self.assertFalse(marker.exists())
                 self.assertEqual(list(dest.parent.iterdir()), [])
+
+    def test_explicit_proxy_is_honored_without_logging_credentials(self):
+        pin = self.library()
+        dest = self.manifest(pin, proxy_policy='')
+        env = {key: value for key, value in os.environ.items() if not key.lower().endswith('_proxy')}
+        env['hTtPs_PrOxY'] = 'http://user:private-proxy-sentinel@127.0.0.1:1'
+        run = subprocess.run(
+            [sys.executable, OPTIONS.driver, 'fetch', 'toolkit', '--ca-file', self.ca],
+            cwd=self.project, capture_output=True, text=True, env=env, timeout=10,
+        )
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn('configured proxy', run.stderr)
+        self.assertNotIn('private-proxy-sentinel', run.stderr)
+        self.assertFalse(self.server.requests)
+        self.assertFalse(dest.exists())
 
     def test_missing_or_noncommit_pin_and_wrong_library_never_publish(self):
         pin = self.library(declared_name='different')

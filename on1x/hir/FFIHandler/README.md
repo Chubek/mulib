@@ -1,45 +1,70 @@
-# Standard FFI recipe compiler
+# MuLIB foreign recipe pipeline
 
-LLSynth parses `.ffi` inputs at build time. The compiler validates their
-closed `ffispec 1` profile and generates immutable typed tables. MIR lowering
-materializes only referenced exports; it needs no `.ffi` reads, C symbol
-lookups, Python or Perl at runtime. The separate native C11 runtime resolves
-its typed entry points in a module compiled by Cephyr on first use.
+FFIHandler uses one build-host pipeline for MuLIB kernels. It discovers
+headers recursively in the ordered, colon-separated `MULIB_KERNELS_PATH`.
+Empty components are ignored. If none remain, it scans the checkout's
+`kernels/` directory. The first root providing a relative header path wins.
 
-```text
-(ffispec 1
-  (kernel clamp)
-  (header mulib-clamp.h)
-  (sha256 HEADER_DIGEST)
-  (export i64 mulib_clamp_i64
-    (params x lo hi)
-    (guard (le lo hi))
-    (body (if (lt x lo) lo (if (gt x hi) hi x)))
-    (hint private-code (backend mir-c11))
-    (hint kernel-hot (backend mir-c11) (target x86_64-unknown-linux-gnu) (speculative))
-    (rewrite fold-identity (speculative))))
+```sh
+cmake -S on1x -B build/on1x \
+  -DON1X_STDFFI_CEPHYR_LIBRARY=/absolute/path/to/libcephyr.so
+MULIB_KERNELS_PATH="$PWD/kernels:/absolute/path/to/more-kernels" \
+  cmake --build build/on1x
 ```
 
-The `backend` and `target` selectors can also be specified directly within
-the spec or export. Directives inherit selectors from those scopes; a
-nested selector overrides the one it inherits. Omission at every level,
-or an explicit `*`, produces the empty (unrestricted) MIR selector.
-Either directive kind may carry the argument-free `(speculative)` marker.
-Without the marker a directive is non-speculative.
-Directives carry no authority over ABI, guards, types or effects.
+Use a build-host shared library whose Python binding supports `emit_mir`.
+`CEPHYR_LIBRARY` or a CMake `Cephyr_DIR` selecting a shared installation also
+works. A custom preprocessing environment can be supplied with
+`ON1X_STDFFI_CEPHYR_CONFIG`; for example, additional system include paths can
+provide headers absent from Cephyr's bundled C library.
 
-The compiler checks the actual MuLIB header hash against `reviewed.json`,
-independently of the hash claimed by `.ffi`. It also checks every typed
-guard and body against the independently recorded structural identity in
-that review, comparing parameters by position. Adding or changing a body
-requires a new review of both its C implementation and recipe, not just a
-new header hash. For `clamp`, the interval guard runs before the body;
-the saturation recipes use short-circuit sign tests to make the
-subsequent arithmetic safe before each bound check.
+Every build scans the configured roots. The generator reuses unchanged output
+when it can fingerprint the header, its include dependencies and the Cephyr
+inputs; it regenerates changed entries and removes its stale managed files.
+The table compiler preserves the generated C++ header when its contents do
+not change. To generate the same bundle outside CMake:
 
-When Perl or LibStone LLSynth is unavailable, the build uses a checked-in
-compiled bootstrap. The build will reject it if its payload, compiler,
-grammar, recipe source, review lock, or a reviewed header has changed. Rebuild the snapshot
-with `cmake --build <build-dir> --target on1x_stdffi_regenerate` in a build
-configured with real LLSynth. The generated and bootstrap tables are checked
-for byte-for-byte parity by `on1x.stdffi.bootstrap`.
+```sh
+python3 on1x/hir/FFIHandler/ffispec-gen.py \
+  --cephyr-library /absolute/path/to/libcephyr.so \
+  --output-dir build/ffi
+```
+
+## What is generated
+
+- `recipes/<kernel>.ffi`: executable `ffispec 1` for representable functions.
+  Cephyr's C11 AST and semantic interface S-expressions must agree on the
+  definition and signed `i64` signature. Translation checks that the
+  supported, bounded body is defined across its input domain. No kernel is
+  given a handwritten exception.
+- `catalogue/`: non-executable entries for other headers. They preserve
+  compiler evidence or diagnostics rather than pretending an unsupported
+  signature, pointer, or effectful body is callable.
+- `index.json`: header and output identities, diagnostics, and the executable
+  recipe list consumed by FFIHandler.
+
+Cephyr MIR is separate from On1x MIR. The generator uses selected evidence
+in Cephyr MIR to assess optimization requests. It does not embed it as
+executable On1x MIR or use directives as a substitute for proof.
+
+An LLSynth-generated parser reads the executable recipes. FFIHandler
+validates the header identity, expression types, arithmetic and directives,
+then compiles immutable tables. Selectors, speculation bits, and function scope
+are preserved as On1x MIR directives. MIR verifies rewrites against its own
+instructions and facts before producing a backend artifact.
+
+## Source import discovery
+
+`import foreign stdffi.<kernel> [as <alias>];` reads generated executable
+recipes from `MULIB_FOREIGNLIB_PATH` in order. If it is unset or has no
+nonempty entries, On1x uses the build's `stdffi/mulib/recipes/` or the
+installation's `share/on1x/stdffi/mulib/`.
+
+The first matching file is authoritative. It can select exports already
+compiled into the compiler's registry, but cannot introduce new executable
+code or override a validated signature, guard, body, or directive. Build with
+different `MULIB_KERNELS_PATH` roots to add new headers to the registry.
+
+For project-local discovery, see the [`kernel-path` declaration and build-host
+command](../../stdlib/on1xfile/README.md#build-host-cephyr-ffi-inputs). That
+command generates the same bundle, not a separate import implementation.

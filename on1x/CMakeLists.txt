@@ -204,7 +204,7 @@ target_link_libraries(on1x_pretty_kernels PUBLIC ${CMAKE_DL_LIBS})
 if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
-add_executable(on1xc src/cli.cpp stdlib/prettyprint/on1x/formatter.cpp)
+add_executable(on1xc src/cli.cpp src/proxy_policy.cpp stdlib/prettyprint/on1x/formatter.cpp)
 if(ON1X_GENERATED_FRONTEND)
   target_compile_definitions(on1xc PRIVATE ON1X_WITH_AUROCKS_FAULTS=1)
 endif()
@@ -281,7 +281,6 @@ if(ON1X_WITH_CEPHYR)
     configure_file(src/backend/cephyr.toml.in "${cephyr_config_dir}/cephyr-${profile}.toml" @ONLY)
     install(FILES "${cephyr_config_dir}/cephyr-${profile}.toml" DESTINATION share/on1x)
   endforeach()
-  include(runtime-sdk/cmake/CephyrKernels.cmake)
   add_subdirectory(stdlib/cephyr)
   add_executable(on1x-cephyr-kernel src/backend/cephyr_kernel.cpp)
   target_compile_features(on1x-cephyr-kernel PRIVATE cxx_std_17)
@@ -298,10 +297,6 @@ if(ON1X_WITH_CEPHYR)
     ON1X_CEPHYR_RESOURCE_ROOT="${ON1X_CEPHYR_RESOURCE_ROOT}"
     ON1X_CEPHYR_ARCHON_ROOT="${ON1X_CEPHYR_ARCHON_ROOT}")
   if(BUILD_TESTING)
-    add_test(NAME on1x.stdffi.cephyr_generator COMMAND "${CMAKE_COMMAND}" -E env
-      "PYTHONPATH=${ON1X_LIBSTONE_ROOT}/cornerstone/Cephyr/python"
-      "CEPHYR_LIBRARY=$<TARGET_FILE:Cephyr::Cephyr>"
-      "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/hir/FFIHandler/test_ffispec_gen.py")
     add_test(NAME on1x.cephyr.native COMMAND "${Python3_EXECUTABLE}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cephyr_native.py" "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
     set_tests_properties(on1x.cephyr.native PROPERTIES TIMEOUT 300)
@@ -466,13 +461,15 @@ endif()
 
 install(TARGETS on1xc RUNTIME DESTINATION bin)
 install(DIRECTORY stdlib stdffi stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
-  PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE)
+  PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE
+  REGEX "/stdffi/mulib(/.*)?$" EXCLUDE) # FFIHandler installs only generated executable recipes.
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
 endif()
 install(FILES tools/on1x_project.py tools/on1x_project_init.py tools/on1x_inline.py
-  tools/on1x_optimization.py tools/on1x_toolchain.py tools/on1x_ffi_trust.py DESTINATION share/on1x/tools)
+  tools/on1x_optimization.py tools/on1x_toolchain.py tools/on1x_ffi_trust.py
+  tools/on1x_dotenv.py tools/on1x_proxy.py DESTINATION share/on1x/tools)
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
@@ -773,16 +770,6 @@ if(BUILD_TESTING)
   add_executable(on1x_mir_directives_tests tests/test_mir_directives.cpp)
   target_link_libraries(on1x_mir_directives_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir.directives COMMAND on1x_mir_directives_tests)
-  if(NOT CMAKE_CROSSCOMPILING)
-    add_test(NAME on1x.stdffi.imports COMMAND "${Python3_EXECUTABLE}" -B
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_portable_import.py" "$<TARGET_FILE:on1xc>"
-      "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stdffi-imports"
-      "${CMAKE_C_COMPILER}")
-    add_test(NAME on1x.stdffi.products COMMAND "${Python3_EXECUTABLE}" -B
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_stdffi_products.py" "$<TARGET_FILE:on1xc>"
-      "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/stdffi-products"
-      "${CMAKE_C_COMPILER}")
-  endif()
   add_executable(on1x_mir_decision_tests tests/test_mir_decision.cpp)
   target_link_libraries(on1x_mir_decision_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_decision_hir COMMAND on1x_mir_decision_tests)
@@ -857,6 +844,13 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_formatter.py"
     "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}")
   set_tests_properties(on1x.formatter PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.proxy_policy COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_proxy_policy.py")
+  if(UNIX AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.direct_proxy COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_direct_proxy.py" "$<TARGET_FILE:on1xc>")
+    set_tests_properties(on1x.direct_proxy PROPERTIES TIMEOUT 30)
+  endif()
   if(TARGET on1x-mune-runner)
     set(_project_qmr_test_tool)
     if(TARGET on1x-qmr-compile)
@@ -869,6 +863,9 @@ if(BUILD_TESTING)
     set_tests_properties(on1x.project_helpers PROPERTIES TIMEOUT 30)
   endif()
   if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.project_dotenv COMMAND "${Python3_EXECUTABLE}" -IB
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_dotenv.py")
+    set_tests_properties(on1x.project_dotenv PROPERTIES TIMEOUT 10)
     set(_project_test_tools --mune-runner "$<TARGET_FILE:on1x-mune-runner>")
     if(TARGET on1x-qmr-compile)
       list(APPEND _project_test_tools --qmr-compiler "$<TARGET_FILE:on1x-qmr-compile>")
