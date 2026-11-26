@@ -499,6 +499,9 @@ install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py t
 install(PROGRAMS tools/on1x-kernel-package.py DESTINATION bin RENAME on1x-kernel-package)
 install(DIRECTORY examples/kernel/load-time-clamp DESTINATION share/on1x/examples
   PATTERN "__pycache__" EXCLUDE)
+install(DIRECTORY examples/http-probe DESTINATION share/on1x/examples
+  FILES_MATCHING PATTERN "*.on1x" PATTERN "*.c" PATTERN "README.md")
+include(cmake/StdlibProbeExample.cmake)
 install(FILES docs/kernel-load-time.md docs/kernel-package.md DESTINATION share/on1x/docs)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
@@ -602,6 +605,7 @@ if(BUILD_TESTING)
   foreach(_flag IN LISTS ON1X_TEST_C_FLAGS)
     list(APPEND _test_c_flags "--cflag=${_flag}")
   endforeach()
+  include(cmake/StdlibProbeTests.cmake)
   if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
       AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     add_test(NAME on1x.toolchain_probe COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover
@@ -1098,13 +1102,13 @@ if(BUILD_TESTING)
        --on1xc "$<TARGET_FILE:on1xc>" --cc "${CMAKE_C_COMPILER}")
      set_tests_properties(on1x.stdlib_project PROPERTIES TIMEOUT 180)
    endif()
-   if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING
-      AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_tls_integration.py")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING
+       AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tests/test_tls_integration.py")
      add_test(NAME on1x.stdlib.http COMMAND "${Python3_EXECUTABLE}" -B
        "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/http/tests/run.py"
        "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" ${_test_c_flags})
-     set_tests_properties(on1x.stdlib.http PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
-   endif()
+      set_tests_properties(on1x.stdlib.http PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 180)
+    endif()
   if(ON1X_BUILD_NATIVE_PPX)
     list(APPEND _meta_tests luaembed inline_c11)
     if(ON1X_BUILD_GRAMMAREMBED)

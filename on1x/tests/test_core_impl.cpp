@@ -199,10 +199,26 @@ int main(){
          "ON1X-IMPL-HIR","generated inherent member identity");
   reject([&]{(void)emit_c(bad_identity,"forged-impl-identity");},
          "ON1X-IMPL-HIR","generated inherent member identity");
-  reject([&]{(void)mir::lower(bad_identity);},
-         "ON1X-IMPL-HIR","generated inherent member identity");
+   reject([&]{(void)mir::lower(bad_identity);},
+          "ON1X-IMPL-HIR","generated inherent member identity");
 
-  NominalCatalog catalog(unit);
+   auto borrowed=checked(R"(
+record Box { value:i64 }
+impl Box { fn get(borrow self) -> i64 { return self["value"]; } }
+fn main() { let box=record<Box>{value:42}; assert(box::get()==42); }
+)");
+   auto& borrowed_member=implementation_member(borrowed,"get");
+   require(borrowed_member.receiver==InherentMember::Receiver::Borrow,
+           "shared borrowed receiver metadata was lost");
+   auto& borrowed_function=generated(borrowed,borrowed_member.runtime_name);
+   borrowed_function.params.front().borrow=BorrowMode::Value;
+   reject([&]{(void)emit_c(borrowed,"lost-borrow-mode");},
+          "ON1X-IMPL-HIR","parameter metadata mismatch");
+   borrowed_member.function.params.front().borrow=BorrowMode::Value;
+   reject([&]{(void)emit_c(borrowed,"forged-borrow-mode");},
+          "ON1X-IMPL-HIR","parameter borrow mode");
+
+   NominalCatalog catalog(unit);
   require(catalog.copy_safe(Type::named("Box",{Type::I64}),
                             {"core-impl-copy"}),
           "copy-safe concrete receiver was rejected");

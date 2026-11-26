@@ -1,5 +1,69 @@
 # Verification report
 
+## Elvi, HTML, Kron, Daemon and HTTP Probe — 2026-11-26
+
+The [offline example](../examples/http-probe/README.md) builds real generated
+C11 and exercises script-based and manual Probes against two in-memory HTTP
+fixtures. It checks exact raw bytes, normalized HTML and metadata, a named
+procedure returning text and a capturing closure returning `i64`. The same
+application runs as a supervised child in immediate, asynchronous, and
+durably scheduled execution. Fake clock steps exercise admission, reopening,
+current dispatch policy, a removed runner, and recurrence cancellation.
+
+The focused fixtures also cover invalid ElviScript and HTML, parser/handler
+type mismatches, borrowed receiver escape into a handler, missing native
+authorization at link time, denied URL and cookie stages, rejected response
+metadata, allocation/descriptor exhaustion, malformed persisted descriptors,
+failed child startup/exit, and uncertain scheduler commits. The library source
+bundle and relocated SDK tests compile and run the composed fixture using
+their selected module and native resource trees.
+
+The 11 focused CTests below passed, including the installed and source-bundle
+consumers; the composed strict-C11 runner also passed with GCC 16.2.1 and
+Clang 22.1.8 ASan/UBSan. Six existing C kernel regressions passed (Elvi
+provider, parser, script and transport, KronVM, and daemon/fswatch).
+
+Reproduce the Linux x86-64 host profile (Unix Makefiles, Clang 22.1.8,
+LibStone `76d24a7f8b19294bab2b713dc69f799e412b62d2`, Release, fallback scanner).
+`CEPHYR_SO` must point to the matching **build-host** Cephyr shared library
+used by FFI recipe generation; the runtime Cephyr backend is not used:
+
+```sh
+cmake -S on1x -B build/on1x-probe -G 'Unix Makefiles' \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
+  -DON1X_USE_FALLBACK_SCANNER=ON -DON1X_BUILD_NATIVE_PPX=OFF \
+  -DON1X_BUILD_EXTENSION_SDK=OFF -DON1X_WITH_SYREN=OFF \
+  -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_PROJECT_QMR=OFF \
+  -DON1X_STDFFI_CEPHYR_LIBRARY="$CEPHYR_SO"
+cmake --build build/on1x-probe --parallel 4
+ctest --test-dir build/on1x-probe --output-on-failure \
+  -R '^on1x\.(stdlib\.(elvi|html|http|http_probe(_context|_components)?|kron_native|daemon_supervisor(_unsupported)?)|stdlib_project|install)$'
+python3 -B on1x/tests/test_http_probe.py --on1xc build/on1x-probe/on1xc \
+  --cc clang --scratch build/on1x-probe --package-tests \
+  --cflag=-fsanitize=address,undefined --cflag=-fno-sanitize-recover=all --cflag=-g
+```
+
+MuLIB baseline: `fa514d281b541a0aab2b217ef80b426fbbd17ae2`, plus the
+changes in this tree. The changed kernel inputs had these SHA-256 hashes:
+
+```text
+6a3d5f006ff2848785c6f9296e860b7d4651c2e2bb0340bdd197e8513d4c02a6  kernels/mulib-daemon.h
+cccfdd9f82a54b93087d4c2900701ab9a17b690974f97cefe7623431794d84cf  kernels/mulib-elvi-scrape.h
+f84129a1b61b6fec6d159dbe8af0f5fa38acae59ca47ab16edc6f410c8eea4f4  kernels/mulib-elvi-script-transport.h
+e51ac63754cae1e547e50c11f8f34e6f6538dc904db793e068e473d7e0c14d42  kernels/mulib-kronvm.h
+```
+
+Only the explicit native Linux C11 profile is qualified by these integration
+tests. TLS/HTTP framing in the example uses a synthetic peer with no sockets;
+it is not a real certificate, DNS or egress-policy test. The separate
+`on1x.stdlib.http` regression uses local TLS. HTTP/2 and HTTP/3, arbitrary
+script substitution, persisted code/closures, automatic credentials, and
+cross-process On1x result ownership are not qualified. These checks do not
+admit a safe foreign ABI or establish SML Basis conformance. The companion
+libraries retain existing KernelBind IPC and ElviScript Lua/discard behavior
+as separate profiles. See the [compiler evidence](../docs/probe-c11-qualification.md).
+
 ## ListPair mapping — 2026-11-24
 
 `on1x.libraries` compiles and executes the `basis_listpair_map` fixture through
@@ -25,9 +89,9 @@ signature or SML exception semantics.
 ## Restricted project package and process environment — 2026-11-23
 
 The restricted source package includes [`std.environ`](environ/README.md)
-and the optional Cephyr companion source. It does not include
-[`std.daemon`](daemon/README.md), which requires the separate KernelBind
-build path. The ordinary library tests check that the daemon is rejected
+and the optional Cephyr companion source. It does not include the legacy
+[`std.daemon`](daemon/README.md) IPC entry point, which requires the separate
+KernelBind build path. The ordinary library tests check that IPC is rejected
 without KernelBind and that it emits C under the intended profile.
 
 ## Restricted project package — 2026-11-18

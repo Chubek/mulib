@@ -8,13 +8,15 @@ stdlib=t.root/'stdlib'
 p=run(['python3',stdlib/'tests/check_package.py']);assert p.returncode == 0,p.stderr
 
 # Check every implementation, including unused definitions, in its supported
-# profile. The daemon's unsafe import must also fail in the ordinary profile.
+# profile. Only the legacy daemon IPC entry points require KernelBind;
+# std.daemon.lifecycle describes data and needs no unsafe import.
+kernel_ipc = {stdlib/'daemon'/name for name in ('__init__.on1x', 'daemon.on1x')}
 modules=[p for p in sorted(stdlib.rglob('*.on1x'))
          if not {'tests', 'fixtures'}.intersection(p.relative_to(stdlib).parts)]
 for i,module in enumerate(modules):
     path=t.source('module_'+str(i),'import '+json.dumps(str(module.resolve()))+';fn main(){}')
     p=run([t.compiler,'--check',path])
-    if module.is_relative_to(stdlib/'daemon'):
+    if module in kernel_ipc:
         assert p.returncode != 0 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr,(module,p.stderr)
         p=run([t.compiler,'--emit-c','--kernel-c11','--no-prelude',path])
     assert p.returncode == 0,(module,p.stderr)

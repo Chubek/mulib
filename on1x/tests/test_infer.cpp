@@ -46,10 +46,42 @@ int main() {
   limits={};limits.type_nodes=1;limited(limits,"expanded-size limit");
   auto exact=parse("fn main() -> _ {}");
   limits={};limits.nodes=3;limits.depth=2;limits.type_nodes=2;
-  on1x::infer_types(exact,limits);
-  require(exact.functions[0].result==on1x::Type::Void,"inference budget boundaries are not inclusive");
+   on1x::infer_types(exact,limits);
+   require(exact.functions[0].result==on1x::Type::Void,"inference budget boundaries are not inclusive");
 
-  auto ambiguous=parse("fn identity(x) -> _ { return x; } fn main() {}");
+   // Every specialization has a new T, but the fixed nominal side of the
+   // signature must not consume a new compound graph on each call.
+   std::string shared_signature=R"(
+record Leaf { left:i64, right:i64 }
+record Row { a:Leaf, b:Leaf, c:Leaf, d:Leaf }
+record Mesh { a:Row, b:Row, c:Row, d:Row }
+fn pick<T>(item:T, shape:Mesh)->T { return item; }
+fn exercise(shape:Mesh) {
+)";
+   for(int i=0;i<48;++i)
+    shared_signature+=i%2?"assert(pick(true,shape));":"assert(pick(1,shape)==1);";
+   shared_signature+="} fn main(){}";
+   auto repeated=parse(shared_signature);
+   limits={};limits.nodes=640;
+   on1x::infer_types(repeated,limits);
+   require(repeated.forall_elaborated,"shared signature did not finish inference");
+   auto deeper=parse(R"(
+record Inner { value:i64 }
+record Middle { value:Inner }
+record Outer { value:Middle }
+fn seed(value:Middle) {}
+fn nested(value:Outer) {}
+fn main(){}
+)");
+   limits={};limits.depth=2;
+   bool nominal_depth_rejected=false;
+   try { on1x::infer_types(deeper,limits); }
+   catch(const on1x::Error& error){
+    nominal_depth_rejected=std::string(error.what()).find("annotation depth limit")!=std::string::npos;
+   }
+   require(nominal_depth_rejected,"cached annotation bypassed the nominal depth limit");
+
+   auto ambiguous=parse("fn identity(x) -> _ { return x; } fn main() {}");
    on1x::check(ambiguous);
    require(ambiguous.functions[0].prototype&&ambiguous.functions[0].result.has_generics(),"unused global was not generalized");
    bool rejected=false;

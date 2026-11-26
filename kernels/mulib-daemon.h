@@ -13,7 +13,8 @@ extern "C" {
 #endif
 typedef struct mulib_daemon mulib_daemon_t;
 typedef enum mulib_daemon_status {
-  MULIB_DAEMON_OK = 0, MULIB_DAEMON_INVALID = -1, MULIB_DAEMON_MEMORY = -2,
+  MULIB_DAEMON_OK = 0, MULIB_DAEMON_START_PENDING = 1,
+  MULIB_DAEMON_INVALID = -1, MULIB_DAEMON_MEMORY = -2,
   MULIB_DAEMON_SCRIPT = -3, MULIB_DAEMON_SYSTEM = -4, MULIB_DAEMON_UNSUPPORTED = -5
 } mulib_daemon_status_t;
 typedef struct mulib_daemon_error {
@@ -61,6 +62,18 @@ int mulib_daemon_compile_file (const mulib_daemon_t *, const char *path,
  * Nonstandard inherited fds remain caller-managed (use close-on-exec). */
 int mulib_daemon_launch (const mulib_daemon_t *, mulib_daemon_entry_fn, void *user,
                         mulib_process_t *child);
+/** Begin exec-only launch without waiting for the child setup/exec handshake.
+ * On success the caller owns both the child and a nonblocking close-on-exec
+ * startup descriptor (>=3). The caller can poll it with a startup deadline,
+ * then query launch_status. On failure the descriptor is set to -1 and no new
+ * child is owned. The same thread, descriptor and reaping rules as launch apply. */
+int mulib_daemon_launch_begin (const mulib_daemon_t *, mulib_process_t *child, int *startup_fd);
+/** Read one handshake result: START_PENDING on would-block or interruption;
+ * OK on close-on-exec EOF (not application readiness); SYSTEM with errno on
+ * launch or read failure. Call only until a terminal result. This never closes
+ * the descriptor or reaps the child; the caller must do both, even on error or
+ * timeout. As with launch, death before exec can also close the pipe. */
+int mulib_daemon_launch_status (int startup_fd);
 /** Send SIGTERM to an owned child after checking/reaping an already exited one.
  * A live child still requires process_wait; this function never waits for shutdown. */
 int mulib_daemon_stop (mulib_process_t *child);
@@ -372,16 +385,23 @@ mulib_daemon_child_error_ (int fd, int code)
     p += n; left -= (size_t)n;
   }
 }
-int
-mulib_daemon_launch (const mulib_daemon_t *d, mulib_daemon_entry_fn entry,
-                     void *user, mulib_process_t *child)
+static int
+mulib_daemon_fork_ (const mulib_daemon_t *d, mulib_daemon_entry_fn entry,
+                    void *user, mulib_process_t *child, int *startup_fd, int nonblock)
 {
-  int pipefd[2], failure = 0;
+  int pipefd[2];
   pid_t pid;
-  size_t used = 0;
-  mulib_process_status_t status;
-  if (!d || (!entry && !d->argc) || !child || child->pid) return MULIB_DAEMON_INVALID;
+  if (startup_fd) *startup_fd = -1;
+  if (!d || (!entry && !d->argc) || !child || child->pid || !startup_fd)
+    return MULIB_DAEMON_INVALID;
   if (mulib_process_pipe (pipefd)) return MULIB_DAEMON_SYSTEM;
+  if (nonblock) {
+    int flags = fcntl (pipefd[0], F_GETFL);
+    if (flags < 0 || fcntl (pipefd[0], F_SETFL, flags | O_NONBLOCK) < 0) {
+      int saved = errno; close (pipefd[0]); close (pipefd[1]); errno = saved;
+      return MULIB_DAEMON_SYSTEM;
+    }
+  }
   pid = fork ();
   if (pid < 0) {
     int saved = errno; close (pipefd[0]); close (pipefd[1]); errno = saved; return MULIB_DAEMON_SYSTEM;
@@ -406,14 +426,48 @@ child_fail:
     mulib_daemon_child_error_ (pipefd[1], errno ? errno : EIO); _exit (127);
   }
   close (pipefd[1]); child->pid = (long)pid;
+  *startup_fd = pipefd[0];
+  return 0;
+}
+int
+mulib_daemon_launch_begin (const mulib_daemon_t *d, mulib_process_t *child, int *startup_fd)
+{
+  return mulib_daemon_fork_ (d, NULL, NULL, child, startup_fd, 1);
+}
+int
+mulib_daemon_launch_status (int startup_fd)
+{
+  int failure = 0;
+  ssize_t n;
+  if (startup_fd < 3) return MULIB_DAEMON_INVALID;
+  /* The child emits one pipe write smaller than PIPE_BUF. A short result
+   * therefore means something has broken the private handshake. */
+  n = read (startup_fd, &failure, sizeof failure);
+  if (n < 0) {
+    if (errno == EINTR || errno == EAGAIN) return MULIB_DAEMON_START_PENDING;
+    return MULIB_DAEMON_SYSTEM;
+  }
+  if (!n) return MULIB_DAEMON_OK;
+  errno = (n == (ssize_t)sizeof failure && failure > 0) ? failure : EIO;
+  return MULIB_DAEMON_SYSTEM;
+}
+int
+mulib_daemon_launch (const mulib_daemon_t *d, mulib_daemon_entry_fn entry,
+                     void *user, mulib_process_t *child)
+{
+  int startup_fd, failure = 0;
+  size_t used = 0;
+  mulib_process_status_t status;
+  int rc = mulib_daemon_fork_ (d, entry, user, child, &startup_fd, 0);
+  if (rc) return rc;
   while (used < sizeof (failure)) {
-    ssize_t n = read (pipefd[0], (unsigned char *)&failure + used, sizeof (failure) - used);
+    ssize_t n = read (startup_fd, (unsigned char *)&failure + used, sizeof (failure) - used);
     if (n < 0 && errno == EINTR) continue;
     if (n < 0) { failure = errno; break; }
     if (!n) { if (used) failure = EIO; break; }
     used += (size_t)n;
   }
-  close (pipefd[0]);
+  close (startup_fd);
   if (failure) {
     (void)mulib_process_terminate (child, &status); errno = failure; return MULIB_DAEMON_SYSTEM;
   }
@@ -431,6 +485,9 @@ mulib_daemon_stop (mulib_process_t *child)
 #else
 int mulib_daemon_launch (const mulib_daemon_t *d, mulib_daemon_entry_fn fn, void *u, mulib_process_t *p)
 { (void)d; (void)fn; (void)u; (void)p; return MULIB_DAEMON_UNSUPPORTED; }
+int mulib_daemon_launch_begin (const mulib_daemon_t *d, mulib_process_t *p, int *fd)
+{ (void)d; (void)p; if (fd) *fd = -1; return MULIB_DAEMON_UNSUPPORTED; }
+int mulib_daemon_launch_status (int fd) { (void)fd; return MULIB_DAEMON_UNSUPPORTED; }
 int mulib_daemon_stop (mulib_process_t *p) { (void)p; return MULIB_DAEMON_UNSUPPORTED; }
 #endif
 #endif

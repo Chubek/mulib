@@ -250,7 +250,11 @@ Grounding is iterative, memoized and structurally interned. It checks both
 depth and expanded type size, so a small shared graph cannot produce an
 exponentially expanded semantic type or diagnostic. Hole presence is cached
 in immutable structural types, and repeated valid function-signature checks
-are memoized. Diagnostics have separate term/depth rendering limits. Default
+are memoized. Within a pass, nominal annotations reuse a declaration layout
+for identical argument terms, with the cached expansion height checked at
+each use. Specialization only copies compound signature nodes affected by
+substitution; fresh quantified variables are still instantiated independently.
+Diagnostics have separate term/depth rendering limits. Default
 node/work/depth/size budgets are specified by `InferenceLimits`; tests lower
 each budget to exercise its failure path.
 

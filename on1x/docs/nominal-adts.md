@@ -9,6 +9,16 @@ fields in nonrecursive nominal declarations. The still later
 [finite unique-owner profile](recursive-owning-adts.md) admits recursive nominal
 layouts through `own<Named>` with explicit moves and C11 cleanup.
 
+The direct C11 profile also admits immutable `string` and checked `fn(...)`
+values in nominal fields and type arguments. Text uses the existing literal
+or immutable runtime-snapshot lifetime; storing text in a record does not
+copy foreign bytes or extend a raw extern's storage lifetime. Closures use the
+existing single-threaded environment retain/release contract, including for
+nested nominal records and the active payload of nominal enums. Closure
+signatures do not break nominal type cycles. Structural aggregates, mutable
+buffer fields, JSON resources, foreign layouts, cross-thread closure transfer,
+and serialization of closure environments are not admitted by this extension.
+
 ```on1x
 record Point { x: i64, y: i64 }
 enum Option<T> { None, Some(T) }
@@ -79,7 +89,9 @@ preserving the existing parser's separate statement/expression depth limits.
 |---|---|---|
 | Admitted nominal products/sums | Trivial by-value copy/move; no destructor | Not a checked concurrency capability |
 | Closure capturing an immutable nominal value | Existing RC environment owns its snapshot | Existing single-thread RC restrictions |
-| JSON owners/views, shared buffers, closures or text in nominal fields | Rejected | Rejected |
+| Immutable text in nominal fields | Snapshot pointer copy; no per-value destructor | No added transfer capability |
+| Checked closures in nominal fields | Existing environment retain/release | Single On1x runtime thread only |
+| JSON owners/views or shared buffers in nominal fields | Rejected | Rejected |
 
 These additions do not alter ordinary structural type equality. Named types
 occupy the loader's type namespace, not the value namespace; local variables do

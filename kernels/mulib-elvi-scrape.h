@@ -34,7 +34,8 @@ typedef enum mulib_elvi_format {
 } mulib_elvi_format_t;
 typedef enum mulib_elvi_mode {
   MULIB_ELVI_MODE_SEARCH = 0,
-  MULIB_ELVI_MODE_SCRAPE
+  MULIB_ELVI_MODE_SCRAPE,
+  MULIB_ELVI_MODE_DOCUMENT
 } mulib_elvi_mode_t;
 typedef enum mulib_elvi_stage_kind {
   MULIB_ELVI_STAGE_NONE = 0,
@@ -42,7 +43,8 @@ typedef enum mulib_elvi_stage_kind {
   MULIB_ELVI_STAGE_XPATH,
   MULIB_ELVI_STAGE_DISCARD,
   MULIB_ELVI_STAGE_LUA,
-  MULIB_ELVI_STAGE_IPC
+  MULIB_ELVI_STAGE_IPC,
+  MULIB_ELVI_STAGE_CAPTURE
 } mulib_elvi_stage_kind_t;
 typedef struct mulib_elvi_stage {
   mulib_elvi_stage_kind_t kind;
@@ -89,7 +91,7 @@ int mulib_elvi_scrape_load(const char *path,
  * on failure. This neither canonicalizes paths nor authorizes I/O. */
 int mulib_elvi_script_resolve(const char *argument, const char *home,
                              char *out, size_t capacity);
-/* Both modes: public HTTPS, exact profile host, no fragment; no I/O. */
+/* All modes: public HTTPS, exact profile host, no fragment; no I/O. */
 int mulib_elvi_script_url_allowed(const mulib_elvi_scrape_program_t *p,
                                  const char *url);
 /* Percent-encode a nonempty query with mulib-url; "" selects the provider
@@ -130,6 +132,10 @@ typedef struct mulib_elvi_scrape_https {
  * of the session even if peer validation fails here. This is not a URL gate. */
 int mulib_elvi_scrape_https_connect_verified(void *ctx, const mulib_uri_t *endpoint,
                                              mulib_tsl_t *session);
+/* Same handshake and validation; optionally copy the verified peer output.
+ * A non-NULL peer is unchanged on failure. Caller still owns session cleanup. */
+int mulib_elvi_scrape_https_connect_inspect(const mulib_elvi_scrape_https_t *https,
+    const mulib_uri_t *endpoint, mulib_tsl_t *session, mulib_elvi_scrape_peer_t *peer);
 /* A mulib_fetch_transport_fn. ctx points to mulib_elvi_scrape_https_t.
  * Enforces public HTTPS, verified peer identity, TLS >=1.2 and HTTP/1.1.
  * Never follows redirects or retries rate limits. Body must be initialized;
@@ -460,13 +466,16 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     case M_MODE:
       if(melvi_eq_(a,"search"))v.mode=MULIB_ELVI_MODE_SEARCH;
       else if(melvi_eq_(a,"scrape"))v.mode=MULIB_ELVI_MODE_SCRAPE;
-      else {melvi_error_(error,line,"expected mode search or mode scrape");return 0;}
+      else if(melvi_eq_(a,"document"))v.mode=MULIB_ELVI_MODE_DOCUMENT;
+      else {melvi_error_(error,line,"expected mode search, scrape or document");return 0;}
       break;
     case M_ARTIFACTS:
-      if(!melvi_eq_(a,"discard")) {
-        melvi_error_(error,line,"expected artifacts discard");return 0;
+      if(melvi_eq_(a,"discard"))v.artifacts.kind=MULIB_ELVI_STAGE_DISCARD;
+      else if(melvi_eq_(a,"capture"))v.artifacts.kind=MULIB_ELVI_STAGE_CAPTURE;
+      else {
+        melvi_error_(error,line,"expected artifacts discard or capture");return 0;
       }
-      v.artifacts.kind=MULIB_ELVI_STAGE_DISCARD;v.artifacts.line=line;break;
+      v.artifacts.line=line;break;
     case M_SEARCH:
       if(!melvi_copy_(v.search_template,sizeof v.search_template,a)) goto syntax;
       break;
@@ -525,12 +534,29 @@ int mulib_elvi_scrape_compile(const char *src, size_t len,
     for(int kind=M_SEARCH;kind<=M_URL;kind++)if(lines[kind]) {
       melvi_error_(error,lines[kind],"search directive not supported in scrape mode");return 0;
     }
+    if(v.artifacts.kind==MULIB_ELVI_STAGE_CAPTURE) {
+      melvi_error_(error,lines[M_ARTIFACTS],"artifacts capture requires mode document");return 0;
+    }
     if(!lines[M_XPATH] || !lines[M_ARTIFACTS] || !lines[M_LOGIC] || !lines[M_FORWARD]) {
       melvi_error_(error,line,"scrape mode requires xpath, artifacts, logic and forward");return 0;
     }
+  } else if(v.mode==MULIB_ELVI_MODE_DOCUMENT) {
+    for(int kind=M_SEARCH;kind<=M_URL;kind++)if(lines[kind]) {
+      melvi_error_(error,lines[kind],"search directive not supported in document mode");return 0;
+    }
+    if(v.artifacts.kind!=MULIB_ELVI_STAGE_CAPTURE) {
+      melvi_error_(error,lines[M_ARTIFACTS]?lines[M_ARTIFACTS]:line,
+                   "document mode requires artifacts capture");return 0;
+    }
+    if(lines[M_XPATH] || lines[M_LOGIC] || lines[M_FORWARD]) {
+      melvi_error_(error,lines[M_XPATH]?lines[M_XPATH]:lines[M_LOGIC]?lines[M_LOGIC]:lines[M_FORWARD],
+                   "xpath, lua and ipc stages are not supported in document mode");return 0;
+    }
   } else {
     for(int kind=M_COOKIES;kind<=M_FORWARD;kind++)if(lines[kind]) {
-      melvi_error_(error,lines[kind],"stage directive requires mode scrape");return 0;
+      melvi_error_(error,lines[kind],v.artifacts.kind==MULIB_ELVI_STAGE_CAPTURE && kind==M_ARTIFACTS ?
+                   "artifacts capture requires mode document" : "stage directive requires mode scrape");
+      return 0;
     }
     if(!lines[M_SEARCH] ||
        (v.format==MULIB_ELVI_FORMAT_HTML && !lines[M_ANCHOR]) ||
@@ -998,9 +1024,8 @@ int mulib_elvi_scrape_search(const mulib_elvi_scrape_program_t *p,
                               cap<limit?cap:limit,count);
  done:mulib_bounded_text_buffer_free(&body);return ok;
 }
-int mulib_elvi_scrape_https_connect_verified(void *ctx,const mulib_uri_t *endpoint,
-                                             mulib_tsl_t *session) {
-  const mulib_elvi_scrape_https_t *tls=(const mulib_elvi_scrape_https_t *)ctx;
+int mulib_elvi_scrape_https_connect_inspect(const mulib_elvi_scrape_https_t *tls,
+    const mulib_uri_t *endpoint,mulib_tsl_t *session,mulib_elvi_scrape_peer_t *verified_peer) {
   mulib_elvi_scrape_peer_t peer={0};
   if(!tls || !tls->connect || !tls->peer || !endpoint || !endpoint->host.data ||
      !endpoint->host.length || !session || tls->connect(tls->context,endpoint,session)!=1 ||
@@ -1010,9 +1035,15 @@ int mulib_elvi_scrape_https_connect_verified(void *ctx,const mulib_uri_t *endpoi
      (peer.tls_version!=0x0303 && peer.tls_version!=0x0304) ||
      !memchr(peer.hostname,0,sizeof peer.hostname) ||
      !memchr(peer.alpn,0,sizeof peer.alpn) ||
-     (peer.alpn[0] && strcmp(peer.alpn,"http/1.1")) ||
-     !mulib_webscan_equal_(endpoint->host.data,endpoint->host.length,peer.hostname))return 0;
+      (peer.alpn[0] && strcmp(peer.alpn,"http/1.1")) ||
+      !mulib_webscan_equal_(endpoint->host.data,endpoint->host.length,peer.hostname))return 0;
+  if(verified_peer)*verified_peer=peer;
   return 1;
+}
+int mulib_elvi_scrape_https_connect_verified(void *ctx,const mulib_uri_t *endpoint,
+                                             mulib_tsl_t *session) {
+  return mulib_elvi_scrape_https_connect_inspect((const mulib_elvi_scrape_https_t *)ctx,
+                                                endpoint,session,NULL);
 }
 int mulib_elvi_scrape_https_transport(void *ctx,const char *url,
     mulib_bounded_text_buffer_t *body,unsigned *status,char *type,size_t cap) {

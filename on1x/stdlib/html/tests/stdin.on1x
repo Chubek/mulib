@@ -1,0 +1,15 @@
+import std.html as H;
+
+fn main()
+{
+  match H.basis_html_parse(io_stdin()) with
+  {
+    Ok(doc) =>
+    {
+      let (status, html) = H.basis_html_serialize(doc);
+      assert(status == 0);
+      io_stdout(html);
+    },
+    Err(code) => println(code)
+  };
+}

@@ -1,0 +1,13 @@
+on1xfile 1
+library "__init__.on1x"
+library "spec.on1x"
+library "execution.on1x"
+library "live.on1x"
+library "artifact.on1x"
+library "_ArtifactTrusted.on1x"
+resource "context.h"
+resource "context.c"
+resource "supervised.h"
+resource "supervised.c"
+resource "artifact.h"
+resource "artifact.c"

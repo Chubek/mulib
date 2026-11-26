@@ -63,15 +63,16 @@ cases = [
  ('record_structural','record A{x:i64} fn main(){let b:record{x:i64}=record<A>{x:1};}', 'nominal'),
  ('enum_identity','enum A{X(i64)} enum B{X(i64)} fn main(){let b:B=variant<A>(X,1);}', 'nominal'),
  ('phantom_identity','enum Tag<T>{Empty} fn main(){let a:Tag<bool>=variant<Tag<i64>>(Empty,record{});}', 'expected bool'),
- ('phantom_managed','enum Tag<T>{Empty} fn main(){let a=variant<Tag<string>>(Empty,record{});}', 'trivially copied'),
+ ('phantom_managed','enum Tag<T>{Empty} fn main(){let a=variant<Tag<buffer>>(Empty,record{});}', 'unsupported buffer'),
  ('arity','enum Option<T>{None,Some(T)} fn main(){let a:Option=variant<Option<i64>>(Some,1);}', 'arity'),
  ('many_args','record A{x:i64} fn main(){let a=record<A<i64>>{x:1};}', 'arity'),
  ('unknown','record A{x:Missing} fn main(){}', 'unknown type'),
- ('managed','record A{x:string} fn main(){}', 'trivially copied'),
- ('unique','enum A{X(json)} fn main(){}', 'trivially copied'),
- ('view','record A{x:json_view} fn main(){}', 'trivially copied'),
- ('closure','record A{x:fn()->i64} fn main(){}', 'trivially copied'),
- ('hole_field','record A{x:_} fn main(){}', 'trivially copied'),
+ ('managed','record A{x:buffer} fn main(){}', 'unsupported buffer'),
+ ('unique','enum A{X(json)} fn main(){}', 'unsupported json'),
+ ('view','record A{x:json_view} fn main(){}', 'unsupported json_view'),
+ ('closure_resource','record A{x:fn()->json} fn main(){}', 'unsupported json'),
+ ('closure_cycle','record A{x:fn(A)->void} fn main(){}', 'recursive'),
+ ('hole_field','record A{x:_} fn main(){}', 'unsupported _'),
  ('direct_cycle','enum A{Next(A)} fn main(){}', 'recursive'),
  ('mutual_cycle','record A{x:B} record B{x:A} fn main(){}', 'recursive'),
  ('boxed_cycle','enum A{Next(box<A>)} fn main(){}', 'unknown type'),
@@ -143,6 +144,55 @@ fn main(){{let f=make(record<Box<i64>>{value:42});let copy=f;
 ''',extra=('-include',t.root/'tests/fixtures/closure_allocator.h',t.root/'tests/fixtures/closure_allocator.c'))
 p=run([closure],env={**os.environ,'ON1X_TEST_ENV_FAIL_AFTER':'0'})
 assert p.returncode==72 and 'allocation' in p.stderr,p.stderr
+
+# Named void procedures and owned capturing environments can live inside
+# polymorphic nominal records and the active payload of an enum.
+t.valid('nominal_text_and_procedures', 'body\n40\nbody\n42\nbody\n',
+        text=r'''
+enum Outcome<T,E> { Ok(T), Err(E) }
+enum Maybe<T> { Nothing, Something(T) }
+record Document { body: string }
+record Delivery<M> { doc: Document, meta: Maybe<M> }
+record Receiver<C,M> { context: C, handle: fn(Delivery<M>, C) -> void }
+extern fn live_environments() -> i64;
+fn inspect<C,M>(self: borrow Receiver<C,M>, r: Delivery<M>) -> Outcome<Document,string> {
+  self["handle"](r, self["context"]);
+  return variant<Outcome<Document,string>>(Ok,r["doc"]);
+}
+fn named(r: Delivery<i64>, context: i64) {
+  println(r["doc"]["body"]);
+  println(context);
+}
+fn handler<M>(number: i64, example: M) -> fn(Delivery<M>, i64) -> void {
+  return fn(r: Delivery<M>, context: i64) {
+    println(r["doc"]["body"]);
+    println(context + number);
+  };
+}
+fn main() {
+  let doc = record<Document>{body:text_concat("bo","dy")};
+  let delivery = record<Delivery<i64>>{
+    doc:doc, meta:variant<Maybe<i64>>(Something,1)};
+  {
+    let receiver = record<Receiver<i64,i64>>{context:40,handle:named};
+    let first = inspect(receiver,delivery);
+    let capturing = record<Receiver<i64,i64>>{context:22,handle:handler(20,1)};
+    let wrapped = variant<Maybe<Receiver<i64,i64>>>(Something,capturing);
+    assert(live_environments()==1);
+    match wrapped with {
+      Nothing() => assert(false),
+      Something(item) => {
+        let second = inspect(item,delivery);
+        match second with { Ok(result) => println(result["body"]),
+                            Err(message) => println(message) };
+      }
+    };
+    match first with { Ok(result) => assert(result["body"]=="body"),
+                       Err(message) => assert(false) };
+  }
+  assert(live_environments()==0);
+}
+''',extra=('-include',t.root/'tests/fixtures/closure_allocator.h',t.root/'tests/fixtures/closure_allocator.c'))
 
 # Real aggregate calls across C translation units sharing one generated interface;
 # not separate On1x compilation or aggregate FFI admission. C++ calls it as well.

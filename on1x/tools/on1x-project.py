@@ -1369,15 +1369,24 @@ def stage_bytes(path, data):
         stream.write(data)
 
 
-# Registered native companions may be found via --stdlib-resource, including
-# the HTTP sources for explicit host linkage. Preserve the existing standalone
-# MuLIB discovery manifest as well. Other SDK inputs are not part of the
-# project-controlled package.
+# Registered native companions may be found via --stdlib-resource. Packaging
+# explicit-link companions does not enable automatic linkage or authorize I/O.
+# Preserve the existing standalone MuLIB discovery manifest as well. Other SDK
+# inputs are not part of the project-controlled package.
 STDLIB_RESOURCES = frozenset(map(Path, (
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
     'environ/runtime.c',
     'cephyr/runtime.c',
+    'daemon/supervisor.c', 'daemon/supervisor.h', 'daemon/lifecycle_kernels.c',
+    'elvi/runtime.c', 'elvi/runtime.h', 'elvi/bridge.c', 'elvi/bridge.h',
+    'elvi/capture.c', 'elvi/capture.h', 'elvi/kernels.c',
+    'elvi/script.c', 'elvi/script.h', 'elvi/live.c', 'elvi/live.h',
+    'html/runtime.c', 'html/runtime.h', 'html/kernels.c',
     'http/runtime.c', 'http/runtime.h', 'http/kernels.c',
+    'http/probe/context.c', 'http/probe/context.h',
+    'http/probe/supervised.c', 'http/probe/supervised.h',
+    'http/probe/artifact.c', 'http/probe/artifact.h',
+    'kron/runtime.c', 'kron/runtime.h', 'kron/kernels.c',
     'prettyprint/runtime.c', 'prettyprint/runtime.h', 'tty/runtime.c', 'tty/runtime.h',
     'container/runtime.c', 'container/runtime.h',
     'container/shared.c', 'container/on1x_container_shared.h',

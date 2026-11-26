@@ -1,10 +1,11 @@
 # KronVM
 
-KronVM turns one KronQL statement into an identified promise. An embedding
-application supplies Unix time in seconds, asks for the next deadline, and
-calls dispatch when ready. Each dispatch consumes at most one occurrence,
-runs its command synchronously and reaps the child. Equal deadlines run in
-enqueue order, including after reopening the cache.
+KronVM turns a KronQL statement or a typed job schedule into an identified
+promise. An embedding application supplies Unix time in seconds, asks for
+the next deadline, and calls dispatch when ready. Each dispatch consumes at
+most one occurrence. The legacy command profile runs the command synchronously
+and reaps the child. Equal deadlines run in enqueue order, including after
+reopening the cache.
 
 ## KronQL
 
@@ -74,6 +75,24 @@ in that gap can skip a launch. A command failure consumes that occurrence.
 Under normal successful commits, reopening restores only the remaining work.
 Each mutation reads the snapshot and commits changed records before updating
 the in-memory queue. Budget I/O proportional to the cached schedule size.
+
+## Data-only application jobs
+
+`mulib_kronvm_open_jobs` opens a separate cache profile in an existing,
+trusted, dedicated absolute directory. Jobs caches cannot be opened by the
+legacy command runner or vice versa. `mulib_kronvm_delegate_job` takes a
+typed schedule and up to `MULIB_KRONVM_MAX_JOB_BYTES` of copied application
+data; no shell syntax is interpreted and no code pointer is stored.
+`mulib_kronvm_validate_job_schedule` checks schedule and clock bounds without
+touching a VM. The same close, next, pull and signal operations apply.
+
+`mulib_kronvm_dispatch_job` delivers a borrowed descriptor to the supplied
+synchronous callback only after a confirmed commit, and skips delivery for
+an expired job or uncertain commit. The clock, descriptor schema, current
+authorization and external effects remain application responsibilities. A
+crash can still skip delivery after consumption; do not retry an uncertain
+mutation blindly. See [`std.kron`](../on1x/stdlib/kron/README.md) for a
+trusted C11 host adapter with structured authorization and execution outcomes.
 
 <!-- manual-reference -->
 ## Source and build reference

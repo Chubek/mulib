@@ -120,6 +120,29 @@ is unchanged on failure. The transport writes no credentials or responses
 to logs or artifact files. Do not persist the body or response headers
 without a separately designed and authorized retention policy.
 
+## Capture a document
+
+`mulib_elvi_script_capture_https` is a separate host entry point for compiled
+`mode document` / `artifacts capture` profiles. It never exposes bodies from
+`mode scrape` / `artifacts discard`, and does not run Lua, XPath or IPC.
+Supply a trusted verified TLS backend, a positive body limit no larger than
+2 MiB, and an independently authorized exact canonical host. Use the
+profile home or an explicit same-host URL for one GET. If the profile
+declares cookies, it must also match the independently approved absolute
+cookie path before the secure loader opens it. Do not fall back to an
+anonymous request on a cookie error.
+
+After the HTTPS session closes and framing is validated, success transfers a
+binary, length-delimited body (including any NUL bytes) and bounded
+metadata: final status, identical requested/effective URL, HTTP protocol and
+framing, `Content-Type`, TLS version, verification state, and actual ALPN
+(or absence). Other headers, credentials, and timestamps are not returned.
+There is no redirect, retry, or truncation; any failure leaves the output
+unchanged. Use an empty output and destroy a successful owner via
+`mulib_elvi_script_document_destroy`. See the
+[On1x capture notes](../on1x/stdlib/elvi/capture.md) for the companion
+contracts and limitations.
+
 ## Offline check
 
 The focused test uses fixture TLS operations; it never contacts a provider:

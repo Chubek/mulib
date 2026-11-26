@@ -135,7 +135,11 @@ class Checker {
       if(depth>32)fail(at,"data value nesting exceeds 32-level limit");
       if(t.is_numeric()||t==Type::Bool||t==Type::Char||t.kind()==Type::Generic||t.kind()==Type::Bound)return 1;
      if(t.is_own())return 1;
-    if(allow_owner&&t==Type::SExpr)return 1;
+     if(allow_owner&&(t==Type::SExpr||t==Type::String))return 1;
+     if(allow_owner&&t.is_function()){
+      validate_type(t,at);
+      return 2;
+     }
     if(!allow_owner&&(t.is_tuple()||(t.is_data()&&t.nominal().empty()))&&t.contains_unique())
      fail(at,"structural aggregates cannot contain unique owners; use a nominal record or enum");
    if(!t.is_tuple()&&!t.is_data())fail(at,"value data fields and match results require trivially copied types");

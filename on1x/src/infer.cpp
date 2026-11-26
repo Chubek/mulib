@@ -145,6 +145,8 @@ class Inference {
  std::map<Type::Kind,Term> scalars;
  std::map<Term,Type> atoms;
  std::map<Type,Term> atom_terms;
+ struct NominalTerm { Term term; std::size_t field_depth; };
+ std::map<std::pair<std::string,std::vector<Term>>,NominalTerm> nominal_terms;
  std::size_t rigid_serial=0;
  std::map<std::string,Global> globals;
  struct Binding { Term type; Scheme* scheme=nullptr; std::string runtime_name; };
@@ -265,7 +267,8 @@ class Inference {
     fields.insert(fields.end(),args.begin(),args.end());
     auto id=add(kind,std::move(fields),0,at);nodes[id].labels=std::move(labels);nodes[id].extent=extent;nodes[id].nominal=std::move(nominal);nodes[id].arguments=arguments;return id;
    }
-     Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,std::size_t depth=0) {
+     Term annotation(const Type& type,const Location& where,const std::vector<Term>* variables=nullptr,
+                     std::size_t depth=0,std::size_t* deepest=nullptr) {
       if(!variables)variables=active_type_variables;
       if(!depth){
        TypeFormOptions options;
@@ -283,6 +286,7 @@ class Inference {
       }
       tick(where);
      if(depth>limits.depth)fail(where,"nominal/type annotation depth limit exceeded");
+     if(deepest)*deepest=std::max(*deepest,depth);
      if(type.is_tuple())for(const auto& element:type.elements()){
       if(element==Type::Void)fail(where,"tuple elements cannot be void");
       if(element==Type::Json||element==Type::JsonView)
@@ -309,7 +313,7 @@ class Inference {
         fail(where,"wrong type argument arity for "+declaration.name);
        std::vector<Term> arguments;
        for(const auto& argument:target.arguments())
-        arguments.push_back(annotation(argument,where,variables,depth+1));
+        arguments.push_back(annotation(argument,where,variables,depth+1,deepest));
        return owning(declaration.name,std::move(arguments),where);
       }
        if(type.kind()==Type::Named||!type.nominal().empty()){
@@ -318,14 +322,27 @@ class Inference {
       const auto& d=catalog.find(type.nominal(),where);
      if(d.parameters.size()!=type.arguments().size())fail(where,"wrong type argument arity for "+d.name);
      std::vector<Term> args,fields;
-     for(const auto& a:type.arguments())args.push_back(annotation(a,where,variables,depth+1));
-     for(const auto& f:d.fields)fields.push_back(annotation(f,where,&args,depth+1));
+     for(const auto& a:type.arguments())args.push_back(annotation(a,where,variables,depth+1,deepest));
+     // Declarations have no holes: the layout depends only on its identity and
+     // these exact argument terms. Independent source holes have different IDs.
+     auto key=std::pair{d.name,args};
+     if(auto found=nominal_terms.find(key);found!=nominal_terms.end()){
+      const auto height=found->second.field_depth;
+      if(height>limits.depth-depth)fail(where,"nominal/type annotation depth limit exceeded");
+      if(deepest)*deepest=std::max(*deepest,depth+height);
+      return found->second.term;
+     }
+     std::size_t field_depth=depth;
+     for(const auto& f:d.fields)fields.push_back(annotation(f,where,&args,depth+1,&field_depth));
+     if(deepest)*deepest=std::max(*deepest,field_depth);
      fields.insert(fields.end(),args.begin(),args.end());
-     return data(d.kind,std::move(fields),d.labels,0,where,d.name,args.size());
+     const auto term=data(d.kind,std::move(fields),d.labels,0,where,d.name,args.size());
+     nominal_terms.emplace(std::move(key),NominalTerm{term,field_depth-depth});
+     return term;
     }
-     if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where,variables,depth+1),where);
+     if(type.is_code())return add(Type::Code,{},annotation(type.code_result(),where,variables,depth+1,deepest),where);
      if(channel_kind(type.kind()))
-      return channel(type.kind(),annotation(type.csp_payload(),where,variables,depth+1),
+      return channel(type.kind(),annotation(type.csp_payload(),where,variables,depth+1,deepest),
                      where,type.kind()==Type::Channel?type.sender_cardinality():0,
                      type.kind()==Type::Channel?type.receiver_cardinality():0);
     if(type.is_forall()||type.kind()==Type::Generic){
@@ -334,17 +351,17 @@ class Inference {
      auto id=add(type.kind(),{},0,where);atoms.emplace(id,resolved);atom_terms.emplace(std::move(resolved),id);return id;
    }
    if(type.is_tuple()){
-    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1));
+    std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1,deepest));
    return add(Type::Tuple,std::move(elements),0,where);
   }
    if(type.is_data()){
-     std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1));
+     std::vector<Term> elements;for(const auto& element:type.elements())elements.push_back(annotation(element,where,variables,depth+1,deepest));
     return data(type.kind(),std::move(elements),type.labels(),type.extent(),where);
    }
    if(!type.is_function())return scalar(type.kind(),where);
   std::vector<Term> parameters;
-   for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where,variables,depth+1));
-    auto result=annotation(type.result(),where,variables,depth+1);
+   for(const auto& parameter:type.parameters())parameters.push_back(annotation(parameter,where,variables,depth+1,deepest));
+    auto result=annotation(type.result(),where,variables,depth+1,deepest);
    return function(std::move(parameters),result,where);
   }
   Predicate predicate(const ClicheConstraint& constraint,
@@ -696,8 +713,21 @@ class Inference {
     auto kind=nodes[term].kind;auto children=nodes[term].parameters;auto result=nodes[term].result;
      auto labels=nodes[term].labels;auto extent=nodes[term].extent;auto nominal=nodes[term].nominal;auto arguments=nodes[term].arguments;
      auto senders=nodes[term].senders,receivers=nodes[term].receivers;
-  for(auto& child:children)child=copy_signature(child,variables,copies,at,depth+1);
-  if(has_result(kind))result=copy_signature(result,variables,copies,at,depth+1);
+   bool changed=false;
+   for(auto& child:children){
+    const auto specialized=copy_signature(child,variables,copies,at,depth+1);
+    changed|=specialized!=child;
+    child=specialized;
+   }
+   if(has_result(kind)){
+    const auto specialized=copy_signature(result,variables,copies,at,depth+1);
+    changed|=specialized!=result;
+    result=specialized;
+   }
+   // Compound nodes are immutable; unification only links variable roots.
+   // A subtree unaffected by quantified substitution can be reused even if it
+   // refers to weak (non-quantified) variables, which are already shared.
+   if(!changed){copies.emplace(term,term);return term;}
     Term id;
     if(data_kind(kind))id=data(kind,std::move(children),std::move(labels),extent,at,std::move(nominal),arguments);
      else if(kind==Type::Own)id=owning(std::move(nominal),std::move(children),at);
@@ -1153,8 +1183,8 @@ class Inference {
     }
    }
   }
-  InherentBinding bind_inherent(Expr& projection,std::optional<Term> receiver,
-                                bool call_position){
+   InherentBinding bind_inherent(Expr& projection,std::optional<Term> receiver,
+                                 bool call_position){
    const auto at=projection.where;
    std::string nominal;
    Term owner=0;
@@ -1169,7 +1199,7 @@ class Inference {
     nominal=projection.result.nominal();
     owner=annotation(projection.result,at);
    }
-   auto selected=inherent_members.find(nominal,projection.text,at);
+    auto selected=inherent_members.find(nominal,projection.text,at);
    const auto& implementation=*selected.implementation;
    const auto& member=*selected.member;
    const bool takes_receiver=member.receiver!=InherentMember::Receiver::None;
@@ -1205,8 +1235,17 @@ class Inference {
    projection.cliche_member.clear();
    auto actual_callable=name(projection,call_position);
    unify(actual_callable,expected_callable,at);
-   return {&member,actual_callable};
-  }
+    return {&member,actual_callable};
+   }
+   Term inherent_referent(Term source,const Location& at){
+    return nodes[head(source,at)].kind==Type::Own?owned_value(source,at):source;
+   }
+   void check_owned_receiver(const InherentMember& member,Term source,
+                             const Location& at){
+    if(nodes[head(source,at)].kind==Type::Own&&
+       member.receiver!=InherentMember::Receiver::Borrow)
+     inherent_error(at,"an owning receiver requires a shared borrowed member");
+   }
  bool contains_rigid(Term term,const Location& at,std::set<Term>& seen){
   term=head(term,at);if(!seen.insert(term).second)return false;
   if(nodes[term].kind==Type::Generic)return true;
@@ -1275,19 +1314,22 @@ class Inference {
     ExprPtr receiver;
     std::optional<Term> receiver_type;
     if(!callee.children.empty()){
-     if(callee.children.size()!=1)
-      inherent_error(callee.where,"malformed receiver member projection");
-     receiver=std::move(callee.children.front());callee.children.clear();
-     receiver_type=expression(*receiver);
-    }
-    auto selected=bind_inherent(callee,receiver_type,true);
+      if(callee.children.size()!=1)
+       inherent_error(callee.where,"malformed receiver member projection");
+      receiver=std::move(callee.children.front());callee.children.clear();
+      receiver_type=expression(*receiver);
+     }
+     std::optional<Term> referent;
+     if(receiver_type)referent=inherent_referent(*receiver_type,callee.where);
+     auto selected=bind_inherent(callee,referent,true);
     if(selected.member->kind==InherentMember::Kind::Value)
      inherent_error(callee.where,"member value '"+selected.member->name+
                     "' is not callable; remove the argument list");
-    callable_override=selected.callable;
-    if(receiver){
-     e.children.insert(e.children.begin(),std::move(receiver));
-     first_argument=receiver_type;
+     callable_override=selected.callable;
+     if(receiver){
+      check_owned_receiver(*selected.member,*receiver_type,callee.where);
+      first_argument=referent;
+      e.children.insert(e.children.begin(),std::move(receiver));
     }
    }
 
@@ -1700,7 +1742,10 @@ class Inference {
       receiver=std::move(e.children.front());e.children.clear();
       receiver_type=expression(*receiver);
      }
-     auto selected=bind_inherent(e,receiver_type,false);
+      std::optional<Term> referent;
+      if(receiver_type)referent=inherent_referent(*receiver_type,at);
+      auto selected=bind_inherent(e,referent,false);
+      if(receiver)check_owned_receiver(*selected.member,*receiver_type,at);
      if(selected.member->kind==InherentMember::Kind::Function){
       if(receiver)
        inherent_error(at,"receiver method '"+selected.member->name+
@@ -1709,7 +1754,7 @@ class Inference {
      }else{
       auto callee=wrap(e,Expr::Kind::Call);e.callee=std::move(callee);
       if(receiver)e.children.push_back(std::move(receiver));
-      result=call(e,selected.callable,receiver_type);
+       result=call(e,selected.callable,referent);
      }
      break;
     }

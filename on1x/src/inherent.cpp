@@ -170,10 +170,21 @@ void verify_generated_members(const Unit& unit){
      fail(parameter.where,
           "bounded inherent member metadata reached checked HIR",
           "ON1X-IMPL-HIR");
-   if(!member.function.type_parameters.empty()||
-      !member.function.constraints.empty())
-    fail(member.where,"forged hidden inherent generic metadata",
-         "ON1X-IMPL-HIR");
+    if(!member.function.type_parameters.empty()||
+       !member.function.constraints.empty())
+     fail(member.where,"forged hidden inherent generic metadata",
+          "ON1X-IMPL-HIR");
+    const bool borrowed=member.receiver==InherentMember::Receiver::Borrow;
+    if(member.receiver!=InherentMember::Receiver::None&&
+       member.receiver!=InherentMember::Receiver::Value&&!borrowed)
+     fail(member.where,"invalid checked inherent receiver mode","ON1X-IMPL-HIR");
+    if(member.receiver!=InherentMember::Receiver::None&&
+       (member.function.params.empty()||member.function.params.front().name!="self"))
+     fail(member.where,"missing checked inherent receiver","ON1X-IMPL-HIR");
+    for(std::size_t p=0;p<member.function.params.size();++p)
+     if(member.function.params[p].borrow!=(borrowed&&p==0?
+        BorrowMode::Shared:BorrowMode::Value))
+      fail(member.where,"invalid checked inherent parameter borrow mode","ON1X-IMPL-HIR");
    const auto identity="@impl_"+std::to_string(i)+"_"+std::to_string(j);
    const auto loaded_identity="@inherent_"+std::to_string(i)+"_"+
                               std::to_string(j);
@@ -345,16 +356,17 @@ void prepare(Unit& unit){
     fail(member.where,"invalid inherent member kind or receiver metadata",
          "ON1X-IMPL-HIR");
 
-   if(member.receiver==InherentMember::Receiver::Borrow)
-    fail(member.where,"borrowed receivers require lifetime/place lowering and are not supported",
-         "ON1X-IMPL-RECEIVER");
-   if(member.receiver==InherentMember::Receiver::Move)
+    if(member.receiver==InherentMember::Receiver::Move)
     fail(member.where,"move receivers require consuming ownership lowering and are not supported",
          "ON1X-IMPL-RECEIVER");
-   if(member.receiver==InherentMember::Receiver::Value&&!nominals.copy_safe(target,member.where))
-    fail(member.where,"value receiver is not copy-safe","ON1X-IMPL-RECEIVER");
+    if(member.receiver==InherentMember::Receiver::Value&&!nominals.copy_safe(target,member.where))
+     fail(member.where,"value receiver is not copy-safe","ON1X-IMPL-RECEIVER");
 
-   auto& function=member.function;
+    auto& function=member.function;
+    if(member.receiver==InherentMember::Receiver::Borrow&&
+       (function.params.empty()||function.params.front().borrow!=BorrowMode::Shared))
+     fail(member.where,"only shared borrowed receivers ('borrow self') are supported",
+          "ON1X-IMPL-RECEIVER");
    if(function.name!=member.name||!function.type_parameters.empty()||
       !function.constraints.empty()||function.external||function.prototype||
       function.extension_generated||!function.kernel_symbol.empty()||
@@ -366,7 +378,8 @@ void prepare(Unit& unit){
     auto& parameter=function.params[p];
     if(!names.insert(parameter.name).second)
      fail(parameter.where,"duplicate member parameter: "+parameter.name);
-     if(parameter.borrow!=BorrowMode::Value)
+      if(parameter.borrow!=BorrowMode::Value&&
+         !(p==0&&member.receiver==InherentMember::Receiver::Borrow))
       fail(parameter.where,"borrowed parameters are not supported in inherent members",
            "ON1X-IMPL-RECEIVER");
     if(parameter.name=="self"&&(member.receiver==InherentMember::Receiver::None||p!=0))

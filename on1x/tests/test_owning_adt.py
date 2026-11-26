@@ -79,10 +79,10 @@ p = run([failure], env={**os.environ, 'ON1X_TEST_ENV_FAIL_AFTER': '0'})
 assert p.returncode == 72 and 'environment allocation failure' in p.stderr, p.stderr
 
 for name, text, expected in (
-    ('unique', 'record R{x:json}fn main(){}', 'trivially copied'),
-    ('view', 'enum R{X(json_view)}fn main(){}', 'trivially copied'),
-    ('mutable', 'record R{x:buffer}fn main(){}', 'trivially copied'),
-    ('closure', 'record R{x:fn()->i64}fn main(){}', 'trivially copied'),
+    ('unique', 'record R{x:json}fn main(){}', 'unsupported json'),
+    ('view', 'enum R{X(json_view)}fn main(){}', 'unsupported json_view'),
+    ('mutable', 'record R{x:buffer}fn main(){}', 'unsupported buffer'),
+    ('closure_resource', 'record R{x:fn()->buffer}fn main(){}', 'unsupported buffer'),
     ('structural', 'fn main(){let x=record{x:sx_nil()};}', 'trivially copied'),
     ('arrays', 'record R{x:sexpr}fn main(){let x=array[record<R>{x:sx_nil()}];}', 'trivially copied'),
     ('identity', 'record R{x:sexpr}record S{x:sexpr}fn main(){let x:S=record<R>{x:sx_nil()};}', 'nominal'),

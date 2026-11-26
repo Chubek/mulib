@@ -37,6 +37,24 @@ must pass the same URL gate used by the runtime.
 name resources, not inline code or a request to open a socket. The caller
 must separately authorize whatever it supplies to the runtime.
 
+## Document mode
+
+```text
+elvi article
+host www.example.org
+home https://www.example.org/article
+mode document
+artifacts capture
+```
+
+The distinct document profile requires `artifacts capture`. It is not a
+variant of `artifacts discard`. It may declare `cookies provide{PATH}` but
+rejects `xpath`, `logic`, `forward` and all legacy search directives. As in
+scrape mode, `elvi`, `host` and `home` are required, the exact-host HTTPS URL
+gate applies, and compilation performs no I/O. The trusted host performs
+separate host and optional cookie-path authorization before invoking the
+[document transport](elvi-script-transport.md#capture-a-document).
+
 ## Lexical rules
 
 - The file contains one directive per line; an open provider expression can
@@ -88,8 +106,8 @@ resolution; an actual transport must validate its destination and peer.
 ## Legacy search mode
 
 Omitting `mode` is equivalent to `mode search`; existing HTML and JSON
-profiles still work. Scrape-mode stages are not allowed in search mode, and
+profiles still work. Scrape and document stages are not allowed in search mode, and
 legacy search-specific directives (`search`, `anchor`, `rewrite`,
 `exclude_host`, `max_results`, `format`, `anchor_class`, `results`, `title`,
-`url`) are not allowed in scrape mode. The legacy search, URL rendering and
-result extraction entry points do not execute scrape-mode programs.
+`url`) are not allowed in scrape or document mode. The legacy search, URL
+rendering and result extraction entry points require search mode.

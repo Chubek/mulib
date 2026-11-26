@@ -1,0 +1,9 @@
+import std.html as H;
+
+fn main()
+{
+  match H.basis_html_parse("<p>Ready</p>") with
+  {
+    Ok(_) => assert(false), Err(_) => assert(false)
+  };
+}

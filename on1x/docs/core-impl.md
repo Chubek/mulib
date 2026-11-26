@@ -112,15 +112,24 @@ Strings, S-expressions, buffers, slices, JSON owners/views, functions, code,
 receiver fields in this profile. This restriction prevents a method call from
 inventing an unmodeled retain, borrow, move or drop.
 
-`ref self` and `move self` are parsed to reserve their intended meaning and to
-produce stable `ON1X-IMPL-RECEIVER` diagnostics. They remain unsupported until
-the compiler has general place/lifetime and consuming-ownership lowering.
+`borrow self` takes a shared, call-scoped loan when invoked on a named local,
+an incoming borrow, or a named `own<Named>` (which lends its payload). It
+uses the same lexical-place checks and C11 lowering as a direct call to
+`fn inspect(value: borrow Named)`. It does not accept a temporary receiver,
+retain a loan in a callback, or move a field out of the receiver. This allows
+inspecting nominal values with immutable text or closure fields without
+inventing an implicit by-value copy. Member properties may also use
+`value item(borrow self): T`.
+
+`ref self` and `move self` remain unsupported and produce
+`ON1X-IMPL-RECEIVER`. Arbitrary borrow modes on other member parameters are
+still unsupported.
 
 ## Backend and metaprogramming boundaries
 
 Fully elaborated members use the direct C11 backend. A scalar-only associated
 member can also use scalar MIR because it has become an ordinary scalar
-function. Aggregate receiver methods still receive the existing located
+function. Borrowed and aggregate receiver methods still receive the existing located
 `ON1X-MIR-UNSUPPORTED` rejection; no aggregate is silently narrowed or
 interpreted.
 

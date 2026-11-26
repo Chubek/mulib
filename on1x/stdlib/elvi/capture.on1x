@@ -1,0 +1,78 @@
+from . .core.Pervasive import Result;
+from .document import BasisElviDocument, basis_elvi_document_valid;
+from .elvi import ElviProgram, ElviError, ElviStageKind, basis_elvi_inspect, basis_elvi_stage;
+
+record BasisElviCaptureRequest
+{
+  url: string,
+  host: string,
+  max_body_bytes: i64
+}
+
+enum BasisElviCaptureError
+{
+  CaptureProfileError(ElviError), CaptureUnsupportedMode, CaptureBadBodyLimit,
+  CaptureDenied, CaptureCookiesUnsupported, CaptureTransportFailure(i64), CaptureInvalidResponse
+}
+
+# The host explicitly authorizes this exact profile host and provides a
+# synchronous verified transport. This function selects no backend itself.
+# The portable typed profile is cookieless; use the native companion and
+# independent path authorization for cookie-bearing profiles.
+fn basis_elvi_capture(program: ElviProgram, approved_host: string, max_body_bytes: i64,
+    fetch: fn(ElviProgram, BasisElviCaptureRequest) -> Result<BasisElviDocument, i64>) ->
+    Result<BasisElviDocument, BasisElviCaptureError>
+{
+  if max_body_bytes < 1 || max_body_bytes > 2097152 {
+    return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+      variant<BasisElviCaptureError>(CaptureBadBodyLimit, record {}));
+  }
+  let profile = match basis_elvi_inspect(program) with {
+    Ok(value) => value,
+    Err(error) => {
+      return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+        variant<BasisElviCaptureError>(CaptureProfileError, error));
+    }
+  };
+  match profile["mode"] with {
+    Document() => {},
+    _ => {
+      return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+        variant<BasisElviCaptureError>(CaptureUnsupportedMode, record {}));
+    }
+  };
+  if approved_host != profile["host"] {
+    return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+      variant<BasisElviCaptureError>(CaptureDenied, record {}));
+  }
+  match basis_elvi_stage(program, variant<ElviStageKind>(CookieFile, record {})) with {
+    Ok(None()) => {},
+    Ok(Some(_)) => {
+      return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+        variant<BasisElviCaptureError>(CaptureCookiesUnsupported, record {}));
+    },
+    Err(error) => {
+      return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+        variant<BasisElviCaptureError>(CaptureProfileError, error));
+    }
+  };
+
+  let url = profile["home"];
+  let request = record<BasisElviCaptureRequest>{
+    url: url, host: approved_host, max_body_bytes: max_body_bytes
+  };
+  let document = match fetch(program, request) with {
+    Ok(value) => value,
+    Err(error) => {
+      return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+        variant<BasisElviCaptureError>(CaptureTransportFailure, error));
+    }
+  };
+  let metadata = document["metadata"];
+  if metadata["requested_url"] != url || metadata["body_length"] > max_body_bytes ||
+      !basis_elvi_document_valid(document) {
+    return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Err,
+      variant<BasisElviCaptureError>(CaptureInvalidResponse, record {}));
+  }
+  return variant<Result<BasisElviDocument, BasisElviCaptureError>>(Ok, document);
+}

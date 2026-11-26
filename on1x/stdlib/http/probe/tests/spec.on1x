@@ -1,0 +1,270 @@
+from . .__init__ import Probe, ProbeResult, ProbeHandler, ProbeSpec, ProbeArtifactPolicy, ProbeParseError, ProbeSpecError,
+  ProbeOptions, ProbeProviderSettings, ProbeRequestPolicy, ProbeExtractionSpec, ProbeAuthReference,
+  ProbeExecutionMode, basis_http_probe_make, basis_http_probe_validate,
+  basis_http_probe_artifact_request, basis_http_probe_configure, basis_http_probe_from_elvi,
+  basis_http_probe_from_elvi_script, basis_http_probe_make_html;
+from . .spec import basis_http_probe_result;
+from . . . .elvi.elvi import ElviProgram, ElviStageKind, basis_elvi_inspect, basis_elvi_stage;
+from . . . .elvi.provider import basis_elvi_script_compile;
+from . . . .elvi.document import BasisElviDocumentMetadata;
+from . . . .html.html import BasisHtml, basis_html_parse;
+
+fn document_source() -> string
+{
+  return "elvi fixture\nhost example.test\nhome https://example.test/status\nmode document\nartifacts capture\n";
+}
+
+fn input(source: string, limit: i64, policy: ProbeArtifactPolicy) -> ProbeSpec
+{
+  return record<ProbeSpec>{source: source, max_body_bytes: limit, artifact_policy: policy};
+}
+
+fn build_parser(suffix: string) -> Result<Probe<string>, ProbeSpecError>
+{
+  let parse = fn(doc: BasisHtml) -> Result<string, ProbeParseError> {
+    return variant<Result<string, ProbeParseError>>(Ok, text_concat("parsed", suffix));
+  };
+  return basis_http_probe_make(input(document_source(), 4096,
+    variant<ProbeArtifactPolicy>(DiscardArtifacts, record {})), parse);
+}
+
+fn must_not_parse(doc: BasisHtml) -> Result<i64, ProbeParseError>
+{
+  assert(false);
+  return variant<Result<i64, ProbeParseError>>(Err,
+    record<ProbeParseError>{message: "constructor invoked parser"});
+}
+
+fn build_handler(expected: string) -> ProbeHandler<string, i64>
+{
+  let deliver = fn(result: ProbeResult<i64>, context: string) {
+    assert(result["value"] == 42);
+    assert(context == expected);
+  };
+  return record<ProbeHandler<string, i64>>{context: "local context", deliver: deliver};
+}
+
+fn named_handler(result: ProbeResult<i64>, expected: i64)
+{
+  assert(result["value"] == expected);
+}
+
+fn check_policy(policy: ProbeArtifactPolicy, doc: BasisHtml, keep_raw: bool, keep_html: bool)
+{
+  let url = "https://example.test/status";
+  let metadata = record<BasisElviDocumentMetadata>{
+    requested_url: url, effective_url: url, content_type: "text/html",
+    status: 200, http_protocol: "HTTP/1.1", alpn: "http/1.1", tls_version: 772,
+    certificate_verified: true, hostname_verified: true, body_length: 12,
+    chunked: false, close_delimited: false
+  };
+  let hex = "3c703e70726f62653c2f703e";
+  let result = basis_http_probe_result(policy, 42, metadata, hex, doc);
+  assert(result["value"] == 42);
+  assert(result["metadata"]["requested_url"] == url);
+  assert(result["metadata"]["body_length"] == 12);
+  assert(sx_text(result["document"]["markup"]) == sx_text(doc["markup"]));
+  assert(match result["raw"] with { None() => !keep_raw, Some(bytes) => keep_raw && bytes == hex });
+  assert(match result["html"] with {
+    None() => !keep_html,
+    Some(html) => keep_html && sx_text(html["markup"]) == sx_text(doc["markup"])
+  });
+  let handler = build_handler("local context");
+  let deliver = handler["deliver"];
+  deliver(result, handler["context"]);
+  let named = record<ProbeHandler<i64, i64>>{context: 42, deliver: named_handler};
+  let deliver_named = named["deliver"];
+  deliver_named(result, named["context"]);
+}
+
+fn options(program: Option<ElviProgram>, provider: Option<ProbeProviderSettings>,
+  target: Option<string>, auth: Option<ProbeAuthReference>, mode: ProbeExecutionMode) -> ProbeOptions
+{
+  return record<ProbeOptions>{
+    program: program, provider: provider, target_url: target, authentication: auth,
+    request_policy: variant<ProbeRequestPolicy>(ProbeHttpsGetNoRedirect, record {}),
+    extraction: variant<ProbeExtractionSpec>(ProbeExtractHtmlDocument, record {}),
+    execution_mode: mode,
+    max_body_bytes: 8192,
+    artifact_policy: variant<ProbeArtifactPolicy>(DiscardArtifacts, record {})
+  };
+}
+
+fn has_target(config: Result<ProbeSpec, ProbeSpecError>, expected: string) -> bool
+{
+  return match config with {
+    Ok(spec) => match basis_http_probe_validate(spec) with {
+      Ok(program) => match basis_elvi_inspect(program) with {
+        Ok(profile) => profile["home"] == expected && spec["max_body_bytes"] == 8192,
+        Err(_) => false
+      },
+      Err(_) => false
+    },
+    Err(_) => false
+  };
+}
+
+fn check_configuration()
+{
+  let provider = option_some(record<ProbeProviderSettings>{name: "manual", host: "example.test"});
+  let target = "https://example.test/override?q=1";
+  let foreground = variant<ProbeExecutionMode>(ProbeForeground, record {});
+  let manual = options(option_none(), provider, option_some(target), option_none(), foreground);
+  assert(has_target(basis_http_probe_configure(manual), target));
+  let built = Probe<i64>::basis_http_probe_from_options(manual, must_not_parse);
+  assert(match built with {
+    Ok(probe) => {
+      let spec = probe :: basis_http_probe_spec();
+      spec["max_body_bytes"] == 8192 && result_is_ok(probe :: basis_http_probe_reconfigure(manual))
+    },
+    Err(_) => false
+  });
+
+  let program = record<ElviProgram>{source: document_source()};
+  assert(result_is_ok(basis_http_probe_from_elvi(program, 4096,
+    variant<ProbeArtifactPolicy>(DiscardArtifacts, record {}), must_not_parse)));
+  let normal = options(option_some(program), option_none(), option_none(), option_none(), foreground);
+  assert(match basis_http_probe_configure(normal) with {
+    Ok(spec) => spec["source"] == document_source(),
+    Err(_) => false
+  });
+  let override_url = options(option_some(program), option_none(), option_some(target),
+    option_none(), foreground);
+  assert(has_target(basis_http_probe_configure(override_url), target));
+  let alternate = option_some(record<ProbeProviderSettings>{name: "alternate", host: "other.test"});
+  let both = options(option_some(program), alternate, option_some("https://other.test/effective"),
+    option_none(), foreground);
+  assert(has_target(basis_http_probe_configure(both), "https://other.test/effective"));
+
+  let injection = options(option_none(), provider,
+    option_some("https://example.test/\nmode scrape"), option_none(), foreground);
+  assert(match basis_http_probe_configure(injection) with {
+    Err(ProbeBadTarget()) => true, _ => false
+  });
+  let wrong_host = options(option_some(program), option_none(),
+    option_some("https://other.test/override"), option_none(), foreground);
+  assert(match basis_http_probe_configure(wrong_host) with {
+    Err(ProbeBadElvi(_)) => true, _ => false
+  });
+
+  let auth = option_some(variant<ProbeAuthReference>(ProbeCookieFileReference, "/private/fixture.cookies"));
+  let credential = options(option_none(), provider, option_some(target), auth, foreground);
+  let configured = basis_http_probe_configure(credential);
+  assert(match configured with {
+    Ok(spec) => match basis_http_probe_validate(spec) with {
+      Ok(compiled) => match basis_elvi_stage(compiled, variant<ElviStageKind>(CookieFile, record {})) with {
+        Ok(Some(stage)) => stage["argument"] == "/private/fixture.cookies",
+        _ => false
+      },
+      Err(_) => false
+    },
+    Err(_) => false
+  });
+  let injected_auth = options(option_none(), provider, option_some(target),
+    option_some(variant<ProbeAuthReference>(ProbeCookieFileReference, "/private} mode scrape {")),
+    foreground);
+  assert(match basis_http_probe_configure(injected_auth) with {
+    Err(ProbeBadAuthenticationReference()) => true, _ => false
+  });
+  let cookie_source = record<ElviProgram>{
+    source: text_concat(document_source(), "cookies provide{/private/fixture.cookies}\n")
+  };
+  let implicit_auth = options(option_some(cookie_source), option_none(), option_some(target),
+    option_none(), foreground);
+  assert(match basis_http_probe_configure(implicit_auth) with {
+    Err(ProbeUnsupportedAuthentication()) => true, _ => false
+  });
+  let clear_auth = option_some(variant<ProbeAuthReference>(ProbeNoAuthentication, record {}));
+  let replacement = options(option_some(cookie_source), option_none(), option_some(target),
+    clear_auth, foreground);
+  assert(has_target(basis_http_probe_configure(replacement), target));
+  let scheduled = options(option_some(program), option_none(), option_none(), option_none(),
+    variant<ProbeExecutionMode>(ProbeScheduled, record {}));
+  assert(match basis_http_probe_configure(scheduled) with {
+    Err(ProbeUnsupportedExecutionMode()) => true, _ => false
+  });
+}
+
+fn main()
+{
+  check_configuration();
+  let drop = variant<ProbeArtifactPolicy>(DiscardArtifacts, record {});
+  let valid = document_source();
+  match basis_elvi_script_compile(valid) with {
+    Ok(script) => assert(result_is_ok(basis_http_probe_from_elvi_script(script, 4096, drop, must_not_parse))),
+    Err(_) => assert(false)
+  };
+  assert(result_is_ok(basis_http_probe_make_html(input(valid, 4096, drop))));
+  let minimum = basis_http_probe_make(input(valid, 1, drop), must_not_parse);
+  assert(match minimum with { Ok(_) => true, Err(_) => false });
+  let maximum = basis_http_probe_validate(input(valid, 65536, drop));
+  assert(match maximum with { Ok(_) => true, Err(_) => false });
+  let negative = basis_http_probe_validate(input(valid, -9223372036854775807 - 1, drop));
+  assert(match negative with {
+    Err(error) => match error with { ProbeBadBodyLimit() => true, _ => false },
+    _ => false
+  });
+  let zero = basis_http_probe_validate(input("not Elvi", 0, drop));
+  assert(match zero with {
+    Err(error) => match error with { ProbeBadBodyLimit() => true, _ => false },
+    _ => false
+  });
+  let excessive = basis_http_probe_validate(input(valid, 65537, drop));
+  assert(match excessive with {
+    Err(error) => match error with { ProbeBadBodyLimit() => true, _ => false },
+    _ => false
+  });
+  let transfer = variant<ProbeArtifactPolicy>(TransferHtml, "analysis-output");
+  assert(result_is_ok(basis_http_probe_validate(input(valid, 4096, transfer))));
+  assert(match basis_http_probe_artifact_request(transfer) with {
+    Some(request) => request["destination"] == "analysis-output" &&
+      match request["action"] with { ProbeArtifactTransfer() => true, _ => false },
+    None() => false
+  });
+  let path = variant<ProbeArtifactPolicy>(SaveHtmlAtomic, "../not-a-slot");
+  assert(match basis_http_probe_validate(input(valid, 4096, path)) with {
+    Err(ProbeBadArtifactDestination()) => true, _ => false
+  });
+  let malformed = basis_http_probe_make(input("not an Elvi profile", 4096, drop), must_not_parse);
+  assert(match malformed with {
+    Err(error) => match error with { ProbeBadElvi(_) => true, _ => false },
+    _ => false
+  });
+  let forbidden = basis_http_probe_validate(input(
+    "elvi fixture\nhost example.test\nhome https://example.test/\nmode document\nartifacts discard\n",
+    4096, drop));
+  assert(match forbidden with {
+    Err(error) => match error with { ProbeBadElvi(_) => true, _ => false },
+    _ => false
+  });
+  let legacy = basis_http_probe_validate(input(
+    "elvi fixture\nhost example.test\nhome https://example.test/\nmode scrape\nartifacts discard\nxpath provide{mulib-xpath}\nlogic lua{/fixture.lua}\nforward ipc{/fixture.sock}\n",
+    4096, drop));
+  assert(match legacy with {
+    Err(error) => match error with { ProbeUnsupportedElviMode() => true, _ => false },
+    _ => false
+  });
+  let markup = basis_html_parse("<!DOCTYPE html><html><head><title>T</title></head><body><p>probe</p></body></html>");
+  assert(match markup with {
+    Ok(doc) => {
+      check_policy(drop, doc, false, false);
+      check_policy(variant<ProbeArtifactPolicy>(RetainRaw, record {}), doc, true, false);
+      check_policy(variant<ProbeArtifactPolicy>(RetainHtml, record {}), doc, false, true);
+      check_policy(variant<ProbeArtifactPolicy>(RetainBoth, record {}), doc, true, true);
+      true
+    },
+    Err(_) => false
+  });
+  let made = build_parser(" closure");
+  assert(match made with {
+    Ok(probe) => match markup with {
+      Ok(doc) => {
+        assert(result_is_ok(probe :: basis_http_probe_validated_program()));
+        let parse = probe["parse"];
+        match parse(doc) with { Ok(text) => text == "parsed closure", Err(_) => false }
+      },
+      Err(_) => false
+    },
+    Err(_) => false
+  });
+}

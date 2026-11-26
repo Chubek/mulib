@@ -26,9 +26,12 @@ for path in [root/'CATALOG.json', *sorted((root/'catalog').rglob('*.json'))]:
     write(path, relocate(json.loads(path.read_text())))
 summary = json.loads((root/'CATALOG_SUMMARY.json').read_text())
 sources = list(root.rglob('*.on1x'))
+test_sources = sum('tests' in p.relative_to(root).parts or
+                   p.relative_to(root).parts[:2] == ('daemon', 'fixtures')
+                   for p in sources)
 summary.update(actual_on1x_modules=len(sources),
-               actual_on1x_library_modules=sum('tests' not in p.relative_to(root).parts for p in sources),
-               on1x_test_sources=sum('tests' in p.relative_to(root).parts for p in sources))
+                actual_on1x_library_modules=len(sources) - test_sources,
+                on1x_test_sources=test_sources)
 write(root/'CATALOG_SUMMARY.json', summary)
 files = []
 for path in sorted(root.rglob('*')):

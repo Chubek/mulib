@@ -19,6 +19,10 @@ assert len({(e['kind'],e['name']) for e in entries})==len(entries)
 exported={}
 for module in modules:
     source=module.read_text()
+    # Fixtures are separate programs, not library exports. They may declare
+    # the same external fixture symbol in independent executables.
+    parts=module.relative_to(root).parts
+    names={} if 'tests' in parts or parts[:2]==('daemon','fixtures') else exported
     for relative in re.findall(r'(?m)^\s*import\s+"([^"]+)";',source):
         path=(module.parent/relative).resolve()
         assert path.is_file(),f'{module}: unresolved import {relative}'
@@ -33,8 +37,8 @@ for module in modules:
             if declaration:
                 symbol=declaration[1]
                 if symbol!='main':
-                    if symbol in exported:raise AssertionError(f'duplicate {symbol}: {module}, {exported[symbol]}')
-                    exported[symbol]=module
+                    if symbol in names:raise AssertionError(f'duplicate {symbol}: {module}, {names[symbol]}')
+                    names[symbol]=module
         for c in line:
             if quote:
                 if escaped:escaped=False

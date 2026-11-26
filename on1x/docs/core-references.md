@@ -102,8 +102,10 @@ ordinary snapshot.
 
 The callee has no route by which to retain the caller's place. Borrowed
 parameter modes are forbidden on `main`, lambdas, extern declarations,
-interfaces, cliche/inherent members, and generated extension functions. Raw
-pointer values are not introduced into the language.
+interfaces, cliche members, and generated extension functions. Intrinsic
+inherent members can use [`borrow self`](core-impl.md#receiver-ownership);
+their calls are elaborated to the same direct shared-borrow form. Raw pointer
+values are not introduced into the language.
 
 ## Lowering and fail-closed boundaries
 

@@ -7,7 +7,7 @@
   "nested_structures": 12,
   "partial_executable_structure_bindings": 60,
   "total_catalog_entries": 186,
-  "actual_on1x_modules": 212,
-  "actual_on1x_library_modules": 204,
-  "on1x_test_sources": 8
+  "actual_on1x_modules": 249,
+  "actual_on1x_library_modules": 221,
+  "on1x_test_sources": 28
 }

@@ -1,0 +1,52 @@
+from . .elvi.document import BasisElviDocumentMetadata, basis_elvi_document_from_hex,
+  basis_elvi_document_valid;
+
+fn capture_metadata(status: i64, url: string, effective: string, count: i64,
+    tls: i64, verified: bool) -> BasisElviDocumentMetadata
+{
+  return record<BasisElviDocumentMetadata>
+  {
+    status: status,
+    requested_url: url,
+    effective_url: effective,
+    content_type: "text/html; charset=utf-8",
+    http_protocol: "HTTP/1.1",
+    alpn: "",
+    tls_version: tls,
+    certificate_verified: verified,
+    hostname_verified: verified,
+    body_length: count,
+    chunked: false,
+    close_delimited: false
+  };
+}
+
+fn capture_accepted(metadata: BasisElviDocumentMetadata, hex: string) -> bool
+{
+  return match basis_elvi_document_from_hex(metadata, hex) with
+  {
+    Ok(document) => basis_elvi_document_valid(document) &&
+      document["body_hex"] == hex && document["metadata"]["status"] == metadata["status"],
+    Err(code) => code == 0
+  };
+}
+
+fn main()
+{
+  let url = "https://www.example.org/body";
+  let metadata = capture_metadata(200, url, url, 3, 772, true);
+  assert(capture_accepted(metadata, "610062")); # Bytes are a, NUL, b.
+  assert(capture_accepted(capture_metadata(404, url, url, 0, 771, true), ""));
+  assert(!capture_accepted(metadata, "61006"));
+  assert(!capture_accepted(metadata, "61006B"));
+  assert(!capture_accepted(metadata, "61006g"));
+  assert(!capture_accepted(capture_metadata(200, url, url, 9223372036854775807, 772, true), ""));
+  assert(!capture_accepted(capture_metadata(302, url, url, 3, 772, true), "610062"));
+  assert(!capture_accepted(capture_metadata(200, url, url, 3, 770, true), "610062"));
+  assert(!capture_accepted(capture_metadata(200, url, url, 3, 772, false), "610062"));
+  assert(!capture_accepted(capture_metadata(200, url, "https://example.com/", 3, 772, true), "610062"));
+  assert(!capture_accepted(capture_metadata(200, "https://", "https://", 3, 772, true), "610062"));
+  assert(!capture_accepted(capture_metadata(200, "https://example.org/#x", "https://example.org/#x",
+    3, 772, true), "610062"));
+  println("Elvi document values: OK");
+}

@@ -125,6 +125,12 @@ fn main(){
     assert p.returncode==0,p.stderr
     p=run([exe],cwd=base);assert p.returncode==0 and p.stdout=='42\n',p.stderr
     if sys.platform.startswith('linux'):
+        p=run([sys.executable,'-B',t.root/'tests/test_http_probe.py',
+               '--on1xc',compiler,'--cc',t.cc,'--stdlib',library/'stdlib',
+               '--runtime',library/'runtime','--example',library/'examples/http-probe',
+               '--scratch',base,*[f'--cflag={flag}' for flag in t.flags]],
+              cwd=base,env=env)
+        assert p.returncode==0,p.stderr
         source.write_text('''import std.container.Box as B;
 import std.container.Tls as T;
 fn main() {

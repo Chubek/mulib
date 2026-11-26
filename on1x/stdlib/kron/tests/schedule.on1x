@@ -1,0 +1,45 @@
+from std.core.Pervasive import Option, Result;
+from std.kron import KronTime, KronDuration, KronScheduleError,
+  basis_kron_time, basis_kron_duration, basis_kron_signal_id, basis_kron_promise_id,
+  basis_kron_once, basis_kron_every, basis_kron_persistent, basis_kron_for,
+  basis_kron_until_signal, basis_kron_first_deadline;
+
+fn main() -> i64 {
+  assert(match basis_kron_time(-1) with { None() => true, _ => false });
+  assert(match basis_kron_duration(0) with { None() => true, _ => false });
+  assert(match basis_kron_signal_id(2147483648) with { None() => true, _ => false });
+  assert(match basis_kron_promise_id(0u64) with { None() => true, _ => false });
+  assert(match basis_kron_promise_id(18446744073709551615u64) with {
+    Some(id) => id["id"] > 0u64, _ => false
+  });
+
+  let zero = record<KronTime>{seconds: 0};
+  let time = record<KronTime>{seconds: 9};
+  let seconds = record<KronDuration>{seconds: 4};
+  let once = basis_kron_once(zero, basis_kron_persistent());
+  assert(match basis_kron_first_deadline(once, time) with {
+    Ok(due) => due["seconds"] == 0, _ => false
+  });
+  let four = basis_kron_every(seconds, basis_kron_for(seconds));
+  assert(match basis_kron_first_deadline(four, time) with {
+    Ok(due) => due["seconds"] == 13, _ => false
+  });
+  let max_time = record<KronTime>{seconds: 9223372036854775807};
+  assert(match basis_kron_first_deadline(four, max_time) with {
+    Err(error) => match error with { KronOverflow() => true, _ => false },
+    _ => false
+  });
+  let too_late = basis_kron_once(time, basis_kron_for(seconds));
+  assert(match basis_kron_first_deadline(too_late, zero) with {
+    Err(error) => match error with { KronTooLate() => true, _ => false },
+    _ => false
+  });
+  let logical_signal = match basis_kron_signal_id(9) with {
+    Some(signal) => signal, _ => { return 1; }
+  };
+  let until = basis_kron_every(seconds, basis_kron_until_signal(logical_signal));
+  assert(match basis_kron_first_deadline(until, zero) with {
+    Ok(due) => due["seconds"] == 4, _ => false
+  });
+  return 0;
+}

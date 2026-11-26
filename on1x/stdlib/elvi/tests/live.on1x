@@ -1,0 +1,49 @@
+from std.elvi.elvi import ElviProgram;
+from std.elvi.live import basis_elvi_live_fetch;
+
+extern fn live_fixture_authorizations() -> i64;
+extern fn live_fixture_connects() -> i64;
+extern fn live_fixture_closes() -> i64;
+
+fn assert_fetch_error(program: ElviProgram, url: string, limit: i64, expected: i64)
+{
+  match basis_elvi_live_fetch(program, url, limit) with {
+    Ok(_) => assert(false),
+    Err(error) => assert(error == expected)
+  };
+}
+
+fn main()
+{
+  let profile = record<ElviProgram> {source:
+    "elvi fixture\nhost example.org\nhome https://example.org/document\nmode document\nartifacts capture\n"};
+
+  assert_fetch_error(profile, "https://other.example/document", 20, -2);
+  assert_fetch_error(profile, "", 0, -1);
+  assert_fetch_error(record<ElviProgram>{source:"broken"}, "", 20, -1);
+  assert(live_fixture_authorizations() == 0);
+
+  assert_fetch_error(profile, "https://example.org/denied", 20, -2);
+  assert(live_fixture_authorizations() == 1);
+  assert(live_fixture_connects() == 0);
+
+  match basis_elvi_live_fetch(profile, "", 3) with {
+    Err(_) => assert(false),
+    Ok(document) => {
+      assert(document["body_hex"] == "610062");
+      let metadata = document["metadata"];
+      assert(metadata["requested_url"] == "https://example.org/document");
+      assert(metadata["requested_url"] == metadata["effective_url"]);
+      assert(metadata["content_type"] == "text/html; charset=utf-8");
+      assert(metadata["status"] == 200 && metadata["body_length"] == 3);
+      assert(metadata["certificate_verified"] && metadata["hostname_verified"]);
+      assert(metadata["tls_version"] == 772 && metadata["alpn"] == "http/1.1");
+    }
+  };
+  assert_fetch_error(profile, "", 2, -8);
+  assert_fetch_error(profile, "https://example.org/redirect", 20, -7);
+  assert_fetch_error(profile, "https://example.org/unverified", 20, -4);
+  assert(live_fixture_authorizations() == 5);
+  assert(live_fixture_connects() == 4 && live_fixture_closes() == 4);
+  println("Elvi live bridge: ok");
+}

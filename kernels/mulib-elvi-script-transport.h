@@ -39,10 +39,68 @@ typedef struct mulib_elvi_script_transport {
 } mulib_elvi_script_transport_t;
 
 /* A synchronous mulib_elvi_script_fetch_fn. GET, exact first-party HTTPS
- * host, verified TLS, no redirects. On failure response is unchanged.
+ * host, verified TLS, no redirects. For document mode use the separately
+ * authorized capture entry point. On failure response is unchanged.
  * On success it owns its message; free using mulib_http_message_free. */
 int mulib_elvi_script_fetch_https(void *context,
     const mulib_elvi_script_request_t *request, mulib_elvi_script_response_t *response);
+
+#define MULIB_ELVI_DOCUMENT_MAX_URL 8192u
+#define MULIB_ELVI_DOCUMENT_MAX_CONTENT_TYPE 256u
+
+typedef enum mulib_elvi_script_capture_result {
+  MULIB_ELVI_CAPTURE_OK = 0,
+  MULIB_ELVI_CAPTURE_INVALID,
+  MULIB_ELVI_CAPTURE_DENIED,
+  MULIB_ELVI_CAPTURE_CREDENTIALS,
+  MULIB_ELVI_CAPTURE_TLS,
+  MULIB_ELVI_CAPTURE_TRANSPORT,
+  MULIB_ELVI_CAPTURE_RESPONSE,
+  MULIB_ELVI_CAPTURE_REDIRECT,
+  MULIB_ELVI_CAPTURE_LIMIT,
+  MULIB_ELVI_CAPTURE_NOMEM
+} mulib_elvi_script_capture_result_t;
+
+typedef struct mulib_elvi_script_capture_config {
+  const char *url; /* NULL to use the profile home. Borrowed NUL-terminated text. */
+  const char *approved_host; /* Required exact, lower-case host from the caller. */
+  const mulib_elvi_scrape_https_t *https;
+  size_t max_body_bytes; /* 1..MULIB_ELVI_SCRIPT_MAX_BODY; no truncation. */
+  const char *approved_home, *approved_cookie_path; /* Optional, borrowed. */
+} mulib_elvi_script_capture_config_t;
+
+typedef struct mulib_elvi_script_document_metadata {
+  char requested_url[MULIB_ELVI_DOCUMENT_MAX_URL];
+  char effective_url[MULIB_ELVI_DOCUMENT_MAX_URL]; /* Exact request spelling. */
+  char content_type[MULIB_ELVI_DOCUMENT_MAX_CONTENT_TYPE]; /* Empty if absent. */
+  char http_protocol[9]; /* HTTP/1.1 (parsed and used on wire). */
+  char alpn[16]; /* Empty means no ALPN was negotiated. */
+  unsigned status, tls_version; /* Final HTTP status, actual 0x0303 or 0x0304. */
+  int certificate_verified, hostname_verified;
+  int chunked, close_delimited;
+} mulib_elvi_script_document_metadata_t;
+
+typedef struct mulib_elvi_script_document {
+  mulib_elvi_script_document_metadata_t metadata;
+  unsigned char *body; /* Binary, not a C string. May be NULL for an empty body. */
+  size_t body_length;
+} mulib_elvi_script_document_t;
+
+/* Exactly one GET; no redirect, retry, decompression, Lua, IPC or artifacts.
+ * Only accepts an unmodified mode document / artifacts capture profile.
+ * All string pointers are NUL-terminated; no argument overlaps out. The
+ * approved host and cookie path must come from independent caller policy.
+ * Callbacks are synchronous and trusted to verify destination policy and
+ * apply finite I/O deadlines. A session is closed before return. On success,
+ * out owns its body. On failure, out is unchanged. Out must not already own
+ * a body. No arbitrary response headers are returned. */
+mulib_elvi_script_capture_result_t mulib_elvi_script_capture_https(
+    const mulib_elvi_scrape_program_t *program,
+    const mulib_elvi_script_capture_config_t *config,
+    mulib_elvi_script_document_t *out);
+
+/* Free/reset an owned or zero-initialized document; NULL is safe. */
+void mulib_elvi_script_document_destroy(mulib_elvi_script_document_t *document);
 
 #ifdef __cplusplus
 }
@@ -469,41 +527,160 @@ static int melvi_cookie_header_(const mulib_elvi_script_cookies_t *store,
   return 1;
 }
 
-int mulib_elvi_script_fetch_https(void *context,
-    const mulib_elvi_script_request_t *request, mulib_elvi_script_response_t *response) {
-  const mulib_elvi_script_transport_t *t = (const mulib_elvi_script_transport_t *)context;
-  mulib_uri_t url, home;
+typedef struct melvi_capture_tls_ {
+  const mulib_elvi_scrape_https_t *https;
+  mulib_elvi_scrape_peer_t peer;
+  int failed;
+} melvi_capture_tls_;
+
+static int melvi_capture_connect_(void *user, const mulib_uri_t *endpoint, mulib_tsl_t *session) {
+  melvi_capture_tls_ *tls = (melvi_capture_tls_ *)user;
+  tls->failed = !mulib_elvi_scrape_https_connect_inspect(tls->https, endpoint, session, &tls->peer);
+  return !tls->failed;
+}
+
+static mulib_elvi_script_capture_result_t melvi_transport_request_(
+    const char *url, const mulib_uri_t *uri, const mulib_elvi_script_cookies_t *cookies,
+    size_t body_limit, melvi_capture_tls_ *tls, mulib_http_message_t *response) {
   mulib_http_message_t message = {0};
-  mulib_webclient_options_t options = {{32768, 100, MULIB_ELVI_SCRIPT_MAX_BODY, 0},
-                                      MULIB_ELVI_SCRIPT_MAX_BODY + 65536u};
+  mulib_webclient_options_t options = {{32768, 100, body_limit, 0}, body_limit + 65536u};
   char cookie[MULIB_ELVI_SCRIPT_MAX_COOKIE_HEADER + 1u];
   char cookie_name[] = "Cookie";
   mulib_http_header_t header = {cookie_name, cookie};
   const char *encoding;
   size_t cursor = 0;
-  int ok = 0;
-  if (!t || !t->https || !t->https->connect || !t->https->peer || !request || !response ||
-      !memchr(request->url, 0, sizeof request->url) ||
-      !melvi_transport_home_(t->program, &home) ||
-      !melvi_transport_uri_(t->program, request->url, &url)) return 0;
-  if (!melvi_cookie_header_(t->cookies, &url, cookie, sizeof cookie)) goto done;
-  if (mulib_https_request(request->url, "GET", cookie[0] ? &header : NULL, cookie[0] ? 1u : 0u,
-                          NULL, 0, &options, mulib_elvi_scrape_https_connect_verified, (void *)t->https,
-                          &message) != MULIB_WEBCLIENT_OK) goto done;
-  if (message.status < 200 || (message.status >= 300 && message.status < 400) ||
-      message.status >= 600) goto done;
-  if (mulib_http_header_next(&message, "Content-Type", &cursor) &&
-      mulib_http_header_next(&message, "Content-Type", &cursor)) goto done;
+  mulib_webclient_result web;
+  if (!melvi_cookie_header_(cookies, uri, cookie, sizeof cookie)) {
+    melvi_transport_wipe_(cookie, sizeof cookie);
+    return MULIB_ELVI_CAPTURE_CREDENTIALS;
+  }
+  web = mulib_https_request(url, "GET", cookie[0] ? &header : NULL, cookie[0] ? 1u : 0u,
+                            NULL, 0, &options, melvi_capture_connect_, tls, &message);
+  melvi_transport_wipe_(cookie, sizeof cookie);
+  switch (web) {
+  case MULIB_WEBCLIENT_OK: break;
+  case MULIB_WEBCLIENT_LIMIT: return MULIB_ELVI_CAPTURE_LIMIT;
+  case MULIB_WEBCLIENT_NOMEM: return MULIB_ELVI_CAPTURE_NOMEM;
+  case MULIB_WEBCLIENT_TRANSPORT:
+    return tls->failed ? MULIB_ELVI_CAPTURE_TLS : MULIB_ELVI_CAPTURE_TRANSPORT;
+  default: return MULIB_ELVI_CAPTURE_RESPONSE;
+  }
+  if (message.status >= 300 && message.status < 400) {
+    mulib_http_message_free(&message);
+    return MULIB_ELVI_CAPTURE_REDIRECT;
+  }
+  if (message.status < 200 || message.status >= 600 ||
+      (mulib_http_header_next(&message, "Content-Type", &cursor) &&
+       mulib_http_header_next(&message, "Content-Type", &cursor))) goto invalid;
   cursor = 0;
   encoding = mulib_http_header_next(&message, "Content-Encoding", &cursor);
   if (encoding && (!melvi_transport_equal_(encoding, strlen(encoding), "identity") ||
-        mulib_http_header_next(&message, "Content-Encoding", &cursor))) goto done;
+        mulib_http_header_next(&message, "Content-Encoding", &cursor))) goto invalid;
+  *response = message;
+  return MULIB_ELVI_CAPTURE_OK;
+ invalid:
+  mulib_http_message_free(&message);
+  return MULIB_ELVI_CAPTURE_RESPONSE;
+}
+
+int mulib_elvi_script_fetch_https(void *context,
+    const mulib_elvi_script_request_t *request, mulib_elvi_script_response_t *response) {
+  const mulib_elvi_script_transport_t *t = (const mulib_elvi_script_transport_t *)context;
+  mulib_uri_t url, home;
+  mulib_http_message_t message = {0};
+  melvi_capture_tls_ tls = {0};
+  if (!t || !t->https || !t->https->connect || !t->https->peer || !request || !response ||
+      !memchr(request->url, 0, sizeof request->url) ||
+      !melvi_transport_home_(t->program, &home) ||
+      t->program->mode == MULIB_ELVI_MODE_DOCUMENT ||
+      !melvi_transport_uri_(t->program, request->url, &url)) return 0;
+  tls.https = t->https;
+  if (melvi_transport_request_(request->url, &url, t->cookies, MULIB_ELVI_SCRIPT_MAX_BODY,
+                               &tls, &message) != MULIB_ELVI_CAPTURE_OK) return 0;
   response->message = message;
   memcpy(response->effective_url, request->url, strlen(request->url) + 1);
-  ok = 1;
-done:
-  melvi_transport_wipe_(cookie, sizeof cookie);
-  if (!ok) mulib_http_message_free(&message);
-  return ok;
+  return 1;
+}
+
+mulib_elvi_script_capture_result_t mulib_elvi_script_capture_https(
+    const mulib_elvi_scrape_program_t *program,
+    const mulib_elvi_script_capture_config_t *config,
+    mulib_elvi_script_document_t *out) {
+  mulib_elvi_script_document_t captured = {0};
+  mulib_http_message_t message = {0};
+  mulib_elvi_script_cookies_t *cookies = NULL;
+  mulib_elvi_script_capture_result_t result;
+  melvi_capture_tls_ tls = {0};
+  mulib_uri_t uri, home;
+  const char *url, *type;
+  size_t type_len, url_len;
+  if (!program || !config || !out || !config->https || !config->https->connect ||
+      !config->https->peer || !config->max_body_bytes ||
+      config->max_body_bytes > MULIB_ELVI_SCRIPT_MAX_BODY) return MULIB_ELVI_CAPTURE_INVALID;
+  if (program->mode != MULIB_ELVI_MODE_DOCUMENT ||
+      program->artifacts.kind != MULIB_ELVI_STAGE_CAPTURE ||
+      program->xpath.kind != MULIB_ELVI_STAGE_NONE ||
+      program->logic.kind != MULIB_ELVI_STAGE_NONE ||
+      program->forward.kind != MULIB_ELVI_STAGE_NONE ||
+      (program->cookies.kind != MULIB_ELVI_STAGE_NONE &&
+       program->cookies.kind != MULIB_ELVI_STAGE_COOKIE_FILE)) return MULIB_ELVI_CAPTURE_INVALID;
+  url = config->url ? config->url : program->home;
+  if (!config->approved_host || !melvi_transport_home_(program, &home) ||
+      strcmp(config->approved_host, program->host) ||
+      !melvi_transport_uri_(program, url, &uri)) return MULIB_ELVI_CAPTURE_DENIED;
+  if (program->cookies.kind == MULIB_ELVI_STAGE_COOKIE_FILE) {
+    char path[4096];
+    if (!config->approved_cookie_path ||
+        !memchr(program->cookies.argument, 0, sizeof program->cookies.argument) ||
+        !mulib_elvi_script_resolve(program->cookies.argument, config->approved_home,
+                                  path, sizeof path) ||
+        strcmp(path, config->approved_cookie_path)) return MULIB_ELVI_CAPTURE_DENIED;
+    cookies = mulib_elvi_script_cookies_load(program, path, config->approved_cookie_path);
+    if (!cookies) return MULIB_ELVI_CAPTURE_CREDENTIALS;
+  }
+  tls.https = config->https;
+  result = melvi_transport_request_(url, &uri, cookies, config->max_body_bytes, &tls, &message);
+  mulib_elvi_script_cookies_destroy(cookies);
+  if (result != MULIB_ELVI_CAPTURE_OK) return result;
+
+  type = mulib_http_header(&message, "Content-Type");
+  type_len = type ? strlen(type) : 0;
+  if (type_len >= sizeof captured.metadata.content_type) {
+    result = MULIB_ELVI_CAPTURE_LIMIT;
+    goto done;
+  }
+  for (size_t i = 0; i < type_len; ++i) {
+    unsigned char c = (unsigned char)type[i];
+    if (c != '\t' && (c < 32 || c > 126)) {
+      result = MULIB_ELVI_CAPTURE_RESPONSE;
+      goto done;
+    }
+  }
+  if (type_len) memcpy(captured.metadata.content_type, type, type_len);
+  url_len = strlen(url); /* URI gate already bounded it to < MAX_URL. */
+  memcpy(captured.metadata.requested_url, url, url_len);
+  memcpy(captured.metadata.effective_url, url, url_len);
+  memcpy(captured.metadata.http_protocol, "HTTP/1.1", sizeof "HTTP/1.1");
+  memcpy(captured.metadata.alpn, tls.peer.alpn, strlen(tls.peer.alpn) + 1);
+  captured.metadata.status = message.status;
+  captured.metadata.tls_version = tls.peer.tls_version;
+  captured.metadata.certificate_verified = tls.peer.certificate_verified;
+  captured.metadata.hostname_verified = tls.peer.hostname_verified;
+  captured.metadata.chunked = message.chunked;
+  captured.metadata.close_delimited = message.close_delimited;
+  captured.body = message.body;
+  captured.body_length = message.body_length;
+  message.body = NULL;
+  *out = captured;
+ done:
+  mulib_http_message_free(&message);
+  return result;
+}
+
+void mulib_elvi_script_document_destroy(mulib_elvi_script_document_t *document) {
+  if (document) {
+    free(document->body);
+    memset(document, 0, sizeof *document);
+  }
 }
 #endif

@@ -1,0 +1,344 @@
+# These values describe a Probe. None of them grants network, file, TLS,
+# process, or scheduler authority.
+from . . .core.Pervasive import Option, Result;
+from . . .elvi.elvi import ElviProgram, ElviError, ElviStageKind,
+  basis_elvi_compile, basis_elvi_inspect, basis_elvi_stage;
+from . . .elvi.document import BasisElviDocumentMetadata;
+from . . .html.html import BasisHtml;
+
+# These policies describe successful result exposure and requested output
+# effects. DiscardArtifacts is not the Elvi scrape-mode artifacts discard stage.
+enum ProbeArtifactPolicy
+{
+  DiscardArtifacts, RetainRaw, RetainHtml, RetainBoth,
+  TransferHtml(string), SaveHtmlAtomic(string)
+}
+
+enum ProbeArtifactAction
+{
+  ProbeArtifactTransfer, ProbeArtifactAtomicSave
+}
+
+record ProbeArtifactRequest
+{
+  action: ProbeArtifactAction,
+  destination: string
+}
+
+record ProbeSpec
+{
+  source: string,
+  max_body_bytes: i64,
+  artifact_policy: ProbeArtifactPolicy
+}
+
+record ProbeProviderSettings
+{
+  name: string,
+  host: string
+}
+
+enum ProbeRequestPolicy
+{
+  ProbeHttpsGetNoRedirect, ProbeHttpsHeadNoRedirect, ProbeHttpsGetFollowRedirect
+}
+
+enum ProbeExtractionSpec
+{
+  ProbeExtractHtmlDocument, ProbeExtractRawBytes
+}
+
+enum ProbeAuthReference
+{
+  ProbeNoAuthentication, ProbeCookieFileReference(string)
+}
+
+enum ProbeExecutionMode
+{
+  ProbeForeground, ProbeScheduled, ProbeDaemon
+}
+
+# An absent script selects manual construction. With a script, explicit
+# provider and URL override the corresponding compiled profile defaults.
+record ProbeOptions
+{
+  program: Option<ElviProgram>,
+  provider: Option<ProbeProviderSettings>,
+  target_url: Option<string>,
+  request_policy: ProbeRequestPolicy,
+  extraction: ProbeExtractionSpec,
+  authentication: Option<ProbeAuthReference>,
+  execution_mode: ProbeExecutionMode,
+  max_body_bytes: i64,
+  artifact_policy: ProbeArtifactPolicy
+}
+
+enum ProbeSpecError
+{
+  ProbeBadBodyLimit, ProbeBadElvi(ElviError), ProbeUnsupportedElviMode,
+  ProbeBadProvider, ProbeBadTarget, ProbeBadArtifactDestination, ProbeBadAuthenticationReference,
+  ProbeUnsupportedRequestPolicy, ProbeUnsupportedExtractionSpec,
+  ProbeUnsupportedAuthentication, ProbeUnsupportedExecutionMode
+}
+
+record ProbeParseError
+{
+  message: string
+}
+
+record ProbeResult < T >
+{
+  value: T,
+  metadata: BasisElviDocumentMetadata,
+  document: BasisHtml,
+  raw: Option<string>,
+  html: Option<BasisHtml>
+}
+
+# An optional same-process success effect, independent of the parser.
+record ProbeHandler < C, T >
+{
+  context: C,
+  deliver: fn(ProbeResult<T>, C) -> void
+}
+
+fn basis_http_probe_artifact_request(policy: ProbeArtifactPolicy) -> Option<ProbeArtifactRequest>
+{
+  return match policy with {
+    TransferHtml(destination) => variant<Option<ProbeArtifactRequest>>(Some,
+      record<ProbeArtifactRequest>{
+        action: variant<ProbeArtifactAction>(ProbeArtifactTransfer, record {}), destination: destination
+      }),
+    SaveHtmlAtomic(destination) => variant<Option<ProbeArtifactRequest>>(Some,
+      record<ProbeArtifactRequest>{
+        action: variant<ProbeArtifactAction>(ProbeArtifactAtomicSave, record {}), destination: destination
+      }),
+    _ => variant<Option<ProbeArtifactRequest>>(None, record {})
+  };
+}
+
+fn probe_ascii_alphanumeric(byte: i64) -> bool
+{
+  return (byte >= 48 && byte <= 57) || (byte >= 65 && byte <= 90) ||
+    (byte >= 97 && byte <= 122);
+}
+
+fn probe_key_valid(key: string) -> bool
+{
+  let n = text_len(key);
+  if n < 1 || n > 63 { return false; }
+  for i in 0 .. n {
+    let byte = text_byte(key, i);
+    if !probe_ascii_alphanumeric(byte) && (i == 0 || (byte != 45 && byte != 95)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+fn probe_validate_document(source: string) -> Result<ElviProgram, ProbeSpecError>
+{
+  let program = match basis_elvi_compile(source) with {
+    Ok(compiled) => compiled,
+    Err(error) => {
+      return variant<Result<ElviProgram, ProbeSpecError>>(Err,
+        variant<ProbeSpecError>(ProbeBadElvi, error));
+    }
+  };
+
+  return match basis_elvi_inspect(program) with {
+    Ok(profile) => match profile["mode"] with {
+      Document() => variant<Result<ElviProgram, ProbeSpecError>>(Ok, program),
+      _ => variant<Result<ElviProgram, ProbeSpecError>>(Err,
+        variant<ProbeSpecError>(ProbeUnsupportedElviMode, record {}))
+    },
+    Err(error) => variant<Result<ElviProgram, ProbeSpecError>>(Err,
+      variant<ProbeSpecError>(ProbeBadElvi, error))
+  };
+}
+
+# Validate and compile the requested document program before any execution.
+# The HTML parser bounds the common capture-and-normalize profile at 64 KiB.
+fn basis_http_probe_validate(spec: ProbeSpec) -> Result<ElviProgram, ProbeSpecError>
+{
+  let limit = spec["max_body_bytes"];
+  if limit < 1 || limit > 65536 {
+    return variant<Result<ElviProgram, ProbeSpecError>>(Err,
+      variant<ProbeSpecError>(ProbeBadBodyLimit, record {}));
+  }
+  let destination_valid = match basis_http_probe_artifact_request(spec["artifact_policy"]) with {
+    None() => true,
+    Some(request) => probe_key_valid(request["destination"])
+  };
+  if !destination_valid {
+    return variant<Result<ElviProgram, ProbeSpecError>>(Err,
+      variant<ProbeSpecError>(ProbeBadArtifactDestination, record {}));
+  }
+  return probe_validate_document(spec["source"]);
+}
+
+fn probe_effective(source: string, options: ProbeOptions) -> Result<ProbeSpec, ProbeSpecError>
+{
+  let spec = record<ProbeSpec>{
+    source: source, max_body_bytes: options["max_body_bytes"], artifact_policy: options["artifact_policy"]
+  };
+  return match basis_http_probe_validate(spec) with {
+    Ok(_) => variant<Result<ProbeSpec, ProbeSpecError>>(Ok, spec),
+    Err(error) => variant<Result<ProbeSpec, ProbeSpecError>>(Err, error)
+  };
+}
+
+fn probe_config_error(error: ProbeSpecError) -> Result<ProbeSpec, ProbeSpecError>
+{
+  return variant<Result<ProbeSpec, ProbeSpecError>>(Err, error);
+}
+
+# Prevent directive injection before using these values to build ElviScript.
+# The Elvi compiler additionally validates label, URL and same-host semantics.
+fn probe_manual_host(host: string) -> bool
+{
+  let n = text_len(host);
+  if n < 1 || n > 253 { return false; }
+  for i in 0 .. n {
+    let byte = text_byte(host, i);
+    if !probe_ascii_alphanumeric(byte) && byte != 45 && byte != 46 { return false; }
+  }
+  return true;
+}
+
+fn probe_manual_target(url: string) -> bool
+{
+  let n = text_len(url);
+  if n < 9 || n > 1023 || text_slice(url, 0, 8) != "https://" { return false; }
+  for i in 8 .. n {
+    let byte = text_byte(url, i);
+    if byte < 33 || byte > 126 || byte == 34 || byte == 35 || byte == 92 {
+      return false;
+    }
+  }
+  return true;
+}
+
+fn probe_manual_cookie_path(path: string) -> bool
+{
+  let n = text_len(path);
+  if n < 2 || n >= 4096 || text_byte(path, 0) != 47 { return false; }
+  for i in 1 .. n {
+    let byte = text_byte(path, i);
+    if !probe_ascii_alphanumeric(byte) && byte != 45 && byte != 46 && byte != 47 && byte != 95 {
+      return false;
+    }
+  }
+  return true;
+}
+
+fn probe_manual(options: ProbeOptions, provider: ProbeProviderSettings, url: string)
+    -> Result<ProbeSpec, ProbeSpecError>
+{
+  if !probe_key_valid(provider["name"]) || !probe_manual_host(provider["host"]) {
+    return probe_config_error(variant<ProbeSpecError>(ProbeBadProvider, record {}));
+  }
+  if !probe_manual_target(url) {
+    return probe_config_error(variant<ProbeSpecError>(ProbeBadTarget, record {}));
+  }
+  let header = text_concat(text_concat("elvi ", provider["name"]),
+    text_concat("\nhost ", provider["host"]));
+  let base = text_concat(text_concat(header, text_concat("\nhome ", url)),
+    "\nmode document\nartifacts capture\n");
+  let source = match options["authentication"] with {
+    Some(ProbeCookieFileReference(path)) => {
+      if !probe_manual_cookie_path(path) {
+        return probe_config_error(variant<ProbeSpecError>(ProbeBadAuthenticationReference, record {}));
+      }
+      text_concat(text_concat(base, "cookies provide{"), text_concat(path, "}\n"))
+    },
+    _ => base
+  };
+  return probe_effective(source, options);
+}
+
+fn probe_configure_program(options: ProbeOptions, program: ElviProgram)
+    -> Result<ProbeSpec, ProbeSpecError>
+{
+  let provider_override = options["provider"];
+  let target_override = options["target_url"];
+  let auth_override = options["authentication"];
+  let rebuild = match (provider_override, target_override, auth_override) with {
+    (None(), None(), None()) => false, _ => true
+  };
+  if !rebuild { return probe_effective(program["source"], options); }
+
+  let compiled = match probe_validate_document(program["source"]) with {
+    Ok(value) => value,
+    Err(error) => { return probe_config_error(error); }
+  };
+  let cookie = basis_elvi_stage(compiled, variant<ElviStageKind>(CookieFile, record {}));
+  match cookie with {
+    Ok(None()) => {},
+    Ok(Some(_)) => {
+      match auth_override with {
+        None() => {
+          return probe_config_error(variant<ProbeSpecError>(ProbeUnsupportedAuthentication, record {}));
+        },
+        Some(_) => {}
+      };
+    },
+    Err(error) => {
+      return probe_config_error(variant<ProbeSpecError>(ProbeBadElvi, error));
+    }
+  };
+  let profile = match basis_elvi_inspect(compiled) with {
+    Ok(value) => value,
+    Err(error) => { return probe_config_error(variant<ProbeSpecError>(ProbeBadElvi, error)); }
+  };
+  let provider = match provider_override with {
+    Some(value) => value,
+    None() => record<ProbeProviderSettings>{name: profile["name"], host: profile["host"]}
+  };
+  let target = match target_override with { Some(value) => value, None() => profile["home"] };
+  return probe_manual(options, provider, target);
+}
+
+fn basis_http_probe_configure(options: ProbeOptions) -> Result<ProbeSpec, ProbeSpecError>
+{
+  match options["request_policy"] with {
+    ProbeHttpsGetNoRedirect() => {},
+    _ => { return probe_config_error(variant<ProbeSpecError>(ProbeUnsupportedRequestPolicy, record {})); }
+  };
+  match options["extraction"] with {
+    ProbeExtractHtmlDocument() => {},
+    _ => { return probe_config_error(variant<ProbeSpecError>(ProbeUnsupportedExtractionSpec, record {})); }
+  };
+  match options["execution_mode"] with {
+    ProbeForeground() => {},
+    _ => { return probe_config_error(variant<ProbeSpecError>(ProbeUnsupportedExecutionMode, record {})); }
+  };
+  return match options["program"] with {
+    Some(program) => probe_configure_program(options, program),
+    None() => match options["provider"] with {
+      None() => probe_config_error(variant<ProbeSpecError>(ProbeBadProvider, record {})),
+      Some(provider) => match options["target_url"] with {
+        None() => probe_config_error(variant<ProbeSpecError>(ProbeBadTarget, record {})),
+        Some(target) => probe_manual(options, provider, target)
+      }
+    }
+  };
+}
+
+# Shared success projection for execution paths. The transport's raw artifact
+# is an exact lowercase-hex byte encoding, not decoded or normalized text.
+fn basis_http_probe_result < T > (policy: ProbeArtifactPolicy, value: T,
+  metadata: BasisElviDocumentMetadata, raw_hex: string, html: BasisHtml) -> ProbeResult<T>
+{
+  let raw_artifact = match policy with {
+    RetainRaw() | RetainBoth() => variant<Option<string>>(Some, raw_hex),
+    _ => variant<Option<string>>(None, record {})
+  };
+  let html_artifact = match policy with {
+    RetainHtml() | RetainBoth() => variant<Option<BasisHtml>>(Some, html),
+    _ => variant<Option<BasisHtml>>(None, record {})
+  };
+  return record<ProbeResult<T>>{
+    value: value, metadata: metadata, document: html, raw: raw_artifact, html: html_artifact
+  };
+}

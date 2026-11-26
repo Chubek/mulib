@@ -120,6 +120,16 @@ already-exited child or sends SIGTERM to a live one; then wait to reap a live
 child. `mulib_process_terminate` provides forced termination/reaping if desired.
 Only one owner may reap a child. Stop signals the daemon itself, not its descendants.
 
+`mulib_daemon_launch_begin` is a lower-level direct-exec entry point for
+supervisors that enforce a startup deadline. It returns the owned child and
+the caller-owned startup descriptor without waiting. Read a complete native
+`int` errno for a setup/exec failure, or observe EOF without bytes for the
+close-on-exec acknowledgement. This is not an application readiness protocol.
+Close the descriptor and stop/reap the child on timeout or startup failure;
+successfully beginning startup transfers both resources to the caller.
+[`std.daemon`](../on1x/stdlib/daemon/README.md) provides a bounded host
+companion built on this operation.
+
 Launch before creating application threads. Fork copies callback data; parent and
 child memory modifications are independent. Open backend resources in the entry
 callback. Nonstandard descriptors and signal masks/dispositions are inherited;

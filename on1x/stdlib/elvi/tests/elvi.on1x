@@ -1,0 +1,172 @@
+import std.elvi as E;
+from std.core.Pervasive import Option, Result;
+
+fn read_fixture(path: string, capacity: i64) -> Result<string, E.ElviError>
+{
+  assert(path == "/approved/profile.elvs" && capacity == 65536);
+  return variant<Result<string, E.ElviError>>(Ok,
+    "elvi fixture\nhost www.example.org\nhome https://www.example.org/\nsearch https://www.example.org/?q={query}&n={limit}\nanchor any\nmax_results 3\nexclude_host omit.example.org\nexclude_host cdn.example.org\n");
+}
+
+fn fetch_fixture(url: string) -> Result<E.ElviSearchResponse, E.ElviError>
+{
+  assert(url == "https://www.example.org/?q=hello%20there&n=3");
+  return variant<Result<E.ElviSearchResponse, E.ElviError>>(Ok, record<E.ElviSearchResponse>{
+    status: 200, effective_url: url, content_type: "Text/HTML; charset=utf-8",
+    body: "<html><a href='https://www.example.org/a'>One &amp; Two</a><a href='https://www.example.org/a'>Duplicate</a></html>"
+  });
+}
+
+fn redirect_fixture(url: string) -> Result<E.ElviSearchResponse, E.ElviError>
+{
+  return variant<Result<E.ElviSearchResponse, E.ElviError>>(Ok, record<E.ElviSearchResponse>{
+    status: 200, effective_url: "https://www.example.org/different",
+    content_type: "text/html", body: ""
+  });
+}
+
+fn script_fixture(program: E.ElviProgram, paths: E.ElviScriptPaths)
+    -> Result<E.ElviScriptCompletion, E.ElviError>
+{
+  let profile = E.basis_elvi_inspect(program)?;
+  assert(profile["name"] == "scrape" && paths["approved_forward_path"] == "/approved/stream");
+  return variant<Result<E.ElviScriptCompletion, E.ElviError>>(Ok,
+    variant<E.ElviScriptCompletion>(ElviIpcComplete, record {}));
+}
+
+fn run() -> Result<i64, E.ElviError>
+{
+  assert(match E.basis_elvi_load("/wrong/path", "/approved/profile.elvs", read_fixture) with {
+    Err(error) => match error["code"] with { ElviDenied() => true, _ => false }, Ok(_) => false
+  });
+  let compiled = E.basis_elvi_script_load("/approved/profile.elvs", "/approved/profile.elvs", read_fixture)?;
+  let program = compiled["program"];
+  let provider = E.basis_elvi_script_provider(compiled)?;
+  let provider_search = E.basis_elvi_provider_search(provider)?;
+  assert(match provider_search with {
+    Some(spec) => {
+      let selectors = spec["selectors"];
+      let template = spec["template"];
+      let excluded = spec["excluded_hosts"];
+      assert(template["text"] == "https://www.example.org/?q={query}&n={limit}");
+      assert(spec["max_results"] == 3 && excluded["count"] == 2);
+      assert(match E.basis_elvi_excluded_host(excluded, 1) with {
+        Some(host) => host == "cdn.example.org", None() => false
+      });
+      match selectors with {
+        ElviSelectHtml(html) => html["tag"] == "a" &&
+          match html["anchor"] with { ElviAnyAnchor() => true, _ => false },
+        _ => false
+      }
+    },
+    None() => false
+  });
+  let profile = E.basis_elvi_inspect(program)?;
+  assert(profile["name"] == "fixture" && profile["host"] == "www.example.org" && profile["max_results"] == 3);
+  assert(match profile["mode"] with { Search() => true, _ => false });
+  assert(match profile["format"] with {
+    Some(kind) => match kind with { ElviHtml() => true, _ => false }, None() => false
+  });
+  let url = E.basis_elvi_render_search(program, "", 1)?;
+  assert(url == profile["home"]);
+  assert(match E.basis_elvi_search(program, "not sent", 3, "example.org", fetch_fixture) with {
+    Err(error) => match error["code"] with { ElviDenied() => true, _ => false }, Ok(_) => false
+  });
+  assert(match E.basis_elvi_search(program, "hello there", 3, "www.example.org", redirect_fixture) with {
+    Err(error) => match error["code"] with { ElviResponse() => true, _ => false }, Ok(_) => false
+  });
+  let results = E.basis_elvi_search(program, "hello there", 3, "www.example.org", fetch_fixture)?;
+  assert(results["count"] == 1);
+  assert(match E.basis_elvi_hit_at(results, 0) with {
+    Some(hit) => hit["title"] == "One & Two" && hit["url"] == "https://www.example.org/a", None() => false
+  });
+  assert(match E.basis_elvi_hit_at(results, 9223372036854775807) with { None() => true, Some(_) => false });
+  let forged = record<E.ElviSearchResults>{count: 1, snapshot: "O000001999999a"};
+  assert(match E.basis_elvi_hit_at(forged, 0) with { None() => true, Some(_) => false });
+  let empty = E.basis_elvi_extract_with(program, record<E.ElviHtmlInput>{html: "<p>No hits</p>"},
+    1, E.basis_elvi_html_extractor())?;
+  assert(empty["count"] == 0);
+  assert(match E.basis_elvi_render_search(program, "q", 9223372036854775807) with { Err(_) => true, Ok(_) => false });
+  assert(match E.basis_elvi_compile("elvi fixture\nbad directive\n") with {
+    Err(error) => error["line"] == 2 && text_len(error["message"]) > 0, Ok(_) => false
+  });
+  assert(match E.basis_elvi_script_compile("elvi fixture\nbad directive\n") with {
+    Err(error) => error["line"] == 2, Ok(_) => false
+  });
+  let forged_program = record<E.ElviProgram>{source: "invalid"};
+  assert(match E.basis_elvi_inspect(forged_program) with { Err(_) => true, Ok(_) => false });
+
+  let json_source = buffer_new();
+  buffer_append(json_source,
+    "elvi json\nhost www.example.org\nhome https://www.example.org/\nsearch https://www.example.org/?q={query}\nformat json\nresults /\ntitle /name\nurl /link\nrewrite relative\n");
+  let json_compiled = E.basis_elvi_script_compile_buffer(json_source)?;
+  let json_program = json_compiled["program"];
+  buffer_push(json_source, u8_from_i64(0));
+  assert(match E.basis_elvi_compile_buffer(json_source) with {
+    Err(error) => error["line"] == 10 && error["message"] == "profile source contains a NUL byte",
+    Ok(_) => false
+  });
+  let json_provider = E.basis_elvi_script_provider(json_compiled)?;
+  let json_provider_search = E.basis_elvi_provider_search(json_provider)?;
+  assert(match json_provider_search with {
+    Some(spec) => match spec["selectors"] with {
+      ElviSelectJson(fields) => fields["results"] == "/" && fields["title"] == "/name" &&
+        fields["url"] == "/link", _ => false
+    },
+    None() => false
+  });
+  let json_hits = E.basis_elvi_extract_with(json_program,
+    record<E.ElviJsonInput>{json: "[{\"name\":\"First\",\"link\":\"/result\"}]"}, 1, E.basis_elvi_json_extractor())?;
+  assert(match E.basis_elvi_hit_at(json_hits, 0) with {
+    Some(hit) => hit["title"] == "First" && hit["url"] == "https://www.example.org/result", None() => false
+  });
+  assert(match E.basis_elvi_extract_search(json_program, "invalid json", 1) with { Err(_) => true, Ok(_) => false });
+  assert(match E.basis_elvi_extract_with(json_program,
+    record<E.ElviHtmlInput>{html: "<p>Unsupported adapter</p>"}, 1, E.basis_elvi_html_extractor()) with {
+    Err(error) => match error["code"] with { ElviModeMismatch() => true, _ => false }, Ok(_) => false
+  });
+
+  let scrape = E.basis_elvi_compile(
+    "elvi scrape\nhost www.example.org\nhome https://www.example.org/\nmode scrape\nxpath provide{mulib-xpath}\nartifacts discard\nlogic lua{\$HOME/fixture.lua}\nforward ipc{/approved/stream}\n")?;
+  let discard = E.basis_elvi_stage(scrape, variant<E.ElviStageKind>(Discard, record {}))?;
+  assert(match discard with { Some(stage) => stage["line"] == 6 && stage["argument"] == "", None() => false });
+  let logic = E.basis_elvi_stage(scrape, variant<E.ElviStageKind>(Lua, record {}))?;
+  let home = variant<Option<string>>(Some, "/approved/");
+  assert(match logic with {
+    Some(stage) => match E.basis_elvi_resolve_stage(stage, home) with {
+      Ok(path) => path == "/approved/fixture.lua", Err(_) => false
+    },
+    None() => false
+  });
+  let not_capture = E.basis_elvi_stage(scrape, variant<E.ElviStageKind>(Capture, record {}))?;
+  assert(match not_capture with { None() => true, Some(_) => false });
+  let paths = record<E.ElviScriptPaths>{
+    approved_home: home, approved_cookie_path: variant<Option<string>>(None, record {}),
+    approved_logic_path: "/approved/fixture.lua", approved_forward_path: "/approved/stream",
+    allow_xpath: true, ipc_timeout_ms: 1000
+  };
+  let completion = E.basis_elvi_run_script(scrape, "www.example.org", paths, script_fixture)?;
+  assert(match completion with { ElviIpcComplete() => true });
+
+  let document = E.basis_elvi_compile(
+    "elvi doc\nhost www.example.org\nhome https://www.example.org/\nmode document\nartifacts capture\n")?;
+  let doc_info = E.basis_elvi_inspect(document)?;
+  assert(match doc_info["mode"] with { Document() => true, _ => false });
+  let capture = E.basis_elvi_stage(document, variant<E.ElviStageKind>(Capture, record {}))?;
+  assert(match capture with { Some(stage) => stage["line"] == 5, None() => false });
+  assert(match E.basis_elvi_extract_search(document, "", 1) with {
+    Err(error) => match error["code"] with { ElviModeMismatch() => true, _ => false }, Ok(_) => false
+  });
+  assert(match E.basis_elvi_run_script(document, "www.example.org", paths, script_fixture) with {
+    Err(error) => match error["code"] with { ElviModeMismatch() => true, _ => false }, Ok(_) => false
+  });
+  return variant<Result<i64, E.ElviError>>(Ok, 0);
+}
+
+fn main()
+{
+  let success = match run() with {
+    Ok(_) => true, Err(error) => { println(error["message"]); false }
+  };
+  assert(success);
+}

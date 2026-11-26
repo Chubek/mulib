@@ -60,6 +60,10 @@ static time_t fixture_time(time_t *out) {
 #undef realloc
 #undef free
 
+#ifdef ON1X_TEST_ELVI_CAPTURE_BRIDGE
+#include "capture.h"
+#endif
+
 static const char dsl[] = "elvi fixture\nhost www.example.org\n"
   "home https://www.example.org/\nsearch https://www.example.org/?q={query}\nanchor any\n";
 
@@ -129,7 +133,8 @@ static void close_tls(void *context) { ++((fixture *)context)->closes; }
 static int connect_tls(void *context, const mulib_uri_t *uri, mulib_tsl_t *tls) {
   fixture *f = context;
   const mulib_tsl_ops_t ops = {handshake_tls, read_tls, write_tls, close_tls};
-  assert(uri->host.length == 15 && !memcmp(uri->host.data, "www.example.org", 15));
+  assert(uri->host.length == 15 && (!memcmp(uri->host.data, "www.example.org", 15) ||
+                                    !memcmp(uri->host.data, "WWW.EXAMPLE.ORG", 15)));
   assert(uri->has_port && uri->port.length == 3 && !memcmp(uri->port.data, "443", 3));
   ++f->connects;
   assert(mulib_tsl_init(tls, &ops, context));
@@ -479,6 +484,225 @@ static void files_and_allocations(const mulib_elvi_scrape_program_t *p,
   assert(!unlink(path) && !rmdir(dir));
 }
 
+static const char document_profile[] = "elvi fixture\nhost www.example.org\n"
+  "home https://www.example.org/\nmode document\nartifacts capture\n";
+
+static void document_rejected(const mulib_elvi_scrape_program_t *program,
+    const mulib_elvi_script_capture_config_t *config,
+    mulib_elvi_script_capture_result_t expected) {
+  mulib_elvi_script_document_t document = {0};
+  unsigned char snapshot[sizeof document];
+  fixture *f = config->https->context;
+  size_t baseline = allocation_live;
+  strcpy(document.metadata.effective_url, "unchanged");
+  memcpy(snapshot, &document, sizeof snapshot);
+  assert(mulib_elvi_script_capture_https(program, config, &document) == expected);
+  assert(!memcmp(snapshot, &document, sizeof snapshot));
+  assert(f->connects == f->closes && allocation_live == baseline);
+}
+
+static void document_policy(const mulib_elvi_scrape_program_t *search) {
+  static const char *const invalid_suffixes[] = {
+    "xpath provide{mulib-xpath}\n", "logic lua{/tmp/logic.lua}\n", "forward ipc{/tmp/receiver}\n",
+    "search https://www.example.org/?q={query}\n", "artifacts discard\n",
+    "anchor any\n", "format html\n", "mode scrape\n"
+  };
+  static const char discard_profile[] = "elvi fixture\nhost www.example.org\n"
+    "home https://www.example.org/\nmode scrape\nartifacts discard\n"
+    "xpath provide{mulib-xpath}\nlogic lua{/tmp/logic.lua}\nforward ipc{/tmp/receiver}\n";
+  static const char *const bad_urls[] = {
+    "http://www.example.org/", "https://www.example.org:443/", "https://www.example.org/?q=#x",
+    "https://www.example.org@evil.test/", "https://a.www.example.org/",
+    "https://www.example.org.evil.test/", "https://www.example.org/%00",
+    "https://www.example.org/%5cpath"
+  };
+  mulib_elvi_scrape_program_t program, discard, invalid;
+  mulib_elvi_scrape_error_t error;
+  mulib_elvi_script_document_t doc = {0};
+  fixture f = make_fixture(valid_wire, sizeof valid_wire - 1);
+  mulib_elvi_scrape_https_t https = {connect_tls, peer_tls, &f};
+  mulib_elvi_script_capture_config_t config = {NULL, "www.example.org", &https, 3, NULL, NULL};
+  char source[1024], oversize_url[MULIB_ELVI_DOCUMENT_MAX_URL + 1u];
+  char rendered[128];
+  assert(mulib_elvi_scrape_compile(document_profile, sizeof document_profile - 1, &program, &error));
+  assert(program.mode == MULIB_ELVI_MODE_DOCUMENT &&
+         program.artifacts.kind == MULIB_ELVI_STAGE_CAPTURE && program.artifacts.line == 5);
+  rejected(&program, NULL, &f, program.home); /* No legacy transport bypass. */
+  assert(!mulib_elvi_scrape_url(&program, "", 1, rendered, sizeof rendered));
+  assert(mulib_elvi_scrape_compile(discard_profile, sizeof discard_profile - 1, &discard, NULL));
+  document_rejected(search, &config, MULIB_ELVI_CAPTURE_INVALID);
+  document_rejected(&discard, &config, MULIB_ELVI_CAPTURE_INVALID);
+  invalid = program;
+  invalid.artifacts.kind = MULIB_ELVI_STAGE_DISCARD;
+  document_rejected(&invalid, &config, MULIB_ELVI_CAPTURE_INVALID);
+  invalid = program;
+  invalid.logic.kind = MULIB_ELVI_STAGE_LUA;
+  document_rejected(&invalid, &config, MULIB_ELVI_CAPTURE_INVALID);
+  for (size_t i = 0; i < sizeof invalid_suffixes / sizeof *invalid_suffixes; ++i) {
+    int n = snprintf(source, sizeof source, "%s%s", document_profile, invalid_suffixes[i]);
+    assert(n > 0 && (size_t)n < sizeof source);
+    assert(!mulib_elvi_scrape_compile(source, (size_t)n, &invalid, &error) && error.line == 6);
+  }
+  {
+    const char *capture = strstr(document_profile, "artifacts capture");
+    assert(capture);
+    assert(!mulib_elvi_scrape_compile(document_profile, (size_t)(capture - document_profile),
+                                      &invalid, &error));
+    assert(snprintf(source, sizeof source, "%.*sartifacts discard\n",
+                    (int)(capture - document_profile), document_profile) > 0);
+    assert(!mulib_elvi_scrape_compile(source, strlen(source), &invalid, &error));
+    assert(snprintf(source, sizeof source, "%.*sartifacts capture\n",
+                    (int)(strstr(discard_profile, "artifacts discard") - discard_profile),
+                    discard_profile) > 0);
+    assert(!mulib_elvi_scrape_compile(source, strlen(source), &invalid, &error));
+  }
+  config.approved_host = NULL;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  config.approved_host = "example.org";
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  config.approved_host = "WWW.example.org";
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  config.approved_host = "www.example.org";
+  for (size_t i = 0; i < sizeof bad_urls / sizeof *bad_urls; ++i) {
+    config.url = bad_urls[i];
+    document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  }
+  strcpy(oversize_url, "https://www.example.org/");
+  memset(oversize_url + strlen(oversize_url), 'a', sizeof oversize_url - strlen(oversize_url) - 1u);
+  oversize_url[sizeof oversize_url - 1u] = '\0';
+  config.url = oversize_url;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  config.url = NULL;
+  config.max_body_bytes = 0;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_INVALID);
+  config.max_body_bytes = SIZE_MAX;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_INVALID);
+  config.max_body_bytes = 3;
+  assert(!f.connects && !f.written);
+
+  config.url = "https://WWW.EXAMPLE.ORG/capture?query=ok";
+#ifdef ON1X_TEST_ELVI_CAPTURE_BRIDGE
+  assert(on1x_elvi_capture_https(&program, &config, &doc) == MULIB_ELVI_CAPTURE_OK);
+  {
+    char hex[7] = "unused";
+    assert(!on1x_elvi_document_copy_hex(&doc, hex, 6) && !strcmp(hex, "unused"));
+    assert(on1x_elvi_document_copy_hex(&doc, hex, sizeof hex) && !strcmp(hex, "610062"));
+  }
+#else
+  assert(mulib_elvi_script_capture_https(&program, &config, &doc) == MULIB_ELVI_CAPTURE_OK);
+#endif
+  assert(f.connects == 1 && f.closes == 1 && strstr(f.request, "GET /capture?query=ok HTTP/1.1\r\n"));
+  assert(!strstr(f.request, "Cookie:") && doc.metadata.status == 200 &&
+    doc.metadata.tls_version == 0x0304 && doc.metadata.certificate_verified == 1 &&
+    doc.metadata.hostname_verified == 1 && doc.metadata.chunked && !doc.metadata.close_delimited);
+  assert(!strcmp(doc.metadata.http_protocol, "HTTP/1.1") && !strcmp(doc.metadata.alpn, "http/1.1"));
+  assert(!strcmp(doc.metadata.requested_url, config.url) && !strcmp(doc.metadata.effective_url, config.url));
+  assert(!strcmp(doc.metadata.content_type, "text/html; charset=utf-8"));
+  assert(doc.body_length == 3 && !memcmp(doc.body, "a\0b", 3));
+  mulib_elvi_script_document_destroy(&doc);
+  assert(!doc.body && !doc.body_length && !doc.metadata.status);
+  mulib_elvi_script_document_destroy(&doc);
+  mulib_elvi_script_document_destroy(NULL);
+}
+
+static void document_transport(void) {
+  static const char redirect[] = "HTTP/1.1 302 Found\r\nLocation: /again\r\nContent-Length: 3\r\n\r\nabc";
+  static const char not_found[] = "HTTP/1.1 404 Not Found\r\n\r\nno";
+  static const char malformed[] = "HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nabc";
+  static const char compressed[] = "HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\n\r\nabc";
+  static const char duplicated[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n"
+    "Content-Type: text/html\r\n\r\nabc";
+  static const char nonascii[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html; x=\xff\r\n\r\n";
+  const struct { const char *wire; mulib_elvi_script_capture_result_t result; } cases[] = {
+    {redirect, MULIB_ELVI_CAPTURE_REDIRECT}, {malformed, MULIB_ELVI_CAPTURE_RESPONSE},
+    {compressed, MULIB_ELVI_CAPTURE_RESPONSE}, {duplicated, MULIB_ELVI_CAPTURE_RESPONSE},
+    {nonascii, MULIB_ELVI_CAPTURE_RESPONSE}
+  };
+  mulib_elvi_scrape_program_t program;
+  mulib_elvi_script_document_t doc = {0};
+  fixture f = {0};
+  mulib_elvi_scrape_https_t https = {connect_tls, peer_tls, &f};
+  mulib_elvi_script_capture_config_t config = {NULL, "www.example.org", &https, 32, NULL, NULL};
+  size_t baseline = allocation_live, allocations;
+  assert(mulib_elvi_scrape_compile(document_profile, sizeof document_profile - 1, &program, NULL));
+  for (size_t i = 0; i < sizeof cases / sizeof *cases; ++i) {
+    f = make_fixture(cases[i].wire, strlen(cases[i].wire));
+    document_rejected(&program, &config, cases[i].result);
+    assert(f.connects == 1 && f.written);
+  }
+  {
+    char large_type[512];
+    const char padded[] = "HTTP/1.1 200 OK\r\nContent-Type: text/html; padding=%0256u\r\n\r\n";
+    int n = snprintf(large_type, sizeof large_type, padded, 0u);
+    assert(n > 0 && (size_t)n < sizeof large_type);
+    f = make_fixture(large_type, (size_t)n);
+    document_rejected(&program, &config, MULIB_ELVI_CAPTURE_LIMIT);
+  }
+  f = make_fixture(valid_wire, sizeof valid_wire - 1);
+  config.max_body_bytes = 2;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_LIMIT);
+  config.max_body_bytes = 32;
+  for (unsigned mode = CONNECT_FAIL; mode <= ABRUPT_EOF; ++mode) {
+    f = make_fixture(valid_wire, sizeof valid_wire - 1);
+    f.mode = mode;
+    document_rejected(&program, &config, mode <= UNTERMINATED_ALPN ?
+      MULIB_ELVI_CAPTURE_TLS : MULIB_ELVI_CAPTURE_TRANSPORT);
+    assert(f.connects == 1 && (f.written > 0) == (mode == ABRUPT_EOF));
+  }
+  f = make_fixture(not_found, sizeof not_found - 1);
+  f.mode = TLS12_NO_ALPN;
+  assert(mulib_elvi_script_capture_https(&program, &config, &doc) == MULIB_ELVI_CAPTURE_OK);
+  assert(f.connects == 1 && f.closes == 1 && doc.metadata.status == 404 &&
+    doc.metadata.close_delimited && !doc.metadata.chunked && !doc.metadata.content_type[0] &&
+    doc.metadata.tls_version == 0x0303 && !doc.metadata.alpn[0] &&
+    doc.body_length == 2 && !memcmp(doc.body, "no", 2));
+  mulib_elvi_script_document_destroy(&doc);
+
+  allocation_calls = 0;
+  f = make_fixture(valid_wire, sizeof valid_wire - 1);
+  assert(mulib_elvi_script_capture_https(&program, &config, &doc) == MULIB_ELVI_CAPTURE_OK);
+  allocations = allocation_calls;
+  mulib_elvi_script_document_destroy(&doc);
+  assert(allocations && allocation_live == baseline);
+  for (size_t i = 1; i <= allocations; ++i) {
+    allocation_calls = 0;
+    allocation_fail = i;
+    f = make_fixture(valid_wire, sizeof valid_wire - 1);
+    document_rejected(&program, &config, MULIB_ELVI_CAPTURE_NOMEM);
+  }
+  allocation_calls = allocation_fail = 0;
+}
+
+static void document_cookie_authority(void) {
+  mulib_elvi_scrape_program_t program;
+  mulib_elvi_script_document_t doc = {0};
+  char dir[] = "/tmp/mulib-elvi-capture.XXXXXX", path[256], source[1024];
+  fixture f = make_fixture(valid_wire, sizeof valid_wire - 1);
+  mulib_elvi_scrape_https_t https = {connect_tls, peer_tls, &f};
+  mulib_elvi_script_capture_config_t config = {NULL, "www.example.org", &https, 3, NULL, NULL};
+  int n, fd;
+  n = snprintf(source, sizeof source, "%scookies provide{$HOME/cookies.json}\n", document_profile);
+  assert(n > 0 && (size_t)n < sizeof source);
+  assert(mulib_elvi_scrape_compile(source, (size_t)n, &program, NULL));
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  assert(mkdtemp(dir) && snprintf(path, sizeof path, "%s/cookies.json", dir) > 0);
+  config.approved_cookie_path = path;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED); /* No approved HOME. */
+  config.approved_home = dir;
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_CREDENTIALS); /* Missing file. */
+  fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+  assert(fd >= 0 && write(fd, cookie_json, sizeof cookie_json - 1) == sizeof cookie_json - 1 && !close(fd));
+  config.approved_host = "other.org";
+  document_rejected(&program, &config, MULIB_ELVI_CAPTURE_DENIED);
+  config.approved_host = "www.example.org";
+  assert(!f.connects && !f.written);
+  assert(mulib_elvi_script_capture_https(&program, &config, &doc) == MULIB_ELVI_CAPTURE_OK);
+  assert(f.connects == 1 && f.closes == 1 && strstr(f.request, "Cookie: global=one;"));
+  assert(!strstr(doc.metadata.content_type, "global="));
+  mulib_elvi_script_document_destroy(&doc);
+  assert(!unlink(path) && !rmdir(dir));
+}
+
 int main(void) {
   mulib_elvi_scrape_program_t program;
   mulib_elvi_script_cookies_t *cookies;
@@ -491,6 +715,9 @@ int main(void) {
   cookie_json_limits(&program);
   files_and_allocations(&program, cookies);
   mulib_elvi_script_cookies_destroy(cookies);
+  document_policy(&program);
+  document_transport();
+  document_cookie_authority();
   assert(!allocation_live);
   puts("elvi-script transport: OK");
   return 0;

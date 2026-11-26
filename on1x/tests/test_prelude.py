@@ -198,7 +198,7 @@ fn main(){
 ''', '42\n', ['--no-prelude'])
 
 # Phantom constructors require contextual type arguments; wrong callbacks and
-# managed nominal payloads continue to fail through ordinary inference/checking.
+# unsupported managed payloads fail through ordinary inference/checking.
 reject('infer_option_none', 'fn main(){let value=option_none();}',
        'cannot infer')
 reject('infer_result_ok', 'fn main(){let value=result_ok(1);}',
@@ -209,9 +209,15 @@ reject('wrong_callback', '''
 fn wrong(value:bool)->bool{return value;}
 fn main(){let value=option_map(option_some(1),wrong);}
 ''', 'expected i64')
+execute('text_payload', '''
+fn main(){
+  let value:Option<string>=option_some("text");
+  match value with { Some(s)=>println(s), None()=>assert(false) };
+}
+''', 'text\n')
 reject('managed_payload', '''
-fn main(){let value:Option<string>=option_some("text");}
-''', 'trivially copied')
+fn main(){let value:Option<buffer>=option_some(buffer_new());}
+''', 'unsupported buffer')
 reject('option_propagation', '''
 fn use()->Option<i64>{let value=option_some(1)?;return option_some(value);}
 fn main(){}

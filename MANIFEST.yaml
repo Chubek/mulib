@@ -16050,7 +16050,7 @@ modules:
   header: kernels/mulib-kronvm.h
   manual: manual/mulib-kronvm.md
   macro: MULIB_IMPL_KRONVM
-  purpose: "Persistent KronQL promises with caller-clocked dispatch."
+  purpose: "Persistent KronQL promises and typed application jobs with caller-clocked dispatch."
   dependencies: [date, endian, evtsched, kvdb]
   status: implemented
 project_files:

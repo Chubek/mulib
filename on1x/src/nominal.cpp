@@ -112,7 +112,12 @@ NominalCatalog::NominalCatalog(const Unit& unit){
      return;
     }
     if(t.is_own()){walk(walk,t.owned(),level+1);return;}
-    if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::SExpr)return;
+     if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::String||t==Type::SExpr)return;
+     if(t.is_function()){
+      for(const auto& param:t.parameters())walk(walk,param,level+1);
+      if(t.result()!=Type::Void)walk(walk,t.result(),level+1);
+      return;
+     }
     if(t.is_tuple()||t.is_data()){
      if(!t.nominal().empty())fail(d.where,"source declaration contains a checked layout");
      for(const auto& c:t.elements())walk(walk,c,level+1);
@@ -125,9 +130,14 @@ NominalCatalog::NominalCatalog(const Unit& unit){
     if(t.kind()==Type::Bound){if(t.generic_identity()>=d.parameters.size())fail(d.where,"unbound nominal type parameter");return;}
     if(t.kind()==Type::Named){const auto& target=find(t.nominal(),d.where);if(t.arguments().size()!=target.parameters.size())fail(d.where,"wrong type argument arity for "+t.nominal());for(const auto& a:t.arguments())walk(walk,a,level+1);self(self,target,level+1);return;}
     if(t.is_own()){reference(reference,t.owned(),level+1);return;}
-    if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::SExpr)return;
+     if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::String||t==Type::SExpr)return;
+     if(t.is_function()){
+      for(const auto& param:t.parameters())walk(walk,param,level+1);
+      if(t.result()!=Type::Void)walk(walk,t.result(),level+1);
+      return;
+     }
     if(t.is_tuple()||t.is_data()){if(!t.nominal().empty())fail(d.where,"source declaration contains a checked layout");for(const auto& c:t.elements())walk(walk,c,level+1);return;}
-     fail(d.where,"nominal fields require trivially copied value data, immutable shared sexpr, or own<Named>; unsupported "+type_name(t));
+      fail(d.where,"nominal fields require value data, immutable text/sexpr, checked closures, or own<Named>; unsupported "+type_name(t));
    };
   for(const auto& t:d.fields)field(field,t,depth+1);
   state=2;
@@ -146,12 +156,15 @@ std::pair<std::size_t,std::size_t> NominalCatalog::layout(const Type& t,const Lo
   if(hit->second.second>32-depth)throw Error(at,"ON1X-NOMINAL: expanded layout depth budget exhausted","ON1X-NOMINAL-LIMIT");
   return hit->second;
  }
-  if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::SExpr||t.is_own()||t.kind()==Type::Generic||t.kind()==Type::Bound)return {1,0};
+   if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::String||t==Type::SExpr||t.is_own()||t.kind()==Type::Generic||t.kind()==Type::Bound)return {1,0};
+  // A closure stores an invocation pointer and an environment reference, not
+  // its argument and result layouts. Those types are checked independently.
+  if(t.is_function())return {2,0};
  if(t.is_data()&&t.nominal().empty()&&t.has_functions()){
    fail(at,"structural record, sum, array and slice fields require trivially copied types");
  }
  if(!t.is_tuple()&&!t.is_data())
-   fail(at,"nominal fields/arguments require trivially copied value data, immutable shared sexpr, or own<Named>; unsupported "+type_name(t));
+    fail(at,"nominal fields/arguments require value data, immutable text/sexpr, checked closures, or own<Named>; unsupported "+type_name(t));
  std::size_t size=1,height=0;
  if(t.kind()==Type::Array||t.kind()==Type::Slice){
   auto count=std::max<std::size_t>(1,t.extent());auto child=layout(t.elements()[0],at,depth+1);
@@ -189,8 +202,13 @@ Type NominalCatalog::expand(const Type& type,const std::vector<Type>& variables,
                         type.sender_cardinality(),type.receiver_cardinality());
   if(type.kind()==Type::Sender)
    return Type::sender(expand(type.csp_payload(),variables,at,depth+1));
-  if(type.kind()==Type::Receiver)
-   return Type::receiver(expand(type.csp_payload(),variables,at,depth+1));
+   if(type.kind()==Type::Receiver)
+    return Type::receiver(expand(type.csp_payload(),variables,at,depth+1));
+   if(type.is_function()){
+    std::vector<Type> parameters;
+    for(const auto& p:type.parameters())parameters.push_back(expand(p,variables,at,depth+1));
+    return Type::function(std::move(parameters),expand(type.result(),variables,at,depth+1));
+   }
   if(type.is_tuple()||type.is_data()){
   std::vector<Type> fields;for(const auto& f:type.elements())fields.push_back(expand(f,variables,at,depth+1));
   auto result=type.is_tuple()?Type::tuple(std::move(fields)):Type::data(type.kind(),std::move(fields),type.labels(),type.extent());
@@ -262,9 +280,14 @@ void NominalCatalog::verify(const Type& type,const Location& at) const{
  (void)layout(type,at);
  auto argument=[&](auto&& self,const Type& t,std::size_t depth)->void{
   tick(at,depth);
-   if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::SExpr||t.kind()==Type::Bound||t.kind()==Type::Generic)return;
-   if(t.is_own()){verify(t,at);return;}
-    if(!t.is_tuple()&&!t.is_data())fail(at,"nominal arguments require trivially copied value data, immutable shared sexpr, or own<Named>; unsupported "+type_name(t));
+    if(t.is_numeric()||t==Type::Bool||t==Type::Char||t==Type::String||t==Type::SExpr||t.kind()==Type::Bound||t.kind()==Type::Generic)return;
+    if(t.is_own()){verify(t,at);return;}
+    if(t.is_function()){
+     for(const auto& p:t.parameters())self(self,p,depth+1);
+     if(t.result()!=Type::Void)self(self,t.result(),depth+1);
+     return;
+    }
+     if(!t.is_tuple()&&!t.is_data())fail(at,"nominal arguments require value data, immutable text/sexpr, checked closures, or own<Named>; unsupported "+type_name(t));
   for(const auto& a:t.arguments())self(self,a,depth+1);
   for(const auto& f:t.elements())self(self,f,depth+1);
  };

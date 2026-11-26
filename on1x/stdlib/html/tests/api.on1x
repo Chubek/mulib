@@ -1,0 +1,249 @@
+import std.html as H;
+
+fn status(result: Result<H.BasisHtml, i64>) -> i64
+{
+  return match result with { Ok(_) => 0, Err(err) => err };
+}
+
+fn bad_doc(err: i64) -> H.BasisHtml
+{
+  println(err);
+  tool_fail("expected HTML snapshot");
+  return record<H.BasisHtml> { markup: sx_nil(), fragment: false };
+}
+
+fn bad_node(err: i64) -> H.BasisHtmlNode
+{
+  return record<H.BasisHtmlNode> { document: bad_doc(err), ordinal: 0 };
+}
+
+fn bad_selection(err: i64) -> H.BasisHtmlSelection
+{
+  return record<H.BasisHtmlSelection> { document: bad_doc(err), ordinals: sx_nil() };
+}
+
+fn doc(result: Result<H.BasisHtml, i64>) -> H.BasisHtml
+{
+  return match result with { Ok(value) => value, Err(err) => bad_doc(err) };
+}
+
+fn selection(result: Result<H.BasisHtmlSelection, i64>) -> H.BasisHtmlSelection
+{
+  return match result with { Ok(value) => value, Err(err) => bad_selection(err) };
+}
+
+fn node(result: Result<H.BasisHtmlNode, i64>) -> H.BasisHtmlNode
+{
+  return match result with { Ok(value) => value, Err(err) => bad_node(err) };
+}
+
+fn relative(result: Result<Option<H.BasisHtmlNode>, i64>) -> H.BasisHtmlNode
+{
+  return match result with
+  {
+    Ok(opt) => match opt with
+    {
+      Some(item) => item, None() => bad_node(-4)
+    },
+    Err(err) => bad_node(err)
+  };
+}
+
+fn only(source: string, expr: string) -> H.BasisHtmlNode
+{
+  let d = doc(H.basis_html_parse(source));
+  let s = selection(H.basis_html_xpath(d, expr));
+  let (code, count) = H.basis_html_selection_count(s);
+  assert(code == 0 && count == 1);
+  return node(H.basis_html_selection_get(s, 0));
+}
+
+fn check_document()
+{
+  let d = doc(H.basis_html_parse_strict("<!DoCtYpE HTML><!--hi--><HTML lang=en><body><a HREF='x&amp;y' data-on>A&nbsp;B</a><BR><p>C&#13;D</p></body></HTML>"));
+  let (code, html) = H.basis_html_serialize(d);
+  assert(code == 0 && html == "<!doctype html>\n<!--hi--><html lang=\"en\"><body><a href=\"x&amp;y\" data-on=\"\">A B</a><br><p>C&#13;D</p></body></html>");
+  let reread = doc(H.basis_html_parse_strict(html));
+  let (serialized, output) = H.basis_html_serialize(reread);
+  assert(serialized == 0 && output == html);
+  let root = H.basis_html_root(d);
+  let (kcode, k) = H.basis_html_node_kind(root);
+  assert(kcode == 0 && k == 0);
+  assert(match H.basis_html_node_parent(root) with
+  {
+    Ok(opt) => match opt with { None() => true, Some(_) => false },
+    Err(_) => false
+  });
+  let comment = relative(H.basis_html_node_first_child(root));
+  let (ccode, c) = H.basis_html_node_value(comment);
+  assert(ccode == 0 && c == "hi");
+  let element = relative(H.basis_html_node_next_sibling(comment));
+  let (ename, e) = H.basis_html_node_name(element);
+  assert(ename == 0 && e == "html");
+  let s = selection(H.basis_html_xpath(d, "//a[@href='x&y']"));
+  let a = node(H.basis_html_selection_get(s, 0));
+  let (attrs, total) = H.basis_html_node_attr_count(a);
+  assert(attrs == 0 && total == 2);
+  let (ncode, name) = H.basis_html_node_attr_name(a, 0);
+  assert(ncode == 0 && name == "href");
+  let (vcode, value) = H.basis_html_node_attr_value(a, 0);
+  assert(vcode == 0 && value == "x&y");
+  let (bcode, boolean) = H.basis_html_node_attr(a, "data-on");
+  assert(bcode == 0 && boolean == "");
+  let (mcode, missing) = H.basis_html_node_attr(a, "missing");
+  assert(mcode == -4 && missing == "");
+  let (lcode, ignored) = H.basis_html_node_attr_name(a, -9223372036854775807 - 1);
+  assert(lcode == -1 && ignored == "");
+  let (hcode, out) = H.basis_html_node_attr_value(a, 9223372036854775807);
+  assert(hcode == -4 && out == "");
+  let (rtcode, alltext) = H.basis_html_node_text(root);
+  assert(rtcode == 0 && alltext == "A B\nC\rD");
+  let (part, snippet) = H.basis_html_node_serialize(a);
+  assert(part == 0 && snippet == "<a href=\"x&amp;y\" data-on=\"\">A B</a>");
+}
+
+fn check_queries()
+{
+  let d = doc(H.basis_html_parse("<ul><li data-k=x>one<li data-k=y>two</ul><ul><li data-k=x>three</ul>"));
+  let s = selection(H.basis_html_xpath(d, "//li[1]/text()"));
+  let (counted, count) = H.basis_html_selection_count(s);
+  assert(counted == 0 && count == 2);
+  let n0 = node(H.basis_html_selection_get(s, 0));
+  let n1 = node(H.basis_html_selection_get(s, 1));
+  let (s0, t0) = H.basis_html_node_value(n0);
+  let (s1, t1) = H.basis_html_node_value(n1);
+  assert(s0 == 0 && s1 == 0 && t0 == "one" && t1 == "three");
+  let p = relative(H.basis_html_node_parent(n0));
+  let (acode, attr) = H.basis_html_node_attr(p, "data-k");
+  assert(acode == 0 && attr == "x");
+  let text = selection(H.basis_html_node_xpath(p, "./text()[1]"));
+  let (rcode, relative_count) = H.basis_html_selection_count(text);
+  assert(rcode == 0 && relative_count == 1);
+  let empty = selection(H.basis_html_xpath(d, "//missing"));
+  let (ecode, none) = H.basis_html_selection_count(empty);
+  assert(ecode == 0 && none == 0);
+  assert(match H.basis_html_selection_get(empty, 0) with { Ok(_) => false, Err(err) => err == -4 });
+  assert(match H.basis_html_xpath(d, "//missing/[") with { Ok(_) => false, Err(err) => err == -1 });
+  assert(match H.basis_html_xpath(d, "//ul//li") with { Ok(_) => false, Err(err) => err == -2 });
+  assert(match H.basis_html_xpath(d, "//@href") with { Ok(_) => false, Err(err) => err == -1 });
+}
+
+fn check_fragment()
+{
+  let d = doc(H.basis_html_parse_fragment("<pre>\n\nA</pre><textarea>\nB</textarea>"));
+  let (status, html) = H.basis_html_serialize(d);
+  assert(status == 0 && html == "<pre>\n\nA</pre><textarea>B</textarea>");
+  let root = H.basis_html_root(d);
+  let (code, name) = H.basis_html_node_name(root);
+  assert(code == 0 && name == "div");
+  let (tcode, text) = H.basis_html_node_text(root);
+  assert(tcode == 0 && text == "\nAB");
+  assert(match H.basis_html_xpath(d, "/div") with { Ok(_) => false, Err(err) => err == -1 });
+  let one = selection(H.basis_html_xpath(d, ".//textarea"));
+  let (counted, count) = H.basis_html_selection_count(one);
+  assert(counted == 0 && count == 1);
+  let empty = doc(H.basis_html_parse_fragment(""));
+  let (escaped, nothing) = H.basis_html_serialize(empty);
+  assert(escaped == 0 && nothing == "");
+}
+
+fn check_recovery()
+{
+  let d = doc(H.basis_html_parse("<!doctype html><HTML><head><title>A < 5</title><style>.x{display:none}</style></head><body><!--ignored--><script>if (1 < 2) fake = '<li>';</script><p>left & right<p>&copy; &#x1f642;<a href='/x?q=1&t=2'>ok"));
+  let (code, html) = H.basis_html_serialize(d);
+  assert(code == 0 && html == "<!doctype html>\n<html><head><title>A &lt; 5</title></head><body><p>left &amp; right</p><p>&amp;copy; 🙂<a href=\"/x?q=1&amp;t=2\">ok</a></p></body></html>");
+  assert(status(H.basis_html_parse_strict("<html><body><ul><li>a<li>b</ul></body></html>")) != 0);
+  assert(status(H.basis_html_parse_strict("<html><script>x</script></html>")) != 0);
+  assert(status(H.basis_html_parse("<script>unterminated")) != 0);
+  assert(status(H.basis_html_parse("<p a='bad>")) != 0);
+  assert(status(H.basis_html_parse("<div ID=x id=y></div>")) != 0);
+  assert(status(H.basis_html_parse("<svg><path/></svg>")) != 0);
+  assert(status(H.basis_html_parse("<iframe>x</iframe>")) != 0);
+  assert(status(H.basis_html_parse_hex("3c703e410042")) == -1);
+  assert(status(H.basis_html_parse_hex("3c703eeda080")) == -1);
+  assert(status(H.basis_html_parse_hex("3c703ec080")) == -1);
+  assert(status(H.basis_html_parse_hex("3c703e01")) == -1);
+  assert(status(H.basis_html_parse_hex("zz")) == -1);
+  assert(status(H.basis_html_parse_hex("0")) == -1);
+  let decoded = only("<p>café", "//p");
+  let (text_result, text) = H.basis_html_node_text(decoded);
+  assert(text_result == 0 && text == "café");
+  let hex = doc(H.basis_html_parse_hex("3C503e636166c3a93c2f503e"));
+  let (sc, src) = H.basis_html_serialize(hex);
+  assert(sc == 0 && src == "<!doctype html>\n<html><body><p>café</p></body></html>");
+}
+
+fn check_visitor()
+{
+  # The node returned from a function owns its snapshot after both the parse
+  # result and selection have left scope. Independent parsing and nested
+  # queries inside callbacks must not invalidate it.
+  let p = only("<p>One<em>Two</em><br>Three</p><p>Other</p>", "//p[1]");
+  let wanted = "p";
+  let (walked, completed) = H.basis_html_walk(p, fn(item: H.BasisHtmlNode) -> bool
+  {
+    let (status, name) = H.basis_html_node_name(item);
+    if status != 0 || name != wanted { return false; }
+    let nested = selection(H.basis_html_node_xpath(item, "./em"));
+    let (ok, count) = H.basis_html_selection_count(nested);
+    assert(ok == 0 && count == 1);
+    let other = only("<div>Nested independent parse</div>", "//div");
+    let (value_status, value) = H.basis_html_node_text(other);
+    assert(value_status == 0 && value == "Nested independent parse");
+    return true;
+  });
+  assert(walked == 0 && !completed);
+  let visited = H.basis_html_fold(p, sx_string(""), fn(acc: sexpr, item: H.BasisHtmlNode) -> sexpr
+  {
+    let (sc, name) = H.basis_html_node_name(item);
+    if sc == -4
+    {
+      let (vc, value) = H.basis_html_node_value(item);
+      assert(vc == 0);
+      return sx_string(text_concat(sx_text(acc), value));
+    }
+    assert(sc == 0);
+    return sx_string(text_concat(sx_text(acc), name));
+  });
+  assert(match visited with
+  {
+    Ok(summary) => sx_text(summary) == "pOneemTwobrThree", Err(_) => false
+  });
+  let value = doc(H.basis_html_parse("<p>Independent</p>"));
+  assert(data_live_nodes() > 0);
+  let (s1, t1) = H.basis_html_node_text(p);
+  let (s2, t2) = H.basis_html_node_text(H.basis_html_root(value));
+  assert(s1 == 0 && t1 == "OneTwo\nThree" && s2 == 0 && t2 == "Independent");
+}
+
+fn check_forgery()
+{
+  let bogus = record<H.BasisHtml> { markup: sx_nil(), fragment: false };
+  let (bcode, ignored) = H.basis_html_serialize(bogus);
+  assert(bcode == -1 && ignored == "");
+  let bad = record<H.BasisHtml> { markup: sx_string("<script>x</script>"), fragment: true };
+  let (scode, serialized) = H.basis_html_serialize(bad);
+  assert(scode != 0 && serialized == "");
+  let valid = doc(H.basis_html_parse("<p>x</p>"));
+  let nowhere = record<H.BasisHtmlNode> { document: valid, ordinal: 9223372036854775807 };
+  assert(match H.basis_html_node_parent(nowhere) with { Ok(_) => false, Err(err) => err == -1 });
+  let broken = record<H.BasisHtmlSelection> { document: valid, ordinals: sx_string("boom") };
+  assert(match H.basis_html_selection_get(broken, 0) with { Ok(_) => false, Err(err) => err == -1 });
+}
+
+fn main()
+{
+  assert(data_live_nodes() == 0);
+  check_document();
+  assert(data_live_nodes() == 0);
+  check_queries();
+  assert(data_live_nodes() == 0);
+  check_fragment();
+  assert(data_live_nodes() == 0);
+  check_recovery();
+  assert(data_live_nodes() == 0);
+  check_visitor();
+  assert(data_live_nodes() == 0);
+  check_forgery();
+  assert(data_live_nodes() == 0);
+}

@@ -1,0 +1,126 @@
+from std.elvi import ElviProgram, basis_elvi_compile;
+from std.html import BasisHtml, basis_html_xpath, basis_html_selection_get, basis_html_node_text;
+from std.http.probe import ProbeArtifactPolicy, ProbeParseError, ProbeRequest,
+  ProbeHost, ProbeHandler, ProbeResult, ProbeOptions, ProbeProviderSettings, ProbeRequestPolicy,
+  ProbeExtractionSpec, ProbeAuthReference, ProbeExecutionMode,
+  basis_http_probe_make, basis_http_probe_run_with, basis_http_probe_from_elvi,
+  basis_http_probe_configure;
+from std.http.probe.live import basis_http_probe_live_backend;
+
+fn parse_title(html: BasisHtml) -> Result<string, ProbeParseError>
+{
+  let failure = record<ProbeParseError>{message: "expected a title"};
+  let selected = match basis_html_xpath(html, "//title") with {
+    Ok(value) => value,
+    Err(_) => { return variant<Result<string, ProbeParseError>>(Err, failure); }
+  };
+  let title = match basis_html_selection_get(selected, 0) with {
+    Ok(node) => node,
+    Err(_) => { return variant<Result<string, ProbeParseError>>(Err, failure); }
+  };
+  let (status, text) = basis_html_node_text(title);
+  if status != 0 || text == "" {
+    return variant<Result<string, ProbeParseError>>(Err, failure);
+  }
+  return variant<Result<string, ProbeParseError>>(Ok, text);
+}
+
+fn approve_fixture(request: ProbeRequest) -> bool
+{
+  let daily = request["host"] == "probe.example" && request["url"] == "https://probe.example/daily";
+  let events = request["host"] == "calendar.test" && request["url"] == "https://calendar.test/events";
+  return (daily || events) && request["max_body_bytes"] <= 4096;
+}
+
+fn report_daily(result: ProbeResult<string>, prefix: string)
+{
+  println(text_concat(prefix, result["value"]));
+}
+
+fn run_scripted(host: ProbeHost) -> bool
+{
+  let source = "elvi daily\nhost probe.example\nhome https://probe.example/daily\nmode document\nartifacts capture\n";
+  let program = match basis_elvi_compile(source) with {
+    Ok(value) => value,
+    Err(_) => { return false; }
+  };
+  let handler = record<ProbeHandler<string, string>>{context: "fixture title: ", deliver: report_daily};
+  let policy = variant<ProbeArtifactPolicy>(RetainBoth, record {});
+  return match basis_http_probe_from_elvi(program, 4096, policy, parse_title) with {
+    Ok(probe) => match basis_http_probe_run_with(probe, host, handler) with {
+      Ok(run) => {
+        let result = run["result"];
+        assert(result["value"] == "Daily & notes");
+        assert(result["metadata"]["status"] == 200 && result["metadata"]["body_length"] == 70);
+        assert(result["metadata"]["tls_version"] == 772 && result["metadata"]["certificate_verified"]);
+        assert(match result["raw"] with {
+          Some(bytes) => bytes == "3c21646f63747970652068746d6c3e3c7469746c653e4461696c792026616d703b206e6f7465733c2f7469746c653e3c7020636c6173733d27636f756e74273e34323c2f703e",
+          None() => false
+        });
+        assert(match result["html"] with {
+          Some(html) => match parse_title(html) with { Ok(text) => text == result["value"], Err(_) => false },
+          None() => false
+        });
+        assert(match parse_title(run::basis_http_probe_run_document()) with {
+          Ok(text) => text == result["value"],
+          Err(_) => false
+        });
+        true
+      },
+      Err(_) => false
+    },
+    Err(_) => false
+  };
+}
+
+fn run_manual(host: ProbeHost, extra: i64) -> bool
+{
+  let url = "https://calendar.test/events";
+  let options = record<ProbeOptions>{
+    program: variant<Option<ElviProgram>>(None, record {}),
+    provider: variant<Option<ProbeProviderSettings>>(Some,
+      record<ProbeProviderSettings>{name: "calendar", host: "calendar.test"}),
+    target_url: variant<Option<string>>(Some, url),
+    request_policy: variant<ProbeRequestPolicy>(ProbeHttpsGetNoRedirect, record {}),
+    extraction: variant<ProbeExtractionSpec>(ProbeExtractHtmlDocument, record {}),
+    authentication: variant<Option<ProbeAuthReference>>(None, record {}),
+    execution_mode: variant<ProbeExecutionMode>(ProbeForeground, record {}),
+    max_body_bytes: 4096,
+    artifact_policy: variant<ProbeArtifactPolicy>(DiscardArtifacts, record {})
+  };
+  let spec = match basis_http_probe_configure(options) with {
+    Ok(value) => value,
+    Err(_) => { return false; }
+  };
+  # The same generic Probe API now uses an i64 parser with captured context.
+  let parse = fn(html: BasisHtml) -> Result<i64, ProbeParseError> {
+    return match parse_title(html) with {
+      Ok(title) => variant<Result<i64, ProbeParseError>>(Ok, text_len(title) + extra),
+      Err(error) => variant<Result<i64, ProbeParseError>>(Err, error)
+    };
+  };
+  let deliver = fn(result: ProbeResult<i64>, expected: i64) {
+    assert(result["metadata"]["effective_url"] == url && result["value"] == expected);
+    assert(match result["raw"] with { None() => true, Some(_) => false });
+    assert(match result["html"] with { None() => true, Some(_) => false });
+    assert(match parse_title(result["document"]) with { Ok(title) => title == "Open studio", Err(_) => false });
+    println("manual fixture: Open studio");
+  };
+  let handler = record<ProbeHandler<i64, i64>>{context: 11 + extra, deliver: deliver};
+  return match basis_http_probe_make(spec, parse) with {
+    Ok(probe) => match basis_http_probe_run_with(probe, host, handler) with {
+      Ok(run) => run["result"]["value"] == 11 + extra,
+      Err(_) => false
+    },
+    Err(_) => false
+  };
+}
+
+fn main()
+{
+  let host = record<ProbeHost>{
+    authorize: approve_fixture, backend: basis_http_probe_live_backend()
+  };
+  assert(run_scripted(host));
+  assert(run_manual(host, 31));
+}

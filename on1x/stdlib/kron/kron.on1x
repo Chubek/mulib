@@ -1,0 +1,112 @@
+# Scheduler values, not a capability to access a cache or execute a job.
+from . .core.Pervasive import Option, Result;
+
+record KronTime { seconds: i64 }
+record KronDuration { seconds: i64 }
+record KronSignal { number: i64 }
+record KronPromiseId { id: u64 }
+
+enum KronCadence { KronOnce(KronTime), KronEvery(KronDuration) }
+enum KronLifetime { KronPersistent, KronFor(KronDuration), KronUntilSignal(KronSignal) }
+record KronSchedule { cadence: KronCadence, lifetime: KronLifetime }
+enum KronScheduleError {
+  KronBadClock, KronBadCadence, KronBadLifetime, KronOverflow, KronTooLate
+}
+
+fn basis_kron_time(seconds: i64) -> Option<KronTime> {
+  if seconds < 0 { return variant<Option<KronTime>>(None, record {}); }
+  return variant<Option<KronTime>>(Some, record<KronTime>{seconds: seconds});
+}
+
+fn basis_kron_duration(seconds: i64) -> Option<KronDuration> {
+  if seconds <= 0 { return variant<Option<KronDuration>>(None, record {}); }
+  return variant<Option<KronDuration>>(Some, record<KronDuration>{seconds: seconds});
+}
+
+fn basis_kron_signal_id(number: i64) -> Option<KronSignal> {
+  if number <= 0 || number > 2147483647 {
+    return variant<Option<KronSignal>>(None, record {});
+  }
+  return variant<Option<KronSignal>>(Some, record<KronSignal>{number: number});
+}
+
+fn basis_kron_promise_id(id: u64) -> Option<KronPromiseId> {
+  if id == 0u64 { return variant<Option<KronPromiseId>>(None, record {}); }
+  return variant<Option<KronPromiseId>>(Some, record<KronPromiseId>{id: id});
+}
+
+fn basis_kron_once(deadline: KronTime, lifetime: KronLifetime) -> KronSchedule {
+  return record<KronSchedule>{cadence: variant<KronCadence>(KronOnce, deadline),
+    lifetime: lifetime};
+}
+
+fn basis_kron_every(interval: KronDuration, lifetime: KronLifetime) -> KronSchedule {
+  return record<KronSchedule>{cadence: variant<KronCadence>(KronEvery, interval),
+    lifetime: lifetime};
+}
+
+fn basis_kron_persistent() -> KronLifetime {
+  return variant<KronLifetime>(KronPersistent, record {});
+}
+
+fn basis_kron_for(duration: KronDuration) -> KronLifetime {
+  return variant<KronLifetime>(KronFor, duration);
+}
+
+fn basis_kron_until_signal(signal: KronSignal) -> KronLifetime {
+  return variant<KronLifetime>(KronUntilSignal, signal);
+}
+
+fn basis_kron_deadline_error(error: KronScheduleError) -> Result<KronTime, KronScheduleError> {
+  return variant<Result<KronTime, KronScheduleError>>(Err, error);
+}
+
+# Preflight the first deadline using the caller's clock, validating even
+# nominal values constructed directly rather than through the constructors.
+fn basis_kron_first_deadline(schedule: KronSchedule, now: KronTime)
+    -> Result<KronTime, KronScheduleError> {
+  let start = now["seconds"];
+  if start < 0 {
+    return basis_kron_deadline_error(variant<KronScheduleError>(KronBadClock, record {}));
+  }
+  let max_time = 9223372036854775807;
+  let first = match schedule["cadence"] with {
+    KronOnce(deadline) => {
+      if deadline["seconds"] < 0 {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronBadCadence, record {}));
+      }
+      deadline["seconds"]
+    },
+    KronEvery(interval) => {
+      let step = interval["seconds"];
+      if step <= 0 {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronBadCadence, record {}));
+      }
+      if step > max_time - start {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronOverflow, record {}));
+      }
+      start + step
+    }
+  };
+  match schedule["lifetime"] with {
+    KronPersistent() => {},
+    KronFor(duration) => {
+      let limit = duration["seconds"];
+      if limit <= 0 {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronBadLifetime, record {}));
+      }
+      if limit > max_time - start {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronOverflow, record {}));
+      }
+      if first > start + limit {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronTooLate, record {}));
+      }
+    },
+    KronUntilSignal(signal) => {
+      if signal["number"] <= 0 || signal["number"] > 2147483647 {
+        return basis_kron_deadline_error(variant<KronScheduleError>(KronBadLifetime, record {}));
+      }
+    }
+  };
+  return variant<Result<KronTime, KronScheduleError>>(Ok, record<KronTime>{seconds: first});
+}

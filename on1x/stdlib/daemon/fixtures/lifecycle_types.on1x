@@ -1,0 +1,43 @@
+import std.daemon.lifecycle as Lifecycle;
+
+fn main() {
+  let id = match Lifecycle.basis_daemon_job_id(1u64) with {
+    Some(value) => value,
+    None() => { return; }
+  };
+  let status = variant<Lifecycle.DaemonMessage<string>>(DaemonStatus, id);
+  let valid_id = match status with {
+    DaemonSubmit(work) => work["context"] == "ignored",
+    DaemonCancel(job) => job["id"] == 0u64,
+    DaemonStatus(job) => job["id"] == 1u64,
+    DaemonShutdown() => false
+  };
+  if !valid_id { return; }
+  let budget = record<Lifecycle.DaemonBudget>{
+    startup_ms: 1000, run_ms: 1000, grace_ms: 0, reap_ms: 1000
+  };
+  let retry = record<Lifecycle.DaemonRetry>{max_restarts: 2, backoff_ms: 10};
+  let policy = record<Lifecycle.DaemonPolicy>{
+    budget: budget, restart: variant<Lifecycle.DaemonRestart>(DaemonOnFailure, retry)
+  };
+  let spec = record<Lifecycle.DaemonSpecification<i64>>{
+    runner: "fixture", context: 42, policy: policy
+  };
+  let message = variant<Lifecycle.DaemonMessage<i64>>(DaemonSubmit, spec);
+  match message with {
+    DaemonSubmit(work) => {
+      if Lifecycle.basis_daemon_policy_valid(work["policy"]) {
+        println(work["runner"]);
+        println(work["context"]);
+      }
+    },
+    DaemonCancel(id) => println(id["id"]),
+    DaemonStatus(id) => println(id["id"]),
+    DaemonShutdown() => println(0)
+  };
+  let invalid = record<Lifecycle.DaemonPolicy>{
+    budget: budget, restart: variant<Lifecycle.DaemonRestart>(DaemonAlways,
+      record<Lifecycle.DaemonRetry>{max_restarts: 9, backoff_ms: 10})
+  };
+  println(Lifecycle.basis_daemon_policy_valid(invalid));
+}

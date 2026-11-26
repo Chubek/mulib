@@ -1,0 +1,365 @@
+from . .core.Pervasive import Option, Result;
+
+enum ElviMode { Search, Scrape, Document }
+enum ElviFormat { ElviHtml, ElviJson }
+enum ElviStageKind { CookieFile, XPath, Discard, Lua, Ipc, Capture }
+enum ElviScriptCompletion { ElviIpcComplete }
+enum ElviErrorCode
+{
+  ElviInvalid, ElviSyntax, ElviModeMismatch, ElviResource,
+  ElviRender, ElviExtract, ElviResolve, ElviDenied, ElviResponse, ElviBridge
+}
+
+# Program values contain only source text. Every native use revalidates it.
+record ElviProgram { source: string }
+record ElviProfile
+{
+  mode: ElviMode, format: Option<ElviFormat>,
+  name: string, host: string, home: string, max_results: i64
+}
+record ElviStage { kind: ElviStageKind, argument: string, line: i64 }
+record ElviError { code: ElviErrorCode, line: i64, message: string }
+record ElviSearchHit { title: string, url: string }
+record ElviSearchResults { count: i64, snapshot: string }
+record ElviSearchResponse
+{
+  status: i64, effective_url: string, content_type: string, body: string
+}
+record ElviScriptPaths
+{
+  approved_home: Option<string>, approved_cookie_path: Option<string>,
+  approved_logic_path: string, approved_forward_path: string,
+  allow_xpath: bool, ipc_timeout_ms: i64
+}
+
+# Explicit C11 companion only. See bridge.h and README.md.
+extern fn on1x_elvi_compile_v1(source: string) -> string;
+extern fn on1x_elvi_inspect_v1(source: string) -> string;
+extern fn on1x_elvi_stage_v1(source: string, kind: i64) -> string;
+extern fn on1x_elvi_render_search_v1(source: string, query: string, limit: i64) -> string;
+extern fn on1x_elvi_extract_search_v1(source: string, body: string, limit: i64) -> string;
+extern fn on1x_elvi_resolve_stage_v1(kind: i64, argument: string, line: i64, home: string) -> string;
+
+fn elvi_number(reply: string, at: i64, n: i64) -> i64
+{
+  if at < 0 || at > n || n - at < 6 { return -1; }
+  var value = 0;
+  for i in at .. at + 6 {
+    let digit = text_byte(reply, i) - 48;
+    if digit < 0 || digit > 9 { return -1; }
+    value = value * 10 + digit;
+  }
+  return value;
+}
+
+# Return the next offset after one field, or -1 for a malformed field.
+fn elvi_field_end(reply: string, at: i64, n: i64, min: i64, cap: i64) -> i64
+{
+  let length = elvi_number(reply, at, n);
+  if length < min || length > cap || length > n - at - 6 { return -1; }
+  return at + 6 + length;
+}
+
+fn elvi_bridge_error() -> ElviError
+{
+  return record<ElviError>{
+    code: variant<ElviErrorCode>(ElviBridge, record {}),
+    line: 0, message: "inconsistent Elvi companion reply"
+  };
+}
+
+fn elvi_error(reply: string) -> ElviError
+{
+  let n = text_len(reply);
+  if n < 9 || n > 167 || text_byte(reply, 0) != 69 { return elvi_bridge_error(); }
+  let line = elvi_number(reply, 2, n);
+  if line < 0 || line > 65536 { return elvi_bridge_error(); }
+  let code = match text_byte(reply, 1) with {
+    byte if byte == 105 => variant<ElviErrorCode>(ElviInvalid, record {}),
+    byte if byte == 99 => variant<ElviErrorCode>(ElviSyntax, record {}),
+    byte if byte == 109 => variant<ElviErrorCode>(ElviModeMismatch, record {}),
+    byte if byte == 97 => variant<ElviErrorCode>(ElviResource, record {}),
+    byte if byte == 114 => variant<ElviErrorCode>(ElviRender, record {}),
+    byte if byte == 120 => variant<ElviErrorCode>(ElviExtract, record {}),
+    byte if byte == 115 => variant<ElviErrorCode>(ElviResolve, record {}),
+    _ => variant<ElviErrorCode>(ElviBridge, record {})
+  };
+  return record<ElviError>{code: code, line: line, message: text_slice(reply, 8, n)};
+}
+
+fn basis_elvi_compile(source: string) -> Result<ElviProgram, ElviError>
+{
+  let reply = on1x_elvi_compile_v1(source);
+  if reply == "O" {
+    return variant<Result<ElviProgram, ElviError>>(Ok, record<ElviProgram>{source: source});
+  }
+  return variant<Result<ElviProgram, ElviError>>(Err, elvi_error(reply));
+}
+
+fn basis_elvi_inspect(program: ElviProgram) -> Result<ElviProfile, ElviError>
+{
+  let reply = on1x_elvi_inspect_v1(program["source"]);
+  let n = text_len(reply);
+  if n < 9 || text_byte(reply, 0) != 79 {
+    return variant<Result<ElviProfile, ElviError>>(Err, elvi_error(reply));
+  }
+  let mode = text_byte(reply, 1);
+  let format = text_byte(reply, 2);
+  let limit = elvi_number(reply, 3, n);
+  let name_end = elvi_field_end(reply, 9, n, 1, 63);
+  let host_end = elvi_field_end(reply, name_end, n, 1, 253);
+  let home_end = elvi_field_end(reply, host_end, n, 1, 1023);
+  if limit < 1 || limit > 64 || home_end != n ||
+     (mode != 83 && mode != 76 && mode != 68) ||
+     (mode == 83 && format != 72 && format != 74) ||
+     (mode != 83 && format != 45) {
+    return variant<Result<ElviProfile, ElviError>>(Err, elvi_bridge_error());
+  }
+  let typed_mode = match mode with {
+    byte if byte == 83 => variant<ElviMode>(Search, record {}),
+    byte if byte == 76 => variant<ElviMode>(Scrape, record {}),
+    _ => variant<ElviMode>(Document, record {})
+  };
+  let typed_format = match format with {
+    byte if byte == 72 => variant<Option<ElviFormat>>(Some, variant<ElviFormat>(ElviHtml, record {})),
+    byte if byte == 74 => variant<Option<ElviFormat>>(Some, variant<ElviFormat>(ElviJson, record {})),
+    _ => variant<Option<ElviFormat>>(None, record {})
+  };
+  return variant<Result<ElviProfile, ElviError>>(Ok, record<ElviProfile>{
+    mode: typed_mode, format: typed_format, max_results: limit,
+    name: text_slice(reply, 15, name_end),
+    host: text_slice(reply, name_end + 6, host_end),
+    home: text_slice(reply, host_end + 6, home_end)
+  });
+}
+
+fn elvi_stage_code(kind: ElviStageKind) -> i64
+{
+  return match kind with {
+    CookieFile() => 1, XPath() => 2, Discard() => 3,
+    Lua() => 4, Ipc() => 5, Capture() => 6
+  };
+}
+
+fn basis_elvi_stage(program: ElviProgram, kind: ElviStageKind) -> Result<Option<ElviStage>, ElviError>
+{
+  let reply = on1x_elvi_stage_v1(program["source"], elvi_stage_code(kind));
+  if reply == "N" {
+    return variant<Result<Option<ElviStage>, ElviError>>(Ok, variant<Option<ElviStage>>(None, record {}));
+  }
+  let n = text_len(reply);
+  if n < 7 || text_byte(reply, 0) != 79 {
+    return variant<Result<Option<ElviStage>, ElviError>>(Err, elvi_error(reply));
+  }
+  let line = elvi_number(reply, 1, n);
+  if line < 1 || line > 65536 || n > 1030 {
+    return variant<Result<Option<ElviStage>, ElviError>>(Err, elvi_bridge_error());
+  }
+  let argument = text_slice(reply, 7, n);
+  let stage = record<ElviStage>{kind: kind, argument: argument, line: line};
+  return variant<Result<Option<ElviStage>, ElviError>>(Ok, variant<Option<ElviStage>>(Some, stage));
+}
+
+fn elvi_text_reply(reply: string, maximum: i64) -> Result<string, ElviError>
+{
+  let n = text_len(reply);
+  if n >= 2 && n - 1 <= maximum && text_byte(reply, 0) == 79 {
+    return variant<Result<string, ElviError>>(Ok, text_slice(reply, 1, n));
+  }
+  return variant<Result<string, ElviError>>(Err, elvi_error(reply));
+}
+
+fn basis_elvi_render_search(program: ElviProgram, query: string, limit: i64) -> Result<string, ElviError>
+{
+  return elvi_text_reply(on1x_elvi_render_search_v1(program["source"], query, limit), 8191);
+}
+
+fn basis_elvi_resolve_stage(stage: ElviStage, approved_home: Option<string>) -> Result<string, ElviError>
+{
+  let home = match approved_home with { Some(path) => path, None() => "" };
+  return elvi_text_reply(on1x_elvi_resolve_stage_v1(
+    elvi_stage_code(stage["kind"]), stage["argument"], stage["line"], home), 4095);
+}
+
+# Validate all result framing, optionally locating one hit.
+fn elvi_result_offsets(reply: string, count: i64, index: i64) -> (bool, i64, i64, i64)
+{
+  let n = text_len(reply);
+  if n < 7 || n > 164487 || text_byte(reply, 0) != 79 ||
+     count < 0 || count > 64 || elvi_number(reply, 1, n) != count {
+    return (false, 0, 0, 0);
+  }
+  var at = 7;
+  var title_begin = 0;
+  var title_end = 0;
+  var url_end = 0;
+  for i in 0 .. count {
+    let after_title = elvi_field_end(reply, at, n, 1, 511);
+    let after_url = elvi_field_end(reply, after_title, n, 1, 2047);
+    if after_url < 0 { return (false, 0, 0, 0); }
+    if i == index {
+      title_begin = at + 6;
+      title_end = after_title;
+      url_end = after_url;
+    }
+    at = after_url;
+  }
+  return (at == n, title_begin, title_end, url_end);
+}
+
+fn basis_elvi_extract_search(program: ElviProgram, body: string, limit: i64) -> Result<ElviSearchResults, ElviError>
+{
+  let reply = on1x_elvi_extract_search_v1(program["source"], body, limit);
+  let n = text_len(reply);
+  if n < 7 || text_byte(reply, 0) != 79 {
+    return variant<Result<ElviSearchResults, ElviError>>(Err, elvi_error(reply));
+  }
+  let count = elvi_number(reply, 1, n);
+  let (valid, start, mid, end) = elvi_result_offsets(reply, count, -1);
+  if !valid || count > limit {
+    return variant<Result<ElviSearchResults, ElviError>>(Err, elvi_bridge_error());
+  }
+  return variant<Result<ElviSearchResults, ElviError>>(Ok,
+    record<ElviSearchResults>{count: count, snapshot: reply});
+}
+
+fn basis_elvi_hit_at(results: ElviSearchResults, index: i64) -> Option<ElviSearchHit>
+{
+  let count = results["count"];
+  if index < 0 || index >= count { return variant<Option<ElviSearchHit>>(None, record {}); }
+  let reply = results["snapshot"];
+  let (valid, start, mid, end) = elvi_result_offsets(reply, count, index);
+  if !valid { return variant<Option<ElviSearchHit>>(None, record {}); }
+  return variant<Option<ElviSearchHit>>(Some, record<ElviSearchHit>{
+    title: text_slice(reply, start, mid), url: text_slice(reply, mid + 6, end)
+  });
+}
+
+# This adapter does not open a file. The trusted reader must enforce its own
+# file-object policy (and close the file) before returning bounded text.
+fn basis_elvi_load(path: string, approved_path: string,
+    read_text: fn(string, i64) -> Result<string, ElviError>) -> Result<ElviProgram, ElviError>
+{
+  let n = text_len(path);
+  let denied = record<ElviError>{
+    code: variant<ElviErrorCode>(ElviDenied, record {}),
+    line: 0, message: "profile path not approved"
+  };
+  if n < 2 || n > 4095 || text_byte(path, 0) != 47 || path != approved_path {
+    return variant<Result<ElviProgram, ElviError>>(Err, denied);
+  }
+  for i in 0 .. n {
+    let byte = text_byte(path, i);
+    if byte < 32 || byte == 127 { return variant<Result<ElviProgram, ElviError>>(Err, denied); }
+  }
+  let source = read_text(path, 65536)?;
+  return basis_elvi_compile(source);
+}
+
+fn elvi_media_matches(content_type: string, expected: string) -> bool
+{
+  let n = text_len(content_type);
+  let prefix = text_len(expected);
+  if n < prefix || n > 127 { return false; }
+  for i in 0 .. n {
+    let raw = text_byte(content_type, i);
+    if (raw < 32 && raw != 9) || raw >= 127 { return false; }
+    if i < prefix {
+      var byte = raw;
+      if byte >= 65 && byte <= 90 { byte = byte + 32; }
+      if byte != text_byte(expected, i) { return false; }
+    }
+  }
+  var at = prefix;
+  while at < n {
+    let byte = text_byte(content_type, at);
+    if byte != 32 && byte != 9 { return byte == 59; }
+    at = at + 1;
+  }
+  return true;
+}
+
+# A synchronous host operation, not implicit networking. fetch must enforce a
+# host-owned egress policy, verified HTTPS, time/byte limits, no redirects,
+# and unambiguous Content-Type plus identity Content-Encoding.
+fn basis_elvi_search(program: ElviProgram, query: string, limit: i64, approved_host: string,
+    fetch: fn(string) -> Result<ElviSearchResponse, ElviError>) -> Result<ElviSearchResults, ElviError>
+{
+  let url = basis_elvi_render_search(program, query, limit)?;
+  let profile = basis_elvi_inspect(program)?;
+  if approved_host != profile["host"] {
+    return variant<Result<ElviSearchResults, ElviError>>(Err, record<ElviError>{
+      code: variant<ElviErrorCode>(ElviDenied, record {}), line: 0,
+      message: "search host not approved"
+    });
+  }
+  let response = fetch(url)?;
+  let content_type = response["content_type"];
+  let media_matches = match profile["format"] with {
+    Some(format) => match format with {
+      ElviHtml() => elvi_media_matches(content_type, "text/html") ||
+                    elvi_media_matches(content_type, "application/xhtml+xml"),
+      ElviJson() => elvi_media_matches(content_type, "application/json")
+    },
+    None() => false
+  };
+  if response["status"] != 200 || response["effective_url"] != url || !media_matches {
+    return variant<Result<ElviSearchResults, ElviError>>(Err, record<ElviError>{
+      code: variant<ElviErrorCode>(ElviResponse, record {}), line: 0,
+      message: "unexpected search response status, URL, or media type"
+    });
+  }
+  return basis_elvi_extract_search(program, response["body"], limit);
+}
+
+fn elvi_path_matches(stage: Option<ElviStage>, home: Option<string>,
+    approved: Option<string>) -> bool
+{
+  return match stage with {
+    None() => match approved with { None() => true, Some(_) => false },
+    Some(value) => match approved with {
+      None() => false,
+      Some(path) => text_len(path) > 1 && text_byte(path, 0) == 47 &&
+        match basis_elvi_resolve_stage(value, home) with { Ok(resolved) => resolved == path, Err(_) => false }
+    }
+  };
+}
+
+# Native execution remains delegated to a trusted application. The callback
+# must bind the approved paths to already-authorized resources, not read or
+# connect merely because path strings match.
+fn basis_elvi_run_script(program: ElviProgram, approved_host: string, paths: ElviScriptPaths,
+    run: fn(ElviProgram, ElviScriptPaths) -> Result<ElviScriptCompletion, ElviError>)
+    -> Result<ElviScriptCompletion, ElviError>
+{
+  let profile = basis_elvi_inspect(program)?;
+  let scrape = match profile["mode"] with { Scrape() => true, _ => false };
+  if !scrape {
+    return variant<Result<ElviScriptCompletion, ElviError>>(Err, record<ElviError>{
+      code: variant<ElviErrorCode>(ElviModeMismatch, record {}), line: 0,
+      message: "operation requires scrape mode"
+    });
+  }
+  if paths["ipc_timeout_ms"] < 1 || paths["ipc_timeout_ms"] > 30000 {
+    return variant<Result<ElviScriptCompletion, ElviError>>(Err, record<ElviError>{
+      code: variant<ElviErrorCode>(ElviInvalid, record {}), line: 0,
+      message: "IPC timeout outside 1..30000 ms"
+    });
+  }
+  let cookies = basis_elvi_stage(program, variant<ElviStageKind>(CookieFile, record {}))?;
+  let logic = basis_elvi_stage(program, variant<ElviStageKind>(Lua, record {}))?;
+  let forward = basis_elvi_stage(program, variant<ElviStageKind>(Ipc, record {}))?;
+  let home = paths["approved_home"];
+  let logic_path = variant<Option<string>>(Some, paths["approved_logic_path"]);
+  let forward_path = variant<Option<string>>(Some, paths["approved_forward_path"]);
+  if approved_host != profile["host"] || !paths["allow_xpath"] ||
+     !elvi_path_matches(cookies, home, paths["approved_cookie_path"]) ||
+     !elvi_path_matches(logic, home, logic_path) ||
+     !elvi_path_matches(forward, home, forward_path) {
+    return variant<Result<ElviScriptCompletion, ElviError>>(Err, record<ElviError>{
+      code: variant<ElviErrorCode>(ElviDenied, record {}), line: 0,
+      message: "script host or stage paths not approved"
+    });
+  }
+  return run(program, paths);
+}

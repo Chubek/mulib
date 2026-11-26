@@ -1,0 +1,73 @@
+from . .elvi.capture import BasisElviCaptureRequest, basis_elvi_capture;
+from . .elvi.document import BasisElviDocument, BasisElviDocumentMetadata,
+  basis_elvi_document_from_hex;
+from . .elvi.elvi import ElviProgram, basis_elvi_compile;
+
+fn capture_fixture(program: ElviProgram, request: BasisElviCaptureRequest) ->
+    Result<BasisElviDocument, i64>
+{
+  let url = request["url"];
+  assert(url == "https://www.example.org/body");
+  assert(request["host"] == "www.example.org");
+  assert(request["max_body_bytes"] == 3 || request["max_body_bytes"] == 2);
+  assert(text_len(program["source"]) > 0);
+  let metadata = record<BasisElviDocumentMetadata>{
+    status: 200, requested_url: url, effective_url: url,
+    content_type: "text/html", http_protocol: "HTTP/1.1", alpn: "http/1.1",
+    tls_version: 772, certificate_verified: true, hostname_verified: true,
+    body_length: 3, chunked: false, close_delimited: false
+  };
+  return basis_elvi_document_from_hex(metadata, "610062");
+}
+
+fn capture_never(program: ElviProgram, request: BasisElviCaptureRequest) ->
+    Result<BasisElviDocument, i64>
+{
+  assert(false);
+  return variant<Result<BasisElviDocument, i64>>(Err,
+    text_len(program["source"]) + request["max_body_bytes"]);
+}
+
+fn capture_compile(source: string) -> ElviProgram
+{
+  return match basis_elvi_compile(source) with {
+    Ok(program) => program,
+    Err(error) => {
+      tool_fail(error["message"]);
+      return record<ElviProgram>{source: ""};
+    }
+  };
+}
+
+fn main()
+{
+  let base = "elvi test\nhost www.example.org\nhome https://www.example.org/body\n";
+  let source = text_concat(base, "mode document\nartifacts capture\n");
+  let program = capture_compile(source);
+  match basis_elvi_capture(program, "www.example.org", 3, capture_fixture) with {
+    Ok(document) => assert(document["body_hex"] == "610062"), Err(_) => assert(false)
+  };
+  match basis_elvi_capture(program, "www.example.org", 2, capture_fixture) with {
+    Err(CaptureInvalidResponse()) => {}, _ => assert(false)
+  };
+  match basis_elvi_capture(program, "example.org", 3, capture_never) with {
+    Err(CaptureDenied()) => {}, _ => assert(false)
+  };
+  match basis_elvi_capture(program, "www.example.org", -1, capture_never) with {
+    Err(CaptureBadBodyLimit()) => {}, _ => assert(false)
+  };
+  let cookies = capture_compile(text_concat(source, "cookies provide{/tmp/fictitious.json}\n"));
+  match basis_elvi_capture(cookies, "www.example.org", 3, capture_never) with {
+    Err(CaptureCookiesUnsupported()) => {}, _ => assert(false)
+  };
+  let discard = capture_compile(text_concat(base,
+    "mode scrape\nartifacts discard\nxpath provide{mulib-xpath}\nlogic lua{/a.lua}\nforward ipc{/a}\n"));
+  match basis_elvi_capture(discard, "www.example.org", 3, capture_never) with {
+    Err(CaptureUnsupportedMode()) => {}, _ => assert(false)
+  };
+  let bogus = record<ElviProgram>{source: "not a profile"};
+  match basis_elvi_capture(bogus, "www.example.org", 3, capture_never) with {
+    Err(CaptureProfileError(_)) => {}, _ => assert(false)
+  };
+  println("Elvi capture operation: OK");
+}

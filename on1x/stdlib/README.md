@@ -36,6 +36,18 @@ It is **not a conforming implementation of the Standard ML Basis Library**.
   safe-admitted On1x externs.
 - [`std.environ`](environ/README.md) reads process arguments, environment
   variables, and host information, and provides POSIX `exec` and `system`.
+- [`std.elvi`](elvi/README.md) compiles ElviScript profiles, exposes typed
+  search and document results, and offers explicit host-authorized companions.
+- [`std.html`](html/README.md) parses bounded UTF-8 HTML into a canonical
+  managed document with serialization, traversal and XPath selection. It is
+  not a sanitizer.
+- [`std.kron`](kron/README.md) provides typed schedule values and a native
+  coordinator for durable data descriptors driven by a caller-supplied clock.
+- [`std.daemon`](daemon/README.md) has separate APIs for its existing
+  local IPC dispatch and an explicit native Linux process supervisor.
+- [`std.http.probe`](http/probe/README.md) combines script-based or manual
+  HTTPS document requests, typed On1x parsers, and explicit host policy. The
+  [offline example](../examples/http-probe/README.md) needs no network.
 
 ## Architectural differences
 
@@ -74,6 +86,11 @@ on1x/stdlib/
   numeric/           Int, Word8, Real/Math bridges, widths, IntInf natural adapter
   collections/       Option, List, ListPair, Array, Vector and mono adapters
   container/         checked owners, lexical mutation and scoped native adapters
+  daemon/            local IPC and an independent native process supervisor
+  elvi/              ElviScript compile, search and document capture
+  html/              canonical HTML documents, traversal and XPath
+  http/probe/        typed document probes and trusted host composition
+  kron/              typed schedules and durable data descriptors
   text/              String, Char, Substring, StringCvt, Text, Byte
   io/                TextIO, BinIO and primitive facade
   os/                OS.Path, OS.FileSys, OS.Process, OS.IO, CommandLine

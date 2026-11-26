@@ -1430,10 +1430,13 @@ class Parser {
 
       auto receiver=[&](std::size_t parameter_index){
        Param parameter;parameter.where=peek().where;
-       if(parameter_index==0&&(at("ref")||at("move"))&&peek(1).text=="self"){
-        const bool borrowed=accept("ref");if(!borrowed)consume("move");
-        parameter.name=ident();
-        member.receiver=borrowed?InherentMember::Receiver::Borrow:InherentMember::Receiver::Move;
+        if(parameter_index==0&&(at("borrow")||at("ref")||at("move"))&&peek(1).text=="self"){
+         if(accept("borrow"))parameter.borrow=BorrowMode::Shared;
+         else if(accept("ref"))parameter.borrow=BorrowMode::Exclusive;
+         else consume("move");
+         parameter.name=ident();
+         member.receiver=parameter.borrow!=BorrowMode::Value?
+                         InherentMember::Receiver::Borrow:InherentMember::Receiver::Move;
         parameter.type=accept(":")?type():target;
         return parameter;
        }

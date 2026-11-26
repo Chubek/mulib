@@ -145,6 +145,22 @@ fn main() {
 }
 ''')
 
+t.valid('core_impl_shared_receiver', 'body\n42\n41\n', text=r'''
+record Box<T> { value:T, action:fn(T) -> void }
+impl<T> Box<T> {
+  fn deliver(borrow self) { self["action"](self["value"]); }
+  value item(borrow self): T = self["value"];
+}
+fn main() {
+  let message = record<Box<string>>{value:"body",action:fn(x:string){println(x);}};
+  message::deliver();
+  let number = box(record<Box<i64>>{value:41,action:fn(x:i64){println(x+1);}});
+  number::deliver();
+  { let view = borrow number; println(view::item); }
+  drop(number);
+}
+''')
+
 
 def reject(name, text, expected_text, *options):
     path = t.source('reject_core_impl_' + name, text)
@@ -157,6 +173,37 @@ def reject(name, text, expected_text, *options):
     assert output.read_text(encoding='utf-8') == 'preserved output\n'
     return p
 
+
+reject('borrow_temporary_receiver', r'''
+record Box { value:i64 }
+impl Box {
+  fn make() -> Box { return record<Box>{value:42}; }
+  fn get(borrow self) -> i64 { return self["value"]; }
+}
+fn main() { println(Box::make()::get()); }
+''', 'addressable local place')
+
+reject('borrow_receiver_capture', r'''
+record Box { value:i64 }
+impl Box {
+  fn get(borrow self) -> fn() -> i64 {
+    return fn() -> i64 { return self["value"]; };
+  }
+}
+fn main() { let box = record<Box>{value:42}; box::get(); }
+''', 'cannot capture borrowed place')
+
+reject('borrow_receiver_argument_move', r'''
+record Box { value:i64 }
+impl Box {
+  fn test(borrow self, ignored:i64) -> i64 { return self["value"]; }
+}
+fn consume(owner:own<Box>) -> i64 { drop(owner); return 1; }
+fn main() {
+  let owner = box(record<Box>{value:42});
+  println(owner::test(consume(move(owner))));
+}
+''', 'shared borrow')
 
 reject('unknown_member', r'''
 record Box { value: i64 }

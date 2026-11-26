@@ -17,7 +17,16 @@ RESOURCES = {
     'runtime/basis_native.c', 'runtime/basis_native.h', 'runtime/basis_real.c',
     'environ/runtime.c',
     'cephyr/runtime.c',
+    'daemon/supervisor.c', 'daemon/supervisor.h', 'daemon/lifecycle_kernels.c',
+    'elvi/runtime.c', 'elvi/runtime.h', 'elvi/bridge.c', 'elvi/bridge.h',
+    'elvi/capture.c', 'elvi/capture.h', 'elvi/kernels.c',
+    'elvi/script.c', 'elvi/script.h', 'elvi/live.c', 'elvi/live.h',
+    'html/runtime.c', 'html/runtime.h', 'html/kernels.c',
     'http/runtime.c', 'http/runtime.h', 'http/kernels.c',
+    'http/probe/context.c', 'http/probe/context.h',
+    'http/probe/supervised.c', 'http/probe/supervised.h',
+    'http/probe/artifact.c', 'http/probe/artifact.h',
+    'kron/runtime.c', 'kron/runtime.h', 'kron/kernels.c',
     'prettyprint/runtime.c', 'prettyprint/runtime.h',
     'tty/runtime.c', 'tty/runtime.h',
     'container/runtime.c', 'container/runtime.h',
@@ -65,11 +74,19 @@ class StdlibProjectTests(unittest.TestCase):
             if not directory.parts or not any(line.startswith('library "') for line in declarations):
                 continue
             with self.subTest(package=directory):
-                self.assertIn('library "__init__.on1x"', declarations)
-                module = '.'.join(directory.parts)
+                # The source bundle deliberately exposes only the daemon's
+                # pure lifecycle types, not its legacy KernelBind initializer.
+                if directory == Path('daemon'):
+                    self.assertNotIn('library "__init__.on1x"', declarations)
+                    entry = 'lifecycle.on1x'
+                    module = 'daemon.lifecycle'
+                else:
+                    entry = '__init__.on1x'
+                    module = '.'.join(directory.parts)
+                self.assertIn(f'library "{entry}"', declarations)
                 source = self.write('entry.on1x', f'import std.{module} as Package;\nfn main() {{}}\n')
                 graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', STDLIB).splitlines()
-                self.assertIn(str(roles.parent / '__init__.on1x'), graph)
+                self.assertIn(str(roles.parent / entry), graph)
                 self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', STDLIB)
 
     def test_package_exports(self):
@@ -125,11 +142,16 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
             'library/' + path.relative_to(package).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
             for path in package.rglob('*') if path.is_file()
         })
-        # The restricted source package does not distribute the KernelBind
-        # daemon, the separately hosted SDK source layer, or test fixtures.
-        modules = {p.relative_to(STDLIB).as_posix() for p in STDLIB.rglob('*.on1x')
-                   if p.relative_to(STDLIB).parts[0] not in ('daemon', 'sdk')
-                   and 'tests' not in p.relative_to(STDLIB).parts}
+        # The restricted source package does not distribute the legacy
+        # KernelBind daemon entry point, the separately hosted SDK source
+        # layer, or test fixtures.
+        modules = {
+            path.as_posix() for path in (p.relative_to(STDLIB) for p in STDLIB.rglob('*.on1x'))
+            if path.parts[0] != 'sdk'
+            and 'tests' not in path.parts
+            and path.as_posix() not in ('daemon/__init__.on1x', 'daemon/daemon.on1x')
+            and path.parts[:2] != ('daemon', 'fixtures')
+        }
         # The empty MCP initializer is a source-tree placeholder, not a
         # declared library module. Keep checking all other modules.
         mcp_placeholder = 'mcp/__init__.on1x'
@@ -189,6 +211,10 @@ fn main() {
             '-I', package / 'mulib').splitlines())
         executable = self.build(client.parent, 'bin', '--stdlib', package) / 'consumer'
         self.assertEqual(self.execute(executable), '1\n1\npackaged prettyprint\n42\n1\n')
+        if sys.platform.startswith('linux'):
+            self.execute(sys.executable, '-B', ON1X / 'tests/test_http_probe.py',
+                         '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc,
+                         '--stdlib', package)
         rebuilt = self.build(package, 'rebuilt') / 'library'
         self.assertEqual({p.relative_to(package): p.read_bytes() for p in package.rglob('*') if p.is_file()},
                          {p.relative_to(rebuilt): p.read_bytes() for p in rebuilt.rglob('*') if p.is_file()})

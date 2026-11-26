@@ -65,6 +65,18 @@ generated MuLIB implementation translation unit for the application. The
 fixed Pod worker is compiled as a separate static executable only with
 `--enable-pod-fixture`; see the [host requirements](container/POD.md).
 
+The restricted bundle also includes the On1x modules and registered explicit
+native resources for [Elvi](elvi/README.md), [HTML](html/README.md),
+[Kron](kron/README.md) and [HTTP Probe](http/probe/README.md), and the
+[daemon](daemon/README.md) lifecycle types and C supervisor. It still excludes
+legacy KernelBind `std.daemon` IPC. Shipping sources does not automatically link
+their native companions or enable file, process or egress authority.
+The [offline Probe example](../examples/http-probe/README.md) is installed by
+CMake under `share/on1x/examples/http-probe`; it requires a host C11 toolchain
+and an explicit matching MuLIB header tree. The example and composed tests use
+one MuLIB implementation translation unit; do not also link standalone
+kernel implementations from the component packages.
+
 This is not an SDK installation or native archive. The build helper takes
 the core On1x runtime, `_bridge/mulib_bridge.c` and its header, and the
 `std.mulib` metadata runtime/planner from its SDK, not from the source package.
