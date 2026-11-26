@@ -1658,6 +1658,48 @@ class Parser {
    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
     return name;
    }
+    std::optional<ModuleHeader> module_header(){
+     const bool module_file=peek().where.file.ends_with(".on1xm");
+     if(!module_file&&!at("module"))return std::nullopt;
+     const auto where=peek().where;
+     if(!module_file)
+      throw Error(where,"module headers require a .on1xm source file","ON1X-MODULE-HEADER");
+     if(!accept("module"))
+      throw Error(where,"expected 'module name;' at the start of .on1xm source","ON1X-MODULE-HEADER");
+     auto name=module_name();
+     if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes","ON1X-MODULE-HEADER");
+     consume(";");
+     return ModuleHeader{where,std::move(name)};
+    }
+    VisibilityRule declaration_visibility(bool module){
+     VisibilityRule visibility;
+     const auto where=peek().where;
+     if(accept("public"))visibility.kind=DeclarationVisibility::Public;
+     else if(accept("private"))visibility.kind=DeclarationVisibility::Private;
+     else if(accept("shared"))visibility.kind=DeclarationVisibility::Shared;
+     else return visibility;
+     if(!module)
+      throw Error(where,"visibility annotations require a module declaration","ON1X-MODULE-VISIBILITY");
+     if(visibility.kind==DeclarationVisibility::Shared)visibility.elevation=1;
+     if(at("elevate")){
+      if(visibility.kind!=DeclarationVisibility::Shared)
+       throw Error(peek().where,"elevate is only allowed with shared visibility","ON1X-MODULE-VISIBILITY");
+      consume("elevate");consume("(");
+      const auto& n=peek();
+      const auto end=n.text.data()+n.text.size();
+      const auto [next,ec]=std::from_chars(n.text.data(),end,visibility.elevation);
+      if(ec!=std::errc{}||next!=end||visibility.elevation==0)
+       throw Error(n.where,"elevation must be a positive decimal integer in range","ON1X-MODULE-ELEVATION");
+      ++pos;consume(")");
+     }
+     if(!at("fn")&&!at("proc")&&!at("extern")&&!at("@")&&!operator_declaration_start()&&
+        !((at("record")||at("enum")||at("cliche"))&&is_ident(peek(1).text))&&!at("macro"))
+      throw Error(peek().where,"visibility annotation must precede a named declaration","ON1X-MODULE-VISIBILITY");
+     if(at("@")&&(peek(1).text=="enable"||peek(1).text=="extension"||
+                   peek(1).text=="scrutiny"||peek(1).text=="ppx"))
+      throw Error(peek().where,"visibility annotations do not apply to directives","ON1X-MODULE-VISIBILITY");
+     return visibility;
+    }
     NominalDeclaration nominal_declaration(){
      NominalDeclaration d;d.where=peek().where;bool sum=accept("enum");if(!sum)consume("record");d.kind=sum?Type::Sum:Type::Record;d.name=ident();
       static const std::set<std::string> builtins={"i64","f64","f32","u8","u16","u32","u64","bool","string","void","json","json_view","sexpr","buffer","record","sum","array","slice","code","forall","fn","xfiber","_"};
@@ -1962,8 +2004,8 @@ class Parser {
       check_import_count();
       return true;
      }
-     const bool unsafe_kernel=unsafe_import&&peek(2).text=="kernel";
-     if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
+    const bool unsafe_kernel=unsafe_import&&peek(2).text=="kernel";
+    if(unsafe_kernel||(at("import")&&peek(1).text=="kernel"&&
         target_follows)){
      KernelImport item;item.where=peek().where;item.is_unsafe=unsafe_kernel;
      if(unsafe_kernel)consume("unsafe");
@@ -1978,6 +2020,27 @@ class Parser {
       check_import_count();
       return true;
     }
+     // `program` is an ordinary name unless another target follows it.
+     if(at("import")&&peek(1).text=="program"&&
+        ((is_ident(target)&&target!="as")||target.starts_with('"'))){
+      Import item;item.where=peek().where;item.kind=Import::Kind::Program;
+      consume("import");consume("program");
+      if(peek().text.starts_with('"')){
+       const auto& token=peek();
+       if(token.text.starts_with("\"\"\"")||token.text.find('\\')!=std::string::npos)
+        throw Error(token.where,"program import paths must be unescaped double-quoted strings","ON1X-PROGRAM-IMPORT");
+       if(token.text.size()<=2||token.text.size()>4098)
+        throw Error(token.where,"import path must be 1..4096 bytes","ON1X-PROGRAM-IMPORT");
+       item.quoted=true;item.module=token.text.substr(1,token.text.size()-2);++pos;
+      }else{
+       item.module=module_name();
+       if(item.module.size()>4096)
+        throw Error(item.where,"program import name exceeds 4096 bytes","ON1X-PROGRAM-IMPORT");
+      }
+      if(accept("as"))item.alias=ident();
+      consume(";");
+      u.module_imports.push_back(std::move(item));check_import_count();return true;
+     }
     if(at("import")||at("from")){
      Import declaration;declaration.where=peek().where;declaration.selective=accept("from");
      if(declaration.selective){
@@ -2039,12 +2102,13 @@ class Parser {
      }
      return false;
     }
-     void parse_operator_declaration(std::vector<Stmt>* lexical_body=nullptr){
+     void parse_operator_declaration(std::vector<Stmt>* lexical_body=nullptr, VisibilityRule visibility={}){
       if(!operator_count||*operator_count>=512)
        throw Error(peek().where,"operator declaration limit exceeded","ON1X-OPERATOR-LIMIT");
       ++*operator_count;
       auto enclosing_types=std::move(bound_types);
       auto declaration=operator_declaration_header();
+      declaration.header.visibility=visibility;
       declaration.block_local=lexical_body!=nullptr;
       if(lexical_body){
       const auto& header=declaration.header;
@@ -2111,12 +2175,17 @@ class Parser {
     }
     OperatorDiscovery discover(){
      Unit imports;OperatorDiscovery result;
+     result.module=module_header();
      while(!at("<eof>")){
       if(accept(";"))continue;
+      if(at("module"))
+       throw Error(peek().where,"a module header must appear once, before all declarations","ON1X-MODULE-HEADER");
+      const auto visibility=declaration_visibility(result.module.has_value());
       if(import_declaration(imports))continue;
       if(operator_declaration_start()){
        if(result.operators.size()>=512)throw Error(peek().where,"operator declaration limit exceeded","ON1X-OPERATOR-LIMIT");
        auto declaration=operator_declaration_header();bound_types.clear();
+       declaration.header.visibility=visibility;
        result.operators.push_back(std::move(declaration.header));
        if(!at("{"))consume("{");
        if(!skip_discovery_group())break;
@@ -2133,14 +2202,18 @@ class Parser {
       Unit parse(std::vector<Docstring> docs){Unit u;
        std::size_t operator_total=0;operator_count=&operator_total;
         u.docstrings=std::move(docs);docstrings=&u.docstrings;declarations=&u.operators;directives=&u.fixity_directives;
+       u.module=module_header();
        while(!at("<eof>")){
+       if(at("module"))
+        throw Error(peek().where,"a module header must appear once, before all declarations","ON1X-MODULE-HEADER");
+       const auto visibility=declaration_visibility(u.module.has_value());
        if(operator_declaration_start()){
-        parse_operator_declaration();continue;
+        parse_operator_declaration(nullptr,visibility);continue;
        }
         if(fixity_header(true)){fixity_directive();continue;}
        if(at("cliche")&&is_ident(peek(1).text)){
         if(u.cliches.size()>=256)throw Error(peek().where,"cliche declaration limit exceeded","ON1X-CLICHE-LIMIT");
-        u.cliches.push_back(cliche_declaration());continue;
+        u.cliches.push_back(cliche_declaration());u.cliches.back().visibility=visibility;continue;
        }
         if(at("impl")&&!cliche_implementation_header()&&(peek(1).text=="<"||is_ident(peek(1).text))){
          if(u.inherent_implementations.size()>=1024)
@@ -2153,7 +2226,7 @@ class Parser {
         }
        if((at("record")||at("enum"))&&is_ident(peek(1).text)){
        if(u.nominals.size()>=512)throw Error(peek().where,"nominal declaration limit exceeded");
-       u.nominals.push_back(nominal_declaration());continue;
+       u.nominals.push_back(nominal_declaration());u.nominals.back().visibility=visibility;continue;
       }
         if(at("@")&&peek(1).text=="scrutiny"){
          auto where=peek().where;pos+=2;auto level=ident();
@@ -2186,7 +2259,11 @@ class Parser {
        if(u.extensions.size()>=32)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier count budget exhausted","ON1X-CAT-SYNTAX");
        u.extensions.push_back(std::move(carrier));accept(";");continue;
       }
-     if(accept("macro")){u.macros.push_back(macro_definition());if(u.macros.size()>512)throw Error(peek().where,"macro definition limit exceeded");continue;}
+     if(accept("macro")){
+      u.macros.push_back(macro_definition());u.macros.back().visibility=visibility;
+      if(u.macros.size()>512)throw Error(peek().where,"macro definition limit exceeded");
+      continue;
+     }
      if(at("@")&&peek(1).text=="ppx"){
       auto where=peek().where;consume("@");consume("ppx");auto label=ident();auto token=peek();
       if(label.size()>128)throw Error(where,"PPX label exceeds 128 bytes");
@@ -2196,7 +2273,7 @@ class Parser {
       ++pos;u.ppx.push_back({where,std::move(label),token.text.substr(1,token.text.size()-2)});accept(";");continue;
      }
      if(import_declaration(u))continue;
-     Function f;f.where=peek().where;
+     Function f;f.where=peek().where;f.visibility=visibility;
      while(accept("@"))f.attributes.push_back(extension(ts[pos-1].where).node);
      f.external=accept("extern");f.procedure=!f.external&&accept("proc");
      if(!f.procedure)consume("fn");

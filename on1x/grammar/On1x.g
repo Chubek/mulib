@@ -8,6 +8,15 @@
 %}
 /* The generated component is the token arena/scanner. Executable source
  * productions live in src/parser.cpp and bridge to include/on1x/ast.hpp:
+ *   module_header := 'module' qualified_identifier ';'     (.on1xm, first item)
+ *   abstract_header := 'abstract' 'module' qualified_identifier ';' (.on1xi)
+ *   module_import := 'import' qualified_identifier ['as' identifier] ';'
+ *                  | 'from' module_path 'import' selectors ';'
+ *   program_import := 'import' 'program' (qualified_identifier | quoted_path)
+ *                     ['as' identifier] ';'
+ *   visibility := 'public' | 'private' | 'shared' ['elevate' '(' decimal ')']
+ * These words are contextual. Module syntax and numeric validation use the
+ * ordinary identifier, punctuation and number terminals; no new %fault rules.
  *   foreign_import := 'import' 'foreign' 'stdffi' '.' identifier
  *                     ['as' identifier] ';'
  *   kernel_import := ['unsafe'] 'import' 'kernel' ['[' 'dynlib' ']']

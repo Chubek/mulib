@@ -107,6 +107,13 @@ valid_cases = [
 for i, data in enumerate(valid_cases):
     check(f'valid_{i}', data, valid=True)
 
+check('contextual_module_words',
+      b'module abstract.module; import program "tool.on1x" as tool;\n'
+      b'public private shared elevate(12);',
+      valid=True, spellings=[b'module', b'abstract', b'.', b'module', b';',
+                             b'import', b'program', b'"tool.on1x"', b'as', b'tool', b';',
+                             b'public', b'private', b'shared', b'elevate', b'(', b'12', b')', b';'])
+
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
 check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)
 operator_spellings = [
