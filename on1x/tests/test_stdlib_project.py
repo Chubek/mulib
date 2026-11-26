@@ -160,6 +160,23 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         self.assertIn(str(package / 'parsec/__init__.on1x'), graph)
         self.assertIn(str(package / 'parsec/parsec.on1x'), graph)
         self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', package)
+        declaration = package / 'parsec/parsec.on1xi'
+        self.assertEqual(declaration.read_bytes(), (STDLIB / 'parsec/parsec.on1xi').read_bytes())
+        self.execute(OPTIONS.on1xc, '--check-interfaces', package / 'parsec/parsec.on1x',
+                     '--interface', declaration, '--stdlib', package)
+
+        # Keep the function internally well typed; a different result type
+        # must fail because of the declared contract, not a body type error.
+        implementation = package / 'parsec/parsec.on1x'
+        original = implementation.read_text(encoding='utf-8')
+        start = original.index('fn parsec_in_range')
+        end = original.index('fn parsec_literal', start)
+        implementation.write_text(original[:start] +
+                                  'fn parsec_in_range(text: string, pos: i64, '
+                                  'low: i64, high: i64) -> i64 { return 1; }\n' +
+                                  original[end:], encoding='utf-8')
+        self.build(package, 'drifted', negative='interface signature mismatch')
+        self.assertFalse((self.work / 'drifted').exists())
 
     def test_whole_stdlib_and_downstream(self):
         dest = self.build(STDLIB)

@@ -51,3 +51,13 @@ metadata-only components are not candidates for stub generation.
 
 Inventory and baseline compatibility tests do not migrate a source or promote
 any SML Basis conformance status.
+
+## Parse implementation qualification
+
+`parsec/parsec.on1xi` checks the existing five local definitions by the v1
+project-interface mechanism. The restricted source bundle includes and
+checks the same interface on relocation. `parsec/__init__.on1x` remains
+a re-export facade, not a checked signature; v1 interfaces cannot match
+re-exports. The type check does not restrict ordinary imports or advance
+the declared-module migration. There are no changes to the implementation,
+its legacy aliases, or the ABI.
