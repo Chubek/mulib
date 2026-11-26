@@ -9,7 +9,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(_libstone_default "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/libstone")
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone/scripts/asdl.pl")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone/cornerstone/ASDL/cmake/Native.cmake" OR
+   EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone/scripts/asdl.pl")
   set(_libstone_default "${CMAKE_CURRENT_SOURCE_DIR}/third_party/libstone")
 endif()
 
@@ -24,6 +25,8 @@ option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
 option(ON1X_USE_FALLBACK_SCANNER "Use the bootstrap scanner even when LibStone is present" OFF)
 set(ON1X_AUROCKS_HOST_EXECUTABLE "" CACHE FILEPATH
   "Host cornerstone/Aurocks native generator built from the pinned LibStone checkout")
+set(ON1X_ASDL_HOST_EXECUTABLE "" CACHE FILEPATH
+  "Host cornerstone/ASDL native generator built from the pinned LibStone checkout")
 option(ON1X_WITH_EXOML "Build optional ExoML contract-verification tool" OFF)
 option(ON1X_WITH_EXOML_EXTRACT "Enable real libclang CDecl extraction in on1x-bind" OFF)
 option(ON1X_WITH_EXOTRACT "Build MuLIB static binding discovery and generation" OFF)
@@ -67,12 +70,39 @@ set(ON1X_TEST_C_FLAGS "" CACHE STRING "Extra generated-program compiler/linker o
 if(ON1X_REQUIRE_LIBSTONE AND ON1X_USE_FALLBACK_SCANNER)
   message(FATAL_ERROR "ON1X_REQUIRE_LIBSTONE and ON1X_USE_FALLBACK_SCANNER are mutually exclusive")
 endif()
-set(_asdl "${ON1X_LIBSTONE_ROOT}/scripts/asdl.pl")
+set(_asdl_source "${ON1X_LIBSTONE_ROOT}/cornerstone/ASDL")
 set(_aurocks_source "${ON1X_LIBSTONE_ROOT}/cornerstone/Aurocks")
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
-if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl}" AND
+if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl_source}/cmake/Native.cmake" AND
+   EXISTS "${_asdl_source}/include/asdl/execution.hpp" AND
+   EXISTS "${ON1X_LIBSTONE_ROOT}/third_party/lua/lua.h" AND
+   EXISTS "${ON1X_LIBSTONE_ROOT}/third_party/kaguya/include/kaguya/kaguya.hpp" AND
    (ON1X_AUROCKS_HOST_EXECUTABLE OR EXISTS "${_aurocks_source}/CLI/main.cpp"))
-  find_package(Perl REQUIRED)
+  function(on1x_add_asdl build_tools)
+    set(ASDL_BUILD_TOOLS ${build_tools})
+    set(ASDL_BUILD_TESTS OFF)
+    set(ASDL_BUILD_MQCTL OFF)
+    add_subdirectory("${_asdl_source}" "${CMAKE_CURRENT_BINARY_DIR}/libstone-asdl" EXCLUDE_FROM_ALL)
+  endfunction()
+  if(ON1X_ASDL_HOST_EXECUTABLE)
+    set(_asdlc "${ON1X_ASDL_HOST_EXECUTABLE}")
+    if(NOT IS_ABSOLUTE "${_asdlc}" OR NOT EXISTS "${_asdlc}" OR IS_DIRECTORY "${_asdlc}")
+      message(FATAL_ERROR "ON1X_ASDL_HOST_EXECUTABLE must name an absolute build-host executable path")
+    endif()
+    execute_process(COMMAND "${_asdlc}" --version RESULT_VARIABLE _asdl_status
+      OUTPUT_VARIABLE _asdl_version OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT _asdl_status STREQUAL "0" OR NOT _asdl_version STREQUAL "asdlc 2.0")
+      message(FATAL_ERROR "ON1X_ASDL_HOST_EXECUTABLE must report 'asdlc 2.0'; build it from the selected LibStone revision for reproducible output")
+    endif()
+    set(_asdl_dependency "${_asdlc}")
+    on1x_add_asdl(OFF)
+  elseif(CMAKE_CROSSCOMPILING)
+    message(FATAL_ERROR "On1x grammar generation requires ON1X_ASDL_HOST_EXECUTABLE when cross-compiling")
+  else()
+    on1x_add_asdl(ON)
+    set(_asdlc "$<TARGET_FILE:asdlc>")
+    set(_asdl_dependency asdlc)
+  endif()
   if(NOT EXISTS "${_aurocks_source}/src/FaultRuntime.cpp")
     message(FATAL_ERROR "On1x requires LibStone Aurocks runtime %fault support (1ebcf9bd or compatible); for bootstrap only, use ON1X_USE_FALLBACK_SCANNER=ON")
   endif()
@@ -114,13 +144,15 @@ if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl}" AND
   endif()
   set(_generated "${CMAKE_CURRENT_BINARY_DIR}/generated")
   file(MAKE_DIRECTORY "${_generated}")
-  add_custom_command(
-    OUTPUT "${_generated}/on1x_ast.h" "${_generated}/on1x_ast.c" "${_generated}/ppx_ast.h" "${_generated}/ppx_ast.c"
-    COMMAND "${CMAKE_COMMAND}" "-DPERL=${PERL_EXECUTABLE}" "-DSCRIPTS=${ON1X_LIBSTONE_ROOT}/scripts"
-      "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${_generated}"
-      -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateASDL.cmake"
-    DEPENDS "${_asdl}" grammar/On1x.asdl grammar/PPX.asdl
-      cmake/GenerateASDL.cmake VERBATIM)
+  function(on1x_generate_asdl schema output)
+    add_custom_command(
+      OUTPUT "${_generated}/${output}.h" "${_generated}/${output}.c"
+      COMMAND "${_asdlc}" --header "${_generated}/${output}.h"
+        --source "${_generated}/${output}.c" "${CMAKE_CURRENT_SOURCE_DIR}/grammar/${schema}"
+      DEPENDS ${_asdl_dependency} "grammar/${schema}" VERBATIM)
+  endfunction()
+  on1x_generate_asdl(On1x.asdl on1x_ast)
+  on1x_generate_asdl(PPX.asdl ppx_ast)
   add_custom_command(
     OUTPUT "${_generated}/on1x_parser.c" "${_generated}/on1x_fault_bank_2.h"
     BYPRODUCTS "${_generated}/on1x_scanner_primary.g" "${_generated}/on1x_scanner_secondary.g"
@@ -133,7 +165,7 @@ if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl}" AND
   set(ON1X_SCANNER_DESCRIPTION "LibStone ASDL+native Aurocks generated frontend")
   set(ON1X_GENERATED_FRONTEND TRUE)
 elseif(ON1X_REQUIRE_LIBSTONE)
-  message(FATAL_ERROR "Missing LibStone scripts/asdl.pl or cornerstone/Aurocks under ${ON1X_LIBSTONE_ROOT}")
+  message(FATAL_ERROR "Missing LibStone native ASDL (including Lua/Kaguya) or Aurocks under ${ON1X_LIBSTONE_ROOT}")
 else()
   add_library(on1x_scanner STATIC src/lexer_fallback.cpp)
   target_include_directories(on1x_scanner PRIVATE include)

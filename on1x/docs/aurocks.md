@@ -3,8 +3,9 @@
 `grammar/On1x.g` is the only `.g` grammar owned by On1x. Its build uses the
 C++ `aurocks` executable from LibStone `cornerstone/Aurocks`, with runtime
 fault support from `1ebcf9bd2722577d894ff53f1ac017dc0009cde0` or later compatible
-checkouts. Perl remains an ASDL build-time
-dependency. Vendored grammars and their generators are outside this migration.
+checkouts. The pinned LibStone `cornerstone/ASDL` native `asdlc` builds the
+scanner and PPX schemas; those schema steps do not use Perl. Vendored grammars
+and their generators are outside this migration.
 The explicit bootstrap scanner does not consume or generate any `.g` file.
 
 ```sh
@@ -14,10 +15,11 @@ cmake --build build/on1x-native --target on1xc on1x_scanner_tests on1x_generated
 ctest --test-dir build/on1x-native -R '^on1x\.(aurocks_faults|scanner(_parity)?)$' --output-on-failure
 ```
 
-For a cross build, first build the host executable from the pinned
-`cornerstone/Aurocks` directory and set `ON1X_AUROCKS_HOST_EXECUTABLE` to
-its absolute path in the On1x configuration. Do not substitute another
-revision just because it reports the same version.
+For a cross build, first build `aurocks` and `asdlc` for the build host from
+the pinned `cornerstone/Aurocks` and `cornerstone/ASDL` directories. Set
+`ON1X_AUROCKS_HOST_EXECUTABLE` and `ON1X_ASDL_HOST_EXECUTABLE` to their absolute
+paths in the On1x configuration. Do not substitute another revision just
+because it reports the same tool versions.
 
 The optional Yellowstone link pipeline defaults off when the separate,
 vendored build still requires the removed `aurocks.pl`. This does not affect

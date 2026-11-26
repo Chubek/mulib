@@ -105,9 +105,8 @@ source snapshot, with cache invalidation through actual fact deltas.
      ISO C11 compiler → native binary with MuLIB kernels
 ```
 
-CMake builds the native C++ Aurocks generator from LibStone's
-`cornerstone/Aurocks` for `grammar/On1x.g`. Perl still generates the ASDL
-schemas; it does not process `.g` files owned by On1x. The scanner uses
+CMake builds LibStone's native Aurocks generator for `grammar/On1x.g` and its
+native ASDL compiler for `grammar/On1x.asdl` and `grammar/PPX.asdl`. The scanner uses
 Aurocks' emitted longest-prefix matcher for regular terminals and shared
 bounded recognizers for nested comments and complex literals. Matcher state
 and the temporary ASDL arena belong to each scan, and the C++ frontend copies
