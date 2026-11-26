@@ -11,6 +11,8 @@ import sys
 import tempfile
 import unittest
 
+from stdlib_module_inventory import collect
+
 ON1X = Path(__file__).resolve().parents[1]
 STDLIB = ON1X / 'stdlib'
 RESOURCES = {
@@ -118,6 +120,31 @@ fn main() {
         self.execute(OPTIONS.on1xc, '--check', private, '--stdlib', STDLIB,
                      negative="no export or submodule 'on1x_mulib_ini_get'")
 
+    def test_legacy_parsec_paths_share_one_implementation(self):
+        implementation = (STDLIB / 'parsec/parsec.on1x').as_posix()
+        initializer = (STDLIB / 'parsec/__init__.on1x').as_posix()
+        source = self.write('mixed.on1x', f'''
+import "{implementation}";
+import std.parsec as Entry;
+import std.parsec.parsec as Body;
+from std.parsec import basis_parsec_int as scan;
+fn main() {{
+    let (ok, value, end) = basis_parsec_int("-9223372036854775808!", 0);
+    assert(ok && value == -9223372036854775808 && end == 20);
+    let (overflow, _, reset) = scan("9223372036854775808", 0);
+    assert(!overflow && reset == 0);
+    assert(Entry.parsec_literal("on1x", 0, "on"));
+    assert(!Body.parsec_literal("on1x", 0, "one"));
+}}
+''')
+        graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', STDLIB).splitlines()
+        self.assertEqual(graph.count(implementation), 1)
+        self.assertEqual(graph.count(initializer), 1)
+        exe = self.work / 'mixed'
+        self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
+                     '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', STDLIB, '-o', exe)
+        self.execute(exe)
+
     def test_initializer_survives_packaging(self):
         root = self.work / 'parsec-stdlib'
         self.write('parsec-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n')
@@ -146,17 +173,16 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         # KernelBind daemon entry point, the separately hosted SDK source
         # layer, or test fixtures.
         modules = {
-            path.as_posix() for path in (p.relative_to(STDLIB) for p in STDLIB.rglob('*.on1x'))
-            if path.parts[0] != 'sdk'
-            and 'tests' not in path.parts
-            and path.as_posix() not in ('daemon/__init__.on1x', 'daemon/daemon.on1x')
-            and path.parts[:2] != ('daemon', 'fixtures')
+            entry['path'] for entry in collect(STDLIB)
+            if entry['bundle_role'] in ('library', 'interface')
         }
         # The empty MCP initializer is a source-tree placeholder, not a
         # declared library module. Keep checking all other modules.
         mcp_placeholder = 'mcp/__init__.on1x'
-        modules.discard(mcp_placeholder)
-        self.assertEqual(modules, {p.relative_to(package).as_posix() for p in package.rglob('*.on1x')})
+        self.assertEqual(modules, {
+            p.relative_to(package).as_posix() for p in package.rglob('*')
+            if p.is_file() and p.suffix in ('.on1x', '.on1xm', '.on1xi')
+        })
         self.assertNotIn('project/' + mcp_placeholder, report['inputs'])
         mcp_client = self.write('mcp-client.on1x', 'import std.mcp;\nfn main() {}\n')
         self.execute(OPTIONS.on1xc, '--check', mcp_client, '--stdlib', package,
