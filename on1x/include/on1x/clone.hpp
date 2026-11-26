@@ -80,7 +80,8 @@ inline MacroParameter clone_macro_pattern(const MacroParameter& p,std::size_t& b
 }
 inline Macro clone_macro(const Macro& m,std::size_t& budget){
   clone_tick(budget,m.where);
-  Macro copy;copy.name=m.name;copy.where=m.where;copy.ellipsis=m.ellipsis;copy.literals=m.literals;
+   Macro copy;copy.name=m.name;copy.where=m.where;copy.ellipsis=m.ellipsis;copy.literals=m.literals;
+   copy.visibility=m.visibility;
   for(const auto& r:m.rules){
    MacroRule rule;rule.where=r.where;rule.block=r.block;
    for(const auto& p:r.parameters)rule.parameters.push_back(clone_macro_pattern(p,budget));
@@ -94,7 +95,8 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;
    copy.type_parameters=f.type_parameters;copy.constraints=f.constraints;
    copy.result=f.result;copy.procedure=f.procedure;copy.external=f.external;copy.prototype=f.prototype;
-   copy.extension_generated=f.extension_generated;
+    copy.extension_generated=f.extension_generated;
+    copy.visibility=f.visibility;
    copy.meta_canonicalized=f.meta_canonicalized;
    copy.meta_folded_identity=f.meta_folded_identity;
    copy.kernel_symbol=f.kernel_symbol;
@@ -108,7 +110,7 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
  }
  inline Unit clone_unit(const Unit& unit,std::size_t& budget){
  Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
-   out.module_imports=unit.module_imports;
+    out.module=unit.module;out.module_imports=unit.module_imports;
     out.kernel_imports=unit.kernel_imports;
     out.foreign_imports=unit.foreign_imports;
     out.features=unit.features;out.scrutiny=unit.scrutiny;out.extensions=unit.extensions;out.nominals=unit.nominals;
@@ -128,7 +130,8 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
      item.function.constraints=member.function.constraints;item.function.result=member.function.result;
      item.function.procedure=member.function.procedure;
      item.function.external=member.function.external;item.function.prototype=member.function.prototype;
-     item.function.extension_generated=member.function.extension_generated;
+      item.function.extension_generated=member.function.extension_generated;
+      item.function.visibility=member.function.visibility;
      item.function.kernel_symbol=member.function.kernel_symbol;
      item.function.kernel_link_only=member.function.kernel_link_only;
      for(const auto& statement:member.function.body)item.function.body.push_back(clone_statement(statement,budget));
@@ -156,7 +159,8 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
     item.function.procedure=member.function.procedure;
     item.function.external=member.function.external;
     item.function.prototype=member.function.prototype;
-    item.function.extension_generated=member.function.extension_generated;
+     item.function.extension_generated=member.function.extension_generated;
+     item.function.visibility=member.function.visibility;
     item.function.kernel_symbol=member.function.kernel_symbol;
     item.function.kernel_link_only=member.function.kernel_link_only;
     for(const auto& statement:member.function.body){
