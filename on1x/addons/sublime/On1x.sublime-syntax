@@ -252,6 +252,10 @@ contexts:
       scope: keyword.control.on1x
     - match: '\b(let|var|extern|fn|proc)\b'
       scope: storage.type.on1x
+    - match: '\boperator\b(?=[ \t]*[<(])'
+      scope: keyword.declaration.operator.on1x
+    - match: '\binfixr?\b(?=[ \t]+[0-9])'
+      scope: keyword.control.directive.fixity.on1x
     - match: '\b(forall|macro|rule|quote|splice|lift|let_syntax|letrec_syntax)\b'
       scope: keyword.other.metaprogramming.on1x
     - match: '\b(block|expression|syntax_block)(?=[ \t]*\{)|\b(syntax_literal)(?=[ \t]*\()|\b(vector)(?=[ \t]*\[)'
@@ -291,7 +295,13 @@ contexts:
       scope: keyword.operator.ellipsis.on1x
     - match: '\.\.=|\.\.'
       scope: keyword.operator.range.on1x
-    - match: '<-|->|=>|:=|==|!=|<=|>=|&&|\|\||[+*/%<>=!|?~-]'
+    - match: '>=>|<=<|=<<|(?:<<|>>)\.(?!\.)|<{2,}=?|>{2,}=?|<[!%&*+?^|~$-]+>|<\||[|~!]>'
+      scope: keyword.operator.custom.on1x
+    - match: '<-|->|=>|:=|==|!=|<=|>=|&&|\|\|'
+      scope: keyword.operator.on1x
+    - match: '[!%&*+?^|~]{2,}'
+      scope: keyword.operator.custom.on1x
+    - match: '[+*/%<>=!|?~&^-]'
       scope: keyword.operator.on1x
     - match: '::|[.,:;]'
       scope: punctuation.separator.on1x

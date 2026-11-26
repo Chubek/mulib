@@ -34,6 +34,45 @@ fn ppx_ident(name: string, location: sexpr) -> sexpr
   return ppx_node("Identifier", ppx_list2(sx_string(name), location));
 }
 
+fn ppx_operator_ref(lexeme: string, location: sexpr) -> sexpr
+{
+  return ppx_node("OperatorReference", ppx_list2(sx_string(lexeme), location));
+}
+
+fn ppx_operator_unary(lexeme: string, position: string, value: sexpr, location: sexpr) -> sexpr
+{
+  return ppx_node("OperatorUnary", ppx_list4(sx_string(lexeme), sx_string(position), value, location));
+}
+
+fn ppx_operator_binary(lexeme: string, left: sexpr, right: sexpr, location: sexpr) -> sexpr
+{
+  return ppx_node("OperatorBinary", ppx_list4(sx_string(lexeme), left, right, location));
+}
+
+fn ppx_operator_ternary(lexeme: string, lexeme2: string, first: sexpr, second: sexpr, third: sexpr, location: sexpr) -> sexpr
+{
+  return ppx_node("OperatorTernary", sx_cons(sx_string(lexeme),
+    sx_cons(sx_string(lexeme2), ppx_list4(first, second, third, location))));
+}
+
+fn ppx_operator_header(lexeme: string, lexeme2: string, arity: string, position: string,
+  precedence: i64, tightness: i64, binds: string, location: sexpr) -> sexpr
+{
+  let tail = ppx_list4(sx_symbol(sexpr_nat(precedence)), sx_symbol(sexpr_nat(tightness)), sx_string(binds), location);
+  return ppx_node("OperatorHeader", sx_cons(sx_string(lexeme), sx_cons(sx_string(lexeme2),
+    sx_cons(sx_string(arity), sx_cons(sx_string(position), tail)))));
+}
+
+fn ppx_operator_declaration(header: sexpr, generics: sexpr, formals: sexpr, result: sexpr, body: sexpr) -> sexpr
+{
+  return ppx_node("OperatorDeclaration", sx_cons(header, ppx_list4(generics, formals, result, body)));
+}
+
+fn ppx_fixity_directive(lexeme: string, tightness: i64, binds: string, location: sexpr) -> sexpr
+{
+  return ppx_node("FixityDirective", ppx_list4(sx_string(lexeme), sx_symbol(sexpr_nat(tightness)), sx_string(binds), location));
+}
+
 fn ppx_call(name: string, arguments: sexpr, location: sexpr) -> sexpr
 {
   return ppx_node("Call",

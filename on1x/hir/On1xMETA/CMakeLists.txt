@@ -46,6 +46,15 @@ if("${ON1X_META_RULE_FILES}" STREQUAL
 endif()
 set(ON1X_META_RULE_FILES "${_meta_default_rules}" CACHE STRING "On1xMETA rule inputs compiled into the frontend")
 set(_meta_header "${_meta_generated}/on1x_meta_rules.hpp")
+set(_meta_source_header "${_meta_generated}/on1x_meta_source.hpp")
+add_custom_command(
+  OUTPUT "${_meta_source_header}" "${_meta_generated}/source_manifest.json"
+  COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/generate.py"
+    --source --parser "${_meta_parser}" --output "${_meta_source_header}"
+    --manifest "${_meta_generated}/source_manifest.json"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/operators.o1m"
+  DEPENDS "${_meta_parser}" generate.py source/operators.o1m source_desugar.hpp
+  COMMENT "Validate and compile the mandatory On1xMETA source program" VERBATIM)
 add_custom_command(
   OUTPUT "${_meta_header}" "${_meta_generated}/rules_manifest.json"
   COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/generate.py"
@@ -54,13 +63,16 @@ add_custom_command(
   DEPENDS "${_meta_parser}" generate.py ${ON1X_META_RULE_FILES}
     "${CMAKE_CURRENT_SOURCE_DIR}/../../include/on1x/meta_schema.hpp"
   COMMENT "Validate and compile On1xMETA rewrite payloads and semantic constraints" VERBATIM)
-add_custom_target(on1x_meta_tables DEPENDS "${_meta_header}" "${_meta_generated}/rules_manifest.json")
+add_custom_target(on1x_meta_tables DEPENDS
+  "${_meta_header}" "${_meta_generated}/rules_manifest.json"
+  "${_meta_source_header}" "${_meta_generated}/source_manifest.json")
 add_library(on1x_meta_generated INTERFACE)
 add_dependencies(on1x_meta_generated on1x_meta_tables)
-target_include_directories(on1x_meta_generated INTERFACE "${_meta_generated}")
+target_include_directories(on1x_meta_generated INTERFACE "${_meta_generated}" "${CMAKE_CURRENT_SOURCE_DIR}")
 if(TARGET on1x_frontend)
   add_dependencies(on1x_frontend on1x_meta_tables)
-  target_include_directories(on1x_frontend BEFORE PRIVATE "${_meta_generated}")
+  target_include_directories(on1x_frontend BEFORE PRIVATE "${_meta_generated}" "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_sources(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/source_desugar.cpp")
 endif()
 if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
   if("${ON1X_META_RULE_FILES}" STREQUAL "${_meta_default_rules}")

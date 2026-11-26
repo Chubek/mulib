@@ -18,6 +18,7 @@
 #include <cstring>
 #include <filesystem>
 #include <cstdint>
+#include <fstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -182,6 +183,179 @@ void check_procedure_ast(On1xSDK_Session *session, On1xSDK_Options *options) {
     on1x_sdk_source_release(source);
 }
 
+void check_operator_ast(On1xSDK_Session *session, On1xSDK_Options *options) {
+    constexpr std::string_view path = "virtual/operators.on1x";
+    constexpr std::string_view text = R"(
+from .not_loaded import (operator("<*>"), ordinary as alias);
+operator (lexeme:"??", lexeme2:"?|", arity:"ternary", precedence:3,
+          tightness:"2", binds:"right", formals:a:i64,b:i64,c:i64) -> i64 {
+    return a+b+c;
+}
+operator (lexeme:"<+>", arity:"binary", formals:a:i64,b:i64) -> i64 {return a+b;}
+operator (lexeme:"^^", arity:"unary", formals:a:i64) -> i64 {return a;}
+infixr 4 <+>;
+macro authored {
+    rule () => block {
+        operator (lexeme:"<&>", arity:"binary", formals:a:i64,b:i64) -> i64 {return a+b;}
+        println(1<&>2);
+    };
+}
+fn f() {
+    let unary = ^^1;
+    let binary = 1<+>2;
+    let ternary = 1??2?|3;
+    let op = operator("??");
+    {
+        operator (lexeme:"%%", arity:"unary", position:"postfix", formals:a:i64) -> i64 {return a;}
+        infix 2 <+>;
+        let postfix = 1%%;
+    }
+}
+)";
+    On1xSDK_Source *source = nullptr;
+    assert(on1x_sdk_source_create(
+        session, path.data(), path.size(), text.data(), text.size(),
+        ON1X_SDK_SOURCE_UTF8, &source) == ON1X_SDK_OK);
+    auto *ast = parse(source, options);
+    const auto root = ast_info(ast);
+    assert(root.validation_state == ON1X_SDK_AST_PARSED_CANDIDATE);
+    auto node = [ast](On1xSDK_ASTNode id) {
+        On1xSDK_ASTNodeInfo info = ON1X_SDK_COMPILER_INIT(On1xSDK_ASTNodeInfo);
+        assert(on1x_sdk_ast_node(ast, id, &info) == ON1X_SDK_OK);
+        return info;
+    };
+    auto child = [ast, &node](On1xSDK_ASTNode parent, std::size_t index) {
+        On1xSDK_ASTNode id = 0;
+        assert(on1x_sdk_ast_child(ast, parent, index, &id) == ON1X_SDK_OK);
+        return node(id);
+    };
+    auto tag = [](const auto &info) { return std::string_view(info.tag, info.tag_size); };
+    auto spelling = [](const auto &info) { return std::string_view(info.text, info.text_size); };
+    auto check = [&](On1xSDK_ASTNode parent, std::string_view expected_tag,
+                     std::string_view expected_text, On1xSDK_ASTNodeCategory category) {
+        for (std::size_t i = 0; i < node(parent).child_count; ++i) {
+            auto info = child(parent, i);
+            if (tag(info) == expected_tag && spelling(info) == expected_text) {
+                assert(info.category == category);
+                assert(info.source_id != 0 && info.source_revision != 0);
+                return info;
+            }
+        }
+        assert(false && "expected a matching AST child");
+        return On1xSDK_ASTNodeInfo{};
+    };
+    auto metadata = [&](On1xSDK_ASTNode parent, std::string_view name,
+                        std::string_view value) {
+        check(parent, name, value, ON1X_SDK_AST_ATTRIBUTE);
+    };
+    auto decl = check(root.root, "operator_declaration", "??", ON1X_SDK_AST_DECLARATION);
+    assert(decl.byte_begin == text.find("operator (lexeme"));
+    assert(decl.flags == 0);
+    metadata(decl.node, "operator_arity", "ternary");
+    metadata(decl.node, "operator_lexeme2", "?|");
+    metadata(decl.node, "operator_position", "infix");
+    metadata(decl.node, "operator_precedence", "3");
+    metadata(decl.node, "operator_tightness", "2");
+    metadata(decl.node, "operator_binds", "right");
+    check(decl.node, "parameter", "a", ON1X_SDK_AST_PARAMETER);
+    check(decl.node, "i64_type", "i64", ON1X_SDK_AST_TYPE_SYNTAX);
+    check(decl.node, "return", "", ON1X_SDK_AST_STATEMENT);
+    auto local = check(root.root, "operator_declaration", "%%", ON1X_SDK_AST_DECLARATION);
+    assert(local.flags == ON1X_SDK_AST_FLAG_BLOCK_LOCAL);
+    metadata(local.node, "operator_position", "postfix");
+    auto authored = check(root.root, "macro", "authored", ON1X_SDK_AST_MACRO);
+    auto rule = check(authored.node, "macro_block_rule", "", ON1X_SDK_AST_MACRO_RULE);
+    auto template_decl = check(rule.node, "operator_declaration", "<&>", ON1X_SDK_AST_DECLARATION);
+    assert(template_decl.flags == ON1X_SDK_AST_FLAG_BLOCK_LOCAL);
+
+    auto directive = check(root.root, "infixr", "<+>", ON1X_SDK_AST_DIRECTIVE);
+    assert(directive.byte_begin == text.find("infixr 4"));
+    metadata(directive.node, "operator_tightness", "4");
+    On1xSDK_DirectiveInfo directive_info =
+        ON1X_SDK_COMPILER_INIT(On1xSDK_DirectiveInfo);
+    assert(on1x_sdk_ast_directive(ast, 0, &directive_info) == ON1X_SDK_OK);
+    assert(directive_info.node == directive.node);
+    assert(directive_info.kind == ON1X_SDK_DIRECTIVE_OPERATOR_FIXITY);
+    assert(std::string_view(directive_info.name, directive_info.name_size) == "<+>");
+    assert(std::string_view(directive_info.value, directive_info.value_size) == "4");
+    auto local_directive = check(root.root, "infix", "<+>", ON1X_SDK_AST_DIRECTIVE);
+    assert(local_directive.byte_begin == text.find("infix 2"));
+    metadata(local_directive.node, "operator_tightness", "2");
+
+    auto imp = check(root.root, "selective_import", "not_loaded", ON1X_SDK_AST_IMPORT);
+    check(imp.node, "operator_import", "<*>", ON1X_SDK_AST_IMPORT);
+    check(imp.node, "relative_import_depth", "1", ON1X_SDK_AST_IMPORT);
+    check(imp.node, "import_name", "ordinary as alias", ON1X_SDK_AST_IMPORT);
+
+    const auto function = check(root.root, "function", "f", ON1X_SDK_AST_DECLARATION).node;
+    auto initializer = [&](std::string_view variable, std::string_view expr_tag,
+                           std::string_view lexeme, std::string_view position,
+                           unsigned operands) {
+        auto let = check(function, "let", variable, ON1X_SDK_AST_STATEMENT);
+        auto expr = check(let.node, expr_tag, lexeme, ON1X_SDK_AST_EXPRESSION);
+        metadata(expr.node, "operator_position", position);
+        for (unsigned i = 0; i < operands; ++i) {
+            auto argument = child(expr.node, i);
+            assert(tag(argument) == "integer");
+            assert(spelling(argument) == std::to_string(i + 1));
+        }
+        return expr;
+    };
+    initializer("unary", "operator_unary", "^^", "prefix", 1);
+    initializer("binary", "operator_binary", "<+>", "infix", 2);
+    const auto app = initializer("ternary", "operator_ternary", "??", "infix", 3);
+    metadata(app.node, "operator_lexeme2", "?|");
+    const auto ref = initializer("op", "operator_reference", "??", "infix", 0);
+    metadata(ref.node, "operator_lexeme2", "?|");
+    assert(ref.child_count == 2);
+
+    On1xSDK_Options *limited = nullptr;
+    assert(on1x_sdk_options_clone(options, &limited) == ON1X_SDK_OK);
+    assert(on1x_sdk_options_set_limit(limited, ON1X_SDK_OPTION_MAX_AST_NODES, 16) == ON1X_SDK_OK);
+    auto *revision = snapshot(source);
+    On1xSDK_AST *rejected = nullptr;
+    assert(on1x_sdk_frontend_parse(revision, limited, &rejected) == ON1X_SDK_LIMIT);
+    assert(!rejected);
+    on1x_sdk_source_revision_release(revision);
+    on1x_sdk_options_release(limited);
+    on1x_sdk_ast_release(ast);
+    on1x_sdk_source_release(source);
+}
+
+void check_loaded_operator_ast(On1xSDK_Session *session, On1xSDK_VFS *vfs,
+                               On1xSDK_Options *options, const fs::path &directory) {
+    const auto entry_path = directory / "operator-entry.on1x";
+    const auto dep_path = directory / "operator_dep.on1x";
+    std::ofstream(entry_path) <<
+        "from .operator_dep import (operator(\"<+>\"), helper as ordinary);\n"
+        "fn main(){let callback=operator(\"<+>\");println(40<+>2);}\n";
+    std::ofstream(dep_path) <<
+        "operator(lexeme:\"<+>\",arity:\"binary\",precedence:5,"
+        "formals:a:i64,b:i64)->i64{return a+b;}\n"
+        "fn helper()->i64{return 0;}\n";
+    auto *entry = source_file(session, entry_path);
+    On1xSDK_Compilation *compilation = nullptr;
+    assert(on1x_sdk_compilation_create(session, vfs, options, entry, &compilation) == ON1X_SDK_OK);
+    On1xSDK_AST *ast = nullptr;
+    assert(on1x_sdk_compilation_ast(compilation, &ast) == ON1X_SDK_OK);
+    const auto root = ast_info(ast);
+    assert(root.validation_state == ON1X_SDK_AST_PARSED_CANDIDATE);
+    assert(root.source_count == 2);
+    for (const auto expected : {"operator_declaration", "operator_binary",
+                                "operator_reference", "operator_import", "import_name"}) {
+        const auto id = find_tag(ast, root.root, expected);
+        On1xSDK_ASTNodeInfo info = ON1X_SDK_COMPILER_INIT(On1xSDK_ASTNodeInfo);
+        assert(id && on1x_sdk_ast_node(ast, id, &info) == ON1X_SDK_OK);
+        assert(info.source_id != 0);
+        const auto from_dep = std::string_view(expected) == "operator_declaration";
+        assert(std::string_view(info.path, info.path_size) ==
+               fs::canonical(from_dep ? dep_path : entry_path).string());
+    }
+    on1x_sdk_ast_release(ast);
+    on1x_sdk_compilation_release(compilation);
+    on1x_sdk_source_release(entry);
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -206,6 +380,8 @@ int main(int argc, char **argv) {
     assert(on1x_sdk_vfs_create(session, &vfs) == ON1X_SDK_OK);
     check_borrow_ast(session, options);
     check_procedure_ast(session, options);
+    check_operator_ast(session, options);
+    check_loaded_operator_ast(session, vfs, options, root);
 
     /* Invalid option combinations do not partially mutate the options. */
     const auto initial_options_revision = on1x_sdk_options_revision(options);

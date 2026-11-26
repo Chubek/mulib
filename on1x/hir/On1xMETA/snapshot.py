@@ -11,7 +11,7 @@ import tempfile
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from generate import compile_inputs, load_parser, publish
+from generate import compile_inputs, compile_source, load_parser, publish
 from generate_parser import generate_parser
 
 
@@ -61,14 +61,18 @@ def main():
             parser = work / "On1xMETA.py"
             generate_parser(args.perl, args.libstone / "cornerstone/LLSynth/scripts/llsynth.pl",
                             HERE / "On1xMETA.llsynth", parser)
-            header, manifest = compile_inputs(load_parser(parser), [
+            parsed = load_parser(parser)
+            header, manifest = compile_inputs(parsed, [
                 HERE / "canonicalize.o1m", HERE / "desugar.o1m", HERE / "semantic.o1m"])
+            source, source_manifest = compile_source(parsed, [HERE / "source/operators.o1m"])
             artifacts = {
                 "On1xMETA.py": parser.read_text(encoding="utf-8"),
                 "parser_manifest.json": json.dumps(provenance(args.libstone, parser),
                                                    sort_keys=True, indent=2) + "\n",
                 "on1x_meta_rules.hpp": header,
                 "rules_manifest.json": manifest,
+                "on1x_meta_source.hpp": source,
+                "source_manifest.json": source_manifest,
             }
             for name, text in artifacts.items():
                 destination = HERE / "generated" / name

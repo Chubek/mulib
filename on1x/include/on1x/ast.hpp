@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -27,6 +28,29 @@ struct Capture { std::string name; Type type; };
 // place alias or named-function parameter whose value type remains the
 // referent type.
 enum class BorrowMode { Value, Shared, Exclusive };
+enum class OperatorArity { Unary, Binary, Ternary };
+enum class OperatorPosition { Prefix, Infix, Postfix };
+enum class OperatorAssociativity { Left, Right };
+struct OperatorHeader {
+ Location where;
+ std::string lexeme,lexeme2;
+ OperatorArity arity=OperatorArity::Binary;
+ OperatorPosition position=OperatorPosition::Infix;
+ unsigned precedence=0,tightness=0;
+ OperatorAssociativity binds=OperatorAssociativity::Left;
+ std::size_t macro_instance=0; // Host-only instance of a copied syntax declaration.
+};
+struct OperatorBinding { OperatorHeader header; std::string identity; };
+// Parser-created provenance, never transported as PPX authority. Adjacent
+// stamps link only when the original parse admitted an unparenthesized edge.
+struct OperatorParse {
+ enum class Form {Prefix,Postfix,Infix,Ternary,Suffix};
+ Form form;
+ unsigned rank;
+ OperatorAssociativity binds=OperatorAssociativity::Left;
+ std::optional<Location> directive;
+ std::shared_ptr<const OperatorParse> left,right;
+};
 struct Pattern {
  enum class Kind { Name, Tuple, Wildcard, Rest, Literal, Variant, Array, Record, Or, As } kind=Kind::Name;
   Location where;
@@ -71,6 +95,7 @@ struct TypeParameter {
 struct Stmt;
 struct Expr;
 struct Macro;
+struct OperatorDeclaration;
 using ExprPtr = std::unique_ptr<Expr>;
 struct Expr {
   enum class Kind { Integer, Float, Boolean, String, Variable, ClicheMember, InherentMember, Unary, Binary, Call, Lambda, Tuple, PolyPack, PolyProjection,
@@ -78,11 +103,15 @@ struct Expr {
                      Quote, Splice, Lift, Run, SyntaxLet, Record, Variant, Match, Array, Field, Index, Slice, Length,
                         PatternMatch, Case, Unit, Region, TagTest, Payload, Project, Loop, Propagate, SourceCsp, Csp, UnsafeBlock,
                          Character, ByteBuffer, Interpolated, RegexLiteral, RegexMatch, RegexCapture,
-                         Borrow } kind;
+                          Borrow, OperatorReference, OperatorUnary, OperatorBinary, OperatorTernary } kind;
   enum class Reference { Unresolved, Local, Function, Extern, Intrinsic, UnsafeForeign, ScalarForeign, BorrowFunction } reference = Reference::Unresolved;
  bool unsafe_region = false; // Canonical region lowered from a lexical unsafe expression.
  Location where;
  std::string text;
+ std::string operator_lexeme2,operator_identity; // Identity is host-only.
+  OperatorPosition operator_position=OperatorPosition::Infix;
+  std::shared_ptr<const OperatorParse> operator_parse;
+  bool operator_grouped=false;
   std::vector<std::string> labels;
   std::vector<Pattern> patterns;
    bool statement_match=false;
@@ -130,7 +159,10 @@ struct Stmt {
    bool ref_store = false; // := writes through an exclusive borrowed place.
  bool prototype = false; // Type-checked generic instance, never emitted.
  std::vector<std::unique_ptr<Stmt>> instances; // Stable storage during inference.
- ExprPtr value;
+  ExprPtr value;
+  // A declaration inside macro syntax is only admitted if that syntax is
+  // instantiated. Carried by an otherwise empty Block, erased before PPX/HIR.
+  std::unique_ptr<OperatorDeclaration> syntax_operator;
   std::vector<Stmt> body, otherwise; // While.otherwise is its latch, outside body scope.
 };
 struct Function {
@@ -152,6 +184,18 @@ struct Function {
   // Host-only On1xMETA pass history. Never an input to semantic verification.
   bool meta_canonicalized=false;
   bool meta_folded_identity=false;
+ };
+struct OperatorDeclaration {
+ OperatorHeader header;
+ Function function;
+ std::string identity; // Host-only; the hidden Function::name when resolved.
+ bool block_local=false; // Host-only; not part of a module's operator exports.
+};
+struct FixityDirective {
+ Location where;
+ std::string lexeme;
+ unsigned tightness=0; // Secondary rank; the declaration's precedence tier is unchanged.
+ OperatorAssociativity binds=OperatorAssociativity::Left;
 };
 inline bool takes_borrows(const Function& function){
  for(const auto& parameter:function.params)
@@ -224,7 +268,8 @@ struct InterfaceObligation {
 };
 inline constexpr std::size_t max_interface_files=256;
 struct MacroParameter {
- enum class Kind { Capture, Literal, Wildcard, List, Vector, Tuple, Call, Unary, Binary } kind=Kind::Capture;
+ enum class Kind { Capture, Literal, Wildcard, List, Vector, Tuple, Call, Unary, Binary,
+                   OperatorReference, Ternary } kind=Kind::Capture;
  Location where;std::string name,category;bool repeated=false;
  ExprPtr literal; // Non-null for a binding-sensitive literal pattern.
  std::vector<MacroParameter> elements;
@@ -245,7 +290,7 @@ struct ModuleExtension {
  std::string owner,source;
  std::vector<Token> tokens;
 };
-struct ImportName { std::string name,alias; };
+struct ImportName { std::string name,alias; bool is_operator=false; };
 struct Import {
  Location where;
  std::string module,alias;
@@ -307,7 +352,15 @@ struct Docstring {
  Location where;
 };
 struct Unit {
-  std::vector<std::string> imports; std::vector<Function> functions;
+   std::vector<std::string> imports; std::vector<Function> functions;
+   std::vector<OperatorDeclaration> operators;
+   std::vector<FixityDirective> fixity_directives;
+   // Host-retained namespace metadata for source transformations. Wire
+   // locations do not select a scope or confer access to an operator.
+   std::map<std::string,std::vector<OperatorBinding>> operator_scopes;
+   std::map<std::string,std::string> operator_owners; // Function/hidden operator name -> scope key.
+   std::string operator_entry; // Scope for a newly synthesized top-level function.
+   std::set<std::string> operator_lazy_functions; // Automatic operator definitions and optional helpers.
   std::vector<Import> module_imports;
   std::vector<KernelImport> kernel_imports;
   std::vector<ForeignImport> foreign_imports;

@@ -2,6 +2,9 @@
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
 #include <on1x/patterns.hpp>
+#include <on1x/operator_scan.h>
+#include <on1x/operator_scope.hpp>
+#include "ppx_internal.hpp"
 #include <charconv>
 #include <set>
 #include <algorithm>
@@ -60,6 +63,26 @@ SExpr parameters(const std::vector<Param>& ps){
 }
 SExpr expression(const Expr& e);
 SExpr block(const std::vector<Stmt>& body,const Location& at);
+const char* position_name(OperatorPosition position){
+ return position==OperatorPosition::Prefix?"prefix":position==OperatorPosition::Postfix?"postfix":"infix";
+}
+const char* arity_name(OperatorArity arity){
+ return arity==OperatorArity::Unary?"unary":arity==OperatorArity::Ternary?"ternary":"binary";
+}
+const char* binds_name(OperatorAssociativity binds){return binds==OperatorAssociativity::Right?"right":"left";}
+SExpr operator_header(const OperatorHeader& h){
+ return form("OperatorHeader",{string(h.lexeme),string(h.lexeme2),string(arity_name(h.arity)),
+  string(position_name(h.position)),symbol(std::to_string(h.precedence)),
+  symbol(std::to_string(h.tightness)),string(binds_name(h.binds)),loc(h.where)});
+}
+SExpr operator_generics(const Function& f){
+ std::vector<SExpr> names;for(const auto& parameter:f.type_parameters)names.push_back(string(parameter.name));
+ return list(std::move(names));
+}
+SExpr operator_directive(const FixityDirective& d){
+ return form("FixityDirective",{string(d.lexeme),symbol(std::to_string(d.tightness)),
+  string(binds_name(d.binds)),loc(d.where)});
+}
 SExpr extension(const Expr& e,bool attribute){
  std::vector<SExpr> args;for(std::size_t i=1;i<e.children.size();++i)args.push_back(expression(*e.children[i]));
  return form(attribute?"Attribute":"ExtensionExpr",{string(e.text),string(literal_value(e.children.at(0)->text)),list(std::move(args)),loc(e.where)});
@@ -103,9 +126,16 @@ SExpr expression(const Expr& e){
   return form("InterpolatedString",{list(std::move(parts)),std::move(at)});
  }
  case K::Boolean:return form("BooleanLiteral",{symbol(e.text),std::move(at)});
- case K::Variable:return form("Identifier",{string(e.text),std::move(at)});
- case K::Unary:return form("Unary",{symbol(e.text),expression(*e.children.at(0)),std::move(at)});
- case K::Binary:return form("Binary",{symbol(e.text),expression(*e.children.at(0)),expression(*e.children.at(1)),std::move(at)});
+  case K::Variable:return form("Identifier",{string(e.text),std::move(at)});
+  case K::Unary:case K::Binary:
+   if(e.children.size()!=(e.kind==K::Unary?1u:2u))
+    throw Error(e.where,"native operator syntax is not a first-class reference","ON1X-OPERATOR-ARITY");
+   if(e.kind==K::Unary)return form("Unary",{symbol(e.text),expression(*e.children[0]),std::move(at)});
+   return form("Binary",{symbol(e.text),expression(*e.children[0]),expression(*e.children[1]),std::move(at)});
+  case K::OperatorReference:return form("OperatorReference",{string(e.text),std::move(at)});
+  case K::OperatorUnary:return form("OperatorUnary",{string(e.text),string(position_name(e.operator_position)),expression(*e.children.at(0)),std::move(at)});
+  case K::OperatorBinary:return form("OperatorBinary",{string(e.text),expression(*e.children.at(0)),expression(*e.children.at(1)),std::move(at)});
+  case K::OperatorTernary:return form("OperatorTernary",{string(e.text),string(e.operator_lexeme2),expression(*e.children.at(0)),expression(*e.children.at(1)),expression(*e.children.at(2)),std::move(at)});
  case K::Tuple:case K::Call:{
   std::vector<SExpr> args;for(const auto& c:e.children)args.push_back(expression(*c));
   if(e.kind==K::Call)return form("Call",{expression(*e.callee),list(std::move(args)),std::move(at)});
@@ -218,19 +248,23 @@ Pattern read_pattern(const SExpr& n){
   if(p.binds()&&!p.name.empty())base_schema().validate(string(p.name),"Name","$.pattern_binder");
  }else invalid(n,"unhandled pattern constructor "+tag(n));return p;
 }
-std::vector<Param> read_parameters(const SExpr& n){
- std::vector<Param> ps;for(const auto& c:n.items){Param p;p.where=location(c.items.back());p.type=read_type(field(c,1));
+ std::vector<Param> read_parameters(const SExpr& n,std::size_t bound=0){
+  std::vector<Param> ps;for(const auto& c:n.items){Param p;p.where=location(c.items.back());p.type=read_type(field(c,1),false,bound);
   if(tag(c)=="Parameter")p.name=field(c,0).text;
   else if(tag(c)=="PatternParameter"){p.pattern=read_pattern(field(c,0));patterns::require_binding(*p.pattern);p.name="@argument_"+std::to_string(ps.size());}
   else invalid(c,"unhandled parameter constructor "+tag(c));
   ps.push_back(std::move(p));
  }return ps;
 }
-std::vector<Stmt> read_block(const SExpr& n);
-ExprPtr read_expression(const SExpr& n){
+ struct BodyReader {
+  std::size_t bound=0;
+  ExprPtr read_expression(const SExpr& n);
+  std::vector<Stmt> read_block(const SExpr& n);
+ };
+ ExprPtr BodyReader::read_expression(const SExpr& n){
    const auto& k=tag(n);auto e=std::make_unique<Expr>();e->where=location(n.items.back());
       if(k=="SourceCsp"){
-       e->kind=K::SourceCsp;e->text=field(n,0).text;e->result=read_type(field(n,1));
+        e->kind=K::SourceCsp;e->text=field(n,0).text;e->result=read_type(field(n,1),false,bound);
          static const std::set<std::string> ops={"launch","launch_async","await_timer","launch_exec","launch_capture","channel","split","join","cancel","send","recv","try_send","try_recv","close","poll","offer_recv","offer_send","offer_after"};
        if(!ops.contains(e->text))invalid(n,"unknown concurrency operation");
        for(const auto& arg:field(n,2).items)e->children.push_back(read_expression(arg));
@@ -264,7 +298,7 @@ ExprPtr read_expression(const SExpr& n){
     auto found=std::find(names.begin(),names.end(),field(n,0).text);if(found==names.end())invalid(n,"unknown data expression kind");
     e->kind=static_cast<K>(static_cast<std::size_t>(K::Record)+static_cast<std::size_t>(found-names.begin()));e->text=field(n,1).text;
     for(const auto& label:field(n,2).items)e->labels.push_back(label.text);
-     e->result=read_type(field(n,3));for(const auto& c:field(n,4).items)e->children.push_back(read_expression(c));
+      e->result=read_type(field(n,3),false,bound);for(const auto& c:field(n,4).items)e->children.push_back(read_expression(c));
      if(e->kind==K::Record&&e->result!=Type::Void&&e->result.kind()!=Type::Named)invalid(n,"named record annotation must be a named reference");
      if(e->kind!=K::Record&&e->kind!=K::Variant&&e->result!=Type::Void)invalid(n,"unexpected data expression annotation");
     std::size_t arity=e->children.size();
@@ -295,7 +329,27 @@ ExprPtr read_expression(const SExpr& n){
  }
  else if(k=="BooleanLiteral"){e->kind=K::Boolean;e->text=field(n,0).text;}
  else if(k=="Identifier"){e->kind=K::Variable;e->text=field(n,0).text;}
- else if(k=="Unary"||k=="Binary"){
+  else if(k=="OperatorReference"||k=="OperatorUnary"||k=="OperatorBinary"||k=="OperatorTernary"){
+   e->text=field(n,0).text;
+   if(!on1x_operator_spelling(e->text.data(),e->text.size()))
+    invalid(n,"invalid custom operator spelling");
+   if(k=="OperatorReference")e->kind=K::OperatorReference;
+   else if(k=="OperatorUnary"){
+    e->kind=K::OperatorUnary;
+    const auto& position=field(n,1).text;
+    if(position!="prefix"&&position!="postfix")invalid(n,"unary operator position must be prefix or postfix");
+    e->operator_position=position=="prefix"?OperatorPosition::Prefix:OperatorPosition::Postfix;
+    e->children.push_back(read_expression(field(n,2)));
+   }else if(k=="OperatorBinary"){
+    e->kind=K::OperatorBinary;
+    for(std::size_t i=1;i<=2;++i)e->children.push_back(read_expression(field(n,i)));
+   }else{
+    e->kind=K::OperatorTernary;e->operator_lexeme2=field(n,1).text;
+    if(!on1x_operator_spelling(e->operator_lexeme2.data(),e->operator_lexeme2.size()))
+     invalid(n,"invalid second ternary operator spelling");
+    for(std::size_t i=2;i<=4;++i)e->children.push_back(read_expression(field(n,i)));
+   }
+  }else if(k=="Unary"||k=="Binary"){
   e->kind=k=="Unary"?K::Unary:K::Binary;e->text=field(n,0).text;e->children.push_back(read_expression(field(n,1)));
   if(k=="Binary")e->children.push_back(read_expression(field(n,2)));
  }else if(k=="Tuple"||k=="Call"){
@@ -307,12 +361,12 @@ ExprPtr read_expression(const SExpr& n){
    e->kind=k=="Quote"?K::Quote:k=="Splice"?K::Splice:k=="Lift"?K::Lift:K::Run;e->children.push_back(read_expression(field(n,0)));
   }else if(k=="Lambda"||k=="ProcedureLambda"){
    e->kind=K::Lambda;e->procedure=k=="ProcedureLambda";
-   e->parameters=read_parameters(field(n,0));e->result=read_type(field(n,1));e->body=read_block(field(n,2));
+    e->parameters=read_parameters(field(n,0),bound);e->result=read_type(field(n,1),false,bound);e->body=read_block(field(n,2));
  }else if(k=="ExtensionExpr"||k=="Attribute")invalid(n,"unhandled extension @"+field(n,0).text+"("+field(n,1).text+")");
  else invalid(n,"unhandled extension constructor "+k);
  return e;
 }
-std::vector<Stmt> read_block(const SExpr& n){
+ std::vector<Stmt> BodyReader::read_block(const SExpr& n){
  if(tag(n)!="Block")invalid(n,"unhandled block constructor "+tag(n));
  std::vector<Stmt> body;
  for(const auto& c:field(n,0).items){Stmt s;s.where=location(c.items.back());const auto& k=tag(c);
@@ -323,7 +377,7 @@ std::vector<Stmt> read_block(const SExpr& n){
    }
    else if(k=="Let"||k=="Var"||k=="LetPattern"){
    s.kind=Stmt::Kind::Let;s.mutable_binding=k=="Var";if(k=="LetPattern"){s.pattern=read_pattern(field(c,0));patterns::require_binding(*s.pattern);}else s.name=field(c,0).text;
-   s.declared=read_type(field(c,1),true);s.value=read_expression(field(c,2));
+    s.declared=read_type(field(c,1),true,bound);s.value=read_expression(field(c,2));
    }else if(k=="Assign"){s.kind=Stmt::Kind::Assign;s.name=field(c,0).text;s.value=read_expression(field(c,1));}
    else if(k=="ControlWhile"){
     s.kind=Stmt::Kind::While;s.label=field(c,0).text;s.label_context=number(field(c,1));s.value=read_expression(field(c,2));s.body=read_block(field(c,3));s.otherwise=read_block(field(c,4));
@@ -382,10 +436,14 @@ SExpr encode(const Unit& unit){
     }
    };
   for(const auto& d:unit.nominals)for(const auto& field:d.fields)reject(field,d.where);
-  for(const auto& f:unit.functions){
-   reject(f.result,f.where);for(const auto& p:f.params){reject(p.type,p.where);if(p.pattern)pattern(pattern,*p.pattern);}
-   body(body,f.body);
-  }
+   auto check_function=[&](const Function& f){
+    reject(f.result,f.where);for(const auto& p:f.params){reject(p.type,p.where);if(p.pattern)pattern(pattern,*p.pattern);}
+    body(body,f.body);
+   };
+   for(const auto& f:unit.functions)
+    if(!unit.operator_lazy_functions.contains(f.name))check_function(f);
+   for(const auto& d:unit.operators)
+    if(!unit.operator_lazy_functions.contains(d.identity))check_function(d.function);
  if(!unit.cliches.empty()||!unit.cliche_implementations.empty())
   throw Error(!unit.cliches.empty()?unit.cliches.front().where:
               unit.cliche_implementations.front().where,
@@ -398,11 +456,11 @@ SExpr encode(const Unit& unit){
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: declaration carriers require native expansion (inspection does not execute processors)","ON1X-CAT-PPX");
  if(!unit.macros.empty())throw Error(unit.macros.front().where,"expand macros before PPX encoding");
  std::vector<SExpr> functions;
- for(const auto& d:unit.nominals){
+  for(const auto& d:unit.nominals){
   std::vector<SExpr> params,labels,fields;for(const auto& p:d.parameters)params.push_back(string(p));for(const auto& l:d.labels)labels.push_back(string(l));for(const auto& f:d.fields)fields.push_back(type(f));
   functions.push_back(form("NominalDeclaration",{string(d.kind==Type::Record?"record":"enum"),string(d.name),list(std::move(params)),list(std::move(labels)),list(std::move(fields)),loc(d.where)}));
  }
-   for(const auto& f:unit.functions){
+   auto add_function=[&](const Function& f){
      if(f.name.starts_with("@stdffi_"))
       throw Error(f.where,"portable stdffi definitions are not Unit-v1 PPX wire data","ON1X-STDFFI-PPX");
      if(!f.kernel_symbol.empty()||f.kernel_link_only)
@@ -410,14 +468,179 @@ SExpr encode(const Unit& unit){
    std::vector<SExpr> attributes;for(const auto& a:f.attributes)attributes.push_back(extension(*a,true));
   if(f.external)functions.push_back(form("Extern",{string(f.name),parameters(f.params),type(f.result),list(std::move(attributes)),loc(f.where)}));
   else functions.push_back(form(f.procedure?"Procedure":"Function",{string(f.name),parameters(f.params),type(f.result),block(f.body,f.where),list(std::move(attributes)),loc(f.where)}));
+  };
+  // Automatically loaded operator definitions/private helpers stay host-side.
+  // Explicitly authored or imported declarations are source PPX syntax.
+  for(const auto& f:unit.functions)if(!unit.operator_lazy_functions.contains(f.name))add_function(f);
+  for(const auto& d:unit.operators){
+   if(unit.operator_lazy_functions.contains(d.identity))continue;
+   const auto& f=d.function;
+   if(!f.attributes.empty()||f.external||f.procedure)
+    throw Error(d.header.where,"PPX Unit v1 requires a source operator function body");
+   functions.push_back(form("OperatorDeclaration",{operator_header(d.header),operator_generics(f),
+    parameters(f.params),type(f.result),block(f.body,f.where)}));
   }
+  for(const auto& d:unit.fixity_directives)functions.push_back(operator_directive(d));
   for(const auto& doc:unit.docstrings)
    functions.push_back(form("Docstring",{string(std::string(1,doc.marker)),string(doc.text),loc(doc.where)}));
   return form("Unit",{symbol("1"),list(std::move(functions))});
 }
-Unit decode(const SExpr& tree){
- base_schema().validate(tree);
-  Unit unit;for(const auto& n:field(tree,1).items){
+ namespace {
+ bool same_wire(const SExpr& left,const SExpr& right){
+  return left.kind==right.kind&&left.text==right.text&&left.items.size()==right.items.size()&&
+   std::equal(left.items.begin(),left.items.end(),right.items.begin(),same_wire);
+ }
+ unsigned operator_rank(const SExpr& n){
+  auto rank=number(n);if(rank>9)invalid(n,"operator rank must be in 0..9");
+  return static_cast<unsigned>(rank);
+ }
+ OperatorAssociativity operator_binds(const SExpr& n){
+  if(n.text=="left")return OperatorAssociativity::Left;
+  if(n.text=="right")return OperatorAssociativity::Right;
+  invalid(n,"operator binds must be left or right");
+ }
+ bool source_spelling(const std::string& text){
+  return on1x_operator_spelling(text.data(),text.size());
+ }
+ OperatorHeader read_operator_header(const SExpr& n){
+  OperatorHeader h;h.where=location(field(n,7));h.lexeme=field(n,0).text;h.lexeme2=field(n,1).text;
+  const auto& arity=field(n,2).text;const auto& position=field(n,3).text;
+  if(arity=="unary")h.arity=OperatorArity::Unary;
+  else if(arity=="binary")h.arity=OperatorArity::Binary;
+  else if(arity=="ternary")h.arity=OperatorArity::Ternary;
+  else invalid(n,"operator arity must be unary, binary, or ternary");
+  if(position=="prefix")h.position=OperatorPosition::Prefix;
+  else if(position=="postfix")h.position=OperatorPosition::Postfix;
+  else if(position=="infix")h.position=OperatorPosition::Infix;
+  else invalid(n,"operator position must be prefix, postfix, or infix");
+  if((h.arity==OperatorArity::Unary)==(h.position==OperatorPosition::Infix))
+   invalid(n,"operator position disagrees with its arity");
+  if(!source_spelling(h.lexeme)||
+     (h.arity==OperatorArity::Ternary?(!source_spelling(h.lexeme2)||h.lexeme==h.lexeme2):!h.lexeme2.empty()))
+   invalid(n,"invalid operator spelling or ternary delimiter");
+  h.precedence=operator_rank(field(n,4));h.tightness=operator_rank(field(n,5));h.binds=operator_binds(field(n,6));
+  return h;
+ }
+ OperatorDeclaration read_new_operator(const SExpr& n){
+  OperatorDeclaration d;d.header=read_operator_header(field(n,0));
+  auto& f=d.function;f.where=location(field(n,4).items.back());
+  std::set<std::string> generics,formals;
+  for(const auto& g:field(n,1).items){
+   if(!generics.insert(g.text).second||generics.size()>32)invalid(g,"invalid operator generic binders");
+   f.type_parameters.push_back({d.header.where,g.text,{}});
+  }
+  const auto count=d.header.arity==OperatorArity::Unary?1u:d.header.arity==OperatorArity::Binary?2u:3u;
+  if(field(n,2).items.size()!=count)invalid(n,"operator formal count disagrees with its arity");
+  for(const auto& p:field(n,2).items){
+   if(tag(p)!="Parameter"||!formals.insert(field(p,0).text).second)
+    invalid(p,"operator formals must be distinct names");
+   Param formal;formal.where=location(p.items.back());formal.name=field(p,0).text;
+   formal.type=read_type(field(p,1),false,generics.size());f.params.push_back(std::move(formal));
+  }
+  f.result=read_type(field(n,3),false,generics.size());
+  f.body=BodyReader{generics.size()}.read_block(field(n,4));
+  return d;
+ }
+ bool scalar_annotation(const Type& value){
+  return value.is_numeric()||value==Type::Bool||value==Type::Char||value==Type::String||value==Type::Void;
+ }
+ void rewrite_operator_signature(const SExpr& n,OperatorDeclaration& d,const Unit& original){
+  auto& f=d.function;
+  const auto& formals=field(n,2);
+  if(same_wire(formals,parameters(f.params))&&same_wire(field(n,3),type(f.result)))return;
+  auto owner=original.operator_owners.find(d.identity);
+  const bool entry=owner==original.operator_owners.end()?original.source_digests.size()<=1:
+                                                        owner->second==original.operator_entry;
+  const auto fail=[&]{invalid(n,"PPX cannot change the interface of this intrinsic operator declaration");};
+  // Only ordinary scalar annotations and formal names may change in an entry
+  // module's plain operator. Its syntax slot/identity and all imported,
+  // constrained, borrowed or lexical interfaces remain host-owned.
+  if(!entry||d.block_local||f.external||f.extension_generated||!f.type_parameters.empty()||
+     !f.constraints.empty()||formals.items.size()!=f.params.size()||!scalar_annotation(f.result))
+   fail();
+  const auto result=read_type(field(n,3));
+  if(!scalar_annotation(result))fail();
+  std::set<std::string> names;
+  for(std::size_t i=0;i<f.params.size();++i){
+   auto& p=f.params[i];
+   const auto& wire=formals.items[i];
+   if(tag(wire)!="Parameter"||p.pattern||p.borrow!=BorrowMode::Value||
+      !scalar_annotation(p.type)||!same_wire(wire.items.back(),loc(p.where))||
+      !names.insert(field(wire,0).text).second)
+    fail();
+   auto t=read_type(field(wire,1));
+   if(!scalar_annotation(t)||t==Type::Void)fail();
+   p.name=field(wire,0).text;p.type=std::move(t);
+  }
+  f.result=result;
+ }
+ Unit decode_unit(const SExpr& tree,Unit* original){
+  base_schema().validate(tree);
+  std::size_t operators=0,directives=0,serial=0;
+  std::set<std::string> hidden_names,identities;
+  std::vector<OperatorDeclaration*> exposed;
+  OperatorScope entry;
+  if(original){
+   if(auto scope=original->operator_scopes.find(original->operator_entry);scope!=original->operator_scopes.end())
+    for(const auto& binding:scope->second)entry.add(binding,binding.header.where);
+   for(auto& d:original->operators){
+    identities.insert(d.identity);
+    if(!original->operator_lazy_functions.contains(d.identity))exposed.push_back(&d);
+   }
+   for(const auto& f:original->functions)
+    if(original->operator_lazy_functions.contains(f.name))hidden_names.insert(f.name);
+  }
+  std::map<std::string,const Function*> generics;
+  if(original)for(const auto& f:original->functions)
+   if(!f.type_parameters.empty())generics.emplace(f.name,&f);
+   Unit unit;for(const auto& n:field(tree,1).items){
+    if(tag(n)=="OperatorDeclaration"){
+     if(!original)invalid(n,"an operator declaration requires trusted PPX readmission");
+     if(operators==exposed.size()){
+      if(unit.operators.size()>=operators+32)invalid(n,"PPX operator declaration limit exceeded");
+      auto d=read_new_operator(n);
+      const auto authored=d.header.where;
+      do{
+       ++serial;
+       d.header.where={"<ppx-generated-operator>",serial,1,serial};
+       d.identity=operator_identity(d.header);
+      }while(!identities.insert(d.identity).second);
+      d.function.name=d.identity;d.function.where=d.header.where;
+      entry.add({d.header,d.identity},authored);
+      unit.operators.push_back(std::move(d));continue;
+     }
+     auto& d=*exposed[operators++];const auto& f=d.function;
+     auto header=read_operator_header(field(n,0));
+      if(header.lexeme!=d.header.lexeme||header.lexeme2!=d.header.lexeme2||
+         header.arity!=d.header.arity||header.position!=d.header.position||
+         !same_wire(field(field(n,0),7),loc(d.header.where))||
+         !same_wire(field(n,1),operator_generics(f)))
+       invalid(n,"PPX cannot change the interface or order of intrinsic operator declarations");
+      rewrite_operator_signature(n,d,*original);
+      auto body=BodyReader{f.type_parameters.size()}.read_block(field(n,4));
+     d.header.precedence=header.precedence;d.header.tightness=header.tightness;d.header.binds=header.binds;
+     d.function.body=std::move(body);unit.operators.push_back(std::move(d));
+     continue;
+    }
+    if(tag(n)=="FixityDirective"){
+     if(!original)invalid(n,"a fixity directive requires trusted PPX readmission");
+     if(directives==original->fixity_directives.size()){
+       if(unit.fixity_directives.size()>=directives+32)invalid(n,"PPX fixity directive limit exceeded");
+       const auto& lexeme=field(n,0).text;
+       if(!source_spelling(lexeme))invalid(n,"invalid fixity spelling");
+       // An appended directive has no authored lexical position. In
+       // particular a wire location cannot apply it retroactively to source.
+       auto generated=unit.fixity_directives.size()-directives+1;
+       unit.fixity_directives.push_back({{"<ppx-generated-fixity>",generated,1,generated},
+                                        lexeme,operator_rank(field(n,1)),operator_binds(field(n,2))});
+      continue;
+     }
+     auto d=original->fixity_directives[directives++];
+     if(d.lexeme!=field(n,0).text||!same_wire(field(n,3),loc(d.where)))
+      invalid(n,"PPX cannot redirect an existing operator fixity directive");
+     d.tightness=operator_rank(field(n,1));d.binds=operator_binds(field(n,2));
+     unit.fixity_directives.push_back(std::move(d));continue;
+    }
    if(tag(n)=="Docstring"){
     const auto& marker=field(n,0).text;
     if(marker!="!"&&marker!=">")invalid(n,"unknown docstring marker");
@@ -435,16 +658,55 @@ Unit decode(const SExpr& tree){
   Function f;f.where=location(n.items.back());
   f.external=tag(n)=="Extern";f.procedure=tag(n)=="Procedure";
   if(!f.external&&!f.procedure&&tag(n)!="Function")invalid(n,"unhandled declaration extension "+tag(n));
-  f.name=field(n,0).text;f.params=read_parameters(field(n,1));f.result=read_type(field(n,2));
-  if(!f.external)f.body=read_block(field(n,3));
+   f.name=field(n,0).text;
+   if(hidden_names.contains(f.name))invalid(n,"PPX cannot replace a private operator helper: "+f.name);
+   if(auto saved=generics.find(f.name);saved!=generics.end()){
+    // Unit v1 has no generic-binder field on ordinary Function. In particular,
+    // automatically visible operators can depend on generic ordinary helpers.
+    // Read their source bodies under the existing host-declared binder list.
+    const auto& baseline=*saved->second;
+    if(f.external!=baseline.external||f.procedure!=baseline.procedure||
+       !same_wire(field(n,1),parameters(baseline.params))||
+       !same_wire(field(n,2),type(baseline.result)))
+     invalid(n,"PPX cannot change a generic function interface");
+    f.type_parameters=baseline.type_parameters;f.constraints=baseline.constraints;
+    f.params=baseline.params;f.result=baseline.result;
+   }else{
+    f.params=read_parameters(field(n,1));f.result=read_type(field(n,2));
+   }
+   if(!f.external)f.body=BodyReader{f.type_parameters.size()}.read_block(field(n,3));
   const auto& attrs=field(n,f.external?3:4);if(!attrs.items.empty())invalid(attrs.items[0],"unhandled function attribute");
   unit.functions.push_back(std::move(f));
  }
- if(unit.functions.empty())invalid(tree,"empty compilation unit");
- return unit;
-}
-void require_core(const Unit& unit){
- require_no_kernel_imports(unit);
+  if(original){
+    if(operators!=exposed.size()||directives!=original->fixity_directives.size())
+    invalid(tree,"PPX cannot erase operator declarations or fixity directives");
+   for(std::size_t i=directives;i<unit.fixity_directives.size();++i){
+    const auto& d=unit.fixity_directives[i];
+    if(!entry.find(d.lexeme,OperatorPosition::Infix))
+     throw Error(d.where,"PPX fixity directive requires a visible infix operator: '"+d.lexeme+"'","ON1X-OPERATOR-PPX");
+   }
+   unit.operator_scopes=std::move(original->operator_scopes);unit.operator_owners=std::move(original->operator_owners);
+   unit.operator_entry=std::move(original->operator_entry);
+   unit.operator_lazy_functions=std::move(original->operator_lazy_functions);
+   if(unit.operators.size()>operators){
+    record_operator_scope(unit,entry,unit.operator_entry);
+    for(std::size_t i=operators;i<unit.operators.size();++i)
+     unit.operator_owners[unit.operators[i].identity]=unit.operator_entry;
+   }
+   for(auto& d:original->operators)
+    if(unit.operator_lazy_functions.contains(d.identity))unit.operators.push_back(std::move(d));
+   for(auto& f:original->functions)
+    if(unit.operator_lazy_functions.contains(f.name))unit.functions.push_back(std::move(f));
+  }
+  if(unit.functions.empty()&&unit.operators.empty())invalid(tree,"empty compilation unit");
+  return unit;
+ }
+ void require_ready(const Unit& unit,bool source){
+  require_no_kernel_imports(unit);
+  if(!source&&(!unit.operators.empty()||!unit.fixity_directives.empty()))
+   throw Error(!unit.operators.empty()?unit.operators.front().header.where:unit.fixity_directives.front().where,
+    "intrinsic operator declarations/fixity must be lowered before core checking","ON1X-OPERATOR-LOWER");
  if(!unit.extensions.empty())throw Error(unit.extensions.front().where,"ON1X-CAT-PPX: unconsumed declaration carrier","ON1X-CAT-PPX");
   if(!unit.macros.empty())throw Error(unit.macros.front().where,"unexpanded macro definitions");
   if(!unit.ppx.empty())throw Error(unit.ppx.front().where,"source PPX registrations require --allow-source-ppx in the compiler driver");
@@ -453,25 +715,58 @@ void require_core(const Unit& unit){
   auto require_void=[](const Type& result,const Location& at){
    if(result!=Type::Void)throw Error(at,"proc must omit its result annotation or declare -> void","ON1X-PROC");
   };
-  auto body=[](auto&& self,const auto& expr,const std::vector<Stmt>& statements,bool procedure)->void{
-   for(const auto& s:statements){
-    if(procedure&&s.kind==Stmt::Kind::Return&&s.value)
-     throw Error(s.where,"proc cannot return an expression; use bare return;","ON1X-PROC");
-    if(s.value)expr(expr,*s.value,procedure);
-    self(self,expr,s.body,procedure);self(self,expr,s.otherwise,procedure);
-   }
+   auto body=[](auto&& self,const auto& expr,const std::vector<Stmt>& statements,bool procedure)->void{
+    auto statement=[&](auto&& visit,const Stmt& s)->void{
+     if(procedure&&s.kind==Stmt::Kind::Return&&s.value)
+      throw Error(s.where,"proc cannot return an expression; use bare return;","ON1X-PROC");
+     if(s.value)expr(expr,*s.value,procedure);
+     self(self,expr,s.body,procedure);self(self,expr,s.otherwise,procedure);
+     for(const auto& instance:s.instances)if(instance)visit(visit,*instance);
+    };
+    for(const auto& s:statements)statement(statement,s);
   };
-  auto expr=[&](auto&& self,const Expr& e,bool procedure)->void{
-   if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.kind==K::SyntaxLet||!e.syntax_definitions.empty()||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
+   auto expr=[&](auto&& self,const Expr& e,bool procedure)->void{
+    if(e.kind==K::MacroCall||e.kind==K::SyntaxHole||e.kind==K::SyntaxBlock||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector||e.kind==K::SyntaxKeyword||e.kind==K::SyntaxLet||!e.syntax_definitions.empty()||e.syntax_tail)throw Error(e.where,"unhandled metaprogramming syntax"+(e.text.empty()?"":": "+e.text));
+    if(e.kind==K::OperatorReference||e.kind==K::OperatorUnary||e.kind==K::OperatorBinary||e.kind==K::OperatorTernary){
+     if(!source)throw Error(e.where,"intrinsic operator must be lowered before core checking","ON1X-OPERATOR-LOWER");
+     auto count=e.kind==K::OperatorReference?0u:e.kind==K::OperatorUnary?1u:e.kind==K::OperatorBinary?2u:3u;
+     if(e.children.size()!=count||e.callee)
+      throw Error(e.where,"intrinsic operator has the wrong operand shape","ON1X-OPERATOR-ARITY");
+    }
+    if((e.kind==K::Unary||e.kind==K::Binary)&&e.children.empty())
+     throw Error(e.where,"native operator syntax is not a first-class reference","ON1X-OPERATOR-ARITY");
    if(e.procedure)require_void(e.result,e.where);
-   if(e.callee)self(self,*e.callee,procedure);
-   for(const auto& c:e.children)self(self,*c,procedure);
+    if(e.callee)self(self,*e.callee,procedure);
+     for(const auto& c:e.children){
+      if(!c)throw Error(e.where,"missing expression operand","ON1X-AST-MALFORMED");
+      self(self,*c,procedure);
+     }
+     for(const auto& proof:e.proofs){
+      if(!proof)throw Error(e.where,"missing proof expression","ON1X-AST-MALFORMED");
+      self(self,*proof,procedure);
+     }
    body(body,self,e.body,e.kind==K::Lambda?e.procedure:procedure);
   };
-  for(const auto& f:unit.functions){
-   if(!f.attributes.empty())throw Error(f.attributes.front()->where,"unhandled PPX attribute: "+f.attributes.front()->text);
+   auto callable=[&](const Function& f){
+    if(!f.attributes.empty()){
+     if(!f.attributes.front())throw Error(f.where,"missing PPX attribute","ON1X-AST-MALFORMED");
+     throw Error(f.attributes.front()->where,"unhandled PPX attribute: "+f.attributes.front()->text);
+    }
    if(f.procedure)require_void(f.result,f.where);
    body(body,expr,f.body,f.procedure);
-  }
-}
-}
+   };
+   for(const auto& f:unit.functions)callable(f);
+   for(const auto& d:unit.operators)callable(d.function);
+   for(const auto& implementation:unit.cliche_implementations)for(const auto& member:implementation.members){
+    callable(member.function);if(member.value)expr(expr,*member.value,false);
+   }
+   for(const auto& implementation:unit.inherent_implementations)for(const auto& member:implementation.members){
+    callable(member.function);if(member.value)expr(expr,*member.value,false);
+   }
+ }
+ }
+ Unit decode(const SExpr& tree){return decode_unit(tree,nullptr);}
+ Unit decode_rewrite(const SExpr& tree,Unit& original){return decode_unit(tree,&original);}
+ void require_source_ready(const Unit& unit){require_ready(unit,true);}
+ void require_core(const Unit& unit){require_ready(unit,false);}
+ }

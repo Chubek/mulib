@@ -3,10 +3,38 @@
 #include <on1x/literals.hpp>
 #include <algorithm>
 #include <optional>
+#include <set>
 namespace on1x::meta {
 namespace {
 using K=Expr::Kind;using P=MacroParameter::Kind;
 [[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"macro: "+message);}
+std::string capture_category(const std::string& name){
+ if(name=="operator")return "Operator";
+ if(name=="customop"||name=="customoperator"||name=="CustomOp")return "CustomOperator";
+ return name;
+}
+bool custom_operator(K k){
+ return k==K::OperatorReference||k==K::OperatorUnary||
+        k==K::OperatorBinary||k==K::OperatorTernary;
+}
+std::optional<K> operator_template(const Expr& e){
+ if(e.kind!=K::Call||!e.callee||e.callee->kind!=K::Variable)return {};
+ const auto& name=e.callee->text;
+ if(name=="ast_unary")return K::OperatorUnary;
+ if(name=="ast_binary")return K::OperatorBinary;
+ if(name=="ast_ternary")return K::OperatorTernary;
+ if(name=="ast_operator")return K::OperatorReference;
+ return {};
+}
+std::size_t operands(K k){
+ return k==K::OperatorUnary?1:k==K::OperatorBinary?2:k==K::OperatorTernary?3:0;
+}
+bool builtin(K k,const std::string& spelling){
+ if(k==K::OperatorUnary)return spelling=="!"||spelling=="-";
+ if(k!=K::OperatorBinary)return false;
+ static const std::set<std::string> binary={"+","-","*","/","%","<",">","<=",">=","==","!=","&&","||"};
+ return binary.contains(spelling);
+}
 struct Sequence {std::vector<const Expr*> items;const Expr* tail=nullptr;};
 Sequence sequence(const Expr& e){
  Sequence out;const Expr* current=&e;
@@ -29,6 +57,8 @@ MacroCaptures MacroRules::duplicate(const MacroCaptures& source,const Location& 
  }return source;
 }
 std::string MacroRules::category(const Expr& e)const{
+ if(e.kind==K::OperatorReference)return "CustomOperator";
+ if((e.kind==K::Unary||e.kind==K::Binary)&&e.children.empty())return "Operator";
  if(e.kind==K::Propagate)return "Expression";
  if(e.kind>=K::Record&&e.kind<=K::Length)return "DataExpression";
   if(e.kind==K::PatternMatch||e.kind==K::Loop)return "DataExpression";
@@ -39,7 +69,9 @@ std::string MacroRules::category(const Expr& e)const{
   case K::Float:return "FloatLiteral";
  case K::String:return "StringLiteral";case K::Boolean:return "BooleanLiteral";case K::Variable:return "Identifier";
   case K::Character:return "CharacterLiteral";case K::ByteBuffer:return "ByteBufferLiteral";case K::Interpolated:case K::Borrow:return "Expression";
- case K::Unary:return "UnaryExpression";case K::Binary:return "BinaryExpression";case K::Call:return "CallExpression";
+  case K::Unary:case K::OperatorUnary:return "UnaryExpression";
+  case K::Binary:case K::OperatorBinary:return "BinaryExpression";
+  case K::OperatorTernary:return "TernaryExpression";case K::Call:return "CallExpression";
  case K::Tuple:return "TupleExpression";case K::Lambda:return "LambdaExpression";case K::SyntaxBlock:return "Block";
  case K::SyntaxList:return "ListSyntax";case K::SyntaxVector:return "VectorSyntax";case K::SyntaxKeyword:return "KeywordSyntax";
   case K::Extension:return "ExtensionExpression";case K::MacroCall:return "Expression";
@@ -52,10 +84,13 @@ void MacroRules::validate(const MacroRule& rule){
  MacroCaptures declarations_for_rule;
  auto declaration=[&](auto&& self,const MacroParameter& p,std::size_t rank)->void{
   tick(p.where);rank+=p.repeated?1:0;
-  if(rank>256)fail(p.where,"pattern repetition depth limit exceeded");
-  if(p.kind==P::Capture||(!p.category.empty()&&p.kind==P::Wildcard)){
-   if(!schema.parents.contains(p.category)||(!schema.subtype(p.category,"Expression")&&p.category!="Syntax"&&p.category!="Block"&&p.category!="ListSyntax"&&p.category!="VectorSyntax"&&p.category!="KeywordSyntax"))fail(p.where,"unsupported syntax category "+p.category);
-  }
+   if(rank>256)fail(p.where,"pattern repetition depth limit exceeded");
+   if(p.kind==P::Capture||(!p.category.empty()&&p.kind==P::Wildcard)){
+    const auto declared=capture_category(p.category);
+    if(!schema.parents.contains(declared)||(!schema.subtype(declared,"Expression")&&declared!="Syntax"&&declared!="Block"&&declared!="ListSyntax"&&declared!="VectorSyntax"&&declared!="KeywordSyntax"))fail(p.where,"unsupported syntax category "+p.category);
+   }
+   if(p.kind==P::OperatorReference&&(p.elements.size()!=1||p.tail||p.elements.front().repeated))
+    fail(p.where,"ast_operator pattern requires one operator");
   if(p.kind==P::Capture){
    charge(p.where,p.name.size()+64);
    if(!declarations_for_rule.variables.emplace(p.name,MacroVariable{&p,rank,{},{}}).second)fail(p.where,"duplicate pattern variable "+p.name);
@@ -81,7 +116,19 @@ void MacroRules::validate(const MacroRule& rule){
    for(const auto& p:e.parameters)if(name_driver(p.name)||(p.pattern&&pattern_driver(pattern_driver,*p.pattern)))return true;
     if((e.kind==K::PatternMatch||e.kind==K::Loop)&&name_driver(e.text))return true;
    for(const auto& p:e.patterns)if(pattern_driver(pattern_driver,p))return true;
-  auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{for(const auto& s:b){if(s.value&&self(self,*s.value,depth))return true;if(name_driver(s.name)||(s.pattern&&pattern_driver(pattern_driver,*s.pattern)))return true;if(visit(visit,s.body)||visit(visit,s.otherwise))return true;}return false;};
+   auto body=[&](auto&& visit,const std::vector<Stmt>& b)->bool{
+    for(const auto& s:b){
+     if(s.syntax_operator){
+      const auto& f=s.syntax_operator->function;
+      for(const auto& p:f.params)if(name_driver(p.name))return true;
+      if(visit(visit,f.body))return true;
+     }
+     if(s.value&&self(self,*s.value,depth))return true;
+     if(name_driver(s.name)||(s.pattern&&pattern_driver(pattern_driver,*s.pattern)))return true;
+     if(visit(visit,s.body)||visit(visit,s.otherwise))return true;
+    }
+    return false;
+   };
   return body(body,e.body);
  };
   auto expression=[&](auto&& self,const Expr& e,std::size_t depth,const std::string& expected,bool list_position)->void{
@@ -93,8 +140,19 @@ void MacroRules::validate(const MacroRule& rule){
   if(e.kind==K::SyntaxHole){
    auto found=declarations_for_rule.variables.find(e.text);if(found==declarations_for_rule.variables.end())fail(e.where,"unknown template variable "+e.text);
    if(found->second.rank>depth)fail(e.where,"repeated pattern variable requires ellipsis at depth "+std::to_string(found->second.rank)+": "+e.text);
-   if(!schema.subtype(found->second.declaration->category,expected))fail(e.where,"template variable "+e.text+" has category "+found->second.declaration->category+", expected "+expected);
-  }else if(!schema.subtype(category(e),expected))fail(e.where,"template construct has category "+category(e)+", expected "+expected);
+    if(!schema.subtype(capture_category(found->second.declaration->category),expected))fail(e.where,"template variable "+e.text+" has category "+found->second.declaration->category+", expected "+expected);
+   }else if(auto form=operator_template(e)){
+    if(!schema.subtype(*form==K::OperatorReference?"CustomOperator":"Expression",expected))
+     fail(e.where,"operator template is not valid in "+expected+" position");
+    if(e.children.size()!=operands(*form)+1||e.syntax_tail)
+     fail(e.where,"operator template has the wrong arity: "+e.callee->text);
+    const auto& head=*e.children.front();
+    if(head.kind!=K::String||!builtin(*form,literal_value(head.text)))
+     self(self,head,depth,*form==K::OperatorReference?"CustomOperator":"Operator",false);
+    else if(head.syntax_repeat)fail(head.where,"operator head cannot repeat");
+    for(std::size_t i=1;i<e.children.size();++i)self(self,*e.children[i],depth,"Expression",false);
+    return;
+   }else if(!schema.subtype(category(e),expected))fail(e.where,"template construct has category "+category(e)+", expected "+expected);
    for(const auto& p:e.parameters){if(p.pattern)pat(pat,*p.pattern,depth);else binding(p.name,depth,p.where);}
     if(e.kind==K::PatternMatch||e.kind==K::Loop)binding(e.text,depth,e.where);
    for(const auto& p:e.patterns)pat(pat,p,depth);
@@ -103,7 +161,19 @@ void MacroRules::validate(const MacroRule& rule){
   bool syntax=e.kind==K::MacroCall||e.kind==K::Extension||e.kind==K::SyntaxList||e.kind==K::SyntaxVector;
    for(const auto& c:e.children)self(self,*c,depth,e.kind==K::PatternMatch&&c->kind==K::Case?"MatchArm":syntax?"Syntax":"Expression",list);
   if(e.syntax_tail)self(self,*e.syntax_tail,depth,"Syntax",false);
-  auto body=[&](auto&& visit,const std::vector<Stmt>& b)->void{for(const auto& s:b){binding(s.name,depth,s.where);if(s.pattern)pat(pat,*s.pattern,depth);if(s.value)self(self,*s.value,depth,s.kind==Stmt::Kind::Expr?"Syntax":"Expression",s.kind==Stmt::Kind::Expr);visit(visit,s.body);visit(visit,s.otherwise);}};body(body,e.body);
+   auto body=[&](auto&& visit,const std::vector<Stmt>& b)->void{
+    for(const auto& s:b){
+     if(s.syntax_operator){
+      const auto& f=s.syntax_operator->function;
+      for(const auto& p:f.params)binding(p.name,depth,p.where);
+      visit(visit,f.body);
+     }
+     binding(s.name,depth,s.where);
+     if(s.pattern)pat(pat,*s.pattern,depth);
+     if(s.value)self(self,*s.value,depth,s.kind==Stmt::Kind::Expr?"Syntax":"Expression",s.kind==Stmt::Kind::Expr);
+     visit(visit,s.body);visit(visit,s.otherwise);
+    }
+   };body(body,e.body);
  };
  if(rule.expression)expression(expression,*rule.expression,0,"Expression",false);
  Expr holder;holder.kind=K::SyntaxBlock;holder.where=rule.where;holder.body=clone_body(rule.body);expression(expression,holder,0,"Syntax",false);
@@ -131,9 +201,11 @@ bool MacroRules::literal(const Expr& pattern,const Expr& actual){
    if(type.is_unsigned())result+=':'+type_name(type);
   return result;
  };
- if(auto a=number(pattern)){auto b=number(actual);return b&&*a==*b;}
- if(pattern.kind!=actual.kind)return false;
- if(pattern.kind==K::Variable)return same_binding(pattern,actual);
+  if(auto a=number(pattern)){auto b=number(actual);return b&&*a==*b;}
+  if(pattern.kind!=actual.kind)return false;
+  if(pattern.kind==K::Variable)return same_binding(pattern,actual);
+  if(pattern.kind==K::OperatorReference)
+    return !pattern.operator_identity.empty()&&same_binding(pattern,actual);
  if(pattern.kind==K::String)return literal_value(pattern.text)==literal_value(actual.text);
  if(pattern.kind==K::Character)return literals::character(pattern.text,pattern.where)==literals::character(actual.text,actual.where);
  return pattern.text==actual.text;
@@ -146,19 +218,41 @@ void MacroRules::widths(const MacroParameter& p,MacroCaptures& captures,const Re
 }
 bool MacroRules::match_one(const MacroParameter& p,const Expr& e,MacroCaptures& captures,RepetitionPath& path){
  tick(p.where);
- if(p.kind==P::Wildcard)return p.category.empty()||schema.subtype(category(e),p.category);
+  if(p.kind==P::Wildcard)return p.category.empty()||schema.subtype(category(e),capture_category(p.category));
  if(p.kind==P::Literal)return literal(*p.literal,e);
  if(p.kind==P::Capture){
-  if(!schema.subtype(category(e),p.category))return false;
+   if(!schema.subtype(category(e),capture_category(p.category)))return false;
   charge(p.where,64+path.size()*sizeof(std::size_t));captures.variables.at(p.name).values[path]=&e;return true;
  }
- bool okay=p.kind==P::List?e.kind==K::SyntaxList:p.kind==P::Vector?e.kind==K::SyntaxVector:p.kind==P::Tuple?e.kind==K::Tuple:p.kind==P::Call?e.kind==K::Call:p.kind==P::Unary?e.kind==K::Unary:e.kind==K::Binary;
+  if(p.kind==P::OperatorReference)return e.kind==K::OperatorReference&&match_one(p.elements.front(),e,captures,path);
+  bool unary=p.kind==P::Unary,binary=p.kind==P::Binary,ternary=p.kind==P::Ternary;
+  bool okay=p.kind==P::List?e.kind==K::SyntaxList:p.kind==P::Vector?e.kind==K::SyntaxVector:
+   p.kind==P::Tuple?e.kind==K::Tuple:p.kind==P::Call?e.kind==K::Call:
+   unary?(e.kind==K::Unary||e.kind==K::OperatorUnary)&&e.children.size()==1:
+   binary?(e.kind==K::Binary||e.kind==K::OperatorBinary)&&e.children.size()==2:
+   ternary&&e.kind==K::OperatorTernary&&e.children.size()==3;
  if(!okay)return false;
  auto view=sequence(e);
  if(p.kind==P::Call)view.items.insert(view.items.begin(),e.callee.get());
- if(p.kind==P::Unary||p.kind==P::Binary){
-  charge(e.where,sizeof(Expr)+e.text.size());
-  auto op=std::make_shared<Expr>();op->kind=K::String;op->where=e.where;op->text=source_literal(e.text);view.items.insert(view.items.begin(),op.get());captures.owned.push_back(std::move(op));
+  if(unary||binary||ternary){
+   charge(e.where,sizeof(Expr)+e.text.size()+e.operator_lexeme2.size()+e.operator_identity.size());
+   auto op=std::make_shared<Expr>();op->where=e.where;
+   // Old ast_unary/ast_binary patterns can still capture the spelling as a
+   // StringLiteral. Typed operator heads instead carry the parser's binding.
+   bool lexeme=true;
+   if(!p.elements.empty()){
+    const auto& head=p.elements.front();
+    lexeme=head.kind==P::Literal?head.literal->kind!=K::OperatorReference:
+           head.kind==P::Capture||head.kind==P::Wildcard?
+            !schema.subtype(capture_category(head.category),"Operator"):false;
+   }
+   if(lexeme){op->kind=K::String;op->text=source_literal(e.text);}
+   else{
+    op->kind=custom_operator(e.kind)?K::OperatorReference:e.kind;
+    op->text=e.text;op->operator_identity=e.operator_identity;op->operator_lexeme2=e.operator_lexeme2;
+     op->operator_position=e.operator_position;op->context=e.context;
+   }
+   view.items.insert(view.items.begin(),op.get());captures.owned.push_back(std::move(op));
  }
  return match_sequence(p.elements,p.tail.get(),view.items,view.tail,0,0,captures,path,p.where);
 }
@@ -205,7 +299,18 @@ std::size_t MacroRules::extent(const Expr& e,const MacroCaptures& captures,const
   if(n.callee)self(self,*n.callee);
   if(n.syntax_tail)self(self,*n.syntax_tail);
   for(const auto& c:n.children)self(self,*c);
-  auto body=[&](auto&& visit,const std::vector<Stmt>& b)->void{for(const auto& s:b){use(s.name,s.where);if(s.pattern)pattern(pattern,*s.pattern);if(s.value)self(self,*s.value);visit(visit,s.body);visit(visit,s.otherwise);}};body(body,n.body);
+   auto body=[&](auto&& visit,const std::vector<Stmt>& b)->void{
+    for(const auto& s:b){
+     if(s.syntax_operator){
+      const auto& f=s.syntax_operator->function;
+      for(const auto& p:f.params)use(p.name,p.where);
+      visit(visit,f.body);
+     }
+     use(s.name,s.where);if(s.pattern)pattern(pattern,*s.pattern);
+     if(s.value)self(self,*s.value);
+     visit(visit,s.body);visit(visit,s.otherwise);
+    }
+   };body(body,n.body);
  };walk(walk,e);if(!count)fail(e.where,"template ellipsis has no repeated driver");return *count;
 }
 void MacroRules::name(std::string& n,std::size_t& context,const MacroCaptures& captures,const RepetitionPath& path,std::size_t mark,const Location& at){
@@ -218,9 +323,40 @@ void MacroRules::element(const Expr& t,const MacroCaptures& captures,RepetitionP
  auto n=extent(t,captures,path);for(std::size_t i=0;i<n;++i){path.push_back(i);element(t,captures,path,mark,repeat-1,out);path.pop_back();}
 }
 void MacroRules::substitute(Expr& e,const MacroCaptures& captures,std::size_t mark,RepetitionPath path){
- tick(e.where);
- if(e.kind==K::SyntaxHole){auto replacement=clone(value(e.text,captures,path,e.where));e=std::move(*replacement);return;}
-  if(e.kind==K::Variable)name(e.text,e.context,captures,path,mark,e.where);
+  tick(e.where);
+  if(e.kind==K::SyntaxHole){auto replacement=clone(value(e.text,captures,path,e.where));e=std::move(*replacement);return;}
+  if(auto form=operator_template(e)){
+   auto head=std::move(e.children.front());
+   substitute(*head,captures,mark,path);
+   K result=*form;
+   if(head->kind==K::OperatorReference){
+    if(result!=K::OperatorReference){
+     auto shape=head->operator_position!=OperatorPosition::Infix?K::OperatorUnary:
+      head->operator_lexeme2.empty()?K::OperatorBinary:K::OperatorTernary;
+     if(shape!=result)fail(e.where,"captured operator has the wrong arity for "+e.callee->text);
+    }
+   }else{
+    const auto spelling=head->kind==K::String?literal_value(head->text):head->text;
+    // Native spelling alone can represent several forms (notably `-`).
+    // A raw native descriptor has no arity until its template constructor.
+    if(!builtin(result,spelling)||(head->kind!=K::String&&
+       ((head->kind!=K::Unary&&head->kind!=K::Binary)||!head->children.empty())))
+     fail(e.where,"captured operator has the wrong arity for "+e.callee->text);
+    result=result==K::OperatorUnary?K::Unary:K::Binary;
+    head->text=spelling;
+   }
+    e.kind=result;e.text=std::move(head->text);e.operator_position=head->operator_position;
+    e.context=head->context;
+    // The constructor arranges structural operands, not a parsed Pratt edge.
+    e.operator_parse.reset();
+   if(!head->operator_identity.empty())e.where=std::move(head->where);
+   e.operator_lexeme2=std::move(head->operator_lexeme2);e.operator_identity=std::move(head->operator_identity);
+   e.callee.reset();e.children.erase(e.children.begin());
+   for(auto& child:e.children)substitute(*child,captures,mark,path);
+   return;
+   }
+   if(custom_operator(e.kind))e.context=mark;
+   if(e.kind==K::Variable)name(e.text,e.context,captures,path,mark,e.where);
    if(e.kind==K::PatternMatch&&!e.text.empty())name(e.text,e.context,captures,path,mark,e.where);
    if(e.kind==K::Loop){if(e.text.empty())e.context=mark;else name(e.text,e.context,captures,path,mark,e.where);}
    for(auto& p:e.patterns)pattern(p,captures,path,mark);
@@ -238,8 +374,19 @@ void MacroRules::substitute(Expr& e,const MacroCaptures& captures,std::size_t ma
  substitute_body(e.body,captures,mark,path);
 }
 void MacroRules::substitute_body(std::vector<Stmt>& body,const MacroCaptures& captures,std::size_t mark,RepetitionPath path){
- std::vector<Stmt> out;
- for(auto& s:body){
+  std::vector<Stmt> out;
+  for(auto& s:body){
+   if(s.syntax_operator){
+    auto& f=s.syntax_operator->function;
+    s.context=mark;
+    std::set<std::string> names;
+    for(auto& p:f.params){
+     name(p.name,p.context,captures,path,mark,p.where);
+     if(!names.insert(p.name).second)fail(p.where,"duplicate operator formal: "+p.name);
+    }
+    substitute_body(f.body,captures,mark,path);
+    out.push_back(std::move(s));continue;
+   }
   if(s.kind==Stmt::Kind::Expr){
    std::vector<ExprPtr> values;element(*s.value,captures,path,mark,s.value->syntax_repeat,values);
    for(auto& e:values){if(e->kind==K::SyntaxBlock){for(auto& child:e->body)out.push_back(std::move(child));}else{Stmt statement;statement.kind=Stmt::Kind::Expr;statement.where=s.where;statement.value=std::move(e);out.push_back(std::move(statement));}}continue;

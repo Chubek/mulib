@@ -4,6 +4,9 @@ For the 2026-11-26 qualification, use the [release checklist and evidence](docs/
 and [completion ledger](COMPLETION_MATRIX.md). Dated runs from other revisions
 stay separate from this task's results.
 
+For the intrinsic operator work, see the separate
+[Clang qualification and reproduction commands](docs/operator-qualification.md).
+
 ## Earlier evidence
 
 - [Historical verification through 2026-11-24](https://github.com/Chubek/mulib/blob/bfb3bbca3ab967681fdb821ea45298d1b523164b/on1x/VERIFICATION.md):

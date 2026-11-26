@@ -91,3 +91,14 @@ let strip = '''text
 #                       ^^^ storage.type.on1x - comment
 let run = proc() {@Name()};
 #                  ^^^^ entity.name.function.preprocessor.on1x - comment
+operator<T>(lexeme: "<$>", arity: "binary", formals: a: T, b: T) -> T { return a; }
+# <- keyword.declaration.operator.on1x
+#                    ^^^ string.quoted.double.on1x
+infixr 3 <$>;
+# <- keyword.control.directive.fixity.on1x
+#        ^^^ keyword.operator.custom.on1x
+let value = a <$> b >>. c ^^ d;
+#             ^^^ keyword.operator.custom.on1x
+#                   ^^^ keyword.operator.custom.on1x
+let action = operator("<$>");
+#            ^^^^^^^^ keyword.declaration.operator.on1x

@@ -48,6 +48,9 @@ assert.deepEqual(matches("literals", "1..=4 -22 0x2au8 0o17u32 0B10 2e-2 1.25f32
   "1", "4", "22", "0x2au8", "0o17u32", "0B10", "2e-2", "1.25f32", "5f64"
 ]);
 assert.deepEqual(matches("punctuation", "1..=4 ... <- => := ~ ?"), ["..=", "...", "<-", "=>", ":=", "~", "?"]);
+assert.deepEqual(matches("punctuation", "n |> f <| m <$> r >>= f >=> g <&> h ^^ 0 ?? 1 |? 2"),
+  ["|>", "<|", "<$>", ">>=", ">=>", "<&>", "^^", "??", "|?"]);
+assert.deepEqual(matches("punctuation", "a <<. b >>. c >> .. d"), ["<<.", ">>.", ">>", ".."]);
 assert.deepEqual(matches("declarations", "fn fizz(x: i64)"), ["fn fizz"]);
 assert.deepEqual(matches("declarations", "proc fizz(x: i64) { let action = proc() {}; }"), ["proc fizz"]);
 assert.deepEqual(matches("declarations", "proc visit<T>(x: T)"), ["proc visit"]);
@@ -59,6 +62,9 @@ assert.deepEqual(matches("metaprogramming", "proc!(flag);"), []);
 assert.deepEqual(matches("keywords", "let match = for(loop); close(value); await select"), ["let"]);
 assert.deepEqual(matches("keywords", "if close { return 1; }"), ["if", "return"]);
 assert.deepEqual(matches("keywords", "match sent with { Ok(n) => n }"), ["match", "with"]);
+assert.deepEqual(matches("keywords", 'operator<T>(lexeme: "<+>") operator("<+>") infix 4 <+> infixr 5 <+>'),
+  ["operator", "operator", "infix", "infixr"]);
+assert.deepEqual(matches("keywords", "let infix = infixr;"), ["let"]);
 
 const [removedImport, foreignImport, dynamicImport] = grammar.repository.keywords.patterns;
 assert.equal(removedImport.name, "invalid.illegal.import.on1x");

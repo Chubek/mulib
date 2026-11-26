@@ -108,13 +108,15 @@ Patterns use the R7RS `syntax-rules` structure, adapted to typed On1x ASTs:
 pattern = $name:Category | _[:Category] | literal
         | [sequence] | vector[sequence] | (sequence)
         | ast_call(sequence) | ast_unary(sequence) | ast_binary(sequence)
+        | ast_ternary(sequence) | ast_operator(sequence)
 sequence = comma-separated patterns, each optionally followed by ellipsis
          + optional . tail-pattern
 ```
 
 `[]` matches proper or dotted syntax lists, `vector[]` matches vectors, and
 `(...)` matches ordinary tuple expressions. AST calls match their callee followed
-by arguments. Unary/binary forms match a **string** operator followed by operands.
+by arguments. Operator patterns match an operator followed by its operands,
+with quoted literal heads retained for compatibility.
 Lists/vectors are macro syntax, not new runtime collection types. Every such
 carrier must disappear during expansion. Vectors cannot have dotted tails.
 The invocation name already supplies R7RS's ignored macro-keyword position.
@@ -175,6 +177,36 @@ identifiers resolve at the definition site (visible locals, module globals/intri
 same-spelled caller locals. Nested expansions preserve these distinctions.
 Identifier captures deliberately used as binders carry the caller's context;
 normal scope/duplicate-binding rules apply to references in that context.
+
+### Operator syntax
+
+`Operator` includes built-in and [custom operators](operators.md).
+`CustomOperator` is its narrower category. Lowercase `operator`,
+`customoperator`, and `customop` are accepted; `$operator` and `$customop`
+are shorthand for captures of their respective categories.
+
+```on1x
+macro swap {
+  rule (ast_binary($customop, $a: Expression, $b: Expression)) =>
+    expression { ast_binary($customop, $b, $a) };
+}
+```
+
+`ast_unary`, `ast_binary`, and `ast_ternary` match or build applications in
+source operand order. The operator capture carries the complete identity and
+position, including the second lexeme of a ternary operator. `ast_operator`
+matches explicit operator references; `operator($op)` forms a first-class
+custom reference from a capture. Arity, category, and repetition ranks are
+checked. Literal operators in templates keep the definition-site binding;
+captured operators keep the use-site binding, even across module boundaries.
+Block templates can also declare operators and emit literal `infix` or
+`infixr` directives. Formal names can be `Identifier` captures and bodies
+can contain ordinary expression and block substitutions. Each expansion
+gets fresh private callable identities. A directive applies only to
+subsequent authored syntax in that template block; captured syntax keeps
+its use-site grouping and bindings. These declarations do not export
+operators or install a binding in surrounding caller syntax. Operator
+spellings, arities, and fixity ranks in the template are static.
 
 ### Local syntax bindings
 
@@ -290,6 +322,41 @@ void `fn` definitions without changing the latter's wire form. Preserve the
 input tag when rebuilding a function or lambda. The compiler checks procedure
 result annotations and returns after PPX, so valid wire shape alone does not
 make a generated procedure valid.
+
+The additive operator constructors in Unit v1 are `OperatorDeclaration`,
+`OperatorHeader`, `FixityDirective`, `OperatorReference`, `OperatorUnary`,
+`OperatorBinary` and `OperatorTernary`. Applications carry only source
+spellings, positions where needed, operands, and locations. Python and
+native authoring libraries provide constructors for them; the canonical
+schema defines their exact field order.
+
+The compiler keeps automatically available, demand-loaded operator
+declarations and their private helpers outside the wire. Explicit operator
+declarations may have their executable bodies, binding ranks, and
+associativity rewritten. An entry-owned, module-scope declaration with a
+plain scalar signature can also change its signature and formal names.
+Existing identities, spellings, positions, arities, and declaration order
+are preserved. A bounded transform may append
+new declarations and fixity metadata to the entry scope. The compiler
+allocates their identities and resolves newly constructed applications
+in their permitted scope. A location on wire cannot authorize a module
+binding. Neither imports nor checked signatures or ownership facts are
+admitted from the wire. Regular source checking runs after readmission.
+
+The expression tree is already grouped when a PPX pass receives it.
+After the final validated output, the compiler replays precedence once
+for surviving source-authored operator chains affected by a fixity change.
+Parentheses, lexical directive boundaries, and hygienic capture boundaries
+are preserved. Newly constructed or explicitly rearranged subtrees keep
+their grouping; appended directives do not take effect retroactively.
+Neither a forged location nor moving a lexical operator occurrence into
+another expression grants access to private bindings. Existing Unit-v1
+restrictions on loans, ownership, and unsafe syntax still apply.
+
+Once source transformations and regrouping finish, the mandatory
+[On1xMETA source phase](../hir/On1xMETA/README.md) turns the resolved
+operators into ordinary functions, calls, and function references before
+type inference. It does not bypass ordinary semantic or ownership checks.
 
 The declaration list can also contain `(Docstring "!" "comment body" (Loc ...))`
 or its `">"` counterpart. The body is preserved verbatim, without delimiters,

@@ -22,7 +22,7 @@
 'syntax: "rule" NAME "phase" Phase "priority" NUMBER "match" Tree "replace" Tree "guard" NAME ";"
 .end
 .rule Phase
-'syntax: "canonicalize" | "desugar"
+'syntax: "canonicalize" | "desugar" | NAME
 .end
 .rule Constraint
 'syntax: "constraint" NAME "phase" "semantic" "match" NAME "require" NAME STRING "message" STRING ";"

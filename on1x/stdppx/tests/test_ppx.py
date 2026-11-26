@@ -11,7 +11,8 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from _support.sexpr import Atom,dumps,loads
 from _support.ast import (mk,tag,typ,integer,literal,boolean,ident,binop,call,block,do,
-                          fn,param,Schema,walk)
+                           fn,param,Schema,walk,operator_ref,operator_unary,
+                           operator_binary,operator_ternary)
 from _support.passes import PROCESSORS
 AT=mk('Loc','test.on1x',Atom('0'),Atom('1'),Atom('1'))
 
@@ -202,6 +203,28 @@ class PPXTests(unittest.TestCase):
     def test_schema_matches_compiler(self):
         self.assertEqual(json.loads((ROOT/'schemas/PPX.schema.json').read_text()),
                          json.loads((ROOT.parent/'grammar/PPX.schema.json').read_text()))
+    def test_source_operator_syntax(self):
+        one=integer(1,AT)
+        binary=operator_binary('%%',one,one,AT)
+        unary=operator_unary('~~','postfix',binary,AT)
+        ternary=operator_ternary('|?','?|',one,unary,operator_ref('%%',AT),AT)
+        tree=unit(do(ternary,AT))
+        tree[2].append(mk('OperatorDeclaration',
+            mk('OperatorHeader','%%','','binary','infix',Atom('6'),Atom('2'),'left',AT),
+            [],[param('a',typ('I64'),AT),param('b',typ('I64'),AT)],typ('I64'),
+            block([mk('Return',one,AT)],AT)))
+        tree[2].append(mk('FixityDirective','%%',Atom('3'),'right',AT))
+        self.assertEqual(self.transformed('identity',tree),tree)
+        for invalid_operator in (
+            mk('OperatorReference','%%','@operator_forbidden',AT),
+            operator_ref('injected_identifier',AT),
+            operator_ref('%%%%%%%',AT),
+            operator_unary('~~','infix',one,AT),
+            mk('OperatorTernary','|?','?|',one,one,AT),
+        ):
+            failure=run('identity',unit(do(invalid_operator,AT)))
+            self.assertNotEqual(failure.returncode,0)
+            self.assertEqual(failure.stdout,b'')
     def test_nested_unroll_budget(self):
         inner=do(ext('unroll','repeat',integer(256,AT),block([do(call('println',[integer(1,AT)],AT),AT)],AT)),AT)
         u=unit(do(ext('unroll','repeat',integer(256,AT),block([inner],AT)),AT))

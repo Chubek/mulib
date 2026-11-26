@@ -32,9 +32,12 @@ MANIFESTS = ("On1xfile", "On1xfile.m", "On1xfile.i")
 QMR_TAG = re.compile(rb"\{[{%#]")
 MAX_CODE_ACTIONS = 256
 MAX_CODE_ACTION_BYTES = 2 * MIB
+MAX_OPERATOR_RECORDS = 32768
 CLI_TIMEOUT = 5
 ENCODINGS = ("utf-16", "utf-8", "utf-32")
 SEVERITIES = {"error": 1, "warning": 2, "note": 3}
+OPERATOR_GLYPHS = b"!%&*+?^|~<>=$.-"
+OPERATOR_KEYWORD = b"operator"
 
 
 class FrameError(Exception):
@@ -160,6 +163,110 @@ def position(data, offset, encoding):
               else len(decoded.encode("utf-16-le")) // 2 if encoding == "utf-16"
               else len(decoded))
     return {"line": line, "character": column}
+
+
+def source_offset(data, point, encoding):
+    """Convert a client position to a byte offset in the saved UTF-8 source."""
+    point = object_or_empty(point)
+    line, character = point.get("line"), point.get("character")
+    if (type(line) is not int or type(character) is not int
+            or not 0 <= line <= len(data) or not 0 <= character <= len(data)):
+        return None
+    start, end = 0, len(data)
+    for eol in re.finditer(rb"\r\n|[\r\n]", data):
+        if not line:
+            end = eol.start()
+            break
+        start = eol.end()
+        line -= 1
+    else:
+        if line:
+            return None
+    raw = data[start:end]
+    if encoding == "utf-8":
+        if character > len(raw):
+            return None
+        raw[:character].decode("utf-8")
+        return start + character
+    text = raw.decode("utf-8")
+    if encoding == "utf-16":
+        wide = text.encode("utf-16-le")
+        if character * 2 > len(wide):
+            return None
+        prefix = wide[:character * 2].decode("utf-16-le")
+    else:
+        if character > len(text):
+            return None
+        prefix = text[:character]
+    return start + len(prefix.encode("utf-8"))
+
+
+def operator_range(source, item, length, encoding):
+    offset, line, column = item.get("offset"), item.get("line"), item.get("column")
+    if (type(offset) is not int or type(length) is not int
+            or not 0 <= offset < offset + length <= len(source) or length > 128
+            or type(line) is not int or type(column) is not int
+            or line != 1 + source.count(b"\n", 0, offset)
+            or column != offset - source.rfind(b"\n", 0, offset)
+            or b"\r" in source[offset:offset + length] or b"\n" in source[offset:offset + length]):
+        return None
+    return {"start": position(source, offset, encoding),
+            "end": position(source, offset + length, encoding)}
+
+
+def operator_report(data, path, source, offset, encoding):
+    report = object_or_empty(parse_json(data))
+    declarations, uses = report.get("declarations"), report.get("uses")
+    if (type(report.get("version")) is not int or report["version"] != 1
+            or not isinstance(declarations, list) or len(declarations) > MAX_OPERATOR_RECORDS
+            or not isinstance(uses, list) or len(uses) > MAX_OPERATOR_RECORDS):
+        return None
+    matches = []
+    for record in uses:
+        item = object_or_empty(record)
+        start, length = item.get("offset"), item.get("length")
+        if (item.get("file") == str(path) and type(start) is int and type(length) is int
+                and start <= offset < start + length):
+            matches.append((item.get("declaration"), item, length))
+    if not matches:
+        for index, record in enumerate(declarations):
+            item = object_or_empty(record)
+            start = item.get("offset")
+            if (item.get("file") == str(path) and type(start) is int
+                    and start <= offset < start + len(OPERATOR_KEYWORD)
+                    and source[start:start + len(OPERATOR_KEYWORD)] == OPERATOR_KEYWORD):
+                matches.append((index, item, len(OPERATOR_KEYWORD)))
+    if len(matches) != 1:
+        return None
+    index, item, length = matches[0]
+    if type(index) is not int or not 0 <= index < len(declarations):
+        return None
+    span = operator_range(source, item, length, encoding)
+    if span is None:
+        return None
+    return object_or_empty(declarations[index]), span
+
+
+def describe_operator(declaration):
+    lexeme, lexeme2 = declaration.get("lexeme"), declaration.get("lexeme2")
+    arity, fixity, binds = (declaration.get(key) for key in ("arity", "position", "binds"))
+    precedence, tightness = (declaration.get(key) for key in ("precedence", "tightness"))
+    signature = declaration.get("signature")
+    if (type(arity) is not int or arity not in (1, 2, 3)
+            or fixity not in ("prefix", "postfix", "infix") or binds not in ("left", "right")
+            or any(type(rank) is not int or not 0 <= rank <= 9 for rank in (precedence, tightness))
+            or (signature is not None and (not isinstance(signature, str) or len(signature) > 4096))
+            or not isinstance(lexeme, str) or not re.fullmatch(r"[!%&*+?^|~<>=$.-]{2,32}", lexeme)
+            or not isinstance(lexeme2, str)
+            or (arity == 3 and not re.fullmatch(r"[!%&*+?^|~<>=$.-]{2,32}", lexeme2))
+            or (arity != 3 and lexeme2)):
+        return None
+    spelling = f'"{lexeme}" "{lexeme2}"' if lexeme2 else f'"{lexeme}"'
+    kind = ("unary", "binary", "ternary")[arity - 1]
+    prototype = concise(signature.encode("utf-8", errors="replace")) + "\n" if signature else ""
+    return (f"operator {spelling} ({kind} {fixity})\n"
+            f"{prototype}"
+            f"Declared precedence {precedence}, tightness {tightness}, {binds}-associative")
 
 
 def file_identity(info):
@@ -292,6 +399,14 @@ def compiler_diagnostics(data, path, source, encoding):
                       "message": message, "severity": SEVERITIES[severity]}
         if isinstance(item.get("id"), str) and item["id"]:
             diagnostic["code"] = item["id"]
+        if item.get("category") == "operator" and diagnostic.get("code", "").startswith("ON1X-OPERATOR-"):
+            # Operator errors have no automatic repair: surface the catalog's
+            # bounded remediation without inventing a source span or edit.
+            remediation = item.get("remediation")
+            if isinstance(remediation, str):
+                hint = concise(remediation[:512].encode("utf-8", errors="replace"))
+                if hint:
+                    diagnostic["message"] += "\n" + hint
         kernel_code = message.partition(":")[0]
         if (kernel_code in ("ON1X-KERNEL-NOT-ADMITTED", "ON1X-KERNEL-UNSAFE-UNSUPPORTED")
                 and item.get("id") in (kernel_code, "ON1X-SOURCE")
@@ -465,6 +580,8 @@ class Server:
             "positionEncoding": self.encoding,
             "textDocumentSync": {"openClose": True, "change": 1, "save": {"includeText": False}},
             "documentFormattingProvider": True,
+            "hoverProvider": True,
+            "definitionProvider": True,
             "codeActionProvider": {
                 "codeActionKinds": ["quickfix"],
                 "resolveProvider": False,
@@ -478,7 +595,7 @@ class Server:
         input_path = self.scratch / (name if manifest else "buffer.on1x")
         input_path.write_bytes(source)
         try:
-            args = ["aux", "format"] if manifest else ["fmt", "--target", "plain"]
+            args = ["aux", "format"] if manifest else ["fmt", "--isolated", "--target", "plain"]
             return input_path, *run_cli(compiler, [*args, str(input_path)], self.scratch)
         finally:
             input_path.unlink()
@@ -544,6 +661,61 @@ class Server:
             self.log(f"On1x save inspection skipped: {exc}")
         doc.actions = actions
         self.publish(uri, doc, diagnostics)
+
+    def operator_navigation(self, method, uri, doc, params):
+        if not doc or doc.source is None or doc.path.suffix != ".on1x":
+            return None
+        try:
+            path = doc.path.resolve(strict=True)
+            before = read_saved(path)
+            if normalized_eols(before[0]) != normalized_eols(doc.source):
+                return None
+            offset = source_offset(before[0], params.get("position"), self.encoding)
+            if offset is None or offset == len(before[0]):
+                return None
+            window = before[0][max(0, offset - 7):offset + 8]
+            if before[0][offset] not in OPERATOR_GLYPHS and OPERATOR_KEYWORD not in window:
+                return None
+            compiler = self.compiler_for(doc)
+            code, output, _ = run_cli(compiler, ["--operator-info", "--source-only", str(path)],
+                                      self.scratch, self.foreignlibs)
+            if code or doc.path.resolve(strict=True) != path or read_saved(path) != before:
+                return None
+            found = operator_report(output, path, before[0], offset, self.encoding)
+            if not found:
+                return None
+            declaration, use_span = found
+            summary = describe_operator(declaration)
+            if not summary:
+                return None
+            if method == "textDocument/hover":
+                return {"contents": {"kind": "plaintext", "value": summary}, "range": use_span}
+            filename = declaration.get("file")
+            if (not isinstance(filename, str) or not filename.startswith("/")
+                    or len(filename) > 16384 or re.search(r"[\x00-\x1f\x7f]", filename)):
+                return None
+            target = Path(filename)
+            if target.suffix != ".on1x" or target.resolve(strict=True) != target:
+                return None
+            if target == path:
+                target_uri, data = uri, before[0]
+            else:
+                target_uri = target.as_uri()
+                data, _ = read_saved(target)
+                for opened in self.documents.values():
+                    if opened.path != target and opened.path.resolve() != target:
+                        continue
+                    if opened.source is None or normalized_eols(opened.source) != normalized_eols(data):
+                        return None
+            start = declaration.get("offset")
+            length = len(OPERATOR_KEYWORD)
+            if type(start) is not int or data[start:start + length] != OPERATOR_KEYWORD:
+                return None
+            target_span = operator_range(data, declaration, length, self.encoding)
+            return {"uri": target_uri, "range": target_span} if target_span else None
+        except (ToolError, OSError, RuntimeError, ValueError):
+            # No speculative index from unsaved or unchecked source.
+            return None
 
     def code_actions(self, uri, doc, params):
         if not doc or doc.source is None:
@@ -663,6 +835,8 @@ class Server:
                 result = self.formatting(doc)
             elif method == "textDocument/codeAction":
                 result = self.code_actions(uri, doc, params)
+            elif method in ("textDocument/hover", "textDocument/definition"):
+                result = self.operator_navigation(method, uri, doc, params)
             else:
                 raise RequestError(-32601, "method not found")
             self.send(id=ident, result=result)

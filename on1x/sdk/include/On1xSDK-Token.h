@@ -16,7 +16,11 @@ enum {
     ON1X_SDK_TOKEN_FLOAT = 5,
     ON1X_SDK_TOKEN_STRING = 6,
     ON1X_SDK_TOKEN_CHARACTER = 7,
-    ON1X_SDK_TOKEN_PUNCTUATION = 8
+    ON1X_SDK_TOKEN_PUNCTUATION = 8,
+    /* An unquoted spelling accepted by the custom operator recognizer.
+     * Context may instead make it structural punctuation (e.g. nested >>);
+     * this lexical classification does not imply a visible declaration. */
+    ON1X_SDK_TOKEN_CUSTOM_OPERATOR = 9
 };
 
 typedef struct On1xSDK_TokenInfo {

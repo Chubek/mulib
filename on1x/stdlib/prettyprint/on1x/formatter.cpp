@@ -1,6 +1,7 @@
 #include <on1x/formatter.hpp>
 #include <on1x/ast.hpp>
 #include <on1x/literal_scan.h>
+#include <on1x/operator_scan.h>
 #include <mulib-prettyemit.h>
 
 #include <algorithm>
@@ -123,6 +124,7 @@ struct Part {
     Location where;
     std::size_t level = 0;
     bool top = false, in_list = false;
+    bool custom_op = false, operator_decl = false;
 };
 
 bool one_of(View text, std::initializer_list<View> words) {
@@ -133,7 +135,7 @@ bool one_of(View text, std::initializer_list<View> words) {
 // spans; comment markers inside a literal are not trivia.
 std::vector<Part> parts(const std::string& text, const std::vector<Token>& tokens, const Unit& unit,
                         std::optional<Target>& source_target) {
-    std::set<std::size_t> top;
+    std::set<std::size_t> top, operator_declarations;
     auto starts = [&](const auto& declarations) {
         for (const auto& d : declarations) top.insert(d.where.offset);
     };
@@ -151,6 +153,11 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
     }
     starts(unit.kernel_imports); starts(unit.foreign_imports); starts(unit.functions);
     starts(unit.features); starts(unit.ppx); starts(unit.macros); starts(unit.nominals);
+    starts(unit.fixity_directives);
+    for (const auto& item : unit.operators) {
+        operator_declarations.insert(item.header.where.offset);
+        top.insert(item.header.where.offset);
+    }
     std::vector<const ModuleExtension*> carriers;
     for (const auto& item : unit.extensions) carriers.push_back(&item);
     std::size_t carrier = 0, cursor = 0, line = 1, line_start = 0;
@@ -255,7 +262,12 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
         const auto end = cursor + spelling.size();
         if (end > source.size() || source.substr(cursor, spelling.size()) != spelling)
             throw Error(token.where, "token does not match its source bytes", "ON1X-FMT-TOKENS");
-        if (!disabled) append(Kind::token, cursor, end, token.where, top.contains(cursor));
+        if (!disabled) {
+            append(Kind::token, cursor, end, token.where, top.contains(cursor));
+            auto& item = result.back();
+            item.custom_op = on1x_operator_width(spelling.data(), spelling.size()) != 0;
+            item.operator_decl = operator_declarations.contains(cursor);
+        }
         if (one_of(spelling, {"{", "(", "["})) {
             delimiters.push_back(spelling.front());
             if (delimiters.size() > max_syntax_depth)
@@ -283,16 +295,16 @@ bool space_between(const Part& a, const Part& b) {
     if (one_of(a.text, {"(", "[", "@", "$"})) return false;
     if (b.text == "}" && a.text == "{") return false;
     if (b.text == "(" && !one_of(a.text, {
-        "if", "while", "for", "return", "with", "=", ":=", "=>", "+", "-", "*", "/", "%",
+        "if", "while", "for", "return", "with", "import", "=", ":=", "=>", "+", "-", "*", "/", "%",
         "<", ">", "<=", ">=", "==", "!=", "&&", "||", "|", "<-", "~", "in", ",", ":"
-    })) return false;
+    }) && !a.custom_op && !a.operator_decl) return false;
     if (b.text == "[" && (a.end == b.start || a.text == "vector")) return false;
     if (b.text == "!" && a.end == b.start) return false;
     return true;
 }
 
 bool continues_block(const Part& p) {
-    return one_of(p.text, {
+    return p.custom_op || one_of(p.text, {
         "else", ";", ",", ")", "]", "?", "(", "[", ".", "=>", "=", "->", ">", ">=",
         "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with", "~"
     });
@@ -344,11 +356,12 @@ mulib_pretty_style_t style(const Part& p) {
         (first == '/' && p.text.size() >= 2 && p.text.back() == '/'))
         return MULIB_PRETTY_STRING;
     if (first >= '0' && first <= '9') return MULIB_PRETTY_NUMBER;
+    if (p.custom_op) return MULIB_PRETTY_OPERATOR;
     if (one_of(p.text, {
         "fn", "proc", "extern", "let", "var", "return", "if", "else", "while", "for", "loop",
         "break", "continue", "true", "false", "import", "from", "as", "forall",
         "macro", "rule", "quote", "splice", "lift", "match", "with", "record", "enum",
-        "taskgroup", "launch", "join", "poll", "defer", "unsafe"
+        "taskgroup", "launch", "join", "poll", "defer", "unsafe", "operator", "infix", "infixr"
     })) return MULIB_PRETTY_KEYWORD;
     return MULIB_PRETTY_NORMAL;
 }
@@ -459,16 +472,38 @@ void verify_tokens(const std::vector<Token>& before, const std::string& formatte
 } // namespace
 
 std::string file(const fs::path& input, const Options& options) {
-    const auto name = input.string();
     std::error_code ec;
     if (!fs::is_regular_file(input, ec))
-        throw Error({name, 0, 1, 1}, "expected regular On1x source file", "ON1X-FMT-INPUT");
+        throw Error({input.string(), 0, 1, 1}, "expected regular On1x source file", "ON1X-FMT-INPUT");
+    // '-' after an option terminator has historically addressed a real file by
+    // that name. Keep it source-only rather than using it as a graph anchor.
+    const bool discover = options.operator_loader.has_value() && input != fs::path("-");
+    const auto path = discover ? fs::canonical(input, ec) : input;
+    if (ec) throw Error({input.string()}, "cannot resolve formatter input: " + ec.message(),
+                        "ON1X-FMT-INPUT");
+    const auto name = path.string();
     const auto cfg = read_config(input);
     const auto source = read_source_file(name);
+    constexpr std::size_t max_tokens = 200001; // Includes EOF.
     const auto tokens = scan(source, name);
-    if (tokens.size() > 200001)
+    if (tokens.size() > max_tokens)
         throw Error({name, 0, 1, 1}, "formatter token limit exceeded", "ON1X-FMT-LIMIT");
-    const auto unit = parse(tokens, options.enabled_extensions);
+    const auto unit = [&] {
+        if (discover) {
+            auto loader = *options.operator_loader;
+            loader.extensions.enabled.insert(options.enabled_extensions.begin(),
+                                             options.enabled_extensions.end());
+            return parse_source_with_operator_imports(path, source, loader);
+        }
+        try {
+            return parse(tokens, options.enabled_extensions);
+        } catch (const Error& e) {
+            if (e.diagnostic_id == "ON1X-OPERATOR-UNBOUND")
+                throw Error(e.where, std::string(e.what()) +
+                            "; isolated formatting resolves only declarations in this file", e.diagnostic_id);
+            throw;
+        }
+    }();
     std::optional<Target> source_target;
     const auto items = parts(source, tokens, unit, source_target);
     Document doc(name);

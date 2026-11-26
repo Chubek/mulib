@@ -39,6 +39,11 @@ struct LoadedUnit {
 std::vector<std::filesystem::path> standard_library_roots(const LoaderOptions&);
 // All state belongs to this invocation. Failed loads publish no partial unit.
 LoadedUnit load_unit(const std::filesystem::path&,const LoaderOptions&);
+// Parse only the supplied entry snapshot against the canonical operator import
+// and prelude environment. Dependency bodies are not parsed or executed;
+// no PPX, extension, foreign-admission or checking step runs.
+Unit parse_source_with_operator_imports(const std::filesystem::path&,const std::string&,
+                                        const LoaderOptions&);
 struct KernelImportRequests {
  std::vector<KernelImport> requests;
  std::map<std::string,std::string> source_digests;

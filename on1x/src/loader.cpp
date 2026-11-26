@@ -2,6 +2,7 @@
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/operator_scope.hpp>
 #include <on1x/stdffi.hpp>
 #include <algorithm>
 #include <cstdlib>
@@ -26,6 +27,12 @@ struct Names {
 struct Module {
  fs::path path;
  std::string source;
+ std::vector<Token> scanned;
+ std::vector<Docstring> docs;
+ OperatorDiscovery discovery;
+ OperatorScope operator_exports,operator_visibility;
+ // Direct dependencies that affect parsing, in discovery import order.
+ std::vector<Module*> operator_targets;
  Unit unit;
  Names names;
  std::vector<Module*> quoted;
@@ -33,7 +40,7 @@ struct Module {
    std::map<std::string,KernelImport> kernels;
    std::map<std::string,ForeignImport> foreigns;
  std::size_t id=0;
-  bool active=true,legacy=false,implicit=false;
+   bool discovering=true,active=false,loaded=false,legacy=false,implicit=false;
   std::optional<SharedKind> shared;
 };
 bool regular(const fs::path& path){std::error_code ec;return fs::is_regular_file(path,ec);}
@@ -63,10 +70,11 @@ class Loader {
   std::vector<fs::path> standard_roots;
   std::map<fs::path,SharedKind> shared_sources;
  std::map<fs::path,std::unique_ptr<Module>> modules;
- std::vector<Module*> order,stack,preludes;
+  std::vector<Module*> order,stack,preludes,operator_preludes,discovery_stack;
   std::set<std::string> tokens,globals,type_globals,cliche_globals;
  std::string prefix="on1x_module_";
- std::size_t bytes=0,bindings=0,edges=0;
+ std::size_t bytes=0,bindings=0,edges=0,discovery_edges=0,next_module_id=0;
+  std::size_t operator_binding_bytes=0;
  bool implicit=false;
   KernelImportRequests* inspection;
    const Module* current_module=nullptr;
@@ -236,12 +244,29 @@ class Loader {
     for(const auto& [name,symbol]:from.cliches){value_alias(into,name,at);insert(into.cliches,name,symbol,at);}
   for(const auto& [name,m]:from.modules)bind_module(into,name,m,at);
  }
-  fs::path candidate(const fs::path& base,const Location& at){
-  auto file=base;file+=".on1x";auto init=base/"__init__.on1x";
-  if(regular(file)&&regular(init))throw Error(at,"ambiguous module: both "+file.string()+" and "+init.string());
-  if(regular(file))return file;
-  if(regular(init))return init;
-  if(directory(base))return base; // Namespace package, with no executable initializer.
+   fs::path candidate(const fs::path& base,const Location& at,bool strict=false){
+   auto file=base;file+=".on1x";auto init=base/"__init__.on1x";
+   const bool has_file=regular(file),has_init=regular(init);
+   const bool has_directory=(strict||(!has_file&&!has_init))&&directory(base);
+   if(strict){
+    // Falling back to no operator prelude is safe only for an absent module,
+    // not for an invalid file, package, dangling symlink or filesystem error.
+    const auto require_kind=[&](const fs::path& path,bool expected){
+     if(expected)return;
+     std::error_code ec;
+     const auto status=fs::symlink_status(path,ec);
+     if(ec==std::errc::no_such_file_or_directory||ec==std::errc::not_a_directory)return;
+     if(ec)throw Error(at,"cannot inspect standard operator module '"+path.string()+"': "+ec.message());
+     if(fs::exists(status))throw Error(at,"invalid standard operator module path: "+path.string());
+    };
+    require_kind(file,has_file);require_kind(base,has_directory);require_kind(init,has_init);
+    if(has_directory&&!has_file&&!has_init)
+     throw Error(at,"standard operator module has no initializer: "+init.string());
+   }
+   if(has_file&&has_init)throw Error(at,"ambiguous module: both "+file.string()+" and "+init.string());
+   if(has_file)return file;
+   if(has_init)return init;
+   if(has_directory)return base; // Namespace package, with no executable initializer.
    return {};
   }
   bool import_alias_conflicts(const Names& names,const std::string& alias)const{
@@ -250,11 +275,15 @@ class Loader {
   }
    fs::path standard(const std::string& module,const Location& at){
     for(const auto& root:standard_roots){
-     auto first=candidate(root/module_path(module),at);
+      const bool operators=module=="operators";
+      auto first=candidate(root/module_path(module),at,operators);
      // Compatibility with older installed extension trees; the canonical MuLIB
      // package now lives inside stdlib, not in this legacy sibling directory.
-     auto second=candidate(root.parent_path()/"std"/module_path(module),at);
-     if(!first.empty()&&!second.empty())throw Error(at,"ambiguous standard module: "+module);
+      auto second=candidate(root.parent_path()/"std"/module_path(module),at,operators);
+      if(!first.empty()&&!second.empty()){
+       if(first==second||canonical(first,at)==canonical(second,at))return first;
+       throw Error(at,"ambiguous standard module: "+module);
+      }
      if(!first.empty()||!second.empty())return first.empty()?second:first;
     }
     return {};
@@ -302,31 +331,140 @@ class Loader {
   }
   insert(names.modules,alias,target,at);
  }
- Module* visit(const fs::path& input,const Location& at,bool allow_directory=true){
-  auto path=canonical(input,at);
-  if(auto hit=modules.find(path);hit!=modules.end()){
-   if(hit->second->active){
-    std::string chain;for(const auto* m:stack)chain+=m->path.string()+" -> ";
+  bool wants_operators(const Import& imp)const{
+   return imp.quoted||(imp.selective&&std::any_of(imp.names.begin(),imp.names.end(),
+                          [](const ImportName& n){return n.is_operator;}));
+  }
+  bool self_package(const Import& imp,const Module& parent,const fs::path& target)const{
+   return imp.relative&&imp.module.empty()&&canonical(target,imp.where)==parent.path;
+  }
+  void add_operator(OperatorScope& into,const OperatorBinding& binding,const Location& at){
+   if(!into.add(binding,at))return;
+   charge(at);
+   constexpr std::size_t max_operator_binding_bytes=16*1024*1024;
+   const auto size=sizeof(binding)+binding.identity.size()+binding.header.where.file.size()+
+                    2*binding.header.lexeme.size()+binding.header.lexeme2.size();
+   if(size>max_operator_binding_bytes-operator_binding_bytes)
+    throw Error(at,"module operator scope byte limit exceeded","ON1X-OPERATOR-LIMIT");
+   operator_binding_bytes+=size;
+  }
+  static bool same_import(const Import& a,const Import& b){
+   return a.where.file==b.where.file&&a.where.offset==b.where.offset&&a.module==b.module&&
+          a.alias==b.alias&&a.relative==b.relative&&a.quoted==b.quoted&&a.selective==b.selective&&
+          std::equal(a.names.begin(),a.names.end(),b.names.begin(),b.names.end(),
+                     [](const ImportName& x,const ImportName& y){
+                      return x.name==y.name&&x.alias==y.alias&&x.is_operator==y.is_operator;
+                     });
+  }
+  // Read immutable source and discover only declarations/imports. In this
+  // phase no function body is parsed and no declaration extension runs.
+  Module* metadata(const fs::path& input,const Location& at,bool allow_directory=true){
+   auto path=canonical(input,at);
+   const bool source=regular(path);
+   if(!source&&!(allow_directory&&directory(path)))
+    throw Error(at,"import is not a regular source file: "+path.string());
+   if(auto hit=modules.find(path);hit!=modules.end()){
+    if(hit->second->discovering){
+     std::string chain;for(const auto* m:discovery_stack)chain+=m->path.string()+" -> ";
+     throw Error(at,"import cycle: "+chain+path.string());
+    }
+    return hit->second.get();
+   }
+   if(modules.size()>=options.max_modules)throw Error(at,"module count limit exceeded");
+   if(stack.size()+discovery_stack.size()>=options.max_depth)
+    throw Error(at,"import recursion limit exceeded");
+   auto storage=std::make_unique<Module>();auto* m=storage.get();m->path=path;
+   modules.emplace(path,std::move(storage));discovery_stack.push_back(m);
+   if(source){
+    auto replacement=options.source_overrides.find(path);
+    m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
+    if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
+    bytes+=m->source.size();m->scanned=scan(m->source,path.string(),&m->docs);
+    for(const auto& t:m->scanned)tokens.insert(t.text);
+    m->discovery=discover_operators(m->scanned);
+    if(m->discovery.imports.size()>16384-discovery_edges)throw Error(at,"import edge limit exceeded");
+    discovery_edges+=m->discovery.imports.size();
+    if(options.standalone_guest&&!m->discovery.imports.empty())
+     throw Error(m->discovery.imports.front().where,"standalone ArchVirt source cannot import or activate extensions");
+    for(const auto& header:m->discovery.operators)
+     add_operator(m->operator_exports,{header,operator_identity(header)},header.where);
+    m->operator_targets.resize(m->discovery.imports.size());
+    for(std::size_t i=0;i<m->discovery.imports.size();++i){
+     const auto& imp=m->discovery.imports[i];
+     if(!wants_operators(imp))continue;
+     auto target_path=resolve(imp,*m);
+     auto* target=self_package(imp,*m,target_path)?nullptr:metadata(target_path,imp.where,!imp.quoted);
+     m->operator_targets[i]=target;
+     if(imp.quoted){
+      target->operator_exports.each([&](const auto& binding){add_operator(m->operator_exports,binding,imp.where);});
+      continue;
+     }
+     for(const auto& selection:imp.names){
+      if(!selection.is_operator)continue;
+      const auto* prefix=target?target->operator_exports.find(selection.name,OperatorPosition::Prefix):nullptr;
+      const auto* trailing=target?target->operator_exports.trailing(selection.name):nullptr;
+      if(!prefix&&!trailing)
+       throw Error(imp.where,"module '"+imp.module+"' has no operator export '"+selection.name+"'",
+                   "ON1X-OPERATOR-IMPORT");
+      if(prefix)add_operator(m->operator_exports,*prefix,imp.where);
+      if(trailing)add_operator(m->operator_exports,*trailing,imp.where);
+     }
+    }
+   }
+   discovery_stack.pop_back();m->discovering=false;return m;
+  }
+  Module* visit(const fs::path& input,const Location& at,bool allow_directory=true){
+   return visit(metadata(input,at,allow_directory),at);
+  }
+   OperatorScope visible_operators(const Module& module,const Location& at){
+    auto scope=module.operator_exports;
+    for(auto it=operator_preludes.rbegin();it!=operator_preludes.rend();++it){
+     (*it)->operator_exports.each([&](const auto& binding){
+      const auto& header=binding.header;
+      const auto* existing=header.position==OperatorPosition::Prefix?
+       scope.find(header.lexeme,OperatorPosition::Prefix):scope.trailing(header.lexeme);
+      if(!existing)add_operator(scope,binding,at);
+     });
+    }
+    return scope;
+   }
+   Module* visit(Module* m,const Location& at){
+   const auto& path=m->path;
+   if(m->active){
+    std::string chain;for(const auto* parent:stack)chain+=parent->path.string()+" -> ";
     throw Error(at,"import cycle: "+chain+path.string());
    }
-   if(!implicit)explicit_module(hit->second.get());
-   return hit->second.get();
-  }
-  if(modules.size()>=options.max_modules)throw Error(at,"module count limit exceeded");
-  if(stack.size()>=options.max_depth)throw Error(at,"import recursion limit exceeded");
-  if(!regular(path)&&!(allow_directory&&directory(path)))throw Error(at,"import is not a regular source file: "+path.string());
-  auto storage=std::make_unique<Module>();auto* m=storage.get();m->path=path;m->id=modules.size();
-  m->implicit=implicit;
-  modules.emplace(path,std::move(storage));stack.push_back(m);
-  if(regular(path)){
-     auto replacement=options.source_overrides.find(path);
-     m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
-    if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
-    std::vector<Docstring> docs;
-    bytes+=m->source.size();auto scanned=scan(m->source,path.string(),&docs);
-   for(const auto& t:scanned)tokens.insert(t.text);
-      m->unit=parse(scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},std::move(docs));
-      if(options.standalone_guest){
+   if(m->loaded){
+    if(!implicit)explicit_module(m);
+    return m;
+   }
+   if(stack.size()>=options.max_depth)throw Error(at,"import recursion limit exceeded");
+   m->id=next_module_id++;m->implicit=implicit;m->active=true;stack.push_back(m);
+   if(!m->scanned.empty()){
+     m->operator_visibility=visible_operators(*m,at);
+    m->unit=parse_with_operators(m->scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},
+                                 std::move(m->docs),m->operator_visibility);
+    std::vector<Token>().swap(m->scanned);
+    const auto module_operators=std::count_if(m->unit.operators.begin(),m->unit.operators.end(),
+                                               [](const auto& op){return !op.block_local;});
+    if(!std::equal(m->unit.module_imports.begin(),m->unit.module_imports.end(),
+                  m->discovery.imports.begin(),m->discovery.imports.end(),same_import)||
+       static_cast<std::size_t>(module_operators)!=m->discovery.operators.size())
+     throw Error(at,"inconsistent operator discovery and parse","ON1X-OPERATOR-DISCOVERY");
+    for(auto& op:m->unit.operators){
+     if(op.block_local){
+      op.function.name=op.identity=operator_identity(op.header);
+      continue;
+     }
+     const auto* binding=m->operator_exports.find(op.header.lexeme,op.header.position);
+     if(!binding||binding->identity!=operator_identity(op.header)||
+        binding->header.lexeme2!=op.header.lexeme2||binding->header.arity!=op.header.arity||
+        binding->header.precedence!=op.header.precedence||binding->header.tightness!=op.header.tightness||
+        binding->header.binds!=op.header.binds)
+      throw Error(op.header.where,"inconsistent operator header in discovery and parse","ON1X-OPERATOR-DISCOVERY");
+     op.function.name=op.identity=binding->identity;
+    }
+       if(options.standalone_guest){
        const auto& u=m->unit;
         if(!u.imports.empty()||!u.module_imports.empty()||!u.kernel_imports.empty()||!u.foreign_imports.empty()||
           !u.ppx.empty()||!u.features.empty()||!u.extensions.empty())
@@ -427,20 +565,26 @@ class Loader {
    if(m->names.syntax.contains(macro.name))throw Error(macro.where,"duplicate macro: "+macro.name);
    insert(m->names.syntax,macro.name,Symbol{m,macro.name},macro.where);
   }
-  for(const auto& imp:m->unit.module_imports){
-   if(++edges>16384)throw Error(imp.where,"import edge limit exceeded");
-   // `from . import child` addresses a directory, not its currently-loading initializer.
-   auto target_path=resolve(imp,*m);
-   Module* target=nullptr;
-   bool self_package=imp.relative&&imp.module.empty()&&canonical(target_path,imp.where)==m->path;
-   if(self_package)target=m;else target=visit(target_path,imp.where,!imp.quoted);
+   for(std::size_t i=0;i<m->unit.module_imports.size();++i){
+    const auto& imp=m->unit.module_imports[i];
+    if(++edges>16384)throw Error(imp.where,"import edge limit exceeded");
+    // `from . import child` addresses a directory, not its currently-loading initializer.
+    auto* target=m->operator_targets[i];
+    bool own_package=false;
+    if(target)target=visit(target,imp.where);
+    else{
+     auto target_path=resolve(imp,*m);
+     own_package=self_package(imp,*m,target_path);
+     target=own_package?m:visit(target_path,imp.where,!imp.quoted);
+    }
    if(target!=m)m->dependencies.push_back(target);
    if(imp.quoted){m->quoted.push_back(target);merge(m->names,target->names,imp.where);continue;}
-   if(!imp.selective){bind_module(m->names,imp.alias.empty()?imp.module:imp.alias,target,imp.where);continue;}
-   for(const auto& selection:imp.names){
-    const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
-    bool found=false;
-    if(!self_package){
+    if(!imp.selective){bind_module(m->names,imp.alias.empty()?imp.module:imp.alias,target,imp.where);continue;}
+    for(const auto& selection:imp.names){
+     if(selection.is_operator)continue; // Already included in the operator export scope.
+     const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
+     bool found=false;
+     if(!own_package){
      if(auto it=target->names.values.find(name);it!=target->names.values.end()){value_alias(m->names,alias,imp.where);insert(m->names.values,alias,it->second,imp.where);found=true;}
        if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
        if(auto it=target->names.types.find(name);it!=target->names.types.end()){value_alias(m->names,alias,imp.where);insert(m->names.types,alias,it->second,imp.where);found=true;}
@@ -454,9 +598,11 @@ class Loader {
        if(directory(root)&&directory(target->path)&&target->path==canonical(root,imp.where)){child=standard(name,imp.where);break;}
     if(child.empty())throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
     auto* imported=visit(child,imp.where);m->dependencies.push_back(imported);
-    bind_module(m->names,alias,imported,imp.where);
+     bind_module(m->names,alias,imported,imp.where);
+    }
    }
-  }
+   m->discovery={};
+   std::vector<Module*>().swap(m->operator_targets);
    if(regular(path)){
     std::set<std::string> aliases;
     for(const auto& request:m->unit.kernel_imports){
@@ -483,7 +629,7 @@ class Loader {
     }
     if(inspection)inspection->source_digests.merge(m->unit.source_digests);
   }
-  stack.pop_back();m->active=false;order.push_back(m);return m;
+   stack.pop_back();m->active=false;m->loaded=true;order.push_back(m);return m;
  }
  void legacy(Module* m){if(m->legacy)return;m->legacy=true;for(auto* child:m->quoted)legacy(child);}
   std::string name(const Symbol& s)const{
@@ -720,8 +866,17 @@ class Loader {
  }
   Scope body(std::vector<Stmt>& statements,const Names& names,const Scope& outer,const Scope& syntax){
   auto values=outer;
-    for(auto& s:statements){
-     s.declared=type_reference(s.declared,s.where,names);
+     for(auto& s:statements){
+      if(s.syntax_operator){
+       // A generated operator is a named, noncapturing callable. Resolve
+       // definition-site modules/macros and its own parameters, not the
+       // template's surrounding value aliases or any unsafe region.
+       auto saved=unsafe_context;unsafe_context=false;
+       function_body(s.syntax_operator->function,names,syntax);
+       unsafe_context=saved;
+       continue;
+      }
+      s.declared=type_reference(s.declared,s.where,names);
      if((s.kind==Stmt::Kind::Break||s.kind==Stmt::Kind::Continue)&&!s.value&&s.label.empty()){
      std::string spelling=s.kind==Stmt::Kind::Break?"break":"continue";
      if(values.contains(spelling)||names.values.contains(spelling)){
@@ -740,8 +895,16 @@ class Loader {
       body(s.body,names,inner,syntax);unsafe_context=saved;
      body(s.otherwise,names,values,syntax);
    }
-   return values;
-  }
+    return values;
+   }
+    void function_body(Function& f,const Names& names,const Scope& syntax={}){
+    f.result=type_reference(f.result,f.where,names);
+    for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
+    for(auto& parameter:f.type_parameters)constraints(parameter.bounds,names);
+    constraints(f.constraints,names);
+     Scope locals;parameters(locals,f.params);body(f.body,names,locals,syntax);
+     for(auto& attr:f.attributes)expression(*attr,names,locals,syntax);
+   }
   std::vector<InterfaceObligation> bind_interfaces(){
    std::set<fs::path> seen;
    std::vector<InterfaceObligation> obligations;
@@ -785,7 +948,36 @@ class Loader {
    }
    return obligations;
   }
-public:
+   struct PreludeModules {
+    Module* pervasive=nullptr;
+    Module* operators=nullptr;
+    std::vector<Module*> configured;
+   };
+   PreludeModules discover_preludes(const fs::path& input){
+    entry_directory=canonical(input,{input.string()}).parent_path();
+    const Location at{"<prelude>"};
+    PreludeModules result;
+    if(options.prelude){
+     auto pervasive=standard("pervasive",at);
+     if(pervasive.empty())
+      throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude (pervasive.on1x not found)");
+     auto operators=standard("operators",at);
+     // Older/custom standard libraries may ship only pervasive.on1x.
+     if(!operators.empty()){
+      result.operators=metadata(operators,at,false);
+      operator_preludes.push_back(result.operators);
+     }
+     result.pervasive=metadata(pervasive,at,false);
+     operator_preludes.push_back(result.pervasive);
+    }
+    for(const auto& path:options.preludes){
+     auto* module=metadata(path,at,false);
+     result.configured.push_back(module);
+     operator_preludes.push_back(module);
+    }
+    return result;
+   }
+ public:
    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
     :options(opts),standard_roots(standard_library_roots(opts)),inspection(inspect){
      for(const auto& root:standard_roots)
@@ -795,7 +987,15 @@ public:
        if(!ec)shared_sources.emplace(std::move(path),kind);
       }
     }
-  LoadedUnit run(const fs::path& input){
+   Unit parse_source(const fs::path& input){
+    (void)discover_preludes(input);
+    const Location at{input.string()};
+    auto* entry=metadata(input,at,false);
+    return parse_with_operators(entry->scanned,
+            {options.extensions.enabled.begin(),options.extensions.enabled.end()},
+            std::move(entry->docs),visible_operators(*entry,at));
+   }
+   LoadedUnit run(const fs::path& input){
     if(options.kernel_load_time&&
        (inspection||options.standalone_guest||options.kernel_c11||options.kernel_stage||
         !options.extensions.enabled.empty()))
@@ -806,13 +1006,13 @@ public:
    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
     throw Error({input.string()},"interface verification cannot run with KernelBind or declaration extensions",
                 "ON1X-INTERFACE-UNSUPPORTED");
-  entry_directory=canonical(input,{input.string()}).parent_path();
-  if(options.prelude){
-    auto path=standard("pervasive",{"<prelude>"});
-    if(path.empty())throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude (pervasive.on1x not found)");
-    implicit=true;preludes.push_back(visit(path,{"<prelude>"},false));implicit=false;
-  }
-  for(const auto& path:options.preludes)preludes.push_back(visit(path,{"<prelude>"},false));
+    const Location prelude_at{"<prelude>"};
+    const auto discovered=discover_preludes(input);
+    implicit=true;
+    if(discovered.pervasive)preludes.push_back(visit(discovered.pervasive,prelude_at));
+    if(discovered.operators)visit(discovered.operators,prelude_at); // Open only its operator exports.
+    implicit=false;
+    for(auto* module:discovered.configured)preludes.push_back(visit(module,prelude_at));
    auto* entry=visit(input,{input.string()},false);
    if(inspection)return {};
    legacy(entry);
@@ -822,12 +1022,15 @@ public:
     for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
     for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
     for(auto* m:order)for(const auto& c:m->unit.cliches)cliche_globals.insert(name({m,c.name}));
-  LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
+   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
+    // Macro expansion or PPX can introduce the first operator in a graph.
+    // Freeze module ownership even when discovery found no operators.
+    result.unit.operator_entry=entry->path.string();
    result.interfaces=bind_interfaces();
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
    std::size_t count=0;
    for(auto* m:order){
-    count+=m->unit.functions.size();
+     count+=m->unit.functions.size()+m->unit.operators.size();
     for(const auto& implementation:m->unit.cliche_implementations)
      count+=implementation.members.size();
     for(const auto& implementation:m->unit.inherent_implementations)
@@ -835,8 +1038,10 @@ public:
    }
    if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count);
-   for(auto* m:order){
+    for(auto* m:order){
      current_module=m;
+     const auto scope_key=m->path.string();
+      record_operator_scope(result.unit,m->operator_visibility,scope_key);
     for(auto& doc:m->unit.docstrings)result.unit.docstrings.push_back(std::move(doc));
     auto names=m->legacy?flat:m->names;
       for(const auto& [alias,request]:m->kernels)if(import_alias_conflicts(names,alias))
@@ -916,13 +1121,18 @@ public:
        }
        result.unit.inherent_implementations.push_back(std::move(implementation));
       }
-      for(auto& f:m->unit.functions){
-      f.result=type_reference(f.result,f.where,names);for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
-      for(auto& parameter:f.type_parameters)constraints(parameter.bounds,names);
-      constraints(f.constraints,names);
-    Scope locals;parameters(locals,f.params);body(f.body,names,locals,{});
-    for(auto& attr:f.attributes)expression(*attr,names,locals,{});
-    f.name=name({m,f.name,f.external});
+    for(auto& op:m->unit.operators){
+     function_body(op.function,names);
+     result.unit.operator_owners.emplace(op.identity,scope_key);
+     result.internal_functions.insert(op.identity);
+     if(m->implicit)result.unit.operator_lazy_functions.insert(op.identity);
+     result.unit.operators.push_back(std::move(op));
+    }
+    for(auto& directive:m->unit.fixity_directives)result.unit.fixity_directives.push_back(std::move(directive));
+    for(auto& f:m->unit.functions){
+     function_body(f,names);
+     f.name=name({m,f.name,f.external});
+      result.unit.operator_owners.emplace(f.name,scope_key);
     if(m->implicit)lazy.insert(f.name);
     if(!m->legacy)result.internal_functions.insert(f.name);
     if(f.external){
@@ -983,18 +1193,33 @@ public:
   // annotated-only checking path and keeps unused generic helpers out of PPX/MIR.
   // Explicit imports and --prelude files always retain/check their definitions.
   std::map<std::string,std::set<std::string>> calls;
-  auto collect=[&](auto&& self,const Expr& e,std::set<std::string>& refs)->void{
-   if(e.kind==Expr::Kind::Variable)refs.insert(e.text);
+   auto collect=[&](auto&& self,const Expr& e,std::set<std::string>& refs)->void{
+    if(e.kind==Expr::Kind::Variable)refs.insert(e.text);
+    if(!e.operator_identity.empty())refs.insert(e.operator_identity);
    if(e.callee)self(self,*e.callee,refs);
    if(e.syntax_tail)self(self,*e.syntax_tail,refs);
    for(const auto& child:e.children)self(self,*child,refs);
    auto statements=[&](auto&& walk,const std::vector<Stmt>& body)->void{
-    for(const auto& s:body){if(s.value)self(self,*s.value,refs);walk(walk,s.body);walk(walk,s.otherwise);}
+     for(const auto& s:body){
+      if(s.value)self(self,*s.value,refs);
+      if(s.syntax_operator){
+       for(const auto& attr:s.syntax_operator->function.attributes)self(self,*attr,refs);
+       walk(walk,s.syntax_operator->function.body);
+      }
+      walk(walk,s.body);walk(walk,s.otherwise);
+     }
    };statements(statements,e.body);
    for(const auto& m:e.syntax_definitions)for(const auto& r:m.rules){if(r.expression)self(self,*r.expression,refs);statements(statements,r.body);}
   };
   auto statements=[&](auto&& self,const std::vector<Stmt>& body,std::set<std::string>& refs)->void{
-   for(const auto& s:body){if(s.value)collect(collect,*s.value,refs);self(self,s.body,refs);self(self,s.otherwise,refs);}
+    for(const auto& s:body){
+     if(s.value)collect(collect,*s.value,refs);
+     if(s.syntax_operator){
+      for(const auto& attr:s.syntax_operator->function.attributes)collect(collect,*attr,refs);
+      self(self,s.syntax_operator->function.body,refs);
+     }
+     self(self,s.body,refs);self(self,s.otherwise,refs);
+    }
   };
   std::set<std::string> needed;
    for(const auto& obligation:result.interfaces)needed.insert(obligation.resolved_name);
@@ -1003,26 +1228,49 @@ public:
      needed.insert(binding.function);needed.insert(binding.selector);
     }
    }
-   for(const auto& f:result.unit.functions){
+    for(const auto& f:result.unit.functions){
     auto& refs=calls[f.name];statements(statements,f.body,refs);for(const auto& a:f.attributes)collect(collect,*a,refs);
     if(!lazy.contains(f.name))needed.insert(f.name);
    }
-   for(const auto& implementation:result.unit.cliche_implementations)
-    for(const auto& member:implementation.members){
-     statements(statements,member.function.body,needed);
-     if(member.value)collect(collect,*member.value,needed);
+    for(const auto& op:result.unit.operators){
+     auto& refs=calls[op.identity];
+     statements(statements,op.function.body,refs);
+     for(const auto& attr:op.function.attributes)collect(collect,*attr,refs);
+     if(!result.unit.operator_lazy_functions.contains(op.identity))needed.insert(op.identity);
     }
+    for(const auto& implementation:result.unit.cliche_implementations)
+     for(const auto& member:implementation.members){
+      statements(statements,member.function.body,needed);
+      if(member.value)collect(collect,*member.value,needed);
+     }
    for(const auto& implementation:result.unit.inherent_implementations)
     for(const auto& member:implementation.members){
      statements(statements,member.function.body,needed);
      if(member.value)collect(collect,*member.value,needed);
     }
    for(const auto& m:result.unit.macros)for(const auto& r:m.rules){if(r.expression)collect(collect,*r.expression,needed);statements(statements,r.body,needed);}
-  std::vector<std::string> pending(needed.begin(),needed.end());
-  while(!pending.empty()){
-   auto current=std::move(pending.back());pending.pop_back();
-   for(const auto& target:calls[current])if(needed.insert(target).second)pending.push_back(target);
-  }
+   const auto reach=[&](std::vector<std::string> pending){
+    while(!pending.empty()){
+     auto current=std::move(pending.back());pending.pop_back();
+     auto found=calls.find(current);
+     if(found==calls.end())continue;
+     for(const auto& target:found->second)if(needed.insert(target).second)pending.push_back(target);
+    }
+   };
+   reach({needed.begin(),needed.end()});
+   if(!result.unit.operator_lazy_functions.empty()){
+    // Keep the complete automatically opened operator surface through PPX.
+    // Those operators may be newly used by a transform, so also retain their
+    // named helpers, marked as optional if no original root requires them.
+    const auto original=needed;
+    std::vector<std::string> pending;
+    for(const auto& op:result.unit.operators)
+     if(needed.insert(op.identity).second)pending.push_back(op.identity);
+    reach(std::move(pending));
+    for(const auto& candidate:lazy)
+     if(needed.contains(candidate)&&!original.contains(candidate))
+      result.unit.operator_lazy_functions.insert(candidate);
+   }
   std::erase_if(result.unit.functions,[&](const Function& f){return lazy.contains(f.name)&&!needed.contains(f.name);});
   return result;
  }
@@ -1097,7 +1345,17 @@ std::vector<fs::path> standard_library_roots(const LoaderOptions& options){
  }
  return result;
 }
-LoadedUnit load_unit(const fs::path& input,const LoaderOptions& options){return Loader(options).run(input);}
+ LoadedUnit load_unit(const fs::path& input,const LoaderOptions& options){return Loader(options).run(input);}
+ Unit parse_source_with_operator_imports(const fs::path& input,const std::string& source,
+                                         const LoaderOptions& options){
+  if(source.size()>max_source_bytes)
+   throw Error({input.string()},"source exceeds 2 MiB limit","ON1X-LEX-LIMIT");
+  auto snapshot=options;
+  auto path=canonical(input,{input.string()});
+  snapshot.source_overrides.insert_or_assign(path,source);
+  snapshot.extensions.execute=false;
+  return Loader(snapshot).parse_source(path);
+ }
 KernelImportRequests inspect_kernel_imports(const fs::path& input,const LoaderOptions& options){
  auto inspect_options=options;
  inspect_options.extensions.execute=false;

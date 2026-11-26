@@ -10,9 +10,15 @@ on1xc fmt src/main.on1x --target troff -o main.roff
 
 `--format`, `--emit-latex`, and `--emit-troff` are leading command aliases.
 For source using a compiler-enabled extension without `@enable`, pass the
-matching `--enable NAME`. Formatting does not load imports, check types,
-expand macros, or run PPX programs. Syntactically invalid input is rejected
-before any output is published. `--inplace` (`-i`) writes plain source back
+matching `--enable NAME`. The formatter can discover headers from
+[operator](operators.md) imports and the pervasive prelude, using the same
+search paths and fixity rules as the compiler. It does not parse dependency
+bodies, check types, expand macros, or run PPX or declaration extensions.
+Use `--stdlib DIR`, `-I DIR`, `--prelude FILE`, or `--no-prelude` to match
+your build's operator environment. `--isolated` restricts formatting to the
+input file and is intended for scratch or untrusted editor buffers.
+Syntactically invalid input is rejected before any output is published.
+`--inplace` (`-i`) writes plain source back
 to the input file without writing to stdout. It cannot be combined with
 `--check`, `-o`, or an explicit LaTeX or troff target. Markup targets produce
 listings, not On1x source; use the plain target if passing the input path to

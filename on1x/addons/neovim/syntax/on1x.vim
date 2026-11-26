@@ -31,6 +31,8 @@ syntax match on1xImport /^\s*\zsfrom\ze\s\+[.A-Za-z_]/
 syntax match on1xImport /\<unsafe\ze\s\+import\s\+kernel\>/
 syntax match on1xRemovedImport /\<unsafe\s\+import\s\+foreign\>/
 syntax match on1xDeclaration /^\s*\zs\%(record\|enum\)\ze\s\+[A-Za-z_]/
+syntax match on1xDeclaration /\<operator\>\ze\s*[(<]/
+syntax match on1xDirective /\<infixr\?\>\ze\s\+[0-9]/
 syntax match on1xType /\<\%(code\|slice\|array\|ifiber\|channel\|sender\|receiver\)\ze\s*</
 syntax match on1xType /\<\%(record\|sum\)\ze\s*{/
 syntax match on1xType /\<array\ze\s*\[\|\<\%(record\|variant\)\ze\s*</
@@ -56,7 +58,7 @@ syntax match on1xFloat /\<[0-9]\+\.[0-9]\+\%([eE][+-]\?[0-9]\+\)\?\%(f32\|f64\)\
 syntax match on1xFloat /\<[0-9]\+[eE][+-]\?[0-9]\+\%(f32\|f64\)\?\>/
 syntax match on1xFloat /\<[0-9]\+f\%(32\|64\)\>/
 syntax match on1xDelimiter /[][{}();:,.]/
-syntax match on1xOperator /\%(&&\|::\|:=\|=>\|->\|<-\|\.\.\.\|\.\.=\|\.\.\|==\|!=\|<=\|>=\|||\|[+*/%<>=!|?~-]\)/
+syntax match on1xOperator /\%(\.\.\.\|\.\.=\|\.\.\|>=>\|<=<\|=<<\|\%(<<\|>>\)\.\%(\.\)\@!\|<\{2,}=\?\|>\{2,}=\?\|<[!%&*+?^|~$-]\+>\|<|\|[|~!]>\|&&\|::\|:=\|=>\|->\|<-\|==\|!=\|<=\|>=\|||\|[!%&*+?^|~]\{2,}\|[+*/%<>=!|?~&^-]\)/
 
 syntax match on1xTodo /\<\%(TODO\|FIXME\|XXX\)\>/ contained
 syntax match on1xComment /#\%(\\\)\@!.*/ contains=on1xTodo

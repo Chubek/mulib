@@ -20,6 +20,8 @@ int main() {
         "fn main(){let c=quote{lift(40)+2};println(run(c));}",
         "fn main(){let r=/[a-z]+/;assert(match r ~ \"abc\");}",
         "proc main(){let action=proc(){return;};action();}",
+        "operator(lexeme:\"??\",lexeme2:\"?|\",arity:\"ternary\",formals:a,b,c){return b;}"
+        "infix 4 ??;infixr 2 ??;fn main(){let op=operator(\"??\");let x=1??2?|3;}",
         "fn main(){let a=r!\"raw\";let b=b!\"bytes\";"
         "let c=#\\a;let x=1.5f32;}",
         "{! main doc }{- skipped -}fn main(){let a='''a\n b''';"
@@ -70,8 +72,16 @@ int main() {
                 assert(token.kind == ON1X_SDK_TOKEN_CHARACTER);
             if (spelling == "1.5f32")
                 assert(token.kind == ON1X_SDK_TOKEN_FLOAT);
-            if (spelling == "proc")
+             if (spelling == "proc")
+                 assert(token.kind == ON1X_SDK_TOKEN_KEYWORD);
+            if (spelling == "operator" || spelling == "infix" || spelling == "infixr")
                 assert(token.kind == ON1X_SDK_TOKEN_KEYWORD);
+            if (spelling == "??" || spelling == "?|")
+                assert(token.kind == ON1X_SDK_TOKEN_CUSTOM_OPERATOR);
+            if (spelling == "\"??\"" || spelling == "\"?|\"")
+                assert(token.kind == ON1X_SDK_TOKEN_STRING);
+            if (spelling == "+" || spelling == ";" || spelling == "=")
+                assert(token.kind == ON1X_SDK_TOKEN_PUNCTUATION);
         }
         if (samples[sample].starts_with("{! main doc }")) {
             On1xSDK_AST *ast = nullptr;

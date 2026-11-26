@@ -5,6 +5,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/operator_scope.hpp>
 
 #include <fstream>
 
@@ -106,7 +107,7 @@ std::shared_ptr<ASTData> maybe_expand(
     operation.poll();
     return build_ast(
         std::move(unit), input->sources, options,
-        ON1X_SDK_AST_MACRO_EXPANDED_CANDIDATE);
+        ON1X_SDK_AST_MACRO_EXPANDED_CANDIDATE, input->source_operator_imports);
 }
 
 } // namespace
@@ -177,6 +178,7 @@ std::shared_ptr<CompilationData> compile_impl(
         std::size_t total_bytes = 0;
         std::size_t total_tokens = 0;
         std::vector<std::shared_ptr<RevisionData>> sources;
+        std::vector<on1x::Import> source_operator_imports;
         for (std::size_t i = 0; i < loaded.dependencies.size(); ++i) {
             auto path = normalize_path(
                 state, loaded.dependencies[i].generic_string());
@@ -201,6 +203,16 @@ std::shared_ptr<CompilationData> compile_impl(
             total_tokens += scanned.size();
             operation.charge(scanned.size());
 
+            // The merged Unit has already consumed its imports. Project the
+            // operator-facing statements from the exact loaded snapshot, not
+            // from disk or from the rewritten namespace.
+            for (auto &import : on1x::discover_operators(scanned).imports) {
+                if (import.quoted || std::any_of(
+                        import.names.begin(), import.names.end(),
+                        [](const auto &name) { return name.is_operator; }))
+                    source_operator_imports.push_back(std::move(import));
+            }
+
             bool from_overlay = false;
             std::shared_ptr<RevisionData> revision;
             auto found = snapshots.find(path);
@@ -222,7 +234,7 @@ std::shared_ptr<CompilationData> compile_impl(
                  "canonical loader omitted the entry source");
         result->ast = build_ast(
             std::move(loaded.unit), std::move(sources), options,
-            ON1X_SDK_AST_PARSED_CANDIDATE);
+            ON1X_SDK_AST_PARSED_CANDIDATE, std::move(source_operator_imports));
         result->ast = maybe_expand(result->ast, options);
     } else {
         auto ast = parse_revision_impl(entry_revision, options);

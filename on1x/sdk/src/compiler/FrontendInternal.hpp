@@ -151,6 +151,8 @@ struct DirectiveData {
 struct ASTData {
     std::shared_ptr<SessionState> state;
     std::shared_ptr<const on1x::Unit> unit;
+    // Source-view projection only; never reintroduced into a linked Unit.
+    std::vector<on1x::Import> source_operator_imports;
     std::vector<std::shared_ptr<RevisionData>> sources;
     std::map<std::string, std::shared_ptr<RevisionData>> source_by_path;
     std::vector<NodeData> nodes;
@@ -334,7 +336,8 @@ std::shared_ptr<ASTData> build_ast(
     on1x::Unit unit,
     std::vector<std::shared_ptr<RevisionData>> sources,
     const OptionsData &options,
-    On1xSDK_ASTValidationState validation);
+    On1xSDK_ASTValidationState validation,
+    std::vector<on1x::Import> source_operator_imports = {});
 std::shared_ptr<CompilationData> compile_impl(
     const std::shared_ptr<SessionState> &state,
     const std::shared_ptr<VFSData> &vfs,

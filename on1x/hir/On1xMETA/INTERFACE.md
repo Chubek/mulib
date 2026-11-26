@@ -54,3 +54,25 @@ Build integration: `hir/CMakeLists.txt` adds `On1xMETA/` after frontend declarat
 The subdirectory adds frontend generation dependencies and private includes.
 The `on1x_meta_generated` interface target is also available for internal
 build-tree consumers; it is not an installed SDK dependency.
+
+## Separate mandatory source interface
+
+`on1x_meta_source.hpp` is compiled from `source/operators.o1m` by the same
+LLSynth frontend with `generate.py --source`. It uses the private
+`source_desugar.hpp` schema: `Form`, `Replacement`, capture arity and ordered
+operand slots, rule provenance, budgets, and a distinct program fingerprint.
+The engine selects generated recipes by host AST form. The host operator bridge
+supplies a validated binding and the original movable operands/payloads; no `.o1m`
+literal can specify a name, binding identity, type, ownership or location.
+Source recipes do not enter the checked `RuleSelection` or semantic tables.
+
+`meta::desugar_source_operators` in `include/on1x/operator_lowering.hpp` returns
+the transactional source-rule report and never runs PPX. Callers must already
+have consumed macro syntax and any applicable PPX; the bridge rejects pending
+source registrations. After the phase, `meta::require_core` and the ordinary
+checker validate the results before backend use.
+
+`--dump-processor` exposes these statistics in the `source_desugar` object:
+`program_sha256`, `verified`, `rewrites`, `definitions`, `fixities`, and
+nonzero `rules` with `name`, `count`, `file`, `line`, and `column`. The top-level
+program fingerprint and the `desugar` object still describe the checked rules.

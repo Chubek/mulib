@@ -61,10 +61,10 @@ def main():
     assert rejected_parser.returncode == 1 and 'expected one self-contained grammar' in rejected_parser.stderr
     assert relocated_parser.read_bytes() == before
 
-    def generate(inputs, directory, *, success=True, using=parser):
+    def generate(inputs, directory, *, success=True, using=parser, source=False, output='on1x_meta_rules.hpp'):
         directory.mkdir(parents=True, exist_ok=True)
-        return run([sys.executable, '-B', generator, '--parser', using,
-                     '--output', directory / 'on1x_meta_rules.hpp',
+        return run([sys.executable, '-B', generator, *(['--source'] if source else []), '--parser', using,
+                      '--output', directory / output,
                      '--manifest', directory / 'manifest.json', *inputs], success)
 
     valid = work / 'identity.o1m'
@@ -124,7 +124,7 @@ int main() {
         ('bad_version', header.replace('meta 1', 'meta 2') + good, 'version'),
         ('trailing_junk', header + good + '@', ''),
         ('missing_semicolon', header + good[:-2], ''),
-        ('unknown_phase', header + good.replace('canonicalize', 'unknown'), ''),
+        ('unknown_phase', header + good.replace('canonicalize', 'unknown'), 'unknown rewrite phase'),
         ('unknown_constructor', header + good.replace('Unary', 'Mystery', 1), 'constructor'),
         ('arity', header + rule('Unary("!", $x, $y)', '$x'), 'operands'),
         ('unknown_guard', header + good.replace('boolean', 'unknown'), 'guard'),
@@ -190,8 +190,9 @@ int main() {
 
     # Compare the generated and bootstrap parse trees and lexical token
     # positions on accepted input, and exact lexer/parser diagnostics on errors.
-    accepted = sorted(root.glob('*.o1m')) + sorted((root / 'tests/fixtures').glob('*.o1m'))
-    bad_syntax = ['trailing_junk', 'missing_semicolon', 'unknown_phase']
+    operators = root / 'source/operators.o1m'
+    accepted = sorted(root.glob('*.o1m')) + sorted((root / 'tests/fixtures').glob('*.o1m')) + [operators]
+    bad_syntax = ['trailing_junk', 'missing_semicolon']
     for path in accepted + [work / (name + '.o1m') for name in bad_syntax]:
         for mode in ['--tokens', '--parse']:
             old, fresh = (run([sys.executable, '-B', p, mode, path], False)
@@ -239,8 +240,74 @@ int main() {
         return [line for line in table.splitlines() if not line.startswith(identities)], manifest
 
     assert table_payload('shipping') == table_payload('shipping-bootstrap')
+    source_one, source_two = work / 'source-one', work / 'source-two'
+    generate([operators], source_one, source=True)
+    generate([operators], source_two, source=True, using=bootstrap)
+    for name in ('on1x_meta_rules.hpp', 'manifest.json'):
+        assert (source_one / name).read_bytes() == (source_two / name).read_bytes(), name
+    data = (source_one / 'on1x_meta_rules.hpp').read_text()
+    assert 'Form::OperatorTernary, Replacement::Call, 3, {0,1,2}' in data
+    assert 'Form::OperatorDeclaration, Replacement::DefineOperator, 1, {0,0,0}' in data
+    assert 'compiled separately' in generate([operators], rejected, success=False).stderr
+    assert 'compiled separately' in generate([valid], rejected, source=True, success=False).stderr
+    valid_source = operators.read_text()
+    # The production interpreter executes the selected source payload, not a
+    # native pass selected by any particular rule name.
+    alternate = work / 'alternate-source.o1m'
+    alternate.write_text(valid_source.replace('operator_binary phase source priority 100',
+                                               'renamed_binary phase source priority 101'))
+    runtime = work / 'source-runtime'
+    generate([alternate], runtime, source=True, output='on1x_meta_source.hpp')
+    driver = runtime / 'probe.cpp'
+    driver.write_text('''#include "source_desugar.hpp"
+#include <iostream>
+int main() {
+  namespace m = on1x::meta::source;
+  using on1x::Expr;
+  Expr e;
+  e.kind = Expr::Kind::OperatorBinary;
+  for (auto text : {"1", "2"}) {
+    auto operand = std::make_unique<Expr>();
+    operand->kind = Expr::Kind::Integer;
+    operand->text = text;
+    e.children.push_back(std::move(operand));
+  }
+  m::Program program;
+  auto ordinary = program.expression(e, "host-id", m::select(m::form_of(e.kind), e.where));
+  ordinary.publish();
+  if (e.kind != Expr::Kind::Call || e.callee->text != "host-id") return 1;
+  const auto report = program.report(0);
+  std::cout << report.rules[0].name << ' ' << e.children[0]->text << e.children[1]->text;
+}
+''')
+    executable = runtime / 'probe'
+    run([args.cxx, '-std=c++20', '-Wall', '-Wextra', '-Wpedantic', '-Werror',
+         '-I', runtime, '-I', root, '-I', on1x / 'include', driver,
+         root / 'source_desugar.cpp', on1x / 'src/type.cpp', '-o', executable])
+    assert run([executable]).stdout == 'renamed_binary 12'
+    source_cases = [
+        (valid_source.replace('$left, $right)\nguard', '$right, $left)\nguard'),
+         'evaluation order'),
+        (valid_source.replace('$left, $right)\nguard', '$left, $left)\nguard'),
+         'evaluation order'),
+        (valid_source.replace('$left, $right)\nguard', '$left)\nguard'),
+         'evaluation order'),
+        (valid_source.replace('Call(BoundOperator(), $left', 'Call(BoundOperator("forged"), $left'),
+         'cannot contain literal text'),
+        (valid_source.replace('Call(BoundOperator(), $left', 'Call($right, $left'),
+         'host-bound callee'),
+        (valid_source.replace('guard resolved_fixity', 'guard host_binding'),
+         'requires the resolved_fixity guard'),
+        (valid_source[:valid_source.index('rule operator_fixity')], 'missing mandatory source forms'),
+    ]
+    for i, (text, diagnostic) in enumerate(source_cases):
+        path = work / ('invalid-source-' + str(i) + '.o1m')
+        path.write_text(text)
+        result = generate([path], rejected, source=True, success=False)
+        assert result.returncode == 1 and diagnostic in result.stderr, result.stderr
+        assert (rejected / 'on1x_meta_rules.hpp').read_text() == 'preserved\n'
     print(f'On1xMETA real LLSynth regeneration, table compilation, relocation/order determinism: PASS; '
-          f'{len(cases)+6} rejected inputs; bootstrap/fresh parser and table payload parity: PASS')
+          f'{len(cases)+8+len(source_cases)} rejected inputs; bootstrap/fresh parser and table payload parity: PASS')
 
 
 if __name__ == '__main__':

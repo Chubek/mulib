@@ -760,8 +760,8 @@ void processes_and_commands() {
               &host, text("/usr/bin/on1xc"), text("/work/input.on1x"),
               text("/work"), nullptr, &result) == ON1X_SDK_OK);
     CHECK((state.arguments ==
-           std::vector<std::string>{"/usr/bin/on1xc", "fmt", "--target",
-                                    "plain", "/work/input.on1x"}));
+           std::vector<std::string>{"/usr/bin/on1xc", "fmt", "--isolated",
+                                     "--target", "plain", "/work/input.on1x"}));
     CHECK(on1x_sdk_formatter_dispatch_source(
               &host, text("/usr/bin/on1xc"), text("../input.on1x"),
               text("/work"), nullptr, &result) ==

@@ -19,6 +19,16 @@ MAX_TREE = 128
 MAX_DEPTH = 32
 ARITIES = {"Capture": 0, "Unary": 1, "Binary": 2, "Boolean": 0,
            "Integer": 0, "Unit": 0, "Select": 3}
+CHECKED_CONSTRUCTORS = ARITIES.keys() - {"Capture"}
+SOURCE_FORMS = {
+    "OperatorReference": (0, "BoundOperator", "host_binding"),
+    "OperatorUnary": (1, "Call", "host_binding"),
+    "OperatorBinary": (2, "Call", "host_binding"),
+    "OperatorTernary": (3, "Call", "host_binding"),
+    "OperatorDeclaration": (1, "DefineOperator", "host_binding"),
+    "FixityDirective": (0, "Consumed", "resolved_fixity"),
+}
+SOURCE_CONSTRUCTORS = SOURCE_FORMS.keys() | {"BoundOperator", "Call", "DefineOperator", "Consumed"}
 PHASES = {"canonicalize": "Canonicalize", "desugar": "Desugar"}
 GUARDS = {"always": "Always", "boolean": "Boolean", "integer": "Integer",
           "pure": "Pure"}
@@ -82,26 +92,30 @@ def string(node):
         fail("invalid quoted string: " + exc.msg)
 
 
-def tree(node, depth=0):
+def tree(node, depth=0, source=False):
     if depth >= MAX_DEPTH:
         fail("META_BUDGET: rule tree depth exceeds 32")
     children = node.children
     if token(children[0]).lexeme == "$":
         return ("Capture", token(children[1]).lexeme, ())
     kind = token(children[0]).lexeme
-    if kind not in ARITIES or kind == "Capture":
+    if kind not in (SOURCE_CONSTRUCTORS if source else CHECKED_CONSTRUCTORS):
         fail("unknown tree constructor " + kind)
     arguments = children[2].children
     text, result = "", []
     if arguments:
         if arguments[0].symbol == "Tree":
-            result.append(tree(arguments[0], depth + 1))
+            result.append(tree(arguments[0], depth + 1, source))
         else:
             text = string(arguments[0])
         tail = arguments[1]
         while tail.children:
-            result.append(tree(tail.children[1], depth + 1))
+            result.append(tree(tail.children[1], depth + 1, source))
             tail = tail.children[2]
+    if source:
+        if text or (arguments and arguments[0].symbol != "Tree"):
+            fail("source constructors cannot contain literal text")
+        return (kind, "", tuple(result))
     if len(result) != ARITIES[kind]:
         fail(f"{kind} requires {ARITIES[kind]} tree operands")
     if kind in {"Select", "Unit"} and text:
@@ -268,9 +282,32 @@ def overlap(left, right):
         overlap(a, b) for a, b in zip(left[2], right[2]))
 
 
-def parse_file(parser, path):
-    with path.open("rb") as source:
-        data = source.read(MAX_BYTES + 1)
+def validate_source_rule(rule):
+    form, _, operands = rule["match"]
+    operation, _, output = rule["replacement"]
+    if form not in SOURCE_FORMS:
+        fail("source rule must match an intrinsic operator form")
+    count, allowed, guard = SOURCE_FORMS[form]
+    if len(operands) != count or any(node[0] != "Capture" for node in operands):
+        fail("source match must capture exactly the immediate operands")
+    if len({node[1] for node in operands}) != count:
+        fail("source match captures must be unique")
+    if rule["guard"] != guard:
+        fail(f"{form} requires the {guard} guard")
+    if operation != allowed:
+        fail(f"{form} must produce {allowed}")
+    if operation == "Call":
+        if not output or output[0] != ("BoundOperator", "", ()):
+            fail("source call requires a host-bound callee")
+        output = output[1:]
+    if output != operands:
+        fail("source replacement must preserve all captures exactly once in evaluation order")
+    return [operands.index(node) for node in output]
+
+
+def parse_file(parser, path, source=False):
+    with path.open("rb") as stream:
+        data = stream.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         fail(f"{path}:1:1: META_BUDGET: file exceeds {MAX_BYTES} bytes")
     try:
@@ -305,17 +342,27 @@ def parse_file(parser, path):
         c = node.children
         try:
             if node.symbol == "Rewrite":
+                phase = token(c[3]).lexeme
+                if phase not in PHASES and phase != "source":
+                    fail("unknown rewrite phase " + phase)
+                if (phase == "source") != source:
+                    fail("source and checked rule modules must be compiled separately")
                 rule = {**location, "name": token(c[1]).lexeme,
-                        "phase": token(c[3]).lexeme, "priority": token(c[5]).value,
-                        "match": tree(c[7]), "replacement": tree(c[9]),
+                        "phase": phase, "priority": token(c[5]).value,
+                        "match": tree(c[7], source=source), "replacement": tree(c[9], source=source),
                         "guard": token(c[11]).lexeme}
                 if rule["priority"] > 65535:
                     fail("priority exceeds 65535")
-                if rule["guard"] not in GUARDS:
-                    fail("unknown guard " + rule["guard"])
-                validate_rule(rule)
+                if source:
+                    rule["captures"] = validate_source_rule(rule)
+                else:
+                    if rule["guard"] not in GUARDS:
+                        fail("unknown guard " + rule["guard"])
+                    validate_rule(rule)
                 result.append(rule)
             else:
+                if source:
+                    fail("checked semantic constraints are not source rules")
                 constraint = {**location, "name": token(c[1]).lexeme,
                               "phase": "semantic", "kind": token(c[5]).lexeme,
                               "property": token(c[7]).lexeme, "value": string(c[8]),
@@ -367,7 +414,7 @@ def quote(text):
                          else f"\\{b:03o}" for b in text.encode("utf-8")) + '"'
 
 
-def compile_inputs(parser, inputs):
+def load_inputs(parser, inputs, source=False):
     if not 1 <= len(inputs) <= 64:
         fail("META_BUDGET: require 1..64 input modules")
     declarations, sources, budgets = [], [], None
@@ -376,7 +423,7 @@ def compile_inputs(parser, inputs):
         if path.name in filenames:
             fail("input basenames must be unique for stable source provenance")
         filenames.add(path.name)
-        file_budgets, items, digest = parse_file(parser, path)
+        file_budgets, items, digest = parse_file(parser, path, source=source)
         if budgets is not None and file_budgets != budgets:
             fail(f"{path}:1:1: all inputs must declare identical budgets")
         budgets = file_budgets
@@ -388,6 +435,11 @@ def compile_inputs(parser, inputs):
         if len(declarations) > MAX_RULES:
             fail("META_BUDGET: more than 512 declarations")
         sources.append({"file": path.name, "sha256": digest})
+    return declarations, sources, budgets
+
+
+def compile_inputs(parser, inputs):
+    declarations, sources, budgets = load_inputs(parser, inputs)
     rules = sorted((d for d in declarations if d["phase"] != "semantic"),
                    key=lambda r: (list(PHASES).index(r["phase"]), -r["priority"], r["name"]))
     constraints = sorted((d for d in declarations if d["phase"] == "semantic"),
@@ -427,9 +479,40 @@ def compile_inputs(parser, inputs):
         fields = [quote(c[k]) for k in ("name", "kind", "property", "value", "message", "file")]
         lines.append(" {" + ", ".join(fields + [str(c["line"]), str(c["column"])]) + "},")
     lines += ["}};", "}", ""]
+    schema = Path(__file__).resolve().parents[2] / "include/on1x/meta_schema.hpp"
+    counts = {"rules": len(rules), "constraints": len(constraints), "nodes": len(nodes)}
+    return finish(parser, lines, schema, sources, budgets, counts)
+
+
+def compile_source(parser, inputs):
+    rules, sources, budgets = load_inputs(parser, inputs, source=True)
+    rules.sort(key=lambda r: (-r["priority"], r["name"]))
+    forms = set()
+    lines = ["// Generated by On1xMETA; do not edit.", "#pragma once",
+             '#include "source_desugar.hpp"', "namespace on1x::meta::source::generated {",
+             "inline constexpr std::uint32_t schema_version = 1;",
+             "inline constexpr Budgets budgets{" + ",".join(map(str, budgets)) + "};",
+             f"inline constexpr std::array<Rule, {len(rules)}> rules{{{{"]
+    for rule in rules:
+        form = rule["match"][0]
+        if form in forms:
+            fail(f"{rule['file']}:{rule['line']}:1: ambiguous source form {form}")
+        forms.add(form)
+        indexes = rule["captures"] + [0] * (3 - len(rule["captures"]))
+        lines.append(" {" + ", ".join([
+            quote(rule["name"]), "Form::" + form, "Replacement::" + rule["replacement"][0],
+            str(len(rule["captures"])), "{" + ",".join(map(str, indexes)) + "}",
+            quote(rule["file"]), str(rule["line"]), str(rule["column"])]) + "},")
+    if forms != SOURCE_FORMS.keys():
+        fail("missing mandatory source forms: " + ", ".join(sorted(SOURCE_FORMS.keys() - forms)))
+    lines += ["}};", "}", ""]
+    return finish(parser, lines, Path(__file__).with_name("source_desugar.hpp"),
+                  sources, budgets, {"rules": len(rules), "phase": "source"})
+
+
+def finish(parser, lines, schema, sources, budgets, counts):
     payload = "\n".join(lines)
-    schema_sha256 = hashlib.sha256(
-        (Path(__file__).resolve().parents[2] / "include/on1x/meta_schema.hpp").read_bytes()).hexdigest()
+    schema_sha256 = hashlib.sha256(schema.read_bytes()).hexdigest()
     generator_sha256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     provenance = {"schema_sha256": schema_sha256, "generator_sha256": generator_sha256,
                   "parser_sha256": parser.on1x_parser_sha256, "sources": sources,
@@ -442,8 +525,8 @@ def compile_inputs(parser, inputs):
     ]
     output = "\n".join(lines)
     manifest = {"schema": 1, "parser": "LibStone LLSynth generated LR/DFA",
-                "sources": sources, "rules": len(rules), "constraints": len(constraints),
-                "nodes": len(nodes), "budgets": dict(zip(("steps", "nodes", "depth"), budgets)),
+                 "sources": sources, **counts,
+                 "budgets": dict(zip(("steps", "nodes", "depth"), budgets)),
                 "program_sha256": program_sha256, **provenance,
                 "output_sha256": hashlib.sha256(output.encode()).hexdigest()}
     return output, json.dumps(manifest, sort_keys=True, indent=2) + "\n"
@@ -464,6 +547,7 @@ def main():
     ap.add_argument("--parser", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--manifest", type=Path)
+    ap.add_argument("--source", action="store_true", help="compile mandatory untyped source rules")
     ap.add_argument("inputs", nargs="+", type=Path)
     args = ap.parse_args()
     try:
@@ -474,7 +558,8 @@ def main():
         if any(p.resolve() == q.resolve() for p in outputs for q in protected):
             fail("output would overwrite an input")
         parser = load_parser(args.parser)
-        output, manifest = compile_inputs(parser, args.inputs)
+        compiler = compile_source if args.source else compile_inputs
+        output, manifest = compiler(parser, args.inputs)
         publish(args.output, output)
         if args.manifest:
             publish(args.manifest, manifest)

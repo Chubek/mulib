@@ -127,6 +127,11 @@ try
         \ '{> more metadata }',
         \ 'let p = proc() {@Name()};',
         \ 'let text = "${match true with {true => "inside", false => ""}} finish";',
+        \ 'operator<T>(lexeme: "<$>", arity: "binary", formals: a: T, b: T) -> T { return a; }',
+        \ 'infixr 3 <$>;',
+        \ 'let value = a <$> b >>. c ^^ d;',
+        \ 'let action = operator("<$>");',
+        \ 'let infixr = 0;',
         \ ])
   call s:CheckGroup(1, '@scrutiny', 'on1xDirective')
   call s:CheckGroup(2, 'macro', 'on1xMacroKeyword')
@@ -200,6 +205,14 @@ try
   call s:CheckGroup(47, '}}', 'on1xDelimiter')
   call assert_equal('on1xInterpolationDelimiter', synIDattr(synID(47, stridx(getline(47), '}}') + 2, 1), 'name'))
   call s:CheckGroup(47, 'finish', 'on1xString')
+  call s:CheckGroup(48, 'operator', 'on1xDeclaration')
+  call s:CheckGroup(48, '<$>', 'on1xString')
+  call s:CheckGroup(49, 'infixr', 'on1xDirective')
+  call s:CheckGroup(50, '$>', 'on1xOperator')
+  call s:CheckGroup(50, '. c', 'on1xOperator')
+  call s:CheckGroup(50, '^^', 'on1xOperator')
+  call s:CheckGroup(51, 'operator', 'on1xDeclaration')
+  call s:CheckGroup(52, 'infixr', '')
 
   " Match the file's code indentation but preserve raw command bytes.
   normal! gg=G

@@ -1,6 +1,7 @@
 {
   "schema_format": "on1x.sexpr-ast/v1", "version": 1, "root": "Unit",
   "categories": {
+    "Operator":"Expression", "CustomOperator":"Operator", "OperatorHeader":"Syntax", "TernaryExpression":"Expression",
     "MatchArm":"Syntax",
     "ExtensionInput":"Syntax", "ExtensionOutput":"Syntax", "DeclarationCarrier":"Syntax", "SourceToken":"Syntax", "ExtensionFact":"Syntax",
     "EvidenceContract":"Syntax", "EvidenceMember":"Syntax", "EvidenceImplementation":"Syntax", "EvidenceBinding":"Syntax",
@@ -35,6 +36,9 @@
     "EvidenceChoice":{"category":"EvidenceChoice","fields":[["implementation","Name"],["member","Name"],["function","Bytes"],["selector","Bytes"],["type","Type"]]},
     "ExtensionFact":{"category":"ExtensionFact","fields":[["owner","Name"],["kind","Name"],["name","Name"],["identity","Bytes"],["location","Location"]]},
     "Unit":{"category":"Unit","fields":[["version","Version"],["functions","Declaration*"]]},
+    "OperatorDeclaration":{"category":"Declaration","fields":[["header","OperatorHeader"],["generics","Name*"],["formals","Parameter*"],["result","Type"],["body","Block"]]},
+    "OperatorHeader":{"category":"OperatorHeader","fields":[["lexeme","OperatorLexeme"],["lexeme2","Bytes"],["arity","Bytes"],["position","Bytes"],["precedence","Nat"],["tightness","Nat"],["binds","Bytes"],["location","Location"]]},
+    "FixityDirective":{"category":"Declaration","fields":[["lexeme","OperatorLexeme"],["tightness","Nat"],["binds","Bytes"],["location","Location"]]},
     "Docstring":{"category":"Declaration","fields":[["marker","Bytes"],["text","Bytes"],["location","Location"]]},
     "NominalDeclaration":{"category":"Declaration","fields":[["kind","Bytes"],["name","Name"],["parameters","Name*"],["labels","Name*"],["fields","Type*"],["location","Location"]]},
     "NamedType":{"category":"Type","fields":[["name","Name"],["arguments","Type*"]]},
@@ -91,6 +95,10 @@
     "Identifier":{"category":"Identifier","fields":[["name","Name"],["location","Location"]]},
     "Unary":{"category":"UnaryExpression","fields":[["operator","UnaryOperator"],["value","Expression"],["location","Location"]]},
     "Binary":{"category":"BinaryExpression","fields":[["operator","BinaryOperator"],["left","Expression"],["right","Expression"],["location","Location"]]},
+    "OperatorReference":{"category":"CustomOperator","fields":[["lexeme","OperatorLexeme"],["location","Location"]]},
+    "OperatorUnary":{"category":"UnaryExpression","fields":[["lexeme","OperatorLexeme"],["position","UnaryPosition"],["value","Expression"],["location","Location"]]},
+    "OperatorBinary":{"category":"BinaryExpression","fields":[["lexeme","OperatorLexeme"],["left","Expression"],["right","Expression"],["location","Location"]]},
+    "OperatorTernary":{"category":"TernaryExpression","fields":[["lexeme","OperatorLexeme"],["lexeme2","OperatorLexeme"],["first","Expression"],["second","Expression"],["third","Expression"],["location","Location"]]},
     "Call":{"category":"CallExpression","fields":[["callee","Expression"],["arguments","Expression*"],["location","Location"]]},
     "Tuple":{"category":"TupleExpression","fields":[["elements","Expression*"],["location","Location"]]},
     "ValueData":{"category":"DataExpression","fields":[["kind","Bytes"],["name","Bytes"],["labels","Name*"],["annotation","Type"],["operands","Expression*"],["location","Location"]]},

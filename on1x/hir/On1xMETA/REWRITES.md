@@ -1,5 +1,8 @@
 # Compiled canonicalization and desugaring rules
 
+This page describes the **checked** rules. Intrinsic source operators are
+handled earlier by the [mandatory source program](README.md#mandatory-source-operator-program).
+
 `canonicalize.o1m` and `desugar.o1m` are executable compiler inputs. The
 LLSynth-generated On1xMETA parser and `generate.py` compile their structural
 match/replacement trees into `on1x_meta_rules.hpp`. `hir/On1xMETA/processor.cpp` interprets

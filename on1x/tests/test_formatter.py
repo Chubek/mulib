@@ -174,6 +174,83 @@ def test_multiline_syntax(work):
         assert formatted.read_bytes() == rendered
 
 
+def test_operator_environment(work):
+    root = work / "operator-layout"
+    root.mkdir()
+    source = root / "main.on1x"
+    formatted = root / "formatted.on1x"
+    module = root / "mathops.on1x"
+    relay = root / "relay.on1x"
+    marker = root / "ppx-ran"
+    processor = root / "processor"
+    processor.write_text(
+        f"#!{sys.executable}\nfrom pathlib import Path\nPath({str(marker)!r}).touch()\n"
+    )
+    processor.chmod(0o700)
+    header = 'operator (lexeme:"<+>", arity:"binary", precedence:5, formals:a:i64,b:i64)->i64'
+    # Discovery needs only the module header and import syntax. None of the
+    # processor, unrelated import, or invalid function body may be touched.
+    module.write_text(f'@ppx Tripwire "./processor";\n{header}{{let ;}}\n')
+    relay.write_text('from .mathops import operator("<+>");\n')
+    source.write_text(
+        'from .relay import (operator("<+>"));\nimport unrelated.missing;\n'
+        'fn main(){println(1<+>2<+>3);{infixr 4 <+>;println(1<+>2<+>3);}'
+        'let op=operator("<+>");println(op(4,2));}\n'
+    )
+    rendered = fmt(source, "--no-prelude").stdout
+    assert b'from .relay import (operator("<+>"));' in rendered
+    assert rendered.count(b"println(1 <+> 2 <+> 3);") == 2
+    assert b"infixr 4 <+>;" in rendered
+    assert b'let op = operator("<+>");' in rendered
+    assert not marker.exists()
+    assert fmt(source, "--isolated", expected=1).stdout == b""
+    formatted.write_bytes(rendered)
+    fmt(formatted, "--check", "--no-prelude")
+
+    module.write_text(f"{header}{{return a*10+b;}}\n")
+    (root / "unrelated").mkdir()
+    (root / "unrelated" / "missing.on1x").touch()
+    assert run_source(source, root / "before") == b"123\n33\n42\n"
+    assert run_source(formatted, root / "after") == b"123\n33\n42\n"
+
+    # Canonical module-path search and explicitly configured preludes.
+    search = root / "search"
+    search.mkdir()
+    extra = search / "extra.on1x"
+    extra.write_text(f"{header}{{return a+b;}}\n")
+    source.write_text('from extra import operator("<+>");\nfn main(){println(40<+>2);}')
+    assert b"println(40 <+> 2);" in fmt(source, "--no-prelude", "-I", search).stdout
+    source.write_text('fn main(){println(40<+>2);}')
+    assert b"println(40 <+> 2);" in fmt(source, "--no-prelude", "--prelude", extra).stdout
+
+    # Pervasive operators participate by default. Opting out leaves ordinary
+    # source formatting intact but rejects uses without a visible declaration.
+    source.write_text('fn increment(x:i64)->i64{return x+1;}fn main(){println(41|>increment);}')
+    assert b"println(41 |> increment);" in fmt(source).stdout
+    assert fmt(source, "--no-prelude", expected=1).stdout == b""
+    assert fmt(source, "--isolated", expected=1).stdout == b""
+    assert fmt(source, "--isolated", "--prelude", extra, expected=2).stdout == b""
+
+    # A quoted import resolves in trusted file mode but not in an editor copy
+    # or on the old real-file spelling `-- -`; bare stdin is not a graph input.
+    quoted = f'import "{module}";\nfn main(){{println(40<+>2);}}\n'
+    source.write_text(quoted)
+    assert b"println(40 <+> 2);" in fmt(source, "--no-prelude").stdout
+    assert fmt(source, "--isolated", expected=1).stdout == b""
+    (root / "-").write_text(quoted)
+    assert fmt("--", "-", cwd=root, expected=1).stdout == b""
+    assert fmt("-", cwd=root, input=quoted.encode(), expected=2).stdout == b""
+
+    source.write_text('from .mathops import operator("<*>");\nfn main(){}')
+    err = fmt(source, "--no-prelude", "-o", formatted, expected=1)
+    assert b"has no operator export" in err.stderr and not err.stdout
+    assert formatted.read_bytes() == rendered
+    source.write_bytes(b"fn large(){" + b"0;" * 100000 + b"}")
+    err = fmt(source, "--no-prelude", "-o", formatted, expected=1)
+    assert b"formatter token limit exceeded" in err.stderr and not err.stdout
+    assert formatted.read_bytes() == rendered
+
+
 def run(work):
     (work / ".on1xfmt").write_text("tabstop = 4 # spaces, not tabs\nwidth = 28\n")
     root = work / "nested"
@@ -328,5 +405,6 @@ if __name__ == "__main__":
         test_repository_style(Path(directory))
         test_procedures(Path(directory))
         test_multiline_syntax(Path(directory))
+        test_operator_environment(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

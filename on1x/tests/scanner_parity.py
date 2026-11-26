@@ -14,7 +14,7 @@ def probe(tool, path):
     return subprocess.run([str(tool), str(path)], capture_output=True, timeout=30)
 
 
-def check(name, data, *, invalid_at=None, diagnostic='invalid token', valid=False):
+def check(name, data, *, invalid_at=None, diagnostic='invalid token', valid=False, spellings=None):
     global count
     path = work / (name + '.on1x')
     path.write_bytes(data)
@@ -36,6 +36,7 @@ def check(name, data, *, invalid_at=None, diagnostic='invalid token', valid=Fals
         tokens = g.stdout.splitlines()
         assert tokens, (name, 'missing EOF')
         previous_end = 0
+        actual = []
         for i, token in enumerate(tokens):
             coordinates, text = token.split(b' ')
             offset, line, column = map(int, coordinates.split(b':'))
@@ -48,6 +49,9 @@ def check(name, data, *, invalid_at=None, diagnostic='invalid token', valid=Fals
             else:
                 assert data[offset:offset + len(text)] == text, (name, token)
                 previous_end = offset + len(text)
+                actual.append(text)
+        if spellings is not None:
+            assert actual == spellings, (name, actual, spellings)
     count += 1
 
 
@@ -105,6 +109,17 @@ for i, data in enumerate(valid_cases):
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
 check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)
+operator_spellings = [
+    b'%%', b'%^+', b'*%+^', b'+^*%+', b'%^+*%^',
+    b'|>', b'<|', b'<<.', b'>>.', b'>>=', b'=<<', b'<$>', b'<&>', b'>=>', b'<=<',
+]
+check('custom_longest_match', b' '.join(operator_spellings), valid=True,
+      spellings=operator_spellings)
+check('operator_delimiter_boundaries',
+      b'1%%2..=3 4{- %% -}%^+5 @p $x... b!"%%" "${1%%2}"',
+      valid=True,
+      spellings=[b'1', b'%%', b'2', b'..=', b'3', b'4', b'%^+', b'5',
+                 b'@', b'p', b'$', b'x', b'...', b'b!"%%"', b'"${1%%2}"'])
 for i, bad in enumerate([b'`', b'`trailing\\', b'```unterminated', b'````', b'`closed``unterminated',
                          b'```````', b'`line\nbreak`', b'&', b'\v', b'\f', b'\xff', b'"unclosed',
                          b'"bad\\q"', b'"bad\\', b'"raw\nnewline"', b'"raw\rnewline"',

@@ -3,4 +3,7 @@
 %%
 -- The portable concrete S-expression tree. PPX.schema.json refines List into
 -- versioned, category-checked AST constructors; C++ owns all retained strings.
+-- Operator references and applications contain source spellings, never
+-- declaration identities. The host validates declaration and fixity
+-- admission and assigns fresh identities to synthesized source declarations.
 wire = Symbol(string value) | Text(string value) | List(wire* elements)

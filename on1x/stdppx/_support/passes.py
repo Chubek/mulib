@@ -397,7 +397,7 @@ def cfg(tree,label):
 
 
 def test(tree,label):
-    tests=[];names={f[1] for f in tree[2]}
+    tests=[];names={f[1] for f in tree[2] if tag(f) in ('Function','Procedure','Extern')}
     for f in tree[2]:
         if tag(f) not in ('Function','Procedure'):continue
         keep=[]
@@ -453,7 +453,7 @@ def return_guard(tree,label):
 
 def timing(tree,label):
     fresh=Fresh(tree);now='on1x_ppx_clock_ns';report='on1x_ppx_timing_log';changed=False
-    existing={entry[1] for entry in tree[2]}
+    existing={entry[1] for entry in tree[2] if tag(entry) in ('Function','Procedure','Extern')}
     for f in tree[2]:
         if tag(f) not in ('Function','Procedure'):continue
         at=f[-1];keep=[];active=False

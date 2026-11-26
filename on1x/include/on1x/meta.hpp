@@ -34,6 +34,8 @@ Unit decode(const SExpr& tree);
 SExpr encode_type(const Type& type);
 Type decode_type(const SExpr& tree);
 Location decode_source_location(const SExpr& tree);
+// After macros/PPX, intrinsic source operators remain for checked lowering.
+void require_source_ready(const Unit& unit);
 void require_core(const Unit& unit);
 struct PpxOptions {
  std::vector<PpxRegistration> programs;

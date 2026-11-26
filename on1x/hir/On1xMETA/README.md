@@ -10,6 +10,13 @@ The default compiler build compiles `canonicalize.o1m`, `desugar.o1m`, and
 `semantic.o1m`; the normal frontend consumes those tables. Generated programs
 and compiler rule execution require neither Python nor Perl.
 
+The compiler separately compiles the mandatory source program
+[`source/operators.o1m`](source/operators.o1m). It runs on resolved source after
+macro expansion and authorized PPX readmission (including fixity regrouping),
+before callable inference. It does not run on already checked HIR and is not
+controlled by `ON1X_META_RULE_FILES` or any checked-rule optimization switch.
+The optional checked `desugar.o1m` rules below are a distinct phase.
+
 The optional [typed partial evaluator](PARTIAL_EVALUATION.md) is independent
 of the authored structural rule tables. Enable it with `--enable-opt partial-eval`.
 The [Novostone HIR pass](../README.md#novostone) can also fold closed checked
@@ -47,7 +54,7 @@ constraint binary_arity phase semantic
 match Binary require arity "2" message "binary expression needs two operands";
 ```
 
-`#` starts a line comment. Rules declare `canonicalize` or `desugar`; constraints
+`#` starts a line comment. Checked rules declare `canonicalize` or `desugar`; constraints
 declare `semantic`. Pattern constructors are `Unary`, `Binary`, `Boolean`,
 `Integer`, and `Unit`; `$name` is a capture. Replacement-only `Select` constructs
 lazy conditional evaluation. Operator/literal text is a quoted string. Select
@@ -57,6 +64,34 @@ Guards apply to captured expression types: `boolean` and `integer` (exact i64).
 `always` is limited to capture-free Boolean rules. `pure` is reserved and rejected
 because purity alone cannot establish operand types. Rules cannot supply trusted
 type, binding, ownership, effect or source-location evidence.
+
+### Mandatory source operator program
+
+Source rules declare `phase source`. Unlike checked rules, their captures are
+untouched source operands or an opaque callable declaration. The grammar and
+generator accept only a complete, nonoverlapping program: one rule for each
+source operator reference, application arity, declaration and fixity directive.
+The source validator rejects dropped, duplicated or reordered captures, invented
+callees and any replacement that retains operator syntax.
+
+`host_binding` asks the bridge for the already resolved binding, never a lookup
+by spelling. The bridge independently validates declaration identity and
+collision, operator and callable shape, and application metadata. The authored
+recipes produce a `BoundOperator` (ordinary function-name expression),
+`Call(BoundOperator(), …)` (ordinary eager call), or `DefineOperator` (the
+original callable with its host-owned name). The `resolved_fixity` guard only
+consumes already applied directives; it cannot change expression grouping.
+No recipe supplies type, borrow, ownership or effect facts. The normal callable
+inference and ownership pipeline handles the result, exactly as for an authored
+call. A reference therefore has the same restrictions as any first-class named
+callable, and a ternary application evaluates all its operands in source order.
+
+The bridge validates and constructs the complete edit plan before publishing.
+It drops parser grouping stamps, source declarations and directives. A
+source-phase report identifies the compiled program and matched rules with
+provenance, the live definitions emitted and the directives consumed. Validated
+but undemanded automatic providers may be discarded by the host; ordinary
+declarations are always checked. Backends see only normal callable IR.
 
 See `INTERFACE.md` and `include/on1x/meta_schema.hpp` for the flat C++ schema and
 semantic property vocabulary. Semantic constraints only reject inconsistent
@@ -116,6 +151,9 @@ python3 -B on1x/hir/On1xMETA/generate.py --parser BUILD/On1xMETA.py \
   --output BUILD/on1x_meta_rules.hpp --manifest BUILD/rules_manifest.json \
   on1x/hir/On1xMETA/canonicalize.o1m on1x/hir/On1xMETA/desugar.o1m \
   on1x/hir/On1xMETA/semantic.o1m
+python3 -B on1x/hir/On1xMETA/generate.py --source --parser BUILD/On1xMETA.py \
+  --output BUILD/on1x_meta_source.hpp --manifest BUILD/source_manifest.json \
+  on1x/hir/On1xMETA/source/operators.o1m
 ```
 
 The generator tests regenerate with real LLSynth twice, compile and inspect

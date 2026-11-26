@@ -1,5 +1,6 @@
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/operator_scan.h>
 #include "ppx_schema.hpp"
 #include <algorithm>
 #include <charconv>
@@ -66,7 +67,9 @@ bool scalar(const SExpr& n,const std::string& expected){
  if(expected=="Name")return quoted&&identifier(s);
  if(expected=="Version")return !quoted&&s=="1";
  if(expected=="Nat"||expected=="Positive")return !quoted&&natural(s,expected=="Positive");
- if(expected=="Boolean")return !quoted&&(s=="true"||s=="false");
+  if(expected=="Boolean")return !quoted&&(s=="true"||s=="false");
+  if(expected=="OperatorLexeme")return quoted&&on1x_operator_spelling(s.data(),s.size());
+  if(expected=="UnaryPosition")return quoted&&(s=="prefix"||s=="postfix");
  if(expected=="UnaryOperator")return !quoted&&(s=="!"||s=="-");
  if(expected=="BinaryOperator"){
   static const std::set<std::string> operators={"+","-","*","/","%","<",">","<=",">=","==","!=","&&","||"};return !quoted&&operators.contains(s);
@@ -82,7 +85,7 @@ bool scalar(const SExpr& n,const std::string& expected){
    if(expected=="UnsignedSpelling")return quoted&&unsigned_spelling(s);
  return false;
 }
-const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling"};
+ const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","OperatorLexeme","UnaryPosition","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling"};
 void add_nodes(Schema& schema,const Json& input,const std::string& owner){
  if(input.kind!='o')throw std::runtime_error("PPX schema: nodes must be an object");
  for(const auto& [tag,definition]:input.object){

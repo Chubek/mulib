@@ -227,6 +227,20 @@ template<class Statistics> void statistics(std::ostream& out,const Statistics& s
  }
  out<<"]}";
 }
+void source_statistics(std::ostream& out,const meta::SourceDesugarReport& stats){
+ out<<"{\"program_sha256\":"<<quoted(stats.program_sha256)
+    <<",\"verified\":"<<(stats.verified?"true":"false")
+    <<",\"rewrites\":"<<stats.rewrites<<",\"definitions\":"<<stats.definitions
+    <<",\"fixities\":"<<stats.fixities<<",\"rules\":[";
+ bool first=true;
+ for(const auto& rule:stats.rules){
+  if(!first)out<<',';
+  first=false;
+  out<<"{\"name\":"<<quoted(rule.name)<<",\"count\":"<<rule.count
+     <<",\"file\":"<<quoted(rule.file)<<",\"line\":"<<rule.line<<",\"column\":"<<rule.column<<'}';
+ }
+ out<<"]}";
+}
 }
 SemanticStats validate(const Unit& unit,SemanticStage stage,const Limits& limits){
  return Validator(stage,limits).run(unit);
@@ -236,7 +250,8 @@ std::string report(const Report& result){
  out<<"{\"format\":\"on1x.processor\",\"version\":"<<meta::generated::schema_version
     <<",\"program_sha256\":"<<quoted(meta::generated::program_sha256)
     <<",\"parser_sha256\":"<<quoted(meta::generated::parser_sha256)
-    <<",\"verified\":"<<(result.verified?"true":"false")<<",\"structural\":";
+    <<",\"verified\":"<<(result.verified?"true":"false")<<",\"source_desugar\":";
+  source_statistics(out,result.source_desugar);out<<",\"structural\":";
  statistics(out,result.structural);out<<",\"typed_before\":";
  statistics(out,result.typed_before);out<<",\"desugar\":";
  statistics(out,result.desugar);out<<",\"canonicalize\":";

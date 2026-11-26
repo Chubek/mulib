@@ -1,5 +1,6 @@
 #pragma once
 #include <on1x/ast.hpp>
+#include <on1x/operator_lowering.hpp>
 #include <on1x/processor.hpp>
 #include <on1x/partial_eval.hpp>
 #include <string>
@@ -22,6 +23,7 @@ struct Report {
   PartialEvalStats partial_eval;
   NovostoneStats novostone_hir;
   FirestoneStats firestone_hir;
+  meta::SourceDesugarReport source_desugar;
 };
 // Deterministic compiler-side report, with rule-source provenance.
 std::string report(const Report&);

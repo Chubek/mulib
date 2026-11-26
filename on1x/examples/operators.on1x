@@ -1,0 +1,24 @@
+# Operator bodies are ordinary checked functions.
+operator (lexeme: "<+>",
+  arity: "binary",
+  precedence: 5,
+  tightness: 1,
+  binds: "left",
+  formals: left: i64,
+  right: i64) -> i64
+{
+  return left * 10 + right;
+}
+
+fn main()
+{
+  println(1 <+> 2 <+> 3); # 123
+  {
+    infixr 0 <+>;
+    println(1 <+> 2 <+> 3); # 33
+    println(1 + 2 <+> 3 * 4); # 42: + and <+> now have equal rank
+  }
+  println(1 + 2 <+> 3 * 4); # 33: * binds tighter than <+>, then +
+  let combine = operator("<+>");
+  println(combine(4, 2)); # 42
+}

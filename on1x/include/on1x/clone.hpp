@@ -11,6 +11,7 @@ inline void clone_tick(std::size_t& budget,const Location& at){
 }
 ExprPtr clone_expression(const Expr&,std::size_t&);
 Macro clone_macro(const Macro&,std::size_t&);
+inline Function clone_function(const Function&,std::size_t&);
 inline Pattern clone_pattern(const Pattern& p,std::size_t& budget){
  clone_tick(budget,p.where);Pattern out;
  out.kind=p.kind;out.where=p.where;out.name=p.name;out.context=p.context;
@@ -25,7 +26,12 @@ inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
   out.context=s.context;
    out.label=s.label;out.label_context=s.label_context;out.control_target=s.control_target;out.inclusive=s.inclusive;
    out.unsafe_block=s.unsafe_block;
- if(s.value)out.value=clone_expression(*s.value,budget);
+  if(s.value)out.value=clone_expression(*s.value,budget);
+  if(s.syntax_operator){
+   const auto& d=*s.syntax_operator;
+   out.syntax_operator=std::make_unique<OperatorDeclaration>(
+    OperatorDeclaration{d.header,clone_function(d.function,budget),d.identity,d.block_local});
+  }
  for(const auto& child:s.body)out.body.push_back(clone_statement(child,budget));
  for(const auto& child:s.otherwise)out.otherwise.push_back(clone_statement(child,budget));
  for(const auto& child:s.instances){
@@ -35,8 +41,11 @@ inline Stmt clone_statement(const Stmt& s,std::size_t& budget){
  return out;
 }
 inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
- clone_tick(budget,e.where);auto out=std::make_unique<Expr>();
-  out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
+  clone_tick(budget,e.where);auto out=std::make_unique<Expr>();
+   out->kind=e.kind;out->reference=e.reference;out->where=e.where;out->text=e.text;out->type=e.type;
+   out->operator_lexeme2=e.operator_lexeme2;out->operator_identity=e.operator_identity;
+    out->operator_position=e.operator_position;
+    out->operator_parse=e.operator_parse;out->operator_grouped=e.operator_grouped;
    out->labels=e.labels;
    for(const auto& p:e.patterns)out->patterns.push_back(clone_pattern(p,budget));
     out->statement_match=e.statement_match;out->sum_match=e.sum_match;out->move_out=e.move_out;out->borrow=e.borrow;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;
@@ -81,7 +90,23 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
    copy.rules.push_back(std::move(rule));
   }return copy;
 }
-inline Unit clone_unit(const Unit& unit,std::size_t& budget){
+ inline Function clone_function(const Function& f,std::size_t& budget){
+   Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;
+   copy.type_parameters=f.type_parameters;copy.constraints=f.constraints;
+   copy.result=f.result;copy.procedure=f.procedure;copy.external=f.external;copy.prototype=f.prototype;
+   copy.extension_generated=f.extension_generated;
+   copy.meta_canonicalized=f.meta_canonicalized;
+   copy.meta_folded_identity=f.meta_folded_identity;
+   copy.kernel_symbol=f.kernel_symbol;
+   copy.kernel_link_only=f.kernel_link_only;
+   for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));
+   for(const auto& attribute:f.attributes){
+    if(!attribute)clone_malformed(f.where,"null function attribute");
+    copy.attributes.push_back(clone_expression(*attribute,budget));
+   }
+   return copy;
+ }
+ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
  Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
    out.module_imports=unit.module_imports;
     out.kernel_imports=unit.kernel_imports;
@@ -147,22 +172,15 @@ inline Unit clone_unit(const Unit& unit,std::size_t& budget){
    out.inherent_implementations.push_back(std::move(copy));
   }
  for(const auto& m:unit.macros)out.macros.push_back(clone_macro(m,budget));
- for(const auto& f:unit.functions){
-    Function copy;copy.name=f.name;copy.where=f.where;copy.params=f.params;
-    copy.type_parameters=f.type_parameters;copy.constraints=f.constraints;
-    copy.result=f.result;copy.procedure=f.procedure;copy.external=f.external;copy.prototype=f.prototype;
-    copy.extension_generated=f.extension_generated;
-    copy.meta_canonicalized=f.meta_canonicalized;
-    copy.meta_folded_identity=f.meta_folded_identity;
-    copy.kernel_symbol=f.kernel_symbol;
-    copy.kernel_link_only=f.kernel_link_only;
-  for(const auto& statement:f.body)copy.body.push_back(clone_statement(statement,budget));
-   for(const auto& attribute:f.attributes){
-    if(!attribute)clone_malformed(f.where,"null function attribute");
-    copy.attributes.push_back(clone_expression(*attribute,budget));
-   }
-  out.functions.push_back(std::move(copy));
- }
+  for(const auto& f:unit.functions)out.functions.push_back(clone_function(f,budget));
+  out.fixity_directives=unit.fixity_directives;
+  out.operator_scopes=unit.operator_scopes;out.operator_owners=unit.operator_owners;
+  out.operator_entry=unit.operator_entry;
+  out.operator_lazy_functions=unit.operator_lazy_functions;
+  for(const auto& d:unit.operators){
+   clone_tick(budget,d.header.where);
+   out.operators.push_back({d.header,clone_function(d.function,budget),d.identity,d.block_local});
+  }
  return out;
 }
 inline void source_expression(Expr& e){

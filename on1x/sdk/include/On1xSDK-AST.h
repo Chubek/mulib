@@ -50,7 +50,9 @@ enum {
     /* With REFERENCE: 'borrow mut' expression or 'ref' parameter. */
     ON1X_SDK_AST_FLAG_EXCLUSIVE = 1u << 10,
     /* A function declaration or lambda written with 'proc'. */
-    ON1X_SDK_AST_FLAG_PROCEDURE = 1u << 11
+    ON1X_SDK_AST_FLAG_PROCEDURE = 1u << 11,
+    /* An operator declaration written in a lexical block. */
+    ON1X_SDK_AST_FLAG_BLOCK_LOCAL = 1u << 12
 };
 
 typedef struct On1xSDK_ASTInfo {
@@ -86,6 +88,9 @@ typedef struct On1xSDK_ASTNodeInfo {
     size_t child_count;
 } On1xSDK_ASTNodeInfo;
 
+/* Operator views describe candidate syntax, not a resolved callable or an
+ * inferred signature. See schemas/frontend/ast-view-v1.schema.json for tags
+ * and child roles. Node data is borrowed from the immutable AST revision. */
 On1xSDK_Status on1x_sdk_ast_retain(On1xSDK_AST *ast);
 void on1x_sdk_ast_release(On1xSDK_AST *ast);
 On1xSDK_Status on1x_sdk_ast_info(

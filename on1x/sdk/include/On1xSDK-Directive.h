@@ -12,7 +12,10 @@ enum {
     ON1X_SDK_DIRECTIVE_FEATURE = 1,
     ON1X_SDK_DIRECTIVE_SCRUTINY = 2,
     ON1X_SDK_DIRECTIVE_PPX = 3,
-    ON1X_SDK_DIRECTIVE_EXTENSION = 4
+    ON1X_SDK_DIRECTIVE_EXTENSION = 4,
+    /* name = operator spelling; value = decimal tightness. The linked
+     * ast node's tag (infix or infixr) identifies the associativity. */
+    ON1X_SDK_DIRECTIVE_OPERATOR_FIXITY = 5
 };
 
 typedef struct On1xSDK_DirectiveInfo {

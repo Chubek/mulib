@@ -14,7 +14,8 @@ directory and candidates under recognized workspace roots or source
 directories (including symlink targets). Do not put untrusted locations
 on the launcher's `PATH` or point `--on1xc` at an untrusted executable.
 If using generated `import foreign stdffi.*` recipes outside the compiler's
-default location, add `--foreignlib-path /absolute/generated/stdffi/mulib`.
+default location, point `--foreignlib-path` at the directory containing the
+`.ffi` recipes (for example `/absolute/build/stdffi/mulib/recipes`).
 Repeat it for multiple trusted recipe directories. The adapter does not
 inherit `MULIB_FOREIGNLIB_PATH` or run a recipe generator.
 The server uses only the Python 3.8+ standard library and POSIX
@@ -25,7 +26,9 @@ process/resource APIs. It has been tested on Linux, not on Windows.
 - **Diagnostics on save only.** The adapter runs
   `on1xc --deps --diagnostics json --color never FILE`, not `--check`.
   This reports real scanner, parser and module-loading errors that the
-  compiler encounters without expanding PPX. It does not type check,
+   compiler encounters without expanding PPX, including missing or ambiguous
+   operator bindings. Operator diagnostics include the compiler's remediation
+   when available; they do not invent a repair. The server does not type check,
   expand macros, elaborate native extensions or diagnose their generated
    declarations. It resolves portable `import foreign stdffi.*` imports
    and reports loader findings such as missing recipes or exports. Native
@@ -48,13 +51,15 @@ process/resource APIs. It has been tested on Linux, not on Windows.
   compiler runs causes the inspection to be discarded. Edits and closing
   the buffer clear previously published findings. There is no check on
   opening, typing, or saving only a dependency of the buffer.
-- **Whole-document formatting.** The adapter runs `on1xc fmt --target
-  plain` on a private copy of the current buffer, even if that content
+- **Whole-document formatting.** The adapter runs `on1xc fmt --isolated
+  --target plain` on a private copy of the current buffer, even if that content
   hasn't been saved yet. It returns one replacement edit or no edits
   if unchanged and never writes your source file. The formatter rejects
   invalid syntax. It uses compiler defaults (not workspace `.on1xfmt`
   or the client's tab settings) and can normalize line endings. Source
-  preservation directives such as `# on1xfmt: off` still apply.
+   preservation directives such as `# on1xfmt: off` still apply.
+   This formats locally declared operators. Unlike save diagnostics, it does
+   not load imported or pervasive operator declarations.
 - **Plain On1xfile support.** `On1xfile`, `On1xfile.m`, and `On1xfile.i`
   use the current `on1xc aux format` driver for formatting and save-time
   diagnostics. The adapter passes a private copy with its original basename
@@ -68,24 +73,33 @@ process/resource APIs. It has been tested on Linux, not on Windows.
   document version. Repairs reported only as `candidate` are visible as
   disabled suggestions with an explicit unverified reason. The adapter never
   upgrades a candidate, applies an edit itself, or keeps actions after the
-  document changes.
+   document changes.
+- **Operator hover and go-to-definition.** Hover shows the visible operator's
+  checked signature, when available, and declared fixity. Go-to-definition
+  follows that particular declaration, including through selective imports.
+  Both require a saved source file matching the open buffer; they return no
+  result if the source does not check or requires PPX or extension execution.
+  No editor-side operator index is maintained.
 - The server advertises full-text synchronization and UTF-16 positions
   by default; it can negotiate UTF-8 or UTF-32. It accepts local
   `file:` URIs (including `localhost`), not remote or untitled buffers.
-  No hover, completion, symbols, go-to-definition, references, rename,
-  range formatting or semantic index is implemented.
+   No general-purpose hover or go-to-definition, completion, symbols,
+   references, rename, range formatting or semantic index is implemented.
 
 ## What runs and what is read
 
 For the current compiler, `--deps` disables native declaration
 extension execution (including source `@enable Protocols`) across the
 loaded graph and returns before ordinary PPX rewriting. The adapter never
-uses `--allow-source-ppx`, selects PPX processors, invokes `--check`,
+uses `--allow-source-ppx`, selects PPX processors, invokes unrestricted `--check`,
 runs a project's build scripts, or forwards compiler arguments from the
-workspace. `fmt` parses a single copied buffer without loading imports or
+workspace. `fmt --isolated` parses a single copied buffer without loading imports or
 running PPX. `aux format` invokes the trusted project's plain-manifest
 formatter bundled with the compiler, not a project command or template.
-Neither uses a shell. The subprocess gets a private working directory and a
+Operator navigation calls `on1xc --operator-info --source-only`, which
+checks the saved source graph without running PPX, native declaration
+extensions, or project actions. These commands do not use a shell.
+The subprocess gets a private working directory and a
 minimal environment, without inherited `ON1X_*` or `MULIB_FOREIGNLIB_PATH`
 search paths. Update the adapter and compiler together if these CLI
 guarantees change.
@@ -117,7 +131,7 @@ Run from the repository root:
 python3 on1x/addons/lsp/test_lsp.py -v
 python3 on1x/addons/lsp/test_lsp.py --on1xc build/on1x/on1xc -v
 python3 on1x/addons/lsp/test_lsp.py --on1xc build/on1x/on1xc \
-    --foreignlib-path build/on1x/stdffi/mulib -v
+    --foreignlib-path build/on1x/stdffi/mulib/recipes -v
 ```
 
 The first command runs protocol and subprocess-boundary tests and skips

@@ -1,3 +1,5 @@
 from .ppx import (ppx_list1, ppx_list2, ppx_list3, ppx_list4, ppx_node, ppx_integer,
-  ppx_ident, ppx_call, ppx_fresh, ppx_schema_env, ppx_serve_as, ppx_serve);
+  ppx_ident, ppx_call, ppx_fresh, ppx_schema_env, ppx_serve_as, ppx_serve,
+  ppx_operator_ref, ppx_operator_unary, ppx_operator_binary, ppx_operator_ternary,
+  ppx_operator_header, ppx_operator_declaration, ppx_fixity_directive);
 from . import (category, diagnostic, json, numbers, schema, signature, source, tokens);

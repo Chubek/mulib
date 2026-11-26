@@ -1,12 +1,16 @@
 #include <on1x/meta.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/operator_scope.hpp>
+#include "ppx_internal.hpp"
+#include "ppx_regroup.hpp"
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <set>
+#include <tuple>
 #if defined(__unix__) || defined(__APPLE__)
 #include <cerrno>
 #include <csignal>
@@ -19,6 +23,170 @@ extern char **environ;
 #endif
 namespace on1x::meta {
 namespace {
+using K=Expr::Kind;
+bool source_operator(K kind){
+ return kind==K::OperatorReference||kind==K::OperatorUnary||
+        kind==K::OperatorBinary||kind==K::OperatorTernary;
+}
+class OperatorAdmission {
+ using Occurrence=std::tuple<K,std::string,std::string,OperatorPosition,PpxSourceLocation>;
+ struct Binding {
+  std::string identity,lexeme2;
+  OperatorPosition position;
+  bool operator==(const Binding&)const=default;
+ };
+ using Bindings=std::map<Occurrence,std::optional<Binding>>;
+ struct Authored {
+  std::vector<Stmt> body;
+  std::vector<ExprPtr> attributes;
+  Bindings bindings;
+ };
+ PpxRegroup regroup;
+ std::map<std::string,OperatorScope> scopes;
+ std::map<std::string,Authored> authored;
+ std::set<std::string> unknown_owners;
+ static Occurrence occurrence(const Expr& e){
+  // A reference's fixity and second spelling are reconstructed, not on wire.
+  const bool ref=e.kind==K::OperatorReference;
+  return {e.kind,e.text,ref?"":e.operator_lexeme2,ref?OperatorPosition::Infix:e.operator_position,
+          PpxSourceLocation(ppx_source_location(e.where))};
+ }
+ static Binding saved(const Expr& e){return {e.operator_identity,e.operator_lexeme2,e.operator_position};}
+ static void restore(Expr& e,const Binding& binding){
+  e.operator_identity=binding.identity;e.operator_lexeme2=binding.lexeme2;
+  e.operator_position=binding.position;
+ }
+ static void record(Bindings& table,const Expr& e,bool nested){
+  if(source_operator(e.kind)&&!e.operator_identity.empty()){
+   auto binding=saved(e);
+   auto [it,inserted]=table.emplace(occurrence(e),binding);
+   if(!inserted&&it->second!=binding)it->second.reset();
+  }
+  if(e.callee)record(table,*e.callee,nested);
+  for(const auto& c:e.children)record(table,*c,nested);
+  if(nested)record(table,e.body);
+ }
+ static void record(Bindings& table,const std::vector<Stmt>& body){
+  for(const auto& stmt:body){
+   if(stmt.value)record(table,*stmt.value,true);
+   record(table,stmt.body);record(table,stmt.otherwise);
+  }
+ }
+ void take(const std::string& owner,Function& function){
+  Authored source;
+  source.body=std::move(function.body);source.attributes=std::move(function.attributes);
+  record(source.bindings,source.body);
+  for(const auto& a:source.attributes)record(source.bindings,*a,true);
+  authored.try_emplace(owner,std::move(source));
+ }
+ static bool corresponding(const Expr& e,const Expr& source){
+  if(e.kind!=source.kind||ppx_source_location(e.where)!=ppx_source_location(source.where))return false;
+  if(source_operator(e.kind))
+   return occurrence(e)==occurrence(source);
+  if(e.kind==K::PatternMatch&&(e.sum_match!=source.sum_match||e.statement_match!=source.statement_match))
+   return false;
+  return !source.operator_parse||e.text==source.text;
+ }
+ struct Readmission {
+  const Authored* source;
+  const OperatorScope* scope;
+  PpxSourcePairs pairs;
+  void bind(Expr& e,const Expr* before,const Bindings* enclosing_expression) const{
+   if(before&&!before->operator_identity.empty()){restore(e,saved(*before));return;}
+   auto key=occurrence(e);
+   // A PPX may rearrange the contents of a matched expression without
+   // inheriting Pratt provenance. Keep its authored operator identities in
+   // that slot, but never recover them across statement or block boundaries.
+   if(enclosing_expression){
+    if(auto hit=enclosing_expression->find(key);hit!=enclosing_expression->end()){
+     if(!hit->second)
+      throw Error(e.where,"ambiguous original operator occurrence during PPX readmission","ON1X-OPERATOR-PPX");
+     restore(e,*hit->second);return;
+    }
+   }
+   const bool ref=e.kind==K::OperatorReference;
+   const auto* visible=scope?(ref?scope->reference(e.text,e.where):scope->find(e.text,e.operator_position)):nullptr;
+   if(!visible)
+    throw Error(e.where,"PPX operator is not visible in its owning declaration: '"+e.text+"'","ON1X-OPERATOR-PPX");
+   if(source){
+    // On repositioning, do not silently rebind a definition-site or local
+    // occurrence to a same-spelled symbol in the module scope.
+    if(auto hit=source->bindings.find(key);hit!=source->bindings.end()&&
+       (!hit->second||hit->second->identity!=visible->identity))
+     throw Error(e.where,"PPX cannot relocate a lexical operator occurrence: '"+e.text+"'","ON1X-OPERATOR-PPX");
+   }
+   if(!ref){
+    const auto arity=e.kind==K::OperatorUnary?OperatorArity::Unary:
+                     e.kind==K::OperatorBinary?OperatorArity::Binary:OperatorArity::Ternary;
+    if(visible->header.arity!=arity||visible->header.lexeme2!=e.operator_lexeme2)
+     throw Error(e.where,"PPX operator application does not match its visible arity or second spelling: '"+e.text+"'","ON1X-OPERATOR-PPX");
+   }
+   e.operator_identity=visible->identity;e.operator_lexeme2=visible->header.lexeme2;
+   e.operator_position=visible->header.position;
+  }
+  void expression(ExprPtr& e,const Expr* before,const Bindings* enclosing_expression){
+   if(!e)return;
+   if(before&&!corresponding(*e,*before))before=nullptr;
+   if(source_operator(e->kind))bind(*e,before,enclosing_expression);
+   if(before&&before->operator_parse&&e->children.size()==before->children.size()&&
+      static_cast<bool>(e->callee)==static_cast<bool>(before->callee))
+    pairs.emplace(e.get(),before);
+   expression(e->callee,before?before->callee.get():nullptr,enclosing_expression);
+   for(std::size_t i=0;i<e->children.size();++i)
+    expression(e->children[i],before&&i<before->children.size()?before->children[i].get():nullptr,
+               enclosing_expression);
+   body(e->body,before?&before->body:nullptr);
+  }
+  void slot(ExprPtr& value,const Expr* before){
+   Bindings bindings;
+   if(before)record(bindings,*before,false);
+   expression(value,before,before?&bindings:nullptr);
+  }
+  void body(std::vector<Stmt>& statements,const std::vector<Stmt>* prior){
+   for(std::size_t i=0;i<statements.size();++i){
+    auto& s=statements[i];
+    const auto* before=prior&&i<prior->size()?&(*prior)[i]:nullptr;
+    if(before&&(s.kind!=before->kind||ppx_source_location(s.where)!=ppx_source_location(before->where)))before=nullptr;
+    slot(s.value,before?before->value.get():nullptr);
+    body(s.body,before?&before->body:nullptr);
+    body(s.otherwise,before?&before->otherwise:nullptr);
+   }
+  }
+ };
+ void apply(const Unit& unit,const std::string& owner,Function& function) const{
+  if(unit.operator_lazy_functions.contains(owner))return; // Host-owned, never reconstructed.
+  auto from=unit.operator_owners.find(owner);
+  auto scope=scopes.find(from==unit.operator_owners.end()?unit.operator_entry:from->second);
+  auto origin=authored.find(owner);
+  const auto* source=origin==authored.end()?nullptr:&origin->second;
+  Readmission read{source,scope==scopes.end()||unknown_owners.contains(owner)?nullptr:&scope->second,{}};
+  read.body(function.body,source?&source->body:nullptr);
+  for(std::size_t i=0;i<function.attributes.size();++i)
+   read.slot(function.attributes[i],source&&i<source->attributes.size()?source->attributes[i].get():nullptr);
+  regroup.apply(function,read.pairs);
+ }
+ public:
+ explicit OperatorAdmission(Unit& unit):regroup(unit){
+  // A multi-module input must not silently turn an original declaration
+  // with missing ownership metadata into a newly synthesized entry owner.
+  if(unit.source_digests.size()>1){
+   for(const auto& f:unit.functions)if(!unit.operator_owners.contains(f.name))unknown_owners.insert(f.name);
+   for(const auto& d:unit.operators)if(!unit.operator_owners.contains(d.identity))unknown_owners.insert(d.identity);
+  }
+  // PPX output has already been serialized. Take ownership of only the
+  // exposed source bodies; decode will reconstruct them, not clone them.
+  if(unit.operators.empty())return;
+  for(auto& f:unit.functions)if(!unit.operator_lazy_functions.contains(f.name))take(f.name,f);
+  for(auto& d:unit.operators)if(!unit.operator_lazy_functions.contains(d.identity))take(d.identity,d.function);
+ }
+ void apply(Unit& unit){
+  for(const auto& [key,bindings]:unit.operator_scopes)
+   for(const auto& binding:bindings)scopes[key].add(binding,binding.header.where);
+  regroup.admit(unit);
+  for(auto& f:unit.functions)apply(unit,f.name,f);
+  for(auto& d:unit.operators)apply(unit,d.identity,d.function);
+ }
+};
 void sideband(std::string_view wire,const std::string& label,diagnostic::Registry* registry,const diagnostic::Catalog* selected){
  if(wire.empty())return;
  const auto& catalog=selected?*selected:diagnostic::Catalog::embedded();
@@ -144,7 +312,7 @@ std::string run_transformer(const std::string& program,std::string_view input,un
 }
 void rewrite(Unit& unit,const PpxOptions& options){
  require_no_kernel_imports(unit);
- if(!needs_macro_expansion(unit)&&unit.ppx.empty()&&options.programs.empty()&&options.schemas.empty()){require_core(unit);return;}
+ if(!needs_macro_expansion(unit)&&unit.ppx.empty()&&options.programs.empty()&&options.schemas.empty()){require_source_ready(unit);return;}
  std::size_t budget=262144;auto working=clone_unit(unit,budget);
  if(!working.ppx.empty()&&!options.allow_source)throw Error(working.ppx.front().where,"source PPX execution requires --allow-source-ppx (not a sandbox)");
  std::vector<PpxRegistration> programs=working.ppx;
@@ -164,7 +332,7 @@ void rewrite(Unit& unit,const PpxOptions& options){
  }
  for(const auto& [label,path]:options.schemas){(void)path;if(!labels.contains(label))throw Error({"<ppx>"},"schema supplied for unregistered PPX label: "+label);}
  expand_macros(working);working.ppx.clear();
- if(programs.empty()){require_core(working);unit=std::move(working);return;}
+  if(programs.empty()){require_source_ready(working);unit=std::move(working);return;}
   std::map<std::string,std::string> native_schemas;
   for(auto& p:programs)if(!std::filesystem::path(p.program).has_parent_path()&&
     (p.where.file=="<standard-ppx>"||!std::filesystem::is_regular_file(p.program))){
@@ -206,7 +374,10 @@ void rewrite(Unit& unit,const PpxOptions& options){
    if(!docs.empty())schema.validate(replacement);
    tree=std::move(replacement);
  }
-  extensions(tree,true);auto result=decode(tree);
+   extensions(tree,true);
+   OperatorAdmission admission(working);
+   auto result=decode_rewrite(tree,working);
+   admission.apply(result);
   // A generic host obligation: a later v1 transformer cannot erase/alter the
   // explicit interface generated by a trusted declaration extension. Bodies
   // still undergo normal post-PPX checking. This knows no protocol/member names.
@@ -223,6 +394,6 @@ void rewrite(Unit& unit,const PpxOptions& options){
     result.scrutiny=std::move(working.scrutiny);
     result.extension_evidence=std::move(working.extension_evidence);
    result.source_digests=std::move(working.source_digests);
-   require_core(result);unit=std::move(result);
+    require_source_ready(result);unit=std::move(result);
 }
 }

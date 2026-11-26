@@ -1,0 +1,11 @@
+from std.operators import operator("<|");
+
+fn double(value: i64) -> i64
+{
+  return value * 2;
+}
+
+fn main()
+{
+  assert((21 |> double) == 42);
+}

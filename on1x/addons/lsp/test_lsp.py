@@ -108,6 +108,11 @@ class Wire:
         return self.request("textDocument/formatting", {
             "textDocument": {"uri": uri}, "options": {"tabSize": 4, "insertSpaces": True}})
 
+    def operator(self, method, uri, line, character):
+        return self.request(f"textDocument/{method}", {
+            "textDocument": {"uri": uri},
+            "position": {"line": line, "character": character}})
+
     def actions(self, uri, only=None):
         context = {"diagnostics": []}
         if only is not None:
@@ -157,7 +162,7 @@ assert os.environ.get("MULIB_FOREIGNLIB_PATH") != "/ambient-ignored"
 assert Path.cwd() == Path(os.environ["TMPDIR"])
 text = path.read_bytes()
 if mode == "fmt":
-    assert args == ["--target", "plain"]
+    assert args == ["--isolated", "--target", "plain"]
     assert path.parent == Path.cwd()
     assert Path(".on1xfmt").read_bytes() == b""
     if b"hang" in text:
@@ -211,6 +216,26 @@ elif mode == "--deps":
     print(json.dumps({"schema": "on1x.diagnostics/v1", "dropped": 0, "diagnostics": records}),
           file=sys.stderr)
     sys.exit(1)
+elif mode == "--operator-info":
+    assert args == ["--source-only"]
+    declaration = path.with_name("dependency % 1.on1x")
+    offset = text.index(b"<+>")
+    if b"race" in text:
+        path.write_bytes(b"raced")
+    print(json.dumps({
+        "version": 1, "fixity": [],
+        "declarations": [{
+            "lexeme": "<+>", "lexeme2": "", "arity": 2, "position": "infix",
+            "precedence": 5, "tightness": 1, "binds": "left",
+            "signature": "fn(a: i64, b: i64) -> i64",
+            "file": str(declaration), "line": 1, "column": 1, "offset": 0,
+        }],
+        "uses": [{
+            "declaration": 99 if b"bad-index" in text else 0, "length": 3,
+            "file": name, "line": text.count(b"\n", 0, offset) + 1,
+            "column": offset - text.rfind(b"\n", 0, offset), "offset": offset,
+        }],
+    }))
 elif mode == "aux":
     assert args == ["format"]
     assert path.name in ("On1xfile", "On1xfile.m", "On1xfile.i")
@@ -293,10 +318,14 @@ class Protocol(Base):
                                         "textDocumentSync": {"openClose": True, "change": 1,
                                                              "save": {"includeText": False}},
                                         "documentFormattingProvider": True,
+                                        "hoverProvider": True,
+                                        "definitionProvider": True,
                                         "codeActionProvider": {
                                             "codeActionKinds": ["quickfix"],
                                             "resolveProvider": False}})
-        for method in ("textDocument/completion", "textDocument/definition", "textDocument/hover",
+        for method in ("textDocument/definition", "textDocument/hover"):
+            self.assertEqual(wire.request(method), {"result": None})
+        for method in ("textDocument/completion",
                        "textDocument/rename", "textDocument/references"):
             self.assertEqual(wire.request(method)["error"]["code"], -32601)
         self.assertEqual(wire.request("initialize")["error"]["code"], -32600)
@@ -304,6 +333,43 @@ class Protocol(Base):
         self.assertEqual(wire.request("textDocument/formatting")["error"]["code"], -32600)
         wire.send(method="exit")
         self.assertEqual(wire.child.wait(timeout=3), 0)
+
+    def test_operator_navigation_snapshot_and_encoding(self):
+        declaration = self.work / "dependency % 1.on1x"
+        declaration.write_text('operator (lexeme: "<+>") {}')
+        prefix = 'fn main() { println("🙂"); println(4 '
+        text = "# lead\n" + prefix + "<+> 2); }\n"
+        for encoding, column in (("utf-8", len(prefix.encode())), ("utf-16", len(prefix) + 1),
+                                 ("utf-32", len(prefix))):
+            with self.subTest(encoding=encoding):
+                self.write(text.replace("\n", "\r\n"))
+                wire = self.launch()
+                wire.initialize(encodings=[encoding])
+                wire.open(self.uri, text)
+                report = wire.operator("hover", self.uri, 1, column + 1)["result"]
+                self.assertEqual(report["contents"]["kind"], "plaintext")
+                self.assertIn('operator "<+>" (binary infix)', report["contents"]["value"])
+                self.assertIn("fn(a: i64, b: i64)", report["contents"]["value"])
+                self.assertEqual(report["range"], {
+                    "start": {"line": 1, "character": column},
+                    "end": {"line": 1, "character": column + 3},
+                })
+                self.assertEqual(wire.operator("definition", self.uri, 1, column)["result"], {
+                    "uri": declaration.as_uri(), "range": {
+                        "start": {"line": 0, "character": 0},
+                        "end": {"line": 0, "character": 8},
+                    },
+                })
+                wire.open(declaration.as_uri(), "unsaved")
+                self.assertEqual(wire.operator("definition", self.uri, 1, column), {"result": None})
+                wire.change(self.uri, 2, [{"text": text + "# unsaved"}])
+                self.assertEqual(wire.operator("hover", self.uri, 1, column), {"result": None})
+                for version, trailer in enumerate(("# bad-index\n", "# race\n"), start=3):
+                    updated = text + trailer
+                    self.write(updated)
+                    wire.change(self.uri, version, [{"text": updated}])
+                    self.assertEqual(wire.operator("hover", self.uri, 1, column), {"result": None})
+                wire.finish()
 
     def test_bad_frames_and_exit_status(self):
         for header in (b"Content-Length: 16777217\r\n\r\n",
@@ -576,6 +642,80 @@ class RealCompiler(Base):
         dep.unlink()
         self.wire.document("didSave", self.uri)
         self.assertIn("cannot resolve import", self.wire.diagnostics(self.uri, 1)[0]["message"])
+        self.wire.finish()
+
+    def test_local_operator_format_and_saved_operator_import(self):
+        header = ('operator(lexeme:"<+>",arity:"binary",precedence:5,'
+                  'formals:a:i64,b:i64)->i64{return a+b;}\n')
+        local = header + 'fn main(){println(40<+>2);}\n'
+        self.wire.open(self.uri, local)
+        edit, = self.wire.format(self.uri)["result"]
+        self.assertIn("operator (lexeme:", edit["newText"])
+        self.assertIn("println(40 <+> 2);", edit["newText"])
+        self.assertFalse(self.path.exists())
+        self.wire.change(self.uri, 2, [{"text": edit["newText"]}])
+        self.assertEqual(self.wire.format(self.uri), {"result": []})
+
+        # Private buffer formatting may not follow workspace imports, even if
+        # their paths are absolute or the editor has a saved file at this URI.
+        dep = self.work / "arithmetic.on1x"
+        dep.write_text(header)
+        unsaved = f'import "{dep}";\nfn main(){{println(40<+>2);}}\n'
+        self.wire.change(self.uri, 3, [{"text": unsaved}])
+        self.assertEqual(self.wire.format(self.uri)["error"]["code"], -32803)
+        self.assertFalse(self.path.exists())
+
+        if REAL_SYREN:
+            prefix = 'fn main() { println("🙂"); println(40 '
+            import_line = 'from .arithmetic import (operator("<+>"));\n'
+            good = import_line + prefix + '<+> 2); }\n'
+            self.write(good.replace("\n", "\r\n"))
+            self.wire.change(self.uri, 4, [{"text": good}])
+            self.wire.document("didSave", self.uri)
+            self.assertEqual(self.wire.diagnostics(self.uri, 4), [])
+            bad = import_line + prefix + '<~> 2); }\n'
+            self.write(bad.replace("\n", "\r\n"))
+            self.wire.change(self.uri, 5, [{"text": bad}])
+            self.wire.document("didSave", self.uri)
+            report, = self.wire.diagnostics(self.uri, 5)
+            point = {"line": 1, "character": len(prefix.encode("utf-16-le")) // 2}
+            self.assertEqual(report["range"], {"start": point, "end": point})
+            self.assertEqual(report["code"], "ON1X-OPERATOR-UNBOUND")
+            self.assertIn("<~>", report["message"])
+            self.assertIn("select it explicitly in an import", report["message"])
+            self.assertEqual(self.wire.actions(self.uri)["result"], [])
+        self.wire.finish()
+
+    def test_real_operator_navigation_without_ppx_execution(self):
+        declaration = self.work / "arithmetic.on1x"
+        declaration.write_text('operator (lexeme: "<+>", arity: "binary", precedence: 5,'
+                               ' formals: a: i64, b: i64) -> i64 { return a + b; }\n')
+        prefix = 'fn main() { println("🙂"); println(40 '
+        import_line = 'from .arithmetic import (operator("<+>"));\n'
+        statement = prefix + '<+> 2); let f = operator("<+>"); println(f(40, 2)); }\n'
+        source = import_line + statement
+        self.write(source)
+        self.wire.open(self.uri, source)
+        column = len(prefix.encode("utf-16-le")) // 2
+        report = self.wire.operator("hover", self.uri, 1, column)["result"]
+        self.assertIn('operator "<+>" (binary infix)', report["contents"]["value"])
+        self.assertIn("i64", report["contents"]["value"])
+        found = self.wire.operator("definition", self.uri, 1, column)["result"]
+        self.assertEqual(found["uri"], declaration.as_uri())
+        self.assertEqual(found["range"]["start"], {"line": 0, "character": 0})
+        literal_prefix = statement[:statement.rindex("<+>")]
+        literal_column = len(literal_prefix.encode("utf-16-le")) // 2
+        self.assertEqual(self.wire.operator("definition", self.uri, 1, literal_column)["result"], found)
+
+        tripwire = self.work / "never-run"
+        marker = self.work / "ran"
+        tripwire.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nPath({str(marker)!r}).touch()\n")
+        tripwire.chmod(0o700)
+        risky = '@ppx unexpected "./never-run";\n' + source
+        self.write(risky)
+        self.wire.change(self.uri, 2, [{"text": risky}])
+        self.assertEqual(self.wire.operator("hover", self.uri, 2, column), {"result": None})
+        self.assertFalse(marker.exists())
         self.wire.finish()
 
     def test_plain_manifest_driver(self):

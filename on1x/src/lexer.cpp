@@ -1,6 +1,7 @@
 #include <on1x/ast.hpp>
 #include <on1x/generated_scan.h>
 #include <on1x/literal_scan.h>
+#include <on1x/operator_scan.h>
 #include <on1x/regex_scan.h>
 #include <algorithm>
 #include <exception>
@@ -67,10 +68,11 @@ std::vector<RegexToken> regex_tokens(const std::string& input) {
    // Leave malformed preceding terminals to the ordinary scanner.
    if(!width)break;
    i=start+width;
-  }else if(c=='#'){
-   auto width=on1x_lit_character(input.data()+start,rest);
-   if(!width)break;
-   i=start+width;
+   }else if(c=='#'||(c=='b'&&rest>=4&&input.compare(start,4,"b!#\\")==0)){
+    const auto prefix=c=='b'?2u:0u;
+    auto width=on1x_lit_character(input.data()+start+prefix,rest-prefix);
+    if(!width)break;
+    i=start+prefix+width;
   }else if(c=='`'){
    const unsigned delim=rest>=3&&input[i]=='`'&&input[i+1]=='`'?3:1;
    i=start+delim;
@@ -86,10 +88,13 @@ std::vector<RegexToken> regex_tokens(const std::string& input) {
    i+=delim;
   }else if(on1x_lit_ident(static_cast<unsigned char>(c))){
    while(i<input.size()&&on1x_lit_ident(static_cast<unsigned char>(input[i])))++i;
-  }else{
-   auto pair=std::string_view(input).substr(start,2);
-   if(pair=="=>"||pair==":="||pair=="=="||pair=="!="||pair=="&&"||pair=="||"||
-      pair=="<="||pair==">="||pair=="<-"||pair=="->"||pair=="::")++i;
+   }else{
+    if(auto width=on1x_operator_width(input.data()+start,rest))i=start+width;
+    else{
+     auto pair=std::string_view(input).substr(start,2);
+     if(pair=="=>"||pair==":="||pair=="=="||pair=="!="||pair=="&&"||pair=="||"||
+        pair=="<="||pair==">="||pair=="<-"||pair=="->"||pair=="::")++i;
+    }
   }
   prev=std::string_view(input).substr(start,i-start);
  }

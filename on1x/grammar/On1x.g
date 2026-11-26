@@ -2,6 +2,7 @@
 #include "on1x_ast.h"
 #include "on1x/generated_scan.h"
 #include "on1x/literal_scan.h"
+#include "on1x/operator_scan.h"
 #include <stdlib.h>
 #include <string.h>
 %}
@@ -58,7 +59,16 @@
  * POSIX bounded profile: launch exec("/absolute/path", "literal-arg", ...)
  * or launch [capture] `absolute argv words`; capture binds process/stdin/
  * stdout/stderr capabilities. The parser, not a host shell, decodes words.
- * Ellipsis keeps its longest-match macro meaning. */
+ *   operator_decl := 'operator' ['<' type_parameters '>']
+ *                    '(' attributes ', formals:' parameter_list ')'
+ *                    ['->' type] ['where' constraints] block
+ *   operator_ref := 'operator' '(' quoted_operator ')'
+ *   fixity := ('infix' | 'infixr') decimal_tightness operator_token ';'
+ * Operator declarations inside a block introduce a noncapturing callable
+ * and a syntax binding valid from the declaration through the end of that
+ * block. Module-scope headers are visible throughout their module.
+ * Custom punctuation uses the shared bounded recognizer before ordinary
+ * punctuation; ellipsis keeps its longest-match macro meaning. */
 %backend portable
 %start on1x_scan_terminal
 %skip /[ \t\r\n]+/
@@ -316,6 +326,10 @@ static size_t on1x_terminal_width(aurocks_parser *matcher, size_t pos, int *triv
   } else if (strchr(" \t\r\n", *start)) {
     *trivia = 1;
     return on1x_rx_width(matcher, aurocks_skip_rx, pos);
+  }
+  if (rule == ON1X_ORDINARY) {
+    const size_t width = on1x_operator_width(start, available);
+    if (width) return width;
   }
   return on1x_rx_width(matcher, aurocks_rhs[aurocks_rules[rule].offset].id, pos);
 }

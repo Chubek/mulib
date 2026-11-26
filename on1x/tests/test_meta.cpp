@@ -1,6 +1,7 @@
 #include <on1x/meta.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/extensions.hpp>
+#include <on1x/clone.hpp>
 #include <iostream>
 namespace {
 void require(bool okay,const char* message){if(!okay)throw std::runtime_error(message);}
@@ -71,7 +72,99 @@ int main(){
    require(on1x::emit_c(local,"a")==on1x::emit_c(local_copy,"b"),"local syntax did not lower before PPX");
    auto local_bad=parse("fn main(){letrec_syntax{macro m{rule()=>expression{m!()};}}block{m!();}}");rejected=false;
    try{on1x::expand_macros(local_bad);}catch(const on1x::Error&){rejected=true;}
-   require(rejected&&local_bad.functions[0].body[0].value->kind==on1x::Expr::Kind::SyntaxLet&&local_bad.functions[0].body[0].value->syntax_definitions.size()==1,"local syntax failure was not transactional");
-  std::cout<<"Metaprogramming HIR, schema and codec: PASS\n";
+    require(rejected&&local_bad.functions[0].body[0].value->kind==on1x::Expr::Kind::SyntaxLet&&local_bad.functions[0].body[0].value->syntax_definitions.size()==1,"local syntax failure was not transactional");
+    auto operators=parse(R"(
+     operator(lexeme: "<+>", arity: "binary", precedence: 5, formals: a: i64, b: i64) -> i64 {
+      return a * 10 + b;
+     }
+     operator(lexeme: "??", lexeme2: "?|", arity: "ternary", precedence: 2,
+              formals: yes: bool, a: i64, b: i64) -> i64 {
+      if yes { return a; } return b;
+     }
+     macro swap { rule(ast_binary($customop, $a:Expression, $b:Expression)) =>
+      expression { ast_binary($customop, $b, $a) }; }
+     macro builtin { rule(ast_unary($operator, $value:Expression)) =>
+      expression { ast_unary($operator, $value) }; }
+     macro take_ref { rule(ast_operator($op:customop)) => expression { operator($op) }; }
+     macro choose { rule(ast_ternary($op:CustomOperator, $test:Expression, $a:Expression, $b:Expression)) =>
+      expression { ast_ternary($op, $test, $b, $a) }; }
+     fn main(){
+      println(swap!(1 <+> 2));
+      println(builtin!(!false));
+      let f = take_ref!(operator("<+>"));
+      println(f(4, 2));
+      println(choose!(true ?? 1 ?| 2));
+     }
+    )");
+    on1x::expand_macros(operators);
+    on1x::meta::require_source_ready(operators);
+    const auto& body=operators.functions.back().body;
+    const auto& swapped=*body[0].value->children[0];
+    require(swapped.kind==on1x::Expr::Kind::OperatorBinary&&swapped.children[0]->text=="2"&&
+            swapped.operator_identity==operators.operators.front().identity,"macro lost a captured operator binding");
+    require(body[1].value->children[0]->kind==on1x::Expr::Kind::Unary,"macro failed to reapply a native operator");
+    require(body[2].value->kind==on1x::Expr::Kind::OperatorReference&&
+            body[2].value->operator_identity==swapped.operator_identity,"operator reference lost hygiene");
+    require(body[4].value->children[0]->operator_lexeme2=="?|","macro lost a ternary delimiter");
+    auto operator_wire=on1x::meta::encode(operators);schema.validate(operator_wire);
+    require(on1x::meta::write_sexpr(operator_wire).find("@operator_")==std::string::npos,
+            "wire contains a hidden operator identity");
+    rejected=false;
+    try{(void)on1x::meta::decode(operator_wire);}catch(const on1x::Error&){rejected=true;}
+    require(rejected,"untrusted wire installed an intrinsic operator declaration");
+    std::size_t budget=262144;
+    auto operator_copy=on1x::clone_unit(operators,budget);
+     on1x::check(operator_copy);
+     on1x::meta::require_core(operator_copy);
+
+     auto generated=parse(R"(
+      macro make {
+       rule ($name:Identifier) => block {
+        operator(lexeme: "<+>", arity: "binary", precedence: 5, formals: $name: i64, y: i64) -> i64 {
+         if y == 0 { return $name; }
+         return $name <+> (y - 1);
+        }
+        infixr 4 <+>;
+        println((1 <+> 2) <+> 3 <+> 4);
+       };
+      }
+      fn main(){ make!(n); make!(n); }
+     )");
+     require(generated.operators.empty()&&generated.macros.front().rules.front().body.front().syntax_operator,
+             "parser hoisted an uninstantiated operator");
+     auto direct_inference=on1x::clone_unit(generated,budget);
+     on1x::expand_macros(generated);
+     on1x::meta::require_source_ready(generated);
+     require(generated.operators.size()==2&&generated.fixity_directives.size()==1,
+             "expansion did not instantiate two declarations and retain one source directive");
+     const auto& first=generated.operators.front();
+     const auto& last=generated.operators.back();
+     require(first.block_local&&last.block_local&&first.identity!=last.identity&&
+             first.header.where.offset==last.header.where.offset,
+             "generated declarations did not receive distinct definition-site identities");
+     for(std::size_t i=0;i<2;++i){
+      const auto& op=generated.operators[i];
+      require(op.function.body.back().value->operator_identity==op.identity,
+              "generated operator body lost its recursive binding");
+      const auto& expr=*generated.functions.front().body[i].value->children.front();
+      const auto& stamp=*expr.operator_parse;
+      require(expr.operator_identity==op.identity&&stamp.rank==54&&stamp.directive&&
+              stamp.directive->offset==generated.fixity_directives.front().where.offset&&
+              expr.children.front()->operator_grouped&&!stamp.left&&
+              stamp.right==expr.children.back()->operator_parse,
+              "generated syntax lost Pratt provenance or crossed a parenthesis boundary");
+     }
+     on1x::infer_types(direct_inference);
+     on1x::meta::require_core(direct_inference);
+
+     auto wrong_arity=parse(R"(
+     operator(lexeme: "<+>", arity: "binary", precedence: 5, formals: a: i64, b: i64) -> i64 { return a + b; }
+     macro wrong { rule($op:Operator) => expression { ast_unary($op, 1) }; }
+     fn main(){ println(wrong!(<+>)); }
+    )");
+    rejected=false;
+    try{on1x::expand_macros(wrong_arity);}catch(const on1x::Error& e){rejected=std::string(e.what()).find("wrong arity")!=std::string::npos;}
+    require(rejected&&!wrong_arity.macros.empty(),"macro accepted a captured operator with the wrong arity");
+   std::cout<<"Metaprogramming HIR, schema and codec: PASS\n";
  }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

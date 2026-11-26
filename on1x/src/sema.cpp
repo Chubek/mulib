@@ -6,6 +6,7 @@
 #include <on1x/extensions.hpp>
 #include <on1x/infer.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/operator_lowering.hpp>
 #include <on1x/canonical/control.hpp>
 #include <on1x/canonical/values.hpp>
 #include <on1x/patterns.hpp>
@@ -370,7 +371,11 @@ class Checker {
     if(i>=e.children.size())fail(e.where,"missing expression child");
     return check_expr(*e.children[i]);
    };
-       switch(e.kind){
+        switch(e.kind){
+         case Expr::Kind::OperatorReference:case Expr::Kind::OperatorUnary:
+         case Expr::Kind::OperatorBinary:case Expr::Kind::OperatorTernary:
+          throw Error(e.where,"operator source syntax reached the semantic checker",
+                      "ON1X-OPERATOR-UNRESOLVED");
         case Expr::Kind::SourceCsp:case Expr::Kind::Csp:{
          auto arity=[&](std::size_t n){if(e.children.size()!=n)fail(e.where,"concurrency operand arity mismatch");};
          if(e.text=="poll"){
@@ -999,8 +1004,9 @@ class Checker {
    generic_context=false;
  }
 };
-   processor::SemanticStats recheck_candidate(Unit& unit,const std::vector<InterfaceObligation>* interfaces){
-    auto stats=processor::validate(unit,processor::SemanticStage::Typed);
+    processor::SemanticStats recheck_candidate(Unit& unit,const std::vector<InterfaceObligation>* interfaces){
+     meta::require_core(unit);
+     auto stats=processor::validate(unit,processor::SemanticStage::Typed);
     Checker(unit).run(interfaces);
     canonical::verify_control(unit);canonical::verify_values(unit);
     csp::verify(unit,true);extensions::verify_evidence(unit);
@@ -1010,8 +1016,10 @@ class Checker {
                    processor::Report* output=nullptr,const processor::RuleSelection& selection={}){
     if(output)*output={};
     processor::Report evidence;
-     require_no_kernel_imports(u);cliches::prepare(u);inherent::prepare(u);
-     expand_macros(u);meta::require_core(u);
+      require_no_kernel_imports(u);
+      expand_macros(u);
+      evidence.source_desugar=meta::desugar_source_operators(u);
+      cliches::prepare(u);inherent::prepare(u);meta::require_core(u);
      infer_types(u);
      cliches::verify_elaborated(u);inherent::verify_elaborated(u);
      evidence.structural=processor::validate(u,processor::SemanticStage::Structural);
@@ -1042,6 +1050,10 @@ class Checker {
    void check(Unit& u,analysis::Context& context,processor::Report& report){check_unit(u,nullptr,&context,&report);}
    void check(Unit& u,analysis::Context& context,const processor::RuleSelection& selection,processor::Report* report){
     check_unit(u,nullptr,&context,report,selection);
+   }
+   void check_library(Unit& u,analysis::Context& context,const processor::RuleSelection& selection){
+    const std::vector<InterfaceObligation> no_interfaces;
+    check_unit(u,&no_interfaces,&context,nullptr,selection);
    }
   void check(Unit& u){
    diagnostic::Registry registry;analysis::Context context{diagnostic::Catalog::embedded(),registry,{},{}};

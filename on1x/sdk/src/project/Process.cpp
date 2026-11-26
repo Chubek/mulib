@@ -188,10 +188,12 @@ extern "C" On1xSDK_Status on1x_sdk_formatter_dispatch_source(
         !absolute_path(as_view(working_directory)))
         return ON1X_SDK_INVALID_ARGUMENT;
     static constexpr char fmt[] = "fmt";
+    static constexpr char isolated[] = "--isolated";
     static constexpr char target[] = "--target";
     static constexpr char plain[] = "plain";
     const std::array arguments{
         compiler, view(std::string_view(fmt, sizeof(fmt) - 1)),
+        view(std::string_view(isolated, sizeof(isolated) - 1)),
         view(std::string_view(target, sizeof(target) - 1)),
         view(std::string_view(plain, sizeof(plain) - 1)), input};
     On1xSDK_ProcessRequest request{};

@@ -30,7 +30,7 @@ def main():
         "project(On1xMetaIncludeRegression LANGUAGES CXX)\n"
         "set(CMAKE_CXX_STANDARD 20)\n"
         "set(BUILD_TESTING OFF)\n"
-        "add_executable(on1x_frontend probe.cpp)\n"
+        f'add_executable(on1x_frontend probe.cpp "{processor.parents[1] / "src/type.cpp"}")\n'
         'target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")\n'
         f'target_include_directories(on1x_frontend PRIVATE "{processor.parents[1] / "include"}")\n'
         f'add_subdirectory("{processor}" processor)\n')
@@ -43,9 +43,10 @@ def main():
         build.mkdir(parents=True, exist_ok=True)
         # Reproduce the original integration failure: the parent adds its
         # binary directory before adding the real processor subdirectory.
-        stale = build / "on1x_meta_rules.hpp"
+        stale = [build / "on1x_meta_rules.hpp", build / "on1x_meta_source.hpp"]
         poison = '#error "stale parent header shadowed real On1xMETA tables"\n'
-        stale.write_text(poison)
+        for path in stale:
+            path.write_text(poison)
         for command in [
             [args.cmake, "-S", str(source), "-B", str(build),
              "-DCMAKE_CXX_COMPILER=" + args.cxx,
@@ -54,18 +55,21 @@ def main():
         ]:
             result = subprocess.run(command, text=True, capture_output=True, timeout=120)
             assert result.returncode == 0, (command, result.stdout, result.stderr)
-        assert stale.read_text() == poison
+        assert all(path.read_text() == poison for path in stale)
 
         # The actual production wiring, even in bootstrap without Perl, must
         # consume all shipping modules and produce the same exact artifacts.
         artifacts = build / "processor/generated"
-        for name in ("On1xMETA.py", "on1x_meta_rules.hpp", "rules_manifest.json"):
+        for name in ("On1xMETA.py", "on1x_meta_rules.hpp", "rules_manifest.json",
+                     "on1x_meta_source.hpp", "source_manifest.json"):
             assert (artifacts / name).read_bytes() == (processor / "generated" / name).read_bytes(), (mode, name)
         manifest = json.loads((artifacts / "rules_manifest.json").read_bytes())
         expected = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in processor.glob("*.o1m")}
         assert expected and {s["file"]: s["sha256"] for s in manifest["sources"]} == expected
         assert manifest["rules"] > 0 and manifest["constraints"] > 0, manifest
+        compiled_source = json.loads((artifacts / "source_manifest.json").read_bytes())
+        assert compiled_source["phase"] == "source" and compiled_source["rules"] == 6
         probe = subprocess.run([build / "on1x_frontend"], capture_output=True,
                                text=True, timeout=10, check=True)
         assert probe.stdout.split() == [manifest["program_sha256"], str(manifest["rules"]),

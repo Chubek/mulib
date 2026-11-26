@@ -31,6 +31,10 @@ receiver methods require direct calls. By-value `self` is limited to copy-safe
 layouts, while `ref self` and `move self` currently reject. Field projection
 remains `value["field"]`.
 
+Intrinsic [operators](operators.md) add module and block-local punctuation declarations,
+lexically scoped fixity directives, and `operator("...")` function values.
+Their checked calls follow ordinary typing and ownership rules.
+
 The default [pervasive environment](modules.md#the-pervasive-environment)
 supplies canonical `Option<T>` and `Result<T,E>` declarations plus constructor,
 query, map/chain, fallback, conversion and focused iteration helpers without an
@@ -113,8 +117,9 @@ import  = 'import' STRING ';'
         | 'import' module ['as' ID] { ',' module ['as' ID] } ';'
         | 'from' { '.' } [module] 'import' import_names ';' ;
 module  = ID { '.' ID } ;
-import_names = ID ['as' ID] { ',' ID ['as' ID] }
-             | '(' ID ['as' ID] { ',' ID ['as' ID] } [','] ')' ;
+ import_names = import_item { ',' import_item }
+              | '(' import_item { ',' import_item } [','] ')' ;
+ import_item = ID ['as' ID] | 'operator' '(' STRING ')' ;
 extern  = 'extern' 'fn' ID '(' [ params ] ')' ['->' type] ';' ;
 function= 'fn' ID '(' [ params ] ')' ['->' type] block ;
 params  = pattern [ ':' type ] { ',' pattern [ ':' type ] } ;

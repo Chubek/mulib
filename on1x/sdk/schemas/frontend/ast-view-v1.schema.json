@@ -40,13 +40,21 @@
           "category": {
             "enum": ["unit", "declaration", "parameter", "statement", "expression", "pattern", "type_syntax", "import", "macro", "macro_rule", "directive", "attribute", "constraint", "extension"]
           },
-          "tag": {"type": "string", "minLength": 1, "maxLength": 128},
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "description": "Operator syntax tags are additive to the generic view. An operator_declaration (declaration) has the primary spelling as text, operator_* attribute children for its header (including defaulted syntax values), then the usual function type parameters, constraints, formals, result type and body. An infix or infixr node (directive) has the operator spelling as text and an operator_tightness child; infixr denotes right associativity. An operator_unary, operator_binary, operator_ternary, or operator_reference node (expression) has the primary spelling as text. Expression operands, if any, are in source order; operator_position and any operator_lexeme2 metadata follow them. An operator_import (import) has the selected spelling as text and is a child of a selective_import. Operator metadata nodes do not expose internal callable names, declaration identities or checked signatures."
+          },
           "flags": {
             "type": "integer",
             "minimum": 0,
-            "description": "On borrow expressions (tag 'borrow') and borrow/ref parameters, REFERENCE marks a reference and EXCLUSIVE distinguishes 'borrow mut' or 'ref' from shared 'borrow'. A ':=' statement uses only REFERENCE. The borrow operand is the named identifier child; a parameter's type syntax remains the referent type. PROCEDURE marks function and lambda nodes spelled 'proc'."
+            "description": "On borrow expressions (tag 'borrow') and borrow/ref parameters, REFERENCE marks a reference and EXCLUSIVE distinguishes 'borrow mut' or 'ref' from shared 'borrow'. A ':=' statement uses only REFERENCE. The borrow operand is the named identifier child; a parameter's type syntax remains the referent type. PROCEDURE marks function and lambda nodes spelled 'proc'. BLOCK_LOCAL (1 << 12) marks lexical-block operator declarations; this flag is not a scope identifier."
           },
-          "text": {"type": "string"},
+          "text": {
+            "type": "string",
+            "description": "Operator attribute children use these text values: operator_arity: unary, binary, or ternary; operator_position: prefix, infix, or postfix; operator_binds: left or right; operator_precedence and operator_tightness: one decimal digit (0 through 9); operator_lexeme2: the ternary delimiter spelling."
+          },
           "hygiene_context": {"type": "integer", "minimum": 0},
           "source_id": {"type": "integer", "minimum": 0},
           "source_revision": {"type": "integer", "minimum": 0},

@@ -78,6 +78,9 @@ def main():
             '  {- outer {@name(x) nested @} still outer -} let tail = 0;\n'
             '  {! metadata {- opaque } let end = 1;\n'
             '  let p = proc() {@Name()};\n'
+            '  infixr 3 <$>;\n'
+            '  let answer = a <$> b >>. c ^^ d;\n'
+            '  let operator_value = operator("<$>");\n'
             '}\n',
             encoding="utf-8",
         )
@@ -96,6 +99,10 @@ def main():
         assert color(latest[10], "let tail") == color(latest[4], "let")
         assert color(latest[11], "let end") == color(latest[4], "let")
         assert color(latest[12], "@Name") != color(latest[5], "# comment")
+        assert color(latest[13], "infixr") != color(latest[13], "3")
+        assert color(latest[14], "<$>") == color(latest[14], "$>")
+        assert color(latest[14], ">>.") == color(latest[14], ". c")
+        assert color(latest[15], "operator(") != color(latest[15], "operator_value")
 
         for name, directives in (
             ("On1xfile", [

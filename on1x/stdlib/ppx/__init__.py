@@ -70,6 +70,10 @@ class Schema:
                 return not quoted and bool(re.fullmatch('[0-9]+', n)) and int(n) <= (1 << 64) - 1 and (kind != 'Positive' or int(n) > 0)
             if kind == 'Boolean':
                 return not quoted and n in ('true', 'false')
+            if kind == 'OperatorLexeme':
+                return quoted and bool(re.fullmatch(r'[!%&*+?^|~<>$=.\-]{2,6}', n))
+            if kind == 'UnaryPosition':
+                return quoted and n in ('prefix', 'postfix')
             if kind == 'UnaryOperator':
                 return not quoted and n in ('!', '-')
             if kind == 'BinaryOperator':
@@ -119,6 +123,35 @@ def integer(value, location):
 
 def ident(value, location):
     return node('Identifier', value, location)
+
+
+def operator_ref(lexeme, location):
+    return node('OperatorReference', lexeme, location)
+
+
+def operator_unary(lexeme, position, value, location):
+    return node('OperatorUnary', lexeme, position, value, location)
+
+
+def operator_binary(lexeme, left, right, location):
+    return node('OperatorBinary', lexeme, left, right, location)
+
+
+def operator_ternary(lexeme, lexeme2, first, second, third, location):
+    return node('OperatorTernary', lexeme, lexeme2, first, second, third, location)
+
+
+def operator_header(lexeme, lexeme2, arity, position, precedence, tightness, binds, location):
+    return node('OperatorHeader', lexeme, lexeme2, arity, position,
+                Atom(str(precedence)), Atom(str(tightness)), binds, location)
+
+
+def operator_declaration(header, generics, formals, result, body):
+    return node('OperatorDeclaration', header, generics, formals, result, body)
+
+
+def fixity_directive(lexeme, tightness, binds, location):
+    return node('FixityDirective', lexeme, Atom(str(tightness)), binds, location)
 
 
 def call(function, arguments, location):

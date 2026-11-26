@@ -18,6 +18,17 @@ def boolean(b,at):return mk('BooleanLiteral',Atom('true' if b else 'false'),at)
 def ident(s,at):return mk('Identifier',s,at)
 def binop(op,left,right,at):return mk('Binary',Atom(op),left,right,at)
 def unary(op,value,at):return mk('Unary',Atom(op),value,at)
+def operator_ref(lexeme,at):return mk('OperatorReference',lexeme,at)
+def operator_unary(lexeme,position,value,at):return mk('OperatorUnary',lexeme,position,value,at)
+def operator_binary(lexeme,left,right,at):return mk('OperatorBinary',lexeme,left,right,at)
+def operator_ternary(lexeme,lexeme2,first,second,third,at):
+    return mk('OperatorTernary',lexeme,lexeme2,first,second,third,at)
+def operator_header(lexeme,lexeme2,arity,position,precedence,tightness,binds,at):
+    return mk('OperatorHeader',lexeme,lexeme2,arity,position,Atom(str(precedence)),Atom(str(tightness)),binds,at)
+def operator_declaration(header,generics,formals,result,body):
+    return mk('OperatorDeclaration',header,generics,formals,result,body)
+def fixity_directive(lexeme,tightness,binds,at):
+    return mk('FixityDirective',lexeme,Atom(str(tightness)),binds,at)
 def call(callee,args,at):return mk('Call', ident(callee,at) if isinstance(callee,str) else callee, args,at)
 def block(body,at):return mk('Block',body,at)
 def do(expr,at):return mk('Do',expr,at)
@@ -86,6 +97,8 @@ class Schema:
             if k in ('Nat','Positive'):
                 return not quoted and bool(re.fullmatch(r'[0-9]+',n)) and int(n)<=2**64-1 and (k!='Positive' or int(n)>0)
             if k=='Boolean':return not quoted and n in ('true','false')
+            if k=='OperatorLexeme':return quoted and bool(re.fullmatch(r'[!%&*+?^|~<>$=.\-]{2,6}',n))
+            if k=='UnaryPosition':return quoted and n in ('prefix','postfix')
             if k=='UnaryOperator':return not quoted and n in ('!','-')
             if k=='BinaryOperator':return not quoted and n in ('+','-','*','/','%','<','>','<=','>=','==','!=','&&','||')
             if k=='DecimalSpelling':return quoted and bool(re.fullmatch(r'-?[0-9]+',n))

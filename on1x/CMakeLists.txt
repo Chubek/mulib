@@ -172,6 +172,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/f
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
 add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
+  src/operator_lowering.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
 target_include_directories(on1x_frontend PUBLIC include)
@@ -501,6 +502,7 @@ install(DIRECTORY examples/kernel/load-time-clamp DESTINATION share/on1x/example
   PATTERN "__pycache__" EXCLUDE)
 install(DIRECTORY examples/http-probe DESTINATION share/on1x/examples
   FILES_MATCHING PATTERN "*.on1x" PATTERN "*.c" PATTERN "README.md")
+install(FILES examples/operators.on1x DESTINATION share/on1x/examples)
 include(cmake/StdlibProbeExample.cmake)
 install(FILES docs/kernel-load-time.md docs/kernel-package.md DESTINATION share/on1x/docs)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -606,6 +608,44 @@ if(BUILD_TESTING)
     list(APPEND _test_c_flags "--cflag=${_flag}")
   endforeach()
   include(cmake/StdlibProbeTests.cmake)
+  if(NOT CMAKE_CROSSCOMPILING)
+    set(_operator_test_options ${_test_c_flags})
+    if(TARGET on1x_diagnostics)
+      list(APPEND _operator_test_options --syren)
+    endif()
+    add_test(NAME on1x.operators COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_operators.py"
+      "$<TARGET_FILE:on1xc>" "$<TARGET_FILE:on1x-vm>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/operators" "${CMAKE_C_COMPILER}"
+      ${_operator_test_options})
+    set_tests_properties(on1x.operators PROPERTIES TIMEOUT 180)
+    add_executable(on1x_operator_semantics_tests tests/test_operator_semantics.cpp)
+    target_link_libraries(on1x_operator_semantics_tests PRIVATE on1x_frontend)
+    add_test(NAME on1x.operators.semantics COMMAND on1x_operator_semantics_tests)
+    set_tests_properties(on1x.operators.semantics PROPERTIES TIMEOUT 45)
+    add_executable(on1x_operator_source_scope_tests tests/test_operator_source_scope.cpp)
+    target_link_libraries(on1x_operator_source_scope_tests PRIVATE on1x_frontend)
+    add_test(NAME on1x.operators.source_scope COMMAND on1x_operator_source_scope_tests
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/operator-source-scope")
+    add_test(NAME on1x.operators.ppx COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_operator_ppx.py"
+      "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/operators-ppx" "${CMAKE_C_COMPILER}"
+      ${_test_c_flags})
+    set_tests_properties(on1x.operators.ppx PROPERTIES TIMEOUT 120)
+    if(UNIX AND CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      set(_operator_install_options)
+      if(TARGET on1x_backend_mir_archon)
+        list(APPEND _operator_install_options --archon-target "${ON1X_ARCHON_TARGET_TRIPLE}")
+      endif()
+      add_test(NAME on1x.operators.installed COMMAND "${Python3_EXECUTABLE}" -B
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/qualify_installed_operators.py"
+        --build "${CMAKE_CURRENT_BINARY_DIR}" --cmake "${CMAKE_COMMAND}"
+        --clang "${CMAKE_C_COMPILER}" --clangxx "${CMAKE_CXX_COMPILER}"
+        ${_operator_install_options})
+      set_tests_properties(on1x.operators.installed PROPERTIES TIMEOUT 180 RUN_SERIAL TRUE)
+    endif()
+  endif()
   if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Linux"
       AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
     add_test(NAME on1x.toolchain_probe COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover

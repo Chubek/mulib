@@ -1,0 +1,35 @@
+{
+  "schema": "on1x.sdk.agent-report/1",
+  "worker": 3,
+  "task": "Operator-aware formatting and SDK candidate source views",
+  "status": "implemented-and-tested",
+  "repository_revision": "26077c078770b744672864d1ba033599d7d279c9",
+  "commits_created": false,
+  "implemented": [
+    "Trusted-file formatting uses canonical operator import and prelude discovery without processing dependency bodies, expanding macros, executing PPX or declaration extensions, or checking semantics.",
+    "The existing C++ formatter remains source-only unless the host supplies loader options. LSP snapshots and the SDK process-based formatter explicitly use isolated mode.",
+    "The generic SDK frontend candidate view exposes operator declarations and attributes, lexical and module fixity directives, ordered application operands, references, selective imports, and macro syntax declarations. Linked source metadata stays separate from the linked Unit.",
+    "The SDK token stream classifies contextual operator keywords and unquoted custom-operator-shaped tokens without asserting semantic bindings.",
+    "Internal callable identity, effective parser grouping provenance, and checked signature data remain host-owned."
+  ],
+  "verification": [
+    {
+      "command": "TMPDIR=$PWD/build/on1x-operators/followup-W3/tmp cmake --build build/on1x-operators/followup-W3 --parallel 3 --target on1x_sdk_test_frontend on1x_sdk_test_frontend_c on1x_sdk_test_scanner_parity on1x_sdk_frontend_embed_example on1x_sdk_test_project on1x_sdk_test_project_c on1xc on1x-vm",
+      "result": "passed with Clang/Clang++ 22.1.8 and the fallback scanner"
+    },
+    {
+      "command": "TMPDIR=$PWD/build/on1x-operators/followup-W3/tmp ctest --test-dir build/on1x-operators/followup-W3 --output-on-failure -j 3 -R '^on1x\\.(formatter|addon_lsp|operators|literals_core|core_syntax_integration|project_driver|sdk\\.(frontend(_c|_scanner_parity|_example|_headers)?|project(_c|_headers|_exports)?))$'",
+      "result": "15 passed, 0 failed. Formatter checks include no PPX invocation, ignored dependency bodies, imported and pervasive operators, output idempotence, a token-budget rejection, and unchanged emitted-Clang-C runtime output."
+    },
+    {
+      "command": "python3 -m json.tool on1x/sdk/schemas/frontend/ast-view-v1.schema.json",
+      "result": "passed"
+    }
+  ],
+  "limitations": [
+    "This is source candidate metadata, not checked HIR or new SDK PPX operator transport. The standalone SDK parser deliberately does not load imports.",
+    "The current loader entry hook returns a Unit, not the token stream. The trusted formatter scans the same bounded source snapshot for layout; SDK compilation projects operator-facing import syntax via canonical discovery over its existing dependency tokens.",
+    "The worker build qualified the fallback scanner; generated scanner and installed-toolchain qualification are integration work.",
+    "Editor buffers deliberately cannot format notation that depends on imports or pervasives. Compiler and editor adapter should be updated together for the isolated CLI option."
+  ]
+}

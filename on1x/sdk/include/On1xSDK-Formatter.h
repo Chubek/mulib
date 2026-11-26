@@ -21,9 +21,10 @@ ON1X_SDK_PROJECT_API On1xSDK_Status on1x_sdk_manifest_format(
 
 /*
  * Requests the existing compiler formatter as:
- *   COMPILER fmt --target plain INPUT
+ *   COMPILER fmt --isolated --target plain INPUT
  * Both paths must be explicit absolute paths.  The host remains the sole
  * process authority and receives the exact argv array without a shell.
+ * The isolated invocation does not read imports or the prelude.
  */
 ON1X_SDK_PROJECT_API On1xSDK_Status on1x_sdk_formatter_dispatch_source(
     const On1xSDK_ProcessHost *host,

@@ -2,6 +2,7 @@
 #include <on1x/analysis.hpp>
 #include <on1x/sema.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/operator_lowering.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
 #include <on1x/formatter.hpp>
@@ -222,9 +223,11 @@ namespace {
  int format_command(int argc,char** argv,std::string_view command){
   namespace fmt=on1x::format;
   fmt::Options options;
+  on1x::LoaderOptions operator_overrides;
+  std::vector<std::filesystem::path> import_paths,stdlib_paths;
   if(command=="--emit-latex")options.target=fmt::Target::latex;
   if(command=="--emit-troff")options.target=fmt::Target::troff;
-  bool check=false, inplace=false, options_done=false;
+  bool check=false, inplace=false, options_done=false, isolated=false, scope_options=false;
   std::string source,out;
    auto usage_error=[](const std::string& message){
     std::cerr<<"on1xc: "<<terminal_text(message)<<'\n';
@@ -234,8 +237,11 @@ namespace {
    std::string_view arg=argv[i];
    if(!options_done&&arg=="--"){options_done=true;continue;}
    if(!options_done&&(arg=="--help"||arg=="-h")){
-    std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
-     "  -i, --inplace  Replace INPUT atomically with plain formatted source.\n";
+     std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
+      "  -i, --inplace  Replace INPUT atomically with plain formatted source.\n"
+      "  --isolated     Do not open imports or the prelude (for editor snapshots).\n"
+      "  --stdlib DIR [-I DIR | --module-path DIR] [--prelude FILE | --no-prelude]\n"
+      "  --lib-path DIR:DIR | --stdlib-path DIR:DIR\n";
     return 0;
    }
    if(!options_done&&arg=="--target"){
@@ -245,9 +251,25 @@ namespace {
     else if(target=="latex")options.target=fmt::Target::latex;
     else if(target=="troff")options.target=fmt::Target::troff;
      else return usage_error("unknown formatter target: "+std::string(target));
-   }else if(!options_done&&arg=="--check")check=true;
-   else if(!options_done&&(arg=="--inplace"||arg=="-i"))inplace=true;
-   else if(!options_done&&arg=="--enable"){
+    }else if(!options_done&&arg=="--check")check=true;
+    else if(!options_done&&(arg=="--inplace"||arg=="-i"))inplace=true;
+    else if(!options_done&&arg=="--isolated")isolated=true;
+    else if(!options_done&&arg=="--no-prelude"){
+     operator_overrides.prelude=false;scope_options=true;
+    }else if(!options_done&&(arg=="--stdlib"||arg=="--prelude"||arg=="-I"||
+                             arg=="--module-path"||arg=="--lib-path"||arg=="--stdlib-path")){
+     if(++i==argc||!argv[i][0])return usage_error(std::string(arg)+" requires a nonempty path");
+     scope_options=true;
+     if(arg=="--stdlib"){
+      operator_overrides.stdlib=argv[i];operator_overrides.stdlib_explicit=true;
+     }else if(arg=="--prelude")operator_overrides.preludes.emplace_back(argv[i]);
+     else if(arg=="--lib-path"||arg=="--stdlib-path")
+      on1x::discovery::append_paths(arg=="--lib-path"?import_paths:stdlib_paths,argv[i]);
+     else import_paths.emplace_back(argv[i]);
+    }else if(!options_done&&arg.starts_with("-I")&&arg.size()>2){
+     import_paths.emplace_back(arg.substr(2));scope_options=true;
+    }
+    else if(!options_done&&arg=="--enable"){
     if(++i==argc)return usage_error("--enable requires registered feature names");
     std::set<std::string> selected;
     on1x::extensions::select(selected,argv[i],{"<command-line>"});
@@ -260,6 +282,22 @@ namespace {
    else return usage_error("formatter requires exactly one input file");
   }
   if(source.empty())return usage_error("formatter requires an input file");
+  if(isolated&&scope_options)return usage_error("--isolated cannot be combined with module or prelude options");
+  if(!isolated){
+   auto operator_loader=on1x::default_loader_options(argv[0]);
+   operator_loader.prelude=operator_overrides.prelude;
+   operator_loader.preludes=std::move(operator_overrides.preludes);
+   if(operator_overrides.stdlib_explicit){
+    operator_loader.stdlib=std::move(operator_overrides.stdlib);
+    operator_loader.stdlib_explicit=true;
+    operator_loader.stdlib_paths.clear();
+   }
+   operator_loader.paths.insert(operator_loader.paths.begin(),import_paths.begin(),import_paths.end());
+   operator_loader.stdlib_paths.insert(operator_loader.stdlib_paths.begin(),stdlib_paths.begin(),stdlib_paths.end());
+   operator_loader.extensions.enabled.insert(options.enabled_extensions.begin(),options.enabled_extensions.end());
+   operator_loader.extensions.execute=false;
+   options.operator_loader=std::move(operator_loader);
+  }
   if(inplace){
    if(check||!out.empty())
     return usage_error("formatter --inplace cannot be combined with --check or -o");
@@ -523,7 +561,167 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  out<<"]}\n";
  return out.str();
 }
-void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
+ std::string callable_signature(const on1x::Function& function){
+  std::vector<on1x::Type> parameters;
+  for(const auto& parameter:function.params)parameters.push_back(parameter.type);
+  auto signature=on1x::Type::function(std::move(parameters),function.result);
+  std::map<std::size_t,std::size_t> variables;
+  auto normalize=[&](auto&& self,const on1x::Type& type)->on1x::Type{
+   if(type.kind()==on1x::Type::Generic){
+    auto [variable,inserted]=variables.emplace(type.generic_identity(),variables.size());(void)inserted;
+    return on1x::Type::bound(variable->second);
+   }
+   if(type.is_code())return on1x::Type::code(self(self,type.code_result()));
+   if(type.is_function()){
+    std::vector<on1x::Type> args;for(const auto& p:type.parameters())args.push_back(self(self,p));
+    return on1x::Type::function(std::move(args),self(self,type.result()));
+   }
+   if(type.is_tuple()){
+    std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
+    return on1x::Type::tuple(std::move(elements));
+   }
+   if(type.is_data()){
+    std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
+    auto result=on1x::Type::data(type.kind(),std::move(elements),type.labels(),type.extent());
+    if(!type.nominal().empty()){
+     std::vector<on1x::Type> args;for(const auto& a:type.arguments())args.push_back(self(self,a));
+     result=result.with_nominal(type.nominal(),std::move(args));
+    }
+    return result;
+   }
+   return type;
+  };
+  signature=normalize(normalize,signature);
+  std::ostringstream listing;
+  if(!variables.empty()){
+   listing<<"forall(";for(std::size_t i=0;i<variables.size();++i){if(i)listing<<", ";listing<<"a"<<i;}
+   listing<<") ";
+  }
+  if(on1x::takes_borrows(function)){
+   listing<<"fn(";
+   for(std::size_t i=0;i<function.params.size();++i){
+    if(i)listing<<", ";
+    if(function.params[i].borrow==on1x::BorrowMode::Shared)listing<<"borrow ";
+    else if(function.params[i].borrow==on1x::BorrowMode::Exclusive)listing<<"ref ";
+    listing<<on1x::type_name(signature.parameters()[i]);
+   }
+   listing<<") -> "<<on1x::type_name(signature.result());
+  }else listing<<on1x::type_name(signature);
+  return listing.str();
+ }
+ void operator_json_string(std::ostream& out,std::string_view text){
+  constexpr std::string_view hex="0123456789abcdef";
+  out<<'"';
+  for(std::size_t i=0;i<text.size();){
+   const auto c=static_cast<unsigned char>(text[i]);
+   if(c=='"'||c=='\\')out<<'\\'<<char(c);
+   else if(c>=32&&c<128)out<<char(c);
+   else{
+    std::size_t count=c>=0xc2&&c<=0xdf?2:c>=0xe0&&c<=0xef?3:c>=0xf0&&c<=0xf4?4:0;
+    if(count<=text.size()-i&&count){
+     const auto next=static_cast<unsigned char>(text[i+1]);
+     for(std::size_t j=1;j<count;++j)
+      if((static_cast<unsigned char>(text[i+j])&0xc0)!=0x80){count=0;break;}
+     if((c==0xe0&&next<0xa0)||(c==0xed&&next>=0xa0)||
+        (c==0xf0&&next<0x90)||(c==0xf4&&next>=0x90))count=0;
+     if(count){out<<text.substr(i,count);i+=count;continue;}
+    }
+    out<<"\\u00"<<hex[c>>4]<<hex[c&15];
+   }
+   ++i;
+  }
+  out<<'"';
+ }
+ struct OperatorInspection {
+  struct Use {std::size_t declaration;on1x::Location where;std::size_t length;};
+  std::vector<std::pair<on1x::OperatorHeader,std::string>> declarations;
+  std::vector<on1x::FixityDirective> directives;
+  std::vector<Use> uses;
+  explicit OperatorInspection(const on1x::Unit& unit):directives(unit.fixity_directives){
+   std::map<std::string_view,std::size_t,std::less<>> ids;
+   for(const auto& declaration:unit.operators){
+    ids.emplace(declaration.identity,declarations.size());
+    declarations.emplace_back(declaration.header,declaration.identity);
+   }
+   auto visit=[&](auto&& self,const on1x::Expr& expr)->void{
+    if(on1x::is_source_operator(expr.kind))
+     if(auto hit=ids.find(expr.operator_identity);hit!=ids.end()){
+      if(uses.size()>=32768)throw on1x::Error(expr.where,"operator inspection use limit exceeded",
+                                            "ON1X-OPERATOR-LIMIT");
+      uses.push_back({hit->second,expr.where,expr.text.size()+
+                       (expr.kind==on1x::Expr::Kind::OperatorReference?2u:0u)});
+     }
+    if(expr.callee)self(self,*expr.callee);
+    for(const auto& child:expr.children)self(self,*child);
+    auto statements=[&](auto&& walk,const std::vector<on1x::Stmt>& body)->void{
+     for(const auto& stmt:body){
+      if(stmt.value)self(self,*stmt.value);
+      walk(walk,stmt.body);walk(walk,stmt.otherwise);
+     }
+    };
+    statements(statements,expr.body);
+   };
+   auto function=[&](const on1x::Function& fn){
+    auto statements=[&](auto&& walk,const std::vector<on1x::Stmt>& body)->void{
+     for(const auto& stmt:body){
+      if(stmt.value)visit(visit,*stmt.value);
+      walk(walk,stmt.body);walk(walk,stmt.otherwise);
+     }
+    };
+    statements(statements,fn.body);
+   };
+   for(const auto& fn:unit.functions)function(fn);
+   for(const auto& op:unit.operators)function(op.function);
+   for(const auto& impl:unit.cliche_implementations)for(const auto& member:impl.members){
+    function(member.function);if(member.value)visit(visit,*member.value);
+   }
+   for(const auto& impl:unit.inherent_implementations)for(const auto& member:impl.members){
+    function(member.function);if(member.value)visit(visit,*member.value);
+   }
+  }
+  std::string describe(const on1x::Unit& checked)const{
+   std::map<std::string_view,const on1x::Function*,std::less<>> functions;
+   for(const auto& function:checked.functions)functions.emplace(function.name,&function);
+   std::ostringstream out;
+   auto location=[&](const on1x::Location& where){
+    out<<"\"file\":";operator_json_string(out,where.file);
+    out<<",\"line\":"<<where.line<<",\"column\":"<<where.column<<",\"offset\":"<<where.offset;
+   };
+   auto association=[](on1x::OperatorAssociativity binds){return binds==on1x::OperatorAssociativity::Left?"left":"right";};
+   out<<"{\"version\":1,\"declarations\":[";
+   bool first=true;
+   for(const auto& [header,id]:declarations){
+    if(!first)out<<',';first=false;
+    out<<"{\"lexeme\":";operator_json_string(out,header.lexeme);
+    out<<",\"lexeme2\":";operator_json_string(out,header.lexeme2);
+    out<<",\"arity\":"<<(header.arity==on1x::OperatorArity::Unary?1:header.arity==on1x::OperatorArity::Binary?2:3)
+       <<",\"position\":\""<<(header.position==on1x::OperatorPosition::Prefix?"prefix":
+                              header.position==on1x::OperatorPosition::Postfix?"postfix":"infix")
+       <<"\",\"precedence\":"<<header.precedence<<",\"tightness\":"<<header.tightness
+       <<",\"binds\":\""<<association(header.binds)<<"\",\"signature\":";
+    if(auto hit=functions.find(id);hit!=functions.end())
+     operator_json_string(out,callable_signature(*hit->second));
+    else out<<"null";
+    out<<',';location(header.where);out<<'}';
+   }
+   out<<"],\"uses\":[";first=true;
+   for(const auto& use:uses){
+    if(!first)out<<',';first=false;
+    out<<"{\"declaration\":"<<use.declaration<<",\"length\":"<<use.length<<',';
+    location(use.where);out<<'}';
+   }
+   out<<"],\"fixity\":[";first=true;
+   for(const auto& directive:directives){
+    if(!first)out<<',';first=false;
+    out<<"{\"lexeme\":";operator_json_string(out,directive.lexeme);
+    out<<",\"tightness\":"<<directive.tightness<<",\"binds\":\""<<association(directive.binds)<<"\",";
+    location(directive.where);out<<'}';
+   }
+   out<<"]}\n";
+   return out.str();
+  }
+ };
+ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO C11\n"
   "usage: on1xc [--check | --emit-c | --tokens | --types | --emit-ast | --emit-hir] INPUT.on1x [-o OUTPUT]\n"
 #ifdef ON1X_WITH_CEPHYR
  "       on1xc --emit-cephyr-object INPUT.on1x -o OUTPUT.o [--cephyr-target x86_64-linux-gnu]\n"
@@ -549,7 +747,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --print-stdlib (resolved first standard-library root)\n"
    "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
-  "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
+   "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
+   "       on1xc --operator-info [--source-only] INPUT.on1x [-o OUTPUT] (checked operator information as JSON)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
    "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
    "         --vm-source-prefix FROM TO  remap absolute diagnostic paths in VM artifacts\n"
@@ -669,7 +868,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #endif
     }
    }
-         std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false;
+          std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false,source_only=false;
           std::string archvirt_mode;
           bool archvirt_uncached=false;
           bool archvirt_standalone=false;
@@ -875,7 +1074,8 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
      cephyr_target=argv[i];continue;
     }
       if(arg=="--check-types"){select_mode(arg);type_safety=true;continue;}
-     if(arg=="--emit-category-plan"||arg=="--kernel-imports"){select_mode(arg);continue;}
+      if(arg=="--emit-category-plan"||arg=="--kernel-imports"||arg=="--operator-info"){select_mode(arg);continue;}
+      if(arg=="--source-only"){source_only=true;continue;}
         if(arg=="--check"||arg=="--emit-c"||arg=="--tokens"||arg=="--types"||arg=="--emit-ast"||arg=="--emit-hir"||arg=="--deps"||arg=="--emit-ir"||arg=="--emit-ir-c"||arg=="--ir-cfg"||arg=="--run-ir"||arg=="--emit-vm"||arg=="--run-vm"||arg=="--emit-ir-facts"||arg=="--analyze-ir"||arg=="--dump-passes"){
         select_mode(arg);
       }
@@ -932,9 +1132,12 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     }
    else if(arg=="-o"){if(++i>=argc)throw std::runtime_error("-o needs a file");out=argv[i];}
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
-    else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
-   }
-    if(loader.kernel_load_time){
+     else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
+    }
+    if(source_only&&(mode!="--operator-info"||ppx.allow_source||!ppx.programs.empty()||
+                     !ppx.schemas.empty()||!loader.extensions.enabled.empty()))
+     throw std::runtime_error("--source-only requires --operator-info without PPX or declaration extensions");
+     if(loader.kernel_load_time){
      if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces")||
         list_opts||!sdk_mode.empty()||ir_input||memory||type_safety||
         !archvirt_mode.empty()||cephyr_object||loader.kernel_c11||loader.kernel_stage||
@@ -1088,9 +1291,9 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
         }
         write_all(out,roots.front().string()+"\n");return 0;
        }
-        if(source.empty()){usage();return 2;}
-        on1x::proxy::apply(on1x::proxy::current_project());
-        loader.extensions.execute=mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
+         if(source.empty()){usage();return 2;}
+         on1x::proxy::apply(on1x::proxy::current_project());
+         loader.extensions.execute=!source_only&&mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
        if(mode=="--repair"){
@@ -1235,11 +1438,15 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
     on1x::expand_macros(unit);auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
     write_all(out,on1x::meta::write_sexpr(tree));return 0;
     }
-    on1x::meta::rewrite(unit,ppx);
-     on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
-      on1x::processor::Report processor_report;
-        on1x::check(unit,analysis_context,policy.rules,mode=="--dump-processor"?&processor_report:nullptr);
-      if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+     on1x::meta::rewrite(unit,ppx);
+      std::optional<OperatorInspection> operators;
+      if(mode=="--operator-info")operators.emplace(unit);
+         on1x::analysis::Context analysis_context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
+       on1x::processor::Report processor_report;
+         if(operators)on1x::check_library(unit,analysis_context,policy.rules);
+         else on1x::check(unit,analysis_context,policy.rules,mode=="--dump-processor"?&processor_report:nullptr);
+       if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+       if(operators){publish_diagnostics();write_all(out,operators->describe(unit));return 0;}
       if(resource_policy=="warn"||resource_policy=="error"){
        const auto& level=diagnostic_catalog->level(resource_policy=="warn"?"warning":"error");
        auto findings=on1x::memgraph::speculate_resources(unit);
@@ -1293,50 +1500,11 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
           auto result=mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes,mir_target);
        publish_diagnostics();return result;
       }
-   if(mode=="--types"){
-    std::ostringstream listing;
-     for(const auto& function:unit.functions){
-       if(function.name.starts_with("@")||loaded.internal_functions.contains(function.name))continue;
-      std::vector<on1x::Type> parameters;for(const auto& parameter:function.params)parameters.push_back(parameter.type);
-      auto signature=on1x::Type::function(std::move(parameters),function.result);
-      std::map<std::size_t,std::size_t> variables;
-      auto normalize=[&](auto&& self,const on1x::Type& type)->on1x::Type{
-       if(type.kind()==on1x::Type::Generic){
-        auto [variable,inserted]=variables.emplace(type.generic_identity(),variables.size());(void)inserted;
-        return on1x::Type::bound(variable->second);
-       }
-       if(type.is_code())return on1x::Type::code(self(self,type.code_result()));
-       if(type.is_function()){
-        std::vector<on1x::Type> args;for(const auto& p:type.parameters())args.push_back(self(self,p));
-        return on1x::Type::function(std::move(args),self(self,type.result()));
-       }
-        if(type.is_tuple()){
-        std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
-        return on1x::Type::tuple(std::move(elements));
-        }
-         if(type.is_data()){
-          std::vector<on1x::Type> elements;for(const auto& p:type.elements())elements.push_back(self(self,p));
-          auto result=on1x::Type::data(type.kind(),std::move(elements),type.labels(),type.extent());
-          if(!type.nominal().empty()){std::vector<on1x::Type> args;for(const auto& a:type.arguments())args.push_back(self(self,a));result=result.with_nominal(type.nominal(),std::move(args));}return result;
-        }
-       return type;
-      };
-      signature=normalize(normalize,signature);
-      listing<<(function.external?"extern ":"")<<function.name<<" : ";
-      if(!variables.empty()){
-       listing<<"forall(";for(std::size_t i=0;i<variables.size();++i){if(i)listing<<", ";listing<<"a"<<i;}listing<<") ";
-      }
-       if(on1x::takes_borrows(function)){
-        listing<<"fn(";
-        for(std::size_t i=0;i<function.params.size();++i){
-         if(i)listing<<", ";
-         if(function.params[i].borrow==on1x::BorrowMode::Shared)listing<<"borrow ";
-         else if(function.params[i].borrow==on1x::BorrowMode::Exclusive)
-          listing<<"ref ";
-         listing<<on1x::type_name(signature.parameters()[i]);
-       }
-       listing<<") -> "<<on1x::type_name(signature.result())<<"\n";
-      }else listing<<on1x::type_name(signature)<<"\n";
+    if(mode=="--types"){
+     std::ostringstream listing;
+      for(const auto& function:unit.functions){
+        if(function.name.starts_with("@")||loaded.internal_functions.contains(function.name))continue;
+       listing<<(function.external?"extern ":"")<<function.name<<" : "<<callable_signature(function)<<"\n";
     }
      publish_diagnostics();write_all(out,listing.str());return 0;
     }

@@ -12,6 +12,8 @@
 #include <on1x/concurrency.hpp>
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
+#include <on1x/meta.hpp>
+#include <on1x/operator_lowering.hpp>
 #include <deque>
 #include <algorithm>
 #include <map>
@@ -56,6 +58,9 @@ bool holes_in(const std::vector<Stmt>& body,InferenceScan& scan,std::size_t dept
 }
 bool holes_in(const Expr& expression,InferenceScan& scan,std::size_t depth) {
  scan.tick(expression.where,depth);
+ if(is_source_operator(expression.kind))
+  throw Error(expression.where,"unresolved operator '"+expression.text+"'",
+              "ON1X-OPERATOR-UNRESOLVED");
  bool found=expression.kind==Expr::Kind::ClicheMember||
             expression.kind==Expr::Kind::InherentMember||
             expression.kind==Expr::Kind::Propagate||
@@ -1517,7 +1522,11 @@ class Inference {
    Term result=0;const auto& at=e.where;
    tick(at);
    normalize_inherent_owner(e);
-      switch(e.kind) {
+       switch(e.kind) {
+        case Expr::Kind::OperatorReference:case Expr::Kind::OperatorUnary:
+        case Expr::Kind::OperatorBinary:case Expr::Kind::OperatorTernary:
+         throw Error(e.where,"operator source syntax reached type inference",
+                     "ON1X-OPERATOR-UNRESOLVED");
        case Expr::Kind::SourceCsp:{
         auto operand=[&](std::size_t i){if(i>=e.children.size()||!e.children[i])fail(at,"missing concurrency operand");return expression(*e.children[i]);};
         auto empty=[&](const Location& where){return data(Type::Record,{},{},0,where);};
@@ -2152,9 +2161,30 @@ public:
 }
 
 void infer_types(Unit& unit,const InferenceLimits& limits) {
-  if(needs_inference(unit)||needs_staging(unit)||canonical::needs_control(unit)){
-   auto budget=limits.expanded_ast;auto working=clone_unit(unit,budget);
-    lower_stages(working);
+    // Direct parse+infer clients also cross the source phase. A macro can
+    // introduce the first declaration, so a source unit's initial operator
+    // inventory is not by itself sufficient.
+    const bool operator_source=!unit.operators.empty()||!unit.fixity_directives.empty()||
+                               !unit.operator_lazy_functions.empty()||
+                               !unit.operator_entry.empty()||
+                               std::any_of(unit.module_imports.begin(),unit.module_imports.end(),[](const Import& source){
+                                return std::any_of(source.names.begin(),source.names.end(),[](const ImportName& item){
+                                 return item.is_operator;
+                                });
+                               });
+   auto needs=[](const Unit& source){
+    return needs_inference(source)||needs_staging(source)||canonical::needs_control(source);
+   };
+   if(operator_source||needs(unit)){
+    auto budget=limits.expanded_ast;auto working=clone_unit(unit,budget);
+    if(operator_source){
+      expand_macros(working);
+      (void)meta::desugar_source_operators(working);
+     cliches::prepare(working);inherent::prepare(working);
+     meta::require_core(working);
+     if(!needs(working)){unit=std::move(working);return;}
+    }
+     lower_stages(working);
     canonical::lower_control(working);
    Inference(working,limits).run();canonical::lower_control(working);unit=std::move(working);
  }

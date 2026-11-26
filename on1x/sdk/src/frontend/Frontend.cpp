@@ -12,6 +12,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/meta.hpp>
 #include <on1x/numeric.hpp>
+#include <on1x/operator_scan.h>
 
 #include <cstring>
 #include <unordered_set>
@@ -75,6 +76,10 @@ std::string expression_tag(on1x::Expr::Kind kind) {
     case Kind::InherentMember: return "inherent_member";
     case Kind::Unary: return "unary";
     case Kind::Binary: return "binary";
+    case Kind::OperatorReference: return "operator_reference";
+    case Kind::OperatorUnary: return "operator_unary";
+    case Kind::OperatorBinary: return "operator_binary";
+    case Kind::OperatorTernary: return "operator_ternary";
     case Kind::Call: return "call";
     case Kind::Lambda: return "lambda";
     case Kind::Tuple: return "tuple";
@@ -121,6 +126,28 @@ std::string expression_tag(on1x::Expr::Kind kind) {
     case Kind::Borrow: return "borrow";
     }
     return "unknown_expression";
+}
+
+const char *operator_position(on1x::OperatorPosition position) noexcept {
+    switch (position) {
+    case on1x::OperatorPosition::Prefix: return "prefix";
+    case on1x::OperatorPosition::Infix: return "infix";
+    case on1x::OperatorPosition::Postfix: return "postfix";
+    }
+    return "";
+}
+
+const char *operator_arity(on1x::OperatorArity arity) noexcept {
+    switch (arity) {
+    case on1x::OperatorArity::Unary: return "unary";
+    case on1x::OperatorArity::Binary: return "binary";
+    case on1x::OperatorArity::Ternary: return "ternary";
+    }
+    return "";
+}
+
+const char *operator_associativity(on1x::OperatorAssociativity binds) noexcept {
+    return binds == on1x::OperatorAssociativity::Right ? "right" : "left";
 }
 
 On1xSDK_ASTNodeFlags borrow_flags(on1x::BorrowMode mode) noexcept {
@@ -237,6 +264,12 @@ class Flattener {
         ast->nodes.at(parent).children.push_back(child);
     }
 
+    void operator_metadata(std::uint32_t parent, std::string tag,
+                           std::string text, const on1x::Location &where) {
+        link(parent, add(ON1X_SDK_AST_ATTRIBUTE, std::move(tag),
+                         std::move(text), where));
+    }
+
     std::uint32_t type(
         const on1x::Type &value,
         const on1x::Location &where) {
@@ -338,7 +371,8 @@ class Flattener {
         static constexpr const char *tags[] = {
             "macro_capture", "macro_literal", "macro_wildcard",
             "macro_list", "macro_vector", "macro_tuple", "macro_call",
-            "macro_unary", "macro_binary"};
+            "macro_unary", "macro_binary", "macro_operator_reference",
+            "macro_ternary"};
         const auto raw = static_cast<std::size_t>(value.kind);
         auto index = add(
             ON1X_SDK_AST_PATTERN,
@@ -455,10 +489,23 @@ class Flattener {
             link(index, expression(*value.syntax_tail));
         for (const auto &item : value.body)
             link(index, statement(item));
+        using Kind = on1x::Expr::Kind;
+        if (value.kind == Kind::OperatorReference ||
+            value.kind == Kind::OperatorUnary ||
+            value.kind == Kind::OperatorBinary ||
+            value.kind == Kind::OperatorTernary) {
+            operator_metadata(index, "operator_position",
+                              operator_position(value.operator_position), value.where);
+            if (!value.operator_lexeme2.empty())
+                operator_metadata(index, "operator_lexeme2",
+                                  value.operator_lexeme2, value.where);
+        }
         return index;
     }
 
     std::uint32_t statement(const on1x::Stmt &value) {
+        if (value.syntax_operator)
+            return operator_declaration(*value.syntax_operator);
         On1xSDK_ASTNodeFlags flags = 0;
         if (value.mutable_binding) flags |= ON1X_SDK_AST_FLAG_MUTABLE;
         if (value.unsafe_block) flags |= ON1X_SDK_AST_FLAG_UNSAFE;
@@ -488,17 +535,7 @@ class Flattener {
         return index;
     }
 
-    std::uint32_t function(
-        const on1x::Function &value,
-        std::string_view tag = "function") {
-        On1xSDK_ASTNodeFlags flags = 0;
-        if (value.external) flags |= ON1X_SDK_AST_FLAG_EXTERNAL;
-        if (value.procedure) flags |= ON1X_SDK_AST_FLAG_PROCEDURE;
-        if (value.extension_generated)
-            flags |= ON1X_SDK_AST_FLAG_GENERATED;
-        auto index = add(
-            ON1X_SDK_AST_DECLARATION, std::string(tag),
-            value.name, value.where, 0, flags);
+    void function_children(std::uint32_t index, const on1x::Function &value) {
         type_parameters(index, value.type_parameters);
         for (const auto &item : value.constraints)
             link(index, constraint(item));
@@ -515,11 +552,54 @@ class Flattener {
         }
         for (const auto &item : value.body)
             link(index, statement(item));
+    }
+
+    std::uint32_t function(
+        const on1x::Function &value,
+        std::string_view tag = "function") {
+        On1xSDK_ASTNodeFlags flags = 0;
+        if (value.external) flags |= ON1X_SDK_AST_FLAG_EXTERNAL;
+        if (value.procedure) flags |= ON1X_SDK_AST_FLAG_PROCEDURE;
+        if (value.extension_generated)
+            flags |= ON1X_SDK_AST_FLAG_GENERATED;
+        auto index = add(
+            ON1X_SDK_AST_DECLARATION, std::string(tag),
+            value.name, value.where, 0, flags);
+        function_children(index, value);
         return index;
     }
 
-    void declarations(std::uint32_t root, const on1x::Unit &unit) {
-        for (const auto &item : unit.module_imports) {
+    std::uint32_t operator_declaration(const on1x::OperatorDeclaration &value) {
+        const auto &header = value.header;
+        const auto flags = value.block_local
+            ? On1xSDK_ASTNodeFlags{ON1X_SDK_AST_FLAG_BLOCK_LOCAL}
+            : On1xSDK_ASTNodeFlags{0};
+        auto index = add(ON1X_SDK_AST_DECLARATION, "operator_declaration",
+                         header.lexeme, header.where, 0, flags);
+        operator_metadata(index, "operator_arity", operator_arity(header.arity), header.where);
+        if (!header.lexeme2.empty())
+            operator_metadata(index, "operator_lexeme2", header.lexeme2, header.where);
+        operator_metadata(index, "operator_position", operator_position(header.position), header.where);
+        operator_metadata(index, "operator_precedence", std::to_string(header.precedence), header.where);
+        operator_metadata(index, "operator_tightness", std::to_string(header.tightness), header.where);
+        operator_metadata(index, "operator_binds", operator_associativity(header.binds), header.where);
+        function_children(index, value.function);
+        return index;
+    }
+
+    std::uint32_t operator_fixity(const on1x::FixityDirective &value) {
+        auto index = add(ON1X_SDK_AST_DIRECTIVE,
+                         value.binds == on1x::OperatorAssociativity::Right ? "infixr" : "infix",
+                         value.lexeme, value.where);
+        auto tightness = std::to_string(value.tightness);
+        operator_metadata(index, "operator_tightness", tightness, value.where);
+        ast->directives.push_back({
+            ON1X_SDK_DIRECTIVE_OPERATOR_FIXITY, index, value.lexeme, std::move(tightness)});
+        return index;
+    }
+
+    void module_imports(std::uint32_t root, const std::vector<on1x::Import> &imports) {
+        for (const auto &item : imports) {
             auto index = add(
                 ON1X_SDK_AST_IMPORT,
                 item.quoted ? "quoted_import"
@@ -535,7 +615,7 @@ class Flattener {
                     item.alias, item.where));
             for (const auto &name : item.names) {
                 auto child = add(
-                    ON1X_SDK_AST_IMPORT, "import_name",
+                    ON1X_SDK_AST_IMPORT, name.is_operator ? "operator_import" : "import_name",
                     name.alias.empty() ? name.name
                                        : name.name + " as " + name.alias,
                     item.where);
@@ -543,6 +623,11 @@ class Flattener {
             }
             link(root, index);
         }
+    }
+
+    void declarations(std::uint32_t root, const on1x::Unit &unit) {
+        module_imports(root, unit.module_imports);
+        module_imports(root, ast->source_operator_imports);
         for (const auto &item : unit.kernel_imports) {
             auto index = add(
                 ON1X_SDK_AST_IMPORT,
@@ -722,6 +807,10 @@ class Flattener {
         }
         for (const auto &item : unit.functions)
             link(root, function(item));
+        for (const auto &item : unit.operators)
+            link(root, operator_declaration(item));
+        for (const auto &item : unit.fixity_directives)
+            link(root, operator_fixity(item));
         for (const auto &evidence : unit.extension_evidence) {
             auto index = add(
                 ON1X_SDK_AST_EXTENSION, "extension_evidence",
@@ -766,7 +855,7 @@ std::shared_ptr<ASTData> expand_ast(
     operation.poll();
     return build_ast(
         std::move(unit), input->sources, options,
-        ON1X_SDK_AST_MACRO_EXPANDED_CANDIDATE);
+        ON1X_SDK_AST_MACRO_EXPANDED_CANDIDATE, input->source_operator_imports);
 }
 
 void require_schema(
@@ -792,7 +881,8 @@ On1xSDK_TokenKind classify_token(std::string_view text) {
         "false", "extern", "import", "from", "as", "forall", "macro",
         "rule", "quote", "splice", "lift", "run", "let_syntax",
         "letrec_syntax", "record", "enum", "impl", "cliche", "match",
-        "for", "in", "break", "continue", "defer", "taskgroup", "unsafe"};
+        "for", "in", "break", "continue", "defer", "taskgroup", "unsafe",
+        "operator", "infix", "infixr"};
     if (keywords.contains(text)) return ON1X_SDK_TOKEN_KEYWORD;
     auto quoted = text;
     if (quoted.starts_with("r!") || quoted.starts_with("b!"))
@@ -805,6 +895,8 @@ On1xSDK_TokenKind classify_token(std::string_view text) {
     if (!text.empty() && text.front() >= '0' && text.front() <= '9')
         return on1x::float_spelling(text)
             ? ON1X_SDK_TOKEN_FLOAT : ON1X_SDK_TOKEN_INTEGER;
+    if (on1x_operator_spelling(text.data(), text.size()))
+        return ON1X_SDK_TOKEN_CUSTOM_OPERATOR;
     if (!text.empty() &&
         ((text.front() >= 'A' && text.front() <= 'Z') ||
          (text.front() >= 'a' && text.front() <= 'z') ||
@@ -847,13 +939,15 @@ std::shared_ptr<ASTData> build_ast(
     on1x::Unit unit,
     std::vector<std::shared_ptr<RevisionData>> sources,
     const OptionsData &options,
-    On1xSDK_ASTValidationState validation) {
+    On1xSDK_ASTValidationState validation,
+    std::vector<on1x::Import> source_operator_imports) {
     if (sources.empty()) invalid("AST requires at least one source revision");
     auto state = sources.front()->state;
     for (const auto &source : sources) require_same(state, source->state);
     auto result = std::make_shared<ASTData>();
     result->state = state;
     result->sources = std::move(sources);
+    result->source_operator_imports = std::move(source_operator_imports);
     result->generation = object_generation(state);
     result->revision = publish_revision(state);
     result->validation = validation;
@@ -1424,7 +1518,8 @@ On1xSDK_Status on1x_sdk_ppx_readmit(
         auto candidate = std::make_unique<On1xSDK_AST>();
         candidate->data = build_ast(
             std::move(unit), base->data->sources, options->data,
-            ON1X_SDK_AST_PPX_READMITTED_CANDIDATE);
+            ON1X_SDK_AST_PPX_READMITTED_CANDIDATE,
+            base->data->source_operator_imports);
         *out_candidate = candidate.release();
     });
 }

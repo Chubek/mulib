@@ -31,7 +31,24 @@ fn ppx_name(text: string) -> bool
 
 fn ppx_scalar_type(name: string) -> bool
 {
-  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling" || name == "UnsignedSpelling";
+  return name == "Bytes" || name == "File" || name == "Name" || name == "Version" || name == "Nat" || name == "Positive" || name == "Boolean" || name == "UnaryOperator" || name == "BinaryOperator" || name == "OperatorLexeme" || name == "UnaryPosition" || name == "DecimalSpelling" || name == "HexSpelling" || name == "FloatSpelling" || name == "UnsignedSpelling";
+}
+
+fn ppx_operator_spelling(text: string) -> bool
+{
+  let width = text_len(text);
+  if width < 2 || width > 6 { return false; }
+  let alphabet = "!%&*+?^|~<>$=.-";
+  var i = 0;
+  while i < width
+  {
+    let glyph = text_byte(text, i);
+    var j = 0;
+    while j < text_len(alphabet) && text_byte(alphabet, j) != glyph { j = j + 1; }
+    if j == text_len(alphabet) { return false; }
+    i = i + 1;
+  }
+  return true;
 }
 
 fn ppx_lookup(pairs: sexpr, name: string) -> sexpr
@@ -302,6 +319,14 @@ fn ppx_scalar(value: sexpr, kind: string) -> bool
   if kind == "Boolean"
   {
     return ! quoted && (text == "true" || text == "false");
+  }
+  if kind == "OperatorLexeme"
+  {
+    return quoted && ppx_operator_spelling(text);
+  }
+  if kind == "UnaryPosition"
+  {
+    return quoted && (text == "prefix" || text == "postfix");
   }
   if kind == "UnaryOperator"
   {

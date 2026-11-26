@@ -96,7 +96,7 @@ def _type(t):
 
 def derive(tree, label):
     additions = []
-    names = {function[1] for function in tree[2]}
+    names = {function[1] for function in tree[2] if tag(function) in ('Function', 'Procedure', 'Extern')}
     for function in tree[2]:
         attributes = function[4 if tag(function) == 'Extern' else 5]
         keep = []
