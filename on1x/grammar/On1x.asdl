@@ -5,3 +5,55 @@
 -- The checked and lowered language AST lives in the C++ frontend.
 token = Tok(string text, usize offset, token? previous)
 unit = (token? last)
+
+.language "On1x";
+.unit :source_module;
+
+-- This view is copied from a parser-owned Unit before resolution. It is
+-- neither a PPX wire type nor an import or export authorization.
+source_module ::= (module_header? header, source_import* imports, source_decl* declarations);
+module_header ::= (string name);
+source_import ::= ModuleRequest(string spelling, string? alias, usize relative,
+                                bool quoted, bool selective, source_selector* selectors)
+                | ProgramRequest(string spelling, string? alias, usize relative,
+                                 bool quoted, bool selective, source_selector* selectors);
+source_selector ::= (string name, string? alias, bool is_operator);
+source_decl ::= (string name, string kind, source_visibility visibility);
+source_visibility ::= SourcePublic | SourcePrivate | SourceShared(usize elevation);
+
+.logistics for :source_module ::= lua(root)
+    local header, imports, declarations = asdl.destruct(root)
+    if header then asdl.logistics(header) end
+    for _, edge in ipairs(imports) do asdl.logistics(edge) end
+    for _, declaration in ipairs(declarations) do asdl.logistics(declaration) end
+    return root
+.end
+
+.logistics for :module_header ::= lua(header)
+    local name = asdl.destruct(header)
+    local valid = name ~= "" and not name:match("^%.") and not name:match("%.$")
+                  and not name:find("..", 1, true)
+    if valid then
+        for part in name:gmatch("[^.]+") do
+            if not part:match("^[a-zA-Z_][a-zA-Z0-9_]*$") then
+                valid = false
+                break
+            end
+        end
+    end
+    if not valid then
+        asdl.diagnostic.emit({severity = "error", location = asdl.location(header),
+                              message = "invalid hierarchical module declaration"})
+    end
+    return header
+.end
+
+.logistics for :source_import ::= lua(edge)
+    local spelling, _, relative, _, selective, selectors = asdl.destruct(edge)
+    if asdl.tag(edge) == "ProgramRequest" and
+       (spelling == "" or relative ~= 0 or selective or #selectors ~= 0) then
+        asdl.diagnostic.emit({severity = "error", location = asdl.location(edge),
+                              message = "invalid program import request"})
+    end
+    return edge
+.end

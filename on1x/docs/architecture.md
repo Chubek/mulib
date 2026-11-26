@@ -118,6 +118,15 @@ automatic prelude is demand-loaded; explicit imports retain their definitions.
 Namespaces disappear before the v1 PPX wire boundary, preserving the existing
 type, ownership and C11 pipeline. See [the module contract](modules.md).
 
+Before resolution, the native frontend also checks a typed ASDL view of
+source units with a module header or an explicit program import. A fresh
+LibStone Lua session runs the embedded logistics and retains source locations
+in diagnostics. The view includes source-spelled import requests and explicit
+visibility annotations, not resolved bindings or authorization. No source
+text becomes Lua code, and the adapter does not load Lua libraries from disk
+or use the environment's ASDL search path. Bootstrap builds skip the ASDL
+pass; the C++ parser and resolver enforce the language in both profiles.
+
 `stdlib/mulib/housekeeping.py` is shared by the native build helper and Exotract.
 It joins MANIFEST kernel dependencies with explicit `library/` fixture recipes,
 separates kernel implementation placement from companion C translation units,
