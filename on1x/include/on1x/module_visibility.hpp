@@ -15,7 +15,10 @@ enum class DeclarationVisibility { Unspecified, Public, Shared, Private };
 // annotation. Interface matching needs to distinguish the two.
 struct VisibilityRule {
     DeclarationVisibility kind = DeclarationVisibility::Unspecified;
-    std::size_t elevation = 0;
+    // Shared elevations are 1-based: 1 selects the declaring module itself,
+    // 2 selects its parent, and so on. Omission is normalized to 1; a
+    // non-shared rule has no elevation and stores 0.
+    std::size_t elevation = kind == DeclarationVisibility::Shared ? 1 : 0;
 };
 
 // The resolver supplies this information. Names, aliases, import spellings,
@@ -30,7 +33,8 @@ struct ModuleProvenance {
 };
 
 enum class ModuleVisibilityIssue {
-    None, InvalidKind, UnexpectedElevation, MissingModuleScope, ElevationTooHigh
+    None, InvalidKind, UnexpectedElevation, MissingModuleScope, ElevationTooHigh,
+    ElevationTooLow
 };
 
 enum class ModuleAccess {
@@ -47,7 +51,8 @@ inline ModuleVisibilityIssue rule_issue(VisibilityRule rule) {
         return rule.elevation == 0 ? ModuleVisibilityIssue::None
                                    : ModuleVisibilityIssue::UnexpectedElevation;
     case DeclarationVisibility::Shared:
-        return ModuleVisibilityIssue::None;
+        return rule.elevation == 0 ? ModuleVisibilityIssue::ElevationTooLow
+                                   : ModuleVisibilityIssue::None;
     }
     return ModuleVisibilityIssue::InvalidKind;
 }
@@ -124,11 +129,9 @@ inline ModuleAccess module_visibility_access(VisibilityRule rule,
                                                    : ModuleAccess::DependencyNotAdmitted;
     if (!same_package)
         return ModuleAccess::SharedPackage;
-    // Elevation drops whole components. Dropping all components shares with
-    // the whole package, not with other packages defining the same hierarchy.
-    const auto scope_depth = owner.module_components.size() - rule.elevation;
-    if (scope_depth == 0)
-        return ModuleAccess::Allowed;
+    // The declaring module is level 1. Even the greatest valid elevation
+    // retains the first component; there is no package-wide shared rule.
+    const auto scope_depth = owner.module_components.size() - (rule.elevation - 1);
     if (!has_module_scope(requester) || requester.module_components.size() < scope_depth ||
         !std::equal(owner.module_components.begin(),
                     owner.module_components.begin() + static_cast<std::ptrdiff_t>(scope_depth),

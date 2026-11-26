@@ -26,16 +26,22 @@ void expect_rule(std::optional<VisibilityRule> actual, VisibilityRule expected,
 }
 
 int main() {
-    const ModuleProvenance owner{"/work/pkg-a/inc.on1xm", "/work/pkg-a/On1xfile", {"A", "B"}};
+    const ModuleProvenance owner{"/work/pkg-a/inc.on1xm", "/work/pkg-a/On1xfile",
+                                 {"foo", "bar", "buzz"}};
     const ModuleProvenance same_file{owner.canonical_file, {}, {"Alias"}};
-    const ModuleProvenance peer{"/work/pkg-a/peer.on1xm", owner.package_identity, {"A", "B"}};
+    const ModuleProvenance peer{"/work/pkg-a/peer.on1xm", owner.package_identity,
+                                owner.module_components};
     const ModuleProvenance child{"/work/pkg-a/child.on1xm", owner.package_identity,
-                                 {"A", "B", "Child"}};
+                                 {"foo", "bar", "buzz", "child"}};
     const ModuleProvenance sibling{"/work/pkg-a/sibling.on1xm", owner.package_identity,
-                                   {"A", "Bigger"}};
+                                   {"foo", "bar", "buzzing"}};
+    const ModuleProvenance cousin{"/work/pkg-a/cousin.on1xm", owner.package_identity,
+                                  {"foo", "barrier", "buzz"}};
     const ModuleProvenance wrong_prefix{"/work/pkg-a/prefix.on1xm", owner.package_identity,
-                                        {"AB", "B"}};
-    const ModuleProvenance ancestor{"/work/pkg-a/parent.on1xm", owner.package_identity, {"A"}};
+                                        {"foobar", "bar", "buzz"}};
+    const ModuleProvenance parent{"/work/pkg-a/parent.on1xm", owner.package_identity,
+                                  {"foo", "bar"}};
+    const ModuleProvenance ancestor{"/work/pkg-a/ancestor.on1xm", owner.package_identity, {"foo"}};
     const ModuleProvenance unnamed{"/work/pkg-a/entry.on1x", owner.package_identity, {}};
     const ModuleProvenance other_package{"/work/pkg-b/inc.on1xm", "/work/pkg-b/On1xfile",
                                          owner.module_components};
@@ -44,15 +50,17 @@ int main() {
                                              owner.module_components};
     const ModuleProvenance unverified_file{"inc.on1xm", {}, owner.module_components};
     const ModuleProvenance malformed_scope{"/work/pkg-a/malformed.on1xm", owner.package_identity,
-                                           {"A", "B.Child"}};
+                                           {"foo", "bar", "buzz.child"}};
 
     const VisibilityRule unannotated{};
     const VisibilityRule public_rule{Visibility::Public};
     const VisibilityRule private_rule{Visibility::Private};
+    const VisibilityRule shared_omitted{Visibility::Shared};
     const VisibilityRule shared0{Visibility::Shared, 0};
     const VisibilityRule shared1{Visibility::Shared, 1};
     const VisibilityRule shared2{Visibility::Shared, 2};
     const VisibilityRule shared3{Visibility::Shared, 3};
+    const VisibilityRule shared4{Visibility::Shared, 4};
     const VisibilityRule unknown_kind{static_cast<Visibility>(99)};
     const VisibilityRule invalid_private{Visibility::Private, 1};
 
@@ -67,46 +75,61 @@ int main() {
     expect(module_visibility_access(private_rule, {}, {}) == Access::Private,
            "missing file identities do not compare as the same file");
 
-    expect(module_visibility_access(shared0, owner, peer) == Access::Allowed,
-           "shared at elevation zero accepts another file in the same module");
-    expect(module_visibility_access(shared0, owner, child) == Access::Allowed,
-           "shared scope admits descendants");
-    expect(module_visibility_access(shared0, owner, sibling, true) == Access::SharedScope,
+    expect(shared_omitted.elevation == 1, "omitted shared elevation is exactly one");
+    expect(module_visibility_access(shared_omitted, owner, peer) == Access::Allowed,
+           "omission selects foo.bar.buzz");
+    expect(module_visibility_access(shared_omitted, owner, sibling) == Access::SharedScope,
+           "omission cannot open foo.bar");
+    expect(module_visibility_access(shared1, owner, peer) == Access::Allowed,
+           "shared 1 selects foo.bar.buzz");
+    expect(module_visibility_access(shared1, owner, child) == Access::Allowed,
+           "shared 1 admits descendants of foo.bar.buzz");
+    expect(module_visibility_access(shared1, owner, sibling, true) == Access::SharedScope,
            "a string prefix within one component is not a module ancestor");
-    expect(module_visibility_access(shared0, owner, ancestor) == Access::SharedScope,
+    expect(module_visibility_access(shared1, owner, parent) == Access::SharedScope,
            "the requester must have every component of the shared prefix");
-    expect(module_visibility_access(shared0, owner, unnamed) == Access::SharedScope,
-           "unnamed requesters cannot claim a matching module prefix");
-    expect(module_visibility_access(shared0, owner, malformed_scope) == Access::SharedScope,
+    expect(module_visibility_access(shared1, owner, malformed_scope) == Access::SharedScope,
            "a qualified spelling is not a single module component");
-    expect(module_visibility_access(shared1, owner, sibling) == Access::Allowed,
-           "elevation admits siblings by dropping a complete module component");
-    expect(module_visibility_access(shared1, owner, ancestor) == Access::Allowed,
-           "the elevated ancestor itself is in scope");
-    expect(module_visibility_access(shared1, owner, wrong_prefix) == Access::SharedScope,
-           "elevation still requires complete components");
-    expect(module_visibility_access(shared2, owner, wrong_prefix) == Access::Allowed,
-           "elevation to package root admits other same-package modules");
-    expect(module_visibility_access(shared2, owner, unnamed) == Access::Allowed,
-           "elevation to package root needs package but not module membership");
-    expect(module_visibility_access(shared2, owner, other_package, true) == Access::SharedPackage,
+    expect(module_visibility_access(shared2, owner, sibling) == Access::Allowed,
+           "shared 2 admits other modules under foo.bar");
+    expect(module_visibility_access(shared2, owner, parent) == Access::Allowed,
+           "shared 2 includes foo.bar itself");
+    expect(module_visibility_access(shared2, owner, cousin) == Access::SharedScope,
+           "shared 2 does not include foo.barrier");
+    expect(module_visibility_access(shared2, owner, ancestor) == Access::SharedScope,
+           "shared 2 does not include foo itself");
+    expect(module_visibility_access(shared3, owner, ancestor) == Access::Allowed,
+           "shared 3 includes foo itself");
+    expect(module_visibility_access(shared3, owner, cousin) == Access::Allowed,
+           "shared 3 includes descendants of foo");
+    expect(module_visibility_access(shared3, owner, wrong_prefix) == Access::SharedScope,
+           "shared 3 does not grant package-wide access");
+    expect(module_visibility_access(shared3, owner, unnamed) == Access::SharedScope,
+           "even maximum elevation requires a requester module component");
+    expect(module_visibility_access(shared3, owner, other_package, true) == Access::SharedPackage,
            "no elevation crosses package identity, even with identical module names");
-    expect(module_visibility_access(shared0, unknown_package_a, unknown_package_b, true) ==
+    expect(module_visibility_access(shared1, unknown_package_a, unknown_package_b, true) ==
                Access::SharedPackage,
            "two missing package identities do not prove same-package access");
 
-    expect(validate_module_visibility(shared3, owner) == Issue::ElevationTooHigh,
-           "elevation past the package root is invalid");
+    expect(validate_module_visibility(shared0, owner) == Issue::ElevationTooLow,
+           "an explicit zero is invalid");
+    expect(module_visibility_access(shared0, owner, same_file) == Access::InvalidVisibility,
+           "an explicit zero rejects even when requester and owner are the same file");
+    expect(validate_module_visibility(shared4, owner) == Issue::ElevationTooHigh,
+           "elevation above the outermost component is invalid");
+    expect(validate_module_visibility(shared2, ancestor) == Issue::ElevationTooHigh,
+           "a depth-1 module cannot elevate beyond one");
     expect(validate_module_visibility({Visibility::Shared, std::numeric_limits<std::size_t>::max()},
                                       owner) == Issue::ElevationTooHigh,
            "large elevation rejects without arithmetic overflow");
-    expect(validate_module_visibility(shared0, unnamed) == Issue::MissingModuleScope,
+    expect(validate_module_visibility(shared1, unnamed) == Issue::MissingModuleScope,
            "shared declaration requires an established declaring module");
     expect(validate_module_visibility(invalid_private, owner) == Issue::UnexpectedElevation,
            "elevation belongs only to shared declarations");
     expect(validate_module_visibility(unknown_kind, owner) == Issue::InvalidKind,
            "unknown visibility kinds fail closed");
-    expect(module_visibility_access(shared3, owner, same_file, true) == Access::InvalidVisibility,
+    expect(module_visibility_access(shared4, owner, same_file, true) == Access::InvalidVisibility,
            "same-file identity does not excuse an invalid rule");
 
     for (const auto rule : {unannotated, public_rule}) {
@@ -123,7 +146,7 @@ int main() {
 
     expect_rule(merge_module_visibility(unannotated, unannotated), unannotated,
                 "unannotated declarations keep the default public spelling state");
-    for (const auto explicit_rule : {public_rule, private_rule, shared0, shared1}) {
+    for (const auto explicit_rule : {public_rule, private_rule, shared1, shared2}) {
         expect_rule(merge_module_visibility(explicit_rule, unannotated), explicit_rule,
                     "an unannotated interface inherits the implementation annotation");
         expect_rule(merge_module_visibility(unannotated, explicit_rule), explicit_rule,
@@ -135,8 +158,16 @@ int main() {
            "an explicit interface cannot widen an explicit private implementation");
     expect(!merge_module_visibility(public_rule, private_rule),
            "different explicit declarations conflict in either direction");
-    expect(!merge_module_visibility(shared0, shared1),
+    expect_rule(merge_module_visibility(shared_omitted, shared1), shared1,
+                "omitted and explicit shared elevation one agree");
+    expect_rule(merge_module_visibility(shared1, shared_omitted), shared1,
+                "shared elevation spelling does not matter in either direction");
+    expect(!merge_module_visibility(shared1, shared2),
            "different explicit shared elevations conflict");
+    expect(!merge_module_visibility(shared_omitted, shared2),
+           "omitted shared elevation conflicts with explicit two");
+    expect(!merge_module_visibility(shared_omitted, shared0),
+           "an explicit zero cannot masquerade as omission");
     expect(!merge_module_visibility(unannotated, invalid_private),
            "an absent annotation cannot inherit a malformed rule");
 }
