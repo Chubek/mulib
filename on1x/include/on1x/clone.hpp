@@ -111,6 +111,7 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
  inline Unit clone_unit(const Unit& unit,std::size_t& budget){
  Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
     out.module=unit.module;out.module_imports=unit.module_imports;
+    out.requires_module_boundary=unit.requires_module_boundary;
     out.kernel_imports=unit.kernel_imports;
     out.foreign_imports=unit.foreign_imports;
     out.features=unit.features;out.scrutiny=unit.scrutiny;out.extensions=unit.extensions;out.nominals=unit.nominals;

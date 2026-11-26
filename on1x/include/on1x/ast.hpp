@@ -388,7 +388,10 @@ struct Unit {
  bool stages_lowered=false;
   std::vector<Macro> macros;
   std::vector<PpxRegistration> ppx;
-  std::optional<ModuleHeader> module;
+   std::optional<ModuleHeader> module;
+   // Loader-owned: this flattened graph requires per-module PPX readmission.
+   // Never reconstructed from Unit-v1 wire or inferred from output locations.
+   bool requires_module_boundary=false;
  };
 std::string read_source_file(const std::string& filename);
 // Docstrings are trivia: optionally append them separately, in source order.
