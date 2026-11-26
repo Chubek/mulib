@@ -65,6 +65,10 @@ for options in [['--emit-c', '--analysis-work', '1'], ['--analyze-ir', '--analys
 
 unsupported = args.work/'unsupported.on1x'
 unsupported.write_text('extern fn raw()->i64;fn main(){}')
+directed = args.work/'directed.on1x'
+directed.write_text('fn is_zero(n:i64)->bool{return n==0;}fn main(){println(is_zero(0));}')
+p = run([args.compiler, '--emit-ir', directed])
+assert p.returncode == 0 and p.stdout.startswith('(on1x.mir 4 '), p
 malformed = args.work/'invalid.mir'
 malformed.write_text('(on1x.mir 999 1 ())')
 for mode in ['--emit-ir-facts', '--analyze-ir']:
@@ -73,15 +77,20 @@ for mode in ['--emit-ir-facts', '--analyze-ir']:
         out.write_text('keep me')
         p = run([args.compiler, mode, path, *options, '-o', out])
         assert p.returncode == 1 and diagnostic in p.stderr and out.read_text() == 'keep me', p.stderr
-    out.write_text('keep me')
-    p=run([args.compiler, mode, args.root/'examples/float_tuples.on1x', '-o', out])
-    assert p.returncode==1 and 'outside relational mapping v1' in p.stderr and out.read_text()=='keep me',p.stderr
+    for path in (args.root/'examples/float_tuples.on1x', directed):
+        out.write_text('keep me')
+        p=run([args.compiler, mode, path, '-o', out])
+        assert p.returncode==1 and 'outside relational mapping v1' in p.stderr and out.read_text()=='keep me',p.stderr
 
 p = run([args.compiler, '--run-ir', source])
 assert p.returncode == 0 and p.stdout == 'true\nfalse\ntrue\nfalse\n', p.stderr
 # CLI analyses must describe the selected optimized artifact, not the pre-pass IR.
-optimized = run([args.compiler, '--emit-ir', '--optimize-ir', args.root/'examples/optimize.on1x'])
-p = run([args.compiler, '--analyze-ir', '--optimize-ir', args.root/'examples/optimize.on1x'])
+scalar_opt = args.work/'scalar_opt.on1x'
+scalar_opt.write_text('fn main(){println((2 + 5) * 6);}')
+plain = run([args.compiler, '--emit-ir', scalar_opt])
+optimized = run([args.compiler, '--emit-ir', '--optimize-ir', scalar_opt])
+p = run([args.compiler, '--analyze-ir', '--optimize-ir', scalar_opt])
 assert optimized.returncode == p.returncode == 0, p.stderr
+assert plain.returncode == 0 and optimized.stdout != plain.stdout
 assert sexpr.loads(p.stdout)[3] == ['source', optimized.stdout]
 print('Novostone CLI, source identity, saved artifacts, rejection and budgets PASS')

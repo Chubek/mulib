@@ -28,9 +28,9 @@ def compiled(name,source,expected,options=(),via=False):
     p=run([exe]);assert p.returncode==0 and p.stdout==expected,p.stderr
     return out.read_text()
 
-def rejected(name,source,diagnostic,options=()):
+def rejected(name,source,diagnostic,options=(),*,mode='--emit-c'):
     path=t.source(name,source);out=t.work/'preserve.c';out.write_text('preserved')
-    p=run([t.compiler,'--emit-c',path,*options,'-o',out])
+    p=run([t.compiler,mode,path,*options,'-o',out])
     assert p.returncode!=0 and diagnostic in p.stderr and not p.stdout and out.read_text()=='preserved',(name,p.stderr)
     return p
 
@@ -221,7 +221,7 @@ before=module_report[4][0][8][2];module.write_text(module.read_text()+'\n# new s
 assert checked_plan(consumer)[0][4][0][8][2]!=before,'stale source snapshot identity'
 # Evidence execution still obeys source-PPX authorization.
 rejected('plan_source_ppx',source+'\n@ppx arbitrary "./malicious"','--allow-source-ppx',
-         ['--emit-category-plan'])
+         mode='--emit-category-plan')
 raw='@extension Protocols { protocol P<Self>{fn ok(x:Self)->bool;} }'
 spelling=['protocol','P','<','Self','>','{','fn','ok','(','x',':','Self',')','->','bool',';','}']
 start=[S('Loc'),'packet.on1x',S('0'),S('1'),S('1')]

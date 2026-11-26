@@ -14,7 +14,8 @@ constexpr std::string_view names[]={"const","add.checked","sub.checked","mul.che
  "f64.add","f64.sub","f64.mul","f64.div","f64.neg",
  "f64.eq","f64.ne","f64.lt","f64.le","f64.gt","f64.ge",
  "f64.from-i64","f64.to-i64","f64.from-bits","f64.to-bits",
-  "f64.is-nan","f64.is-finite","f64.signbit","tuple","extract","numeric"};
+  "f64.is-nan","f64.is-finite","f64.signbit","tuple","extract","numeric",
+  "owner.create","owner.move","owner.drop"};
 [[noreturn]] void fail(const Location& at,const std::string& message){throw Error(at,"ON1X-MIR-VERIFY: "+message);}
 bool scalar(const Type& t){return t==Type::I64||t==Type::Bool;}
 struct Budget {
@@ -23,6 +24,17 @@ struct Budget {
  void node(const Location& at){if(!left.nodes)fail(at,"node budget exhausted");--left.nodes;work(at);}
 };
 struct Definition { Type type; Id block; std::size_t position; };
+bool owner_op(Op op){return op==Op::OwnerCreate||op==Op::OwnerMove||op==Op::OwnerDrop;}
+bool nominal_identifier(std::string_view name,bool qualified){
+ if(name.empty()||name.size()>128)return false;
+ bool start=true;
+ for(unsigned char c:name){
+  if(!start&&qualified&&c=='.'){start=true;continue;}
+  if(c!='_'&&!(c>='A'&&c<='Z')&&!(c>='a'&&c<='z')&&(start||c<'0'||c>'9'))return false;
+  start=false;
+ }
+ return !start;
+}
 bool directive_selector(std::string_view selector){
  if(selector.empty())return true;
  if(selector.size()>128)return false;
@@ -40,7 +52,7 @@ Effect effect(Op op){
  switch(op){
  case Op::Constant:case Op::Not:case Op::Eq:case Op::Ne:case Op::Lt:case Op::Le:case Op::Gt:case Op::Ge:return Effect::Pure;
  case Op::Add:case Op::Sub:case Op::Mul:case Op::Div:case Op::Mod:case Op::Neg:case Op::Assert:return Effect::Trap;
- case Op::Load:case Op::Store:return Effect::Memory;
+  case Op::Load:case Op::Store:case Op::OwnerCreate:case Op::OwnerMove:case Op::OwnerDrop:return Effect::Memory;
  case Op::Call:return Effect::Call;
   case Op::Print:return Effect::IO;
   case Op::FloatFromBits:case Op::FloatToBits:case Op::FloatIsNaN:case Op::FloatIsFinite:case Op::FloatSignbit:
@@ -52,7 +64,8 @@ Effect effect(Op op){
  }
  throw std::invalid_argument("unknown MIR opcode");
 }
-void verify(const Module& module,Limits limits){
+namespace {
+void verify_profile(const Module& module,Limits limits,bool nominal_owner){
  Budget budget{limits};std::set<Id> identities;
  auto identity=[&](Id id,const Location& at){
   budget.node(at);
@@ -61,13 +74,19 @@ void verify(const Module& module,Limits limits){
   if(!id||!identities.insert(id).second)fail(at,"zero/duplicate identity");
  };
  const Location module_at{"<mir>"};
- if(module.version<legacy_format_version||module.version>directive_format_version)fail(module_at,"unsupported format version");
- if(module.version<directive_format_version&&!module.directives.empty())fail(module_at,"directives require MIR version 4");
+ if(nominal_owner){
+  if(module.version!=nominal_owner_format_version)fail(module_at,"nominal-owner admission requires MIR version 5");
+  if(!module.directives.empty())fail(module_at,"directives are unsupported in nominal-owner MIR");
+ }else{
+  if(module.version<legacy_format_version||module.version>directive_format_version)fail(module_at,"unsupported format version");
+  if(!module.nominal_owners.empty())fail(module_at,"nominal owner declarations require explicit admission");
+  if(module.version<directive_format_version&&!module.directives.empty())fail(module_at,"directives require MIR version 4");
+ }
   auto admitted=[&](const Type& type,const Location& at){
   auto visit=[&](auto&& self,const Type& t,std::size_t depth)->bool{
    budget.work(at);if(depth>32)fail(at,"type depth budget exhausted");
    if(scalar(t))return true;
-   if(module.version==legacy_format_version)return false;
+   if(nominal_owner||module.version==legacy_format_version)return false;
     if(t==Type::F64)return true;
     if(module.version>=numeric_format_version&&(t==Type::F32||t.is_unsigned()))return true;
    if(!t.is_tuple())return false;
@@ -99,6 +118,21 @@ void verify(const Module& module,Limits limits){
    return true;
   };
  identity(module.id,module_at);
+ std::set<Id> nominal_types;
+ if(nominal_owner){
+  if(module.nominal_owners.empty())fail(module_at,"missing nominal owner declarations");
+  std::set<std::string_view> nominal_names;
+  for(const auto& decl:module.nominal_owners){
+   identity(decl.id,decl.where);
+   budget.work(decl.where,decl.name.size());
+   budget.work(decl.where,decl.field.size());
+   if(!nominal_identifier(decl.name,true)||!nominal_names.insert(decl.name).second)
+    fail(decl.where,"invalid/duplicate nominal owner name");
+   if(!nominal_identifier(decl.field,false)||decl.payload!=Type::I64)
+    fail(decl.where,"nominal owner layout requires one named i64 field");
+   nominal_types.insert(decl.id);
+  }
+ }
  if(module.functions.empty())fail(module_at,"empty module");
  std::map<Id,const Function*> functions;std::set<std::string> function_names;
  for(const auto& f:module.functions){
@@ -106,6 +140,8 @@ void verify(const Module& module,Limits limits){
   if(f.name.empty()||f.name.size()>4096||f.name.find('\0')!=std::string::npos||!function_names.insert(f.name).second)fail(f.where,"invalid/duplicate function name");
   if(!admitted(f.result,f.where)&&f.result!=Type::Void)fail(f.where,"unsupported function result type");
   if(f.blocks.empty())fail(f.where,"missing entry block");
+  if(nominal_owner&&(f.blocks.size()!=1||!f.slots.empty()))
+   fail(f.where,"nominal-owner MIR requires one block and no slots per function");
   functions.emplace(f.id,&f);
  }
  using DirectiveKey=std::tuple<std::string_view,std::string_view,std::string_view,std::string_view,Id,bool>;
@@ -131,6 +167,7 @@ void verify(const Module& module,Limits limits){
   if(!directive_keys.emplace(d.backend,d.target,d.kind,d.action,d.function,d.speculative).second)
    fail(module_at,"duplicate directive");
  }
+ bool has_create=false;
  for(const auto& f:module.functions){
   std::map<Id,const Block*> blocks;std::map<Id,Type> slots;std::map<Id,Definition> defs;
   std::map<Id,std::vector<Id>> predecessors;
@@ -147,10 +184,15 @@ void verify(const Module& module,Limits limits){
     identity(i.id,i.where);++position;
     if(!admitted(i.type,i.where)&&i.type!=Type::Void)fail(i.where,"unsupported instruction type");
     if(static_cast<std::size_t>(i.op)>=std::size(names))fail(i.where,"unknown opcode");
-     if(module.version==legacy_format_version&&i.op>Op::Assert)fail(i.where,"opcode requires MIR version 2");
-     if(i.op==Op::Numeric&&module.version<numeric_format_version)fail(i.where,"numeric opcode requires MIR version 3");
-     if(i.primitive.size()>64||(i.op!=Op::Numeric&&!i.primitive.empty()))fail(i.where,"invalid numeric descriptor");
-     budget.work(i.where,i.primitive.size());
+    if(owner_op(i.op)){
+     if(!nominal_owner)fail(i.where,"nominal owner opcode requires explicit admission");
+     if(i.type!=Type::Void)fail(i.where,"nominal owner operation cannot define an ordinary result");
+    }else if(nominal_owner&&(i.op>Op::Assert||i.op==Op::Load||i.op==Op::Store||i.op==Op::Call))
+     fail(i.where,"unsupported opcode in nominal-owner MIR");
+    if(module.version==legacy_format_version&&i.op>Op::Assert)fail(i.where,"opcode requires MIR version 2");
+    if(i.op==Op::Numeric&&module.version<numeric_format_version)fail(i.where,"numeric opcode requires MIR version 3");
+    if(i.primitive.size()>64||(i.op!=Op::Numeric&&!i.primitive.empty()))fail(i.where,"invalid numeric descriptor");
+    budget.work(i.where,i.primitive.size());
     if(i.type!=Type::Void)defs.emplace(i.id,Definition{i.type,b.id,position});
     if(i.effect_out)identity(i.effect_out,i.where);
    }
@@ -158,6 +200,7 @@ void verify(const Module& module,Limits limits){
   }
   for(const auto& b:f.blocks){
    const auto& t=b.exit;
+   if(nominal_owner&&t.kind!=Exit::Return)fail(t.where,"nominal-owner block must return directly");
    if(t.kind!=Exit::Return&&t.kind!=Exit::Jump&&t.kind!=Exit::Branch)fail(t.where,"missing/invalid terminator");
    std::size_t edges=t.kind==Exit::Return?0:t.kind==Exit::Jump?1:2;
    if(t.edges.size()!=edges)fail(t.where,"terminator edge count mismatch");
@@ -201,14 +244,42 @@ void verify(const Module& module,Limits limits){
   };
   for(const auto& b:f.blocks){
    Id token=b.effect;std::size_t position=0;
+   // Owner places are disjoint from defs (ordinary SSA). Since a v5 function
+   // has one block, each consuming instruction can check the exact live place.
+   struct LiveOwner { Id place,nominal; };
+   std::optional<LiveOwner> live;
    for(const auto& i:b.instructions){
     ++position;std::vector<Type> args;
-    for(auto id:i.operands)args.push_back(use(id,b.id,position,i.where));
+    const bool owner=owner_op(i.op);
+    if(live&&!owner)fail(i.where,"only owner.move or owner.drop is allowed with a live owner");
+    if(!owner)for(auto id:i.operands)args.push_back(use(id,b.id,position,i.where));
     auto require=[&](bool condition,const char* message){if(!condition)fail(i.where,message);};
     auto signature=[&](Type result,std::vector<Type> parameters){require(same(i.type,result,i.where)&&same_list(args,parameters,i.where),"opcode type/arity mismatch");};
     if(effect(i.op)==Effect::Pure)require(!i.effect_in&&!i.effect_out,"pure operation has effect tokens");
     else{require(i.effect_in==token&&i.effect_out,"broken effect ordering");token=i.effect_out;}
     if(i.op!=Op::Constant&&i.op!=Op::Extract)require(i.immediate==0,"unexpected immediate");
+    if(owner){
+     require(i.operands.size()==1,"nominal owner operation requires one operand");
+     budget.work(i.where);
+     const Id operand=i.operands.front();
+     if(i.op==Op::OwnerCreate){
+      require(!live,"owner.create while an owner is live");
+      require(use(operand,b.id,position,i.where)==Type::I64,"owner.create requires an ordinary i64 payload");
+      require(nominal_types.contains(i.target),"unknown nominal owner declaration");
+      live=LiveOwner{i.id,i.target};
+      has_create=true;
+     }else{
+      if(!live||operand!=live->place)fail(i.where,"owner operation requires the current live place");
+      if(i.op==Op::OwnerMove){
+       require(i.target==live->nominal,"nominal owner identity mismatch");
+       live->place=i.id;
+      }else{
+       require(i.target==0,"unexpected owner.drop target");
+       live.reset();
+      }
+     }
+     continue;
+    }
     if(i.op!=Op::Load&&i.op!=Op::Store&&i.op!=Op::Call)require(i.target==0,"unexpected target");
     switch(i.op){
     case Op::Constant:{
@@ -260,9 +331,12 @@ void verify(const Module& module,Limits limits){
       auto descriptor=detail::numeric_signature(i.primitive);require(descriptor.has_value(),"unknown numeric primitive");
       signature(descriptor->result(),descriptor->parameters());break;
      }
+     case Op::OwnerCreate:case Op::OwnerMove:case Op::OwnerDrop:
+      fail(i.where,"unexpected nominal owner opcode");
     }
    }
    const auto& t=b.exit;++position;
+   if(live)fail(t.where,"normal exit with a live nominal owner; explicit drop required");
    if(t.effect!=token)fail(t.where,"terminator drops/reorders effects");
    if(t.kind==Exit::Branch){if(use(t.value,b.id,position,t.where)!=Type::Bool)fail(t.where,"branch requires bool");}
    else if(t.kind==Exit::Return&&f.result!=Type::Void){if(!same(use(t.value,b.id,position,t.where),f.result,t.where))fail(t.where,"return type mismatch");}
@@ -270,6 +344,7 @@ void verify(const Module& module,Limits limits){
    for(const auto& e:t.edges)for(std::size_t n=0;n<e.arguments.size();++n)
     if(!same(use(e.arguments[n],b.id,position,t.where),blocks.at(e.block)->parameters[n].type,t.where))fail(t.where,"block argument type mismatch");
   }
+  if(nominal_owner)continue; // No slots exist in this profile.
   // Forward must-initialization: greatest fixed point, with an empty entry.
   // A loop backedge must never justify an uninitialized first-iteration load.
   budget.work(f.where,slots.size());
@@ -313,5 +388,9 @@ void verify(const Module& module,Limits limits){
    }
   }
  }
+ if(nominal_owner&&!has_create)fail(module_at,"nominal-owner MIR requires an owner.create");
 }
+}
+void verify(const Module& module,Limits limits){verify_profile(module,limits,false);}
+void verify_nominal_owner(const Module& module,Limits limits){verify_profile(module,limits,true);}
 }

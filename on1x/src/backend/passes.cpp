@@ -321,6 +321,7 @@ std::string_view analysis_name(Analysis analysis){
  fail({"<mir-pass>"},"unknown analysis");
 }
 void verify_transition(const Module& before,const Module& after,Pass pass,mir::Limits limits){
+ // Preservation rules describe legacy value/memory semantics, not owner places.
  const auto& d=descriptor(pass);verify(before,limits);verify(after,limits);
  if(before.id!=after.id||before.version!=after.version)fail({"<mir-pass>"},"pass changed module identity/version");
  auto directive_key=[](const Directive& d){return std::tie(d.backend,d.target,d.kind,d.action,d.function,d.speculative);};
@@ -353,6 +354,7 @@ Result run(const Module& module,Options options){
   if(module.version==directive_format_version)options.target="portable-directives-v4";
  if((options.pipeline.empty()&&!options.allow_empty)||options.pipeline.size()>16||!options.rounds||options.rounds>64)fail({"<mir-pass>"},"pipeline requires 1..16 passes and 1..64 rounds unless explicitly disabled");
  for(auto pass:options.pipeline)(void)descriptor(pass);
+ // The pipeline and its report bytes both remain on legacy MIR admission.
  verify(module,options.verification);Result result(module,serialize(module),options);
   Budget budget{options.work,options.rewrites,0,0,&options.control};std::size_t revision=0;
   for(std::size_t round=0;round<options.rounds;++round){

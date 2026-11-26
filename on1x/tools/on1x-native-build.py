@@ -128,11 +128,14 @@ def manifest_path(build, toolchain_prefix):
     installed = build.parent / "share/on1x/backends/mir-archon/BackendManifest.json"
     if build.name == 'bin' and not (build / 'CMakeCache.txt').is_file():
         return installed
+    staged = build / "backends/mir-archon/BackendManifest.json"
+    if staged.is_file():
+        return staged
     cache = build / "CMakeCache.txt"
     if cache.stat().st_size > 4 * 1024 * 1024:
         raise BuildError("CMake cache exceeds limit")
     for line in cache.read_text().splitlines():
-        if line.startswith("ArchonBackend_DIR:PATH="):
+        if line.startswith(("ArchonBackend_DIR:PATH=", "ArchonBackend_DIR:UNINITIALIZED=")):
             package = Path(line.partition("=")[2]).resolve()
             return package.parents[2] / "share/archon/backend/BackendManifest.json"
     raise BuildError("missing ArchonBackend_DIR; provide --toolchain-prefix")

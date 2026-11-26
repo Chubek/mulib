@@ -1,9 +1,7 @@
 #include "Bridge.hpp"
 
-#include "BuiltinContext.hpp"
-#include "On1xSDK-Backend.h"
+#include "BuiltinProvider.hpp"
 #include "ProgramInternal.hpp"
-#include "backend/BackendProviderInternal.hpp"
 
 #include <on1x/backend/mir_directives.hpp>
 
@@ -128,9 +126,7 @@ On1xSDK_Status emit_archon(void *userdata, const On1xSDK_BackendInvocation *invo
 
 extern "C" On1xSDK_Status on1x_builtin_mir_archon_register(
     On1xSDK_Registry *registry, on1x::backends::Context *context) {
-    if (!registry || !context) return ON1X_SDK_INVALID_ARGUMENT;
-    if (!matches_generated_architecture(ON1X_ARCHON_TARGET_TRIPLE))
-        return ON1X_SDK_UNSUPPORTED;
+    if (!context || (!registry && !context->describe_provider)) return ON1X_SDK_INVALID_ARGUMENT;
     static constexpr char triple[] = ON1X_ARCHON_TARGET_TRIPLE;
     static const On1xSDK_BackendTarget target{triple, sizeof(triple) - 1};
     const On1xSDK_BackendCapability capability{
@@ -143,7 +139,9 @@ extern "C" On1xSDK_Status on1x_builtin_mir_archon_register(
         "mir-archon", sizeof("mir-archon") - 1, 0, 0, &capability, 1,
         emit_archon, context
     };
-    // The host must enable its verified native-artifact policy first. This
-    // registration intentionally does NOT mislabel assembly as C11 source.
-    return on1x::sdk::register_builtin_backend_provider(registry, &provider);
+    // Keep the generated architecture check for registration; the report can
+    // distinguish a linked but ineligible provider from an absent adapter.
+    const auto prerequisite = matches_generated_architecture(triple)
+        ? ON1X_SDK_OK : ON1X_SDK_UNSUPPORTED;
+    return on1x::backends::register_or_describe(registry, *context, provider, prerequisite);
 }

@@ -7,6 +7,10 @@ type and opcode admission, directives, CFG, and effect ordering. The
 `on1x.mir.wire_grammar` test parses real `on1xc --emit-ir` output with the
 generated parser. Compiler tools do not use it at runtime.
 
+The [experimental nominal-owner profile](../docs/mir-nominal-owner.md) uses
+an in-memory version 5 tag only through named C++ opt-ins. It is not a wire
+version and cannot pass through this grammar, specialization, SDK, or VM.
+
 LLSynth generates the LR/DFA parser; `rewrite/compile.py` validates the activation
 policy in `rewrite/core.mirp` and all ten pattern banks in `rewrite/banks/`, then
 emits a static C++ database. It separately compiles the scoped MEMGraph and

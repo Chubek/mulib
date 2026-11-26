@@ -1,7 +1,5 @@
-#include "BuiltinContext.hpp"
-#include "On1xSDK-Backend.h"
+#include "BuiltinProvider.hpp"
 #include "ProgramInternal.hpp"
-#include "backend/BackendProviderInternal.hpp"
 
 #include <on1x/ast.hpp>
 
@@ -47,7 +45,7 @@ On1xSDK_Status on1x_builtin_c11_register(On1xSDK_Registry *registry,
     const On1xSDK_BackendProvider provider{
         ON1X_SDK_BACKEND_PROVIDER_ABI_VERSION, sizeof(On1xSDK_BackendProvider),
         "c11", 3, 0, 0, &capability, 1, emit_c11_v2, context};
-    return on1x::sdk::register_builtin_backend_provider(registry, &provider);
+    return on1x::backends::register_or_describe(registry, *context, provider);
 }
 
 } // extern "C"

@@ -5,7 +5,7 @@
   "worker_baseline_revision": "cc0d754cf7563de35e492b672a2fdcd5328183ca",
   "libstone_revision": "3399047f6c6328b8f07788795c610699e66c060a",
   "statuses": ["EXECUTABLE", "PARTIAL", "UNSUPPORTED"],
-  "scope": "Statuses apply to the stated subset, not to the complete architecture. Verification and build-option evidence are recorded separately.",
+  "scope": "Historical SDK 2 implementation inventory for the recorded revisions. Statuses are not current build-option, semantic-admission, native-toolchain, or artifact-execution evidence. For compiler-linked SDK backend interfaces query on1xc --backend-capabilities; for release evidence see on1x/VERIFICATION.md in the source checkout.",
   "facilities": [
     {
       "id": "plugin.trusted-linked-mir-analyzer-v2",

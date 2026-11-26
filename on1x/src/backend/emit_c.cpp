@@ -1,6 +1,7 @@
 #include <on1x/backend/mir.hpp>
 #include <on1x/backend/mir_c11.hpp>
 #include <on1x/backend/mir_directives.hpp>
+#include <on1x/backend/mir_nominal_owner.hpp>
 #include <limits>
 #include <map>
 #include <set>
@@ -29,8 +30,15 @@ public:
   declarations<<"} "<<name<<";\n";return name;
  }
 };
-std::string value(Id id){return "v"+std::to_string(id);}
-std::string name(Id id){return "on1x_mir_f"+std::to_string(id);}
+ std::string value(Id id){return "v"+std::to_string(id);}
+ std::string name(Id id){return "on1x_mir_f"+std::to_string(id);}
+ std::string owner_type(Id id){return "on1x_mir_owner_t"+std::to_string(id);}
+ std::string owner_place(Id id){return "on1x_mir_owner_p"+std::to_string(id);}
+ std::string owner_cell(Id id){return "on1x_mir_owner_c"+std::to_string(id);}
+ void owner_event(std::ostream& out,Op op,Id nominal,Id from,Id to,const std::string& payload){
+  out<<"on1x_mir_owner_trace(\""<<op_name(op)<<"\", UINT64_C("<<nominal
+     <<"), UINT64_C("<<from<<"), UINT64_C("<<to<<"), "<<payload<<")";
+ }
 std::string literal(std::int64_t n){
  if(n==std::numeric_limits<std::int64_t>::min())return "(-INT64_C(9223372036854775807)-INT64_C(1))";
  return "INT64_C("+std::to_string(n)+")";
@@ -41,20 +49,14 @@ void signature(std::ostream& out,const Function& f,Types& types){
  for(std::size_t n=0;n<params.size();++n){if(n)out<<", ";out<<types.ctype(params[n].type)<<" "<<value(params[n].id);}
  out<<")";
 }
-}
-std::string emit_c(const Module& module){return emit_c(module,std::nullopt);}
-
-std::string emit_c(const Module& module,std::optional<std::size_t> stack_bytes){
- return emit_directed_c(module,stack_bytes,{},false);
-}
-
-std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack_bytes,
-                            std::string_view target,bool speculate){
+std::string emit_checked_c(const Module& input,std::optional<std::size_t> stack_bytes,
+                           std::string_view target,bool speculate,bool nominal_owner,bool trace){
    if(stack_bytes&&*stack_bytes>memgraph::max_stack_bytes)
     throw std::invalid_argument("MEMGraph scratch stack byte budget exceeds 65536");
  std::optional<Module> selected;
  std::set<Id> hot,hidden,cold,no_inline;
- if(input.version==directive_format_version){
+ if(nominal_owner)verify_nominal_owner(input);
+ else if(input.version==directive_format_version){
   selected=specialize(input,"mir-c11",target,speculate);
   for(const auto& d:input.directives){
    if(d.kind!="hint"||(!d.backend.empty()&&d.backend!="mir-c11")||
@@ -75,7 +77,14 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
   types.ctype(f.result);for(const auto& slot:f.slots)types.ctype(slot.type);
   for(const auto& b:f.blocks){for(const auto& p:b.parameters)types.ctype(p.type);for(const auto& i:b.instructions)types.ctype(i.type);}
  }
-  std::ostringstream out;out<<"/* On1x scalar MIR v"<<module.version<<": checked C11 lowering. */\n#include <on1x_runtime.h>\n\n";
+   std::ostringstream out;out<<"/* On1x "<<(nominal_owner?"nominal-owner":"scalar")<<" MIR v"<<module.version
+    <<": checked C11 lowering. */\n#include <on1x_runtime.h>\n\n";
+   if(trace)out<<"#include <inttypes.h>\n#include <stdio.h>\n"
+     "static void on1x_mir_owner_trace(const char *op, uint64_t nominal, uint64_t from, uint64_t to, int64_t payload) {\n"
+     "  fprintf(stderr, \"%s %\" PRIu64 \" %\" PRIu64 \" %\" PRIu64 \" %\" PRId64 \"\\n\", op, nominal, from, to, payload);\n"
+     "}\n\n";
+   for(const auto& owner:module.nominal_owners)
+    out<<"typedef struct { int64_t payload; } "<<owner_type(owner.id)<<";\n";
   const std::string cell="on1x_mir_memgraph_cell";
   using memgraph::Placement;
   using Plan=std::map<Id,Placement>;
@@ -118,8 +127,9 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
    if(hidden.contains(f.id)||hidden.contains(0))out<<"ON1X_MIR_PRIVATE ";
    signature(out,f,types);out<<";\n";
   }
- for(const auto& f:module.functions){
-  std::map<Id,Type> value_types;std::map<Id,const Block*> blocks;
+  for(const auto& f:module.functions){
+   std::map<Id,Type> value_types;std::map<Id,const Block*> blocks;
+   std::map<Id,Id> owner_nominals;
   for(const auto& b:f.blocks){blocks.emplace(b.id,&b);for(const auto& p:b.parameters)value_types.emplace(p.id,p.type);for(const auto& i:b.instructions)value_types.emplace(i.id,i.type);}
    signature(out,f,types);out<<" {\n";
    const Plan no_placement;
@@ -138,9 +148,17 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
      out<<"  int64_t "<<value(s.id)<<" = 0; (void)"<<value(s.id)<<"; /* MEMGraph: stack slot */\n";
     else declare(s.id,s.type);
    }
-  for(const auto& b:f.blocks){
-   if(&b!=&f.blocks.front())for(const auto& p:b.parameters)declare(p.id,p.type);
-   for(const auto& i:b.instructions)declare(i.id,i.type);
+   for(const auto& b:f.blocks){
+    if(&b!=&f.blocks.front())for(const auto& p:b.parameters)declare(p.id,p.type);
+    for(const auto& i:b.instructions){
+     declare(i.id,i.type);
+     if(i.op==Op::OwnerCreate||i.op==Op::OwnerMove){
+      const auto type=owner_type(i.target);
+      if(i.op==Op::OwnerCreate)out<<"  "<<type<<" "<<owner_cell(i.id)<<" = {0};\n";
+      out<<"  "<<type<<" *"<<owner_place(i.id)<<" = 0;\n";
+      owner_nominals.emplace(i.id,i.target);
+     }
+    }
   }
   out<<"  goto b"<<f.blocks.front().id<<";\n";
   for(const auto& b:f.blocks){
@@ -191,7 +209,25 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
      auto type=value_types.at(i.operands[0]);
       out<<"on1x_print_"<<type_name(type)<<"("<<a<<")";break;
     }
-    case Op::Assert:out<<"on1x_assert("<<a<<")";break;
+      case Op::Assert:out<<"on1x_assert("<<a<<")";break;
+      case Op::OwnerCreate:{
+       const auto cell=owner_cell(i.id),to=owner_place(i.id);
+       out<<cell<<".payload = "<<a<<"; "<<to<<" = &"<<cell;
+       if(trace){out<<"; ";owner_event(out,i.op,i.target,0,i.id,to+"->payload");}
+       break;
+      }
+      case Op::OwnerMove:{
+       const auto from=owner_place(i.operands[0]),to=owner_place(i.id);
+       out<<to<<" = "<<from<<"; "<<from<<" = 0";
+       if(trace){out<<"; ";owner_event(out,i.op,i.target,i.operands[0],i.id,to+"->payload");}
+       break;
+      }
+      case Op::OwnerDrop:{
+       const auto id=i.operands[0];const auto from=owner_place(id);
+       if(trace){owner_event(out,i.op,owner_nominals.at(id),id,0,from+"->payload");out<<"; ";}
+       out<<from<<"->payload = 0; "<<from<<" = 0";
+       break;
+      }
     case Op::Tuple:
      out<<"("<<types.ctype(i.type)<<"){";
      for(std::size_t n=0;n<i.operands.size();++n){if(n)out<<", ";out<<value(i.operands[n]);}
@@ -251,6 +287,22 @@ std::string emit_directed_c(const Module& input,std::optional<std::size_t> stack
  }
  if(main->result==Type::Void)out<<"int main(void) { "<<name(main->id)<<"(); return 0; }\n";
  else out<<"int main(void) { return (int)"<<name(main->id)<<"(); }\n";
- return out.str();
+  return out.str();
+}
+}
+
+std::string emit_c(const Module& module){return emit_c(module,std::nullopt);}
+
+std::string emit_c(const Module& module,std::optional<std::size_t> stack_bytes){
+ return emit_directed_c(module,stack_bytes,{},false);
+}
+
+std::string emit_directed_c(const Module& module,std::optional<std::size_t> stack_bytes,
+                            std::string_view target,bool speculate){
+ return emit_checked_c(module,stack_bytes,target,speculate,false,false);
+}
+
+std::string emit_nominal_owner_c(const Module& module,bool trace){
+ return emit_checked_c(module,std::nullopt,{},false,true,trace);
 }
 }

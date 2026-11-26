@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,25 +23,49 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     llsynth = args.llsynth or on1x / 'third_party/libstone/cornerstone/LLSynth/scripts/llsynth.pl'
     spec, generator = root / 'On1xMETA.llsynth', root / 'generate.py'
+    parser_generator = root / 'generate_parser.py'
+    bootstrap = root / 'generated/On1xMETA.py'
     parser = work / 'parser.py'
 
-    def run(argv, success=True):
-        result = subprocess.run(list(map(str, argv)), text=True, capture_output=True, timeout=60)
+    def run(argv, success=True, *, env=None):
+        result = subprocess.run(list(map(str, argv)), text=True, capture_output=True,
+                                timeout=60, env=env)
         if success:
             assert result.returncode == 0, (argv, result.returncode, result.stderr)
         return result
 
-    # The parser under test is freshly produced from the actual pinned LLSynth.
+    # Give actual LLSynth two different grammar locations, output directories,
+    # and Perl hash seeds. Raw Python emission embeds the full source path.
     run([args.perl, llsynth, '--check', '--mode=interpret', spec])
-    for output in [parser, work / 'parser-again.py']:
-        run([args.perl, llsynth, '--mode=interpret', '-T', 'python3', '-o', output, spec])
-    assert parser.read_bytes() == (work / 'parser-again.py').read_bytes(), 'parser nondeterminism'
+    relocated_grammar = work / 'relocated söurce' / spec.name
+    relocated_grammar.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(spec, relocated_grammar)
+    relocated_parser = work / 'relocated output' / parser.name
+    for grammar, output, seed in [(spec, parser, '601'),
+                                  (relocated_grammar, relocated_parser, '987')]:
+        run([sys.executable, '-B', parser_generator, '--perl', args.perl,
+             '--llsynth', llsynth, '--grammar', grammar, '--output', output],
+            env=dict(os.environ, PERL_HASH_SEED=seed, PERL_PERTURB_KEYS='2'))
+    assert parser.read_bytes() == relocated_parser.read_bytes(), 'parser depends on its location'
 
-    def generate(inputs, directory, *, success=True):
+    # An added grammar dependency must not be silently hidden by normalization.
+    dependent_grammar = work / 'dependent source' / spec.name
+    dependent_grammar.parent.mkdir(parents=True, exist_ok=True)
+    (dependent_grammar.parent / 'extra.llsynth').write_text('# additional source\n', encoding='utf-8')
+    dependent_grammar.write_text('.include "extra.llsynth"\n' + spec.read_text(encoding='utf-8'),
+                                 encoding='utf-8')
+    before = relocated_parser.read_bytes()
+    rejected_parser = run([sys.executable, '-B', parser_generator, '--perl', args.perl,
+                           '--llsynth', llsynth, '--grammar', dependent_grammar,
+                           '--output', relocated_parser], False)
+    assert rejected_parser.returncode == 1 and 'expected one self-contained grammar' in rejected_parser.stderr
+    assert relocated_parser.read_bytes() == before
+
+    def generate(inputs, directory, *, success=True, using=parser):
         directory.mkdir(parents=True, exist_ok=True)
-        return run([sys.executable, generator, '--parser', parser,
-                    '--output', directory / 'on1x_meta_rules.hpp',
-                    '--manifest', directory / 'manifest.json', *inputs], success)
+        return run([sys.executable, '-B', generator, '--parser', using,
+                     '--output', directory / 'on1x_meta_rules.hpp',
+                     '--manifest', directory / 'manifest.json', *inputs], success)
 
     valid = work / 'identity.o1m'
     shutil.copyfile(root / 'tests/fixtures/identity.o1m', valid)
@@ -163,6 +188,21 @@ int main() {
         for output in ['on1x_meta_rules.hpp', 'manifest.json']:
             assert (rejected / output).read_text() == 'preserved\n', (name, output)
 
+    # Compare the generated and bootstrap parse trees and lexical token
+    # positions on accepted input, and exact lexer/parser diagnostics on errors.
+    accepted = sorted(root.glob('*.o1m')) + sorted((root / 'tests/fixtures').glob('*.o1m'))
+    bad_syntax = ['trailing_junk', 'missing_semicolon', 'unknown_phase']
+    for path in accepted + [work / (name + '.o1m') for name in bad_syntax]:
+        for mode in ['--tokens', '--parse']:
+            old, fresh = (run([sys.executable, '-B', p, mode, path], False)
+                          for p in [bootstrap, parser])
+            assert (old.returncode, old.stdout, old.stderr) == (
+                fresh.returncode, fresh.stdout, fresh.stderr), (path, mode)
+            if path in accepted:
+                assert fresh.returncode == 0 and fresh.stdout, (path, mode)
+            elif mode == '--parse':
+                assert fresh.returncode == 1 and fresh.stderr, path
+
     # File encoding and output collisions are errors without corrupting inputs.
     bad_utf8 = work / 'bad-utf8.o1m'
     bad_utf8.write_bytes(b'\xff')
@@ -185,10 +225,22 @@ int main() {
     assert len(shipping) >= 3, 'canonicalize/desugar/semantic modules must all ship'
     generate(shipping, work / 'shipping')
     generate(list(reversed(shipping)), work / 'shipping-again')
+    generate(shipping, work / 'shipping-bootstrap', using=bootstrap)
     for name in ['on1x_meta_rules.hpp', 'manifest.json']:
         assert (work / 'shipping' / name).read_bytes() == (work / 'shipping-again' / name).read_bytes()
+    # Only parser identity may change in a refresh, not the authored table.
+    def table_payload(directory):
+        directory = work / directory
+        table = (directory / 'on1x_meta_rules.hpp').read_text(encoding='utf-8')
+        identities = ('inline constexpr char parser_sha256[]', 'inline constexpr char program_sha256[]')
+        manifest = json.loads((directory / 'manifest.json').read_text(encoding='utf-8'))
+        for field in ['parser_sha256', 'program_sha256', 'output_sha256']:
+            del manifest[field]
+        return [line for line in table.splitlines() if not line.startswith(identities)], manifest
+
+    assert table_payload('shipping') == table_payload('shipping-bootstrap')
     print(f'On1xMETA real LLSynth regeneration, table compilation, relocation/order determinism: PASS; '
-          f'{len(cases)+5} rejected inputs')
+          f'{len(cases)+6} rejected inputs; bootstrap/fresh parser and table payload parity: PASS')
 
 
 if __name__ == '__main__':

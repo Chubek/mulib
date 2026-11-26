@@ -1,5 +1,5 @@
 #include "BuiltinMIR.hpp"
-#include "backend/BackendProviderInternal.hpp"
+#include "BuiltinProvider.hpp"
 
 #include <exception>
 #include <new>
@@ -38,7 +38,7 @@ On1xSDK_Status on1x_builtin_mir_cfg_register(On1xSDK_Registry *registry,
     const On1xSDK_BackendProvider provider{
         ON1X_SDK_BACKEND_PROVIDER_ABI_VERSION, sizeof(On1xSDK_BackendProvider),
         "mir-cfg", 7, 0, 0, &capability, 1, emit_mir_cfg_v2, context};
-    return on1x::sdk::register_builtin_backend_provider(registry, &provider);
+    return on1x::backends::register_or_describe(registry, *context, provider);
 }
 
 } // extern "C"

@@ -1,5 +1,11 @@
 # SDK 2 verification record
 
+The results below are historical and apply only to the identified revisions
+and configurations. For current On1x release tests and gaps, see
+`on1x/VERIFICATION.md` in the source checkout. For the linked SDK backend interfaces
+in a particular compiler binary, run `on1xc --backend-capabilities`; the result
+does not include any qualification claims.
+
 ## Baseline
 
 On 2026-11-19, before SDK 2 changes:

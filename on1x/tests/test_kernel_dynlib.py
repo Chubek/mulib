@@ -85,21 +85,16 @@ with tempfile.TemporaryDirectory() as directory:
         p = run(*host, *reviewed, src, '-o', raw, ok=False)
         assert 'does not match' in p.stderr and not raw.exists(), p
 
-    # The existing unsafe framed C11 runtime adapter stays in the executable.
-    # Its ipc-framed + sandbox-profile switches are emitted only in the DSO.
+    # The unsafe framed C11 resource adapter has a static ABI only.
     framed = examples/'framed_session.on1x'
-    run(*base, '--kernel-bind', framed, '-o', work/'framed-static')
+    framed_static = work/'framed-static'
+    run(*base, '--kernel-bind', framed, '-o', framed_static)
+    assert run(framed_static).stdout == '42\n297\n'
     src.write_text(dynamic(framed))
-    if has_cephyr:
-        p = run(*base, '--kernel-bind', src, '-o', raw, ok=False)
-        assert 'cephyr.preprocessor.error' in p.stderr and not raw.exists(), p
-    run(*host, '--kernel-bind', src, '-o', work/'framed-dynamic')
-    framed_out = work/'framed-dynamic'
-    assert run(framed_out/'program').stdout == run(work/'framed-static').stdout == '42\n297\n'
-    defined = run('nm', '-D', '--defined-only', framed_out/soname).stdout
-    assert 'mulib_ipc_send' in defined and 'mulib_sandbox_profile_' in defined
-    assert 'on1x_kernel_ipc_' not in defined
-    assert ' U mulib_ipc_send' in run('nm', '-D', framed_out/'program').stdout
+    for driver in (base, host) if has_cephyr else (host,):
+        p = run(*driver, '--kernel-bind', src, '-o', raw, ok=False)
+        assert 'ON1X-FFI-ABI: mulib.ipc_framed has no dynlib resource ABI' in p.stderr, p
+        assert not raw.exists(), p
 
     # Host PIC never admits discovery-only kernels.
     src.write_text('unsafe import kernel[dynlib] mulib.money as Money;\nfn main(){}\n')

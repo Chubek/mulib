@@ -83,6 +83,7 @@ Directive decode_directive(const SExpr& n){
 }
 }
 std::string serialize(const Module& module){
+ // This codec has no representation for nominal declarations or owner places.
  verify(module);
  auto functions=sequence(module.functions,[](const Function& f){return list({symbol("function"),number(f.id),string(f.name),encode_type(f.result),location(f.where),sequence(f.slots,value),sequence(f.blocks,block)});});
  auto tree=list({symbol("on1x.mir"),number(module.version),number(module.id),std::move(functions)});
@@ -93,6 +94,7 @@ Module deserialize(std::string_view text,const std::string& filename){
  auto tree=meta::read_sexpr(text,filename);
  if(items(tree).size()<2||atom(tree.items[0])!="on1x.mir")bad(tree,"expected on1x.mir with a format version");
  Module m;m.version=integer<unsigned>(tree.items[1]);
+ // The in-memory nominal-owner profile does not extend the public text wire.
  if(m.version<legacy_format_version||m.version>directive_format_version)bad(tree,"unsupported format version");
  shape(tree,"on1x.mir",m.version==directive_format_version?5:4);m.id=integer<Id>(tree.items[2]);
  for(const auto& n:items(tree.items[3])){

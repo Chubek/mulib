@@ -14,7 +14,12 @@ template<class Exception=std::exception,class F>void rejected(F operation,const 
  try{operation();}catch(const Exception& e){require(std::string(e.what()).find(why)!=std::string::npos,"wrong rejection: "+std::string(e.what()));return;}
  throw std::runtime_error("expected rejection: "+why);
 }
-m::Module lower(const std::string& text){auto unit=on1x::parse(on1x::scan(text,"analysis-test.on1x"));on1x::check(unit);return m::lower(unit);}
+m::Module lower(const std::string& text){
+ auto unit=on1x::parse(on1x::scan(text,"analysis-test.on1x"));on1x::check(unit);
+ auto module=m::lower(unit);
+ require(module.version==m::legacy_format_version,"MIR v1 fixture gained directives or an extended type: "+text);
+ return module;
+}
 dl::Tuple pair(m::Id a,m::Id b){return {std::to_string(a),std::to_string(b)};}
 
 // Independent worklist/sets over MIR, without reading projected facts or rules.
@@ -209,9 +214,9 @@ int main(){
    for(unsigned f=0;f<4;++f){
     auto target=rng()%4;source+="fn f"+std::to_string(f)+"(n:i64)->i64{var i=0;while i<n{i=i+1;}";
     if(rng()%2)source+="println(i);";
-    source+="if n==0{return "+std::to_string(rng()%100)+";}return f"+std::to_string(target)+"(n-1);}";
+     source+="if n<=0{return "+std::to_string(rng()%100)+";}return f"+std::to_string(target)+"(n-1);}";
    }
-   source+="fn main(){println(f0(3));println(true&&(f1(0)==1||f2(1)==2));}";
+    source+="fn main(){println(f0(3));println(f0(3)>0&&(f1(0)==1||f2(1)==2));}";
    r::Store generated(lower(source));oracle(generated.snapshot());
   }
   std::cout<<"MIR facts, independent graph/liveness oracles, revisions, rollback and budgets PASS\n";

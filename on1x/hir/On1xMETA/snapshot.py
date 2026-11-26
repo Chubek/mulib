@@ -12,6 +12,7 @@ import tempfile
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from generate import compile_inputs, load_parser, publish
+from generate_parser import generate_parser
 
 
 def digest(path):
@@ -30,7 +31,7 @@ def provenance(libstone, parser):
 
 
 def check_parser(libstone):
-    manifest = json.loads((HERE / "generated/parser_manifest.json").read_text())
+    manifest = json.loads((HERE / "generated/parser_manifest.json").read_bytes())
     if manifest["grammar_sha256"] != digest(HERE / "On1xMETA.llsynth"):
         raise ValueError("stale bootstrap parser: grammar changed; run on1x_meta_regenerate")
     if manifest["parser_sha256"] != digest(HERE / "generated/On1xMETA.py"):
@@ -45,6 +46,7 @@ def check_parser(libstone):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--libstone", type=Path, default=HERE.parents[1] / "third_party/libstone")
+    ap.add_argument("--perl", default=shutil.which("perl") or "perl")
     ap.add_argument("--work", type=Path, required=True)
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--parser-only", action="store_true")
@@ -57,15 +59,12 @@ def main():
         with tempfile.TemporaryDirectory(prefix="snapshot-", dir=args.work) as temporary:
             work = Path(temporary)
             parser = work / "On1xMETA.py"
-            subprocess.run([
-                shutil.which("perl") or "perl",
-                str(args.libstone / "cornerstone/LLSynth/scripts/llsynth.pl"),
-                "--mode=interpret", "-T", "python3", "-o", str(parser),
-                str(HERE / "On1xMETA.llsynth")], check=True, timeout=120)
+            generate_parser(args.perl, args.libstone / "cornerstone/LLSynth/scripts/llsynth.pl",
+                            HERE / "On1xMETA.llsynth", parser)
             header, manifest = compile_inputs(load_parser(parser), [
                 HERE / "canonicalize.o1m", HERE / "desugar.o1m", HERE / "semantic.o1m"])
             artifacts = {
-                "On1xMETA.py": parser.read_text(),
+                "On1xMETA.py": parser.read_text(encoding="utf-8"),
                 "parser_manifest.json": json.dumps(provenance(args.libstone, parser),
                                                    sort_keys=True, indent=2) + "\n",
                 "on1x_meta_rules.hpp": header,
@@ -74,7 +73,7 @@ def main():
             for name, text in artifacts.items():
                 destination = HERE / "generated" / name
                 if args.check:
-                    if not destination.is_file() or destination.read_text() != text:
+                    if not destination.is_file() or destination.read_bytes() != text.encode("utf-8"):
                         raise ValueError("stale generated artifact: " + str(destination))
                 else:
                     publish(destination, text)

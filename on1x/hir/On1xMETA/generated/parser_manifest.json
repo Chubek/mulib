@@ -1,14 +1,16 @@
 {
   "generator": "LibStone cornerstone/LLSynth",
   "generator_sources": {
+    "LLSynthActionSemantics.pm": "eeab3c1ce9937d25756a6415a089f444cfff628feb10c43753b2a3a3893a2129",
     "LLSynthCompanions.pm": "5006d72e9af265821963705368f77f3f6f814cc37cc9ab802b47816f560bb39d",
-    "LLSynthCompiler.pm": "819798f589a8fc9895b8bee1b0b696fe776f0eab3ff3b89ee64d213c0588b7aa",
-    "LLSynthEmit.pm": "cb540f6471bbae9fe94adf1cd7ba57b3660977d915ca72f6269ce6b0f466d155",
+    "LLSynthCompiler.pm": "dafcdff8a1975318c7ce14abb5b2f3a30439a94123cf419c91881097d8176f5b",
+    "LLSynthEmit.pm": "65684908048f5bd8e519b70fad9b6d9def9c9f78ea1b1b16417a639bb5c4fee4",
     "LLSynthExtensions.pm": "40614a57a17206f3a4fcca2432e1bb51c59267f2f83b8ac3634f44c93fc7a48f",
-    "LLSynthMeta.pm": "b026225a7f88713271ea38b06afc182424c921bd88b6df222d21a5862964271c",
-    "LLSynthModules.pm": "332a26e297a2b96519831ec6f1300c76d71c5779ca4846aee3974ce45839b174",
-    "llsynth.pl": "ed7da085502cf9a9c190d14daf6de890a9ff129886814b3e9fe14fc84f8730d0"
+    "LLSynthMeta.pm": "45351887472da26c7f46078433d1009b9095bbbbdc75541f2dca851ee5ec322f",
+    "LLSynthModules.pm": "bfaafcf232a9e5710b2c3ee145a6295e57a059f964a46011e7c3dc9bef719613",
+    "LLSynthVMGen.pm": "cc200128c961864a94d15c581af018593fb1ea7610ca2b982249d6660da556d2",
+    "llsynth.pl": "7a27c12b60350dd128e604c340769e142717f96cb4b501eb436857d65bbf65b0"
   },
   "grammar_sha256": "211e0dbba45ffb0a1340772d409193e455f63d77cc2d2884d7ef137b3d8aad60",
-  "parser_sha256": "a8f517a60c91ee997d55f26df33762a28c377e5fc32e3caa9c5f024e15185840"
+  "parser_sha256": "90887d22b64c56dd62e7e0cdc7a2979ad4accc7385051220bb176c23503391e5"
 }

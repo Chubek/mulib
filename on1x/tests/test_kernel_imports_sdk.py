@@ -128,7 +128,8 @@ with tempfile.TemporaryDirectory(dir=work) as directory:
     # tests without editing any shipped sidecars or authorizing the fixture.
     corrupt = directory/'corrupt-tools'
     for subdir, names in (
-        ('tools', ['on1x-build.py', 'on1x_optimization.py', 'on1x-exotract.py', 'on1x-contracts.py']),
+        ('tools', ['on1x-build.py', 'on1x_toolchain.py', 'on1x_optimization.py',
+                   'on1x-exotract.py', 'on1x-contracts.py']),
         ('stdlib/mulib', ['housekeeping.py', 'catalog.json']),
         ('runtime', ['on1x_runtime.c', 'on1x_runtime.h', 'on1x_bounds.h']),
         ('contracts-exotract', ['kernel-discovery-v1.lua', 'catalog.json']),

@@ -124,7 +124,8 @@ def main():
         checkout = directory/'checkout'
         home = checkout/'on1x'
         for subdir, names in (
-            ('tools', ('on1x-build.py', 'on1x_optimization.py', 'on1x-exotract.py', 'on1x-contracts.py')),
+            ('tools', ('on1x-build.py', 'on1x_toolchain.py', 'on1x_optimization.py',
+                       'on1x-exotract.py', 'on1x-contracts.py')),
             ('stdlib/mulib', ('housekeeping.py',)),
             ('runtime', ('on1x_runtime.c', 'on1x_runtime.h', 'on1x_bounds.h')),
             ('contracts-exotract', ('catalog.json', 'kernel-discovery-v1.lua')),

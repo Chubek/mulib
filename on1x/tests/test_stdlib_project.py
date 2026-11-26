@@ -130,7 +130,15 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         modules = {p.relative_to(STDLIB).as_posix() for p in STDLIB.rglob('*.on1x')
                    if p.relative_to(STDLIB).parts[0] not in ('daemon', 'sdk')
                    and 'tests' not in p.relative_to(STDLIB).parts}
+        # The empty MCP initializer is a source-tree placeholder, not a
+        # declared library module. Keep checking all other modules.
+        mcp_placeholder = 'mcp/__init__.on1x'
+        modules.discard(mcp_placeholder)
         self.assertEqual(modules, {p.relative_to(package).as_posix() for p in package.rglob('*.on1x')})
+        self.assertNotIn('project/' + mcp_placeholder, report['inputs'])
+        mcp_client = self.write('mcp-client.on1x', 'import std.mcp;\nfn main() {}\n')
+        self.execute(OPTIONS.on1xc, '--check', mcp_client, '--stdlib', package,
+                     negative='standard module not found: std.mcp')
         self.assertEqual(RESOURCES, {p.relative_to(package).as_posix() for p in package.rglob('*')
                                      if p.suffix in ('.c', '.h')})
         for name in sorted(modules | RESOURCES | {'mulib/On1xfile'}):

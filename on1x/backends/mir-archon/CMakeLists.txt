@@ -21,6 +21,20 @@ add_executable(on1x-archon-mir Tool.cpp)
 target_link_libraries(on1x-archon-mir PRIVATE on1x_archon_bridge)
 install(TARGETS on1x-archon-mir RUNTIME DESTINATION bin)
 install(TARGETS on1x_archon_scalar_abi ARCHIVE DESTINATION lib)
+# The native project driver needs the same manifest in the build tree and
+# relocated install. Do not depend on the spelling/type of a CMake cache key.
+set(ON1X_ARCHON_BACKEND_MANIFEST "" CACHE FILEPATH
+    "Provider manifest, if outside the installed ArchonBackend package layout")
+set(_archon_manifest "${ON1X_ARCHON_BACKEND_MANIFEST}")
+if(NOT _archon_manifest)
+  set(_archon_manifest "${ArchonBackend_DIR}/../../../share/archon/backend/BackendManifest.json")
+endif()
+if(NOT IS_ABSOLUTE "${_archon_manifest}" OR NOT EXISTS "${_archon_manifest}" OR IS_DIRECTORY "${_archon_manifest}")
+  message(FATAL_ERROR "The selected ArchonBackend package needs a BackendManifest.json; set ON1X_ARCHON_BACKEND_MANIFEST to its absolute path if necessary")
+endif()
+configure_file("${_archon_manifest}" BackendManifest.json COPYONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/BackendManifest.json"
+  DESTINATION share/on1x/backends/mir-archon)
 
 option(ON1X_ARCHON_ENABLE_SDK_ADAPTER "Build target-aware trusted SDK 2 provider" OFF)
 set(ON1X_ARCHON_TARGET_TRIPLE "" CACHE STRING

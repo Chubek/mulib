@@ -91,8 +91,18 @@ if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl}" AND
     execute_process(COMMAND "${_aurocks}" --version RESULT_VARIABLE _aurocks_status
       OUTPUT_VARIABLE _aurocks_version OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT _aurocks_status STREQUAL "0" OR NOT _aurocks_version STREQUAL "aurocks 2.0 (native)")
-      message(FATAL_ERROR "ON1X_AUROCKS_HOST_EXECUTABLE must be the pinned cornerstone/Aurocks native generator")
+      message(FATAL_ERROR "ON1X_AUROCKS_HOST_EXECUTABLE must report 'aurocks 2.0 (native)'; build it from the selected LibStone revision for reproducible output")
     endif()
+    # Optional LibStone components (e.g. Novostone) need the same host tool
+    # when the Aurocks subdirectory only builds the target-side runtime.
+    if(LIBSTONE_AUROCKS_EXECUTABLE)
+      file(REAL_PATH "${LIBSTONE_AUROCKS_EXECUTABLE}" _libstone_aurocks)
+      file(REAL_PATH "${_aurocks}" _on1x_aurocks)
+      if(NOT _libstone_aurocks STREQUAL _on1x_aurocks)
+        message(FATAL_ERROR "ON1X_AUROCKS_HOST_EXECUTABLE and LIBSTONE_AUROCKS_EXECUTABLE select different host tools")
+      endif()
+    endif()
+    set(LIBSTONE_AUROCKS_EXECUTABLE "${_aurocks}")
     set(_aurocks_dependency "${_aurocks}")
     on1x_add_aurocks(OFF)
   elseif(CMAKE_CROSSCOMPILING)
@@ -131,6 +141,12 @@ else()
 endif()
 message(STATUS "On1x scanner: ${ON1X_SCANNER_DESCRIPTION}")
 include(cmake/DependencyReport.cmake)
+if(BUILD_TESTING AND GIT_FOUND AND
+    EXISTS "${ON1X_LIBSTONE_ROOT}/third_party/satie/src/SatieMemory.cpp")
+  add_test(NAME on1x.provision.satie COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_prepare_type_sdk.py" "${GIT_EXECUTABLE}"
+    "${ON1X_LIBSTONE_ROOT}/third_party/satie" "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
 add_custom_target(on1x_extend_kernelbind
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/extend-kernelbind.py"
   COMMENT "Refresh the checked-in KernelBind discovery catalog" VERBATIM)
@@ -326,6 +342,14 @@ target_link_libraries(on1xc PRIVATE on1x_frontend on1x_pretty_kernels on1x_mir_v
 target_compile_definitions(on1xc PRIVATE ON1X_DRIVER_SOURCE_TOOLS="${CMAKE_CURRENT_SOURCE_DIR}/tools")
 if(ON1X_BUILD_EXTENSION_SDK)
   add_subdirectory(backends)
+  if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
+    add_executable(on1x_backend_capabilities_test backends/tests/BuiltinCapabilities.cpp)
+    target_link_libraries(on1x_backend_capabilities_test PRIVATE on1x_builtin_backends on1x_frontend)
+    add_test(NAME on1x.backends.capabilities COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/backends/tests/check_builtin_capabilities.py"
+      "$<TARGET_FILE:on1x_backend_capabilities_test>" "$<TARGET_EXISTS:on1x_backend_mir_archon>"
+      "${ON1X_ARCHON_TARGET_TRIPLE}" --compiler "$<TARGET_FILE:on1xc>")
+  endif()
   if(BUILD_TESTING AND TARGET on1x_backend_mir_archon)
     add_executable(on1x_sdk_test_native_backend_v2 sdk/tests/native_backend_v2.cpp)
     target_include_directories(on1x_sdk_test_native_backend_v2 PRIVATE sdk/src backends)
@@ -394,6 +418,9 @@ if(ON1X_WITH_NOVOSTONE)
 endif()
 add_library(on1x_runtime STATIC runtime/on1x_runtime.c)
 target_include_directories(on1x_runtime PUBLIC runtime)
+if(TARGET on1x_archon_scalar_abi)
+  install(TARGETS on1x_runtime ARCHIVE DESTINATION lib)
+endif()
 include(cmake/KernelImports.cmake)
 option(ON1X_BUILD_NATIVE_PPX "Build the self-hosted On1x PPX processors" ON)
 target_compile_definitions(on1x_frontend PRIVATE ON1X_BUILD_NATIVE_PPX=$<BOOL:${ON1X_BUILD_NATIVE_PPX}>)
@@ -801,6 +828,25 @@ if(BUILD_TESTING)
   target_link_libraries(on1x_mir_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.mir_hir COMMAND on1x_mir_tests)
   set_tests_properties(on1x.mir_hir PROPERTIES TIMEOUT 40)
+  if(NOT CMAKE_CROSSCOMPILING)
+    add_executable(on1x_mir_nominal_owner_tests tests/test_mir_nominal_owner.cpp)
+    target_link_libraries(on1x_mir_nominal_owner_tests PRIVATE on1x_frontend on1x_mir_vm)
+    if(TARGET On1x::SDK)
+      target_link_libraries(on1x_mir_nominal_owner_tests PRIVATE On1x::SDK)
+      target_include_directories(on1x_mir_nominal_owner_tests PRIVATE sdk/src)
+      target_compile_definitions(on1x_mir_nominal_owner_tests PRIVATE ON1X_TEST_OWNER_SDK=1)
+    endif()
+    if(TARGET on1x_archon_bridge)
+      target_link_libraries(on1x_mir_nominal_owner_tests PRIVATE on1x_archon_bridge)
+      target_compile_definitions(on1x_mir_nominal_owner_tests PRIVATE ON1X_TEST_OWNER_ARCHON=1)
+    endif()
+    add_test(NAME on1x.mir.nominal_owner COMMAND "${Python3_EXECUTABLE}" -B
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_mir_nominal_owner.py"
+      "$<TARGET_FILE:on1x_mir_nominal_owner_tests>" "${CMAKE_C_COMPILER}"
+      "$<TARGET_FILE:on1x_runtime>" "${CMAKE_CURRENT_BINARY_DIR}/mir-nominal-owner-tests"
+      ${_test_c_flags})
+    set_tests_properties(on1x.mir.nominal_owner PROPERTIES TIMEOUT 60)
+  endif()
   add_test(NAME on1x.backend_phase_routes
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_backend_phase_routes.py"
       "$<TARGET_FILE:on1xc>" "$<TARGET_FILE:on1x-vm>" "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -1135,7 +1181,16 @@ if(BUILD_TESTING)
          --on1xc "$<TARGET_FILE:on1xc>" --exotract "$<TARGET_FILE:exotract>"
          --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/integration-forecasting"
          --cc "${CMAKE_C_COMPILER}" ${_test_c_flags})
-       set_tests_properties(on1x.integration.forecasting PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+        set_tests_properties(on1x.integration.forecasting PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+        if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
+            CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64)$")
+          add_test(NAME on1x.integration.price_candidates COMMAND "${Python3_EXECUTABLE}" -B
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/integration/price_candidates/check.py"
+            --on1xc "$<TARGET_FILE:on1xc>" --exotract "$<TARGET_FILE:exotract>"
+            --artifacts "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/integration-price-candidates"
+            --cc "${CMAKE_C_COMPILER}" ${_test_c_flags})
+          set_tests_properties(on1x.integration.price_candidates PROPERTIES TIMEOUT 360 SKIP_RETURN_CODE 77)
+        endif()
      endif()
      add_test(NAME on1x.bounded_kernel_discovery_sdk COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_bounded_kernel_discovery_sdk.py"
       "$<TARGET_FILE:exotract>" "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_SOURCE_DIR}"

@@ -10,16 +10,20 @@ inline constexpr unsigned format_version = 2;
 inline constexpr unsigned legacy_format_version = 1;
 inline constexpr unsigned numeric_format_version = 3;
 inline constexpr unsigned directive_format_version = 4;
+inline constexpr unsigned nominal_owner_format_version = 5;
 enum class Op { Constant, Add, Sub, Mul, Div, Mod, Neg, Not, Eq, Ne, Lt, Le, Gt, Ge,
                 Load, Store, Call, Print, Assert,
                 FloatAdd, FloatSub, FloatMul, FloatDiv, FloatNeg,
                 FloatEq, FloatNe, FloatLt, FloatLe, FloatGt, FloatGe,
                 FloatFromI64, FloatToI64, FloatFromBits, FloatToBits,
-                 FloatIsNaN, FloatIsFinite, FloatSignbit, Tuple, Extract, Numeric };
+                 FloatIsNaN, FloatIsFinite, FloatSignbit, Tuple, Extract, Numeric,
+                 OwnerCreate, OwnerMove, OwnerDrop };
 enum class Exit { Invalid, Return, Jump, Branch };
 enum class Effect { Pure, Trap, Memory, Call, IO };
 struct Value { Id id=0; Type type=Type::Invalid; Location where; };
 struct Instruction {
+ // OwnerCreate/OwnerMove define an owner place at id, not an ordinary SSA
+ // value: type is Void and target identifies its NominalOwner declaration.
  Id id=0; Type type=Type::Void; Op op=Op::Constant;
  std::vector<Id> operands;
  std::int64_t immediate=0;
@@ -54,16 +58,26 @@ struct Directive {
  Id function=0;
  bool speculative=false;
 };
+// v5 module-local identity for one labeled i64 field; never a host ABI.
+struct NominalOwner {
+ Id id=0;
+ std::string name,field;
+ Type payload=Type::I64;
+ Location where;
+};
 struct Module {
  unsigned version=legacy_format_version; Id id=1;
  std::vector<Function> functions;
  // Preserves request order. Exact duplicates are invalid.
  std::vector<Directive> directives={};
+ std::vector<NominalOwner> nominal_owners={};
 };
 struct Limits { std::size_t nodes=65536, work=4194304; bool decision_ssa=true; };
 Effect effect(Op op);
 std::string_view op_name(Op op);
 void verify(const Module& module, Limits limits={});
+// Explicit v5 opt-in. The default verifier never admits owner metadata/opcodes.
+void verify_nominal_owner(const Module& module, Limits limits={});
 // Requires checked, elaborated HIR; unsupported operations fail with source locations.
 Module lower(const Unit& unit, Limits limits={});
 // VM entry: erase verified, unmanaged data layouts to portable product values.

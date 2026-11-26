@@ -462,6 +462,8 @@ class Builder {
         case O::FloatIsFinite: runtime("f64_is_finite", i); return;
         case O::FloatSignbit: runtime("f64_signbit", i); return;
         case O::Numeric: numeric(i); return;
+        case O::OwnerCreate: case O::OwnerMove: case O::OwnerDrop:
+            fail(at_, "nominal owner operations are not supported by Archon");
         }
         fail(at_, "unknown verified opcode");
     }

@@ -1,14 +1,16 @@
-# On1x consolidation ledger
+# On1x consolidation ledger — historical
 
-This ledger records the first integration increment based on MuLIB
+This ledger records the **2026-11-25** integration increment based on MuLIB
 `167286b84830f019e3c19fc9d9eef8b9e3ce6c59` and LibStone
 `ac95160900398cb864a91b134fc6d716b29c0a28`. The primary worktree was clean at
 entry; its revision matched the earlier review and `origin/master`. Other
 local branches and worktrees were not substituted for the active source.
 The existing [profile reference](profile-reference.md) describes the boundary
-between checked source, MIR, and executable products.
+between checked source, MIR, and executable products. None of the results
+below are from the 2026-11-26 qualification. See the [current completion
+ledger](../COMPLETION_MATRIX.md) and [release checklist and evidence](release-qualification.md).
 
-## Verified scope and remaining work
+## Scope verified in that increment
 
 - **MIR verification — executable v1–v4:** Direct calls compare their exact
   argument types in place after arity checking; even a forward reference
@@ -91,7 +93,7 @@ between checked source, MIR, and executable products.
   fixture passed at baseline; it exercises native PPX, not a self-hosted
   compiler. No performance improvement or new native-target claim.
 
-## Baseline and reproduction
+## Historical baseline and reproduction
 
 Linux x86-64, GCC/G++ 16.2.1 (20260810), Clang 22.1.8, CMake 4.4.3
 (Unix Makefiles), Python 3.14.7 and Perl 5.42.2. The MuLIB root project
@@ -188,11 +190,12 @@ time was 46.0, 34.8 and 38.9 ms respectively, and executables were 51,688,
 70,680 and 70,680 bytes. These short, process-inclusive smoke samples do
 not establish a performance ranking or measure the consolidation changes.
 
-## Next decision gate
+## Decisions proposed at that revision
 
-The first candidate ownership increment is a finite, non-generic one-field
-nominal box with explicit creation, move and destruction. It is a proposal,
-not an admitted format. Define a single canonical MIR representation and
+The first candidate proposed at this revision was a finite, non-generic
+one-field nominal box with explicit creation, move and destruction. It was
+not an admitted format in this run. The proposal called for a single
+canonical MIR representation and
 explicit opt-in admission so none of the existing codecs, SDK/VM adapters,
 or optimization passes accept the new operations merely because the
 verifier learned them. Establish exact nominal and place identities; first
@@ -211,9 +214,9 @@ arguments. Specify how declaration order and canonical layout order relate
 before emitting a new record/sum wire shape. Do not reuse the VM's
 identity-erasing projection as evidence of a canonical nominal layout.
 
-For capability reporting, start by inspecting the compiler's existing
-linked provider registry, not by adding a parallel table. Publish exact
+The capability reporting proposal was to inspect the compiler's existing
+linked provider registry, not add a parallel table. It called for exact
 request envelopes (phase, representation, artifact and target), and keep
 inspection, semantic admission, build/link readiness, and independent
-execution evidence distinct. The existing JSON and SDK help remain
-separate until that migration is implemented.
+execution evidence to stay distinct. For the current reporting scope and
+specific results, use the [release checklist](release-qualification.md).

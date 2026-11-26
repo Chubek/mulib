@@ -9,11 +9,16 @@ file(GLOB _meta_generator_sources CONFIGURE_DEPENDS
   "${ON1X_LIBSTONE_ROOT}/cornerstone/LLSynth/scripts/*.pl"
   "${ON1X_LIBSTONE_ROOT}/cornerstone/LLSynth/scripts/*.pm")
 set(_meta_parser "${_meta_generated}/On1xMETA.py")
+set(_meta_perl_options)
+if(PERL_FOUND)
+  set(_meta_perl_options --perl "${PERL_EXECUTABLE}")
+endif()
 if(PERL_FOUND AND EXISTS "${_meta_driver}")
   add_custom_command(OUTPUT "${_meta_parser}"
-    COMMAND "${PERL_EXECUTABLE}" "${_meta_driver}" --mode=interpret -T python3
-      -o "${_meta_parser}" "${CMAKE_CURRENT_SOURCE_DIR}/On1xMETA.llsynth"
-    DEPENDS On1xMETA.llsynth ${_meta_generator_sources}
+    COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/generate_parser.py"
+      ${_meta_perl_options} --llsynth "${_meta_driver}"
+      --grammar "${CMAKE_CURRENT_SOURCE_DIR}/On1xMETA.llsynth" --output "${_meta_parser}"
+    DEPENDS On1xMETA.llsynth generate_parser.py generate.py ${_meta_generator_sources}
     COMMENT "Generate the On1xMETA LR/DFA parser with LibStone LLSynth" VERBATIM)
 else()
   add_custom_command(OUTPUT "${_meta_parser}"
@@ -22,7 +27,7 @@ else()
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${CMAKE_CURRENT_SOURCE_DIR}/generated/On1xMETA.py" "${_meta_parser}"
     DEPENDS On1xMETA.llsynth generated/On1xMETA.py generated/parser_manifest.json
-      snapshot.py generate.py ${_meta_generator_sources}
+      snapshot.py generate_parser.py generate.py ${_meta_generator_sources}
     COMMENT "Verify the pinned LLSynth-generated On1xMETA bootstrap parser" VERBATIM)
 endif()
 set(_meta_default_rules
@@ -71,7 +76,8 @@ if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_include_precedence.py"
       --processor "${CMAKE_CURRENT_SOURCE_DIR}"
       --work "${CMAKE_CURRENT_BINARY_DIR}/tests/include-precedence"
-      --libstone "${ON1X_LIBSTONE_ROOT}" --cmake "${CMAKE_COMMAND}" --cxx "${CMAKE_CXX_COMPILER}")
+      --libstone "${ON1X_LIBSTONE_ROOT}" --cmake "${CMAKE_COMMAND}" --cxx "${CMAKE_CXX_COMPILER}"
+      ${_meta_perl_options})
   set_tests_properties(on1x.processor.include_precedence PROPERTIES TIMEOUT 240)
   foreach(_variant IN ITEMS add subtract forbid)
     set(_variant_dir "${CMAKE_CURRENT_BINARY_DIR}/tests/${_variant}")
@@ -97,11 +103,11 @@ if(BUILD_TESTING AND TARGET on1x_frontend AND NOT CMAKE_CROSSCOMPILING)
 endif()
 add_custom_target(on1x_meta_regenerate
   COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/snapshot.py"
-    --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}"
+    --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}" ${_meta_perl_options}
   COMMENT "Regenerate checked On1xMETA parser and rule snapshots" VERBATIM)
 add_custom_target(on1x_meta_check
   COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/snapshot.py"
-    --check --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}"
+    --check --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}" ${_meta_perl_options}
   COMMENT "Check deterministic LLSynth parser and rule snapshots" VERBATIM)
 if(BUILD_TESTING AND PERL_FOUND AND EXISTS "${_meta_driver}")
   add_test(NAME on1x.processor.generator
@@ -111,6 +117,6 @@ if(BUILD_TESTING AND PERL_FOUND AND EXISTS "${_meta_driver}")
   set_tests_properties(on1x.processor.generator PROPERTIES TIMEOUT 180)
   add_test(NAME on1x.processor.snapshots
     COMMAND "${Python3_EXECUTABLE}" -B "${CMAKE_CURRENT_SOURCE_DIR}/snapshot.py"
-      --check --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}/tests")
+      --check --libstone "${ON1X_LIBSTONE_ROOT}" --work "${CMAKE_CURRENT_BINARY_DIR}/tests" ${_meta_perl_options})
   set_tests_properties(on1x.processor.snapshots PROPERTIES TIMEOUT 180)
 endif()

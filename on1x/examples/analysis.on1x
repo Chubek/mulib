@@ -1,7 +1,9 @@
 # Inspect with --emit-ir-facts or --analyze-ir in a Novostone-enabled build.
+# <= 0 keeps the nonnegative recursion fixture in scalar MIR v1; a right-side
+# zero equality would attach portable rewrite requests (MIR v4).
 fn even(n: i64) -> bool
 {
-  if n == 0
+  if n <= 0
   {
     return true;
   }
@@ -10,7 +12,7 @@ fn even(n: i64) -> bool
 
 fn odd(n: i64) -> bool
 {
-  if n == 0
+  if n <= 0
   {
     return false;
   }

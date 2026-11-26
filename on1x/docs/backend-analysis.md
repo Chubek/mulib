@@ -7,9 +7,11 @@ and block liveness. All executable semantics remain in [MIR](backend-mir.md).
 
 This mapping accepts **MIR v1 only**. Numeric/product MIR v2 has new type and
 opcode descriptors not yet represented by the relational schema; both source
-and saved-v2 analysis reject before publishing facts. The v2 execution paths
-remain usable without Novostone. No float bit payload is narrowed or treated
-as integer arithmetic to force admission to this mapping.
+and saved-v2 analysis reject before publishing facts. MIR v3 numeric ops and
+MIR v4 portable directive envelopes likewise reject, including an otherwise
+scalar v4 payload; analysis does not silently strip directives. The
+execution paths remain usable without Novostone. No float bit payload is
+narrowed or treated as integer arithmetic to force admission.
 
 ## Build and use
 

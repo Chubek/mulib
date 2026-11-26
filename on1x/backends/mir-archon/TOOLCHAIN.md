@@ -23,6 +23,14 @@ generated C99 library and CLI, runs the upstream scalar GAS suite, and installs
 the actual `ArchonBackend` CMake package. A failed build or test stops
 installation. `on1x-toolchain.json` records the source revision and paths.
 
+At LibStone `76d24a7f8b19294bab2b713dc69f799e412b62d2`, full generation
+with `Translate.py` requires a removed Perl generator. Use the
+[backend-only provisioning recipe](../../docs/dependency-provisioning.md#build-host-cephyr-and-optional-providers)
+for the independently tested native package. On1x stages that package's
+`BackendManifest.json` in the build and install trees for project builds.
+`ON1X_ARCHON_BACKEND_MANIFEST` can select an absolute manifest path for a
+nonstandard package layout.
+
 The default CMake build includes Yellowstone's real registrar generator.
 `-DON1X_USE_YELLOWSTONE_LINK=OFF` selects the checked-in portable registrar map.
 Both guard the native registrar on the actual SDK adapter target. Disabling
@@ -44,8 +52,9 @@ ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-archon-standalone-build \
 cmake --install /mnt/andromeda/tempdir/opencode/on1x-archon-standalone-build
 ```
 
-This installs `bin/on1x-archon-mir`, `lib/libon1x_archon_scalar_abi.a`, and
-the normal On1x compiler/runtime distribution. Enabling the SDK adapter while
+This installs `bin/on1x-archon-mir`, `lib/libon1x_archon_scalar_abi.a`,
+`lib/libon1x_runtime.a` and the selected backend manifest alongside the
+normal On1x compiler/runtime distribution. Enabling the SDK adapter while
 disabling the SDK is rejected at configuration time.
 
 ## Initial real-toolchain evidence
@@ -81,6 +90,6 @@ On Linux AMD64, with GNU C/C++ 16.2.1:
 - The additional `on1x.backends.mir_archon_tool_target` regression passes,
   checking that CMake supplies the actual standalone tool target definition.
 
-These are scoped toolchain checks. Full language coverage, cross-target
-execution, and production readiness require the broader integration gates in
-`AGENTS.md`.
+These are scoped toolchain checks. See the
+[release checklist](../../docs/release-qualification.md) for current language,
+target, and release gaps.

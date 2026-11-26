@@ -559,6 +559,7 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
    "       on1xc --vm-launcher=always|opt-in INPUT -o EXECUTABLE (linked ArchVirt)\n"
    "         --vm-uncached  emit a VM ID without registering the guest for replay\n"
    "       on1xc vmm connect ID [--detached] [--param I64]... | on1xc vmm stop ID\n"
+   "       on1xc --backend-capabilities (linked SDK built-ins only; no build or execution probe)\n"
 #ifdef ON1X_WITH_EXTENSION_SDK
    "       on1xc --sdk-analyze NAME|linked-v2:HOOK INPUT [--ir-input]\n"
     "       on1xc --sdk-emit NAME INPUT [-o OUTPUT] [--ir-input]\n"
@@ -628,6 +629,16 @@ void usage(){std::cout<<"on1xc - a small strict ML-family frontend targeting ISO
 #endif
    if(argc>1){
      std::string_view command=argv[1];
+     if(command=="--backend-capabilities"){
+      if(argc!=2)throw std::runtime_error("--backend-capabilities takes no arguments");
+#ifdef ON1X_WITH_EXTENSION_SDK
+      std::cout<<on1x::backends::builtin_capabilities_json();
+      if(!std::cout)throw std::runtime_error("could not write backend capabilities");
+      return 0;
+#else
+      throw std::runtime_error("--backend-capabilities requires ON1X_BUILD_EXTENSION_SDK=ON; direct compiler routes are not part of this report");
+#endif
+     }
      if(command=="--syntax-faults"){
       if(argc!=3)throw std::runtime_error("--syntax-faults requires exactly one input file");
       return syntax_faults(argv[2]);

@@ -46,6 +46,11 @@ allocation, drop/retain/release, error edges and function-defer stacks.
 Borrowed parameters require call-scoped places and callee effects; they
 cannot be modeled as a scalar argument followed by unconditional copy-back.
 
+The separate [nominal-owner MIR experiment](mir-nominal-owner.md) is not a
+source route: only its named C++ evaluator and C11 emitter admit its
+single-block in-memory form. It does not add owner borrowing, implicit
+cleanup, or a transport/ABI to the routes above.
+
 ```sh
 cmake --build build/on1x-baseline
 ctest --test-dir build/on1x-baseline --output-on-failure \

@@ -14,6 +14,10 @@ Product run_c11(const Unit &, std::string_view source, const C11Options & = {});
 Product run_mir(const mir::Module &, const char *backend,
                 std::string_view target = {}, bool speculate = false);
 
+// Describes this binary's compiler-linked SDK adapters, not an input, installed
+// toolchain, external provider registry, or qualification run. No backend runs.
+std::string builtin_capabilities_json();
+
 // Native output is assembly only. External assembly/linking belongs to the
 // explicitly selected build tool, never to a compiler backend callback.
 struct NativeOptions {

@@ -7,6 +7,7 @@ checkout. No fetching. The destination must not already exist.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ cli.add_argument('--source', type=Path, default=root/'third_party/libstone/third
 cli.add_argument('--output', type=Path, required=True)
 args = cli.parse_args()
 source, output = args.source.resolve(), args.output.resolve()
+
 if output.exists():
     cli.error('destination already exists')
 patch = root/'upstream/satie-euf-target.patch'
@@ -34,8 +36,21 @@ for name in required:
         shutil.copyfile(src, dst)
 hashes = {str(p.relative_to(output)): hashlib.sha256(p.read_bytes()).hexdigest()
           for p in sorted(output.rglob('*')) if p.is_file()}
-subprocess.run(['git', 'apply', '--check', str(patch)], cwd=output, check=True)
-subprocess.run(['git', 'apply', str(patch)], cwd=output, check=True)
+
+
+def apply(*flags):
+    # An out-of-source build may still be inside MuLIB's worktree. Without a
+    # discovery ceiling, git apply silently skips the patch's root paths there.
+    env = os.environ.copy()
+    for key in ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_PREFIX'):
+        env.pop(key, None)
+    env['GIT_CEILING_DIRECTORIES'] = str(output.parent)
+    subprocess.run(['git', 'apply', *flags, str(patch)], cwd=output, env=env, check=True)
+
+
+apply('--check')
+apply()
+apply('--reverse', '--check')
 (output/'on1x-sdk-provenance.json').write_text(json.dumps({
     'source': str(source), 'original_sha256': hashes,
     'patch_sha256': hashlib.sha256(patch.read_bytes()).hexdigest(),

@@ -168,6 +168,11 @@ fn main() {
                 assert report['backend']['name']==backend
                 key='archon' if backend=='mir-archon' else 'vm_runner'
                 assert report['tools'][key]==sha256((relocated/'bin'/tool).read_bytes()).hexdigest()
+                if backend=='mir-archon':
+                    manifest=library/'backends/mir-archon/BackendManifest.json'
+                    assert report['tools']['archon_manifest']==sha256(manifest.read_bytes()).hexdigest()
+                    assert report['tools']['runtime']==sha256(
+                        (relocated/'lib/libon1x_runtime.a').read_bytes()).hexdigest()
                 p=run([out/'relocated-project'],cwd=base,env=env)
                 assert (p.returncode,p.stdout)==(0,'42\n'),(backend,p)
 print('Relocated compiler, prelude, stdlib, stdppx, formatter and project driver: PASS')

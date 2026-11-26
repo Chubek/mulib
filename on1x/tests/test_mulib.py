@@ -47,7 +47,8 @@ core=house.plan(root,['json','vec','parsec'])
 assert core['implementation_macros']==['MULIB_IMPL_PARSEC','MULIB_IMPL_STRBUF','MULIB_IMPL_UTF8','MULIB_IMPL_JSON','MULIB_IMPL_VEC']
 mune=house.plan(root,['mune'])
 assert mune['implementation_macros'].count('MULIB_IMPL_PARSER')==1
-assert len(mune['required_symbols']['mune'])==52 and mune['implementation_translation_units']==1
+assert len(mune['required_symbols']['mune'])==53 and mune['implementation_translation_units']==1
+assert 'mulib_mune_state_create_bare' in mune['required_symbols']['mune']
 for path in ['tests/test_mune_runtime.c','tests/test_mune_runtime_alloc.c','tools/check_mune_runtime.py']:
     assert mune['inputs'][str((root/path).resolve())]==hashlib.sha256((root/path).read_bytes()).hexdigest()
 provider=house.plan(root,['yantlr'],['yantlr'])
@@ -56,7 +57,9 @@ assert 'MULIB_IMPL_PARSER' in provider['implementation_macros']
 assert 'MULIB_IMPL_YANTLR_STDLIB' in provider['implementation_macros']
 assert house.plan(root,['fst'])['implementation_macros'][-1]=='MULIB_IMPL_FST_SERIALIZE'
 elvi=house.plan(root,[],['elvis'])
-assert elvi['requested_fixtures']==['elvis'] and len(elvi['required_symbols']['elvi-scrape'])==6
+assert elvi['requested_fixtures']==['elvis'] and len(elvi['required_symbols']['elvi-scrape'])==9
+assert {'mulib_elvi_scrape_https_connect_verified', 'mulib_elvi_script_resolve',
+        'mulib_elvi_script_url_allowed'} <= set(elvi['required_symbols']['elvi-scrape'])
 assert elvi['implementation_translation_units']==1 and 'MULIB_IMPL_PARSER' not in elvi['implementation_macros']
 assert elvi['link_libraries']==['m']
 assert [f['path'] for f in elvi['files']]==elvis

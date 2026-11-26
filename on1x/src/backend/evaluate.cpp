@@ -1,4 +1,4 @@
-#include <on1x/backend/mir.hpp>
+#include <on1x/backend/mir_nominal_owner.hpp>
 #include "checked.hpp"
 #include "floating.hpp"
 #include "numeric_eval.hpp"
@@ -15,6 +15,8 @@ class Evaluator {
  std::map<Id,Index> indices;
  Evaluation result;std::size_t remaining,depth_limit;
  std::size_t live_entries=0;
+ const NominalOwnerObserver* observe;
+ struct Owner {Id nominal,place;std::int64_t payload;};
  void tick(const Location& at){
   if(!remaining)throw Halt{Status::BudgetExhausted,at,"evaluation step budget exhausted"};
   --remaining;++result.steps;
@@ -34,13 +36,32 @@ class Evaluator {
   live_entries+=index.entries;
   struct Frame {std::size_t& live;std::size_t entries;~Frame(){live-=entries;}} frame{live_entries,index.entries};
   std::map<Id,RuntimeValue> values,slots;
+  std::optional<Owner> owner;
   const Block* b=&f.blocks.front();std::vector<RuntimeValue> incoming=args;
   for(;;){
    tick(b->where);
    for(std::size_t n=0;n<incoming.size();++n)values[b->parameters[n].id]=copy(incoming[n],b->where);
-   for(const auto& i:b->instructions){
-    tick(i.where);RuntimeValue empty,value;
-    const auto& first=i.operands.empty()?empty:values.at(i.operands[0]);
+    for(const auto& i:b->instructions){
+     tick(i.where);RuntimeValue empty,value;
+     // The explicitly opted-in verifier proves the single-block lifetime.
+     // Owner places never go through the ordinary value map or copy path.
+     if(i.op==Op::OwnerCreate){
+      owner=Owner{i.target,i.id,values.at(i.operands[0]).scalar};
+      if(observe&&*observe)(*observe)({i.op,owner->nominal,0,owner->place,owner->payload});
+      continue;
+     }
+     if(i.op==Op::OwnerMove){
+      const auto from=owner->place;owner->place=i.id;
+      if(observe&&*observe)(*observe)({i.op,owner->nominal,from,owner->place,owner->payload});
+      continue;
+     }
+     if(i.op==Op::OwnerDrop){
+      const auto dropped=*owner;
+      owner.reset();
+      if(observe&&*observe)(*observe)({i.op,dropped.nominal,dropped.place,0,dropped.payload});
+      continue;
+     }
+     const auto& first=i.operands.empty()?empty:values.at(i.operands[0]);
     auto a=first.scalar,c=i.operands.size()<2?0:values.at(i.operands[1]).scalar;
     switch(i.op){
     case Op::Constant:value.scalar=i.immediate;break;
@@ -82,7 +103,8 @@ class Evaluator {
   }
  }
 public:
-  Evaluator(const Module& m,std::size_t steps,std::size_t depth):remaining(steps),depth_limit(std::min<std::size_t>(depth,256)){
+   Evaluator(const Module& m,std::size_t steps,std::size_t depth,const NominalOwnerObserver* observer=nullptr)
+    :remaining(steps),depth_limit(std::min<std::size_t>(depth,256)),observe(observer){
    auto width=[&](auto&& self,const Type& t)->std::size_t{
     std::size_t n=1;if(t.is_tuple())for(const auto& field:t.elements()){auto child=self(self,field);if(child>262144-n)return 262145;n+=child;}return n;
    };
@@ -119,19 +141,28 @@ public:
   return std::move(result);
  }
 };
-}
-Evaluation evaluate(const Module& module,std::string_view name,const std::vector<std::int64_t>& args,std::size_t steps,std::size_t depth){
- verify(module);
+Evaluation evaluate_scalars(const Module& module,std::string_view name,const std::vector<std::int64_t>& args,
+                            std::size_t steps,std::size_t depth,const NominalOwnerObserver* observe=nullptr){
  for(const auto& f:module.functions)if(f.name==name){
   if(args.size()!=f.blocks.front().parameters.size())throw Error(f.where,"ON1X-MIR-EVAL: argument arity mismatch");
   std::vector<RuntimeValue> values;for(auto scalar:args)values.push_back({scalar,{}});
-  return Evaluator(module,steps,depth).run(f,values);
+  return Evaluator(module,steps,depth,observe).run(f,values);
  }
  throw Error({"<mir>"},"ON1X-MIR-EVAL: function not found");
+}
+}
+Evaluation evaluate(const Module& module,std::string_view name,const std::vector<std::int64_t>& args,std::size_t steps,std::size_t depth){
+ verify(module);
+ return evaluate_scalars(module,name,args,steps,depth);
 }
 Evaluation evaluate_values(const Module& module,std::string_view name,const std::vector<RuntimeValue>& args,std::size_t steps,std::size_t depth){
  verify(module);
  for(const auto& f:module.functions)if(f.name==name)return Evaluator(module,steps,depth).run(f,args);
  throw Error({"<mir>"},"ON1X-MIR-EVAL: function not found");
+}
+Evaluation evaluate_nominal_owner(const Module& module,std::string_view name,const std::vector<std::int64_t>& args,
+                                  std::size_t steps,const NominalOwnerObserver& observe){
+ verify_nominal_owner(module);
+ return evaluate_scalars(module,name,args,steps,1,&observe);
 }
 }

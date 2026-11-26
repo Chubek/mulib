@@ -3,8 +3,8 @@
 #include <on1x/meta_schema.hpp>
 namespace on1x::meta::generated {
 inline constexpr std::uint32_t schema_version = 1;
-inline constexpr char program_sha256[] = "33697886f1f6c6d5a157416da149e0ff4b7c6e5df2fa14d863aa26a9dac23b53";
-inline constexpr char parser_sha256[] = "a8f517a60c91ee997d55f26df33762a28c377e5fc32e3caa9c5f024e15185840";
+inline constexpr char program_sha256[] = "9e7df04411b52fe4ca271769ad4c7c2457b101d528485a9de408327a353d4bc3";
+inline constexpr char parser_sha256[] = "90887d22b64c56dd62e7e0cdc7a2979ad4accc7385051220bb176c23503391e5";
 inline constexpr Budgets budgets{8388608,262144,520};
 inline constexpr std::array<Node, 145> nodes{{
  {NodeKind::Capture, "left", {no_node,no_node,no_node}, 0},

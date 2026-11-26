@@ -3,6 +3,8 @@
 #include "FacetInternal.hpp"
 #include "ProgramInternal.hpp"
 
+#include <on1x/backend/mir.hpp>
+
 namespace {
 
 struct StagedDiagnostic {
@@ -101,6 +103,17 @@ const Unit *checked_hir(const On1xSDK_Program *program, std::string_view *source
 On1xSDK_Status make_builtin_mir(const mir::Module &module, On1xSDK_Program **out) noexcept {
     if (!out) return ON1X_SDK_INVALID_ARGUMENT;
     *out = nullptr;
+    // This private borrowing path doesn't read the public wire. Keep the
+    // owner profile out even if an in-memory caller supplies a legacy tag.
+    // Legacy validation remains with the consumer, preserving its diagnostics.
+    if (module.version == mir::nominal_owner_format_version || !module.nominal_owners.empty())
+        return ON1X_SDK_UNSUPPORTED;
+    for (const auto &fn : module.functions)
+        for (const auto &block : fn.blocks)
+            for (const auto &inst : block.instructions)
+                if (inst.op == mir::Op::OwnerCreate || inst.op == mir::Op::OwnerMove ||
+                    inst.op == mir::Op::OwnerDrop)
+                    return ON1X_SDK_UNSUPPORTED;
     return guard([&] {
         *out = new On1xSDK_Program{ON1X_SDK_VERIFIED_MIR, {}, nullptr, &module};
         return ON1X_SDK_OK;

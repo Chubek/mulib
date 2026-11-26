@@ -8,6 +8,11 @@ at MIR verification and does not run HIR passes.
 See the [backend phase audit](../docs/backend-phase-audit.md) for actual
 driver routes, regression commands, and remaining coverage gaps.
 
+In an SDK-enabled compiler, `on1xc --backend-capabilities` reports the
+[linked provider descriptors](BuiltinCapabilities.md). It does not check a
+program, locate toolchains, or replay the
+[release evidence](../docs/release-qualification.md).
+
 In SDK-enabled builds, the compiler dispatches these existing modes through
 the extension SDK registry and artifact sink:
 
