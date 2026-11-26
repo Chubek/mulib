@@ -1,4 +1,4 @@
-# Checked project interfaces (.on1xi v1)
+# Checked project interfaces (.on1xi)
 
 A declared interface is a **source conformance check**, not a module export
 list or a separately compiled artifact. In `On1xfile.i`, `interface "values.on1xi"`
@@ -80,10 +80,44 @@ For direct compiler use, pass the interfaces explicitly. For example:
 on1xc --check-interfaces values.on1x --interface values.on1xi
 ```
 
-The entry may be a library with no `main`, or a source file that imports the
+For v1, the entry may be a library with no `main`, or a source file that imports the
 implementations for multiple `--interface` options. This mode produces no
 C/artifact. Ordinary `--check`, `--emit-c` and import lookup do not search for
 paired files or read `On1xfile.i`. Unlisted functions remain available under
 existing export rules: no signature ascription, sealing, interface-only
 imports, ABI fingerprints, persisted interface cache, or separate
 compilation is provided.
+
+## Declared module signatures
+
+For declared modules, an explicitly associated `.on1xi` can instead begin
+with `abstract module` and the implementation's full hierarchical name:
+
+```on1x
+abstract module Acme.Vault;
+type Token;
+fn make(value: i64) -> Token;
+fn read(token: Token) -> i64;
+```
+
+Only declaration forms are allowed; a signature cannot import code, contain
+bodies, or run a transform. A `type Token;` (also spelled `abstract type Token;`)
+requires one original local record or enum named `Token`. `type Box<T>;`
+similarly requires a nominal declaration of the same arity. The resulting
+abstract identity belongs to the provider, not to the import spelling. Fields,
+constructors, and layout are not part of the signature.
+
+Function declarations require one original local, explicitly typed `fn`
+definition. Parameter names are not part of the match. The supported types
+are numeric scalars, `bool`, `char`, `string`, their tuples, and references to
+abstract types listed in the same signature. `void` is permitted only as the
+whole result. Generic functions, procedures, borrowed parameters, imports and
+re-exports do not satisfy these declarations.
+
+Declared-module signature conformance compares source declarations, not
+implementation bodies. It never authorizes executable emission. When a
+loader uses a function-only signature as a module boundary, listing a
+function does not increase its visibility, and unlisted members are not part
+of that boundary. The current executable HIR cannot carry opaque source
+types, so any executable load that reaches an associated signature declaring
+an abstract type must reject it instead of exposing its representation.

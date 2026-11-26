@@ -203,7 +203,7 @@ execute_process(
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/category/features.sexpr" ON1X_EXTENSION_REGISTRY)
 configure_file(cmake/extensions_registry.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/extensions_registry.hpp" @ONLY)
-add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
+add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/nominal.cpp src/inherent.cpp src/cliche.cpp src/numeric.cpp src/parser.cpp src/module_signature.cpp src/loader.cpp src/discovery.cpp src/infer.cpp src/sema.cpp src/analysis.cpp src/diagnostic.cpp src/concurrency.cpp src/codegen.cpp
   src/operator_lowering.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
@@ -803,6 +803,9 @@ if(BUILD_TESTING)
   add_executable(on1x_loader_tests tests/test_loader.cpp)
   target_link_libraries(on1x_loader_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.loader_api COMMAND on1x_loader_tests "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/loader-api")
+  add_executable(on1x_module_signature_tests tests/test_module_signature.cpp)
+  target_link_libraries(on1x_module_signature_tests PRIVATE on1x_frontend)
+  add_test(NAME on1x.module_signature COMMAND on1x_module_signature_tests)
   if(ON1X_WITH_NEROTYPICAL)
     add_executable(on1x_type_safety_tests tests/test_type_safety.cpp)
     target_link_libraries(on1x_type_safety_tests PRIVATE on1x_type_safety)

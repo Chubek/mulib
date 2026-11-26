@@ -2,6 +2,7 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
+#include <on1x/module_signature.hpp>
 #include <on1x/extensions.hpp>
 #include <on1x/operator_scan.h>
 #include <on1x/operator_scope.hpp>
@@ -1651,9 +1652,62 @@ class Parser {
      consume(")");consume("->");auto result=signature_type(true);consume(";");
      members.push_back({where,std::move(name),Type::function(std::move(parameters),std::move(result))});
     }
-    return members;
-   }
-   std::string module_name(){
+     return members;
+    }
+    ModuleSignature module_signature(){
+     ModuleSignature signature;signature.where=peek().where;
+     if(!accept("abstract")){
+      signature.members=interface();
+      return signature;
+     }
+     consume("module");signature.module=module_name();consume(";");
+     std::set<std::string> functions,types;
+     while(!at("<eof>")){
+      if(signature.members.size()+signature.types.size()>=256)
+       throw Error(peek().where,"interface member limit exceeded","ON1X-INTERFACE-LIMIT");
+      if(at("abstract")||at("type")){
+       accept("abstract");consume("type");auto where=peek().where;auto name=ident();
+       if(!types.insert(name).second)
+        throw Error(where,"duplicate interface type: "+name,"ON1X-INTERFACE-DUPLICATE");
+       std::set<std::string> parameters;
+       if(accept("<")){
+        do{
+         auto at=peek().where;
+         if(parameters.size()>=32)
+          throw Error(at,"interface type parameter limit exceeded","ON1X-INTERFACE-LIMIT");
+         if(!parameters.insert(ident()).second)
+          throw Error(at,"duplicate interface type parameter","ON1X-INTERFACE-DUPLICATE");
+        }while(accept(","));
+        close_angle();
+       }
+       consume(";");
+       signature.types.push_back({std::move(where),std::move(name),parameters.size()});
+       continue;
+      }
+      if(!accept("fn"))
+       throw Error(peek().where,"abstract module accepts only 'type T;' and 'fn name(...) -> type;' declarations",
+                   "ON1X-INTERFACE-SHAPE");
+      auto where=peek().where;auto name=ident();
+      if(!functions.insert(name).second)
+       throw Error(where,"duplicate interface member: "+name,"ON1X-INTERFACE-DUPLICATE");
+      consume("(");std::vector<Type> parameters;std::set<std::string> parameter_names;
+      if(!at(")"))do{
+       auto at=peek().where;
+       if(parameters.size()>=32)
+        throw Error(at,"interface parameter limit exceeded","ON1X-INTERFACE-LIMIT");
+       if(!parameter_names.insert(ident()).second)
+        throw Error(at,"duplicate interface parameter","ON1X-INTERFACE-DUPLICATE");
+       consume(":");parameters.push_back(type());
+      }while(accept(","));
+      consume(")");consume("->");auto result=type();consume(";");
+      signature.members.push_back({std::move(where),std::move(name),
+                                   Type::function(std::move(parameters),std::move(result))});
+     }
+     if(signature.members.empty()&&signature.types.empty())
+      throw Error(peek().where,"abstract module requires at least one declaration","ON1X-INTERFACE-SHAPE");
+     return signature;
+    }
+    std::string module_name(){
    auto where=peek().where;std::string name=ident();
    while(accept(".")){name+="."+ident();if(name.size()>4096)throw Error(where,"module name exceeds 4096 bytes");}
     return name;
@@ -2339,6 +2393,7 @@ class Parser {
   return unit;
  }
 std::vector<InterfaceMember> parse_interface(const std::vector<Token>& ts){return Parser(ts,{}).interface();}
+ModuleSignature parse_module_signature(const std::vector<Token>& ts){return Parser(ts,{}).module_signature();}
 void require_no_kernel_imports(const Unit& unit){
  if(unit.kernel_imports.empty()){
   if(!unit.foreign_imports.empty())
