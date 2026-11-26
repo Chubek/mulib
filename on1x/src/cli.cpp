@@ -1288,9 +1288,11 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
           report_registry(diagnostic_registry,*diagnostic_catalog,diagnostic_snapshots,diagnostic_format,color);
           diagnostics_published=true;
          };
-         const bool interface_mode=mode=="--check-interfaces";
-        if(interface_mode==loader.interfaces.empty())
-         throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
+          const bool interface_mode=mode=="--check-interfaces";
+         if((!interface_mode&&!loader.interfaces.empty())||
+            (interface_mode&&loader.interfaces.empty()&&project_module_index.empty()))
+          throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
+          loader.declaration_interfaces=interface_mode;
          if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
             analysis_limit||!ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||
             loader.kernel_c11||loader.kernel_stage||!loader.extensions.enabled.empty()))
@@ -1471,12 +1473,17 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
      write_all(out,project_module_graph(loaded));return 0;
     }
        auto& unit=loaded.unit;
-       if(interface_mode){
-        on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
-         on1x::check_interfaces(std::move(unit),loaded.interfaces,context,policy.rules);
-        if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
-        publish_diagnostics();
-        std::cout<<"OK: "<<loaded.interfaces.size()<<" interface members\n";return 0;
+        if(interface_mode){
+         on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
+         // Only legacy obligations run the original whole-unit checker. An
+         // abstract module signature verifies declarations, not bodies, and
+         // this mode does not emit code.
+         if(!loaded.interfaces.empty()||!loaded.declaration_interface_members)
+          on1x::check_interfaces(std::move(unit),loaded.interfaces,context,policy.rules);
+         if(diagnostic_registry.has_errors()){publish_diagnostics();return 1;}
+         publish_diagnostics();
+         std::cout<<"OK: "<<loaded.interfaces.size()+loaded.declaration_interface_members
+                  <<" interface members\n";return 0;
        }
      auto extension_names=loader.extensions.enabled;
      for(const auto& activation:unit.features)extension_names.insert(activation.name);
