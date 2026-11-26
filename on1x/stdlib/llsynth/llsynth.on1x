@@ -1,0 +1,216 @@
+# Syntax-only runner for the little-endian word image emitted by pack_tables.py.
+# DFA accepts are in precedence order; edge ranges and LR keys are sorted.
+fn llsynth_word(bytes: buffer, word: i64) -> i64
+{
+  let i = word * 4;
+  return u8_to_i64(buffer_at(bytes, i))
+    + 256 * u8_to_i64(buffer_at(bytes, i + 1))
+    + 65536 * u8_to_i64(buffer_at(bytes, i + 2))
+    + 16777216 * u8_to_i64(buffer_at(bytes, i + 3));
+}
+
+fn llsynth_push_word(bytes: buffer, word: i64)
+{
+  buffer_push(bytes, u8_from_i64(word % 256));
+  buffer_push(bytes, u8_from_i64(word / 256 % 256));
+  buffer_push(bytes, u8_from_i64(word / 65536 % 256));
+  buffer_push(bytes, u8_from_i64(word / 16777216));
+}
+
+# Positive token or zero for skip, negative status for failure.
+fn llsynth_scan(tables: buffer, rows: i64, count: i64, max_token: i64,
+                source: buffer, start: i64, length: i64, fuel: i64) -> (i64, i64, i64)
+{
+  var budget = fuel;
+  var at = start;
+  var state = 0;
+  var best = - 1;
+  var end = start;
+  let bol = start == 0 || buffer_at(source, start - 1) == 10u8;
+  let first = llsynth_word(tables, rows);
+  let last = llsynth_word(tables, rows + count);
+  while budget > 0
+  {
+    budget = budget - 1;
+    let lo = llsynth_word(tables, rows + state);
+    let hi = llsynth_word(tables, rows + state + 1);
+    if lo < first || hi > last || hi <= lo
+    {
+      return (- 3, start, budget);
+    }
+    let accepts = llsynth_word(tables, lo);
+    if accepts >= hi - lo || (hi - lo - 1 - accepts) % 2 != 0
+    {
+      return (- 3, start, budget);
+    }
+    if at > start
+    {
+      let eol = at == length || buffer_at(source, at) == 10u8;
+      for i in 0 .. accepts
+      {
+        if budget == 0 { return (- 4, start, budget); }
+        budget = budget - 1;
+        let entry = llsynth_word(tables, lo + 1 + i);
+        let token = entry / 4;
+        if token > max_token || token == 1 || token == 2
+        {
+          return (- 3, start, budget);
+        }
+        if (entry % 2 == 0 || bol) && (entry / 2 % 2 == 0 || eol)
+        {
+          best = token;
+          end = at;
+          break;
+        }
+      }
+    }
+    if at == length { return (best, end, budget); }
+    let byte = u8_to_i64(buffer_at(source, at));
+    let edges = lo + 1 + accepts;
+    var left = 0;
+    var right = (hi - edges) / 2;
+    var next = - 1;
+    while left < right
+    {
+      let i = left + (right - left) / 2;
+      let range = llsynth_word(tables, edges + 2 * i);
+      if range > 65535 || range % 256 > range / 256
+      {
+        return (- 3, start, budget);
+      }
+      if byte < range % 256 { right = i; }
+      else
+      {
+        if byte > range / 256 { left = i + 1; }
+        else
+        {
+          next = llsynth_word(tables, edges + 2 * i + 1);
+          break;
+        }
+      }
+    }
+    if next < 0 { return (best, end, budget); }
+    if next >= count { return (- 3, start, budget); }
+    state = next;
+    at = at + 1;
+  }
+  return (- 4, start, budget);
+}
+
+fn llsynth_lookup(tables: buffer, rows: i64, count: i64, state: i64, symbol: i64) -> i64
+{
+  let lo = llsynth_word(tables, rows + state);
+  let hi = llsynth_word(tables, rows + state + 1);
+  if lo < llsynth_word(tables, rows) || hi > llsynth_word(tables, rows + count)
+    || hi < lo || (hi - lo) % 2 != 0
+  {
+    return - 2;
+  }
+  var left = 0;
+  var right = (hi - lo) / 2;
+  while left < right
+  {
+    let mid = left + (right - left) / 2;
+    let entry = lo + 2 * mid;
+    let key = llsynth_word(tables, entry);
+    if symbol == key { return llsynth_word(tables, entry + 1); }
+    if symbol < key { right = mid; }
+    else { left = mid + 1; }
+  }
+  return - 1;
+}
+
+fn basis_llsynth_recognize(tables: buffer, source: buffer) -> (i64, i64)
+{
+  let bytes = buffer_len(tables);
+  let length = buffer_len(source);
+  if bytes > 524288 || length > 1048576 { return (4, 0); }
+  # Magic bytes: "LLS" followed by binary version 1.
+  if bytes < 20 || bytes % 4 != 0 || llsynth_word(tables, 0) != 22236236
+  {
+    return (3, 0);
+  }
+  let lex_count = llsynth_word(tables, 1);
+  let parse_count = llsynth_word(tables, 2);
+  let productions = llsynth_word(tables, 3);
+  let max_token = llsynth_word(tables, 4);
+  let lex_rows = 5 + productions * 2;
+  let parse_rows = lex_rows + lex_count + 1;
+  let data = parse_rows + parse_count + 1;
+  if lex_count == 0 || parse_count == 0 || productions == 0 || max_token < 2
+    || data > bytes / 4 || llsynth_word(tables, lex_rows) != data
+    || llsynth_word(tables, lex_rows + lex_count) != llsynth_word(tables, parse_rows)
+    || llsynth_word(tables, parse_rows + parse_count) != bytes / 4
+    || llsynth_word(tables, parse_rows) < data || llsynth_word(tables, parse_rows) > bytes / 4
+  {
+    return (3, 0);
+  }
+  # Scratch frames are (state, parent word offset). Pop walks parent links;
+  # scratch storage is released on every return and bounded by LR fuel.
+  let stack = buffer_new();
+  llsynth_push_word(stack, 0);
+  llsynth_push_word(stack, 0);
+  var frame = 0;
+  var depth = 0;
+  var pos = 0;
+  var start = 0;
+  var token = 0;
+  var eof = false;
+  var lex_fuel = 4194304;
+  for step in 0 .. 131072
+  {
+    while token == 0 && pos < length
+    {
+      let (kind, end, fuel) = llsynth_scan(tables, lex_rows, lex_count, max_token,
+                                         source, pos, length, lex_fuel);
+      if kind < 0 { return (- kind, pos); }
+      token = kind;
+      start = pos;
+      pos = end;
+      lex_fuel = fuel;
+    }
+    if token == 0
+    {
+      # The upstream parser consumes EOF and then looks ahead at virtual '$'.
+      start = length;
+      token = 1;
+      if eof { token = 2; }
+    }
+    var action = llsynth_lookup(tables, parse_rows, parse_count, llsynth_word(stack, frame), token);
+    if action == - 1 { return (2, start); }
+    if action < 0 { return (3, start); }
+    let op = action % 4;
+    let arg = action / 4;
+    if op == 2
+    {
+      if token != 2 || depth != 1 || arg != 0 { return (3, start); }
+      return (0, length);
+    }
+    if op == 0
+    {
+      if token == 2 { return (3, start); }
+      if token == 1 { eof = true; }
+      token = 0;
+    }
+    else
+    {
+      if op != 1 { return (3, start); }
+      if arg >= productions { return (3, start); }
+      let lhs = llsynth_word(tables, 5 + arg * 2);
+      let pop = llsynth_word(tables, 6 + arg * 2);
+      if lhs <= max_token || pop > depth { return (3, start); }
+      for item in 0 .. pop { frame = llsynth_word(stack, frame + 1); }
+      depth = depth - pop;
+      action = llsynth_lookup(tables, parse_rows, parse_count, llsynth_word(stack, frame), lhs);
+      if action < 0 || action % 4 != 3 { return (3, start); }
+    }
+    let next = action / 4;
+    if next >= parse_count { return (3, start); }
+    let parent = frame;
+    frame = buffer_len(stack) / 4;
+    llsynth_push_word(stack, next);
+    llsynth_push_word(stack, parent);
+    depth = depth + 1;
+  }
+  return (4, start);
+}

@@ -1,3 +1,5 @@
+import "sexpr_document.on1x";
+
 # Raw, synchronous Cephyr ABI-1 companion. See README.md for the link recipe.
 extern fn on1x_cephyr_analyze_v1(source: string, mode: i64) -> i64;
 extern fn on1x_cephyr_output_v1() -> string;
@@ -19,4 +21,29 @@ fn basis_cephyr_emit_assembly(source: string) -> (i64, string, string)
 {
   let status = on1x_cephyr_analyze_v1(source, 2);
   return (status, on1x_cephyr_output_v1(), on1x_cephyr_diagnostics_v1());
+}
+
+fn basis_cephyr_preprocess(source: string) -> (i64, string, string)
+{
+  let status = on1x_cephyr_analyze_v1(source, 3);
+  return (status, on1x_cephyr_output_v1(), on1x_cephyr_diagnostics_v1());
+}
+
+fn basis_cephyr_read_document(source: string, mode: i64) -> sexpr
+{
+  if on1x_cephyr_analyze_v1(source, mode) != 0
+  {
+    tool_fail(on1x_cephyr_diagnostics_v1());
+  }
+  return basis_cephyr_decode_document(on1x_cephyr_output_v1());
+}
+
+fn basis_cephyr_cparser(source: string) -> sexpr
+{
+  return basis_cephyr_read_document(source, 4);
+}
+
+fn basis_cephyr_csemantics(source: string) -> sexpr
+{
+  return basis_cephyr_read_document(source, 5);
 }

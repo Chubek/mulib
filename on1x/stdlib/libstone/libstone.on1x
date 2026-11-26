@@ -6,21 +6,26 @@ fn libstone_node(tag: string, children: sexpr) -> sexpr
   return sx_cons(sx_symbol(tag), children);
 }
 
-fn libstone_tag(node: sexpr) -> string
+fn basis_libstone_validate(node: sexpr) -> i64
 {
-  basis_shape_list(node);
-  let tag = sx_head(node);
-  if sx_kind(tag) != 1
+  if sx_kind(node) != 3 || sx_kind(sx_head(node)) != 1
   {
     tool_fail("expected symbol node tag");
   }
-  return sx_text(tag);
+  # Use the same bound as libstone_node: the tag is not a child.
+  return basis_shape_list(sx_tail(node));
+}
+
+fn libstone_tag(node: sexpr) -> string
+{
+  basis_libstone_validate(node);
+  return sx_text(sx_head(node));
 }
 
 fn libstone_child(node: sexpr, index: i64) -> sexpr
 {
-  libstone_tag(node);
-  if index < 0 || index >= basis_shape_list(sx_tail(node))
+  let count = basis_libstone_validate(node);
+  if index < 0 || index >= count
   {
     tool_fail("child index outside node");
   }

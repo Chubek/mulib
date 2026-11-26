@@ -24,8 +24,13 @@ It is **not a conforming implementation of the Standard ML Basis Library**.
   add persistent S-expression helpers and canonical MuLIB scalar adapters.
   [`_bridge/README.md`](_bridge/README.md) describes automatic linkage, recoverable
   status, bounds, binary sockets and the explicitly raw trust boundary.
-- [`std.cephyr`](cephyr/README.md) optionally checks trusted C11 source
-  and emits MIR or AMD64 assembly using the pinned Cephyr embedding API.
+- [`std.cephyr`](cephyr/README.md) optionally preprocesses and checks trusted
+  C11 source, returns syntax and declaration trees as `sexpr`, and emits MIR
+  or AMD64 assembly using the pinned Cephyr embedding API.
+- [`std.libstone`](libstone/README.md) constructs and inspects tagged
+  S-expression nodes without linking to a C++ library.
+- [`std.llsynth`](llsynth/README.md) recognizes syntax in native On1x using
+  explicitly prepared LibStone LLSynth tables.
 - [`std.vmm`](vmm/README.md) validates ArchVirt configurations. Its optional
   trusted C-host companion runs a scoped software VM; management calls are not
   safe-admitted On1x externs.

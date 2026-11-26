@@ -101,8 +101,9 @@ FFIHandler always needs a **shared** build-host `libcephyr`, even when
 installed CMake package via `Cephyr_DIR`. The Python bindings and default
 config for FFI extraction come from the selected LibStone source tree.
 Setting `ON1X_WITH_CEPHYR=ON` is separate: it requires the installed
-`Cephyr::Cephyr` target with embedding ABI 1 and currently supports native
-AMD64 Linux LP64, not arbitrary cross builds.
+`Cephyr::Cephyr` target with embedding ABI 1 and the C11 syntax and declaration
+interface APIs. It currently supports native AMD64 Linux LP64, not arbitrary
+cross builds.
 
 The pinned Cephyr source tree is `f8e44f0c23e8161b5cdeb69e007a3f0ab9646cc6`.
 Its standalone build expects `third_party/valijson`, but LibStone's

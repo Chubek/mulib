@@ -259,7 +259,9 @@ if(ON1X_WITH_CEPHYR)
       cephyr_result *result = 0;
       size_t length;
       if (cephyr_abi_version() != 1 || cephyr_python_version() != 0 ||
-          cephyr_compile(&request, &result) != CEPHYR_INVALID_ARGUMENT) return 1;
+          cephyr_compile(&request, &result) != CEPHYR_INVALID_ARGUMENT ||
+          cephyr_parse_c11(&request, CEPHYR_AST_SEXP, &result) != CEPHYR_INVALID_ARGUMENT ||
+          cephyr_emit_interface(&request, &result) != CEPHYR_INVALID_ARGUMENT) return 1;
       (void)cephyr_result_output(result, &length);
       (void)cephyr_result_diagnostics(result, &length);
       cephyr_result_destroy(result);
@@ -267,7 +269,7 @@ if(ON1X_WITH_CEPHYR)
     }]] ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
   cmake_pop_check_state()
   if(NOT ON1X_CEPHYR_HAS_EMBEDDING_ABI_1)
-    message(FATAL_ERROR "Cephyr_DIR must select the project-pinned native-package Cephyr (embedding ABI 1, no embedded CPython). Rebuild and install the selected LibStone checkout.")
+    message(FATAL_ERROR "Cephyr_DIR must select the project-pinned native-package Cephyr (embedding ABI 1 with C11 AST and declaration interface support, no embedded CPython). Rebuild and install the selected LibStone checkout.")
   endif()
   get_target_property(_cephyr_library_type Cephyr::Cephyr TYPE)
   if(_cephyr_library_type STREQUAL "SHARED_LIBRARY")

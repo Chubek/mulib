@@ -14,7 +14,7 @@
     {
       "path": "CATALOG_SUMMARY.json",
       "bytes": 345,
-      "sha256": "b8e33280a5ec06e076532e7525710ae726fc674fe0798e3d3577036b6e2e34cf"
+      "sha256": "b63c40015bfab59b1c1aa312ca1611d97359e6243d083c752eacca472c28f2d6"
     },
     {
       "path": "CMakelists-example.txt",
@@ -73,8 +73,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 10968,
-      "sha256": "2f13c3eb473d657fc61584a52456f45cbf6d224190b618375462de4933e29acd"
+      "bytes": 11471,
+      "sha256": "d9dc100c2d4247c365fb6c5d495b3226a5988a01db8b50c5438181d7251a52ac"
     },
     {
       "path": "String.on1x",
@@ -2303,33 +2303,48 @@
     },
     {
       "path": "cephyr/CMakeLists.txt",
-      "bytes": 1517,
-      "sha256": "c16e05d078dea79185c3268c2b6650eded9a16da9bbad5de8c159690b69af5f9"
+      "bytes": 2092,
+      "sha256": "d9fd3eb68e63627fcfc6d2cee267ae8745040cc97eb9efd3fe19260d3a4c9219"
     },
     {
       "path": "cephyr/On1xfile.m",
-      "bytes": 78,
-      "sha256": "ce2ed48f5eeb1b1ef819baaeb0e7e94c2281978ffeda3c6224dc916819692f25"
+      "bytes": 108,
+      "sha256": "6debc63ab36a24fa97478b613f7b36d41cd750823035fc46b2d53773f575213b"
     },
     {
       "path": "cephyr/README.md",
-      "bytes": 3433,
-      "sha256": "db2490ef31757ad64acab34612c735ec1b95428c973d4c4f00ac2d55c989b176"
+      "bytes": 5164,
+      "sha256": "2dfbacd6b6009ec17d9133b6703f9a0e9be3b521fedbf76113b32fc898997975"
     },
     {
       "path": "cephyr/__init__.on1x",
-      "bytes": 129,
-      "sha256": "e74839a8a36c8b6a22b38fb75e70d74b0a009d58bcb6ba855ab76940978e4657"
+      "bytes": 260,
+      "sha256": "87a422cee5633633ecdb5e28c8ac95378d160f1195db83e081c8e2bcda0f11de"
     },
     {
       "path": "cephyr/cephyr.on1x",
-      "bytes": 795,
-      "sha256": "bc245e2ce4f7ce7442286ef840ca19ddc26aafbf6d83e9184e3df05a5e35f434"
+      "bytes": 1465,
+      "sha256": "4f52b5f5c2f9812cdb3e54bf9748cb9e2bb5ac35aeca1b324cf9c9109dd36899"
     },
     {
       "path": "cephyr/runtime.c",
-      "bytes": 2781,
-      "sha256": "1a46e82ac0e7f21b26facb5a1b2876bc2eeeae1d9d9a5f1ba0d50fea0fefbdc0"
+      "bytes": 3506,
+      "sha256": "3464d0eeea245c2027f8ce4fcb768293421cc707d7cc4819b75b22c90e534833"
+    },
+    {
+      "path": "cephyr/sexpr_document.on1x",
+      "bytes": 1724,
+      "sha256": "49c49facac20854915dc0bfa70a2b2d9e294e3b38f6ce59ac5a40e14e74c790c"
+    },
+    {
+      "path": "cephyr/tests/documents.py",
+      "bytes": 4112,
+      "sha256": "3156690a68d3fda1ff2958eb7804c8f596cd3164202bbc634febf6b7368f1080"
+    },
+    {
+      "path": "cephyr/tests/preprocess.py",
+      "bytes": 2570,
+      "sha256": "6a96f87e1f1fdfc37893497ad6829c1ff847d0c4400d81f73d319cf135451eb0"
     },
     {
       "path": "collections/Array.on1x",
@@ -2673,8 +2688,8 @@
     },
     {
       "path": "diagnostics/catalog.json",
-      "bytes": 14976,
-      "sha256": "a15c9b58ed9244898eb72a8c10065c57d6213cc203bc26e2e5f144dcf0ba815e"
+      "bytes": 19121,
+      "sha256": "089e386fb61856b6020a9d2deb715abbb251a76af8c45b43a5d034f5bd87c8c4"
     },
     {
       "path": "diagnostics/diagnostics.on1x",
@@ -2932,14 +2947,69 @@
       "sha256": "f8c640d8732ae2512c62d9b6019c0a100983f800d3ecb988c2edadf55a75235c"
     },
     {
+      "path": "libstone/README.md",
+      "bytes": 1131,
+      "sha256": "6671df025de8c7d5456005dab4dc1c3ab566a1b5387827a40041c35b7ddde0c2"
+    },
+    {
       "path": "libstone/__init__.on1x",
       "bytes": 69,
       "sha256": "a88ec26144caba771fcc4ccbd88d013e2e4d681b2405db974df90f980ab5fc95"
     },
     {
       "path": "libstone/libstone.on1x",
-      "bytes": 791,
-      "sha256": "f8d8410421a2cedab8977f9827210cc20822a51daff83d895e186be9ec1d7200"
+      "bytes": 969,
+      "sha256": "9ad2263198a274a52d7051a9e368bec1fa85cba82261f469e5c348314a5958ef"
+    },
+    {
+      "path": "libstone/tests/run.py",
+      "bytes": 5333,
+      "sha256": "a13490d85dea18dca4c713a16ad82fefe56bcc6fbecacac747770d9ef289e0e5"
+    },
+    {
+      "path": "llsynth/On1xfile.m",
+      "bytes": 58,
+      "sha256": "c4c1d8cbee9c98332de8ab4d859477afd3e95eb88fb0e24207f0c692123c1a9d"
+    },
+    {
+      "path": "llsynth/README.md",
+      "bytes": 4298,
+      "sha256": "df7a7a0b9a26520b931a7d789a60acbc29bd8e0440c2c2976dd81eff4ee5f7ad"
+    },
+    {
+      "path": "llsynth/__init__.on1x",
+      "bytes": 84,
+      "sha256": "de28820486d6c6b77c03e2ff8c1a28b88a8c62cce490c5507c2f713f524d9306"
+    },
+    {
+      "path": "llsynth/llsynth.on1x",
+      "bytes": 6875,
+      "sha256": "58e93b2dfbfcb23b97d8fb43ba7e1b0268b496ea602d0f048dc7bfe2f1824466"
+    },
+    {
+      "path": "llsynth/pack_tables.py",
+      "bytes": 6240,
+      "sha256": "de252598f8fbd85f9fd61311cc8b2ffa515cea4f74610bfdfc62c364cafda027"
+    },
+    {
+      "path": "llsynth/tests/run.py",
+      "bytes": 7725,
+      "sha256": "bafd9f1fa25d01dea0096373760dfdecdfc6ddb2e093bc7f6c9505abe76581fe"
+    },
+    {
+      "path": "llsynth/tests/syntax.llsynth",
+      "bytes": 495,
+      "sha256": "4530b9b80bda81bbf48c332c09d6f2d05e8f805fd037210edd0e9378b30d17a1"
+    },
+    {
+      "path": "mcp/On1xfile",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "mcp/__init__.on1x",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "path": "mulib/Native.on1x",
@@ -2968,13 +3038,13 @@
     },
     {
       "path": "mulib/catalog.json",
-      "bytes": 4558,
-      "sha256": "3eee4b8bd1c2506b61ceacc84ad34bd91398fa7f20442288aa95f29f99880245"
+      "bytes": 4889,
+      "sha256": "446d6d8d06602e059aedae1bbf655609097f062eb10f60a3a94d2d6b8aaa31a7"
     },
     {
       "path": "mulib/housekeeping.py",
-      "bytes": 18138,
-      "sha256": "8d2d5cc28a3f40b408c24727fc02b30015f618e9e7f0bda1cfe2f9ffe3a2167c"
+      "bytes": 19026,
+      "sha256": "64b0880e54a52f915c10fce5b23e3c5cf0fb003b5ea17fee695f0779b37a5e08"
     },
     {
       "path": "mulib/runtime.c",
@@ -3108,18 +3178,18 @@
     },
     {
       "path": "on1xfile/README.md",
-      "bytes": 23803,
-      "sha256": "d1107e0e7831e8aea9aacefc2a663fb7610c55f06ca06a382bca788f3a53db9d"
+      "bytes": 39040,
+      "sha256": "219dca636f640265532d905b6eb1a8d255825c422b226d2a1924edd881f5505c"
     },
     {
       "path": "on1xfile/mune_runner.c",
-      "bytes": 5938,
-      "sha256": "fef38f8764ec82838ddae360dcfd347e0f553d83f3dfc5fc9e8f3b6828280363"
+      "bytes": 7458,
+      "sha256": "506abc6b30e49f147a75f7306de1540f3c82c3efde53b45ffdc2a57e7654cea1"
     },
     {
       "path": "on1xfile/profiles.lua",
-      "bytes": 761,
-      "sha256": "3d8d39441e65b54662bd87c317cd71db07431b689aaad79bdd86f900108bb191"
+      "bytes": 1654,
+      "sha256": "bf1ff7c92f92d10a3e7e7e3e385a844a6c22233338cb84950a8c39fd219233cf"
     },
     {
       "path": "on1xfile/qmr_compile.cpp",
@@ -3203,8 +3273,8 @@
     },
     {
       "path": "ppx/__init__.py",
-      "bytes": 6354,
-      "sha256": "ab8934c14661ff74495bba24389a7f844278a6beffec9ceedf2f941e3e721149"
+      "bytes": 6362,
+      "sha256": "a702c003912645df605d0f6bfede8d9d0d72cddb8a913465207832fab6239e24"
     },
     {
       "path": "ppx/category/On1xfile.m",
@@ -3298,8 +3368,8 @@
     },
     {
       "path": "prettyprint/on1x/formatter.cpp",
-      "bytes": 23194,
-      "sha256": "d319a348423f323dbcbba3e97ecfae3cde736e5302be91e81f2fb739c4c69de1"
+      "bytes": 24229,
+      "sha256": "5f5608ac8de71f318f6f684c5a4a3a95c09aab31c16926bd06742d8821367aff"
     },
     {
       "path": "prettyprint/on1x/implementation.py",
@@ -3675,6 +3745,61 @@
       "path": "visitor/visitor.on1x",
       "bytes": 2071,
       "sha256": "8a3cc27646cef5812c6fcdd747c58991902f86052517efc0e03b6215c5d602c7"
+    },
+    {
+      "path": "vmm/CMakeLists.txt",
+      "bytes": 1632,
+      "sha256": "8eb4d95f9cfccc5d4943cb08619ed3f3fab3722b84c80c2ba01075932d257923"
+    },
+    {
+      "path": "vmm/Config.on1x",
+      "bytes": 1956,
+      "sha256": "f79fa15a8ca0476746ec62349daaef79b9445bd215fbe12b620560825068dc83"
+    },
+    {
+      "path": "vmm/On1xfile.m",
+      "bytes": 57,
+      "sha256": "ef4fc1b302805b9fb0e8e92588dba0425dc4c344229dc28cb4d2291a59fc7d4f"
+    },
+    {
+      "path": "vmm/README.md",
+      "bytes": 9075,
+      "sha256": "88d4650297e6a3540228b534d674e7de6d906b5258cd48ea6b089360e3b4ac60"
+    },
+    {
+      "path": "vmm/__init__.on1x",
+      "bytes": 164,
+      "sha256": "93540e8d39931312c7943eeae5553df88e1cc6bac4fda8499d3fbb514780ef27"
+    },
+    {
+      "path": "vmm/tests/admission.py",
+      "bytes": 1888,
+      "sha256": "d013b506b24b5dc1314757800c9c6fb982de717fdd5caa22a6213787a99d9189"
+    },
+    {
+      "path": "vmm/tests/bridge.c",
+      "bytes": 7346,
+      "sha256": "2cebf432d71849002d199529dfd4483b096f2e0c6e3c180171fa2bb91ef0eab3"
+    },
+    {
+      "path": "vmm/tests/config.py",
+      "bytes": 3534,
+      "sha256": "a712e6e25e0391985a2410cd62b7dbdc68a0487bbdadd8848ccb285a04931233"
+    },
+    {
+      "path": "vmm/version.contract.json",
+      "bytes": 1141,
+      "sha256": "649cc200d596347acc94a07a8c4602218cfee45f63ae49d8b0855206c24e8b69"
+    },
+    {
+      "path": "vmm/vmm.cpp",
+      "bytes": 7764,
+      "sha256": "f3975af9625bf0387cdec761989a61aa1af78da1befaea65cdef849a19a57e31"
+    },
+    {
+      "path": "vmm/vmm.h",
+      "bytes": 2582,
+      "sha256": "760ecf7803307fbafed9628f3da1f71b7b36b2e07407c389b5d4d0e29b9d61db"
     },
     {
       "path": "yaml/On1xfile.m",

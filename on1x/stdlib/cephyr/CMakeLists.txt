@@ -23,5 +23,14 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/test_stdlib_cephyr.py"
     "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" "$<TARGET_FILE:on1x_stdlib_cephyr>"
     "$<TARGET_FILE:Cephyr::Cephyr>" "$<BOOL:${ON1X_WITH_CHISEL}>")
-  set_tests_properties(on1x.stdlib.cephyr PROPERTIES TIMEOUT 120)
+  add_test(NAME on1x.stdlib.cephyr.preprocess COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/preprocess.py"
+    "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" "$<TARGET_FILE:on1x_stdlib_cephyr>"
+    "$<TARGET_FILE:Cephyr::Cephyr>")
+  add_test(NAME on1x.stdlib.cephyr.documents COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/documents.py"
+    "$<TARGET_FILE:on1xc>" "${CMAKE_C_COMPILER}" "$<TARGET_FILE:on1x_stdlib_cephyr>"
+    "$<TARGET_FILE:Cephyr::Cephyr>")
+  set_tests_properties(on1x.stdlib.cephyr on1x.stdlib.cephyr.preprocess
+    on1x.stdlib.cephyr.documents PROPERTIES TIMEOUT 120)
 endif()
