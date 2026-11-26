@@ -1,4 +1,5 @@
 #pragma once
+#include <on1x/module_visibility.hpp>
 #include <on1x/type.hpp>
 #include <cstddef>
 #include <cstdint>
@@ -39,6 +40,7 @@ struct OperatorHeader {
  unsigned precedence=0,tightness=0;
  OperatorAssociativity binds=OperatorAssociativity::Left;
  std::size_t macro_instance=0; // Host-only instance of a copied syntax declaration.
+ VisibilityRule visibility;
 };
 struct OperatorBinding { OperatorHeader header; std::string identity; };
 // Parser-created provenance, never transported as PPX authority. Adjacent
@@ -183,7 +185,8 @@ struct Function {
     bool extension_generated=false; // Host-only: explicit interface cannot be erased by a later PPX.
   // Host-only On1xMETA pass history. Never an input to semantic verification.
   bool meta_canonicalized=false;
-  bool meta_folded_identity=false;
+   bool meta_folded_identity=false;
+   VisibilityRule visibility;
  };
 struct OperatorDeclaration {
  OperatorHeader header;
@@ -222,6 +225,7 @@ struct ClicheDeclaration {
  std::vector<TypeParameter> type_parameters; // Excludes the implicit Self parameter.
  std::vector<ClicheConstraint> constraints;
  std::vector<ClicheMember> members;
+ VisibilityRule visibility;
 };
 struct ClicheImplementationMember {
  ClicheMember::Kind kind=ClicheMember::Kind::Function;
@@ -280,7 +284,7 @@ struct MacroRule {
  bool block=false;ExprPtr expression;std::vector<Stmt> body;
  std::unique_ptr<MacroParameter> tail;
 };
-struct Macro {Location where;std::string name;std::vector<MacroRule> rules;std::string ellipsis="...";std::vector<std::string> literals;};
+struct Macro {Location where;std::string name;std::vector<MacroRule> rules;std::string ellipsis="...";std::vector<std::string> literals;VisibilityRule visibility;};
 struct PpxRegistration {Location where;std::string label,program;};
 struct FeatureActivation {Location where,end;std::string name;};
 // Host-retained analysis policy. It is not PPX wire data or type evidence.
@@ -290,13 +294,15 @@ struct ModuleExtension {
  std::string owner,source;
  std::vector<Token> tokens;
 };
+struct ModuleHeader { Location where; std::string name; };
 struct ImportName { std::string name,alias; bool is_operator=false; };
 struct Import {
  Location where;
  std::string module,alias;
  std::vector<ImportName> names;
  std::size_t relative=0;
- bool quoted=false,selective=false;
+  bool quoted=false,selective=false;
+  enum class Kind { Module, Program } kind=Kind::Module;
 };
 // A source request, never a filesystem path or an admission certificate.
 // Deliberately not part of the PPX Unit wire format.
@@ -318,6 +324,7 @@ struct NominalDeclaration {
  Type::Kind kind=Type::Record;
  std::vector<std::string> parameters,labels;
  std::vector<Type> fields; // Bound indices refer to parameters; no inferred layout.
+ VisibilityRule visibility;
 };
 // Host-retained declaration-extension requests, never accepted from ordinary
 // Unit-v1 PPX output. They are proposals, not cached typing/ownership proofs.
@@ -379,9 +386,10 @@ struct Unit {
  std::map<Type,std::vector<Type>> forall_layouts; // Internal whole-unit demand ABI.
  bool forall_elaborated=false;
  bool stages_lowered=false;
- std::vector<Macro> macros;
- std::vector<PpxRegistration> ppx;
-};
+  std::vector<Macro> macros;
+  std::vector<PpxRegistration> ppx;
+  std::optional<ModuleHeader> module;
+ };
 std::string read_source_file(const std::string& filename);
 // Docstrings are trivia: optionally append them separately, in source order.
 std::vector<Token> scan(const std::string& source, const std::string& filename,

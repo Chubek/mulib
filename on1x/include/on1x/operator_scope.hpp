@@ -89,6 +89,7 @@ inline std::string operator_identity(const OperatorHeader& header){
 struct OperatorDiscovery {
  std::vector<Import> imports;
  std::vector<OperatorHeader> operators;
+ std::optional<ModuleHeader> module;
 };
 OperatorDiscovery discover_operators(const std::vector<Token>&);
 Unit parse_with_operators(const std::vector<Token>&,const std::vector<std::string>& enabled,
