@@ -1,2 +1,0 @@
-# Explicit trusted C11 companion; no foreign file descriptor escapes to On1x.
-extern fn on1x_http_probe_artifact_write_v1(slot: string, html: string) -> i64;

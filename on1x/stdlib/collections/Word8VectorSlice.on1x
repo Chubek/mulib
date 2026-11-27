@@ -1,5 +1,0 @@
-import "VectorSlice.on1x";
-fn basis_word8_vector_slice(v: sexpr, start: i64, n: i64) -> sexpr
-{
-  return basis_vector_slice(v, start, n);
-}

@@ -1,4 +1,0 @@
-# The module name `fn` is a reserved keyword in named imports.
-import "fn.on1x";
-from . import (either, list, monad, option, ordering, predicate, result,
-  sequence, shape, string);

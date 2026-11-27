@@ -1,1 +1,0 @@
-from .extensions.Functional import basis_function_compose as compose, basis_function_pipe as pipe, basis_function_flip as flip, basis_function_curry as curry, basis_function_uncurry as uncurry;

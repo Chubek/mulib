@@ -1,1 +1,0 @@
-from .environ import basis_argc as argc, basis_argv as argv, basis_environ as environ, basis_getenv as getenv, basis_os as os, basis_uname as uname, basis_exec as exec, basis_system as system;

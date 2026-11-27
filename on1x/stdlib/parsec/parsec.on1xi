@@ -1,6 +1,0 @@
-on1xi 1;
-fn parsec_in_range(text: string, pos: i64, low: i64, high: i64) -> bool;
-fn parsec_literal(text: string, pos: i64, expected: string) -> bool;
-fn parsec_space(text: string, start: i64) -> i64;
-fn basis_parsec_int(text: string, start: i64) -> (bool, i64, i64);
-fn parsec_uint(text: string, start: i64) -> (bool, i64, i64);

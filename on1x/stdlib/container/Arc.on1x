@@ -1,5 +1,0 @@
-# Opaque marker. The standard module loader supplies the checked C11
-# operations; this record's representation is not accessible to On1x.
-record Arc < T >
-{
-}

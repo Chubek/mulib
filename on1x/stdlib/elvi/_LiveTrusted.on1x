@@ -1,2 +1,0 @@
-# Explicit trusted C companion; this is not a reviewed safe foreign import.
-extern fn on1x_elvi_live_snapshot_v1(source: string, url: string, limit: i64) -> string;

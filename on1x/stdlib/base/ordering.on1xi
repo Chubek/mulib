@@ -1,4 +1,0 @@
-abstract module std.base.ordering;
-fn base_compare_i64(a: i64, b: i64) -> i64;
-fn base_sign_i64(value: i64) -> i64;
-fn base_clamp_i64(value: i64, low: i64, high: i64) -> i64;

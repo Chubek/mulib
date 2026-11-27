@@ -1,3 +1,0 @@
-abstract module std.rpc.rpc;
-fn rpc_escape(text: string) -> string;
-fn rpc_notification(method: string, raw_params: string) -> string;

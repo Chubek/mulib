@@ -1,5 +1,0 @@
-# Requires explicit linking of the trusted C11 companion. These are private
-# low-level declarations; see runtime.h and README.md for ABI obligations.
-extern fn on1x_html_parse_v1(source: string, length: i64, profile: i64, hex: i64) -> string;
-extern fn on1x_html_node_v1(markup: string, fragment: i64, ordinal: i64,
-                            operation: i64, argument: string, index: i64) -> string;
