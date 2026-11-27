@@ -117,12 +117,13 @@ whole result. Generic functions, borrowed parameters, imports and
 re-exports do not satisfy these declarations.
 
 Declared-module signature conformance compares source declarations, not
-implementation bodies. It never authorizes executable emission. When a
-loader uses a callable-only signature as a module boundary, listing a
+implementation bodies. A conformance check alone never authorizes executable
+emission. When the loader uses a signature as a module boundary, listing a
 callable does not increase its visibility, and unlisted members are not part
-of that boundary. The current executable HIR cannot carry opaque source
-types, so any executable load that reaches an associated signature declaring
-an abstract type must reject it instead of exposing its representation.
+of that boundary. Ordinary compilation may carry eligible [opaque module
+values](opaque-module-abi.md) through the direct C11 route after checking
+the provider and its representation. It rejects unsupported representations,
+and opaque values cannot cross the MIR or Unit-v1 PPX boundary.
 
 ### Named signatures, type equations, and ascription
 
@@ -151,7 +152,7 @@ module Acme.Vault;
 record Token { secret: (i64, bool) }
 type Payload = (i64, bool);
 type View = Token;
-public fn open(payload: Payload) -> Token { return Token { secret: payload }; }
+public fn open(payload: Payload) -> Token { return record<Token>{secret: payload}; }
 public fn read(value: Token) -> (i64, bool) { return value.secret; }
 ```
 

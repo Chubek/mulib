@@ -17,8 +17,11 @@ validation, program entry-point isolation, fail-closed program capability
 admission and legacy PPX, multiple manifest fragments, deterministic
 dependency reporting, and signature enforcement on the actual build. Failure
 checks verify that neither an existing emitted file nor a published project
-artifact is replaced. It also runs the portable backend matrix below on both
-the legacy and sealed-module versions of the energy-budget example; keep
+artifact is replaced. The opaque-value gate builds and runs an actual staged
+C11 consumer, rejects outside record/enum construction and destructuring,
+field access, mixing nominal identities, and both MIR routes, and verifies
+the original artifact is still intact. The suite also runs the portable backend
+matrix below on both the legacy and sealed-module versions of energy-budget; keep
 `on1x-vm` from the same build next to `on1xc`. The legacy interface suite is
 separate: its v1 contract checks are not an export allowlist.
 

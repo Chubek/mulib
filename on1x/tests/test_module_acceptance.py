@@ -276,6 +276,77 @@ public fn hidden() -> i64 { return 99; }
         self.assertEqual(marker.read_bytes(), before)
         self.assertEqual(self.command(output / "app"), "42\n")
 
+    def test_opaque_provider_identity_and_project_atomicity(self):
+        self.application("""module "A.Vault" "src/vault.on1xm"
+module "A.Other" "src/other.on1xm"
+module-interface "A.Vault" "src/vault.on1xi"
+module-interface "A.Other" "src/other.on1xi"
+module-interface-policy "A.Vault" required
+module-interface-policy "A.Other" required
+""")
+        provider = """module A.Vault;
+public record Token { secret: i64 }
+public enum Choice { Empty, Full(i64) }
+public fn issue(n:i64) -> Token { return record<Token>{secret:n}; }
+public fn redeem(token:Token) -> i64 { return token.secret; }
+public fn wrap(n:i64) -> Choice { return Choice::Full(n); }
+public fn unwrap(value:Choice) -> i64 {
+    return match value with { Empty() => 0, Full(n) => n };
+}
+"""
+        signature = """abstract module A.Vault;
+type Token;
+type Choice;
+fn issue(n:i64) -> Token;
+fn redeem(token:Token) -> i64;
+fn wrap(n:i64) -> Choice;
+fn unwrap(value:Choice) -> i64;
+"""
+        for name, declared in (("vault", "Vault"), ("other", "Other")):
+            self.write(f"src/{name}.on1xm", provider.replace("A.Vault", f"A.{declared}"))
+            self.write(f"src/{name}.on1xi", signature.replace("A.Vault", f"A.{declared}"))
+
+        imports = "import A.Vault as V; import A.Other as O;\n"
+        good = imports + """
+fn pass(token:V.Token) -> V.Token { return token; }
+fn main() { let t = pass(V.issue(20)); println(V.redeem(t) + O.unwrap(O.wrap(22))); }
+"""
+        entry = self.write("src/main.on1x", good)
+        output = self.root / "output"
+        self.project(output)
+        executable = output / "app"
+        marker = output / ".on1x-build.json"
+        previous = marker.read_bytes(), executable.read_bytes()
+        self.assertEqual(self.command(executable, quiet=True), "42\n")
+
+        opaque = r"opaque module type representation is not accessible"
+        cases = {
+            "dot projection": ("let v = V.issue(1); println(v.secret);", opaque),
+            "index projection": ('let v = V.issue(1); println(v["secret"]);', opaque),
+            "record construction": ("let v = record<V.Token>{secret: 1};", opaque),
+            "record destructuring": (
+                "let v = V.issue(1); println(match v with { record{secret:n} => n });",
+                opaque,
+            ),
+            "enum construction": ("let v = V.Choice::Full(1);", opaque),
+            "enum destructuring": (
+                "let v = V.wrap(1); println(match v with { Empty() => 0, Full(n) => n });",
+                opaque,
+            ),
+            "layout equivalence": ("println(O.redeem(V.issue(1)));", r"nominal|expected|incompatib"),
+        }
+        for name, (body, diagnostic) in cases.items():
+            with self.subTest(case=name):
+                entry.write_text(imports + f"fn main() {{ {body} }}\n", encoding="utf-8")
+                self.project(output, error=diagnostic)
+                self.assertEqual((marker.read_bytes(), executable.read_bytes()), previous)
+
+        entry.write_text(good, encoding="utf-8")
+        for backend in ("mir-c11", "mir-vm"):
+            with self.subTest(backend=backend):
+                self.project(output, backend=backend, error=r"sealed module value ABI.*direct C11")
+                self.assertEqual((marker.read_bytes(), executable.read_bytes()), previous)
+
     def test_energy_budget_legacy_and_sealed_portable_backends(self):
         example = ON1X / "examples/energy-budget"
         expected = (example / "expected.txt").read_text(encoding="utf-8")
