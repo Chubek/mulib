@@ -18,6 +18,34 @@ ROOT = Path(__file__).resolve().parents[1]
 MULIB = ROOT.parent
 STRICT_C11 = ['-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror']
 
+def load_housekeeping():
+    """Kernel planning is optional, and never imports code from --stdlib."""
+    helper = ROOT/'stdlib/mulib/housekeeping.py'
+    if not helper.is_file():
+        raise ValueError('source kernel linkage requires the compiler-owned '
+                         'stdlib/mulib/housekeeping.py; this installation does not '
+                         'provide that profile (--stdlib selects source assets, not Python helpers)')
+    spec = importlib.util.spec_from_file_location('mulib_housekeeping', helper)
+    house = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(house)
+    return house
+
+def processor_search_paths(values, environment):
+    """Bounded processor runtime directories; empty entries never select CWD."""
+    result = []
+    for value in [*values, os.environ.get(environment, '')]:
+        if len(os.fsencode(value)) > 65536:
+            raise ValueError('search path byte limit exceeded')
+        for entry in value.split(':'):
+            if not entry:
+                continue
+            if len(os.fsencode(entry)) > 4096 or len(result) >= 256:
+                raise ValueError('search path count/entry limit exceeded')
+            path = Path(entry).resolve()
+            if path not in result:
+                result.append(path)
+    return result
+
 class OrderedAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         chain = getattr(namespace, self.dest, None)
@@ -464,26 +492,6 @@ def main():
             args.output.write_text(code)
             return
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        spec = importlib.util.spec_from_file_location('mulib_housekeeping', ROOT/'stdlib/mulib/housekeeping.py')
-        house = importlib.util.module_from_spec(spec);spec.loader.exec_module(house)
-        if args.kernel_load_time:
-            # Neither MuLIB source discovery nor package discovery belongs
-            # in this link mode. The generated application initializes its
-            # imports at process startup.
-            paths, mulib_root, includes = [], MULIB, []
-        else:
-            paths = house.search_paths(args.mulib_path)
-            mulib_root = house.kernel_root(args.mulib_root, MULIB, paths)
-            includes = house.include_paths(mulib_root, paths)
-        if args.kernel_review or ipc_raw or dyn_modules:
-            # Discovery checked alternate kernel candidates but did not add
-            # those search roots to ExoLib's C header search path.
-            includes=[mulib_root/'kernels']
-        include_flags=[part for path in includes for part in ['-I',str(path)]]
-        compile_flags = [*STRICT_C11, *include_flags, *args.cflag]
-        cmd = [args.cc, *STRICT_C11,
-               '-I', str(ROOT / 'runtime'), *include_flags,
-                str(generated), str(ROOT / 'runtime/on1x_runtime.c')]
         has_json = 'on1x_json_' in code
         has_csp = '#include <on1x_concurrency.h>' in code
         has_pretty = bool(re.search(r'^extern [^;\n]*\bon1x_pretty_(?:render|status)\(', code, re.M))
@@ -524,6 +532,29 @@ def main():
             raise ValueError('--kernel-load-time cannot link built-in source kernel bridges')
         native = (args.kernel_load_time or kernel_interface or uses_source_kernels or has_environ
                   or args.mulib or args.mulib_fixture or args.mulib_archive or args.mulib_plan)
+        # Ordinary direct-C11 programs have no MuLIB source-kernel dependency.
+        # In particular, do not execute a Python helper just to obtain an
+        # unused kernels include directory. Keep source-kernel modes fail-closed.
+        house = None
+        paths, mulib_root, includes = [], MULIB, []
+        if native or args.mulib_path:
+            house = load_housekeeping()
+            if not args.kernel_load_time:
+                paths = house.search_paths(args.mulib_path)
+                mulib_root = house.kernel_root(args.mulib_root, MULIB, paths)
+                includes = house.include_paths(mulib_root, paths)
+        elif args.mulib_root:
+            # The project driver supplies its root even for kernel-free code.
+            # This explicit include root needs no manifest or Python discovery.
+            mulib_root = args.mulib_root.resolve()
+            includes = [mulib_root/'kernels']
+        if args.kernel_review or ipc_raw or dyn_modules:
+            # Discovery did not add alternate roots to ExoLib's header paths.
+            includes = [mulib_root/'kernels']
+        include_flags = [part for path in includes for part in ['-I', str(path)]]
+        compile_flags = [*STRICT_C11, *include_flags, *args.cflag]
+        cmd = [args.cc, *STRICT_C11, '-I', str(ROOT/'runtime'), *include_flags,
+               str(generated), str(ROOT/'runtime/on1x_runtime.c')]
         if use_cephyr and native:
             raise ValueError(f'this native bridge requires the host C11 runtime and link recipe; {toolchain.HOST_HELP}')
         recipe, fingerprints, native_links = None, {}, []
@@ -765,8 +796,8 @@ def main():
                 adapters.append(Path(subprocess.check_output(
                     [args.on1xc,'--stdlib-resource',file,*loader_flags],text=True).strip()))
         if re.search(r'\bextern\s+[^;\n]*\bon1x_ppx_clock_ns\(', code):
-            ppx_roots=[*house.search_paths(processor_paths['--stdppx-path'],'ON1X_STDPPX_PATH'),
-                       *house.search_paths(processor_paths['--ppx-path'],'ON1X_PPX_PATH'),library.parent/'stdppx',ROOT/'stdppx']
+            ppx_roots=[*processor_search_paths(processor_paths['--stdppx-path'],'ON1X_STDPPX_PATH'),
+                       *processor_search_paths(processor_paths['--ppx-path'],'ON1X_PPX_PATH'),library.parent/'stdppx',ROOT/'stdppx']
             timing=next((p/'runtime/on1x_ppx_timing.c' for p in ppx_roots if (p/'runtime/on1x_ppx_timing.c').is_file()),None)
             if timing is None:raise ValueError('PPX timing runtime not found in configured paths')
             adapters += [timing]
