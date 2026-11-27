@@ -2,6 +2,7 @@
 import json
 import os
 from support import NativeTests, run
+from stdlib_module_inventory import collect
 
 t=NativeTests()
 stdlib=t.root/'stdlib'
@@ -11,10 +12,13 @@ p=run(['python3',stdlib/'tests/check_package.py']);assert p.returncode == 0,p.st
 # profile. Only the legacy daemon IPC entry points require KernelBind;
 # std.daemon.lifecycle describes data and needs no unsafe import.
 kernel_ipc = {stdlib/'daemon'/name for name in ('__init__.on1x', 'daemon.on1x')}
-modules=[p for p in sorted(stdlib.rglob('*.on1x'))
+modules=[p for p in sorted(p for suffix in ('*.on1x', '*.on1xm') for p in stdlib.rglob(suffix))
          if not {'tests', 'fixtures'}.intersection(p.relative_to(stdlib).parts)]
+named={stdlib/entry['path']:entry['declared_module'] for entry in collect(stdlib)
+       if entry['suffix']=='.on1xm'}
 for i,module in enumerate(modules):
-    path=t.source('module_'+str(i),'import '+json.dumps(str(module.resolve()))+';fn main(){}')
+    binding = named[module] + ' as Module' if module in named else json.dumps(str(module.resolve()))
+    path=t.source('module_'+str(i),'import '+binding+';fn main(){}')
     p=run([t.compiler,'--check',path])
     if module in kernel_ipc:
         assert p.returncode != 0 and 'ON1X-KERNEL-UNSAFE-UNSUPPORTED' in p.stderr,(module,p.stderr)

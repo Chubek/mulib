@@ -1,5 +1,7 @@
 # Pure On1x byte-index scanning primitives, complements MuLIB Parsec contracts.
-fn parsec_in_range(text: string, pos: i64, low: i64, high: i64) -> bool
+module std.parsec.parsec;
+
+public fn parsec_in_range(text: string, pos: i64, low: i64, high: i64) -> bool
 {
   if pos < 0 || pos >= text_len(text)
   {
@@ -9,7 +11,7 @@ fn parsec_in_range(text: string, pos: i64, low: i64, high: i64) -> bool
   return b >= low && b <= high;
 }
 
-fn parsec_literal(text: string, pos: i64, expected: string) -> bool
+public fn parsec_literal(text: string, pos: i64, expected: string) -> bool
 {
   if pos < 0 || pos > text_len(text)
   {
@@ -30,7 +32,7 @@ fn parsec_literal(text: string, pos: i64, expected: string) -> bool
   return true;
 }
 
-fn parsec_space(text: string, start: i64) -> i64
+public fn parsec_space(text: string, start: i64) -> i64
 {
   if start < 0 || start > text_len(text)
   {
@@ -48,7 +50,7 @@ fn parsec_space(text: string, start: i64) -> i64
   return end;
 }
 
-fn basis_parsec_int(text: string, start: i64) ->(bool, i64, i64)
+public fn basis_parsec_int(text: string, start: i64) ->(bool, i64, i64)
 {
   let length = text_len(text);
   if start < 0 || start >= length
@@ -107,7 +109,7 @@ fn basis_parsec_int(text: string, start: i64) ->(bool, i64, i64)
   return (true, - value, pos);
 }
 
-fn parsec_uint(text: string, start: i64) ->(bool, i64, i64)
+public fn parsec_uint(text: string, start: i64) ->(bool, i64, i64)
 {
   var i = start;
   var n = 0;

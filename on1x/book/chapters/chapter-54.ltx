@@ -15,6 +15,6 @@ Why keep a negative accumulator even when the input has no minus? The magnitude 
 One final boundary distinguishes two helpers in this module. At the offset exactly equal to the input length, matching an empty literal succeeds: no bytes need comparison. Starting the integer scanner there fails because it needs a digit. A caller that models both operations merely as ``at end means failure'' discards a real distinction.
 
 \section*{Repository sources}
-\OnxSource{on1x/stdlib/parsec/parsec.on1x}\par
+\OnxSource{on1x/stdlib/parsec/parsec.on1xm}\par
 \OnxSource{on1x/stdlib/README.md}\par
 \OnxSource{manual/mulib-parsec.md}\par

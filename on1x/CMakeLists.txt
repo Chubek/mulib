@@ -514,7 +514,10 @@ if(ON1X_BUILD_NATIVE_PPX)
   set(_ppx_manifest "(On1xfile 1 (kind \"ppx\") (name \"stdppx\") (protocol \"1\")\n")
   configure_file(grammar/PPX.schema.json "${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json" COPYONLY)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/stdppx/category.schema.json" DESTINATION libexec/on1x)
-  file(GLOB_RECURSE _native_stdlib CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1x")
+  file(GLOB_RECURSE _native_stdlib CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1x"
+    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1xm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/*.on1xi")
   file(GLOB _native_ppx_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/stdppx/native/*.on1x")
   set(_luaembed_dir "${CMAKE_CURRENT_BINARY_DIR}/luaembed")
   add_custom_command(

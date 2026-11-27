@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 
-from stdlib_module_inventory import collect
+from stdlib_module_inventory import BUNDLE_ROLES, collect
 
 ON1X = Path(__file__).resolve().parents[1]
 STDLIB = ON1X / 'stdlib'
@@ -94,8 +94,12 @@ class StdlibProjectTests(unittest.TestCase):
     def test_package_exports(self):
         source = self.write('exports.on1x', '''
 import std.base as Base;
+import std.core.Pervasive as Core;
+import std.daemon.lifecycle as Lifecycle;
 import std.numeric as Numeric;
 import std.parsec.parsec as Original;
+import std.http.http as HttpBody;
+import std.rpc as Rpc;
 from std.parsec import basis_parsec_int;
 from std import sexpr;
 fn main() {
@@ -106,6 +110,15 @@ fn main() {
     assert(Numeric.Int.basis_int_div(-7, 3) == -3);
     assert(Base.option.base_is_some(Base.option.base_some(sx_string("ok"))));
     assert(Base.base_identity_i64(42) == 42);
+    assert(Base.ordering.base_compare_i64(0, 42) == -1);
+    assert(HttpBody.basis_http_nibble(97) == 10);
+    assert(HttpBody.basis_http_fold_ascii(65) == 97);
+    assert(Rpc.rpc_notification("ping", "[]") ==
+           "{\\"jsonrpc\\":\\"2.0\\",\\"method\\":\\"ping\\",\\"params\\":[]}");
+    let none: Core.Option<Lifecycle.DaemonJobId> = Lifecycle.basis_daemon_job_id(0u64);
+    let some: Option<Lifecycle.DaemonJobId> = Lifecycle.basis_daemon_job_id(42u64);
+    assert(option_is_none(none));
+    assert(match some with { Some(job) => job.id == 42u64, None() => false });
     assert(sexpr.sexpr_size(sexpr.sexpr_parse("(one two)")) == 2);
 }
 ''')
@@ -121,13 +134,18 @@ fn main() {
                      negative="no export or submodule 'on1x_mulib_ini_get'")
 
     def test_legacy_parsec_paths_share_one_implementation(self):
-        implementation = (STDLIB / 'parsec/parsec.on1x').as_posix()
+        legacy = (STDLIB / 'parsec/parsec.on1x').as_posix()
+        implementation = (STDLIB / 'parsec/parsec.on1xm').as_posix()
         initializer = (STDLIB / 'parsec/__init__.on1x').as_posix()
         source = self.write('mixed.on1x', f'''
-import "{implementation}";
+import "{legacy}";
+import "{initializer}";
 import std.parsec as Entry;
+import std.parsec.__init__ as ExplicitEntry;
 import std.parsec.parsec as Body;
+import parsec.parsec as Unanchored;
 from std.parsec import basis_parsec_int as scan;
+from std.parsec import parsec as SelectedChild;
 fn main() {{
     let (ok, value, end) = basis_parsec_int("-9223372036854775808!", 0);
     assert(ok && value == -9223372036854775808 && end == 20);
@@ -135,11 +153,17 @@ fn main() {{
     assert(!overflow && reset == 0);
     assert(Entry.parsec_literal("on1x", 0, "on"));
     assert(!Body.parsec_literal("on1x", 0, "one"));
+    assert(Unanchored.parsec_space(" \\tX", 0) == 2);
+    assert(ExplicitEntry.parsec_in_range("A", 0, 65, 90));
+    let (unsigned_ok, unsigned_value, unsigned_end) = SelectedChild.parsec_uint("42!", 0);
+    assert(unsigned_ok && unsigned_value == 42 && unsigned_end == 2);
 }}
 ''')
+        self.assertFalse(Path(legacy).exists())
         graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', STDLIB).splitlines()
         self.assertEqual(graph.count(implementation), 1)
         self.assertEqual(graph.count(initializer), 1)
+        self.assertNotIn(legacy, graph)
         exe = self.work / 'mixed'
         self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
                      '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', STDLIB, '-o', exe)
@@ -147,36 +171,61 @@ fn main() {{
 
     def test_initializer_survives_packaging(self):
         root = self.work / 'parsec-stdlib'
-        self.write('parsec-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n')
+        records = ''.join(line + '\n' for line in (STDLIB / 'On1xfile').read_text().splitlines()
+                          if '"std.parsec.parsec"' in line)
+        self.write('parsec-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n' + records)
         self.write('parsec-stdlib/On1xfile.m', 'on1xfile 1\nlibrary "pervasive.on1x"\n')
         self.write('parsec-stdlib/pervasive.on1x', 'fn unused() {}\n')
         shutil.copytree(STDLIB / 'parsec', root / 'parsec')
         package = (self.build(root) / 'library').rename(self.work / 'relocated parsec stdlib')
         source = self.write('consumer.on1x', '''
+import "relocated parsec stdlib/parsec/parsec.on1x";
 import std.parsec as Parse;
-fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
+fn main() {
+    assert(Parse.parsec_literal("on1x", 0, "on"));
+    assert(parsec_literal("on1x", 0, "on"));
+}
 ''')
         graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', package).splitlines()
         self.assertIn(str(package / 'parsec/__init__.on1x'), graph)
-        self.assertIn(str(package / 'parsec/parsec.on1x'), graph)
+        self.assertEqual(graph.count(str(package / 'parsec/parsec.on1xm')), 1)
+        self.assertFalse((package / 'parsec/parsec.on1x').exists())
         self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', package)
+        exe = self.work / 'relocated-consumer'
+        self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
+                     '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', package,
+                     '--cflag=-Werror', '-o', exe)
+        self.execute(exe)
         declaration = package / 'parsec/parsec.on1xi'
         self.assertEqual(declaration.read_bytes(), (STDLIB / 'parsec/parsec.on1xi').read_bytes())
-        self.execute(OPTIONS.on1xc, '--check-interfaces', package / 'parsec/parsec.on1x',
-                     '--interface', declaration, '--stdlib', package)
+        self.execute(OPTIONS.on1xc, '--check-interfaces', source, '--stdlib', package)
 
         # Keep the function internally well typed; a different result type
         # must fail because of the declared contract, not a body type error.
-        implementation = package / 'parsec/parsec.on1x'
+        implementation = package / 'parsec/parsec.on1xm'
         original = implementation.read_text(encoding='utf-8')
-        start = original.index('fn parsec_in_range')
-        end = original.index('fn parsec_literal', start)
+        start = original.index('public fn parsec_in_range')
+        end = original.index('public fn parsec_literal', start)
         implementation.write_text(original[:start] +
-                                  'fn parsec_in_range(text: string, pos: i64, '
+                                  'public fn parsec_in_range(text: string, pos: i64, '
                                   'low: i64, high: i64) -> i64 { return 1; }\n' +
                                   original[end:], encoding='utf-8')
+        emitted = self.work / 'unexpected.c'
+        for spelling in ('import std.parsec.parsec as Parse;',
+                         'import std.parsec as Parse;',
+                         'import "relocated parsec stdlib/parsec/parsec.on1x";'):
+            with self.subTest(spelling=spelling):
+                consumer = self.write('drift-consumer.on1x', spelling + '\nfn main() {}\n')
+                self.execute(OPTIONS.on1xc, '--emit-c', consumer, '--stdlib', package, '-o', emitted,
+                             negative='interface signature mismatch')
+                self.assertFalse(emitted.exists())
         self.build(package, 'drifted', negative='interface signature mismatch')
         self.assertFalse((self.work / 'drifted').exists())
+        implementation.write_text(original, encoding='utf-8')
+        declaration.unlink()
+        self.execute(OPTIONS.on1xc, '--emit-c', source, '--stdlib', package, '-o', emitted,
+                     negative='expected a local interface for std.parsec.parsec')
+        self.assertFalse(emitted.exists())
 
     def test_whole_stdlib_and_downstream(self):
         dest = self.build(STDLIB)
@@ -189,10 +238,10 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         # The restricted source package does not distribute the legacy
         # KernelBind daemon entry point, the separately hosted SDK source
         # layer, or test fixtures.
-        modules = {
-            entry['path'] for entry in collect(STDLIB)
-            if entry['bundle_role'] in ('library', 'interface')
-        }
+        inventory = collect(STDLIB)
+        modules = {entry['path'] for entry in inventory if entry['bundle_role'] in BUNDLE_ROLES}
+        self.assertEqual({entry['declared_module'] for entry in inventory if entry['suffix'] == '.on1xm'},
+                         {entry['name'] for entry in report['module_graph']})
         # The empty MCP initializer is a source-tree placeholder, not a
         # declared library module. Keep checking all other modules.
         mcp_placeholder = 'mcp/__init__.on1x'
@@ -221,13 +270,19 @@ fn main() { assert(Parse.parsec_literal("on1x", 0, "on")); }
         client = self.write('client/consumer.on1x', '''
 import std.List as L;
 import std.base.list as B;
+from std.base import ordering as Ordering;
 import std.numeric.Real as R;
 import std.prettyprint as P;
 import std.ini as I;
 import std.http as Http;
+import std.parsec as Scan;
+import std.rpc as Rpc;
 from std import mulib;
 fn main() {
     assert(Http.success(200) && !Http.success(404));
+    assert(Ordering.base_clamp_i64(23, 0, 10) == 10);
+    assert(Scan.parsec_space("  a", 0) == 2);
+    assert(Rpc.rpc_escape("hello") == "hello");
     println(B.base_list_length(L.cons(sx_string("one"),L.nil())));
     println(R.basis_real_add("0.25","0.75"));
     let(status,formatted)=P.pp_format(P.pp_text("packaged prettyprint"),30);
@@ -247,6 +302,9 @@ fn main() {
         self.assertIn(package / 'core/Pervasive.on1x', graph)
         self.assertIn(package / 'mulib/Native.on1x', graph)
         self.assertIn(package / 'http/__init__.on1x', graph)
+        for entry in inventory:
+            if entry['suffix'] == '.on1xm':
+                self.assertIn(package / entry['path'], graph)
         self.assertNotIn(package / 'http/client.on1x', graph)
         separate = self.write('standalone.on1x', 'import mulib as M;\nfn main(){assert(M.fits_size(42));}\n')
         self.assertIn(str(package / 'mulib/__init__.on1x'), self.execute(

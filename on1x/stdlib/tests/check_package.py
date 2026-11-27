@@ -3,10 +3,17 @@
 from pathlib import Path
 import json
 import re
-import sys
+import shlex
 root=Path(__file__).resolve().parents[1]
 catalog=json.loads((root/'CATALOG.json').read_text())
-modules=sorted(root.rglob('*.on1x'))
+modules=sorted(p for suffix in ('*.on1x', '*.on1xm') for p in root.rglob(suffix))
+# A migrated source keeps its old quoted spelling without shipping a copy.
+legacy={}
+for line in (root/'On1xfile').read_text().splitlines():
+    tokens=shlex.split(line, comments=True)
+    if tokens and tokens[0]=='module':
+        canonical=root/tokens[2]
+        legacy[canonical.with_suffix('.on1x')]=canonical
 assert len(modules)>=60, len(modules)
 assert len(catalog['required_signatures'])==40
 assert len(catalog['required_structures'])==43
@@ -25,6 +32,8 @@ for module in modules:
     names={} if 'tests' in parts or parts[:2]==('daemon','fixtures') else exported
     for relative in re.findall(r'(?m)^\s*import\s+"([^"]+)";',source):
         path=(module.parent/relative).resolve()
+        if not path.is_file():
+            path=legacy.get(path, path)
         assert path.is_file(),f'{module}: unresolved import {relative}'
         assert root in path.parents, f'{module}: import escapes basis root'
     # Check top-level declarations only. A cliche's signature and its impl
@@ -33,7 +42,7 @@ for module in modules:
     stack=[];quote=False;escaped=False
     for line in source.splitlines():
         if not stack and not quote:
-            declaration=re.match(r'^\s*(?:extern\s+)?fn\s+([A-Za-z_]\w*)\s*[<(]',line)
+            declaration=re.match(r'^\s*(?:(?:public|extern)\s+)?fn\s+([A-Za-z_]\w*)\s*[<(]',line)
             if declaration:
                 symbol=declaration[1]
                 if symbol!='main':

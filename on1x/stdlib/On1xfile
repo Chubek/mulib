@@ -2,3 +2,15 @@ on1xfile 1
 kind library
 name "std"
 directory "."
+module "std.base.ordering" "base/ordering.on1xm"
+module-interface "std.base.ordering" "base/ordering.on1xi"
+module-interface-policy "std.base.ordering" required
+module "std.http.http" "http/http.on1xm"
+module-interface "std.http.http" "http/http.on1xi"
+module-interface-policy "std.http.http" required
+module "std.parsec.parsec" "parsec/parsec.on1xm"
+module-interface "std.parsec.parsec" "parsec/parsec.on1xi"
+module-interface-policy "std.parsec.parsec" required
+module "std.rpc.rpc" "rpc/rpc.on1xm"
+module-interface "std.rpc.rpc" "rpc/rpc.on1xi"
+module-interface-policy "std.rpc.rpc" required

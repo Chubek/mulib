@@ -7,7 +7,7 @@ It excludes vendor code and the LibStone submodule.
 ## Native kernel imports
 
 The clamp examples use native imports for all three functions in the v2
-profile. `base_clamp_i64` in `stdlib/base/ordering.on1x` remains a portable
+profile. `base_clamp_i64` in `stdlib/base/ordering.on1xm` remains a portable
 On1x implementation: switching to `Clamp.i64` would require an explicit
 KernelBind build and review for ordinary standard-library consumers. Both
 check the ordering of the bounds. Pricing and forecasting sources were

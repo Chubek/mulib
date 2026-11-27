@@ -1,5 +1,7 @@
 # JSON-RPC request builder. General dispatcher requires an actual callback FFI.
-fn rpc_escape(text: string) -> string
+module std.rpc.rpc;
+
+public fn rpc_escape(text: string) -> string
 {
   let out = buffer_new();
   for i in 0 .. text_len(text)
@@ -26,7 +28,7 @@ fn rpc_escape(text: string) -> string
   return buffer_text(out);
 }
 
-fn rpc_notification(method: string, raw_params: string) -> string
+public fn rpc_notification(method: string, raw_params: string) -> string
 {
   let prefix = "{\"jsonrpc\":\"2.0\",\"method\":\"";
   let middle = "\",\"params\":";

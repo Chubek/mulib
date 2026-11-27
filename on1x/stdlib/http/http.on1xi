@@ -1,0 +1,6 @@
+abstract module std.http.http;
+fn basis_http_success(status: i64) -> bool;
+fn basis_http_fold_ascii(byte: i64) -> i64;
+fn basis_http_header(headers: string, name: string) -> (bool, string);
+fn basis_http_nibble(byte: i64) -> i64;
+fn basis_http_body_byte(hex: string, index: i64) -> i64;

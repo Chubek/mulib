@@ -9,12 +9,12 @@ python3 -B on1x/tests/stdlib_module_inventory.py > stdlib-module-inventory.json
 ```
 
 The JSON lists every implementation-format source, package initializer,
-interface-format source, and independent fixture, with its package role and
-conventional path spelling. A path spelling is not a compiler admission claim
-(for example, `base/fn.on1x` uses a quoted import because `fn` is reserved).
-`__init__.on1x` is the legacy package entry-point implementation, not a checked
-interface. A source record can describe an implementation or a facade which
-re-exports another file. A fixture is never a library implementation.
+interface-format source, and independent fixture, with its package role,
+conventional path spelling, and declared member name when present. A
+conventional spelling alone is not a compiler admission claim (for example,
+`base/fn.on1x` uses a quoted import because `fn` is reserved). A source record
+can describe an implementation or a facade which re-exports another file.
+A fixture is never a library implementation.
 
 ## Baseline at `0d7f9210`
 
@@ -52,15 +52,37 @@ metadata-only components are not candidates for stub generation.
 Inventory and baseline compatibility tests do not migrate a source or promote
 any SML Basis conformance status.
 
-## Parse implementation qualification
+## Canonical implementation batch
 
-`parsec/parsec.on1xi` checks the existing five local definitions by the v1
-project-interface mechanism. The restricted source bundle includes and
-checks the same interface on relocation. `parsec/__init__.on1x` remains
-a re-export facade, not a checked signature; v1 interfaces cannot match
-re-exports. The type check does not restrict ordinary imports or advance
-the declared-module migration. There are no changes to the implementation,
-its legacy aliases, or the ABI.
+| Declared member | Canonical source (with sibling `.on1xi`) | Checked public functions |
+|---|---|---:|
+| `std.base.ordering` | `base/ordering.on1xm` | 3 |
+| `std.http.http` | `http/http.on1xm` | 5 |
+| `std.parsec.parsec` | `parsec/parsec.on1xm` | 5 |
+| `std.rpc.rpc` | `rpc/rpc.on1xm` | 2 |
+
+The restricted bundle certifies these four members in its root `On1xfile`.
+They keep their existing bodies and public signatures. The sibling signature
+is mandatory and checked on ordinary use; in particular, the old v1 build-only
+Parsec interface is now an authoritative named boundary. Old same-stem `.on1x`
+imports within the selected standard-library roots are compatibility paths,
+not shipped copies or forwarding implementations. The original dotted,
+quoted and relative Parsec imports are exercised from the checkout and after
+bundling; changing a signed implementation's type fails even on the ordinary
+C emission path.
+
+There are 210 shipped implementation files (four named and 206 legacy), four
+shipped named interfaces, and 33 independent executable/negative fixtures.
+All package initializers remain legacy. Their selective re-exports and
+submodule aliases still select the original targets; the supported signature
+form requires local definitions, and cannot yet certify those forwarding
+members without changing their identity. Raw extern declarations, callable
+parameters, and exposed nominal representations also remain outside this
+batch. In particular, the native HTTP client and the pervasive, `sexpr`,
+`visitor`, `ppx`, and standalone `mulib` routes are unchanged. Importing a
+signed member through a legacy alias still enters a checked module boundary;
+Unit-v1 PPX cannot transform such a graph. These counts do not imply added
+SML Basis conformance.
 
 The shipped `std.daemon.lifecycle` implementation uses dot projection for
 its budget and retry records and static constructors for the pervasive

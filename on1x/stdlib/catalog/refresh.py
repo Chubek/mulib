@@ -25,7 +25,7 @@ def write(path, value):
 for path in [root/'CATALOG.json', *sorted((root/'catalog').rglob('*.json'))]:
     write(path, relocate(json.loads(path.read_text())))
 summary = json.loads((root/'CATALOG_SUMMARY.json').read_text())
-sources = list(root.rglob('*.on1x'))
+sources = [path for suffix in ('*.on1x', '*.on1xm') for path in root.rglob(suffix)]
 test_sources = sum('tests' in p.relative_to(root).parts or
                    p.relative_to(root).parts[:2] == ('daemon', 'fixtures')
                    for p in sources)
