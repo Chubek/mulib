@@ -335,4 +335,9 @@
     (constraints "none"))
   (layout module
     (rules "Supply the SPIR-V header, capabilities, addressing/memory model, types, definitions, functions and block structure separately. Unique result IDs must be below header bound. encode/decode only checks each local word template and nonzero IDs."))
+  (x-image spirv-image
+  (format "SPIR-V word stream with capabilities, types, IDs and opcodes")
+  (execution "Verification, linking and JIT or interpreter translation are runtime obligations, not encoder guarantees.")
+  (sources "https://en.wikipedia.org/wiki/Standard_Portable_Intermediate_Representation")
+  (doc "It is not lossy like previous byte-code or virtual machine-like intermediate representations used for graphical shaders. Additional sets of extended instruction sets can be provided in separate specifications. === Validation === The SPIR-V specification states the rules that must be followed to have a valid SPIR-V module."))
 )

@@ -293,4 +293,9 @@
     (requires (ref feature tensor))
     (coverage metadata-only)
     (semantics "Tensor operations require explicit PTX and SM version, layout, synchronization and convergence contracts; no forms supplied."))
+  (x-image nvptx-image
+  (format "PTX text module compiled by the driver to a GPU binary")
+  (execution "Verification, linking and JIT or interpreter translation are runtime obligations, not encoder guarantees.")
+  (sources "https://en.wikipedia.org/wiki/Parallel_Thread_Execution")
+  (doc "Parallel Thread Execution (PTX or NVPTX) is a low-level parallel thread execution virtual machine and instruction set architecture used in Nvidia's Compute Unified Device Architecture (CUDA) programming environment. == Registers == PTX uses an arbitrarily large processor register set; the output from the compiler is almost pure static single-assignment form, with consecutive lines generally referring to consecutive registers. Register names are preceded with a % character and constants are literal, e.g.: There are predicate registers, but compiled code in shader model 1.0 uses these only in conjunction with branch commands; the conditional branch is The setp.cc.type instruction sets a predicate register to the result of comparing two registers of appropriate type, there is also a set instruction, where set.le.u32.u64 %r101, %rd12, %rd28 sets the 32-bit register %r101 to 0xffffffff if the"))
 )

@@ -423,4 +423,18 @@
     (constraints "none"))
   (exception breakpoint
     (rules "Breakpoint transfers to the execution environment debug/exception handler; no normal fallthrough."))
+  (x-bank Ghidra-CPU
+    (path "infobank/Ghidra-CPU")
+    (files 1404)
+    (roles source-provenance)
+    (target (ref target avr32))
+    (kind unclassified)
+    (evidence "6502/Module.manifest" "6502/README.md" "6502/build.gradle" "6502/certification.manifest")
+    (doc "Scraped 2026-11-27; classification=heuristic. deterministic local fallback; no agent available")
+  )
+  (microarch avr32-web
+  (family "Atmel AVR")
+  (model unspecified) (schedules (ref schedule alu))
+  (sources "https://en.wikipedia.org/wiki/AVR_microcontrollers")
+  (doc "Descriptive ISA-family facts only; no issue model, pipeline width or measured timing is asserted. The designers worked closely with compiler writers at IAR Systems to ensure that the AVR instruction set provided efficient compilation of high-level languages. However, the improved tinyAVR 0/1/2-series (released in 2016) include: Peripherals equal to or exceed megaAVR 0-series Event System Improved AVRxt instruction set (improved timing of calls), hardware multiply flash memory is readable by ordinary load instructions, PROGMEM macro is not needed (AVR42789) megaAVR – the ATmega series The ATmega series features microcontrollers that provide an extended instruction set (multiply instructions"))
 )

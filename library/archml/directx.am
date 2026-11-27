@@ -243,4 +243,27 @@
     (effects shader-system-values))
   (layout container
     (rules "DXIL is serialized LLVM bitcode inside a DXContainer with signatures and shader metadata. The numeric dxil-opcode properties are not independently serializable byte opcodes. No binary encoder or container writer is supplied by this profile."))
+  (x-image directx-image
+  (format "DXIL LLVM IR embedded in a DirectX shader container")
+  (execution "Verification, linking and JIT or interpreter translation are runtime obligations, not encoder guarantees.")
+  (sources "https://en.wikipedia.org/wiki/DirectX")
+  (doc "== See also == Direct3D DxDiag Graphics Device Interface (GDI) Graphics pipeline Vulkan == Notes == == References == == External links == Microsoft's DirectX developer site The State of DirectX 10 - Image Quality & Performance"))
+  (x-bank LLVM-TD
+    (path "infobank/LLVM-TD")
+    (files 559)
+    (roles source-provenance)
+    (target (ref target directx))
+    (kind unclassified)
+    (evidence "AArch64.td" "AArch64CallingConvention.td" "AArch64Combine.td" "AArch64FMV.td")
+    (doc "Scraped 2026-11-27; classification=heuristic. deterministic local fallback; no agent available")
+  )
+  (x-bank LLVM-Target
+    (path "infobank/LLVM-Target")
+    (files 2732)
+    (roles source-provenance)
+    (target (ref target directx))
+    (kind unclassified)
+    (evidence "AArch64/AArch64.h" "AArch64/AArch64.td" "AArch64/AArch64A53Fix835769.cpp" "AArch64/AArch64A57FPLoadBalancing.cpp")
+    (doc "Scraped 2026-11-27; classification=heuristic. deterministic local fallback; no agent available")
+  )
 )
