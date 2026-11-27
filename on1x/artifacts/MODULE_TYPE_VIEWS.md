@@ -27,12 +27,22 @@ On base `9180386bbfce6d141bf2707aabcecf0ed856af12` this passed plain and with
 `-fsanitize=address,undefined -fno-omit-frame-pointer`. The existing
 `test_module_signature.cpp` also passed when linked with the actual parser,
 fallback scanner, signature resolver, extensions registry and type sources.
-`test_module_signature_cli.py` now asks the real driver to resolve two aliases,
-project a record field, compile the emitted C under strict C11, and run it for
-`42`. This end-to-end assertion was **not executed** in the W2 worktree: the
-checkout lacks the required compiler diagnostic catalog and formatter sources.
-MIR gate syntax checked; optional Archon depends on an installed target-specific
-`Backend.h` and was not compiled.
+`test_module_signature_cli.py` passed using the real generated Aurocks/ASDL
+compiler with W1 loader `9dab0cd6` and W3 external-assets profile `e4437581`.
+The explicitly selected assets were the unmodified stdlib tree `bb7e7814`
+from external checkout `cbb7d66f`; LibStone was `4607ce58`. See
+`MODULE_ALGEBRA.md` for the CMake options (W2 disables the SDK).
+
+```sh
+ON1X_TEST_VIEW_CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  python3 -B on1x/tests/test_module_signature_cli.py "$BUILD/on1xc" "$BUILD/fixtures"
+```
+
+Two aliases of the same exported record crossed a real provider call and
+projected a field. Strict C11 compiled and the executable printed `42`, both
+plain and under ASan/UBSan. A different provider's same-layout record failed
+nominal unification. Opaque projection, MIR and VM emission all rejected and
+preserved the prior output. Archon was not built.
 
 Manifest equations remain declaration-only; this patch does not admit them
 into executable HIR. No change to the existing opaque ABI. Static functors,

@@ -2,6 +2,7 @@
 """Exercise named declaration checks through real CLI/loader pairing."""
 import json
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -122,12 +123,35 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         result = run("--emit-c", program, "--project-module-index", index, "-o", output)
         assert result.returncode == 0, result.stderr
         runtime = Path(__file__).resolve().parents[1] / "runtime"
-        binary = root / "transparent"
-        subprocess.run([os.environ.get("CC", "cc"), "-std=c11", "-Wall", "-Wextra",
-                        "-Wpedantic", "-Werror", "-I", runtime, output,
-                        runtime / "on1x_runtime.c", "-pthread", "-o", binary],
-                       check=True, timeout=30)
-        assert subprocess.check_output([binary], timeout=10) == b"42\n"
+        def execute_c(name):
+            binary = root / name
+            subprocess.run([*shlex.split(os.environ.get("CC", "cc")), "-std=c11", "-Wall",
+                            "-Wextra", "-Wpedantic", "-Werror",
+                            *shlex.split(os.environ.get("ON1X_TEST_VIEW_CFLAGS", "")),
+                            "-I", runtime, output, runtime / "on1x_runtime.c", "-pthread",
+                            "-o", binary], check=True, timeout=30)
+            assert subprocess.check_output([binary], timeout=10) == b"42\n"
+
+        execute_c("transparent")
+        good_c = output.read_bytes()
+        for mode in ("--emit-ir", "--emit-vm"):
+            result = run(mode, program, "--project-module-index", index, "-o", output)
+            assert result.returncode != 0 and "direct C11" in result.stderr, result.stderr
+            assert output.read_bytes() == good_c
+
+        # A different provider's same-spelled, same-layout Token is not a Key.
+        peer, peer_interface = root / "peer.on1xm", root / "peer.on1xi"
+        peer.write_text(implementation.read_text().replace("Test.Vault", "Test.Peer"), encoding="utf-8")
+        peer_interface.write_text("signature S { type Token; fn make(n:i64)->Token; };"
+                                  "module Test.Peer : S;", encoding="utf-8")
+        membership["members"]["Test.Peer"] = {"package": str(root), "declared_name": "Test.Peer",
+                                                "fragments": [str(peer)], "interfaces": [str(peer_interface)]}
+        index.write_text(json.dumps(membership), encoding="utf-8")
+        program.write_text("import Test.Peer as Peer;" + client +
+                           "fn main(){println(pass(Peer.make(42)).secret);}", encoding="utf-8")
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode != 0 and "incompatible nominal types" in result.stderr, result.stderr
+        assert output.read_bytes() == good_c
         membership["members"]["Test.Vault"]["fragments"].remove(str(side))
         index.write_text(json.dumps(membership), encoding="utf-8")
 
