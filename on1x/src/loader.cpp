@@ -1,11 +1,15 @@
 #include <on1x/loader.hpp>
+#include <on1x/asdl_module.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/module_visibility.hpp>
+#include <on1x/module_signature.hpp>
 #include <on1x/operator_scope.hpp>
 #include <on1x/stdffi.hpp>
 #include <algorithm>
 #include <cstdlib>
+#include <iterator>
 #include <sstream>
 
 namespace on1x {
@@ -16,6 +20,7 @@ struct Symbol {
  Module* owner;
  std::string name;
  bool external=false;
+ VisibilityRule visibility{};
  bool operator==(const Symbol& other) const {
   return name==other.name&&external==other.external&&(owner==other.owner||external);
  }
@@ -30,17 +35,24 @@ struct Module {
  std::vector<Token> scanned;
  std::vector<Docstring> docs;
  OperatorDiscovery discovery;
- OperatorScope operator_exports,operator_visibility;
+ OperatorScope operator_exports,operator_imports,operator_visibility;
  // Direct dependencies that affect parsing, in discovery import order.
  std::vector<Module*> operator_targets;
  Unit unit;
  Names names;
+ Names declarations; // Own declarations, excluding lexically imported names.
+ std::optional<Names> signature_exports;
+ std::vector<Module*> fragments;
+ Module* group=nullptr;
+ const LoaderOptions::ModuleMember* member=nullptr;
+ fs::path package_identity;
  std::vector<Module*> quoted;
   std::vector<Module*> dependencies;
    std::map<std::string,KernelImport> kernels;
    std::map<std::string,ForeignImport> foreigns;
  std::size_t id=0;
    bool discovering=true,active=false,loaded=false,legacy=false,implicit=false;
+ bool program=false,isolated=false,source_capability=false;
   std::optional<SharedKind> shared;
 };
 bool regular(const fs::path& path){std::error_code ec;return fs::is_regular_file(path,ec);}
@@ -69,7 +81,14 @@ class Loader {
   fs::path entry_directory;
   std::vector<fs::path> standard_roots;
   std::map<fs::path,SharedKind> shared_sources;
- std::map<fs::path,std::unique_ptr<Module>> modules;
+  std::map<fs::path,std::unique_ptr<Module>> modules;
+  using Member=LoaderOptions::ModuleMember;
+  std::map<std::pair<fs::path,std::string>,std::unique_ptr<Module>> groups;
+  std::map<fs::path,const Member*> enrolled;
+  std::map<std::string,fs::path> conventional_names;
+  std::set<fs::path> verified_signatures;
+  std::map<fs::path,fs::path> explicit_interfaces;
+  std::size_t declaration_interface_members=0;
   std::vector<Module*> order,stack,preludes,operator_preludes,discovery_stack;
   std::set<std::string> tokens,globals,type_globals,cliche_globals;
  std::string prefix="on1x_module_";
@@ -85,6 +104,22 @@ class Loader {
    std::map<std::string,stdffi::SelectedLibrary> foreign_libraries;
    std::map<std::pair<std::string,std::string>,Function> foreign_functions;
    std::set<std::string> foreign_function_names;
+   static bool program_import(const Import& imp){return imp.kind==Import::Kind::Program;}
+   static bool named_module(const Module& m){return m.discovery.module.has_value()||m.unit.module.has_value();}
+   static const Names& exported(const Module& m){
+    if(m.signature_exports)return *m.signature_exports;
+    return named_module(m)||m.program||!m.fragments.empty()?m.declarations:m.names;
+   }
+   static bool valid_module_name(std::string_view text){
+    const auto alpha=[](char c){return (c>='A'&&c<='Z')||(c>='a'&&c<='z')||c=='_';};
+    bool first=true;
+    for(auto c:text){
+     if(first){if(!alpha(c))return false;first=false;}
+     else if(c=='.')first=true;
+     else if(!alpha(c)&&!(c>='0'&&c<='9'))return false;
+    }
+    return !first;
+   }
   static void append_parameters(Function& f,const std::vector<Type>& parameters){
    for(std::size_t i=0;i<parameters.size();++i){
     Param parameter;parameter.name="arg"+std::to_string(i);
@@ -237,11 +272,15 @@ class Loader {
  void value_alias(const Names& names,const std::string& alias,const Location& at){
   if(module_bound(names,alias))throw Error(at,"import alias conflicts with module: "+alias);
  }
-  void merge(Names& into,const Names& from,const Location& at){
-  for(const auto& [name,symbol]:from.values){value_alias(into,name,at);insert(into.values,name,symbol,at);}
-   for(const auto& [name,symbol]:from.syntax){value_alias(into,name,at);insert(into.syntax,name,symbol,at);}
-    for(const auto& [name,symbol]:from.types){value_alias(into,name,at);insert(into.types,name,symbol,at);}
-    for(const auto& [name,symbol]:from.cliches){value_alias(into,name,at);insert(into.cliches,name,symbol,at);}
+   void merge(Names& into,const Names& from,const Location& at,const Module* requester=nullptr){
+   auto transfer=[&](auto& target,const auto& source){
+    for(const auto& [name,symbol]:source){
+     if(requester&&!accessible(*symbol.owner,*requester,symbol.visibility))continue;
+     value_alias(into,name,at);insert(target,name,symbol,at);
+    }
+   };
+   transfer(into.values,from.values);transfer(into.syntax,from.syntax);
+   transfer(into.types,from.types);transfer(into.cliches,from.cliches);
   for(const auto& [name,m]:from.modules)bind_module(into,name,m,at);
  }
    fs::path candidate(const fs::path& base,const Location& at,bool strict=false){
@@ -273,23 +312,96 @@ class Loader {
    return module_bound(names,alias)||names.values.contains(alias)||names.types.contains(alias)||
           names.syntax.contains(alias)||names.cliches.contains(alias);
   }
-   fs::path standard(const std::string& module,const Location& at){
-    for(const auto& root:standard_roots){
-      const bool operators=module=="operators";
-      auto first=candidate(root/module_path(module),at,operators);
+   fs::path standard(const std::string& module,const Location& at,bool modern=false){
+     for(const auto& root:standard_roots){
+       const bool operators=module=="operators";
+       auto first=candidate(root/module_path(module),at,operators);
      // Compatibility with older installed extension trees; the canonical MuLIB
      // package now lives inside stdlib, not in this legacy sibling directory.
-      auto second=candidate(root.parent_path()/"std"/module_path(module),at,operators);
+       auto second=candidate(root.parent_path()/"std"/module_path(module),at,operators);
+       if(modern){
+        auto declared=direct_module(root,module_path(module),at);
+        if(!declared.empty()){
+         if(regular(first)||regular(second))throw Error(at,"ambiguous standard module: "+module);
+         return declared;
+        }
+       }
       if(!first.empty()&&!second.empty()){
        if(first==second||canonical(first,at)==canonical(second,at))return first;
        throw Error(at,"ambiguous standard module: "+module);
       }
      if(!first.empty()||!second.empty())return first.empty()?second:first;
     }
-    return {};
+     return {};
+   }
+  static bool contained(const fs::path& root,const fs::path& path){
+   auto it=path.begin();
+   for(auto part=root.begin();part!=root.end();++part,++it)
+    if(it==path.end()||*it!=*part)return false;
+   return it!=path.end();
   }
- fs::path resolve(const Import& imp,const Module& parent){
-  if(imp.quoted)return parent.path.parent_path()/imp.module;
+  const Member* member_for(const std::string& name,const Module& parent)const{
+   if(auto scope=options.scoped_module_members.find(parent.package_identity);
+      scope!=options.scoped_module_members.end()){
+    auto found=scope->second.find(name);
+    return found==scope->second.end()?nullptr:&found->second;
+   }
+   if(parent.package_identity==options.project_package){
+    auto found=options.module_members.find(name);
+    return found==options.module_members.end()?nullptr:&found->second;
+   }
+   return nullptr;
+  }
+  fs::path direct_module(const fs::path& root,const fs::path& suffix,const Location& at){
+   const auto locate=[&](const fs::path& path)->fs::path{
+    std::error_code ec;
+    const auto status=fs::symlink_status(path,ec);
+    if(ec==std::errc::no_such_file_or_directory||ec==std::errc::not_a_directory)return {};
+    if(ec)throw Error(at,"cannot inspect module '"+path.string()+"': "+ec.message(),"ON1X-MODULE-RESOLUTION");
+    if(!fs::exists(status))return {};
+    auto origin=canonical(path,at);
+    if(!regular(origin)||origin.extension()!=".on1xm"||!contained(canonical(root,at),origin))
+     throw Error(at,"module source is not a regular .on1xm file in its search root: "+path.string(),
+                 "ON1X-MODULE-RESOLUTION");
+    return origin;
+   };
+   auto file=root/suffix;file+=".on1xm";
+   auto source=locate(file),initializer=locate(root/suffix/"__init__.on1xm");
+   if(!source.empty()&&!initializer.empty())
+    throw Error(at,"ambiguous module: "+file.string(),"ON1X-MODULE-RESOLUTION");
+   return source.empty()?initializer:source;
+  }
+  fs::path resolve_program(const Import& imp,const Module& parent){
+   if(imp.relative||(imp.selective&&!imp.alias.empty()))
+    throw Error(imp.where,"program imports cannot combine relative or namespace aliases with selectors","ON1X-PROGRAM-IMPORT");
+   if(!options.project_package.empty()){
+    if(imp.quoted||parent.package_identity!=options.project_package)
+     throw Error(imp.where,"project program imports require an admitted program name","ON1X-PROGRAM-IMPORT");
+    auto found=options.program_members.find(imp.module);
+    if(found==options.program_members.end())
+     throw Error(imp.where,"program is not in the project index: "+imp.module,"ON1X-PROGRAM-IMPORT");
+    return found->second;
+   }
+   if(imp.quoted)return parent.path.parent_path()/imp.module;
+   if(!valid_module_name(imp.module))
+    throw Error(imp.where,"invalid program name: "+imp.module,"ON1X-PROGRAM-IMPORT");
+   auto suffix=module_path(imp.module);suffix+=".on1x";
+   std::vector<fs::path> roots{entry_directory};
+   roots.insert(roots.end(),options.paths.begin(),options.paths.end());
+   for(const auto& root:roots){
+    auto candidate=root/suffix;
+    if(regular(candidate)){
+     auto origin=canonical(candidate,imp.where);
+     if(!contained(canonical(root,imp.where),origin))
+      throw Error(imp.where,"program source escapes its search root","ON1X-PROGRAM-IMPORT");
+     return origin;
+    }
+   }
+   throw Error(imp.where,"program not found: "+imp.module,"ON1X-PROGRAM-IMPORT");
+  }
+  fs::path resolve(const Import& imp,const Module& parent){
+   if(program_import(imp))return resolve_program(imp,parent);
+   if(imp.quoted)return parent.path.parent_path()/imp.module;
   auto relative=module_path(imp.module);
   if(imp.relative){
    auto base=package(parent);
@@ -302,18 +414,24 @@ class Loader {
    auto found=candidate(base/relative,imp.where);if(!found.empty())return found;
    throw Error(imp.where,"module not found: "+std::string(imp.relative,'.')+imp.module+" (in "+base.string()+")");
   }
-  if(imp.module=="std"||imp.module.starts_with("std.")){
+   if(imp.module=="std"||imp.module.starts_with("std.")){
     if(standard_roots.empty())throw Error(imp.where,"standard library root is not configured");
-     auto found=imp.module=="std"?standard_roots.front():standard(imp.module.substr(4),imp.where);
+      auto found=imp.module=="std"?standard_roots.front():standard(imp.module.substr(4),imp.where,true);
    if(!found.empty()&&fs::exists(found))return found;
    throw Error(imp.where,"standard module not found: "+imp.module);
   }
   std::vector<fs::path> roots{entry_directory};roots.insert(roots.end(),options.paths.begin(),options.paths.end());
    roots.insert(roots.end(),standard_roots.begin(),standard_roots.end());
   std::string searched;
-   for(const auto& root:roots){
-    auto found=discovery::library(root,imp.module,imp.where);
-    if(found.empty())found=candidate(root/relative,imp.where);
+    for(const auto& root:roots){
+     auto found=discovery::library(root,imp.module,imp.where);
+     if(found.empty())found=candidate(root/relative,imp.where);
+     if(options.project_package.empty()){
+      if(auto path=direct_module(root,relative,imp.where);!path.empty()){
+       if(regular(found))throw Error(imp.where,"ambiguous module: "+imp.module);
+       return path;
+      }
+     }
     if(!found.empty())return found;
    if(!searched.empty())searched+=", ";
    searched+=root.string();
@@ -331,11 +449,11 @@ class Loader {
   }
   insert(names.modules,alias,target,at);
  }
-  bool wants_operators(const Import& imp)const{
-   return imp.quoted||(imp.selective&&std::any_of(imp.names.begin(),imp.names.end(),
+   bool wants_operators(const Import& imp)const{
+    return (imp.quoted&&!program_import(imp))||(imp.selective&&std::any_of(imp.names.begin(),imp.names.end(),
                           [](const ImportName& n){return n.is_operator;}));
   }
-  bool self_package(const Import& imp,const Module& parent,const fs::path& target)const{
+   bool self_package(const Import& imp,const Module& parent,const fs::path& target)const{
    return imp.relative&&imp.module.empty()&&canonical(target,imp.where)==parent.path;
   }
   void add_operator(OperatorScope& into,const OperatorBinding& binding,const Location& at){
@@ -350,7 +468,7 @@ class Loader {
   }
   static bool same_import(const Import& a,const Import& b){
    return a.where.file==b.where.file&&a.where.offset==b.where.offset&&a.module==b.module&&
-          a.alias==b.alias&&a.relative==b.relative&&a.quoted==b.quoted&&a.selective==b.selective&&
+           a.alias==b.alias&&a.relative==b.relative&&a.quoted==b.quoted&&a.selective==b.selective&&a.kind==b.kind&&
           std::equal(a.names.begin(),a.names.end(),b.names.begin(),b.names.end(),
                      [](const ImportName& x,const ImportName& y){
                       return x.name==y.name&&x.alias==y.alias&&x.is_operator==y.is_operator;
@@ -370,10 +488,90 @@ class Loader {
     }
     return hit->second.get();
    }
+   ModuleProvenance provenance(const Module& m)const{
+    ModuleProvenance result{m.path,m.package_identity,{}};
+    const auto& header=m.unit.module?m.unit.module:m.discovery.module;
+    if(header){
+     std::istringstream name(header->name);
+     std::string part;
+     while(std::getline(name,part,'.'))result.module_components.push_back(std::move(part));
+    }
+    return result;
+   }
+   bool accessible(const Module& owner,const Module& requester,VisibilityRule rule)const{
+    bool admitted=true;
+    if(auto membership=enrolled.find(owner.path);membership!=enrolled.end()){
+     admitted=false;
+     const auto* scope=&options.module_members;
+     if(auto found=options.scoped_module_members.find(requester.package_identity);
+        found!=options.scoped_module_members.end())scope=&found->second;
+     else if(requester.package_identity!=options.project_package)scope=nullptr;
+     if(scope)admitted=std::any_of(scope->begin(),scope->end(),[&](const auto& entry){
+      return entry.second.package==membership->second->package&&entry.second.declared_name==membership->second->declared_name;
+     });
+    }
+    return module_visibility_access(rule,provenance(owner),provenance(requester),admitted)==ModuleAccess::Allowed;
+   }
+   void require_access(const Symbol& symbol,const Module& requester,const Location& at)const{
+    if(!accessible(*symbol.owner,requester,symbol.visibility))
+     throw Error(at,"module member is not visible: "+symbol.name,"ON1X-MODULE-VISIBILITY");
+   }
+   void validate_visibility(const Module& owner,VisibilityRule rule,const Location& at)const{
+    if(validate_module_visibility(rule,provenance(owner))!=ModuleVisibilityIssue::None)
+     throw Error(at,"invalid declaration visibility for this module scope","ON1X-MODULE-VISIBILITY");
+   }
+   bool operator_accessible(const OperatorBinding& binding,const Module& requester)const{
+    auto owner=modules.find(fs::path(binding.header.where.file));
+    return owner!=modules.end()&&accessible(*owner->second,requester,binding.header.visibility);
+   }
+   bool has_signature(const Module& module)const{
+    auto interface=module.path;interface.replace_extension(".on1xi");
+    return (module.member&&!module.member->interfaces.empty())||explicit_interfaces.contains(interface);
+   }
+   void verify_signatures(Module& target,const std::vector<fs::path>& input,const Location& at){
+    if(input.empty())return;
+    const auto& header=target.unit.module?target.unit.module:target.discovery.module;
+    ModuleSignature signature;
+    signature.where={input.front().string()};
+    signature.module=header->name;
+    for(const auto& origin:input){
+     if(verified_signatures.size()>=max_interface_files)
+      throw Error(at,"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
+     if(!verified_signatures.insert(origin).second)
+      throw Error({origin.string()},"signature belongs to more than one module","ON1X-INTERFACE-DUPLICATE");
+     auto source=read_source_file(origin.string());
+     if(source.size()>options.max_bytes-bytes)
+      throw Error({origin.string()},"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
+     bytes+=source.size();
+     auto fragment=parse_module_signature(scan(source,origin.string()));
+     if(fragment.module!=signature.module)
+      throw Error(fragment.where,"signature does not declare module '"+header->name+"'","ON1X-INTERFACE-IMPLEMENTATION");
+     std::move(fragment.members.begin(),fragment.members.end(),std::back_inserter(signature.members));
+     std::move(fragment.types.begin(),fragment.types.end(),std::back_inserter(signature.types));
+    }
+    std::vector<const Unit*> originals;
+    for(auto* fragment:target.fragments)originals.push_back(&fragment->unit);
+    if(originals.empty())originals.push_back(&target.unit);
+    (void)verify_module_signature(signature,originals,header->name,target.path);
+    if(!options.declaration_interfaces)require_executable_module_signature(signature);
+    else declaration_interface_members+=signature.members.size()+signature.types.size();
+    std::set<std::string> listed;
+    for(const auto& declaration:signature.members)listed.insert(declaration.name);
+    auto& visible=target.signature_exports.emplace();
+    for(const auto& name:listed){
+     auto item=target.declarations.values.find(name);
+     if(item!=target.declarations.values.end())visible.values.insert(*item);
+    }
+   }
    if(modules.size()>=options.max_modules)throw Error(at,"module count limit exceeded");
    if(stack.size()+discovery_stack.size()>=options.max_depth)
     throw Error(at,"import recursion limit exceeded");
-   auto storage=std::make_unique<Module>();auto* m=storage.get();m->path=path;
+    auto storage=std::make_unique<Module>();auto* m=storage.get();m->path=path;
+    if(auto member=enrolled.find(path);member!=enrolled.end()){
+     m->member=member->second;m->package_identity=m->member->package;
+    }
+    else if(!options.project_package.empty()&&contained(options.project_package,path))
+     m->package_identity=options.project_package;
    modules.emplace(path,std::move(storage));discovery_stack.push_back(m);
    if(source){
     auto replacement=options.source_overrides.find(path);
@@ -381,69 +579,199 @@ class Loader {
     if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
     bytes+=m->source.size();m->scanned=scan(m->source,path.string(),&m->docs);
     for(const auto& t:m->scanned)tokens.insert(t.text);
-    m->discovery=discover_operators(m->scanned);
+     m->discovery=discover_operators(m->scanned);
+     if(path.extension()==".on1xm"&&!m->discovery.module)
+      throw Error(at,"module source requires a module declaration: "+path.string(),"ON1X-MODULE-IDENTITY");
+     if(m->discovery.module){
+      if(auto member=enrolled.find(path);member!=enrolled.end()){
+       if(member->second->declared_name!=m->discovery.module->name)
+        throw Error(m->discovery.module->where,"module declaration does not match project membership: "+
+                    member->second->declared_name,"ON1X-MODULE-IDENTITY");
+      }else{
+       auto [found,added]=conventional_names.emplace(m->discovery.module->name,path);
+       if(!added&&found->second!=path)
+        throw Error(m->discovery.module->where,"repeated module identity requires project membership: "+
+                    m->discovery.module->name,"ON1X-MODULE-IDENTITY");
+      }
+     }
     if(m->discovery.imports.size()>16384-discovery_edges)throw Error(at,"import edge limit exceeded");
     discovery_edges+=m->discovery.imports.size();
     if(options.standalone_guest&&!m->discovery.imports.empty())
      throw Error(m->discovery.imports.front().where,"standalone ArchVirt source cannot import or activate extensions");
-    for(const auto& header:m->discovery.operators)
-     add_operator(m->operator_exports,{header,operator_identity(header)},header.where);
+     for(const auto& header:m->discovery.operators){
+      validate_visibility(*m,header.visibility,header.where);
+      add_operator(m->operator_exports,{header,operator_identity(header)},header.where);
+     }
     m->operator_targets.resize(m->discovery.imports.size());
     for(std::size_t i=0;i<m->discovery.imports.size();++i){
      const auto& imp=m->discovery.imports[i];
      if(!wants_operators(imp))continue;
-     auto target_path=resolve(imp,*m);
-     auto* target=self_package(imp,*m,target_path)?nullptr:metadata(target_path,imp.where,!imp.quoted);
+      auto* target=import_metadata(imp,*m);
      m->operator_targets[i]=target;
-     if(imp.quoted){
-      target->operator_exports.each([&](const auto& binding){add_operator(m->operator_exports,binding,imp.where);});
+      if(imp.quoted&&!program_import(imp)){
+       target->operator_exports.each([&](const auto& binding){
+        if(operator_accessible(binding,*m))
+         add_operator(named_module(*m)?m->operator_imports:m->operator_exports,binding,imp.where);
+       });
       continue;
      }
-     for(const auto& selection:imp.names){
-      if(!selection.is_operator)continue;
-      const auto* prefix=target?target->operator_exports.find(selection.name,OperatorPosition::Prefix):nullptr;
-      const auto* trailing=target?target->operator_exports.trailing(selection.name):nullptr;
+      for(const auto& selection:imp.names){
+       if(!selection.is_operator)continue;
+       if(program_import(imp))
+        throw Error(imp.where,"program imports cannot select operators","ON1X-PROGRAM-IMPORT");
+       const auto* prefix=target&&!has_signature(*target)?target->operator_exports.find(selection.name,OperatorPosition::Prefix):nullptr;
+       const auto* trailing=target&&!has_signature(*target)?target->operator_exports.trailing(selection.name):nullptr;
+       if(prefix&&!operator_accessible(*prefix,*m))prefix=nullptr;
+       if(trailing&&!operator_accessible(*trailing,*m))trailing=nullptr;
       if(!prefix&&!trailing)
        throw Error(imp.where,"module '"+imp.module+"' has no operator export '"+selection.name+"'",
                    "ON1X-OPERATOR-IMPORT");
-      if(prefix)add_operator(m->operator_exports,*prefix,imp.where);
-      if(trailing)add_operator(m->operator_exports,*trailing,imp.where);
+       auto& scope=named_module(*m)?m->operator_imports:m->operator_exports;
+       if(prefix)add_operator(scope,*prefix,imp.where);
+       if(trailing)add_operator(scope,*trailing,imp.where);
      }
     }
    }
-   discovery_stack.pop_back();m->discovering=false;return m;
-  }
-  Module* visit(const fs::path& input,const Location& at,bool allow_directory=true){
-   return visit(metadata(input,at,allow_directory),at);
-  }
-   OperatorScope visible_operators(const Module& module,const Location& at){
-    auto scope=module.operator_exports;
-    for(auto it=operator_preludes.rbegin();it!=operator_preludes.rend();++it){
-     (*it)->operator_exports.each([&](const auto& binding){
+    discovery_stack.pop_back();m->discovering=false;return m;
+   }
+   Module* group_metadata(const Member& member,const Location& at){
+    auto key=std::make_pair(member.package,member.declared_name);
+    if(auto found=groups.find(key);found!=groups.end()){
+     if(found->second->discovering)throw Error(at,"import cycle: "+member.declared_name);
+     return found->second.get();
+    }
+    auto group=std::make_unique<Module>();
+    auto* m=group.get();
+    m->path=member.fragments.front();
+    m->member=&member;
+    m->package_identity=member.package;
+    m->discovery.module=ModuleHeader{at,member.declared_name};
+    groups.emplace(std::move(key),std::move(group));
+    for(const auto& path:member.fragments){
+     auto* fragment=metadata(path,at,false);
+     const auto& header=fragment->unit.module?fragment->unit.module:fragment->discovery.module;
+     if(!header||header->name!=member.declared_name)
+      throw Error(at,"module fragment must declare '"+member.declared_name+"': "+path.string(),"ON1X-MODULE-IDENTITY");
+     fragment->group=m;
+     m->fragments.push_back(fragment);
+     if(!has_signature(*fragment)&&member.interfaces.empty())
+      fragment->operator_exports.each([&](const auto& binding){add_operator(m->operator_exports,binding,at);});
+    }
+    m->discovering=false;
+    return m;
+   }
+   Module* import_metadata(const Import& imp,Module& parent){
+    if(!imp.relative&&!imp.quoted&&!program_import(imp)&&imp.module!="std"&&!imp.module.starts_with("std."))
+     if(auto member=member_for(imp.module,parent))return group_metadata(*member,imp.where);
+    auto path=resolve(imp,parent);
+    if((imp.relative||imp.quoted)&&!parent.package_identity.empty()){
+     auto origin=canonical(path,imp.where);
+     if(origin!=parent.package_identity&&!contained(parent.package_identity,origin))
+      throw Error(imp.where,"relative or quoted import escapes the verified package","ON1X-MODULE-MEMBERSHIP");
+    }
+    if(self_package(imp,parent,path))return nullptr;
+    auto* target=metadata(path,imp.where,!imp.quoted&&!program_import(imp));
+    if(program_import(imp)){
+     if(named_module(*target)||target->path.extension()!=".on1x")
+      throw Error(imp.where,"program import requires a headerless .on1x source","ON1X-PROGRAM-IMPORT");
+    }else if(named_module(*target)){
+     if(imp.quoted||imp.relative||enrolled.contains(target->path)||
+        (!options.project_package.empty()&&!imp.module.starts_with("std."))||
+        (target->unit.module?target->unit.module:target->discovery.module)->name!=imp.module)
+      throw Error(imp.where,"import does not match the canonical module identity: "+imp.module,"ON1X-MODULE-IDENTITY");
+    }
+    return target;
+   }
+    OperatorScope visible_operators(const Module& module,const Location& at){
+     auto scope=module.operator_exports;
+     module.operator_imports.each([&](const auto& binding){add_operator(scope,binding,at);});
+     if(module.group)for(auto* sibling:module.group->fragments){
+      if(sibling==&module)continue;
+      sibling->operator_exports.each([&](const auto& binding){
+       if(operator_accessible(binding,module))add_operator(scope,binding,at);
+      });
+     }
+     for(auto it=operator_preludes.rbegin();it!=operator_preludes.rend();++it){
+      if(has_signature(**it))continue;
+      (*it)->operator_exports.each([&](const auto& binding){
+       if(!operator_accessible(binding,module))return;
       const auto& header=binding.header;
       const auto* existing=header.position==OperatorPosition::Prefix?
        scope.find(header.lexeme,OperatorPosition::Prefix):scope.trailing(header.lexeme);
       if(!existing)add_operator(scope,binding,at);
      });
     }
-    return scope;
+     return scope;
+    }
+   void isolate(Module& module,const Location& at){
+    if(module.source_capability)
+     throw Error(at,"program import dependency requests source activation or native capabilities: "+
+                 module.path.string(),"ON1X-PROGRAM-CAPABILITY");
+    if(module.isolated)return;
+    module.isolated=true;
+    for(auto* dep:module.dependencies)isolate(*dep,at);
    }
-   Module* visit(Module* m,const Location& at){
-   const auto& path=m->path;
+   void depend(Module& requester,Module& target){
+    requester.dependencies.push_back(&target);
+   }
+   Module* visit(Module* m,const Location& at,bool isolated=false,bool program=false){
+    const auto& path=m->path;
    if(m->active){
     std::string chain;for(const auto* parent:stack)chain+=parent->path.string()+" -> ";
     throw Error(at,"import cycle: "+chain+path.string());
-   }
-   if(m->loaded){
-    if(!implicit)explicit_module(m);
-    return m;
-   }
+    }
+    if(m->loaded){
+     if(program!=m->program)
+      throw Error(at,"program source cannot also be imported as a library: "+path.string(),"ON1X-PROGRAM-IMPORT");
+     if(isolated)isolate(*m,at);
+     if(!implicit)explicit_module(m);
+     return m;
+    }
    if(stack.size()>=options.max_depth)throw Error(at,"import recursion limit exceeded");
-   m->id=next_module_id++;m->implicit=implicit;m->active=true;stack.push_back(m);
-   if(!m->scanned.empty()){
+    m->id=next_module_id++;m->implicit=implicit;m->active=true;stack.push_back(m);
+    m->program=program;
+    if(!m->fragments.empty()){
+     for(auto* fragment:m->fragments){
+      visit(fragment,at,isolated);
+      depend(*m,*fragment);
+      const auto reject_duplicates=[&](const auto& prior,const auto& added){
+       for(const auto& [name,symbol]:added)
+        if(prior.contains(name))
+         throw Error({symbol.owner->path.string()},"duplicate fragment declaration: "+name,"ON1X-MODULE-IDENTITY");
+      };
+      reject_duplicates(m->declarations.values,fragment->declarations.values);
+      reject_duplicates(m->declarations.types,fragment->declarations.types);
+      reject_duplicates(m->declarations.syntax,fragment->declarations.syntax);
+      reject_duplicates(m->declarations.cliches,fragment->declarations.cliches);
+      merge(m->declarations,fragment->declarations,at);
+     }
+     verify_signatures(*m,m->member->interfaces,at);
+     stack.pop_back();m->active=false;m->loaded=true;m->isolated=isolated;
+     return m;
+    }
+    if(!m->scanned.empty()){
      m->operator_visibility=visible_operators(*m,at);
-    m->unit=parse_with_operators(m->scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},
-                                 std::move(m->docs),m->operator_visibility);
+     m->unit=parse_with_operators(m->scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},
+                                  std::move(m->docs),m->operator_visibility);
+     check_asdl_module(m->unit);
+     if(m->discovery.module.has_value()!=m->unit.module.has_value()||
+        (m->unit.module&&m->unit.module->name!=m->discovery.module->name))
+      throw Error(at,"inconsistent module identity in discovery and parse","ON1X-MODULE-IDENTITY");
+     const auto mains=std::count_if(m->unit.functions.begin(),m->unit.functions.end(),
+                                    [](const auto& f){return f.name=="main";});
+     if(program&&(mains!=1||std::none_of(m->unit.functions.begin(),m->unit.functions.end(),
+                                       [](const auto& f){return f.name=="main"&&!f.external;})))
+      throw Error(at,"program import requires exactly one local main function: "+path.string(),"ON1X-PROGRAM-IMPORT");
+     if(m->unit.module&&mains)
+      throw Error(at,"a declared module cannot define the program entry point main","ON1X-MODULE-IDENTITY");
+     m->source_capability=!m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
+                          !m->unit.kernel_imports.empty()||!m->unit.foreign_imports.empty()||
+                          std::any_of(m->unit.functions.begin(),m->unit.functions.end(),
+                                      [](const auto& f){return f.external||!f.attributes.empty();});
+     if(isolated)isolate(*m,at);
+     if(program)std::erase_if(m->unit.functions,[](const auto& f){return f.name=="main";});
+     if(m->unit.module&&(!m->unit.extensions.empty()||!m->unit.features.empty()))
+      throw Error(at,"declaration extensions are not supported across a module boundary","ON1X-MODULE-EXTENSION");
     std::vector<Token>().swap(m->scanned);
     const auto module_operators=std::count_if(m->unit.operators.begin(),m->unit.operators.end(),
                                                [](const auto& op){return !op.block_local;});
@@ -484,7 +812,7 @@ class Loader {
                     "intrinsic cliche/impl declarations cannot cross legacy Category or Unit-v1 PPX expansion",
                     !m->unit.inherent_implementations.empty()?"ON1X-IMPL-UNSUPPORTED":
                                                                "ON1X-CLICHE-UNSUPPORTED");
-       if(!options.interfaces.empty()){
+        if(!options.interfaces.empty()||has_signature(*m)){
        const auto reject=[](const Location& where){
         throw Error(where,"interface verification does not execute PPX or declaration extensions",
                     "ON1X-INTERFACE-UNSUPPORTED");
@@ -544,62 +872,99 @@ class Loader {
      if(carrier.end.offset-carrier.where.offset>262144)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier byte budget exhausted","ON1X-CAT-SYNTAX");
       carrier.source=m->source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
     }
-    extensions::expand(m->unit,options.extensions,path.string());
+     if(!isolated)extensions::expand(m->unit,options.extensions,path.string());
      m->unit.source_digests.emplace(path.string(),extensions::digest(m->source));
   }
     if(auto found=shared_sources.find(path);found!=shared_sources.end()){
      m->shared=found->second;
      for(const auto& op:shared_intrinsics)
       if(shared_module(op.kind)==*m->shared)
-       insert(m->names.values,std::string(op.spelling),Symbol{m,std::string(op.identity),true},at);
+        insert(m->declarations.values,std::string(op.spelling),Symbol{m,std::string(op.identity),true},at);
     }
-    for(const auto& d:m->unit.nominals)insert(m->names.types,d.name,Symbol{m,d.name},d.where);
-    for(const auto& c:m->unit.cliches)insert(m->names.cliches,c.name,Symbol{m,c.name},c.where);
+     for(const auto& d:m->unit.nominals){
+      validate_visibility(*m,d.visibility,d.where);
+      insert(m->declarations.types,d.name,Symbol{m,d.name,false,d.visibility},d.where);
+     }
+     for(const auto& c:m->unit.cliches){
+      validate_visibility(*m,c.visibility,c.where);
+      insert(m->declarations.cliches,c.name,Symbol{m,c.name,false,c.visibility},c.where);
+     }
    for(const auto& f:m->unit.functions){
    if(is_reserved_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
    // PPX cfg may select between declarations with the same name. Retain both
    // AST declarations; the normal post-PPX checker rejects remaining duplicates.
-   insert(m->names.values,f.name,Symbol{m,f.name,f.external},f.where);
+    validate_visibility(*m,f.visibility,f.where);
+    if(named_module(*m)&&m->declarations.values.contains(f.name))
+     throw Error(f.where,"duplicate module declaration: "+f.name,"ON1X-MODULE-IDENTITY");
+    insert(m->declarations.values,f.name,Symbol{m,f.name,f.external,f.visibility},f.where);
   }
   for(const auto& macro:m->unit.macros){
-   if(m->names.syntax.contains(macro.name))throw Error(macro.where,"duplicate macro: "+macro.name);
-   insert(m->names.syntax,macro.name,Symbol{m,macro.name},macro.where);
-  }
+    if(m->declarations.syntax.contains(macro.name))throw Error(macro.where,"duplicate macro: "+macro.name);
+    validate_visibility(*m,macro.visibility,macro.where);
+    insert(m->declarations.syntax,macro.name,Symbol{m,macro.name,false,macro.visibility},macro.where);
+   }
+    m->names=m->declarations;
+    if(named_module(*m)){
+     auto source_interface=path;source_interface.replace_extension(".on1xi");
+     if(auto found=explicit_interfaces.find(source_interface);found!=explicit_interfaces.end()){
+      if(m->member&&!m->member->interfaces.empty()&&m->member->interfaces!=std::vector<fs::path>{found->second})
+       throw Error({found->second.string()},"explicit interface conflicts with module membership","ON1X-INTERFACE-DUPLICATE");
+      if(!m->member||m->member->interfaces.empty())verify_signatures(*m,{found->second},at);
+     }
+    }
    for(std::size_t i=0;i<m->unit.module_imports.size();++i){
     const auto& imp=m->unit.module_imports[i];
     if(++edges>16384)throw Error(imp.where,"import edge limit exceeded");
     // `from . import child` addresses a directory, not its currently-loading initializer.
-    auto* target=m->operator_targets[i];
-    bool own_package=false;
-    if(target)target=visit(target,imp.where);
-    else{
-     auto target_path=resolve(imp,*m);
-     own_package=self_package(imp,*m,target_path);
-     target=own_package?m:visit(target_path,imp.where,!imp.quoted);
-    }
-   if(target!=m)m->dependencies.push_back(target);
-   if(imp.quoted){m->quoted.push_back(target);merge(m->names,target->names,imp.where);continue;}
-    if(!imp.selective){bind_module(m->names,imp.alias.empty()?imp.module:imp.alias,target,imp.where);continue;}
-    for(const auto& selection:imp.names){
+     auto* target=m->operator_targets[i];
+     if(!target)target=import_metadata(imp,*m);
+     const bool own_package=!target;
+     const bool explicit_program=program_import(imp);
+     target=own_package?m:visit(target,imp.where,isolated||explicit_program,explicit_program);
+     if(target!=m)depend(*m,*target);
+     if(imp.quoted&&!explicit_program){m->quoted.push_back(target);merge(m->names,target->names,imp.where,m);continue;}
+     if(!imp.selective){
+      auto alias=imp.alias;
+      if(alias.empty()){
+       alias=explicit_program&&imp.quoted?target->path.stem().string():imp.module;
+       if(explicit_program&&imp.quoted&&alias.find('.')!=std::string::npos)
+        throw Error(imp.where,"program path requires an explicit module alias","ON1X-PROGRAM-IMPORT");
+      }
+      if(!valid_module_name(alias))throw Error(imp.where,"program path requires an explicit module alias","ON1X-PROGRAM-IMPORT");
+      bind_module(m->names,alias,target,imp.where);continue;
+     }
+     Names selected;
+     for(const auto& selection:imp.names){
      if(selection.is_operator)continue; // Already included in the operator export scope.
      const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
-     bool found=false;
-     if(!own_package){
-     if(auto it=target->names.values.find(name);it!=target->names.values.end()){value_alias(m->names,alias,imp.where);insert(m->names.values,alias,it->second,imp.where);found=true;}
-       if(auto it=target->names.syntax.find(name);it!=target->names.syntax.end()){value_alias(m->names,alias,imp.where);insert(m->names.syntax,alias,it->second,imp.where);found=true;}
-       if(auto it=target->names.types.find(name);it!=target->names.types.end()){value_alias(m->names,alias,imp.where);insert(m->names.types,alias,it->second,imp.where);found=true;}
-       if(auto it=target->names.cliches.find(name);it!=target->names.cliches.end()){value_alias(m->names,alias,imp.where);insert(m->names.cliches,alias,it->second,imp.where);found=true;}
-     if(auto it=target->names.modules.find(name);it!=target->names.modules.end()){bind_module(m->names,alias,it->second,imp.where);found=true;}
-    }
-    if(found)continue;
-    if(!directory(target->path)&&target->path.filename()!="__init__.on1x")throw Error(imp.where,"module '"+imp.module+"' has no export '"+name+"'");
+      bool found=false;
+      if(!own_package){
+       const auto& visible=exported(*target);
+       auto select=[&](auto& into,const auto& from){
+        if(auto it=from.find(name);it!=from.end()){
+         require_access(it->second,*m,imp.where);
+         value_alias(selected,alias,imp.where);insert(into,alias,it->second,imp.where);found=true;
+        }
+       };
+       select(selected.values,visible.values);select(selected.syntax,visible.syntax);
+       select(selected.types,visible.types);select(selected.cliches,visible.cliches);
+       if(auto it=visible.modules.find(name);it!=visible.modules.end()){
+        bind_module(selected,alias,it->second,imp.where);found=true;
+       }
+     }
+     if(found)continue;
+     if(named_module(*target)||(!directory(target->path)&&target->path.filename()!="__init__.on1x"))
+      throw Error(imp.where,"module '"+imp.module+"' has no export '"+name+"'");
      auto child=candidate(package(*target)/name,imp.where);
       for(const auto& root:standard_roots)
        if(directory(root)&&directory(target->path)&&target->path==canonical(root,imp.where)){child=standard(name,imp.where);break;}
     if(child.empty())throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
-    auto* imported=visit(child,imp.where);m->dependencies.push_back(imported);
-     bind_module(m->names,alias,imported,imp.where);
-    }
+     auto* imported=metadata(child,imp.where);
+     if(named_module(*imported))throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
+     visit(imported,imp.where,isolated);depend(*m,*imported);
+     bind_module(selected,alias,imported,imp.where);
+     }
+     merge(m->names,selected,imp.where);
    }
    m->discovery={};
    std::vector<Module*>().swap(m->operator_targets);
@@ -653,18 +1018,25 @@ class Loader {
                 "ON1X-STDFFI-MEMBER");
    }
     const auto& symbols=type?names.types:syntax?names.syntax:names.values;
-  if(auto it=symbols.find(text);it!=symbols.end()){text=name(it->second);return;}
+   if(auto it=symbols.find(text);it!=symbols.end()){
+    if(current_module)require_access(it->second,*current_module,at);
+    text=name(it->second);return;
+   }
   if(dot!=std::string::npos){
    // Longest bound prefix, followed by explicitly imported/re-exported modules.
    for(auto cut=text.rfind('.');cut!=std::string::npos;cut=cut?text.rfind('.',cut-1):std::string::npos){
     auto it=names.modules.find(text.substr(0,cut));if(it==names.modules.end())continue;
     std::string member=text.substr(cut+1);auto* module=it->second;
     while(true){
-     const auto& exports=type?module->names.types:syntax?module->names.syntax:module->names.values;
-     if(auto symbol=exports.find(member);symbol!=exports.end()){text=name(symbol->second);return;}
+      const auto& visible=exported(*module);
+      const auto& exports=type?visible.types:syntax?visible.syntax:visible.values;
+      if(auto symbol=exports.find(member);symbol!=exports.end()){
+       if(current_module)require_access(symbol->second,*current_module,at);
+       text=name(symbol->second);return;
+      }
      bool descended=false;
      for(auto split=member.rfind('.');split!=std::string::npos;split=split?member.rfind('.',split-1):std::string::npos){
-      auto child=module->names.modules.find(member.substr(0,split));if(child==module->names.modules.end())continue;
+       auto child=visible.modules.find(member.substr(0,split));if(child==visible.modules.end())continue;
       module=child->second;member=member.substr(split+1);descended=true;break;
      }
      if(!descended)break;
@@ -673,14 +1045,17 @@ class Loader {
     }
     throw Error(at,"unknown module qualifier: "+text);
   }
-  if(names.modules.contains(text))throw Error(at,"module is not a first-class value: "+text);
+   if(names.modules.contains(text))throw Error(at,"module is not a first-class value: "+text);
+    if(current_module&&current_module->program&&!type&&!syntax&&text=="main")
+     throw Error(at,"imported program entry point is not available","ON1X-PROGRAM-IMPORT");
    if(!type&&globals.contains(text)&&!is_intrinsic_name(text))throw Error(at,"name is not imported in this module: "+text);
    if(type&&type_globals.contains(text))throw Error(at,"type is not imported in this module: "+text);
    // Unknown unqualified names remain for the ordinary checker, or a PPX which
    // generates globals (derive/test). The loader never infers types or effects.
    }
     void cliche_reference(std::string& text,const Location& at,const Names& names){
-    if(auto found=names.cliches.find(text);found!=names.cliches.end()){
+     if(auto found=names.cliches.find(text);found!=names.cliches.end()){
+      if(current_module)require_access(found->second,*current_module,at);
      text=name(found->second);return;
     }
     if(auto dot=text.find('.');dot!=std::string::npos){
@@ -689,14 +1064,16 @@ class Loader {
       auto module=names.modules.find(text.substr(0,cut));if(module==names.modules.end())continue;
       std::string member=text.substr(cut+1);auto* owner=module->second;
       while(true){
-       if(auto found=owner->names.cliches.find(member);found!=owner->names.cliches.end()){
+        const auto& visible=exported(*owner);
+        if(auto found=visible.cliches.find(member);found!=visible.cliches.end()){
+         if(current_module)require_access(found->second,*current_module,at);
         text=name(found->second);return;
        }
        bool descended=false;
        for(auto split=member.rfind('.');split!=std::string::npos;
            split=split?member.rfind('.',split-1):std::string::npos){
-        auto child=owner->names.modules.find(member.substr(0,split));
-        if(child==owner->names.modules.end())continue;
+         auto child=visible.modules.find(member.substr(0,split));
+         if(child==visible.modules.end())continue;
         owner=child->second;member=member.substr(split+1);descended=true;break;
        }
        if(!descended)break;
@@ -709,16 +1086,23 @@ class Loader {
      throw Error(at,"cliche is not imported in this module: "+text,"ON1X-CLICHE-IMPORT");
      // Preserve a source-level unknown name for the located cliche diagnostic.
     }
-    std::optional<std::string> named_reference(const std::string& text,const Names& names,
-                                               bool cliche)const{
+     std::optional<std::string> named_reference(const std::string& text,const Names& names,
+                                                bool cliche,const Location& at)const{
      const auto direct=[&](const Module* module,const std::string& key)
        ->std::optional<std::string>{
-      const auto& symbols=cliche?module->names.cliches:module->names.types;
-      if(auto found=symbols.find(key);found!=symbols.end())return name(found->second);
+       const auto& visible=exported(*module);
+       const auto& symbols=cliche?visible.cliches:visible.types;
+       if(auto found=symbols.find(key);found!=symbols.end()){
+        if(current_module)require_access(found->second,*current_module,at);
+        return name(found->second);
+       }
       return {};
      };
      const auto& local=cliche?names.cliches:names.types;
-     if(auto found=local.find(text);found!=local.end())return name(found->second);
+      if(auto found=local.find(text);found!=local.end()){
+       if(current_module)require_access(found->second,*current_module,at);
+       return name(found->second);
+      }
      if(text.find('.')==std::string::npos)return {};
      for(auto cut=text.rfind('.');cut!=std::string::npos;
          cut=cut?text.rfind('.',cut-1):std::string::npos){
@@ -729,8 +1113,9 @@ class Loader {
        bool descended=false;
        for(auto split=member.rfind('.');split!=std::string::npos;
            split=split?member.rfind('.',split-1):std::string::npos){
-        auto child=owner->names.modules.find(member.substr(0,split));
-        if(child==owner->names.modules.end())continue;
+         const auto& children=exported(*owner).modules;
+         auto child=children.find(member.substr(0,split));
+         if(child==children.end())continue;
         owner=child->second;member=member.substr(split+1);descended=true;break;
        }
        if(!descended)break;
@@ -801,8 +1186,8 @@ class Loader {
     for(auto& argument:e.cliche_arguments)argument=type_reference(argument,e.where,names);
     for(auto& argument:e.member_type_arguments)argument=type_reference(argument,e.where,names);
      if(e.kind==Expr::Kind::ClicheMember){
-      auto cliche=named_reference(e.text,names,true);
-      auto nominal=named_reference(e.text,names,false);
+       auto cliche=named_reference(e.text,names,true,e.where);
+       auto nominal=named_reference(e.text,names,false,e.where);
       if(cliche&&nominal)
        throw Error(e.where,"ambiguous '::' owner is both a cliche and nominal type: "+e.text,
                    "ON1X-IMPL-AMBIGUOUS");
@@ -821,7 +1206,7 @@ class Loader {
       const auto& spelling=e.children[0]->text;
       const auto first=spelling.substr(0,spelling.find('.'));
       if(!values.contains(first)&&!names.values.contains(spelling))
-       if(auto nominal=named_reference(spelling,names,false)){
+        if(auto nominal=named_reference(spelling,names,false,e.where)){
        e.result=Type::named(*nominal);e.children.clear();
       }
      }
@@ -912,11 +1297,12 @@ class Loader {
     Location where{path.string()};
     if(path.extension()!=".on1xi"||!regular(path))
      throw Error(where,"expected a regular .on1xi file","ON1X-INTERFACE-FILE");
-    auto origin=canonical(path,where);
+     auto origin=canonical(path,where);
     if(!seen.insert(origin).second)
      throw Error(where,"duplicate interface file","ON1X-INTERFACE-DUPLICATE");
-    if(origin.extension()!=".on1xi")
-     throw Error(where,"interface must resolve to a .on1xi file","ON1X-INTERFACE-FILE");
+     if(origin.extension()!=".on1xi")
+      throw Error(where,"interface must resolve to a .on1xi file","ON1X-INTERFACE-FILE");
+     if(verified_signatures.contains(origin))continue;
     where.file=origin.string();
     auto implementation=origin;implementation.replace_extension(".on1x");
     // Never resolve by search precedence, import alias, or re-export. The
@@ -946,8 +1332,64 @@ class Loader {
      obligations.push_back({std::move(member),f.where,std::move(resolved)});
     }
    }
-   return obligations;
-  }
+    return obligations;
+   }
+   void index_membership(){
+    const Location at{"<project-module-index>"};
+    const auto valid_root=[&](const fs::path& root){
+     if(!root.is_absolute()||canonical(root,at)!=root||!directory(root))
+      throw Error(at,"expected a canonical project package directory: "+root.string(),"ON1X-MODULE-MEMBERSHIP");
+    };
+    const auto valid_file=[&](const fs::path& file,const fs::path& root,std::string_view suffix){
+     if(!contained(root,file)||file.extension()!=suffix||canonical(file,at)!=file||!regular(file))
+      throw Error(at,"invalid project source membership: "+file.string(),"ON1X-MODULE-MEMBERSHIP");
+    };
+    if(!options.project_package.empty())valid_root(options.project_package);
+    else if(!options.module_members.empty()||!options.scoped_module_members.empty()||!options.program_members.empty())
+     throw Error(at,"module membership requires a project package","ON1X-MODULE-MEMBERSHIP");
+    std::map<std::pair<fs::path,std::string>,const Member*> identities;
+    const auto read=[&](const auto& any_scope){
+     for(const auto& [import,member]:any_scope){
+      if(!valid_module_name(import)||!valid_module_name(member.declared_name)||
+         member.fragments.empty()||member.fragments.size()>options.max_modules)
+       throw Error(at,"invalid project module membership: "+import,"ON1X-MODULE-MEMBERSHIP");
+      auto [original,added]=identities.emplace(std::make_pair(member.package,member.declared_name),&member);
+      if(!added){
+       if(original->second->fragments!=member.fragments||original->second->interfaces!=member.interfaces)
+        throw Error(at,"conflicting membership records for "+member.declared_name,"ON1X-MODULE-MEMBERSHIP");
+       continue;
+      }
+      valid_root(member.package);
+      std::set<fs::path> seen;
+      for(const auto& fragment:member.fragments){
+       valid_file(fragment,member.package,".on1xm");
+       if(!seen.insert(fragment).second||!enrolled.emplace(fragment,&member).second)
+        throw Error(at,"a source belongs to more than one fragment membership: "+fragment.string(),"ON1X-MODULE-MEMBERSHIP");
+      }
+      for(const auto& interface:member.interfaces){
+       valid_file(interface,member.package,".on1xi");
+       if(!seen.insert(interface).second)
+        throw Error(at,"duplicate interface membership: "+interface.string(),"ON1X-MODULE-MEMBERSHIP");
+      }
+     }
+    };
+    read(options.module_members);
+    for(const auto& [scope,membership]:options.scoped_module_members){valid_root(scope);read(membership);}
+    for(const auto& [name,path]:options.program_members){
+     if(!valid_module_name(name))throw Error(at,"invalid project program name: "+name,"ON1X-MODULE-MEMBERSHIP");
+     valid_file(path,options.project_package,".on1x");
+    }
+    for(const auto& path:options.interfaces){
+     const Location where{path.string()};
+     if(path.extension()!=".on1xi"||!regular(path))
+      throw Error(where,"expected a regular .on1xi file","ON1X-INTERFACE-FILE");
+     auto origin=canonical(path,where);
+     if(origin.extension()!=".on1xi")
+      throw Error(where,"interface must resolve to a .on1xi file","ON1X-INTERFACE-FILE");
+     if(!explicit_interfaces.emplace(origin,origin).second)
+      throw Error(where,"duplicate interface file","ON1X-INTERFACE-DUPLICATE");
+    }
+   }
    struct PreludeModules {
     Module* pervasive=nullptr;
     Module* operators=nullptr;
@@ -987,13 +1429,16 @@ class Loader {
        if(!ec)shared_sources.emplace(std::move(path),kind);
       }
     }
-   Unit parse_source(const fs::path& input){
+    Unit parse_source(const fs::path& input){
+     index_membership();
     (void)discover_preludes(input);
     const Location at{input.string()};
     auto* entry=metadata(input,at,false);
-    return parse_with_operators(entry->scanned,
+     auto result=parse_with_operators(entry->scanned,
             {options.extensions.enabled.begin(),options.extensions.enabled.end()},
-            std::move(entry->docs),visible_operators(*entry,at));
+             std::move(entry->docs),visible_operators(*entry,at));
+     check_asdl_module(result);
+     return result;
    }
    LoadedUnit run(const fs::path& input){
     if(options.kernel_load_time&&
@@ -1003,9 +1448,10 @@ class Loader {
                  "ON1X-KERNEL-PROFILE");
     if(options.interfaces.size()>max_interface_files)
     throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
-   if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
+    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
     throw Error({input.string()},"interface verification cannot run with KernelBind or declaration extensions",
-                "ON1X-INTERFACE-UNSUPPORTED");
+                 "ON1X-INTERFACE-UNSUPPORTED");
+     index_membership();
     const Location prelude_at{"<prelude>"};
     const auto discovered=discover_preludes(input);
     implicit=true;
@@ -1013,23 +1459,30 @@ class Loader {
     if(discovered.operators)visit(discovered.operators,prelude_at); // Open only its operator exports.
     implicit=false;
     for(auto* module:discovered.configured)preludes.push_back(visit(module,prelude_at));
-   auto* entry=visit(input,{input.string()},false);
+    const Location entry_at{input.string()};
+    auto* entry=metadata(input,entry_at,false);
+    if(entry->member)visit(group_metadata(*entry->member,entry_at),entry_at);
+    else visit(entry,entry_at);
    if(inspection)return {};
-   legacy(entry);
+    if(!named_module(*entry))legacy(entry);
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
     for(auto* m:order)for(const auto& f:m->unit.functions)globals.insert(name({m,f.name,f.external}));
     for(auto* m:order)for(const auto& d:m->unit.nominals)type_globals.insert(name({m,d.name}));
     for(auto* m:order)for(const auto& c:m->unit.cliches)cliche_globals.insert(name({m,c.name}));
-   LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
+    LoadedUnit result;std::map<std::string,const Function*> externs;std::set<std::string> lazy;
+    result.unit.module=entry->unit.module;
+    if(entry->unit.module)result.unit.module_imports=entry->unit.module_imports;
+    result.declaration_interface_members=declaration_interface_members;
+    std::set<std::pair<fs::path,fs::path>> emitted_edges;
     // Macro expansion or PPX can introduce the first operator in a graph.
     // Freeze module ownership even when discovery found no operators.
     result.unit.operator_entry=entry->path.string();
    result.interfaces=bind_interfaces();
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
    std::size_t count=0;
-   for(auto* m:order){
+     for(auto* m:order){
      count+=m->unit.functions.size()+m->unit.operators.size();
     for(const auto& implementation:m->unit.cliche_implementations)
      count+=implementation.members.size();
@@ -1038,12 +1491,28 @@ class Loader {
    }
    if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count);
-    for(auto* m:order){
-     current_module=m;
+     for(auto* m:order){
+      current_module=m;
+      result.unit.requires_module_boundary|=named_module(*m)||m->program;
      const auto scope_key=m->path.string();
       record_operator_scope(result.unit,m->operator_visibility,scope_key);
     for(auto& doc:m->unit.docstrings)result.unit.docstrings.push_back(std::move(doc));
-    auto names=m->legacy?flat:m->names;
+     auto names=m->legacy?flat:m->names;
+     if(m->group)merge(names,m->group->declarations,{m->path.string()},m);
+     if(m!=entry||!entry->unit.module)
+      for(const auto& imp:m->unit.module_imports)
+       if(program_import(imp))result.unit.module_imports.push_back(imp);
+     const auto add_edge=[&](const Module* target){
+      if(!regular(m->path)||!regular(target->path))return;
+      if(emitted_edges.emplace(m->path,target->path).second){
+       if(emitted_edges.size()>16384)throw Error({m->path.string()},"physical dependency edge limit exceeded");
+       result.source_edges.emplace_back(m->path,target->path);
+      }
+     };
+     for(auto* dep:m->dependencies){
+      if(dep->fragments.empty())add_edge(dep);
+      else for(auto* fragment:dep->fragments)add_edge(fragment);
+     }
       for(const auto& [alias,request]:m->kernels)if(import_alias_conflicts(names,alias))
        throw Error(request.where,"conflicting kernel import alias: "+alias,"ON1X-KERNEL-ALIAS");
       for(const auto& [alias,request]:m->foreigns)if(import_alias_conflicts(names,alias))
@@ -1051,10 +1520,14 @@ class Loader {
     for(auto it=preludes.rbegin();it!=preludes.rend();++it){
      auto* prelude=*it;
      const auto bound=[&](const std::string& key){return module_bound(names,key)||m->foreigns.contains(key);};
-     for(const auto& [key,symbol]:prelude->names.values)if(!names.values.contains(key)&&!bound(key))insert(names.values,key,symbol,{m->path.string()});
-      for(const auto& [key,symbol]:prelude->names.syntax)if(!names.syntax.contains(key)&&!bound(key))insert(names.syntax,key,symbol,{m->path.string()});
-       for(const auto& [key,symbol]:prelude->names.types)if(!names.types.contains(key)&&!bound(key))insert(names.types,key,symbol,{m->path.string()});
-       for(const auto& [key,symbol]:prelude->names.cliches)if(!names.cliches.contains(key)&&!bound(key))insert(names.cliches,key,symbol,{m->path.string()});
+      const auto& allowed=exported(*prelude);
+      const auto inject=[&](auto& into,const auto& from){
+       for(const auto& [key,symbol]:from)
+        if(!into.contains(key)&&!bound(key)&&accessible(*symbol.owner,*m,symbol.visibility))
+         insert(into,key,symbol,{m->path.string()});
+      };
+      inject(names.values,allowed.values);inject(names.syntax,allowed.syntax);
+      inject(names.types,allowed.types);inject(names.cliches,allowed.cliches);
    }
      for(auto& d:m->unit.nominals){
       for(auto& field:d.fields)field=type_reference(field,d.where,names);

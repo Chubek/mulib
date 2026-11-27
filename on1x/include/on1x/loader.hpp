@@ -22,7 +22,17 @@ struct LoaderOptions {
  // an empty map. All normal parsing, import and byte limits still apply.
   std::map<std::filesystem::path,std::string> source_overrides;
   extensions::Options extensions;
-  std::vector<std::filesystem::path> interfaces; // Explicit opt-in, never searched or imported.
+   std::vector<std::filesystem::path> interfaces; // Explicit opt-in, never searched or imported.
+  bool declaration_interfaces=false; // Accept checked declaration-only signatures; never emit this result.
+  struct ModuleMember {
+   std::filesystem::path package; // Canonical, verified package root.
+   std::string declared_name;
+   std::vector<std::filesystem::path> fragments,interfaces;
+  };
+  std::filesystem::path project_package;
+  std::map<std::string,ModuleMember> module_members;
+  std::map<std::filesystem::path,std::map<std::string,ModuleMember>> scoped_module_members;
+  std::map<std::string,std::filesystem::path> program_members;
 };
 struct LoadedUnit {
  Unit unit;
@@ -32,7 +42,10 @@ struct LoadedUnit {
  // includes tooling overrides and avoids a racy second filesystem read.
  std::vector<std::string> dependency_sources;
  std::set<std::string> internal_functions;
- std::vector<InterfaceObligation> interfaces;
+  std::vector<InterfaceObligation> interfaces;
+  std::size_t declaration_interface_members=0;
+  // Direct edges between physical source files, not synthetic module groups.
+  std::vector<std::pair<std::filesystem::path,std::filesystem::path>> source_edges;
 };
 // Reads the new *_PATH lists and legacy ON1X_STDLIB/ON1X_PATH aliases.
  LoaderOptions default_loader_options(const std::string& executable);

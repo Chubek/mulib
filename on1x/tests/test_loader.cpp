@@ -4,9 +4,92 @@
 #include <cassert>
 #include <filesystem>
 #include <fstream>
+
+namespace {
+void module_imports(const std::filesystem::path& root){
+ namespace fs=std::filesystem;
+ using namespace on1x;
+ fs::create_directories(root/"nested");
+ fs::create_directories(root/"project");
+ const auto entry=root/"entry.on1x";
+ const auto modern=root/"nested"/"Choice.on1xm";
+ const auto program=root/"program.on1x";
+ const auto helper=root/"helper.on1x";
+ const auto write=[](const fs::path& path,const std::string& source){
+  std::ofstream out(path);out<<source;
+  if(!out)throw std::runtime_error("cannot create module fixture");
+ };
+ const auto require=[](bool ok,const char* msg){if(!ok)throw std::runtime_error(msg);};
+ LoaderOptions options;options.prelude=false;
+ auto reject=[&](const std::string& source,const std::string& message){
+  write(entry,source);
+  try{(void)load_unit(entry,options);}
+  catch(const Error& error){if(std::string(error.what()).find(message)!=std::string::npos)return;throw;}
+  throw std::runtime_error("unexpectedly accepted: "+source);
+ };
+
+ write(modern,"module nested.Choice; private fn secret()->i64{return 40;}"
+              "public fn answer()->i64{return secret()+2;}");
+ write(entry,"import nested.Choice as c;import nested.Choice : answer as get;"
+             "fn main(){assert(c.answer()==get());}");
+ auto modules=load_unit(entry,options);
+ require(modules.unit.requires_module_boundary,"declared module did not retain its boundary");
+ require(modules.dependencies==std::vector<fs::path>{modern,entry},"wrong canonical module order");
+ require(modules.source_edges==std::vector<std::pair<fs::path,fs::path>>{{entry,modern}},
+         "canonical import diamond was not deduplicated");
+ check(modules.unit);
+ reject("import nested.Choice as c;fn main(){c.secret();}","not visible");
+ reject("from nested.Choice import answer,secret;fn main(){}","not visible");
+ reject("import \"nested/Choice.on1xm\";fn main(){}","canonical module identity");
+
+ write(helper,"fn number()->i64{return 42;}");
+ write(program,"import helper;fn main(){println(999031);}"
+               "fn public_result()->i64{return helper.number();}");
+ write(entry,"import program \"program.on1x\" as p;"
+             "fn main(){assert(p.public_result()==42);}");
+ auto imported=load_unit(entry,options);
+ require(imported.unit.requires_module_boundary&&imported.unit.module_imports.size()==1,
+         "program import did not retain its boundary");
+ require(imported.dependencies==std::vector<fs::path>{helper,program,entry},
+         "program dependencies are not ordered correctly");
+ require(imported.unit.functions.size()==3,"imported main reached the executable");
+ check(imported.unit);
+ require(emit_c(imported.unit,"entry.on1x").find("999031")==std::string::npos,
+         "imported main body reached the emitter");
+ reject("import program \"program.on1x\" as p;fn main(){p.main();}","no export");
+ reject("import program \"program.on1x\" as p;fn main(){p.helper.number();}","no export");
+ write(entry,"import program \"program.on1x\" : public_result as get;fn main(){assert(get()==42);}");
+ auto selected=load_unit(entry,options);
+ check(selected.unit);
+ reject("import program \"program.on1x\" : public_result as get,main;fn main(){}","no export");
+ reject("import program \"program.on1x\" : public_result as get;fn main(){program.public_result();}",
+        "unknown module qualifier");
+ write(helper,"extern fn number()->i64;");
+ reject("import program \"program.on1x\" as p;fn main(){}","ON1X-PROGRAM-CAPABILITY");
+
+ const auto a=root/"project"/"a.on1xm",b=root/"project"/"b.on1xm";
+ const auto sig=root/"project"/"signature.on1xi";
+ write(a,"module Work.Joined;public fn first()->i64{return second();}");
+ write(b,"module Work.Joined;public fn second()->i64{return 42;}");
+ write(sig,"abstract module Work.Joined;fn first()->i64;");
+ options.project_package=root;
+ options.module_members.emplace("Work.Joined",LoaderOptions::ModuleMember{root,"Work.Joined",{a,b},{sig}});
+ write(entry,"import Work.Joined as w;fn main(){assert(w.first()==42);}");
+ auto grouped=load_unit(entry,options);
+ require(grouped.dependencies==std::vector<fs::path>{a,b,entry},"fragment dependency order changed");
+ require(grouped.source_edges==std::vector<std::pair<fs::path,fs::path>>{{entry,a},{entry,b}},
+         "module graph did not report both fragment edges");
+ check(grouped.unit);
+ reject("import Work.Joined as w;fn main(){w.second();}","no export");
+ write(sig,"abstract module Work.Joined;fn first()->bool;");
+ reject("import Work.Joined as w;fn main(){}","ON1X-INTERFACE");
+}
+}
+
 int main(int argc,char** argv){
  assert(argc==2);namespace fs=std::filesystem;
  fs::path root=argv[1];fs::create_directories(root);
+ module_imports(fs::canonical(root)/"module-imports");
  std::ofstream(root/"a.on1x")<<"import b;fn main(){}";
  std::ofstream(root/"b.on1x")<<"fn value()->i64{return 42;}";
  on1x::LoaderOptions options;options.prelude=false;
