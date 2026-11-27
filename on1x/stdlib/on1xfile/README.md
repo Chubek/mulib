@@ -137,9 +137,10 @@ program "Helpers.Legacy" "src/legacy.on1x"
 ```
 
 The file must also have the existing `library "legacy.on1x"` directory-local
-role. Use `import program Helpers.Legacy` and the appropriate source selectors;
-this opt-in does not turn the imported file into a target or allow a dependency
-to use the project's program names.
+role. Use `import program Helpers.Legacy` and the appropriate source selectors.
+A quoted explicit program import can use a same-package relative path to an
+admitted file. This opt-in does not turn the imported file into a target or
+allow a dependency to use the project's program names.
 
 Run from a checkout:
 

@@ -1860,9 +1860,11 @@ def quoted_import(file, spelling, root, libraries):
         base = base.parent
     if base / tail not in libraries:
         fail(f'{file}: quoted import must name a declared library in the same package: {spelling!r}')
+    return base / tail
 
 
-def source_policy(executor, compiler, file, root, libraries, *, declared_module=None, programs=()):
+def source_policy(executor, compiler, file, root, libraries, *, declared_module=None,
+                  programs=(), program_paths=()):
     listed = executor.run([compiler, '--tokens', executor.path(file)], bound=16 * MAX_SOURCE)
     # Use the canonical scanner. Only the exact directive token pair matters:
     # comments, string data and hygienic syntax are not regex-scanned as source.
@@ -1888,14 +1890,17 @@ def source_policy(executor, compiler, file, root, libraries, *, declared_module=
             if target == b'program' and following != b'as' and (
                     following.startswith(b'"') or re.fullmatch(rb'[A-Za-z_][A-Za-z0-9_]*', following)):
                 if following.startswith(b'"'):
-                    fail(f'{file}: project program imports require an admitted program name')
-                parts, j = [following], i + 3
-                while j + 1 < len(tokens) and tokens[j] == b'.':
-                    parts.append(tokens[j + 1])
-                    j += 2
-                program = b'.'.join(parts).decode('utf-8')
-                if program not in programs:
-                    fail(f'{file}: program is not in the project index: {program}')
+                    path = quoted_import(file, following[1:-1].decode('utf-8'), root, libraries)
+                    if path not in program_paths:
+                        fail(f'{file}: quoted program is not in the project index: {path.name}')
+                else:
+                    parts, j = [following], i + 3
+                    while j + 1 < len(tokens) and tokens[j] == b'.':
+                        parts.append(tokens[j + 1])
+                        j += 2
+                    program = b'.'.join(parts).decode('utf-8')
+                    if program not in programs:
+                        fail(f'{file}: program is not in the project index: {program}')
             elif target.startswith(b'"'):
                 quoted_import(file, target[1:-1].decode('utf-8'), root, libraries)
         if tokens[i] == b'from' and tokens[i + 1] in (b'.', b'...'):
@@ -2038,11 +2043,11 @@ def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_ro
 
 
 def check_manifest_members(executor, compiler, stage, members, loader, compiler_flags,
-                           permitted, trusted_roots, edges):
+                           permitted, trusted_roots, edges, *, directory=Path('.')):
     for i, (member, declaration) in enumerate(sorted(members.items())):
         # The loader uses the carrier's canonical staged package to select
         # its scope. A dot-prefixed name cannot be a manifest-declared path.
-        carrier = stage / f'.on1x-check-module-{i}.on1x'
+        carrier = stage / directory / f'.on1x-check-module-{i}.on1x'
         stage_bytes(carrier, f'import {member};\nfn main() -> i64 {{ return 0; }}\n'.encode())
         try:
             entry = executor.path(carrier)
@@ -2626,22 +2631,24 @@ def build(args):
             dep_report[key] = record
 
         project_modules = {project_stage / path for path, role in roles.items() if role == 'library'}
+        program_paths = {project_stage / path for path in config['programs'].values()}
         project_programs = [project_stage / path for path, role in roles.items() if role in ('source', 'library')]
         for path in sorted(project_programs):
             source_policy(executor, compiler, path, project_stage / directory,
-                          project_modules, programs=config['programs'])
-        for name, module in sorted(root_members.items()):
+                          project_modules, programs=config['programs'], program_paths=program_paths)
+        for module_name, module in sorted(root_members.items()):
             for path in module.sources:
                 source_policy(executor, compiler, project_stage / path, project_stage / directory,
-                              project_modules, declared_module=name, programs=config['programs'])
+                              project_modules, declared_module=module_name, programs=config['programs'],
+                              program_paths=program_paths)
         for key, paths in dep_modules.items():
             own_files = set(paths)
             for path in sorted(paths):
                 source_policy(executor, compiler, path, deps_stage / key, own_files)
-            for name, module in sorted(dep_members[key].items()):
+            for module_name, module in sorted(dep_members[key].items()):
                 for path in module.sources:
                     source_policy(executor, compiler, deps_stage / key / path, deps_stage / key,
-                                  own_files, declared_module=name)
+                                  own_files, declared_module=module_name)
         dep_sources = [path for paths in dep_modules.values() for path in paths]
         # A std package must use its own staged pervasive module and imports,
         # not fill missing declarations from the installed standard library.
@@ -2657,6 +2664,8 @@ def build(args):
             packages[config['name']] = (project_stage, root_members, '')
         index_flags, module_owners = module_index(executor, work / 'input/module-index.json', project_stage,
                                                   packages, config['programs'])
+        if index_flags and directory != Path('.'):
+            loader += ['-I', str(executor.path(project_stage / directory))]
         loader += index_flags
         module_edges = set()
         kernel_flags = ['--kernel-load-time'] if load_time else []
@@ -2688,7 +2697,7 @@ def build(args):
         verify_interfaces(executor, compiler, project_stage, roles, graph_loader,
                           compiler_flags, permitted, trusted_roots)
         check_manifest_members(executor, compiler, project_stage, root_members, graph_loader,
-                               compiler_flags, permitted, trusted_roots, module_edges)
+                               compiler_flags, permitted, trusted_roots, module_edges, directory=directory)
         outputs = {}
         guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':

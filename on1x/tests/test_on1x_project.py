@@ -91,6 +91,71 @@ class ProjectTests(unittest.TestCase):
         self.build('--release', '--output-dir', str(self.output),
                    negative='not a build output for this project kind/name/profile')
 
+    def test_named_module_fragments_and_interface_on_executable_path(self):
+        rules = ('module "Math.Tools" "src/z.on1xm"\n'
+                 'module "Math.Tools" "src/a.on1xm"\n'
+                 'module-interface "Math.Tools" "src/z-api.on1xi"\n'
+                 'module-interface "Math.Tools" "src/a-api.on1xi"\n'
+                 'module-interface-policy "Math.Tools" required\n'
+                 'module "Base" "src/base-fragment.on1xm"\n')
+        source = 'import Math.Tools : answer; fn main(){println(answer());}\n'
+        self.app(rules, source)
+        self.write('src/z.on1xm', 'module Math.Tools; import Base : base; '
+                   'public fn answer()->i64{return base()+21;}\n')
+        self.write('src/a.on1xm', 'module Math.Tools; public fn spare()->i64{return 42;} '
+                   'public fn hidden()->i64{return 42;}\n')
+        self.write('src/base-fragment.on1xm', 'module Base; public fn base()->i64{return 21;}\n')
+        self.write('src/z-api.on1xi', 'abstract module Math.Tools; fn answer()->i64;\n')
+        self.write('src/a-api.on1xi', 'abstract module Math.Tools; fn spare()->i64;\n')
+        output = self.build()
+        self.run_bin(output)
+        marker = output / '.on1x-build.json'
+        before = marker.read_bytes()
+        self.assertEqual(json.loads(before)['module_graph'], [
+            {'package': 'sample', 'name': 'Base', 'dependencies': []},
+            {'package': 'sample', 'name': 'Math.Tools',
+             'dependencies': [{'package': 'sample', 'name': 'Base'}]},
+        ])
+        self.write('src/main.on1x', 'import Math.Tools : hidden; fn main(){println(hidden());}\n')
+        self.build(negative="has no export 'hidden'")
+        self.assertEqual(marker.read_bytes(), before)
+        self.write('src/main.on1x', source)
+        self.write('src/a.on1xm', 'module Different; public fn spare()->i64{return 42;}\n')
+        self.build(negative='source module header does not match declared membership')
+        self.assertEqual(marker.read_bytes(), before)
+
+    def test_program_import_requires_project_opt_in_even_without_modules(self):
+        source = 'import program tool : value as get; fn main(){println(get());}\n'
+        self.app(implementation=source)
+        roles = 'on1xfile 1\nsource "main.on1x"\nlibrary "tool.on1x"\n'
+        self.write('src/On1xfile.m', roles)
+        self.write('src/tool.on1x', 'fn value()->i64{return 42;} fn main(){println(999);}\n')
+        self.build(negative='program is not in the project index: tool')
+        self.app('program "tool" "src/tool.on1x"\n', source)
+        self.write('src/On1xfile.m', roles)
+        self.run_bin(self.build())
+
+    def test_published_module_package_reloads_scoped_members(self):
+        rules = ('module "Outer" "lib/outer.on1xm"\n'
+                 'module "Inner" "lib/inner.on1xm"\n')
+        self.write('pkg/On1xfile', 'on1xfile 1\nkind library\nname "dep"\ndirectory "lib"\n' + rules)
+        self.write('pkg/lib/outer.on1xm', 'module Outer; import Inner : value; '
+                   'public fn answer()->i64{return value();}\n')
+        self.write('pkg/lib/inner.on1xm', 'module Inner; public fn value()->i64{return 42;}\n')
+        published = self.build(root=self.project / 'pkg') / 'library'
+        self.assertIn('module "Outer" "lib/outer.on1xm"\n', (published / 'On1xfile').read_text())
+        self.assertTrue((published / 'lib/outer.on1xm').is_file())
+        self.assertFalse(list(published.glob('.on1x-check-module-*.on1x')))
+        self.app('dependency "dep" local "pkg/target/dev/library"\n',
+                 'import dep.Outer : answer; fn main(){println(answer());}\n')
+        output = self.build()
+        self.run_bin(output)
+        self.assertEqual(json.loads((output / '.on1x-build.json').read_bytes())['module_graph'], [
+            {'package': 'dep', 'name': 'Inner', 'dependencies': []},
+            {'package': 'dep', 'name': 'Outer',
+             'dependencies': [{'package': 'dep', 'name': 'Inner'}]},
+        ])
+
     def test_scrutiny_precedence(self):
         probe = self.root / 'analysis-probe.on1x'
         probe.write_text('fn main()->i64{return 42/0;}\n')

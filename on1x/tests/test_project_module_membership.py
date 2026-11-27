@@ -149,8 +149,10 @@ class ModuleProjects(unittest.TestCase):
             project.source_policy(runner, 'cc', entry, root, set())
         project.source_policy(runner, 'cc', entry, root, set(), programs={'Helpers.Value'})
         tokens[2:] = [b'"tool.on1x"', b':', b'value', b';']
-        with self.assertRaisesRegex(ValueError, 'require an admitted program name'):
+        with self.assertRaisesRegex(ValueError, 'quoted program is not in the project index'):
             project.source_policy(runner, 'cc', entry, root, {root / 'tool.on1x'})
+        project.source_policy(runner, 'cc', entry, root, {root / 'tool.on1x'},
+                              program_paths={root / 'tool.on1x'})
         tokens[2:] = [b'as', b'p', b';']
         project.source_policy(runner, 'cc', entry, root, set())
 

@@ -48,7 +48,7 @@ def frontend_flags(flags):
         "--no-analysis-repairs": 0, "--allow-source-ppx": 0,
         "--opt-profile": 1, "--profile": 1, "--enable-opt": 1, "--disable-opt": 1,
         "--all-optimizations": 0, "--no-optimizations": 0,
-        "-I": 1, "--module-path": 1, "--stdlib": 1, "--prelude": 1,
+        "-I": 1, "--module-path": 1, "--stdlib": 1, "--prelude": 1, "--project-module-index": 1,
         "--lib-path": 1, "--stdlib-path": 1, "--ppx-path": 1,
         "--stdppx-path": 1, "--stdppx": 1, "--use-ppx": 1,
         "--enable": 1, "--disable": 1, "--ppx-timeout-ms": 1,
