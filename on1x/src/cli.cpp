@@ -222,6 +222,18 @@ namespace {
    throw std::runtime_error("atomic "+action+" file output requires a POSIX host; use stdout");
 #endif
  }
+ void apply_project_module_index(on1x::LoaderOptions& loader,const std::filesystem::path& path){
+  auto index=on1x::project_index::read(path);
+  loader.project_package=std::move(index.project);
+  loader.program_members=std::move(index.programs);
+  for(auto& [name,member]:index.members){
+   on1x::LoaderOptions::ModuleMember indexed{member.package,member.declared_name,
+                                             std::move(member.fragments),std::move(member.interfaces)};
+   if(indexed.package!=loader.project_package)
+    loader.scoped_module_members[indexed.package].emplace(indexed.declared_name,indexed);
+   loader.module_members.emplace(name,std::move(indexed));
+  }
+ }
  int format_command(int argc,char** argv,std::string_view command){
   namespace fmt=on1x::format;
   fmt::Options options;
@@ -231,7 +243,7 @@ namespace {
   if(command=="--emit-troff")options.target=fmt::Target::troff;
   if(command=="--emit-html")options.target=fmt::Target::html;
   bool check=false, inplace=false, options_done=false, isolated=false, scope_options=false;
-  std::string source,out;
+   std::string source,out,module_index;
    auto usage_error=[](const std::string& message){
     std::cerr<<"on1xc: "<<terminal_text(message)<<'\n';
    return 2;
@@ -242,7 +254,8 @@ namespace {
    if(!options_done&&(arg=="--help"||arg=="-h")){
      std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff|html] [--check | --inplace | -i | -o OUTPUT]\n"
       "  -i, --inplace  Replace INPUT atomically with plain formatted source.\n"
-      "  --isolated     Do not open imports or the prelude (for editor snapshots).\n"
+       "  --isolated     Do not open imports or the prelude (for editor snapshots).\n"
+       "  --project-module-index FILE  Use staged module membership for operator discovery.\n"
       "  --stdlib DIR [-I DIR | --module-path DIR] [--prelude FILE | --no-prelude]\n"
       "  --lib-path DIR:DIR | --stdlib-path DIR:DIR\n";
     return 0;
@@ -255,7 +268,11 @@ namespace {
     else if(target=="troff")options.target=fmt::Target::troff;
     else if(target=="html")options.target=fmt::Target::html;
      else return usage_error("unknown formatter target: "+std::string(target));
-    }else if(!options_done&&arg=="--check")check=true;
+     }else if(!options_done&&arg=="--project-module-index"){
+      if(!module_index.empty()||++i==argc||!argv[i][0])
+       return usage_error("--project-module-index requires exactly one nonempty index path");
+      module_index=argv[i];scope_options=true;
+     }else if(!options_done&&arg=="--check")check=true;
     else if(!options_done&&(arg=="--inplace"||arg=="-i"))inplace=true;
     else if(!options_done&&arg=="--isolated")isolated=true;
     else if(!options_done&&arg=="--no-prelude"){
@@ -298,9 +315,14 @@ namespace {
    }
    operator_loader.paths.insert(operator_loader.paths.begin(),import_paths.begin(),import_paths.end());
    operator_loader.stdlib_paths.insert(operator_loader.stdlib_paths.begin(),stdlib_paths.begin(),stdlib_paths.end());
-   operator_loader.extensions.enabled.insert(options.enabled_extensions.begin(),options.enabled_extensions.end());
-   operator_loader.extensions.execute=false;
-   options.operator_loader=std::move(operator_loader);
+    operator_loader.extensions.enabled.insert(options.enabled_extensions.begin(),options.enabled_extensions.end());
+    operator_loader.extensions.execute=false;
+    // Interfaces and the legacy literal '-' input are source-only: do not
+    // inspect the staged index any more than their imports or prelude.
+    const std::filesystem::path input=source;
+    if(!module_index.empty()&&input!="-"&&input.extension()!=".on1xi")
+     apply_project_module_index(operator_loader,module_index);
+    options.operator_loader=std::move(operator_loader);
   }
   if(inplace){
    if(check||!out.empty())
@@ -1425,18 +1447,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
          return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes,mir_target);
     }
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||mode=="--project-module-graph")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
-   if(!project_module_index.empty()){
-    auto index=on1x::project_index::read(project_module_index);
-    loader.project_package=std::move(index.project);
-    loader.program_members=std::move(index.programs);
-    for(auto& [name,member]:index.members){
-     on1x::LoaderOptions::ModuleMember indexed{member.package,member.declared_name,
-                                               std::move(member.fragments),std::move(member.interfaces)};
-     if(indexed.package!=loader.project_package)
-      loader.scoped_module_members[indexed.package].emplace(indexed.declared_name,indexed);
-     loader.module_members.emplace(name,std::move(indexed));
-    }
-   }
+   if(!project_module_index.empty())apply_project_module_index(loader,project_module_index);
    if(mode=="--kernel-imports"){
     write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
    }
