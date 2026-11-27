@@ -18,5 +18,5 @@ source_selector = SourceValueSelector(string name, string? alias) | SourceOperat
 source_import = SourceModuleImport(source_import_target target, usize relative_depth, bool selective, string? alias, source_selector* selectors, source_point location)
               | SourceProgramImport(source_import_target target, bool selective, string? alias, source_selector* selectors, source_point location)
 source_visibility = SourcePublic | SourceShared(usize elevation) | SourcePrivate
-source_declaration_visibility = SourceDeclarationVisibility(string kind, string spelling, source_visibility rule, source_point location) | SourceOperatorVisibility(string spelling, source_visibility rule, source_point location)
+source_declaration_visibility = SourceDeclarationVisibility(string kind, string spelling, source_visibility visibility, source_point location) | SourceOperatorVisibility(string spelling, source_visibility visibility, source_point location)
 source_module_metadata = (usize version, source_module_header header, source_import* requests, source_declaration_visibility* declarations)
