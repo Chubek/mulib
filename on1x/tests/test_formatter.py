@@ -134,6 +134,40 @@ def test_static_and_brackets(work):
     invoke(ON1XC, "--check", source, "--ppx", "identity", HOME / "stdppx/identity.py")
 
 
+def test_field_round_trip(work):
+    source = work / "field-access.on1x"
+    source.write_bytes(
+        b'enum Choice{Empty,Full(record{value:i64})}'
+        b'fn main(){let data=Choice :: Full(record{value:42});'
+        b'let empty=Choice::Empty;'
+        b'println(match data with {Full(p)=>p .value,Empty()=>0});'
+        b'println(match data with {Full(p)=>p["value"],Empty()=>0});'
+        b'println(match empty with {Full(p)=>p.value,Empty()=>7});}'
+    )
+
+    def check_wire():
+        wire = invoke(ON1XC, "--emit-ast", source).stdout
+        assert wire.startswith(b"(Unit 1"), wire
+        # Attached, spaced and bracket projections still use the same
+        # non-authoritative Unit-v1 wire node after ordinary resolution.
+        assert wire.count(b'(ValueData "field" "value"') == 3, wire
+        for variant in (b"Full", b"Empty"):
+            assert b'(ValueData "variant" "' + variant + b'"' in wire, wire
+        invoke(ON1XC, "--check", source, "--ppx", "identity", HOME / "stdppx/identity.py")
+
+    check_wire()
+    before = run_source(source, work / "field-before")
+    fmt(source, "--isolated", "-i")
+    plain = source.read_bytes()
+    for spelling in (b"Choice::Full(", b"Choice::Empty;", b"p .value", b"p.value", b'p["value"]'):
+        assert spelling in plain, (spelling, plain)
+    listing = fmt(source, "--isolated", "--target", "html").stdout
+    assert Listing(listing).source == plain
+    fmt(source, "--isolated", "--check")
+    check_wire()
+    assert run_source(source, work / "field-after") == before == b"42\n42\n7\n"
+
+
 def test_inplace(work):
     source = work / "inplace.on1x"
     output = work / "other.on1x"
@@ -513,5 +547,6 @@ if __name__ == "__main__":
         test_operator_environment(Path(directory))
         test_modules(Path(directory))
         test_static_and_brackets(Path(directory))
+        test_field_round_trip(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

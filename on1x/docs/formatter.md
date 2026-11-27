@@ -18,9 +18,10 @@ bodies, check types, expand macros, or run PPX or declaration extensions.
 Use `--stdlib DIR`, `-I DIR`, `--prelude FILE`, or `--no-prelude` to match
 your build's operator environment. `--isolated` restricts formatting to the
 input file and is intended for scratch or untrusted editor buffers.
-Use `--isolated` for syntax-only formatting of `.on1xm` files when a
-project index or its imports are unavailable and no imported operator fixity
-is needed. Formatting does not admit modules or certify import visibility.
+The `fmt` command does not read a staged module index. Use `--isolated` for
+`.on1xm` sources whose imports require that index, provided the file does not
+need an imported operator fixity. Formatting does not admit modules or
+certify import visibility.
 Syntactically invalid input is rejected before any output is published.
 `--inplace` (`-i`) writes plain source back
 to the input file without writing to stdout. It cannot be combined with
