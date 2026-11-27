@@ -1,0 +1,54 @@
+# Module integration acceptance
+
+Run the acceptance suite against a compiler built from the same checkout:
+
+```sh
+mkdir -p build/module-acceptance/tmp
+export TMPDIR="$PWD/build/module-acceptance/tmp"
+python3 -B on1x/tests/test_module_acceptance.py \
+  --on1xc /absolute/path/to/on1xc --cc cc --work-dir build/module-acceptance
+python3 -B on1x/tests/test_interfaces.py --on1xc /absolute/path/to/on1xc --cc cc
+```
+
+The module suite compiles and runs actual generated C11. It checks named and
+colon-selector module and program imports next to quoted legacy imports, visibility after aliasing,
+source-kind and name validation, program entry-point isolation, fail-closed
+program capability admission, multiple manifest fragments, deterministic
+dependency reporting, and signature enforcement on the actual build. Failure
+checks verify that neither an existing emitted file nor a published project
+artifact is replaced. The legacy interface suite is separate: its v1 contract
+checks are not an export allowlist.
+
+## Backend smoke matrix
+
+Build and run the `examples/energy-budget` project through each requested
+route. Run from the repository root with a fresh work directory under `build/`.
+`on1x-vm` must come from the same build as `on1xc`.
+
+```sh
+set -eu
+COMPILER=/absolute/path/to/on1xc
+WORK="$PWD/build/module-acceptance/energy"
+mkdir -p "$WORK/tmp"
+export TMPDIR="$WORK/tmp"
+cp -R on1x/examples/energy-budget "$WORK/project"
+for route in c11 mir-c11 mir-vm; do
+  python3 -B on1x/tools/on1x-project.py build "$WORK/project" \
+    --on1xc "$COMPILER" --cc cc --backend "$route" --output-dir "$WORK/$route"
+  "$WORK/$route/energy-budget" >"$WORK/$route.stdout" 2>"$WORK/$route.stderr"
+  cmp "$WORK/project/expected.txt" "$WORK/$route.stdout"
+  test ! -s "$WORK/$route.stderr"
+done
+"$(dirname "$COMPILER")/on1x-vm" --verify "$WORK/mir-vm/energy-budget.o1vm"
+```
+
+Report each route separately. C11 and MIR-to-C11 qualify their respective C
+toolchain routes. The VM wrapper and bytecode verifier qualify the portable VM
+route. None of these results qualifies an optional native MIR backend.
+Likewise, declaration-only checks of opaque signature types do not qualify an
+opaque runtime ABI. A backend or signature form not tested should be reported
+as unqualified rather than inferred from another route.
+
+See [module coordination](module-coordination.md) for the standalone IPC
+acceptance command; it does not need a compiler build and uses isolated
+session IDs.
