@@ -16,8 +16,9 @@
  *                     import_scope ';'
  *   import_scope := empty | 'as' identifier | ':' selectors
  *   visibility := 'public' | 'private' | 'shared' ['elevate' '(' decimal ')']
- * These words are contextual. Module syntax and numeric validation use the
- * ordinary identifier, punctuation and number terminals; no new %fault rules.
+ * These words are contextual. Module syntax uses ordinary identifier,
+ * punctuation and number terminals. The parser dispatches the zero elevation
+ * fault only for a complete shared visibility clause.
  *   foreign_import := 'import' 'foreign' 'stdffi' '.' identifier
  *                     ['as' identifier] ';'
  *   kernel_import := ['unsafe'] 'import' 'kernel' ['[' 'dynlib' ']']
@@ -223,6 +224,12 @@
 %fault "[\\xC2-\\xDF] [\\x80-\\xBF] / ('\\xE0' [\\xA0-\\xBF] / [\\xE1-\\xEC\\xEE-\\xEF] [\\x80-\\xBF] / '\\xED' [\\x80-\\x9F]) [\\x80-\\xBF] / ('\\xF0' [\\x90-\\xBF] / [\\xF1-\\xF3] [\\x80-\\xBF] / '\\xF4' [\\x80-\\x8F]) [\\x80-\\xBF] [\\x80-\\xBF]" => error "unsupported Unicode character in token position; On1x identifiers use ASCII" using on1x_fault_hint
 %fault "." => error "invalid token or malformed UTF-8 in source" using on1x_fault_hint
 /* ON1X_FAULT_BANK_END */
+/* ON1X_CONTEXTUAL_FAULTS */
+/* This bank is never used at a lexical failure. After finding a complete
+ * zero-valued shared elevation clause, the parser supplies its canonical
+ * spelling to the PEG and reports against the original decimal token. */
+%fault "'elevate(0)' !." => error "shared elevation cannot be zero; use a positive decimal integer"
+/* ON1X_CONTEXTUAL_FAULTS_END */
 
 /* Keep alternatives and on1x_rx_rule in the same order. The ordinary
  * terminal combines numbers, identifiers and operators for maximal munch. */

@@ -113,6 +113,11 @@ check('contextual_module_words',
       valid=True, spellings=[b'module', b'abstract', b'.', b'module', b';',
                              b'import', b'program', b'"tool.on1x"', b'as', b'tool', b';',
                              b'public', b'private', b'shared', b'elevate', b'(', b'12', b')', b';'])
+check('contextual_zero_elevation_is_not_a_lexical_fault',
+      b'# shared elevate(0)\r\n"shared elevate(0)" shared {- trivia -} elevate(00)\n'
+      b'elevate(0) elevate0',
+      valid=True, spellings=[b'"shared elevate(0)"', b'shared', b'elevate', b'(', b'00', b')',
+                             b'elevate', b'(', b'0', b')', b'elevate0'])
 check('colon_selectors',
       b'import program "k.on1x" : foo, bar as public;\n'
       b'import fizz.buzz : fred; # import nope : still_comment\n',

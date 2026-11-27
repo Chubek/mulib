@@ -149,6 +149,57 @@ void visibility() {
             cloned.operators[0].header.visibility.kind == DeclarationVisibility::Private,
             "clone lost annotated declaration metadata");
 }
+
+void contextual_elevation_fault() {
+    constexpr std::string_view message =
+        "shared elevation cannot be zero; use a positive decimal integer";
+    const std::string file = "zero.on1xm";
+    for (const std::string_view zero : {"0", "00"}) {
+        const std::string before_zero = "module alpha.beta;\r\nshared {- trivia -} elevate (\r\n\t";
+        const auto source = before_zero + std::string(zero) + " {@ trivia @} ) fn f() {}";
+        const auto tokens = scan(source, file);
+        require(tokens.at(5).text == "shared" && tokens.at(6).text == "elevate" &&
+                tokens.at(7).text == "(" && tokens.at(8).text == zero &&
+                tokens.at(8).where.offset == before_zero.size() && tokens.at(9).text == ")",
+                "contextual fault changed scanner tokens or byte spans");
+        for (const bool discovery : {false, true}) {
+            try {
+                if (discovery) (void)discover_operators(tokens);
+                else (void)parse_with_operators(tokens, {}, {}, {});
+            } catch (const Error& error) {
+                require(error.diagnostic_id == "ON1X-MODULE-ELEVATION" && error.what() == message,
+                        "zero did not receive the dedicated diagnostic");
+                require(error.where.file == file && error.where.offset == before_zero.size() &&
+                        error.where.line == 3 && error.where.column == 2,
+                        "zero elevation lost its original number location");
+                continue;
+            }
+            throw std::runtime_error("zero shared elevation accepted");
+        }
+    }
+
+    const auto ordinary = parse(scan(
+        "module alpha.beta;\n"
+        "# shared elevate(0) fn not_code() {}\n"
+        "shared elevate(01) fn shared(x: i64) -> i64 { return x; }\n"
+        "fn elevate(x: i64) -> i64 { return x; }\n"
+        "macro keep{rule()=>expression{elevate(0)};}\n"
+        "fn use_words() -> i64 { let elevate0 = \"shared elevate(0)\";"
+        "return shared(elevate(0)) + keep!(); }\n", file));
+    require(ordinary.functions.size() == 3 && ordinary.functions.front().visibility.elevation == 1 &&
+            ordinary.functions[1].name == "elevate" && ordinary.macros.size() == 1,
+            "contextual fault changed valid identifiers, literals or macro syntax");
+
+    const auto malformed = scan("module alpha.beta; shared elevate(0 + 1) fn f() {}", file);
+    try {
+        (void)parse(malformed);
+    } catch (const Error& error) {
+        require(error.diagnostic_id == "ON1X-MODULE-ELEVATION" && error.what() != message,
+                "a non-clause triggered the contextual zero diagnostic");
+        return;
+    }
+    throw std::runtime_error("non-decimal shared elevation accepted");
+}
 }
 
 int main() {
@@ -157,6 +208,7 @@ int main() {
         legacy();
         colon_imports();
         visibility();
+        contextual_elevation_fault();
         rejects("", "empty.on1xm", "ON1X-MODULE-HEADER");
         rejects("fn f() {}", "missing.on1xm", "ON1X-MODULE-HEADER");
         rejects("module a; fn f() {}", "wrong.on1x", "ON1X-MODULE-HEADER");
@@ -180,6 +232,7 @@ int main() {
         rejects("module a; public import b;", "import.on1xm", "ON1X-MODULE-VISIBILITY");
         rejects("module a; public @scrutiny off;", "directive.on1xm", "ON1X-MODULE-VISIBILITY");
         rejects("module a; private elevate(1) fn f() {}", "private.on1xm", "ON1X-MODULE-VISIBILITY");
+        rejects("module a; private elevate(0) fn f() {}", "private.on1xm", "ON1X-MODULE-VISIBILITY");
         for (std::string_view n : {"", "0", "00", "-1", "+1", "0x1", "1u8", "1.0", "1e3", "oops",
                                    "9999999999999999999999999999999999999999"})
             rejects("module a; shared elevate(" + std::string(n) + ") fn f() {}",

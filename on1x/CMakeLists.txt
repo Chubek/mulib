@@ -157,13 +157,17 @@ if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl_source}/cmake/Native.cmake"
   on1x_generate_asdl(PPX.asdl ppx_ast)
   add_custom_command(
     OUTPUT "${_generated}/on1x_parser.c" "${_generated}/on1x_fault_bank_2.h"
+      "${_generated}/on1x_contextual_fault_bank.h"
     BYPRODUCTS "${_generated}/on1x_scanner_primary.g" "${_generated}/on1x_scanner_secondary.g"
+      "${_generated}/on1x_contextual_faults.g"
     COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateAurocks.py"
       "${_aurocks}" "${CMAKE_CURRENT_SOURCE_DIR}/grammar/On1x.g" "${_generated}"
     DEPENDS ${_aurocks_dependency} grammar/On1x.g cmake/GenerateAurocks.py VERBATIM)
   add_library(on1x_scanner STATIC "${_generated}/on1x_parser.c" "${_generated}/on1x_ast.c" "${_generated}/ppx_ast.c" src/ppx_asdl.c)
   target_link_libraries(on1x_scanner PRIVATE Aurocks::FaultRuntime)
   target_include_directories(on1x_scanner PRIVATE "${_generated}" include)
+  target_include_directories(on1x_scanner SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/firestone/liblr")
+  target_compile_definitions(on1x_scanner PRIVATE ON1X_AUROCKS_CONTEXTUAL_FAULTS=1)
   set(ON1X_SCANNER_DESCRIPTION "LibStone ASDL+native Aurocks generated frontend")
   set(ON1X_GENERATED_FRONTEND TRUE)
 elseif(ON1X_REQUIRE_LIBSTONE)
@@ -173,6 +177,7 @@ else()
   target_include_directories(on1x_scanner PRIVATE include)
   set(ON1X_SCANNER_DESCRIPTION "portable fallback scanner (bootstrap only)")
 endif()
+target_sources(on1x_scanner PRIVATE src/module_elevation_fault.cpp)
 message(STATUS "On1x scanner: ${ON1X_SCANNER_DESCRIPTION}")
 include(cmake/DependencyReport.cmake)
 if(BUILD_TESTING AND GIT_FOUND AND
