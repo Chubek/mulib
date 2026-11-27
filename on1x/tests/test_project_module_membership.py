@@ -105,15 +105,53 @@ class ModuleProjects(unittest.TestCase):
     def test_graph_uses_logical_identity_and_deterministic_order(self):
         members = {Path(k): value for k, value in {
             '/one': ('app', 'A'), '/two': ('app', 'A'), '/other': ('dep', 'B')}.items()}
-        e = [(Path('/one'), Path('/other')), (Path('/two'), Path('/other'))]
+        packet = {'nodes': [dict(id='b', kind='named', name='B', fragments=['/other']),
+                            dict(id='a', kind='named', name='A', fragments=['/one', '/two'])],
+                  'edges': [dict(source='a', target='b', witnesses=['r1', 'r2'])]}
         expected = [
             {'package': 'dep', 'name': 'B', 'dependencies': []},
             {'package': 'app', 'name': 'A', 'dependencies': [{'package': 'dep', 'name': 'B'}]},
         ]
-        self.assertEqual(project.module_graph(members, e), expected)
-        self.assertEqual(project.module_graph(dict(reversed(list(members.items()))), reversed(e)), expected)
-        with self.assertRaisesRegex(ValueError, 'app:A -> dep:B -> app:A'):
-            project.module_graph(members, [*e, (Path('/other'), Path('/two'))])
+        projection = project.ProjectProjection(members)
+        projection.accept(packet, list(members))
+        self.assertEqual(projection.report(), expected)
+        projection.accept(packet, reversed(list(members)))
+        self.assertEqual(projection.report(), expected)
+        for mutation in (
+            lambda p: p['nodes'].reverse(),
+            lambda p: p['nodes'][0].update(id='a'),
+            lambda p: p['nodes'][1]['fragments'].pop(),
+            lambda p: p['nodes'][1].update(kind='legacy'),
+            lambda p: p['edges'][0].update(target='absent'),
+            lambda p: p['edges'][0].update(target='a'),
+            lambda p: p['edges'][0].update(witnesses=[]),
+            lambda p: p['edges'][0].update(witnesses=['r', 'r']),
+            lambda p: p['edges'].clear(),
+        ):
+            import copy
+            invalid = copy.deepcopy(packet)
+            mutation(invalid)
+            with self.assertRaises(ValueError):
+                projection.accept(invalid, list(members))
+            self.assertEqual(projection.report(), expected)
+
+    def test_project_mode_requires_v3_without_fallback(self):
+        path = Path('/staged/μ file')
+        physical = dict(schema='on1x.project-module-graph/v2', sources=[str(path)],
+                        edges=[], auxiliary=[], cacheable=True)
+        packet = dict(schema='on1x.project-module-graph/v3', snapshot='sha256:'+'0'*64,
+                      physical=physical, nodes=[dict(id='x', kind='named', name='X', fragments=[str(path)])], edges=[])
+        def run(cmd, **_):
+            self.assertEqual(cmd[1], '--project-module-graph-v3')
+            return json.dumps(packet).encode()
+        runner = type('Runner', (), {'run': staticmethod(run)})
+        projection = project.ProjectProjection({path: ('pkg', 'X')})
+        result = project.inspect_module_graph(runner, 'cc', path, [], {path}, (), projection)
+        self.assertEqual(result.sources, (path,))
+        self.assertEqual(projection.report(), [dict(package='pkg', name='X', dependencies=[])])
+        packet['schema'] = 'on1x.project-module-graph/v4'
+        with self.assertRaisesRegex(ValueError, 'invalid compiler project projection'):
+            project.inspect_module_graph(runner, 'cc', path, [], {path}, (), projection)
 
     def test_graph_report_must_include_all_declared_fragments(self):
         entry, module, missing = map(Path, ('/input/test.on1x', '/input/a.on1xm', '/input/z.on1xm'))

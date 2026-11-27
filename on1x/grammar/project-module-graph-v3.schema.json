@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:on1x:project-module-graph:v3",
+  "type":"object", "additionalProperties":false, "required":["schema","snapshot","physical","nodes","edges"],
+  "$defs": {
+    "id":{"type":"string","minLength":1},
+    "path":{"type":"string","pattern":"^/"},
+    "paths":{"type":"array","items":{"$ref":"#/$defs/path"},"uniqueItems":true}
+  },
+  "properties": {
+    "schema":{"const":"on1x.project-module-graph/v3"},"snapshot":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},
+    "physical":{"type":"object","additionalProperties":false,"required":["schema","sources","edges","auxiliary","cacheable"],
+      "properties":{"schema":{"const":"on1x.project-module-graph/v2"},"sources":{"$ref":"#/$defs/paths"},"auxiliary":{"$ref":"#/$defs/paths"},"cacheable":{"type":"boolean"},
+        "edges":{"type":"array","maxItems":16384,"items":{"type":"array","minItems":2,"maxItems":2,"items":{"$ref":"#/$defs/path"}}}}},
+    "nodes":{"type":"array","minItems":1,"maxItems":1024,"items":{"type":"object","additionalProperties":false,"required":["id","kind","name","fragments"],
+      "properties":{"id":{"$ref":"#/$defs/id"},"name":{"$ref":"#/$defs/id"},"kind":{"enum":["named","legacy","program","initializer"]},"fragments":{"$ref":"#/$defs/paths","minItems":1}}}},
+    "edges":{"type":"array","maxItems":16384,"items":{"type":"object","additionalProperties":false,"required":["source","target","witnesses"],
+      "properties":{"source":{"$ref":"#/$defs/id"},"target":{"$ref":"#/$defs/id"},"witnesses":{"type":"array","minItems":1,"uniqueItems":true,"items":{"$ref":"#/$defs/id"}}}}}
+  }
+}

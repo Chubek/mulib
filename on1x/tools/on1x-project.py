@@ -1997,20 +1997,78 @@ def verify_graph(executor, compiler, source, flags, permitted, trusted_roots):
             fail(f'{source}: import is outside the declared module graph: {item}')
 
 
-def module_graph(members, source_edges):
-    """Collapse physical fragment edges to package-local logical members.
+class ProjectProjection:
+    """Join compiler logical IDs to manifest display labels using staged membership."""
+    def __init__(self, members):
+        self.members = members
+        self.fragments = {}
+        for path, label in members.items():
+            self.fragments.setdefault(label, set()).add(path)
+        self.dependencies = {}
+        self.ids = {}
+        self.physical_edges = set()
 
-    `members` maps canonical source paths to (package, name). Edges to
-    legacy sources are checked by verify_graph, not promoted to modules.
-    """
-    dependencies = {member: set() for member in members.values()}
-    for count, (importer, imported) in enumerate(source_edges, 1):
-        if count > MAX_MODULE_EDGES:
-            fail('project module graph edge budget exceeded')
-        parent, child = members.get(importer), members.get(imported)
-        if parent is not None and child is not None:
-            dependencies[parent].add(child)
+    def accept(self, packet, sources):
+        nodes, edges = packet['nodes'], packet['edges']
+        if (not isinstance(nodes, list) or not 0 < len(nodes) <= MAX_MODULES or
+                not isinstance(edges, list) or len(edges) > MAX_MODULE_EDGES):
+            fail('invalid project quotient size')
+        labels, indices, seen, additions = {}, {}, set(), {}
+        known = {str(p): p for p in sources}
+        for i, node in enumerate(nodes):
+            if not isinstance(node, dict) or set(node) != {'id', 'kind', 'name', 'fragments'}:
+                fail('invalid project quotient node')
+            ident, kind, name, paths = (node[k] for k in ('id', 'kind', 'name', 'fragments'))
+            if (not isinstance(ident, str) or not ident or ident in labels or
+                    kind not in ('named', 'legacy', 'program', 'initializer') or
+                    not isinstance(name, str) or not name or not isinstance(paths, list) or
+                    not 0 < len(paths) <= len(known) or
+                    any(not isinstance(p, str) or p not in known or p in seen for p in paths) or
+                    len(set(paths)) != len(paths)):
+                fail('invalid project quotient identity or fragments')
+            seen.update(paths)
+            fragments = {known[p] for p in paths}
+            owners = {self.members.get(p) for p in fragments}
+            if len(owners) != 1:
+                fail('compiler merged distinct project module owners')
+            label = owners.pop()
+            if label is not None:
+                if (kind != 'named' or name != label[1] or fragments != self.fragments[label] or
+                        label in additions or self.ids.get(label, ident) != ident):
+                    fail('project module identity or membership mismatch')
+                additions[label] = set()
+            labels[ident], indices[ident] = label, i
+        if seen != known.keys():
+            fail('project quotient omitted source membership')
+        pairs, count = set(), 0
+        for edge in edges:
+            if not isinstance(edge, dict) or set(edge) != {'source', 'target', 'witnesses'}:
+                fail('invalid project quotient edge')
+            a, b, w = edge['source'], edge['target'], edge['witnesses']
+            if (not isinstance(a, str) or not isinstance(b, str) or a not in labels or b not in labels or
+                    indices[b] >= indices[a] or (a, b) in pairs or not isinstance(w, list) or not w or
+                    any(not isinstance(x, str) or not x for x in w) or len(w) != len(set(w))):
+                fail('invalid project quotient edge references, order or witnesses')
+            count += len(w)
+            if count > 65536:
+                fail('project quotient witness budget exceeded')
+            pairs.add((a, b))
+            if labels[a] is not None and labels[b] is not None:
+                additions[labels[a]].add(labels[b])
+        for label, deps in additions.items():
+            if label in self.dependencies and self.dependencies[label] != deps:
+                fail('inconsistent project module dependencies across inspections')
+        self.dependencies.update(additions)
+        self.ids.update((label, ident) for ident, label in labels.items() if label is not None)
 
+    def report(self):
+        if self.fragments.keys() != self.dependencies.keys():
+            fail('compiler omitted project module observations')
+        return ordered_module_report(self.dependencies)
+
+
+def ordered_module_report(dependencies):
+    """Stable presentation across per-entry observations; edges already come from G."""
     # Iterative DFS keeps the accepted depth independent of Python's stack
     # limit. Sorting roots and edges also fixes the first reported cycle.
     completed, order = set(), []
@@ -2238,8 +2296,19 @@ def module_certificate(members):
 
 def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_roots, edges,
                          expected=(), *, auxiliary_permitted=(), expected_auxiliary=()):
-    data = executor.run([compiler, '--project-module-graph', entry, *flags], frontend=True, bound=MAX_BUILD_REPORT)
+    projection = edges if isinstance(edges, ProjectProjection) else None
+    mode = '--project-module-graph-v3' if projection is not None else '--project-module-graph'
+    data = executor.run([compiler, mode, entry, *flags], frontend=True, bound=MAX_BUILD_REPORT)
     graph = json.loads(data, object_pairs_hook=unique_json_object)
+    packet = graph
+    if projection is not None:
+        if (not isinstance(packet, dict) or set(packet) != {'schema', 'snapshot', 'physical', 'nodes', 'edges'} or
+                packet['schema'] != 'on1x.project-module-graph/v3' or not isinstance(packet['snapshot'], str) or
+                not re.fullmatch(r'sha256:[0-9a-f]{64}', packet['snapshot']) or
+                not isinstance(packet['physical'], dict) or packet['physical'].get('schema') != 'on1x.project-module-graph/v2'):
+            fail('invalid compiler project projection v3')
+        graph = packet['physical']
+        edges = projection.physical_edges
     v1 = {'schema', 'sources', 'edges'}
     v2 = v1 | {'auxiliary', 'cacheable'}
     version = graph.get('schema') if isinstance(graph, dict) else None
@@ -2287,9 +2356,11 @@ def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_ro
         if importer not in inputs or imported not in inputs:
             fail('compiler returned a project module graph edge outside its sources')
         found_edges.append((importer, imported))
-        edges.add((importer, imported))
-        if len(edges) > MAX_MODULE_EDGES:
-            fail('project module graph edge budget exceeded')
+    if len(edges.union(found_edges)) > MAX_MODULE_EDGES:
+        fail('project module graph edge budget exceeded')
+    if projection is not None:
+        projection.accept(packet, sources)
+    edges.update(found_edges)
     return ModuleGraphInputs(sources, tuple(found_edges), auxiliary, graph.get('cacheable', False))
 
 
@@ -3015,7 +3086,7 @@ def build(args):
         if index_flags and directory != Path('.'):
             loader += ['-I', str(executor.path(project_stage / directory))]
         loader += index_flags
-        module_edges = set()
+        module_edges = ProjectProjection(module_owners)
         kernel_flags = ['--kernel-load-time'] if load_time else []
         graph_loader = [*loader, *kernel_flags]
         analysis_flags = []
@@ -3093,7 +3164,7 @@ def build(args):
                                      trusted_roots, module_edges, auxiliary_permitted=all_auxiliary)
             else:
                 verify_graph(executor, compiler, entry, graph_loader, permitted | {entry}, trusted_roots)
-        named_graph = module_graph(module_owners, sorted(module_edges)) if module_owners else None
+        named_graph = module_edges.report() if module_owners else None
         outputs = {}
         guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':

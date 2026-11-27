@@ -20,7 +20,7 @@
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #include "project_module_index.hpp"
-#include <on1x/module_graph.hpp>
+#include "project_graph_projection.hpp"
 #include "proxy_policy.hpp"
 #include "../hir/inspect_hir.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -841,6 +841,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
    "       on1xc (--emit-import-graph | --emit-module-graph) INPUT [--graph-format json|sexpr|dot] [--graph-partial]\n"
    "       on1xc --emit-ppx-graph-v1 INPUT  (read-only SourceModuleGraphMetadata packet)\n"
+   "       on1xc --project-module-graph-v3 INPUT (staged build-tool projection)\n"
    "       on1xc --project-module-graph INPUT.on1x [--project-module-index FILE | --stdlib ROOT]\n"
    "       on1xc --operator-info [--source-only] INPUT.on1x [-o OUTPUT] (checked operator information as JSON)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
@@ -1138,7 +1139,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
        if(arg=="--kernel-load-time"){loader.kernel_load_time=true;continue;}
          if(arg=="--check-memory"){select_mode(arg);memory=true;continue;}
          if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"||
-            arg=="--project-module-graph"||arg=="--emit-import-graph"||arg=="--emit-module-graph"||arg=="--emit-ppx-graph-v1"){select_mode(arg);continue;}
+            arg=="--project-module-graph"||arg=="--project-module-graph-v3"||arg=="--emit-import-graph"||arg=="--emit-module-graph"||arg=="--emit-ppx-graph-v1"){select_mode(arg);continue;}
      if(arg=="--graph-format"){
       if(!graph_format.empty()||++i>=argc)throw std::runtime_error("--graph-format requires one of json, sexpr, dot");
       graph_format=argv[i];
@@ -1254,6 +1255,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
      else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
     }
+    const bool project_v3=mode=="--project-module-graph-v3";
+    const bool project_inspection=project_v3||mode=="--project-module-graph";
     const bool graph_packet=mode=="--emit-ppx-graph-v1";
     if(graph_packet&&(graph_partial||!graph_format.empty()))throw std::runtime_error("PPX graph v1 requires complete canonical graphs");
     const bool graph_mode=graph_packet||mode=="--emit-import-graph"||mode=="--emit-module-graph";
@@ -1267,7 +1270,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
                      !ppx.schemas.empty()||!loader.extensions.enabled.empty()))
      throw std::runtime_error("--source-only requires --operator-info without PPX or declaration extensions");
      if(loader.kernel_load_time){
-     if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces"&&mode!="--project-module-graph")||
+     if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces"&&!project_inspection)||
         list_opts||!sdk_mode.empty()||ir_input||memory||type_safety||
         !archvirt_mode.empty()||cephyr_object||loader.kernel_c11||loader.kernel_stage||
         !ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||!loader.extensions.enabled.empty())
@@ -1343,7 +1346,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
         const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
            mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
        const bool checked_source=!graph_mode&&!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
-         mode!="--project-module-graph"&&
+         !project_inspection&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
           mode!="--print-stdlib"&&mode!="--stdlib-resource";
          if(!resource_policy.empty()&&(!checked_source||mode=="--check-interfaces"||
@@ -1431,10 +1434,10 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
         write_all(out,roots.front().string()+"\n");return 0;
        }
          if(source.empty()){usage();return 2;}
-         if(mode=="--project-module-graph"&&project_module_index.empty()&&!loader.stdlib_explicit)
+         if(project_inspection&&project_module_index.empty()&&!loader.stdlib_explicit)
           throw std::runtime_error("--project-module-graph requires --project-module-index or --stdlib");
          on1x::proxy::apply(on1x::proxy::current_project());
-         loader.extensions.execute=!graph_mode&&!source_only&&mode!="--deps"&&mode!="--project-module-graph"&&
+         loader.extensions.execute=!graph_mode&&!source_only&&mode!="--deps"&&!project_inspection&&
           mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
@@ -1527,7 +1530,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
          return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,
                            scratch_stack_bytes,mir_target,diagnostic_filter);
     }
-   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||mode=="--project-module-graph")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||project_inspection)&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(!project_module_index.empty())apply_project_module_index(loader,project_module_index);
    if(graph_mode){
     const bool logical=mode=="--emit-module-graph";
@@ -1567,8 +1570,9 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    std::ostringstream listing;for(auto& t:tokens)listing<<t.where.line<<":"<<t.where.column<<"  "<<t.text<<"\n";
    write_all(out,listing.str());return 0;
   }
-      loader.observe_unused_bindings=mode!="--deps"&&mode!="--project-module-graph"&&
+      loader.observe_unused_bindings=mode!="--deps"&&!project_inspection&&
        mode!="--emit-ast"&&!interface_mode;
+      loader.capture_module_graph=project_v3;
       auto loaded=on1x::load_unit(source,loader);
       if(!archvirt_mode.empty()&&!out.empty()){
        const auto target=std::filesystem::weakly_canonical(std::filesystem::absolute(out));
@@ -1596,6 +1600,15 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
     if(mode=="--deps"){
      std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
      write_all(out,paths.str());return 0;
+    }
+    if(project_v3){
+     if(!loaded.module_graph)throw std::runtime_error("project loader omitted graph snapshot");
+     std::map<std::string,std::filesystem::path> paths;
+     for(const auto& p:loaded.dependencies)paths.emplace("f:"+on1x::extensions::digest(p.generic_string()),p);
+     auto report=on1x::project_graph::project_v3(*loaded.module_graph,paths,project_module_graph(loaded,!loader.extensions.enabled.empty()));
+     if(out.empty()||out=="-")write_all(out,report);
+     else publish_regular_file(out,report,"project module graph",".on1x-graph-XXXXXX");
+     return 0;
     }
     if(mode=="--project-module-graph"){
      write_all(out,project_module_graph(loaded,!loader.extensions.enabled.empty()));return 0;

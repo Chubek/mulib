@@ -32,3 +32,17 @@ python3 on1x/tests/test_graph_driver.py /path/to/on1xc
 `tests/test_graph_packet.cpp` uses the actual wire parser and schema validator;
 compile it with the configured `ppx_schema.hpp` and `src/{ppx_schema,sexpr,
 numeric,type}.cpp`. The SDK module-logistics test exercises the opt-in C API.
+
+### Project builds and graph v3
+
+The project driver requests `--project-module-graph-v3` for staged member
+and indexed target checks. This private absolute-path envelope includes the
+existing physical v2 admission/cache inputs and the same transaction's logical
+nodes in dependency-first order, fragment memberships and witnessed edges.
+`grammar/project-module-graph-v3.schema.json` defines its shape. The driver
+verifies exact staged membership, unique identities, path admission, referenced
+endpoints, order, witnesses and consistency across per-entry inspections. Its
+public report orders manifest display labels deterministically across those
+inspections. It does not infer logical dependencies from physical pairs.
+The original `--project-module-graph` continues emitting v2; a build requesting
+v3 does not silently accept an older compiler response.
