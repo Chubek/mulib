@@ -1,4 +1,6 @@
 #include <on1x/loader.hpp>
+#include <on1x/module_graph.hpp>
+#include <on1x/module_algebra.hpp>
 #include <on1x/asdl_module.hpp>
 #include <on1x/kernel.hpp>
 #include <on1x/container_shared.hpp>
@@ -34,7 +36,8 @@ struct Names {
 };
 struct Module {
  fs::path path;
- std::string source;
+ std::string source,file_id;
+ std::vector<GraphRequest> graph_requests;
  std::vector<Token> scanned;
  std::vector<Docstring> docs;
  OperatorDiscovery discovery;
@@ -123,6 +126,9 @@ class Loader {
   std::size_t operator_binding_bytes=0;
  bool implicit=false;
   KernelImportRequests* inspection;
+  bool graph_only=false,direct_views=false;
+  std::size_t graph_targets=0;
+  std::vector<GraphAux> graph_aux;
    const Module* current_module=nullptr;
    bool unsafe_context=false;
    std::size_t kernel_requests=0;
@@ -697,7 +703,7 @@ class Loader {
       return entry.second.package==membership->second->package&&entry.second.declared_name==membership->second->declared_name;
      });
     }
-    return module_visibility_access(rule,provenance(owner),provenance(requester),admitted)==ModuleAccess::Allowed;
+    return oml::access(rule,provenance(owner),provenance(requester),admitted)==ModuleAccess::Allowed;
    }
    void require_access(const Symbol& symbol,const Module& requester,const Location& at)const{
     if(!accessible(*symbol.owner,requester,symbol.visibility))
@@ -716,6 +722,48 @@ class Loader {
     auto interface=module.path;interface.replace_extension(".on1xi");
     return (module.member&&!module.member->interfaces.empty())||explicit_interfaces.contains(interface);
    }
+   std::string graph_owner(const Module& m)const{
+    if(m.group)return graph_owner(*m.group);
+    auto name=m.unit.module?m.unit.module->name:m.member?m.member->declared_name:std::string{};
+    if(!name.empty())return "named:"+extensions::digest((m.package_identity.empty()?m.path:m.package_identity).generic_string())+":"+name;
+    return (m.program?"program:":m.path.stem()=="__init__"?"initializer:":"legacy:")+m.file_id;
+   }
+   void record_interface(const Module& m,const fs::path& path,const std::string& bytes){
+    if(options.capture_module_graph)graph_aux.push_back({"signature",graph_owner(m),"i:"+extensions::digest(path.generic_string()),"sha256:"+extensions::digest(bytes)});
+   }
+   void graph_target(GraphRequest& request,const Module& target){
+    auto add=[&](const Module& f){if(f.file_id.empty())return;
+     if(++graph_targets>65536)throw Error({f.path.string()},"graph witness budget exceeded");
+     request.targets.push_back(f.file_id);};
+    if(target.fragments.empty())add(target);else for(auto* f:target.fragments)add(*f);
+   }
+   ModuleGraph freeze_graph(Module& entry){
+    ModuleGraph g;g.auxiliary=graph_aux;g.oml=oml::rule_digest();
+    std::string config;auto put=[&](std::string v){config+=std::to_string(v.size())+":"+v;};
+    put(options.project_package.string());put(std::to_string(options.prelude));put(std::to_string(options.declaration_interfaces));
+    auto paths=[&](auto& list){put(std::to_string(list.size()));for(auto& p:list)put(p.generic_string());};
+    paths(standard_roots);paths(options.paths);paths(options.preludes);paths(options.interfaces);
+    auto members=[&](auto& table){put(std::to_string(table.size()));for(auto& [key,m]:table){put(key);put(m.package.string());put(m.declared_name);paths(m.fragments);paths(m.interfaces);}};
+    members(options.module_members);for(auto& [scope,table]:options.scoped_module_members){put(scope.string());members(table);}
+    for(auto& [key,path]:options.program_members){put(key);put(path.string());}
+    g.policy="sha256:"+extensions::digest(config);
+    for(auto* m:order){if(m->file_id.empty())continue;auto id=graph_owner(*m);auto root=m->package_identity;
+     std::string pkg=root.empty()?"":"p:"+extensions::digest(root.generic_string());
+     auto display=root.empty()?m->path.lexically_relative(entry.path.parent_path()):m->path.lexically_relative(root);
+     if(display.empty()||*display.begin()=="..")display=m->path.filename();
+     g.files.emplace(m->file_id,GraphFile{m->file_id,id,pkg,display.generic_string(),"sha256:"+extensions::digest(m->source)});
+     auto& logical=g.modules[id];logical.id=id;logical.kind=id.substr(0,id.find(':'));logical.package=pkg;
+     logical.name=m->unit.module?m->unit.module->name:display.generic_string();
+     if(m->group){if(logical.fragments.empty())for(auto* f:m->group->fragments)logical.fragments.push_back(f->file_id);}
+     else logical.fragments.push_back(m->file_id);
+     for(auto& r:m->graph_requests){std::set<std::string> unique;std::erase_if(r.targets,[&](auto& t){return !unique.insert(t).second;});g.requests.push_back(std::move(r));}
+    }
+    g.roots=entry.group?g.modules.at(graph_owner(entry)).fragments:std::vector<std::string>{entry.file_id};
+    for(auto* p:operator_preludes)if(!p->file_id.empty())g.auxiliary.push_back({"prelude",entry.file_id,p->file_id,{}});
+    std::sort(g.requests.begin(),g.requests.end(),[](auto& a,auto& b){return std::tie(a.source,a.begin)<std::tie(b.source,b.begin);});
+    if(!g.analyze().cycles.empty())throw Error({entry.path.string()},"logical module import cycle");
+    g.revision="sha256:"+extensions::digest(g.serialize(false,"json")+g.serialize(true,"json"));return g;
+   }
    void verify_signatures(Module& target,const std::vector<fs::path>& input,const Location& at){
     if(input.empty())return;
     const auto& header=target.unit.module?target.unit.module:target.discovery.module;
@@ -728,7 +776,9 @@ class Loader {
       throw Error(at,"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
      if(!verified_signatures.insert(origin).second)
       throw Error({origin.string()},"signature belongs to more than one module","ON1X-INTERFACE-DUPLICATE");
-     auto source=read_source_file(origin.string());
+     auto overlay=options.source_overrides.find(origin);
+     auto source=overlay==options.source_overrides.end()?read_source_file(origin.string()):overlay->second;
+     record_interface(target,origin,source);
      if(source.size()>options.max_bytes-bytes)
       throw Error({origin.string()},"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
      bytes+=source.size();
@@ -754,6 +804,9 @@ class Loader {
     std::set<std::string> listed;
     for(const auto& declaration:signature.members)listed.insert(declaration.name);
      auto& visible=target.signature_exports.emplace();
+     if(!options.declaration_interfaces)for(const auto& [type,_]:verified.transparent_types){
+      visible.types.emplace(type,target.declarations.types.at(type));direct_views=true;
+     }
      for(const auto& type:target.opaque_types){
       auto item=target.declarations.types.find(type);
       if(item==target.declarations.types.end())
@@ -792,6 +845,7 @@ class Loader {
        m->package_identity=root;
    modules.emplace(path,std::move(storage));discovery_stack.push_back(m);
    if(source){
+    if(options.capture_module_graph)m->file_id="f:"+extensions::digest(path.generic_string());
     auto replacement=options.source_overrides.find(path);
     m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
     if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
@@ -1022,6 +1076,17 @@ class Loader {
      if(program)std::erase_if(m->unit.functions,[](const auto& f){return f.name=="main";});
      if(m->unit.module&&(!m->unit.extensions.empty()||!m->unit.features.empty()))
       throw Error(at,"declaration extensions are not supported across a module boundary","ON1X-MODULE-EXTENSION");
+    if(options.capture_module_graph){
+     for(const auto& imp:m->unit.module_imports){
+      auto& r=m->graph_requests.emplace_back();r.source=m->file_id;r.begin=imp.where.offset;
+      r.id="r:"+m->file_id+":"+std::to_string(r.begin);r.module=imp.module;r.alias=imp.alias;r.relative=imp.relative;
+      r.kind=program_import(imp)?"program":imp.quoted?"quoted":imp.relative?"relative":imp.selective?"selective":"named";
+      auto t=std::lower_bound(m->scanned.begin(),m->scanned.end(),r.begin,[](auto& tok,auto off){return tok.where.offset<off;});
+      for(;t!=m->scanned.end();++t){if(t->text==","&&!imp.selective)break;r.end=t->where.offset+t->text.size();if(t->text==";")break;}
+      r.spelling=m->source.substr(r.begin,r.end-r.begin);
+      for(auto& n:imp.names)r.selectors.push_back({n.is_operator?"operator":"name",n.name,n.alias});
+     }
+    }
     std::vector<Token>().swap(m->scanned);
     const auto module_operators=std::count_if(m->unit.operators.begin(),m->unit.operators.end(),
                                                [](const auto& op){return !op.block_local;});
@@ -1077,7 +1142,7 @@ class Loader {
                       "interface verification does not transport intrinsic impl declarations",
                       "ON1X-IMPL-UNSUPPORTED");
       }
-       if(!inspection){
+       if(!inspection&&!graph_only){
        for(const auto& request:m->unit.kernel_imports)require_kernel_import_policy(request);
         if(!options.kernel_c11&&!m->unit.kernel_imports.empty()){
          if(m->unit.kernel_imports.front().module==ipc_kernel_module)
@@ -1122,7 +1187,9 @@ class Loader {
      if(carrier.end.offset-carrier.where.offset>262144)throw Error(carrier.where,"ON1X-CAT-SYNTAX: carrier byte budget exhausted","ON1X-CAT-SYNTAX");
       carrier.source=m->source.substr(carrier.where.offset,carrier.end.offset-carrier.where.offset);
     }
-     if(!isolated)extensions::expand(m->unit,options.extensions,path.string());
+     if(options.capture_module_graph&&(!m->unit.extensions.empty()||!m->unit.features.empty()))
+      throw Error(at,"module graph extraction cannot expand source extensions");
+     if(!isolated&&!options.capture_module_graph)extensions::expand(m->unit,options.extensions,path.string());
      m->unit.source_digests.emplace(path.string(),extensions::digest(m->source));
   }
     if(auto found=shared_sources.find(path);found!=shared_sources.end()){
@@ -1174,6 +1241,7 @@ class Loader {
      const bool explicit_program=program_import(imp);
      target=own_package?m:visit(target,imp.where,isolated||explicit_program,explicit_program);
      if(target!=m)depend(*m,*target);
+     if(options.capture_module_graph&&!own_package)graph_target(m->graph_requests.at(i),*target);
       if(imp.quoted&&!explicit_program){
        if(!named_module(*target))m->quoted.push_back(target);
        merge(m->names,named_module(*target)?exported(*target):target->names,imp.where,m);
@@ -1203,6 +1271,10 @@ class Loader {
          if(!id)id=observation(UnusedKind::Import,selection.where,selection.name,"operator",*m);
          if(id)m->observed_imports[{BindingSpace::Operator,binding->identity}].push_back(*id);
         };
+        if(options.capture_module_graph){
+         for(auto* op:{target->operator_exports.find(selection.name,OperatorPosition::Prefix),target->operator_exports.trailing(selection.name)})
+          if(op&&operator_accessible(*op,*m))m->graph_requests.at(i).declarations.push_back("operator:"+extensions::digest(op->identity));
+        }
         if(candidate_source(*m)){
          std::optional<std::size_t> id;
          add(target->operator_exports.find(selection.name,OperatorPosition::Prefix),id);
@@ -1220,6 +1292,7 @@ class Loader {
        auto select=[&](auto& into,const auto& from,BindingSpace space){
         if(auto it=from.find(name);it!=from.end()){
          require_access(it->second,*m,imp.where);
+         if(options.capture_module_graph)m->graph_requests.at(i).declarations.push_back("d:"+it->second.owner->file_id+":"+it->second.kind+":"+it->second.name);
          value_alias(selected,alias,imp.where);insert(into,alias,it->second,imp.where);found=true;
          observe_import(*m,space,alias,alias,selection.alias,it->second.kind,selection.where);
         }
@@ -1227,6 +1300,7 @@ class Loader {
        select(selected.values,visible.values,BindingSpace::Value);select(selected.syntax,visible.syntax,BindingSpace::Syntax);
        select(selected.types,visible.types,BindingSpace::Type);select(selected.cliches,visible.cliches,BindingSpace::Cliche);
        if(auto it=visible.modules.find(name);it!=visible.modules.end()){
+        if(options.capture_module_graph)m->graph_requests.at(i).declarations.push_back(graph_owner(*it->second));
         bind_module(selected,alias,it->second,imp.where);found=true;
         observe_import(*m,BindingSpace::Module,alias,alias,selection.alias,"module",selection.where);
        }
@@ -1254,6 +1328,7 @@ class Loader {
       if(named_module(*imported)&&!standard_package)
        throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
      visit(imported,imp.where,isolated);depend(*m,*imported);
+     if(options.capture_module_graph)graph_target(m->graph_requests.at(i),*imported);
      bind_module(selected,alias,imported,imp.where);
      observe_import(*m,BindingSpace::Module,alias,alias,selection.alias,"module",selection.where);
      }
@@ -1284,7 +1359,7 @@ class Loader {
      // --kernel-imports describes only requests that may need native build
      // inputs. Portable definitions neither require linking nor participate in
      // that protocol; admission happens during ordinary source loading.
-     if(!inspection){
+     if(!inspection&&!graph_only){
       admit_foreign(request);
       m->foreigns.emplace(request.alias,request);
       observe_import(*m,BindingSpace::Resource,request.alias,request.alias,
@@ -1696,7 +1771,9 @@ class Loader {
      throw Error(where,"matching implementation is not in the loaded graph: "+implementation.string(),
                  "ON1X-INTERFACE-IMPLEMENTATION");
     auto& module=*it->second;
-    auto source=read_source_file(where.file);
+    auto overlay=options.source_overrides.find(origin);
+    auto source=overlay==options.source_overrides.end()?read_source_file(where.file):overlay->second;
+    record_interface(module,origin,source);
     if(source.size()>options.max_bytes-bytes)
      throw Error(where,"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
      bytes+=source.size();
@@ -1818,9 +1895,9 @@ class Loader {
      return metadata(path,at,false);
     }
   public:
-    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
+    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr,bool graph_inspection=false)
      :options(opts),standard_roots(standard_library_roots(opts)),declared_standard_roots(stdlib_roots(opts,false)),
-      inspection(inspect){
+      inspection(inspect),graph_only(graph_inspection){
       for(const auto& root:standard_roots)
       for(const auto& [kind,file]:shared_modules){
        std::error_code ec;
@@ -1870,6 +1947,7 @@ class Loader {
     if(entry->member)visit(group_metadata(*entry->member,entry_at),entry_at);
     else visit(entry,entry_at);
    if(inspection)return {};
+   if(graph_only){(void)bind_interfaces();LoadedUnit r;r.module_graph=std::make_shared<const ModuleGraph>(freeze_graph(*entry));return r;}
     if(!named_module(*entry))legacy(entry);
     // PPX/declaration extensions can inspect, replace or introduce
     // references beyond those available to the ordinary source resolver.
@@ -1902,6 +1980,8 @@ class Loader {
     // Freeze module ownership even when discovery found no operators.
     result.unit.operator_entry=entry->path.string();
     result.interfaces=bind_interfaces();
+    result.unit.direct_c11_type_views=direct_views;
+    if(options.capture_module_graph)result.module_graph=std::make_shared<const ModuleGraph>(freeze_graph(*entry));
     result.signature_dependencies.assign(verified_signatures.begin(),verified_signatures.end());
     result.signature_dependencies.insert(result.signature_dependencies.end(),legacy_interfaces.begin(),legacy_interfaces.end());
     std::sort(result.signature_dependencies.begin(),result.signature_dependencies.end());
@@ -2283,6 +2363,10 @@ LoaderOptions default_loader_options(const std::string& executable){
   snapshot.extensions.execute=false;
   return Loader(snapshot).parse_source(path);
  }
+ModuleGraph inspect_module_graph(const fs::path& input,const LoaderOptions& options){
+ auto opts=options;opts.capture_module_graph=true;opts.extensions.execute=false;opts.observe_unused_bindings=false;
+ return *Loader(opts,nullptr,true).run(input).module_graph;
+}
 KernelImportRequests inspect_kernel_imports(const fs::path& input,const LoaderOptions& options){
  auto inspect_options=options;
  inspect_options.extensions.execute=false;

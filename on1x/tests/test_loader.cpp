@@ -1,4 +1,5 @@
 #include <on1x/loader.hpp>
+#include <on1x/module_graph.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/stdffi.hpp>
 #include <algorithm>
@@ -338,6 +339,20 @@ int main(int argc,char** argv){
  auto first=on1x::load_unit(root/"a.on1x",options);
  auto second=on1x::load_unit(root/"a.on1x",options);
  assert(first.dependencies==second.dependencies&&first.unit.functions.size()==2);
+ // Compare the canonical adapter with the legacy physical projection on the
+ // same loader transaction, then ensure an overlay invalidates only the new snapshot.
+ options.capture_module_graph=true;
+ const auto snapshot=on1x::load_unit(root/"a.on1x",options).module_graph;
+ assert(snapshot&&snapshot->requests.size()==1&&snapshot->files.size()==2);
+ const auto& request=snapshot->requests.front();
+ assert(request.targets.size()==1&&request.spelling=="b;");
+ assert(snapshot->files.at(request.source).path==first.source_edges.front().first.filename());
+ assert(snapshot->files.at(request.targets.front()).path==first.source_edges.front().second.filename());
+ assert(snapshot->serialize(true,"json")==on1x::inspect_module_graph(root/"a.on1x",options).serialize(true,"json"));
+ options.source_overrides[fs::canonical(root/"b.on1x")]="fn value()->i64{return 77;}";
+ auto overlay_graph=on1x::inspect_module_graph(root/"a.on1x",options);
+ assert(snapshot->revision!=overlay_graph.revision&&snapshot->roots==overlay_graph.roots);
+ options.source_overrides.clear();options.capture_module_graph=false;
  std::ofstream(root/"b.on1x")<<"fn changed()->i64{return 43;}";
  auto changed=on1x::load_unit(root/"a.on1x",options);
   assert(changed.unit.functions.front().name!=first.unit.functions.front().name);

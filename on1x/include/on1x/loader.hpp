@@ -6,7 +6,9 @@
 #include <set>
 
 namespace on1x {
+struct ModuleGraph;
 struct LoaderOptions {
+ bool capture_module_graph=false;
  std::filesystem::path stdlib;
  std::vector<std::filesystem::path> paths;
  std::vector<std::filesystem::path> stdlib_paths;
@@ -37,6 +39,7 @@ struct LoaderOptions {
   bool observe_unused_bindings=false;
 };
 struct LoadedUnit {
+ std::shared_ptr<const ModuleGraph> module_graph;
  Unit unit;
  // Canonical paths in dependency-first order, each included exactly once.
  std::vector<std::filesystem::path> dependencies;
