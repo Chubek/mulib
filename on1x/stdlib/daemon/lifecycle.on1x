@@ -31,28 +31,28 @@ enum DaemonMessage < C > {
 
 fn basis_daemon_job_id(id: u64) -> Option<DaemonJobId> {
   if id == 0u64 {
-    return variant<Option<DaemonJobId>>(None, record {});
+    return Option<DaemonJobId>::None;
   }
-  return variant<Option<DaemonJobId>>(Some, record<DaemonJobId>{id: id});
+  return Option<DaemonJobId>::Some(record<DaemonJobId>{id: id});
 }
 
 fn basis_daemon_retry_valid(retry: DaemonRetry) -> bool {
-  let count = retry["max_restarts"];
-  let backoff = retry["backoff_ms"];
+  let count = retry.max_restarts;
+  let backoff = retry.backoff_ms;
   return count >= 1 && count <= 8 && backoff >= 1 && backoff <= 60000;
 }
 
 fn basis_daemon_policy_valid(policy: DaemonPolicy) -> bool {
-  let budget = policy["budget"];
-  let startup = budget["startup_ms"];
-  let run = budget["run_ms"];
-  let grace = budget["grace_ms"];
-  let reap = budget["reap_ms"];
+  let budget = policy.budget;
+  let startup = budget.startup_ms;
+  let run = budget.run_ms;
+  let grace = budget.grace_ms;
+  let reap = budget.reap_ms;
   if startup < 1 || startup > 60000 || run < 1 || run > 60000 ||
       grace < 0 || grace > 60000 || reap < 1 || reap > 60000 {
     return false;
   }
-  return match policy["restart"] with {
+  return match policy.restart with {
     DaemonNever() => true,
     DaemonOnFailure(retry) => basis_daemon_retry_valid(retry),
     DaemonAlways(retry) => basis_daemon_retry_valid(retry)

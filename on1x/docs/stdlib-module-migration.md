@@ -61,3 +61,10 @@ a re-export facade, not a checked signature; v1 interfaces cannot match
 re-exports. The type check does not restrict ordinary imports or advance
 the declared-module migration. There are no changes to the implementation,
 its legacy aliases, or the ABI.
+
+The shipped `std.daemon.lifecycle` implementation uses dot projection for
+its budget and retry records and static constructors for the pervasive
+`Option<DaemonJobId>`. The existing `daemon/fixtures/lifecycle_types.on1x`
+continues to exercise bracket projection and `variant` from a downstream
+consumer. This is a syntax-only change; it does not migrate the lifecycle
+module, change its nominal types, or add a dependency on KernelBind.
