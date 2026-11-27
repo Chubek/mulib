@@ -62,8 +62,10 @@ fs::path canonical(const fs::path& path,const Location& at){
  if(ec)throw Error(at,"cannot resolve import '"+path.string()+"': "+ec.message());
  return result;
 }
-fs::path module_path(std::string name){std::replace(name.begin(),name.end(),'.',fs::path::preferred_separator);return name;}
-fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_path();}
+ fs::path module_path(std::string name){std::replace(name.begin(),name.end(),'.',fs::path::preferred_separator);return name;}
+ bool standard_name(std::string_view name){return name=="std"||name.starts_with("std.");}
+ fs::path package(const Module& m){return directory(m.path)?m.path:m.path.parent_path();}
+ std::vector<fs::path> stdlib_roots(const LoaderOptions&,bool include_legacy_paths);
 
 // The sole compatibility profile with an executable resource ABI. Its
 // opaque owners and companion calls are never available to safe imports.
@@ -79,15 +81,18 @@ class Loader {
  using Scope=std::set<std::string>;
   const LoaderOptions& options;
   fs::path entry_directory;
-  std::vector<fs::path> standard_roots;
+   std::vector<fs::path> standard_roots;
+   std::vector<fs::path> declared_standard_roots;
   std::map<fs::path,SharedKind> shared_sources;
   std::map<fs::path,std::unique_ptr<Module>> modules;
-  using Member=LoaderOptions::ModuleMember;
+   using Member=LoaderOptions::ModuleMember;
+   std::map<std::pair<fs::path,std::string>,Member> standard_members;
   std::map<std::pair<fs::path,std::string>,std::unique_ptr<Module>> groups;
   std::map<fs::path,const Member*> enrolled;
   std::set<fs::path> known_packages,indexed_programs;
   std::map<std::string,fs::path> conventional_names;
-  std::set<fs::path> verified_signatures;
+   std::set<fs::path> verified_signatures;
+   std::set<fs::path> legacy_interfaces;
   std::map<fs::path,fs::path> explicit_interfaces;
   std::size_t declaration_interface_members=0;
   std::vector<Module*> order,stack,preludes,operator_preludes,discovery_stack;
@@ -284,7 +289,7 @@ class Loader {
    transfer(into.types,from.types);transfer(into.cliches,from.cliches);
   for(const auto& [name,m]:from.modules)bind_module(into,name,m,at);
  }
-   fs::path candidate(const fs::path& base,const Location& at,bool strict=false){
+    fs::path candidate(const fs::path& base,const Location& at,bool strict=false,bool modern_initializer=false){
    auto file=base;file+=".on1x";auto init=base/"__init__.on1x";
    const bool has_file=regular(file),has_init=regular(init);
    const bool has_directory=(strict||(!has_file&&!has_init))&&directory(base);
@@ -300,7 +305,7 @@ class Loader {
      if(fs::exists(status))throw Error(at,"invalid standard operator module path: "+path.string());
     };
     require_kind(file,has_file);require_kind(base,has_directory);require_kind(init,has_init);
-    if(has_directory&&!has_file&&!has_init)
+     if(has_directory&&!has_file&&!has_init&&!modern_initializer)
      throw Error(at,"standard operator module has no initializer: "+init.string());
    }
    if(has_file&&has_init)throw Error(at,"ambiguous module: both "+file.string()+" and "+init.string());
@@ -313,28 +318,28 @@ class Loader {
    return module_bound(names,alias)||names.values.contains(alias)||names.types.contains(alias)||
           names.syntax.contains(alias)||names.cliches.contains(alias);
   }
-   fs::path standard(const std::string& module,const Location& at,bool modern=false){
-     for(const auto& root:standard_roots){
-       const bool operators=module=="operators";
-       auto first=candidate(root/module_path(module),at,operators);
+    fs::path legacy_standard(const fs::path& root,const std::string& module,const Location& at,bool modern=false){
+        const bool operators=module=="operators";
+        const auto checked=[&](const fs::path& base,bool chosen){
+         auto path=candidate(base/module_path(module),at,operators,modern&&chosen);
+         if(path.empty())return path;
+         auto origin=canonical(path,at);
+         if(!contained(base,origin))
+          throw Error(at,"standard module escapes its search root: "+path.string(),"ON1X-MODULE-RESOLUTION");
+         return origin;
+        };
+        auto first=checked(root,true);
      // Compatibility with older installed extension trees; the canonical MuLIB
      // package now lives inside stdlib, not in this legacy sibling directory.
-       auto second=candidate(root.parent_path()/"std"/module_path(module),at,operators);
-       if(modern){
-        auto declared=direct_module(root,module_path(module),at);
-        if(!declared.empty()){
-         if(regular(first)||regular(second))throw Error(at,"ambiguous standard module: "+module);
-         return declared;
-        }
-       }
-      if(!first.empty()&&!second.empty()){
-       if(first==second||canonical(first,at)==canonical(second,at))return first;
+        auto second=checked(root.parent_path()/"std",false);
+        if(!first.empty()&&!second.empty()){
+        if(first==second)return first;
+        if(modern&&!regular(first)&&!regular(second))return first;
        throw Error(at,"ambiguous standard module: "+module);
       }
-     if(!first.empty()||!second.empty())return first.empty()?second:first;
+      if(!first.empty()||!second.empty())return first.empty()?second:first;
+      return {};
     }
-     return {};
-   }
   static bool contained(const fs::path& root,const fs::path& path){
    auto it=path.begin();
    for(auto part=root.begin();part!=root.end();++part,++it)
@@ -353,7 +358,7 @@ class Loader {
    }
    return nullptr;
   }
-  fs::path direct_module(const fs::path& root,const fs::path& suffix,const Location& at){
+   fs::path direct_module(const fs::path& root,const fs::path& suffix,const Location& at){
    const auto locate=[&](const fs::path& path)->fs::path{
     std::error_code ec;
     const auto status=fs::symlink_status(path,ec);
@@ -370,11 +375,134 @@ class Loader {
    auto source=locate(file),initializer=locate(root/suffix/"__init__.on1xm");
    if(!source.empty()&&!initializer.empty())
     throw Error(at,"ambiguous module: "+file.string(),"ON1X-MODULE-RESOLUTION");
-   return source.empty()?initializer:source;
-  }
-  fs::path resolve_program(const Import& imp,const Module& parent){
-   if(imp.relative||(imp.selective&&!imp.alias.empty()))
-    throw Error(imp.where,"program imports cannot combine relative or namespace aliases with selectors","ON1X-PROGRAM-IMPORT");
+    return source.empty()?initializer:source;
+   }
+   // Only explicit stdlib locations and the configured built/installed root
+   // can provide declared std identities. Ordinary library paths still support
+   // discovery of old headerless stdlib manifests.
+   const Member* standard_member(const fs::path& root,const std::string& suffix,const Location& at){
+    if(!valid_module_name(suffix))return nullptr;
+    const auto name="std."+suffix;
+    auto key=std::make_pair(root,name);
+    if(auto found=standard_members.find(key);found!=standard_members.end())return &found->second;
+    const auto source=direct_module(root,module_path(suffix),at);
+    if(source.empty())return nullptr;
+    auto stem=root/module_path(suffix);
+    auto file=stem;file+=".on1xm";
+    if(source!=file&&source!=stem/"__init__.on1xm")
+     throw Error(at,"standard implementation must use its own canonical path: "+source.string(),"ON1X-MODULE-IDENTITY");
+    auto legacy=legacy_standard(root,suffix,at,true);
+    if(regular(legacy))throw Error(at,"ambiguous standard module: "+name,"ON1X-MODULE-RESOLUTION");
+    Member member{root,name,{source},{}};
+    const auto interface_of=[&](fs::path file,bool required){
+     file.replace_extension(".on1xi");
+     std::error_code ec;
+     const auto status=fs::symlink_status(file,ec);
+     if(!required&&(ec==std::errc::no_such_file_or_directory||(!ec&&!fs::exists(status))))return;
+     if(ec||!fs::exists(status)||!regular(file)||canonical(file,at)!=file||!contained(root,file))
+      throw Error(at,"expected a local interface for "+name+": "+file.string(),"ON1X-INTERFACE-IMPLEMENTATION");
+     member.interfaces.push_back(file);
+    };
+    interface_of(source,true);
+    auto fragment_dir=source;
+    fragment_dir.replace_extension(".fragments");
+    std::error_code ec;
+    const auto status=fs::symlink_status(fragment_dir,ec);
+    if(ec&&ec!=std::errc::no_such_file_or_directory)
+     throw Error(at,"cannot inspect standard module fragments: "+fragment_dir.string(),"ON1X-MODULE-MEMBERSHIP");
+    if(fs::exists(status)){
+     if(!fs::is_directory(status))
+      throw Error(at,"expected a local standard fragment directory: "+fragment_dir.string(),"ON1X-MODULE-MEMBERSHIP");
+     // The primary file anchors identity. Supplemental fragments have stable
+     // order and cannot be found by ordinary lookup through the .fragments dir.
+     std::size_t entries=0;
+     for(fs::directory_iterator it(fragment_dir,ec),end;!ec&&it!=end;it.increment(ec)){
+      const auto& file=it->path();
+      if(++entries>options.max_modules)
+       throw Error(at,"standard fragment directory entry limit exceeded","ON1X-MODULE-MEMBERSHIP");
+      if(file.extension()==".on1xi"){
+       auto implementation=file;implementation.replace_extension(".on1xm");
+       if(!regular(implementation))
+        throw Error(at,"standard fragment interface has no implementation: "+file.string(),"ON1X-INTERFACE-IMPLEMENTATION");
+      }else if(file.extension()==".on1xm"){
+       if(!regular(file)||canonical(file,at)!=file||member.fragments.size()>=options.max_modules)
+        throw Error(at,"invalid standard module fragment: "+file.string(),"ON1X-MODULE-MEMBERSHIP");
+       member.fragments.push_back(file);
+      }
+     }
+     if(ec)throw Error(at,"cannot read standard module fragments: "+fragment_dir.string(),"ON1X-MODULE-MEMBERSHIP");
+     std::sort(member.fragments.begin()+1,member.fragments.end());
+     for(auto it=member.fragments.begin()+1;it!=member.fragments.end();++it)interface_of(*it,false);
+    }
+    auto& indexed=standard_members.emplace(std::move(key),std::move(member)).first->second;
+    for(const auto& path:indexed.fragments)
+     if(!enrolled.emplace(path,&indexed).second)
+      throw Error(at,"source has multiple canonical module identities: "+path.string(),"ON1X-MODULE-MEMBERSHIP");
+    return &indexed;
+   }
+   const Member* selected_standard_member(const std::string& suffix,const Location& at){
+    for(const auto& root:declared_standard_roots){
+     if(auto* member=standard_member(root,suffix,at))return member;
+     if(regular(legacy_standard(root,suffix,at)))break; // Earlier selected stdlib overrides later defaults.
+    }
+    return nullptr;
+   }
+   const Member* standard_member_at(const fs::path& path,const Location& at){
+    if(path.extension()!=".on1x"&&path.extension()!=".on1xm"&&!path.extension().empty())return nullptr;
+    for(const auto& root:declared_standard_roots){
+     if(!contained(root,path))continue;
+     auto anchor=path;
+     if(anchor.parent_path().extension()==".fragments")anchor=anchor.parent_path();
+     if(anchor.has_extension())anchor.replace_extension();
+     if(anchor.filename()=="__init__")anchor=anchor.parent_path();
+     if(!contained(root,anchor))continue;
+     std::string suffix;
+     for(const auto& part:anchor.lexically_relative(root)){
+      if(!valid_module_name(part.string())||part.string().find('.')!=std::string::npos)return nullptr;
+      if(!suffix.empty())suffix+='.';
+      suffix+=part.string();
+     }
+     if(auto* member=standard_member(root,suffix,at)){
+      if(path.extension()!=".on1xm"||
+         std::find(member->fragments.begin(),member->fragments.end(),path)!=member->fragments.end()){
+       if(selected_standard_member(suffix,at)!=member)
+        throw Error(at,"standard alias refers to a nonselected root: "+path.string(),"ON1X-MODULE-IDENTITY");
+       return member;
+      }
+     }
+    }
+    return nullptr;
+   }
+   Module* standard_metadata(const std::string& suffix,const Location& at){
+    // An untrusted manifest found on a project/library path must never shadow
+    // a declared standard module, even with a headerless file.
+    if(suffix.ends_with(".__init__")){
+     const auto parent=suffix.substr(0,suffix.size()-9);
+     if(auto* member=selected_standard_member(parent,at);
+        member&&member->fragments.front().filename()=="__init__.on1xm")
+      return group_metadata(*member,at);
+    }
+    if(auto* member=selected_standard_member(suffix,at))return group_metadata(*member,at);
+    for(const auto& root:standard_roots){
+     if(auto path=legacy_standard(root,suffix,at);!path.empty()){
+      auto* target=metadata(path,at);
+      if(named_module(*target))
+       throw Error(at,"standard module declaration is not enrolled: std."+suffix,"ON1X-MODULE-IDENTITY");
+      return target;
+     }
+    }
+    return nullptr;
+   }
+   const Member* standard_alias(const fs::path& input,const Location& at){
+    std::error_code ec;
+    auto path=fs::weakly_canonical(input,ec);
+    return ec?nullptr:standard_member_at(path,at);
+   }
+   fs::path resolve_program(const Import& imp,const Module& parent){
+    if(imp.relative||(imp.selective&&!imp.alias.empty()))
+     throw Error(imp.where,"program imports cannot combine relative or namespace aliases with selectors","ON1X-PROGRAM-IMPORT");
+    if(!imp.quoted&&standard_name(imp.module))
+     throw Error(imp.where,"program name is reserved for the standard library: "+imp.module,"ON1X-PROGRAM-IMPORT");
    if(!options.project_package.empty()){
     if(parent.package_identity!=options.project_package)
      throw Error(imp.where,"project program imports require an admitted program name","ON1X-PROGRAM-IMPORT");
@@ -418,21 +546,20 @@ class Loader {
     base=base.parent_path();
    }
    if(imp.module.empty())return regular(base/"__init__.on1x")?base/"__init__.on1x":base;
-   auto found=candidate(base/relative,imp.where);if(!found.empty())return found;
+    auto found=candidate(base/relative,imp.where);
+    if(!regular(found))
+     if(auto* member=standard_alias(base/relative,imp.where))return member->fragments.front();
+    if(!found.empty())return found;
    throw Error(imp.where,"module not found: "+std::string(imp.relative,'.')+imp.module+" (in "+base.string()+")");
-  }
-   if(imp.module=="std"||imp.module.starts_with("std.")){
-    if(standard_roots.empty())throw Error(imp.where,"standard library root is not configured");
-      auto found=imp.module=="std"?standard_roots.front():standard(imp.module.substr(4),imp.where,true);
-   if(!found.empty()&&fs::exists(found))return found;
-   throw Error(imp.where,"standard module not found: "+imp.module);
   }
   std::vector<fs::path> roots{entry_directory};roots.insert(roots.end(),options.paths.begin(),options.paths.end());
    roots.insert(roots.end(),standard_roots.begin(),standard_roots.end());
   std::string searched;
     for(const auto& root:roots){
-     auto found=discovery::library(root,imp.module,imp.where);
-     if(found.empty())found=candidate(root/relative,imp.where);
+      auto found=discovery::library(root,imp.module,imp.where);
+      if(found.empty())found=candidate(root/relative,imp.where);
+      if(!regular(found))
+       if(auto* member=standard_alias(root/relative,imp.where))return member->fragments.front();
      if(options.project_package.empty()){
       if(auto path=direct_module(root,relative,imp.where);!path.empty()){
        if(regular(found))throw Error(imp.where,"ambiguous module: "+imp.module);
@@ -493,7 +620,8 @@ class Loader {
    }
    bool accessible(const Module& owner,const Module& requester,VisibilityRule rule)const{
     bool admitted=true;
-    if(auto membership=enrolled.find(owner.path);membership!=enrolled.end()){
+     if(auto membership=enrolled.find(owner.path);membership!=enrolled.end()&&
+        !standard_name(membership->second->declared_name)){
      admitted=false;
      const auto* scope=&options.module_members;
      if(auto found=options.scoped_module_members.find(requester.package_identity);
@@ -592,8 +720,12 @@ class Loader {
      m->discovery=discover_operators(m->scanned);
      if(path.extension()==".on1xm"&&!m->discovery.module)
       throw Error(at,"module source requires a module declaration: "+path.string(),"ON1X-MODULE-IDENTITY");
-     if(m->discovery.module){
-      if(auto member=enrolled.find(path);member!=enrolled.end()){
+      if(m->discovery.module){
+       if(standard_name(m->discovery.module->name)&&
+          (!m->member||!standard_name(m->member->declared_name)))
+        throw Error(m->discovery.module->where,"reserved standard identity requires a selected stdlib member: "+
+                    m->discovery.module->name,"ON1X-MODULE-IDENTITY");
+       if(auto member=enrolled.find(path);member!=enrolled.end()){
        if(member->second->declared_name!=m->discovery.module->name)
         throw Error(m->discovery.module->where,"module declaration does not match project membership: "+
                     member->second->declared_name,"ON1X-MODULE-IDENTITY");
@@ -619,8 +751,8 @@ class Loader {
      if(!wants_operators(imp))continue;
       auto* target=import_metadata(imp,*m);
      m->operator_targets[i]=target;
-      if(imp.quoted&&!program_import(imp)){
-       target->operator_exports.each([&](const auto& binding){
+       if(imp.quoted&&!program_import(imp)){
+        if(!has_signature(*target))target->operator_exports.each([&](const auto& binding){
         if(operator_accessible(binding,*m))
          add_operator(named_module(*m)?m->operator_imports:m->operator_exports,binding,imp.where);
        });
@@ -672,16 +804,32 @@ class Loader {
     m->discovering=false;
     return m;
    }
-   Module* import_metadata(const Import& imp,Module& parent){
-    if(!imp.relative&&!imp.quoted&&!program_import(imp)&&imp.module!="std"&&!imp.module.starts_with("std."))
-     if(auto member=member_for(imp.module,parent))return group_metadata(*member,imp.where);
-    auto path=resolve(imp,parent);
-    if((imp.relative||imp.quoted)&&!parent.package_identity.empty()){
+    Module* import_metadata(const Import& imp,Module& parent){
+     if(!imp.relative&&!imp.quoted&&!program_import(imp)){
+      if(standard_name(imp.module)){
+       if(standard_roots.empty())throw Error(imp.where,"standard library root is not configured");
+       if(imp.module=="std")return metadata(standard_roots.front(),imp.where);
+       if(auto* target=standard_metadata(imp.module.substr(4),imp.where))return target;
+       throw Error(imp.where,"standard module not found: "+imp.module);
+      }
+      if(auto member=member_for(imp.module,parent))return group_metadata(*member,imp.where);
+     }
+     auto path=resolve(imp,parent);
+     const Member* standard=nullptr;
+     if(!program_import(imp)){
+      // Legacy quoted spelling names the old .on1x file, not an arbitrary
+      // physical .on1xm fragment. Dotted/relative lookup uses the same group.
+      if(!imp.quoted||(path.extension()==".on1x"&&!regular(path)))
+       standard=standard_alias(path,imp.where);
+      if(standard)path=standard->fragments.front();
+     }
+     if((imp.relative||imp.quoted)&&!parent.package_identity.empty()){
      auto origin=canonical(path,imp.where);
      if(origin!=parent.package_identity&&!contained(parent.package_identity,origin))
       throw Error(imp.where,"relative or quoted import escapes the verified package","ON1X-MODULE-MEMBERSHIP");
-    }
-    if(self_package(imp,parent,path))return nullptr;
+     }
+     if(self_package(imp,parent,path))return nullptr;
+     if(standard)return group_metadata(*standard,imp.where);
     auto* target=metadata(path,imp.where,!imp.quoted&&!program_import(imp));
     if(program_import(imp)){
      if(named_module(*target)||target->path.extension()!=".on1x")
@@ -689,8 +837,7 @@ class Loader {
     }else if(indexed_programs.contains(target->path)){
      throw Error(imp.where,"an indexed program requires an explicit program import: "+imp.module,"ON1X-PROGRAM-IMPORT");
     }else if(named_module(*target)){
-     if(imp.quoted||imp.relative||enrolled.contains(target->path)||
-        (!options.project_package.empty()&&!imp.module.starts_with("std."))||
+      if(imp.quoted||imp.relative||enrolled.contains(target->path)||!options.project_package.empty()||
         (target->unit.module?target->unit.module:target->discovery.module)->name!=imp.module)
       throw Error(imp.where,"import does not match the canonical module identity: "+imp.module,"ON1X-MODULE-IDENTITY");
     }
@@ -946,7 +1093,11 @@ class Loader {
      const bool explicit_program=program_import(imp);
      target=own_package?m:visit(target,imp.where,isolated||explicit_program,explicit_program);
      if(target!=m)depend(*m,*target);
-     if(imp.quoted&&!explicit_program){m->quoted.push_back(target);merge(m->names,target->names,imp.where,m);continue;}
+      if(imp.quoted&&!explicit_program){
+       if(!named_module(*target))m->quoted.push_back(target);
+       merge(m->names,named_module(*target)?exported(*target):target->names,imp.where,m);
+       continue;
+      }
      if(!imp.selective){
       auto alias=imp.alias;
       if(alias.empty()){
@@ -982,14 +1133,25 @@ class Loader {
      if(found)continue;
      if(named_module(*target)||explicit_program||(!directory(target->path)&&target->path.filename()!="__init__.on1x"))
       throw Error(imp.where,"module '"+imp.module+"' has no export '"+name+"'");
-     auto child=candidate(package(*target)/name,imp.where);
-      for(const auto& root:standard_roots)
-       if(directory(root)&&directory(target->path)&&target->path==canonical(root,imp.where)){child=standard(name,imp.where);break;}
-    if(child.empty())throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
-     auto* imported=metadata(child,imp.where);
+      Module* imported=nullptr;
+      bool standard_package=false;
+       for(const auto& root:standard_roots)
+        if(directory(target->path)&&target->path==root){
+         standard_package=true;imported=standard_metadata(name,imp.where);break;
+        }
+      if(!standard_package){
+       auto child=candidate(package(*target)/name,imp.where);
+       if(!regular(child))
+        if(auto* member=standard_alias(package(*target)/name,imp.where)){
+         imported=group_metadata(*member,imp.where);standard_package=true;
+        }
+       if(!imported&&!child.empty())imported=metadata(child,imp.where);
+      }
+      if(!imported)throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
      if(indexed_programs.contains(imported->path))
       throw Error(imp.where,"an indexed program requires an explicit program import: "+name,"ON1X-PROGRAM-IMPORT");
-     if(named_module(*imported))throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
+      if(named_module(*imported)&&!standard_package)
+       throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
      visit(imported,imp.where,isolated);depend(*m,*imported);
      bind_module(selected,alias,imported,imp.where);
      }
@@ -1388,8 +1550,9 @@ class Loader {
     auto source=read_source_file(where.file);
     if(source.size()>options.max_bytes-bytes)
      throw Error(where,"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
-    bytes+=source.size();
-    auto members=parse_interface(scan(source,where.file));
+     bytes+=source.size();
+     auto members=parse_interface(scan(source,where.file));
+     legacy_interfaces.insert(origin);
     std::map<std::string,std::vector<const Function*>> definitions;
     for(const auto& f:module.unit.functions)definitions[f.name].push_back(&f);
     for(auto& member:members){
@@ -1424,7 +1587,8 @@ class Loader {
     std::map<std::pair<fs::path,std::string>,const Member*> identities;
     const auto read=[&](const auto& any_scope){
      for(const auto& [import,member]:any_scope){
-      if(!valid_module_name(import)||!valid_module_name(member.declared_name)||
+       if(!valid_module_name(import)||!valid_module_name(member.declared_name)||
+          standard_name(import)||standard_name(member.declared_name)||
          member.fragments.empty()||member.fragments.size()>options.max_modules)
        throw Error(at,"invalid project module membership: "+import,"ON1X-MODULE-MEMBERSHIP");
       auto [original,added]=identities.emplace(std::make_pair(member.package,member.declared_name),&member);
@@ -1450,7 +1614,8 @@ class Loader {
     read(options.module_members);
     for(const auto& [scope,membership]:options.scoped_module_members){valid_root(scope);read(membership);}
     for(const auto& [name,path]:options.program_members){
-     if(!valid_module_name(name))throw Error(at,"invalid project program name: "+name,"ON1X-MODULE-MEMBERSHIP");
+      if(!valid_module_name(name)||standard_name(name))
+       throw Error(at,"invalid project program name: "+name,"ON1X-MODULE-MEMBERSHIP");
      valid_file(path,options.project_package,".on1x");
      indexed_programs.insert(path);
     }
@@ -1475,16 +1640,14 @@ class Loader {
     const Location at{"<prelude>"};
     PreludeModules result;
     if(options.prelude){
-     auto pervasive=standard("pervasive",at);
-     if(pervasive.empty())
-      throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude (pervasive.on1x not found)");
-     auto operators=standard("operators",at);
+      result.pervasive=standard_metadata("pervasive",at);
+      if(!result.pervasive||!regular(result.pervasive->path))
+       throw Error({input.string()},"automatic prelude requires --stdlib or --no-prelude (pervasive.on1x not found)");
+      result.operators=standard_metadata("operators",at);
      // Older/custom standard libraries may ship only pervasive.on1x.
-     if(!operators.empty()){
-      result.operators=metadata(operators,at,false);
+      if(result.operators){
       operator_preludes.push_back(result.operators);
      }
-     result.pervasive=metadata(pervasive,at,false);
      operator_preludes.push_back(result.pervasive);
     }
      for(const auto& path:options.preludes){
@@ -1496,28 +1659,35 @@ class Loader {
      operator_preludes.push_back(module);
     }
     return result;
-   }
- public:
-   explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
-    :options(opts),standard_roots(standard_library_roots(opts)),inspection(inspect){
-     for(const auto& root:standard_roots)
+    }
+    Module* entry_metadata(const fs::path& input,const Location& at){
+     const auto path=canonical(input,at);
+     const auto* member=path.extension()==".on1xm"?standard_member_at(path,at):nullptr;
+     if(!member)
+      if(auto found=enrolled.find(path);found!=enrolled.end())member=found->second;
+     if(member)(void)group_metadata(*member,at);
+     return metadata(path,at,false);
+    }
+  public:
+    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr)
+     :options(opts),standard_roots(standard_library_roots(opts)),declared_standard_roots(stdlib_roots(opts,false)),
+      inspection(inspect){
+      for(const auto& root:standard_roots)
       for(const auto& [kind,file]:shared_modules){
        std::error_code ec;
        auto path=fs::canonical(root/"container"/file,ec);
-       if(!ec)shared_sources.emplace(std::move(path),kind);
+        if(!ec&&contained(root,path))shared_sources.emplace(std::move(path),kind);
       }
     }
     Unit parse_source(const fs::path& input){
      index_membership();
     (void)discover_preludes(input);
     const Location at{input.string()};
-    auto* entry=metadata(input,at,false);
+     // Get the same fragment group and fixities as the compiler without
+     // visiting the group or opening its signatures.
+     auto* entry=entry_metadata(input,at);
      if(!options.project_package.empty()&&named_module(*entry)&&!entry->member)
       throw Error(at,"declared module entry is not in project membership","ON1X-MODULE-MEMBERSHIP");
-     // Attach the same fragment group as the compiler does, so the entry sees
-     // its siblings' accessible fixities. Do not visit() the group: only the
-     // requested source is fully parsed, and signatures are never opened.
-     if(entry->member)(void)group_metadata(*entry->member,at);
      auto result=parse_with_operators(entry->scanned,
             {options.extensions.enabled.begin(),options.extensions.enabled.end()},
              std::move(entry->docs),visible_operators(*entry,at));
@@ -1545,7 +1715,7 @@ class Loader {
     implicit=false;
     for(auto* module:discovered.configured)preludes.push_back(visit(module,prelude_at));
     const Location entry_at{input.string()};
-    auto* entry=metadata(input,entry_at,false);
+     auto* entry=entry_metadata(input,entry_at);
     if(!options.project_package.empty()&&named_module(*entry)&&!entry->member)
      throw Error(entry_at,"declared module entry is not in project membership","ON1X-MODULE-MEMBERSHIP");
     if(entry->member)visit(group_metadata(*entry->member,entry_at),entry_at);
@@ -1566,7 +1736,10 @@ class Loader {
     // Macro expansion or PPX can introduce the first operator in a graph.
     // Freeze module ownership even when discovery found no operators.
     result.unit.operator_entry=entry->path.string();
-   result.interfaces=bind_interfaces();
+    result.interfaces=bind_interfaces();
+    result.signature_dependencies.assign(verified_signatures.begin(),verified_signatures.end());
+    result.signature_dependencies.insert(result.signature_dependencies.end(),legacy_interfaces.begin(),legacy_interfaces.end());
+    std::sort(result.signature_dependencies.begin(),result.signature_dependencies.end());
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
    std::size_t count=0;
      for(auto* m:order){
@@ -1579,7 +1752,8 @@ class Loader {
    if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count);
      for(auto* m:order){
-      current_module=m;
+       current_module=m;
+       result.source_capabilities|=m->source_capability;
       result.unit.requires_module_boundary|=named_module(*m)||m->program;
      const auto scope_key=m->path.string();
       record_operator_scope(result.unit,m->operator_visibility,scope_key);
@@ -1880,7 +2054,8 @@ LoaderOptions default_loader_options(const std::string& executable){
 #endif
  return options;
 }
-std::vector<fs::path> standard_library_roots(const LoaderOptions& options){
+ namespace {
+ std::vector<fs::path> stdlib_roots(const LoaderOptions& options,bool include_legacy_paths){
  if(options.paths.size()+options.stdlib_paths.size()>256)throw Error({"<search-path>"},"library search path count limit exceeded");
  std::vector<fs::path> result;
  auto add=[&](const fs::path& path){
@@ -1898,13 +2073,15 @@ std::vector<fs::path> standard_library_roots(const LoaderOptions& options){
   if(!root.empty())add(root);
   else if(directory(path))throw Error({(path/"On1xfile").string()},"stdlib search directory requires an On1xfile manifest");
  }
- for(const auto& path:options.paths)add(discovery::stdlib(path));
+  if(include_legacy_paths)for(const auto& path:options.paths)add(discovery::stdlib(path));
  if(!options.stdlib.empty()&&!options.stdlib_explicit){
   auto root=discovery::stdlib(options.stdlib);
   add(root.empty()?options.stdlib:root); // Legacy --stdlib/ON1X_STDLIB compatibility.
  }
- return result;
-}
+  return result;
+ }
+ }
+ std::vector<fs::path> standard_library_roots(const LoaderOptions& options){return stdlib_roots(options,true);}
  LoadedUnit load_unit(const fs::path& input,const LoaderOptions& options){return Loader(options).run(input);}
  Unit parse_source_with_operator_imports(const fs::path& input,const std::string& source,
                                          const LoaderOptions& options){
