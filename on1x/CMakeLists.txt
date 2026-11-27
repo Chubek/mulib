@@ -602,6 +602,7 @@ install(FILES tools/on1x_project.py tools/on1x_project_init.py tools/on1x_inline
   tools/on1x_dotenv.py tools/on1x_proxy.py DESTINATION share/on1x/tools)
 if(ON1X_BUILD_EXTENSION_SDK)
   # The standalone SDK's manifest validator loads the canonical project engine.
+  include(GNUInstallDirs)
   install(FILES tools/on1x_project.py DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools" COMPONENT On1xSDK)
 endif()
 
