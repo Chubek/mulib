@@ -958,9 +958,12 @@ class Loader {
       bind_module(m->names,alias,target,imp.where);continue;
      }
      Names selected;
+     std::set<std::string> selected_aliases;
      for(const auto& selection:imp.names){
-     if(selection.is_operator)continue; // Already included in the operator export scope.
-     const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
+      if(selection.is_operator)continue; // Already included in the operator export scope.
+      const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
+      if((named_module(*target)||explicit_program)&&!selected_aliases.insert(alias).second)
+       throw Error(imp.where,"duplicate selector alias: "+alias,"ON1X-IMPORT-SELECTORS");
       bool found=false;
       if(!own_package){
        const auto& visible=exported(*target);
@@ -977,7 +980,7 @@ class Loader {
        }
      }
      if(found)continue;
-     if(named_module(*target)||(!directory(target->path)&&target->path.filename()!="__init__.on1x"))
+     if(named_module(*target)||explicit_program||(!directory(target->path)&&target->path.filename()!="__init__.on1x"))
       throw Error(imp.where,"module '"+imp.module+"' has no export '"+name+"'");
      auto child=candidate(package(*target)/name,imp.where);
       for(const auto& root:standard_roots)
@@ -1440,9 +1443,12 @@ class Loader {
      result.pervasive=metadata(pervasive,at,false);
      operator_preludes.push_back(result.pervasive);
     }
-    for(const auto& path:options.preludes){
-     auto* module=metadata(path,at,false);
-     result.configured.push_back(module);
+     for(const auto& path:options.preludes){
+      auto* module=metadata(path,at,false);
+      if(module->member)
+       throw Error(at,"project module fragments cannot be opened as configured preludes: "+path.string(),
+                   "ON1X-MODULE-MEMBERSHIP");
+      result.configured.push_back(module);
      operator_preludes.push_back(module);
     }
     return result;

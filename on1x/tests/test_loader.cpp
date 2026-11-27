@@ -24,12 +24,17 @@ void module_imports(const std::filesystem::path& root){
  auto reject=[&](const std::string& source,const std::string& message){
   write(entry,source);
   try{(void)load_unit(entry,options);}
-  catch(const Error& error){if(std::string(error.what()).find(message)!=std::string::npos)return;throw;}
+  catch(const Error& error){
+   if(std::string(error.what()).find(message)!=std::string::npos||error.diagnostic_id.starts_with(message))return;
+   throw;
+  }
   throw std::runtime_error("unexpectedly accepted: "+source);
  };
 
  write(modern,"module nested.Choice; private fn secret()->i64{return 40;}"
-              "public fn answer()->i64{return secret()+2;}");
+              "public fn answer()->i64{return secret()+2;}"
+              "private operator(lexeme: \"%%\", arity: \"binary\", formals: x:i64,y:i64)"
+              "->i64{return x+y;}");
  write(entry,"import nested.Choice as c;import nested.Choice : answer as get;"
              "fn main(){assert(c.answer()==get());}");
  auto modules=load_unit(entry,options);
@@ -40,6 +45,8 @@ void module_imports(const std::filesystem::path& root){
  check(modules.unit);
  reject("import nested.Choice as c;fn main(){c.secret();}","not visible");
  reject("from nested.Choice import answer,secret;fn main(){}","not visible");
+ reject("from nested.Choice import (operator(\"%%\"));fn main(){}","no operator export");
+ reject("import nested.Choice : answer as get,answer as get;fn main(){}","duplicate selector alias");
  reject("import \"nested/Choice.on1xm\";fn main(){}","canonical module identity");
 
  write(helper,"fn number()->i64{return 42;}");
@@ -64,7 +71,11 @@ void module_imports(const std::filesystem::path& root){
  reject("import program \"program.on1x\" : public_result as get,main;fn main(){}","no export");
  reject("import program \"program.on1x\" : public_result as get;fn main(){program.public_result();}",
         "unknown module qualifier");
+ reject("import program \"program.on1x\" : public_result as get,public_result as get;fn main(){}",
+        "duplicate selector alias");
  write(helper,"extern fn number()->i64;");
+ reject("import program \"program.on1x\" as p;fn main(){}","ON1X-PROGRAM-CAPABILITY");
+ write(helper,"@ppx identity \"must-not-run.py\";fn number()->i64{return 42;}");
  reject("import program \"program.on1x\" as p;fn main(){}","ON1X-PROGRAM-CAPABILITY");
  write(helper,"fn main(){}fn number()->i64{return 42;}");
  reject("import program \"program.on1x\" as p;fn main(){}","needs an explicit program import");
