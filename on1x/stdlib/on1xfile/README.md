@@ -443,8 +443,9 @@ build reports under `diagnostic_selectors`.
 
 This changes presentation only: errors still fail the build, even with no
 message, and an invalid project cannot publish build outputs or cache a
-successful check. Dependency `On1xfile`s and directory declarations such as
-`On1xfile.m` and `On1xfile.i` cannot set this policy.
+successful check. A successful named-module cache hit replays the diagnostic
+presentation for the same source and settings. Dependency `On1xfile`s and
+directory declarations such as `On1xfile.m` and `On1xfile.i` cannot set this policy.
 
 `on1x-project.py format PATH [--check]` validates and canonically spaces a
 plain root, module, or interface manifest, preserving comment text and order.

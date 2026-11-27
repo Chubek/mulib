@@ -1608,7 +1608,9 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
        }
        if(!findings.empty()&&resource_policy=="error"){publish_diagnostics();return 1;}
       }
-     unused_advisories=on1x::collect_asdl_unused(loaded.unused_bindings,diagnostic_catalog->level("warning"));
+     if(!loaded.unused_bindings.empty())
+      unused_advisories=on1x::collect_asdl_unused(
+       loaded.unused_bindings,on1x::diagnostic::Catalog::embedded().level("warning"));
      auto category_plan=on1x::extensions::evidence_plan(unit);
     std::string type_evidence;
 #ifdef ON1X_WITH_NEROTYPICAL

@@ -121,6 +121,21 @@ class DiagnosticSelectors(unittest.TestCase):
         self.assertEqual(hidden.stdout, visible.stdout)
         self.assertEqual(hidden.stdout, before.stdout)
 
+    def test_hiding_registry_error_leaves_scrutiny_active(self):
+        self.source.write_text('fn main() -> i64 { return 3 / 0; }\n', encoding='utf-8')
+        check = subprocess.run([options.on1xc, '--stdlib', ON1X / 'stdlib', '--check',
+                                '--scrutiny', 'strict', self.source],
+                               cwd=self.root, capture_output=True, text=True, timeout=60)
+        if check.returncode == 0:
+            self.skipTest('Wetstone unavailable')
+        self.assertEqual(check.returncode, 1, check)
+        self.assertIn('ON1X-ANALYSIS-DIVZERO', check.stderr)
+        destination = self.root / 'invalid.c'
+        failed = self.compile('--emit-c', '-o', destination, '--scrutiny', 'strict',
+                              '--diagnostic-disable', 'error', status=1)
+        self.assertEqual((failed.stdout, failed.stderr), ('', ''))
+        self.assertFalse(destination.exists())
+
     def test_structured_and_info(self):
         if not options.json:
             self.skipTest('structured diagnostics unavailable')
@@ -139,6 +154,23 @@ class DiagnosticSelectors(unittest.TestCase):
         result = self.compile('--repair', '-o', change, *OFF, '--diagnostic-enable', 'name:already-valid')
         self.assertTrue(result.stderr)
         self.assertFalse(change.exists())
+
+    def test_external_catalog_does_not_have_to_name_warning_level_warning(self):
+        catalog = json.loads((ON1X / 'stdlib/diagnostics/catalog.json').read_bytes())
+        next(level for level in catalog['levels'] if level['kind'] == 1)['name'] = 'advisory'
+        for entry in catalog['diagnostics']:
+            if entry['level'] == 'warning':
+                entry['level'] = 'advisory'
+        for policy in catalog['scrutiny']:
+            for override in policy['severity_overrides']:
+                if override['from'] == 'warning':
+                    override['from'] = 'advisory'
+        path = self.write(self.root, 'diagnostics.json', json.dumps(catalog))
+        result = self.compile('--check', '--diagnostic-catalog', path, *OFF,
+                              '--diagnostic-enable', 'name:unused-variable')
+        self.assertIn(VARIABLE, result.stderr)
+        self.assertNotIn(TYPE, result.stderr)
+        self.assertNotIn(IMPORT, result.stderr)
 
     def test_project_order_and_cache_isolation(self):
         root, cache, output = self.root, self.root / 'cache', self.root / 'result'
@@ -190,6 +222,10 @@ class DiagnosticSelectors(unittest.TestCase):
         self.assertEqual((hidden.stdout, hidden.stderr), ('', ''))
         self.assertFalse(invalid.exists())
         self.assertEqual(before, {path.name: path.read_bytes() for path in cache.iterdir()})
+        wrapper = self.run_command(options.on1xc, 'exec', 'build', project,
+                                   '--cc', options.cc, '--output-dir', invalid, *OFF, status=1)
+        self.assertEqual((wrapper.stdout, wrapper.stderr), ('', ''))
+        self.assertFalse(invalid.exists())
 
     def test_local_and_dependency_manifest_have_no_authority(self):
         project, cache, output = self.root / 'project', self.root / 'cache', self.root / 'out'
