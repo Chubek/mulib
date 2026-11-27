@@ -69,7 +69,8 @@ bool scalar(const SExpr& n,const std::string& expected){
  if(expected=="Nat"||expected=="Positive")return !quoted&&natural(s,expected=="Positive");
   if(expected=="Boolean")return !quoted&&(s=="true"||s=="false");
   if(expected=="OperatorLexeme")return quoted&&on1x_operator_spelling(s.data(),s.size());
-  if(expected=="UnaryPosition")return quoted&&(s=="prefix"||s=="postfix");
+   if(expected=="UnaryPosition")return quoted&&(s=="prefix"||s=="postfix");
+   if(expected=="SourceDeclarationKind")return !quoted&&(s=="function"||s=="nominal"||s=="macro"||s=="cliche");
  if(expected=="UnaryOperator")return !quoted&&(s=="!"||s=="-");
  if(expected=="BinaryOperator"){
   static const std::set<std::string> operators={"+","-","*","/","%","<",">","<=",">=","==","!=","&&","||"};return !quoted&&operators.contains(s);
@@ -85,22 +86,46 @@ bool scalar(const SExpr& n,const std::string& expected){
    if(expected=="UnsignedSpelling")return quoted&&unsigned_spelling(s);
  return false;
 }
- const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","OperatorLexeme","UnaryPosition","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling"};
-void add_nodes(Schema& schema,const Json& input,const std::string& owner){
+  const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","OperatorLexeme","UnaryPosition","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling","SourceDeclarationKind"};
+ // These categories are compiler/extension protocol envelopes, not syntax
+ // that ordinary processors can introduce via an extensible Syntax field.
+ bool host_category(const Schema& schema,const std::string& category){
+  static const std::set<std::string_view> roots={
+   "ExtensionInput","ExtensionOutput","DeclarationCarrier","SourceToken",
+   "ExtensionFact","EvidenceContract","EvidenceMember","EvidenceImplementation",
+   "EvidenceBinding","EvidenceInput","EvidenceOutput","TypedFunction","EvidenceChoice","SourceModuleMetadata",
+   "SourceModuleHeader","SourceImport","SourceImportTarget","SourceImportSelector","SourceImportAlias","SourceVisibility",
+   "SourceDeclarationVisibility"};
+  auto it=schema.parents.find(category);
+  for(std::size_t i=0;it!=schema.parents.end()&&i<=schema.parents.size();++i){
+   if(roots.contains(it->first))return true;
+   if(it->second.empty())break;
+   it=schema.parents.find(it->second);
+  }
+  return false;
+ }
+ bool protected_category(const Schema& schema,const std::string& category){
+  return schema.subtype(category,"Unit")||schema.subtype(category,"Location")||host_category(schema,category);
+ }
+ void add_nodes(Schema& schema,const Json& input,const std::string& owner){
  if(input.kind!='o')throw std::runtime_error("PPX schema: nodes must be an object");
  for(const auto& [tag,definition]:input.object){
   if(schema.nodes.size()>=1024)throw std::runtime_error("PPX schema constructor limit exceeded");
   if(tag.empty()||tag.size()>128||tag.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:")!=std::string::npos)throw std::runtime_error("PPX schema: invalid constructor name");
   if(!owner.empty()&&!tag.starts_with(owner+":"))throw std::runtime_error("PPX schema extensions must prefix constructors with "+owner+":");
-  SchemaNode node;node.owner=owner;node.category=text(member(definition,"category"));
-  if(!schema.parents.contains(node.category))throw std::runtime_error("PPX schema: unknown category "+node.category);
+   SchemaNode node;node.owner=owner;node.category=text(member(definition,"category"));
+   if(!schema.parents.contains(node.category))throw std::runtime_error("PPX schema: unknown category "+node.category);
+   if(!owner.empty()&&protected_category(schema,node.category))
+    throw std::runtime_error("PPX schema: cannot extend protected category "+node.category);
   const auto& fields=member(definition,"fields");if(fields.kind!='a'||fields.array.size()>32)throw std::runtime_error("PPX schema: invalid fields array");std::set<std::string> names;
   for(const auto& field:fields.array){
    if(field.kind!='a'||field.array.size()!=2)throw std::runtime_error("PPX schema: field must be [name, type]");
    auto name=text(field.array[0]),type=text(field.array[1]);
    if(name.size()>128||!identifier(name)||!names.insert(name).second)throw std::runtime_error("PPX schema: invalid/duplicate field name");
    auto base=type.ends_with('*')?type.substr(0,type.size()-1):type;
-   if(!schema.parents.contains(base)&&!scalars.contains(base))throw std::runtime_error("PPX schema: unknown field type "+type);
+    if(!schema.parents.contains(base)&&!scalars.contains(base))throw std::runtime_error("PPX schema: unknown field type "+type);
+    if(!owner.empty()&&host_category(schema,base))
+     throw std::runtime_error("PPX schema: cannot use host protocol field type "+type);
    node.fields.emplace_back(std::move(name),std::move(type));
   }
   if(!schema.nodes.emplace(tag,std::move(node)).second)throw std::runtime_error("PPX schema: constructor cannot be redefined: "+tag);
@@ -126,22 +151,24 @@ void Schema::extend(std::string_view json,const std::string& label,const std::st
 }
 void Schema::validate(const SExpr& tree,const std::string& expected,const std::string& path)const{
  std::size_t count=0;
- auto visit=[&](auto&& self,const SExpr& n,const std::string& type,const std::string& at,unsigned depth)->void{
+ auto visit=[&](auto&& self,const SExpr& n,const std::string& type,const std::string& at,unsigned depth,bool core)->void{
   auto fail=[&](const std::string& message){throw Error(n.where,"PPX schema at "+at+": "+message);};
   if(depth>=256||++count>max_wire_nodes)fail("tree limit exceeded");
   if(type.ends_with('*')){
    if(n.kind!=SExpr::Kind::List)fail("expected a list of "+type);
-   for(std::size_t i=0;i<n.items.size();++i)self(self,n.items[i],type.substr(0,type.size()-1),at+"["+std::to_string(i)+"]",depth+1);
+   for(std::size_t i=0;i<n.items.size();++i)self(self,n.items[i],type.substr(0,type.size()-1),at+"["+std::to_string(i)+"]",depth+1,core);
    return;
   }
   if(scalars.contains(type)){if(!scalar(n,type))fail("expected "+type);return;}
   if(n.kind!=SExpr::Kind::List||n.items.empty()||n.items[0].kind!=SExpr::Kind::Symbol)fail("expected "+type+" constructor");
   auto found=nodes.find(n.items[0].text);if(found==nodes.end())fail("unknown constructor "+n.items[0].text);
-  const auto& shape=found->second;
+   const auto& shape=found->second;
+   if(core&&host_category(*this,shape.category))fail("host protocol constructor is not Unit syntax: "+n.items[0].text);
   if(!subtype(shape.category,type))fail(n.items[0].text+" has category "+shape.category+", expected "+type);
   if(n.items.size()!=shape.fields.size()+1)fail(n.items[0].text+" expects "+std::to_string(shape.fields.size())+" fields, got "+std::to_string(n.items.size()-1));
-  for(std::size_t i=0;i<shape.fields.size();++i)self(self,n.items[i+1],shape.fields[i].second,at+"."+shape.fields[i].first,depth+1);
+   for(std::size_t i=0;i<shape.fields.size();++i)
+    self(self,n.items[i+1],shape.fields[i].second,at+"."+shape.fields[i].first,depth+1,core||shape.category=="Unit");
  };
- visit(visit,tree,expected,path,0);
+ visit(visit,tree,expected,path,0,false);
 }
 }

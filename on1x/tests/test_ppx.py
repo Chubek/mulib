@@ -163,6 +163,17 @@ assert p.returncode==1 and 'unhandled PPX schema extension' in p.stderr,p.stderr
 schema_path.write_text('{"version":1,"nodes":{"Identifier":{"category":"Expression","fields":[]}}}')
 p=run([t.compiler,'--check',source,*options('introduce'),'--ppx-schema','introduce',schema_path])
 assert p.returncode==1 and 'prefix constructors' in p.stderr,p.stderr
+for category in ('Unit','Location','ExtensionOutput','EvidenceOutput','SourceModuleMetadata'):
+    schema_path.write_text(json.dumps({'version':1,'nodes':{'introduce:Override':{
+        'category':category,'fields':[]}}}))
+    p=run([t.compiler,'--check',source,*options('introduce'),'--ppx-schema','introduce',schema_path])
+    assert p.returncode==1 and 'cannot extend protected category '+category in p.stderr,p.stderr
+schema_path.write_text(json.dumps({'version':1,'nodes':{'introduce:Override':{
+    'category':'Expression','fields':[['value','EvidenceOutput']]}}}))
+p=run([t.compiler,'--check',source,*options('introduce'),'--ppx-schema','introduce',schema_path])
+assert p.returncode==1 and 'cannot use host protocol field type EvidenceOutput' in p.stderr,p.stderr
+p=run([t.compiler,'--check',source,*options('embed_evidence')])
+assert p.returncode==1 and 'host protocol constructor is not Unit syntax: EvidencePlan' in p.stderr,p.stderr
 
 # Canonical cross-language round trips for every source example without a PPX registration.
 for example in sorted((root/'examples').glob('*.on1x')):

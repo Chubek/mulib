@@ -29,6 +29,9 @@ std::string literal_value(const std::string& text);
 std::string source_literal(const std::string& value);
 SExpr encode(const Unit& unit);
 Unit decode(const SExpr& tree);
+// Separate read-only packet for a parsed source unit. It does not transport
+// resolved imports, access privileges, or compiler declaration identities.
+SExpr encode_source_module_metadata(const Unit& unit);
 // Reuse the canonical, schema-validated type/location codec for sideband
 // requests. Decoding syntax never confers semantic admission.
 SExpr encode_type(const Type& type);

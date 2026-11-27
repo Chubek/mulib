@@ -4,6 +4,8 @@
 #include "extensions_registry.hpp"
 #include <fstream>
 #include <algorithm>
+#include <charconv>
+#include <tuple>
 
 namespace on1x::extensions {
 namespace {
@@ -65,7 +67,22 @@ Resolved resolve(const Options& options,const SExpr& entry){
  if(magic[0]=='#'&&magic[1]=='!')fail({out.program.string()},"bundled Category processors must be native executables");
  return out;
 }
-SExpr loc(const Location& at){return list({symbol("Loc"),string(at.file),symbol(std::to_string(at.offset)),symbol(std::to_string(at.line)),symbol(std::to_string(at.column))});}
+ SExpr loc(const Location& at){return list({symbol("Loc"),string(at.file),symbol(std::to_string(at.offset)),symbol(std::to_string(at.line)),symbol(std::to_string(at.column))});}
+ using SourcePoint=std::tuple<std::size_t,std::size_t,std::size_t>;
+ void validate_provenance(const SExpr& node,std::string_view origin,const std::set<SourcePoint>& source){
+  if(node.kind!=SExpr::Kind::List)return;
+  if(!node.items.empty()&&node.items.front().kind==SExpr::Kind::Symbol&&node.items.front().text=="Loc"){
+   // The envelope schema has already checked the types, arity and bounds.
+   auto coordinate=[&](std::size_t field){
+    const auto& text=node.items[field].text;std::size_t value=0;
+    std::from_chars(text.data(),text.data()+text.size(),value);return value;
+   };
+   if(node.items[1].text!=origin||!source.contains({coordinate(2),coordinate(3),coordinate(4)}))
+    fail(node.where,"response location was not supplied by its source carriers");
+   return;
+  }
+  for(const auto& child:node.items)validate_provenance(child,origin,source);
+ }
 }
 std::string digest(const std::string& bytes){return module_key(bytes);}
 std::string canonical(const std::string& name,const Location& at){(void)feature(name,at);return name;}
@@ -99,12 +116,23 @@ void expand(Unit& unit,const Options& options,const std::string& origin){
   throw Error(carrier.where,"ON1X-CAT-ENABLE: carrier owner is not active: "+carrier.owner,"ON1X-CAT-ENABLE");
  if(!options.execute)return;
  std::vector<Function> generated_functions;
+ std::set<std::string> names_in_scope;
+ for(const auto& f:unit.functions)names_in_scope.insert(f.name);
  for(const auto& name:active){
-  auto entry=feature(name,{origin});auto resolved=resolve(options,entry);
-  std::vector<SExpr> carriers,names;
+   auto entry=feature(name,{origin});auto resolved=resolve(options,entry);
+   std::vector<SExpr> carriers,names;
+   std::set<SourcePoint> source;
+   auto input_point=[&](const Location& at){
+    if(at.file!=origin)fail(at,"source carrier location does not match its module origin");
+    source.emplace(at.offset,at.line,at.column);
+   };
   for(const auto& f:unit.functions)names.push_back(string(f.name));
   for(const auto& c:unit.extensions)if(c.owner==name){
-   std::vector<SExpr> tokens;for(const auto& t:c.tokens)tokens.push_back(list({symbol("SourceToken"),string(t.text),loc(t.where)}));
+    input_point(c.where);input_point(c.end);
+    std::vector<SExpr> tokens;for(const auto& t:c.tokens){
+     input_point(t.where);
+     tokens.push_back(list({symbol("SourceToken"),string(t.text),loc(t.where)}));
+    }
    carriers.push_back(list({symbol("DeclarationCarrier"),string(name),string(c.source),loc(c.where),loc(c.end),list(std::move(tokens))}));
   }
   if(carriers.empty())continue;
@@ -112,16 +140,24 @@ void expand(Unit& unit,const Options& options,const std::string& origin){
   auto schema=base_schema();schema.validate(packet,"ExtensionInput");
    auto wire=run_transformer(resolved.program.string(),write_sexpr(packet),options.timeout_ms,name,{{"ON1X_PPX_SCHEMA",resolved.schema.string()},{"ON1X_EXTENSION_PHASE","syntax-v1"}});
   auto result=read_sexpr(wire,"<native-extension:"+name+">");schema.validate(result,"ExtensionOutput");
-   if(tag(result)!="ModuleEvidenceExpansion"||result.items[2].text!=origin)fail({origin},"response origin/envelope mismatch (checked evidence required)");
+    if(tag(result)!="ModuleEvidenceExpansion"||result.items[2].text!=origin)fail({origin},"response origin/envelope mismatch (checked evidence required)");
+   validate_provenance(result,origin,source);
   // Facts are reporting data only, never privileged typing or ownership proofs.
   for(const auto& fact:result.items[4].items)if(fact.items[1].text!=name||fact.items.back().items[1].text!=origin)fail({origin},"response fact owner/source mismatch");
   if(hash(resolved.program)!=resolved.binary_hash||hash(resolved.schema)!=resolved.schema_hash)fail({origin},"bundled artifact changed during expansion");
-  const auto& tree=result.items[3];
-  if(!tree.items[2].items.empty()){
+   const auto& tree=result.items[3];
+   if(!tree.items[2].items.empty()){
+    for(const auto& decl:tree.items[2].items){
+     if(tag(decl)!="Function"&&tag(decl)!="Procedure")
+      fail(decl.where,"native declaration profile admits only generated function/procedure definitions");
+    }
     auto generated=decode(tree);
-    if(!generated.nominals.empty())fail({origin},"native declaration profile cannot generate nominal types");
    if(unit.functions.size()+generated_functions.size()+generated.functions.size()>2048)fail({origin},"generated function budget exhausted");
-     for(auto& f:generated.functions){if(f.external||!f.attributes.empty())fail(f.where,"generated extern/attribute not admitted");f.extension_generated=true;generated_functions.push_back(std::move(f));}
+    for(auto& f:generated.functions){
+     if(f.external||!f.attributes.empty())fail(f.where,"generated extern/attribute not admitted");
+     if(!names_in_scope.insert(f.name).second)fail(f.where,"generated declaration collides with an existing function: "+f.name);
+     f.extension_generated=true;generated_functions.push_back(std::move(f));
+    }
    }
    ExtensionEvidence evidence;
    evidence.owner=name;evidence.origin=origin;evidence.version=entry.items[3].text;

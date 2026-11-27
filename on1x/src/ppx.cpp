@@ -313,6 +313,17 @@ std::string run_transformer(const std::string& program,std::string_view input,un
 void rewrite(Unit& unit,const PpxOptions& options){
  require_no_kernel_imports(unit);
  if(!needs_macro_expansion(unit)&&unit.ppx.empty()&&options.programs.empty()&&options.schemas.empty()){require_source_ready(unit);return;}
+ if((!unit.ppx.empty()||!options.programs.empty())&&
+    (unit.requires_module_boundary||(unit.module&&!unit.module_imports.empty())||
+     std::any_of(unit.module_imports.begin(),unit.module_imports.end(),
+                 [](const Import& request){return request.kind==Import::Kind::Program;}))){
+  // Unit v1 has no ownership/access map for value/type spellings. An ordinary
+  // processor can manufacture names already resolved by the loader; checking
+  // such names in the merged unit would bypass the original module scopes.
+  throw Error(unit.module?unit.module->where:Location{"<ppx>"},
+              "ON1X-PPX-SCOPE: Unit-v1 PPX is unavailable for a module-scoped import graph",
+              "ON1X-PPX-SCOPE");
+ }
  std::size_t budget=262144;auto working=clone_unit(unit,budget);
  if(!working.ppx.empty()&&!options.allow_source)throw Error(working.ppx.front().where,"source PPX execution requires --allow-source-ppx (not a sandbox)");
  std::vector<PpxRegistration> programs=working.ppx;

@@ -3,6 +3,7 @@
 import os
 import hashlib
 import copy
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -268,5 +269,17 @@ with tempfile.TemporaryDirectory(dir=t.work,prefix='category-install-') as tempo
     p=run([compiler,'--check',local],env=env);assert p.returncode and 'digest mismatch' in p.stderr,p.stderr
     schema.write_bytes(original_schema);native.rename(native.with_suffix('.missing'))
     p=run([compiler,'--check',local],env=env);assert p.returncode and 'no PATH or Python fallback' in p.stderr,p.stderr
+    # A pinned native binary still cannot invent source coordinates.
+    forged=[S('ModuleEvidenceExpansion'),S('1'),str(local.resolve()),[S('Unit'),S('1'),[]],
+            [[S('ExtensionFact'),'Protocols','proof','Forged','id',
+              [S('Loc'),str(local.resolve()),S('999999'),S('1'),S('1')]]],[],[]]
+    forged_source=base/'forged.c'
+    forged_source.write_text('#include <stdio.h>\nint main(void){while(getchar()!=EOF){} return fputs('
+                             +json.dumps(dumps(forged))+',stdout)==EOF;}\n')
+    p=run([t.cc,'-std=c11',forged_source,*t.flags,'-o',native]);assert p.returncode==0,p.stderr
+    pin=Path(str(native)+'.pin');record=loads(pin.read_text())
+    record[4]=hashlib.sha256(native.read_bytes()).hexdigest();pin.write_text(dumps(record))
+    p=run([compiler,'--check',local],env=env)
+    assert p.returncode and 'response location was not supplied by its source carriers' in p.stderr,p.stderr
 
 print('Category concrete evidence: native syntax/typed phases, host admission, activation, import identity and relocation PASS')

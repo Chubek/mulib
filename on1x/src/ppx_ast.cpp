@@ -404,6 +404,63 @@ Pattern read_pattern(const SExpr& n){
 SExpr encode_type(const Type& value){return type(value);}
 Type decode_type(const SExpr& tree){base_schema().validate(tree,"Type");return read_type(tree);}
 Location decode_source_location(const SExpr& tree){base_schema().validate(tree,"Location");return location(tree);}
+SExpr encode_source_module_metadata(const Unit& unit){
+ auto components=[](const std::string& name){
+  std::vector<SExpr> values;
+  for(std::size_t begin=0;begin<name.size();){
+   const auto end=name.find('.',begin);
+   values.push_back(string(name.substr(begin,end==std::string::npos?end:end-begin)));
+   if(end==std::string::npos)break;
+   begin=end+1;
+  }
+  return list(std::move(values));
+ };
+ auto alias=[](const std::string& spelling){return spelling.empty()?form("SourceNoAlias"):form("SourceAlias",{string(spelling)});};
+ auto header=unit.module
+  ?form("SourceModuleHeader",{components(unit.module->name),loc(unit.module->where)})
+  :form("SourceAnonymousModule");
+ std::vector<SExpr> imports,declarations;
+ for(const auto& request:unit.module_imports){
+  const bool program=request.kind==Import::Kind::Program;
+  auto target=request.quoted?form("SourceQuotedTarget",{string(request.module)}):
+                             form("SourceNamedTarget",{components(request.module)});
+  std::vector<SExpr> selectors;
+  for(const auto& sel:request.names){
+   if(sel.is_operator){
+    if(program||!sel.alias.empty())throw Error(request.where,"unsupported source operator selector");
+    selectors.push_back(form("SourceOperatorSelector",{string(sel.name)}));
+   }else selectors.push_back(form("SourceValueSelector",{string(sel.name),alias(sel.alias)}));
+  }
+  if(program&&request.relative)throw Error(request.where,"a program import cannot be relative");
+  auto fields=std::vector<SExpr>{std::move(target),symbol(request.selective?"true":"false"),alias(request.alias),
+                                list(std::move(selectors)),loc(request.where)};
+  if(!program)fields.insert(fields.begin()+1,symbol(std::to_string(request.relative)));
+  imports.push_back(form(program?"SourceProgramImport":"SourceModuleImport",std::move(fields)));
+ }
+ auto rule=[&](std::string_view kind,const std::string& spelling,const VisibilityRule& visibility,const Location& where){
+  SExpr spec;
+  switch(visibility.kind){
+  case DeclarationVisibility::Unspecified:return;
+  case DeclarationVisibility::Public:spec=form("SourcePublic");break;
+  case DeclarationVisibility::Shared:spec=form("SourceShared",{symbol(std::to_string(visibility.elevation))});break;
+  case DeclarationVisibility::Private:spec=form("SourcePrivate");break;
+  }
+  auto fields=std::vector<SExpr>{string(spelling),std::move(spec),loc(where)};
+  if(kind=="operator")declarations.push_back(form("SourceOperatorVisibility",std::move(fields)));
+  else{
+   fields.insert(fields.begin(),symbol(std::string(kind)));
+   declarations.push_back(form("SourceDeclarationVisibility",std::move(fields)));
+  }
+ };
+ for(const auto& f:unit.functions)rule("function",f.name,f.visibility,f.where);
+ for(const auto& d:unit.nominals)rule("nominal",d.name,d.visibility,d.where);
+ for(const auto& d:unit.operators)rule("operator",d.header.lexeme,d.header.visibility,d.header.where);
+ for(const auto& m:unit.macros)rule("macro",m.name,m.visibility,m.where);
+ for(const auto& c:unit.cliches)rule("cliche",c.name,c.visibility,c.where);
+ auto tree=form("SourceModuleMetadata",{symbol("1"),std::move(header),list(std::move(imports)),list(std::move(declarations))});
+ base_schema().validate(tree,"SourceModuleMetadata");
+ return tree;
+}
 SExpr encode(const Unit& unit){
   require_no_kernel_imports(unit);
   auto reject=[&](const Type& type,const Location& at){
@@ -574,12 +631,42 @@ SExpr encode(const Unit& unit){
   }
   f.result=result;
  }
+ template<typename Decl>
+ using SourceDeclarations=std::map<std::string,std::vector<const Decl*>>;
+ template<typename Decl>
+ void restore_declaration_metadata(Decl& declaration,const SourceDeclarations<Decl>& original,
+                                   const SExpr& wire,bool structured){
+  auto hit=original.find(declaration.name);
+  if(hit==original.end()){
+   if(structured)declaration.where={"<ppx-generated>"};
+   return;
+  }
+  const auto& candidates=hit->second;
+  const auto* before=candidates.front();
+  if(!structured&&std::all_of(candidates.begin(),candidates.end(),[](const Decl* d){
+       return d->visibility.kind==DeclarationVisibility::Unspecified;
+     }))return;
+  for(const auto* d:candidates)
+   if(d->visibility.kind!=before->visibility.kind||d->visibility.elevation!=before->visibility.elevation)
+    invalid(wire,"PPX cannot disambiguate conflicting declaration visibility: "+declaration.name);
+  if(candidates.size()>1){
+   auto exact=std::find_if(candidates.begin(),candidates.end(),[&](const Decl* d){
+     return same_wire(wire.items.back(),loc(d->where));
+   });
+   if(exact==candidates.end())invalid(wire,"PPX cannot disambiguate source declarations: "+declaration.name);
+   before=*exact;
+  }
+  declaration.visibility=before->visibility;
+  declaration.where=before->where;
+ }
  Unit decode_unit(const SExpr& tree,Unit* original){
   base_schema().validate(tree);
   std::size_t operators=0,directives=0,serial=0;
   std::set<std::string> hidden_names,identities;
   std::vector<OperatorDeclaration*> exposed;
   OperatorScope entry;
+  SourceDeclarations<Function> functions;
+  SourceDeclarations<NominalDeclaration> nominals;
   if(original){
    if(auto scope=original->operator_scopes.find(original->operator_entry);scope!=original->operator_scopes.end())
     for(const auto& binding:scope->second)entry.add(binding,binding.header.where);
@@ -589,10 +676,14 @@ SExpr encode(const Unit& unit){
    }
    for(const auto& f:original->functions)
     if(original->operator_lazy_functions.contains(f.name))hidden_names.insert(f.name);
+    else functions[f.name].push_back(&f);
+   for(const auto& d:original->nominals)nominals[d.name].push_back(&d);
   }
   std::map<std::string,const Function*> generics;
-  if(original)for(const auto& f:original->functions)
-   if(!f.type_parameters.empty())generics.emplace(f.name,&f);
+  if(original){
+   for(const auto& f:original->functions)
+    if(!f.type_parameters.empty())generics.emplace(f.name,&f);
+  }
    Unit unit;for(const auto& n:field(tree,1).items){
     if(tag(n)=="OperatorDeclaration"){
      if(!original)invalid(n,"an operator declaration requires trusted PPX readmission");
@@ -651,8 +742,9 @@ SExpr encode(const Unit& unit){
    NominalDeclaration d;d.where=location(n.items.back());auto kind=field(n,0).text;d.kind=kind=="record"?Type::Record:kind=="enum"?Type::Sum:Type::Invalid;d.name=field(n,1).text;
    for(const auto& p:field(n,2).items)d.parameters.push_back(p.text);
    for(const auto& l:field(n,3).items)d.labels.push_back(l.text);
-   if(d.parameters.size()>32||field(n,4).items.size()>256||unit.nominals.size()>=4096)invalid(n,"nominal declaration budget exceeded");
-   for(const auto& f:field(n,4).items)d.fields.push_back(read_type(f,false,d.parameters.size()));
+    if(d.parameters.size()>32||field(n,4).items.size()>256||unit.nominals.size()>=4096)invalid(n,"nominal declaration budget exceeded");
+    for(const auto& f:field(n,4).items)d.fields.push_back(read_type(f,false,d.parameters.size()));
+    if(original)restore_declaration_metadata(d,nominals,n,original->module.has_value());
    unit.nominals.push_back(std::move(d));continue;
   }
   Function f;f.where=location(n.items.back());
@@ -675,10 +767,14 @@ SExpr encode(const Unit& unit){
     f.params=read_parameters(field(n,1));f.result=read_type(field(n,2));
    }
    if(!f.external)f.body=BodyReader{f.type_parameters.size()}.read_block(field(n,3));
-  const auto& attrs=field(n,f.external?3:4);if(!attrs.items.empty())invalid(attrs.items[0],"unhandled function attribute");
+   const auto& attrs=field(n,f.external?3:4);if(!attrs.items.empty())invalid(attrs.items[0],"unhandled function attribute");
+   if(original)restore_declaration_metadata(f,functions,n,original->module.has_value());
   unit.functions.push_back(std::move(f));
  }
-  if(original){
+   if(original){
+    unit.module=std::move(original->module);
+    unit.module_imports=std::move(original->module_imports);
+    unit.imports=std::move(original->imports);
     if(operators!=exposed.size()||directives!=original->fixity_directives.size())
     invalid(tree,"PPX cannot erase operator declarations or fixity directives");
    for(std::size_t i=directives;i<unit.fixity_directives.size();++i){

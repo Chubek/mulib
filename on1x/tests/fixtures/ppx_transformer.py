@@ -72,6 +72,9 @@ def transform(n,path):
         if mode in ('increment','proc_rewrite'):return [n[0],str(int(n[1])+1),n[2]]
         if mode=='double':return [n[0],str(int(n[1])*2),n[2]]
         if mode=='introduce':return [Atom('introduce:Box'),n,n[2]]
+        if mode=='embed_evidence':
+            return [Atom('ExtensionExpr'),'embed_evidence','tag',
+                    [[Atom('EvidencePlan'),Atom('1'),'forged',[]]],n[2]]
         if mode=='bad_semantics':return [Atom('Binary'),Atom('+'),n,[Atom('BooleanLiteral'),Atom('true'),n[2]],n[2]]
     if mode=='consume' and tag(n)=='introduce:Box':return n[1]
     return n
