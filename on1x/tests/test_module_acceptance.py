@@ -107,6 +107,11 @@ fn main() { println(tool.answer()); }
         self.assertEqual(self.emit_and_run(entry), "42\n")
         self.write("client.on1x", """
 import program "tool.on1x" : answer as get;
+fn main() { println(tool.answer()); }
+""")
+        self.compiler("--check", entry, error=r"unknown (?:module|function|name)|not imported|unbound")
+        self.write("client.on1x", """
+import program "tool.on1x" : answer as get;
 fn main() { println(get()); }
 """)
         self.assertEqual(self.emit_and_run(entry), "42\n")
@@ -137,6 +142,17 @@ fn main() { println(tool.answer()); }
                       error=r"program.*(?:ppx|capabilit)|(?:ppx|capabilit).*program")
         self.assertEqual(out.read_text(encoding="utf-8"), "keep me\n")
 
+    def test_unit_v1_ppx_cannot_transform_program_import_graph(self):
+        self.write("tool.on1x", "fn answer() -> i64 { return 42; }\nfn main() {}\n")
+        entry = self.write("client.on1x", """
+import program tool : answer;
+fn main() { println(answer()); }
+""")
+        out = self.write("preserved.c", "keep me\n")
+        self.compiler("--ppx", "denied", "/bin/false", "--emit-c", entry, "-o", out,
+                      error=r"ppx.*(?:module|scope|admission)|(?:module|scope).*ppx")
+        self.assertEqual(out.read_text(encoding="utf-8"), "keep me\n")
+
     def test_manifest_fragments_graph_and_atomic_publish(self):
         self.application("""module "A.Wrapper" "src/api.on1xm"
 module "A.Wrapper" "src/impl.on1xm"
@@ -152,10 +168,11 @@ module A.Wrapper;
 import A.Values as V;
 public fn another() -> i64 { return V.value() + 2; }
 """)
-        self.write("src/value.on1xm", """
+        value_source = """
 module A.Values;
 shared elevate(2) fn value() -> i64 { return 40; }
-""")
+"""
+        self.write("src/value.on1xm", value_source)
         self.write("src/main.on1x", """
 from A.Wrapper import (answer, another);
 fn main() { println(answer()); println(another()); }
@@ -171,6 +188,11 @@ fn main() { println(answer()); println(another()); }
             {"package": "app", "name": "A.Wrapper",
              "dependencies": [{"package": "app", "name": "A.Values"}]},
         ])
+        self.write("src/value.on1xm", value_source.replace("elevate(2)", "elevate(1)"))
+        self.project(output, error=r"value.*(?:shared|scope|visible)|(?:shared|scope|visible).*value")
+        self.assertEqual(marker.read_bytes(), before)
+        self.write("src/value.on1xm", value_source)
+
         self.write("src/impl.on1xm", "module A.Wrong;\npublic fn another() -> i64 { return 42; }\n")
         self.project(output, error=r"A\.Wrong|does not match|expected.+A\.Wrapper")
         self.assertEqual(marker.read_bytes(), before)
@@ -203,6 +225,24 @@ public fn hidden() -> i64 { return 99; }
         self.write("src/api.on1xi", "abstract module A.API;\nfn answer() -> bool;\n")
         self.project(output, error=r"(?:signature|interface).*(?:mismatch|expected)")
         self.assertEqual(marker.read_bytes(), before)
+
+    def test_manifest_program_requires_explicit_admission(self):
+        self.application('program "tool" "src/tool.on1x"\n')
+        roles = 'on1xfile 1\nsource "main.on1x"\nlibrary "tool.on1x"\n'
+        self.write("src/On1xfile.m", roles)
+        self.write("src/tool.on1x", "fn answer() -> i64 { return 42; }\nfn main() { println(99); }\n")
+        self.write("src/main.on1x", "import program tool : answer;\nfn main() { println(answer()); }\n")
+        output = self.root / "output"
+        self.project(output)
+        self.assertEqual(self.command(output / "app"), "42\n")
+        marker = output / ".on1x-build.json"
+        before = marker.read_bytes()
+
+        self.application("")
+        self.write("src/On1xfile.m", roles)
+        self.project(output, error=r"program.*(?:not.*(?:declared|index|admit)|admission|opt.in)")
+        self.assertEqual(marker.read_bytes(), before)
+        self.assertEqual(self.command(output / "app"), "42\n")
 
 
 def main():

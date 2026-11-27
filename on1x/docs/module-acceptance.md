@@ -13,7 +13,7 @@ python3 -B on1x/tests/test_interfaces.py --on1xc /absolute/path/to/on1xc --cc cc
 The module suite compiles and runs actual generated C11. It checks named and
 colon-selector module and program imports next to quoted legacy imports, visibility after aliasing,
 source-kind and name validation, program entry-point isolation, fail-closed
-program capability admission, multiple manifest fragments, deterministic
+program capability admission and legacy PPX, multiple manifest fragments, deterministic
 dependency reporting, and signature enforcement on the actual build. Failure
 checks verify that neither an existing emitted file nor a published project
 artifact is replaced. The legacy interface suite is separate: its v1 contract
@@ -48,6 +48,25 @@ route. None of these results qualifies an optional native MIR backend.
 Likewise, declaration-only checks of opaque signature types do not qualify an
 opaque runtime ABI. A backend or signature form not tested should be reported
 as unqualified rather than inferred from another route.
+
+## Native ASDL schema artifacts
+
+Use the `asdlc` binary from the pinned LibStone build. Pass relative input
+paths so that source paths recorded in the artifacts are reproducible.
+
+```sh
+ASDLC=/absolute/path/to/asdlc
+SCHEMAS="$PWD/build/module-acceptance/schema"
+mkdir -p "$SCHEMAS"
+(
+  cd on1x/grammar
+  for schema in On1x PPX; do
+    "$ASDLC" --check --schema "$SCHEMAS/$schema.json" --dot "$SCHEMAS/$schema.dot" \
+      "$schema.asdl"
+    dot -Tsvg "$SCHEMAS/$schema.dot" -o "$SCHEMAS/$schema.svg"
+  done
+)
+```
 
 See [module coordination](module-coordination.md) for the standalone IPC
 acceptance command; it does not need a compiler build and uses isolated
