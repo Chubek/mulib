@@ -28,10 +28,11 @@ non-operator imports are preserved, not checked; formatting does not admit
 modules or certify import visibility. An index cannot be combined with
 `--isolated`, and `.on1xi` formatting does not open it.
 Syntactically invalid input is rejected before any output is published.
-The formatter accepts both `on1xi 1;` and `abstract module` [interfaces](interfaces.md)
-in `.on1xi` files. It validates declarations with the compiler's signature
-parser, without opening imports or the prelude, loading an implementation,
-or checking conformance.
+The formatter accepts `on1xi 1;`, inline `abstract module` declarations, and
+named [signatures](interfaces.md) in `.on1xi` files. It uses the compiler's
+signature parser without opening imports or the prelude, loading an
+implementation, or checking conformance. Markup styles contextual signature
+words as keywords only where they introduce syntax, not in identifier slots.
 `--inplace` (`-i`) writes plain source back
 to the input file without writing to stdout. It cannot be combined with
 `--check`, `-o`, or an explicit markup target. Markup targets produce

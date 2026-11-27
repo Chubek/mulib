@@ -245,6 +245,24 @@ def test_signatures(work):
         assert b"named.on1xi" in err.stderr and not err.stdout
         assert named.read_bytes() == malformed
 
+    catalog = (
+        b"signature include<T>{type View=T;};"
+        b"signature API<T>{include include<T>;type Alias=T;sharing type Alias=View;"
+        b"fn sharing(include:Alias)->View;};"
+    )
+    for header in (b"abstract module", b"module"):
+        named.write_bytes(catalog + header + b" Example.Types:API<i64>;")
+        plain = fmt(named, "--prelude", missing, "--project-module-index", missing).stdout
+        html = fmt(named, "--target", "html").stdout
+        assert Listing(html).source == plain
+        for keyword, count in ((b"signature", 2), (b"include", 1), (b"type", 3), (b"sharing", 1),
+                               (b"abstract", int(header.startswith(b"abstract"))), (b"module", 1),
+                               (b"Example", 0)):
+            assert html.count(b'<span class="tok-keyword">' + keyword + b"</span>") == count, html
+        fmt(named, "-i")
+        fmt(named, "--check")
+        assert named.read_bytes() == plain
+
 
 def test_inplace(work):
     source = work / "inplace.on1x"

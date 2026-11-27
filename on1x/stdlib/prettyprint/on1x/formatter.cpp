@@ -179,17 +179,11 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
         for (const auto& item : items) declaration(item);
     };
     if (signature) {
-        auto header = token_at(signature->where.offset);
-        contextual_keywords.insert(header->where.offset);
-        if (signature->module) contextual_keywords.insert((header + 1)->where.offset);
-        for (const auto& item : signature->types) {
-            // The signature parser records the name, after `type` and any
-            // `abstract` prefix. Do not style those words in identifier slots.
-            auto keyword = token_at(item.where.offset) - 1;
-            contextual_keywords.insert(keyword->where.offset);
-            if (keyword != tokens.begin() && (keyword - 1)->text == "abstract")
-                contextual_keywords.insert((keyword - 1)->where.offset);
-        }
+        if (signature->context_keywords.empty())
+            contextual_keywords.insert(signature->where.offset); // Legacy on1xi header.
+        else
+            contextual_keywords.insert(signature->context_keywords.begin(),
+                                       signature->context_keywords.end());
     }
     if (unit.module) {
         top.insert(unit.module->where.offset);
