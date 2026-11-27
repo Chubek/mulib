@@ -9,6 +9,7 @@
 #include <on1x/canonical/control.hpp>
 #include <on1x/patterns.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/module_opaque.hpp>
 #include <on1x/concurrency.hpp>
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
@@ -141,6 +142,10 @@ class Inference {
  struct Slot { Type* output; Term term; Location where; std::string description; bool generic=false; };
  struct Ground { Type type; std::size_t identity, depth, size; };
    Unit& unit;
+   std::string_view representation_owner;
+   void require_layout(Term root,const Location& at)const{
+    opaque::require_access(unit,nodes[root].nominal,representation_owner,at);
+   }
    NominalCatalog catalog;
    inherent::Catalog inherent_members;
    std::set<std::string> nominal_names,cliche_names;
@@ -249,6 +254,7 @@ class Inference {
      fail(at,"owning operation requires own<Named>");
      if(shared_opaque_nominal(nodes[root].nominal))shared_opaque_error(at);
      if(ipc_kernel_opaque_nominal(nodes[root].nominal))ipc_kernel_opaque_error(at);
+    require_layout(root,at);
     const auto& declaration=catalog.find(nodes[root].nominal,at);
     if(nodes[root].parameters.size()!=declaration.parameters.size())
      fail(at,"wrong type argument arity for "+declaration.name);
@@ -404,6 +410,8 @@ class Inference {
   id=head(id,where);
   if(!budget||depth>=16)return "...";
   --budget;
+    if(opaque::hidden(unit,nodes[id].nominal,representation_owner))
+     return nodes[id].nominal;
     if(nodes[id].kind==Type::Hole)return "?"+std::to_string(id);
     if(nodes[id].kind==Type::Code)return "code<"+describe(nodes[id].result,where,budget,depth+1)+">";
     if(nodes[id].kind==Type::Own){
@@ -790,6 +798,8 @@ class Inference {
     bool saved_saw=saw_return;auto saved_loops=std::move(loop_values);
     auto* saved_type_variables=active_type_variables;
     auto* saved_constraints=active_constraints;
+    auto saved_owner=representation_owner;
+    representation_owner=opaque::function_owner(unit,f.name);
     active_type_variables=&global.variables;active_constraints=&global.constraints;
     loop_values.clear();
   scopes.emplace_back();auto signature=global.signature;
@@ -845,7 +855,7 @@ class Inference {
   }
     scopes=std::move(saved_scopes);returns=saved_returns;saw_return=saved_saw;
     loop_values=std::move(saved_loops);active_type_variables=saved_type_variables;
-    active_constraints=saved_constraints;
+    active_constraints=saved_constraints;representation_owner=saved_owner;
   global.state=2;global_stack.pop_back();
   if(!global_stack.empty()){
    auto& caller=globals.at(global_stack.back());caller.low=std::min(caller.low,global.low);
@@ -907,11 +917,14 @@ class Inference {
    for(auto& member:members){
     auto* saved_type_variables=active_type_variables;
     auto* saved_constraints=active_constraints;
+    auto saved_owner=representation_owner;
+    representation_owner=opaque::function_owner(unit,member.global->definition->name);
     active_type_variables=&member.type_variables;
     active_constraints=&member.constraints;
     auto type=expression(*member.instance->value,member.signature);unify(type,member.signature,use.where);
     share_weak(member.global->signature,type,*member.global->scheme,use.where);
     active_type_variables=saved_type_variables;active_constraints=saved_constraints;
+    representation_owner=saved_owner;
    }
    Term result=0;auto use_slot=slots.size();
    for(auto& member:members){
@@ -1094,6 +1107,7 @@ class Inference {
      }
     if(n=="box"){
      arity(1);auto value=head(args[0],at);
+     require_layout(value,at);
      if(!data_kind(nodes[value].kind)||nodes[value].nominal.empty())
       fail(at,"box(value) requires a known nominal record or enum value");
      if(nodes[value].arguments>nodes[value].parameters.size())
@@ -1204,6 +1218,7 @@ class Inference {
     nominal=projection.result.nominal();
     owner=annotation(projection.result,at);
    }
+    opaque::require_access(unit,nominal,representation_owner,at);
     auto selected=inherent_members.find(nominal,projection.text,at);
    const auto& implementation=*selected.implementation;
    const auto& member=*selected.member;
@@ -1492,6 +1507,7 @@ class Inference {
     for(const auto& [name,t]:a){auto found=b.find(name);if(found==b.end())fail(p.where,"or-pattern alternatives must bind the same names");unify(t,found->second,p.where);}out=std::move(a);break;
    }
    case P::Record:{
+    require_layout(container,p.where);
     if(kind==Type::Hole&&!p.open){std::vector<Term> fields;for(std::size_t i=0;i<p.elements.size();++i)fields.push_back(fresh(p.where));unify(input,data(Type::Record,fields,p.labels,0,p.where),p.where);container=head(input,p.where);}
     if(nodes[container].kind!=Type::Record)fail(p.where,"record pattern requires a known record shape");
     auto labels=nodes[container].labels;auto fields=nodes[container].parameters;
@@ -1504,11 +1520,13 @@ class Inference {
     auto element=nodes[container].parameters[0];for(std::size_t i=0;i<p.elements.size();++i)child(i,element);break;
    }
    case P::Variant:{
+    require_layout(container,p.where);
     if(kind!=Type::Sum)fail(p.where,"constructor pattern requires a known closed sum; annotate the parameter");
     auto labels=nodes[container].labels;auto fields=nodes[container].parameters;auto tag=std::find(labels.begin(),labels.end(),p.name);if(tag==labels.end())fail(p.where,"unknown constructor: "+p.name);
     auto payload=fields[static_cast<std::size_t>(tag-labels.begin())];
      if(p.elements.size()==1)child(0,payload);else{
-     auto h=head(payload,p.where);auto parts=nodes[h].parameters;if(p.elements.empty()&&nodes[h].kind==Type::Record&&parts.empty())break;
+     auto h=head(payload,p.where);require_layout(h,p.where);
+     auto parts=nodes[h].parameters;if(p.elements.empty()&&nodes[h].kind==Type::Record&&parts.empty())break;
      if(nodes[h].kind!=Type::Tuple||parts.size()!=p.elements.size())fail(p.where,"constructor payload arity mismatch");
      for(std::size_t i=0;i<parts.size();++i)child(i,parts[i]);
     }break;
@@ -1524,8 +1542,10 @@ class Inference {
     normalize_inherent_owner(*selection);
     if(selection->kind==Expr::Kind::InherentMember&&selection->children.empty()&&
        selection->result.kind()==Type::Named&&
-       !inherent_members.contains(selection->result.nominal(),selection->text))
+       !inherent_members.contains(selection->result.nominal(),selection->text)){
+     opaque::require_access(unit,selection->result.nominal(),representation_owner,selection->where);
      inherent::lower_enum_member(e,catalog.find(selection->result.nominal(),selection->where));
+    }
    }
        switch(e.kind) {
         case Expr::Kind::OperatorReference:case Expr::Kind::OperatorUnary:
@@ -1675,6 +1695,7 @@ class Inference {
     case Expr::Kind::Propagate:{
      if(e.children.size()!=1)fail(at,"propagation requires one operand");
      auto input=head(expression(*e.children[0]),at);
+     require_layout(input,at);
      if(nodes[input].kind!=Type::Sum||nodes[input].nominal.empty())fail(at,"propagation requires a known nominal Result");
      auto identity=nodes[input].nominal;catalog.result(identity,at);
      auto fields=nodes[input].parameters;auto labels=nodes[input].labels;
@@ -1795,8 +1816,11 @@ class Inference {
     }
     case Expr::Kind::PatternMatch:{
      auto scrutinee=expression(*e.children.at(0));
-     if(e.sum_match&&nodes[head(scrutinee,at)].kind!=Type::Sum)
-      fail(at,"'~ { ... }' requires a known closed sum (enum) subject; annotate the subject if needed");
+     if(e.sum_match){
+      auto root=head(scrutinee,at);require_layout(root,at);
+      if(nodes[root].kind!=Type::Sum)
+       fail(at,"'~ { ... }' requires a known closed sum (enum) subject; annotate the subject if needed");
+     }
      result=fresh(at);bool fallthrough=false;scopes.emplace_back();
     if(!e.text.empty())define(e.text,scrutinee,at);
     for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=Expr::Kind::Case||arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");
@@ -1815,7 +1839,8 @@ class Inference {
      std::vector<Term> fields;for(auto& child:e.children)fields.push_back(expression(*child));
      auto actual=data(Type::Record,std::move(fields),e.labels,0,at);
      if(e.result!=Type::Void){
-      result=annotation(e.result,at);if(nodes[result].kind!=Type::Record||nodes[result].nominal.empty())fail(at,"named record constructor requires a declared record");
+      result=annotation(e.result,at);require_layout(result,at);
+      if(nodes[result].kind!=Type::Record||nodes[result].nominal.empty())fail(at,"named record constructor requires a declared record");
       auto expected_fields=nodes[result].parameters;expected_fields.resize(nodes[result].labels.size());
       unify(actual,data(Type::Record,std::move(expected_fields),nodes[result].labels,0,at),at);
       slots.push_back({&e.result,result,at,"named record schema"});
@@ -1827,7 +1852,8 @@ class Inference {
     result=data(Type::Array,{element},{},e.children.size(),at);break;
    }
    case Expr::Kind::Variant:{
-     result=annotation(e.result,at);if(nodes[result].kind!=Type::Sum)fail(at,"variant requires a closed sum annotation");
+     result=annotation(e.result,at);require_layout(result,at);
+     if(nodes[result].kind!=Type::Sum)fail(at,"variant requires a closed sum annotation");
      auto tags=nodes[result].labels;auto fields=nodes[result].parameters;
     auto tag=std::find(tags.begin(),tags.end(),e.text);if(tag==tags.end())fail(at,"unknown sum constructor: "+e.text);
     if(e.children.size()!=1)fail(at,"variant requires one payload");
@@ -1850,6 +1876,7 @@ class Inference {
      result=scalar(Type::String,at);break;
     }
     if(e.kind==Expr::Kind::Field){
+     require_layout(container,at);
      if(kind!=Type::Record)fail(at,"field projection requires a known record shape; annotate the parameter");
      auto tags=nodes[container].labels;auto tag=std::find(tags.begin(),tags.end(),e.text);
      if(tag==tags.end())fail(at,"unknown record field: "+e.text);
@@ -1862,6 +1889,7 @@ class Inference {
    }
    case Expr::Kind::Match:{
     auto scrutinee=head(expression(*e.children.at(0)),at);
+    require_layout(scrutinee,at);
     if(nodes[scrutinee].kind!=Type::Sum)fail(at,"match requires a known closed sum shape; annotate the parameter");
     auto tags=nodes[scrutinee].labels;auto fields=nodes[scrutinee].parameters;std::set<std::string> seen;result=fresh(at);
     if(e.children.size()!=e.labels.size()+1)fail(at,"invalid match arm shape");
@@ -1904,7 +1932,10 @@ class Inference {
   }
   case Expr::Kind::Binary:{
    auto left=expression(*e.children[0]),right=expression(*e.children[1]);
-   if(e.text=="=="||e.text=="!="){unify(left,right,at);weak.push_back(left);}
+   if(e.text=="=="||e.text=="!="){
+    require_layout(head(left,at),at);require_layout(head(right,at),at);
+    unify(left,right,at);weak.push_back(left);
+   }
      else if(e.text=="&&"||e.text=="||"){
       auto operand=scalar(Type::Bool,at);
      unify(left,operand,at);unify(right,operand,at);
@@ -2142,6 +2173,8 @@ public:
   for(auto& source:global_sources)for(auto& instance:source->instances){
    auto& lambda=*instance->value;finish_expression(lambda);
    Function f;f.name=instance->name;f.where=instance->where;f.prototype=instance->prototype;
+    if(auto owner=opaque::function_owner(unit,source->name);!owner.empty())
+     unit.opaque_function_owners.emplace(f.name,owner);
     f.params=std::move(lambda.parameters);f.result=lambda.result;f.procedure=lambda.procedure;f.body=std::move(lambda.body);
    generated.push_back(std::move(f));
   }

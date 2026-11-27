@@ -11,6 +11,7 @@
 #include <on1x/canonical/values.hpp>
 #include <on1x/patterns.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/module_opaque.hpp>
 #include <on1x/primitives.hpp>
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
@@ -81,6 +82,33 @@ class Checker {
  bool unsafe_context=false;
  std::vector<std::pair<std::size_t,bool>> regions;
   Unit& unit;
+  std::string_view representation_owner;
+  bool hidden_layout(const Type& type)const{
+   return opaque::hidden(unit,type.nominal(),representation_owner);
+  }
+  void require_layout(const Type& type,const Location& at)const{
+   if(hidden_layout(type))opaque::inaccessible(at);
+  }
+  void verify_opaque_layouts()const{
+   if(unit.opaque_nominal_owners.empty())return;
+   // C11 uses the checked concrete copy-value representation. Managed
+   // resources, unique handles, closures and generic seals need another ABI.
+   auto closed=[](auto&& self,const Type& type)->bool{
+    if(!type.arguments().empty())return false;
+    if(type.is_numeric()||type==Type::Bool||type==Type::Char)return true;
+    if(!type.is_tuple()&&type.kind()!=Type::Record&&type.kind()!=Type::Sum&&
+       type.kind()!=Type::Array)return false;
+    for(const auto& item:type.elements())if(!self(self,item))return false;
+    return true;
+   };
+   for(const auto& [name,owner]:unit.opaque_nominal_owners){
+    const auto& declaration=catalog.find(name,{"<opaque module>"});
+    if(!unit.requires_module_boundary||owner.empty()||!declaration.parameters.empty()||
+       !closed(closed,catalog.instantiate(name,{},declaration.where)))
+     throw Error(declaration.where,"unsupported opaque module ABI: requires a monomorphic copy-value layout",
+                 "ON1X-INTERFACE-OPAQUE");
+   }
+  }
   NominalCatalog catalog;
   regex::Cache regex_patterns;
  std::map<std::string,const Function*> funcs;
@@ -289,6 +317,7 @@ class Checker {
     };
     if(n=="box"){
      arity(1);const auto& value=arg[0];
+      require_layout(value,e.where);
       if(ipc_kernel_opaque_nominal(value.nominal()))ipc_kernel_opaque_error(e.where);
      if((value.kind()!=Type::Record&&value.kind()!=Type::Sum)||value.nominal().empty())
       fail(e.children[0]->where,"box(value) requires a nominal record or enum value");
@@ -311,6 +340,7 @@ class Checker {
     if(n=="take"){
      arity(1);
      if(!arg[0].is_own())fail(e.children[0]->where,"take(owner) requires own<Named>");
+     require_layout(arg[0].owned(),e.where);
      if(ipc_kernel_opaque_owner(arg[0]))ipc_kernel_opaque_error(e.where);
      consume_local(0);
      const auto& target=arg[0].owned();
@@ -486,7 +516,8 @@ class Checker {
        }
       case Expr::Kind::Propagate:{
        if(e.children.size()!=1)fail(e.where,"propagation requires one operand");
-       auto input=child(0);if(input.kind()!=Type::Sum||input.nominal().empty())fail(e.where,"propagation requires a nominal Result");
+       auto input=child(0);require_layout(input,e.where);
+       if(input.kind()!=Type::Sum||input.nominal().empty())fail(e.where,"propagation requires a nominal Result");
        catalog.result(input.nominal(),e.where);
        if(returns.kind()!=Type::Sum||returns.nominal()!=input.nominal())fail(e.where,"propagation requires the same nominal Result return declaration");
        equal(input.arguments().at(1),returns.arguments().at(1),e.where);e.result=returns;
@@ -607,6 +638,7 @@ class Checker {
        if(ipc_kernel_opaque_owner(source))ipc_kernel_opaque_error(e.where);
        if(source.is_own()){
         const auto& target=source.owned();
+        require_layout(target,e.where);
         source=catalog.instantiate(target.nominal(),target.arguments(),e.where);
        }
        validate_type(source,e.where);
@@ -624,11 +656,13 @@ class Checker {
        if(consuming&&e.children[0]->kind==Expr::Kind::Variable&&
           e.children[0]->reference==Expr::Reference::Local)
         e.children[0]->move_out=true;
-       if(e.sum_match&&t.kind()!=Type::Sum)fail(e.where,"'~ { ... }' requires a closed sum (enum) subject");
+       if(e.sum_match){require_layout(t,e.where);if(t.kind()!=Type::Sum)fail(e.where,"'~ { ... }' requires a closed sum (enum) subject");}
+       patterns::HiddenRepresentation hidden;
+       if(!unit.opaque_nominal_owners.empty())hidden=[this](const Type& type){return hidden_layout(type);};
        push();if(!e.text.empty())define(e.text,t,false,e.where);
       Type result=Type::Invalid;bool all_exit=true;
       for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=Expr::Kind::Case||arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");
-       auto bindings=patterns::check(arm.patterns[0],t);push();for(const auto& [name,type]:bindings)define(name,type,false,arm.where);
+       auto bindings=patterns::check(arm.patterns[0],t,true,hidden);push();for(const auto& [name,type]:bindings)define(name,type,false,arm.where);
         if(consuming)consuming_pattern(arm.patterns[0],true);
         equal(check_expr(*arm.children[0]),Type::Bool,arm.where);
         if(consuming&&(!arm.text.empty()||arm.children[0]->kind!=Expr::Kind::Boolean||arm.children[0]->text!="true"))
@@ -640,7 +674,7 @@ class Checker {
        if(!exits){all_exit=false;if(!e.statement_match){if(result==Type::Invalid)result=value;else equal(value,result,arm.where);}}
        pop();pop();
       }
-      pop();patterns::coverage(e);e.noreturn=all_exit;return e.type=e.statement_match||result==Type::Invalid?Type{Type::Void}:result;
+      pop();patterns::coverage(e,hidden);e.noreturn=all_exit;return e.type=e.statement_match||result==Type::Invalid?Type{Type::Void}:result;
      }
       case Expr::Kind::Case:fail(e.where,"match arm outside a match");
       case Expr::Kind::UnsafeBlock:{
@@ -661,7 +695,8 @@ class Checker {
      }
      case Expr::Kind::TagTest:case Expr::Kind::Payload:{
       if(e.children.size()!=1)fail(e.where,"sum control operation requires one operand");
-      auto t=child(0);if(t.kind()!=Type::Sum)fail(e.where,"sum control operation requires a closed sum");auto tag=std::find(t.labels().begin(),t.labels().end(),e.text);if(tag==t.labels().end())fail(e.where,"unknown sum control tag");e.projection=static_cast<std::size_t>(tag-t.labels().begin());
+      auto t=child(0);require_layout(t,e.where);
+      if(t.kind()!=Type::Sum)fail(e.where,"sum control operation requires a closed sum");auto tag=std::find(t.labels().begin(),t.labels().end(),e.text);if(tag==t.labels().end())fail(e.where,"unknown sum control tag");e.projection=static_cast<std::size_t>(tag-t.labels().begin());
       auto result=e.kind==Expr::Kind::TagTest?Type{Type::Bool}:t.elements()[e.projection];equal(e.type,result,e.where);return result;
      }
      case Expr::Kind::Project:{
@@ -699,6 +734,7 @@ class Checker {
       std::set<std::string> names;for(const auto& label:e.labels)if(!names.insert(label).second)fail(e.where,"duplicate record field: "+label);
        auto t=Type::data(Type::Record,std::move(fields),e.labels);
        if(e.result!=Type::Void){
+        require_layout(e.result,e.where);
         catalog.verify(e.result,e.where);if(e.result.kind()!=Type::Record||e.result.nominal().empty())fail(e.where,"named record constructor requires a declared record");
         equal(t,Type::data(Type::Record,e.result.elements(),e.result.labels()),e.where);t=e.result;
        }
@@ -710,6 +746,7 @@ class Checker {
       validate_type(e.type,e.where);return e.type;
      }
      case Expr::Kind::Variant:{
+      require_layout(e.result,e.where);
       if(e.result.kind()!=Type::Sum||e.children.size()!=1)fail(e.where,"variant requires a closed sum and one payload");
       validate_type(e.result,e.where);auto pos=std::find(e.result.labels().begin(),e.result.labels().end(),e.text);
       if(pos==e.result.labels().end())fail(e.where,"unknown sum constructor: "+e.text);
@@ -717,7 +754,8 @@ class Checker {
      }
       case Expr::Kind::Field:{
        if(e.children.size()!=1)fail(e.where,"field projection requires one operand");
-       auto t=child(0);if(t.kind()!=Type::Record)fail(e.where,"field projection requires a record");
+       auto t=child(0);require_layout(t,e.where);
+       if(t.kind()!=Type::Record)fail(e.where,"field projection requires a record");
       auto pos=std::find(t.labels().begin(),t.labels().end(),e.text);if(pos==t.labels().end())fail(e.where,"unknown record field: "+e.text);
       e.projection=static_cast<std::size_t>(pos-t.labels().begin());return e.type=t.elements()[e.projection];
      }
@@ -745,7 +783,8 @@ class Checker {
       return e.type=e.kind==Expr::Kind::Length?Type::I64:e.kind==Expr::Kind::Slice?Type::data(Type::Slice,t.elements(),{},t.extent()):t.elements()[0];
      }
       case Expr::Kind::Match:{
-       auto t=child(0);if(t.kind()!=Type::Sum)fail(e.where,"match requires a closed sum");
+       auto t=child(0);require_layout(t,e.where);
+       if(t.kind()!=Type::Sum)fail(e.where,"match requires a closed sum");
        if(t.is_move_only())fail(e.where,"move-only enums require pattern-match syntax with consuming arms");
       if(e.children.size()!=e.labels.size()+1)fail(e.where,"match arm shape mismatch");
       std::set<std::string> seen;Type result=Type::Invalid;
@@ -777,6 +816,7 @@ class Checker {
        if(!a.is_numeric())equal(a,Type::I64,e.where);
       equal(b,a,e.where);return e.type=Type::Bool;}
     if(op=="=="||op=="!="){
+       require_layout(a,e.where);require_layout(b,e.where);
        if(a!=b||!literals::formattable(a))fail(e.where,"incompatible or non-scalar equality operands");
      return e.type=Type::Bool;}
     fail(e.where,"unknown operator: "+op);}
@@ -810,6 +850,7 @@ class Checker {
          if(ipc_kernel_opaque_owner(referent))ipc_kernel_opaque_error(e.children[i]->where);
          if(referent.is_own()){
           const auto& target=referent.owned();
+          require_layout(target,e.children[i]->where);
           referent=catalog.instantiate(target.nominal(),target.arguments(),
                                        e.children[i]->where);
          }
@@ -921,6 +962,7 @@ class Checker {
  public:
  explicit Checker(Unit& u):unit(u),catalog(u){}
    void run(const std::vector<InterfaceObligation>* interfaces){
+     verify_opaque_layouts();
      if(!interfaces&&unit.functions.empty())fail({"<unit>"},"missing main function");
      for(auto& f:unit.functions){
        generic_context=f.prototype;
@@ -994,6 +1036,7 @@ class Checker {
      }
     }
    for(auto& f:unit.functions){if(f.external)continue;generic_context=f.prototype;returns=f.result;push();
+      representation_owner=opaque::function_owner(unit,f.name);
       for(auto& p:f.params){
        if(p.pattern)bind_pattern(*p.pattern,p.type);
        else define(p.name,p.type,false,p.where,p.borrow);

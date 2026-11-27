@@ -2,6 +2,7 @@
 #include <on1x/numeric.hpp>
 #include <on1x/literals.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/module_opaque.hpp>
 #include <algorithm>
 #include <bit>
 #include <charconv>
@@ -18,14 +19,16 @@ struct Budget {
  void text(const Location& at,std::size_t size){if(size>bytes)throw Error(at,"pattern analysis byte budget exhausted","ON1X-PATTERN-LIMIT");bytes-=size;}
 };
 Type literal_type(const Pattern& p){return p.name=="true"||p.name=="false"?Type::Bool:p.name.starts_with('"')?Type::String:p.name.starts_with("#\\")?Type::Char:numeric_literal_type(p.name.starts_with('-')?std::string_view(p.name).substr(1):p.name);}
-Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bool root){
+Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bool root,
+                 const HiddenRepresentation& hidden){
  budget.tick(p.where,depth);p.type=type;Bindings out;
  if(p.elements.size()>256||p.labels.size()>256)fail(p.where,"pattern width exceeds 256");
  if(p.kind!=P::Record&&(!p.labels.empty()||p.open))fail(p.where,"record-only metadata on another pattern");
  if(p.kind!=P::Name&&p.kind!=P::As&&p.kind!=P::Literal&&p.kind!=P::Variant&&!p.name.empty())fail(p.where,"unexpected pattern name/literal");
  auto bind=[&](const std::string& name,const Type& t){if(name.empty()||!out.emplace(name,t).second)fail(p.where,"duplicate or empty pattern binder: "+name);};
  auto merge=[&](Bindings b){for(const auto& [name,t]:b)bind(name,t);};
- auto child=[&](std::size_t i,const Type& t){if(i>=p.elements.size())fail(p.where,"missing pattern child");merge(inspect(p.elements[i],t,budget,depth+1,false));};
+ auto child=[&](std::size_t i,const Type& t){if(i>=p.elements.size())fail(p.where,"missing pattern child");merge(inspect(p.elements[i],t,budget,depth+1,false,hidden));};
+ auto require_layout=[&](const Type& t){if(hidden&&hidden(t))opaque::inaccessible(p.where);};
  if(p.is_tuple()){
   if(p.elements.size()<2||!p.name.empty())fail(p.where,"tuple pattern needs at least two unnamed elements");
   if(!type.is_tuple()||p.elements.size()!=type.elements().size())fail(p.where,"tuple pattern arity/type mismatch");
@@ -41,9 +44,11 @@ Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bo
   auto value=literal(p);(void)value;break;
  }
  case P::Variant:{
+  require_layout(type);
   if(type.kind()!=Type::Sum)fail(p.where,"constructor pattern requires a closed sum");
   auto tag=std::find(type.labels().begin(),type.labels().end(),p.name);if(tag==type.labels().end())fail(p.where,"unknown constructor: "+p.name);
   auto payload=type.elements()[static_cast<std::size_t>(tag-type.labels().begin())];
+  if(p.elements.size()!=1)require_layout(payload);
   if(p.elements.empty()&&payload.kind()==Type::Record&&payload.elements().empty())break;
   if(p.elements.size()==1)child(0,payload);
   else if(payload.is_tuple()&&payload.elements().size()==p.elements.size()){for(std::size_t i=0;i<p.elements.size();++i)child(i,payload.elements()[i]);}
@@ -56,6 +61,7 @@ Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bo
   for(std::size_t i=0;i<p.elements.size();++i)child(i,type.elements()[0]);
   break;
  case P::Record:{
+  require_layout(type);
   if(type.kind()!=Type::Record||p.labels.size()!=p.elements.size())fail(p.where,"record pattern shape/type mismatch");
   if(!p.open&&p.labels.size()!=type.labels().size())fail(p.where,"record pattern requires every field or '..'");
   std::set<std::string> seen;
@@ -64,7 +70,7 @@ Bindings inspect(Pattern& p,const Type& type,Budget& budget,std::size_t depth,bo
  case P::As:if(p.elements.size()!=1)fail(p.where,"as-pattern requires one child");child(0,type);bind(p.name,type);break;
  case P::Or:{
   if(p.elements.size()!=2)fail(p.where,"or-pattern requires two alternatives");
-  auto a=inspect(p.elements[0],type,budget,depth+1,false),b=inspect(p.elements[1],type,budget,depth+1,false);
+  auto a=inspect(p.elements[0],type,budget,depth+1,false,hidden),b=inspect(p.elements[1],type,budget,depth+1,false,hidden);
   if(a!=b)fail(p.where,"or-pattern alternatives must bind the same names with identical types");
   out=std::move(a);break;
  }
@@ -118,14 +124,15 @@ std::vector<Node> expand(const Pattern& p,Budget& budget,std::size_t depth){
  return out;
 }
 Matrix specialize(const Matrix& matrix,const Constructor& c,Budget& budget,const Location& at){Matrix out;for(const auto& row:matrix){budget.spend(at,row.size()+c.args.size()+1);copy_keys(row,budget,at);if(row.empty())continue;Row next;if(row[0].wild)next.resize(c.args.size());else if(row[0].key==c.key){if(row[0].args){copy_keys(*row[0].args,budget,at);next=*row[0].args;}}else continue;next.insert(next.end(),row.begin()+1,row.end());out.push_back(std::move(next));}return out;}
-bool useful(const Matrix& matrix,const Row& query,const std::vector<Type>& types,Budget& budget,const Location& at,std::size_t depth=0){
+bool useful(const Matrix& matrix,const Row& query,const std::vector<Type>& types,Budget& budget,
+            const Location& at,const HiddenRepresentation& hidden,std::size_t depth=0){
  if(depth>520)throw Error(at,"pattern decision depth exhausted","ON1X-PATTERN-LIMIT");
  budget.tick(at);if(query.empty())return matrix.empty();budget.spend(at,query.size()+types.size());
- auto recurse=[&](const Constructor& c,const Row& args){budget.spend(at,args.size()+c.args.size()+query.size()+types.size());copy_keys(args,budget,at);copy_keys(query,budget,at);auto q=args;q.insert(q.end(),query.begin()+1,query.end());auto ts=c.args;ts.insert(ts.end(),types.begin()+1,types.end());return useful(specialize(matrix,c,budget,at),q,ts,budget,at,depth+1);};
- auto constructors=signature(types[0],budget,at);
+ auto recurse=[&](const Constructor& c,const Row& args){budget.spend(at,args.size()+c.args.size()+query.size()+types.size());copy_keys(args,budget,at);copy_keys(query,budget,at);auto q=args;q.insert(q.end(),query.begin()+1,query.end());auto ts=c.args;ts.insert(ts.end(),types.begin()+1,types.end());return useful(specialize(matrix,c,budget,at),q,ts,budget,at,hidden,depth+1);};
+ auto constructors=hidden&&hidden(types[0])?std::vector<Constructor>{}:signature(types[0],budget,at);
  if(!query[0].wild){auto c=std::find_if(constructors.begin(),constructors.end(),[&](const auto& v){return v.key==query[0].key;});return recurse(c==constructors.end()?Constructor{query[0].key,{}}:*c,query[0].args?*query[0].args:Row{});}
  if(!constructors.empty()){for(const auto& c:constructors)if(recurse(c,Row(c.args.size())))return true;return false;}
- Matrix defaults;for(const auto& row:matrix){budget.spend(at,row.size()+1);copy_keys(row,budget,at);if(row[0].wild)defaults.emplace_back(row.begin()+1,row.end());}copy_keys(query,budget,at);return useful(defaults,Row(query.begin()+1,query.end()),std::vector<Type>(types.begin()+1,types.end()),budget,at,depth+1);
+ Matrix defaults;for(const auto& row:matrix){budget.spend(at,row.size()+1);copy_keys(row,budget,at);if(row[0].wild)defaults.emplace_back(row.begin()+1,row.end());}copy_keys(query,budget,at);return useful(defaults,Row(query.begin()+1,query.end()),std::vector<Type>(types.begin()+1,types.end()),budget,at,hidden,depth+1);
 }
 }
 Expr literal(const Pattern& p){
@@ -144,22 +151,22 @@ Expr literal(const Pattern& p){
  }
  return e;
 }
-Bindings check(Pattern& p,const Type& type,bool root){if(type==Type::Void)fail(p.where,"match scrutinee cannot be void");if(type==Type::Json||type==Type::JsonView)fail(p.where,"unique resources are not copyable pattern scrutinees");Budget b;return inspect(p,type,b,0,root);}
+Bindings check(Pattern& p,const Type& type,bool root,const HiddenRepresentation& hidden){if(type==Type::Void)fail(p.where,"match scrutinee cannot be void");if(type==Type::Json||type==Type::JsonView)fail(p.where,"unique resources are not copyable pattern scrutinees");Budget b;return inspect(p,type,b,0,root,hidden);}
 void require_binding(const Pattern& p){
  if(p.kind!=P::Name&&p.kind!=P::Tuple)fail(p.where,"refutable/wildcard patterns require match; let and parameters retain name/tuple semantics");
  for(const auto& c:p.elements)require_binding(c);
 }
-void coverage(const Expr& match){
+void coverage(const Expr& match,const HiddenRepresentation& hidden){
  if(match.children.size()<2)fail(match.where,"empty match is not exhaustive");
  Budget budget;Matrix matrix;
  for(std::size_t i=1;i<match.children.size();++i){const auto& arm=*match.children[i];if(arm.patterns.size()!=1||arm.children.size()!=2)fail(arm.where,"malformed match arm");const auto& p=arm.patterns[0];
   if(p.kind==P::Rest&&i+1!=match.children.size())fail(p.where,"rest is allowed only in the final arm");
   if(arm.children[0]->kind==Expr::Kind::Boolean&&arm.children[0]->text=="false")fail(arm.where,"unreachable arm with false guard");
-  auto alternatives=expand(p,budget,0);bool reachable=false;for(const auto& node:alternatives)reachable=useful(matrix,{node},{match.children[0]->type},budget,p.where)||reachable;
+  auto alternatives=expand(p,budget,0);bool reachable=false;for(const auto& node:alternatives)reachable=useful(matrix,{node},{match.children[0]->type},budget,p.where,hidden)||reachable;
   if(!reachable)fail(p.where,"unreachable or redundant match arm");
   if(arm.children[0]->kind==Expr::Kind::Boolean&&arm.children[0]->text=="true")for(auto& node:alternatives)matrix.push_back({std::move(node)});
  }
- if(useful(matrix,{Node{}},{match.children[0]->type},budget,match.where))fail(match.where,"non-exhaustive match; guards do not prove coverage");
+ if(useful(matrix,{Node{}},{match.children[0]->type},budget,match.where,hidden))fail(match.where,"non-exhaustive match; guards do not prove coverage");
 }
 bool terminates(const Expr& e){
  if(e.noreturn)return true;

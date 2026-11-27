@@ -15,6 +15,8 @@
 #include <on1x/cliche.hpp>
 #include <on1x/inherent.hpp>
 #include <on1x/c11.hpp>
+#include <on1x/clone.hpp>
+#include <on1x/sema.hpp>
 #include "../hir/MEMGraph/memgraph.hpp"
 #include "../hir/MEMGraph/storage.hpp"
 #include <algorithm>
@@ -1569,7 +1571,15 @@ std::string emit_c(const Unit& unit,const std::string& source_name,const C11Opti
  extensions::verify_evidence(unit);inherent::verify_elaborated(unit);cliches::verify_elaborated(unit);
  canonical::verify_control(unit);meta::require_core(unit);canonical::verify_values(unit);
  verify_nominals(unit);csp::verify(unit,true);
-  Generator generator(unit,options);
+ std::optional<Unit> checked;
+ if(!unit.opaque_nominal_owners.empty()){
+  // The C representation is intentionally concrete. Recheck sealed-operation
+  // authorization at the last boundary, not just the aggregate annotations.
+  std::size_t budget=262144;
+  checked.emplace(clone_unit(unit,budget));
+  recheck_checked_hir(*checked);
+ }
+  Generator generator(checked?*checked:unit,options);
  auto output=generator.run();
   if(options.memgraph_report)*options.memgraph_report=generator.bounds_report();
  return output;

@@ -400,6 +400,10 @@ struct Unit {
    // Never reconstructed from Unit-v1 wire or inferred from output locations.
    bool requires_module_boundary=false;
    std::vector<SignatureTypeAlias> signature_type_aliases;
+   // Loader-only authority. Keys are resolved identities, not the caller's
+   // spelling or a Location. Manifest-authorized fragments share an owner.
+   std::map<std::string,std::string> opaque_nominal_owners;
+   std::map<std::string,std::string> opaque_function_owners;
  };
 std::string read_source_file(const std::string& filename);
 // Docstrings are trivia: optionally append them separately, in source order.

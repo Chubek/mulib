@@ -329,7 +329,8 @@ void lower_enum_members_for_ppx(Unit& unit){
  if(present(unit))return;
  std::map<std::string,const NominalDeclaration*> enums;
  for(const auto& declaration:unit.nominals)
-  if(declaration.kind==Type::Sum)enums.emplace(declaration.name,&declaration);
+  if(declaration.kind==Type::Sum&&!unit.opaque_nominal_owners.contains(declaration.name))
+   enums.emplace(declaration.name,&declaration);
  if(enums.empty())return;
  expressions(unit,[&](Expr& e){
   const auto* selection=e.kind==Expr::Kind::Call?e.callee.get():&e;

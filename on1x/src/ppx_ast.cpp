@@ -462,6 +462,9 @@ SExpr encode_source_module_metadata(const Unit& unit){
  return tree;
 }
 SExpr encode(const Unit& unit){
+ if(!unit.opaque_nominal_owners.empty())
+  throw Error(unit.module?unit.module->where:Location{"<ppx>"},
+              "Unit-v1 AST cannot transport opaque module ABI authority","ON1X-PPX-SCOPE");
   require_no_kernel_imports(unit);
   auto reject=[&](const Type& type,const Location& at){
    if(type.contains_unique())
@@ -660,6 +663,8 @@ SExpr encode(const Unit& unit){
   declaration.where=before->where;
  }
  Unit decode_unit(const SExpr& tree,Unit* original){
+  if(original&&!original->opaque_nominal_owners.empty())
+   invalid(tree,"Unit-v1 rewrite cannot transport opaque module ABI authority");
   base_schema().validate(tree);
   std::size_t operators=0,directives=0,serial=0;
   std::set<std::string> hidden_names,identities;
