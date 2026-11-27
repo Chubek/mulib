@@ -114,8 +114,19 @@ Repeated rows aggregate distinct fragments in manifest order, not filename
 order. Interface fragments are attached to the named module, rather than
 paired by stem. The optional per-module presence policy is `optional`
 (default), `required` (at least one interface fragment), or `forbidden`
-(none). It does not change interface syntax or conformance rules. All paths
-are relative to the project root and must be below its declared `directory`.
+(none). It does not change interface syntax or conformance rules. For
+example, one fragment of the named module's interface could be:
+
+```on1x
+abstract module Math.Checked;
+fn gcd(a: i64, b: i64) -> i64;
+```
+
+Every interface fragment names the same module. A checked interface limits
+the module's exported surface in the actual target build, not just in a
+separate conformance command. Opaque types remain declaration-checking
+only and cannot enter an executable build. All manifest paths are relative
+to the project root and must be below its declared `directory`.
 Do not also list them in `On1xfile.m` or `On1xfile.i`.
 
 The driver checks named modules even if no target imports them. It supplies
