@@ -47,6 +47,11 @@ inline std::string module_name(const json::Value& value) {
  return name;
 }
 
+inline void require_project_namespace(std::string_view name) {
+ if(name=="std"||name.starts_with("std."))
+  throw std::invalid_argument("the std namespace is reserved for the standard library");
+}
+
 inline fs::path canonical_path(const json::Value& value,bool directory) {
  fs::path path(string_field(value));
  std::error_code error;
@@ -85,9 +90,11 @@ inline Index read(const fs::path& input) {
   visible_name.kind='s';
   visible_name.text=visible;
   (void)module_name(visible_name);
+  require_project_namespace(visible);
   if(value.kind!='o'||value.object.size()!=4)throw std::invalid_argument("invalid project module index member");
   IndexMember member{.package=canonical_path(value.at("package"),true),
                      .declared_name=module_name(value.at("declared_name")),.fragments={},.interfaces={}};
+  require_project_namespace(member.declared_name);
   const auto identity=std::pair(member.package,member.declared_name);
   const auto append=[&](const json::Value& array,std::string_view extension,std::vector<fs::path>& result){
    if(array.kind!='a')throw std::invalid_argument("invalid project module index path list");

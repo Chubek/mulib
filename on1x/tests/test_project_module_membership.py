@@ -126,8 +126,119 @@ class ModuleProjects(unittest.TestCase):
                                          (module, missing))
         with self.assertRaisesRegex(ValueError, 'outside the declared module graph'):
             project.inspect_module_graph(runner, 'cc', entry, [], {entry}, (), edges)
-        project.inspect_module_graph(runner, 'cc', entry, [], {entry, module}, (), edges, (module,))
+        graph = project.inspect_module_graph(runner, 'cc', entry, [], {entry, module}, (), edges, (module,))
         self.assertEqual(edges, {(entry, module)})
+        self.assertFalse(graph.cacheable)
+
+    def test_graph_v2_keeps_signature_inputs_out_of_computational_edges(self):
+        entry, module, signature, other = map(Path, (
+            '/input/test.on1x', '/input/a.on1xm', '/input/a.on1xi', '/input/unlisted.on1xi'))
+        graph = {'schema': 'on1x.project-module-graph/v2', 'sources': [str(entry), str(module)],
+                 'edges': [[str(entry), str(module)]], 'auxiliary': [str(signature)], 'cacheable': True}
+        runner = type('Runner', (), {'run': staticmethod(lambda _, **__: json.dumps(graph).encode())})
+        edges = set()
+        validated = project.inspect_module_graph(
+            runner, 'cc', entry, [], {entry, module}, (), edges, (module,),
+            auxiliary_permitted={signature}, expected_auxiliary=(signature,))
+        self.assertTrue(validated.cacheable)
+        self.assertEqual(validated.auxiliary, (signature,))
+        self.assertEqual(edges, {(entry, module)})
+        with self.assertRaisesRegex(ValueError, 'did not load the declared interface'):
+            project.inspect_module_graph(
+                runner, 'cc', entry, [], {entry, module}, (), set(),
+                auxiliary_permitted={signature, other}, expected_auxiliary=(other,))
+        graph['auxiliary'] = [str(other)]
+        with self.assertRaisesRegex(ValueError, 'auxiliary input is outside'):
+            project.inspect_module_graph(runner, 'cc', entry, [], {entry, module}, (), set(),
+                                         auxiliary_permitted={signature})
+
+    def test_std_module_is_owned_for_admission_but_not_project_index_transport(self):
+        with tempfile.TemporaryDirectory() as work:
+            staged = Path(work)
+            member = project.ModuleMembership((Path('math.on1xm'),), (Path('math.on1xi'),), 'required')
+            packages = {'std': (staged, {'std.math': member}, '')}
+            executor = type('Runner', (), {'path': staticmethod(lambda path: path)})
+            index = staged / 'index.json'
+            with self.assertRaisesRegex(ValueError, 'namespace is reserved'):
+                project.module_index(executor, index, staged, packages)
+            flags, owners = project.module_index(executor, index, staged, packages, trusted_standard=True)
+            self.assertEqual(flags, [])
+            self.assertEqual(owners, {staged / 'math.on1xm': ('std', 'std.math')})
+            self.assertFalse(index.exists())
+            self.assertEqual(project.quoted_import(staged / 'check.on1x', 'math.on1x', staged, (),
+                                                   standard_aliases={staged / 'math.on1x'}),
+                             staged / 'math.on1x')
+            with self.assertRaisesRegex(ValueError, 'must name a declared library'):
+                project.quoted_import(staged / 'check.on1x', 'math.on1x', staged, ())
+
+    def test_module_cache_transitive_policy_profile_and_failed_check(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            staged, dependency = root / 'project', root / 'dependency'
+            staged.mkdir()
+            dependency.mkdir()
+            carrier, module, unrelated = (staged / name for name in ('carrier.on1x', 'app.on1xm', 'other.on1xm'))
+            imported, signature = (dependency / name for name in ('dep.on1xm', 'dep.on1xi'))
+            prelude = root / 'pervasive.on1x'
+            for path in (carrier, module, imported, signature, prelude, unrelated):
+                path.write_text(path.name)
+            graph = project.ModuleGraphInputs((prelude, imported, module, carrier),
+                                             ((carrier, module), (module, imported)), (signature,), True)
+            roots = [('project', staged), ('dependency/dep', dependency)]
+            rule = {'policy': 'optional'}
+            membership = {imported: ('dependency/dep:Inner', rule)}
+            versions = {'dependency/dep': {'commit': '0000'}}
+            context = {'project': str(staged), 'backend': 'c11', 'tools': {'on1xc': 'A'}}
+            checks = []
+            with project.module_cache_directory(root / 'cache', staged, None) as fd:
+                cache = project.ModuleCheckCache(fd, context, roots, membership, versions)
+                def check():
+                    cache.check('', 'App', graph, lambda: checks.append('verified'))
+
+                check()
+                check()
+                unrelated.write_text('not imported')
+                check()
+                self.assertEqual(len(checks), 1)
+                for count, path in enumerate((module, imported, signature, prelude), 2):
+                    path.write_text('changed')
+                    check()
+                    self.assertEqual(len(checks), count)
+                for count, (record, key, value) in enumerate((
+                        (rule, 'policy', 'required'), (versions['dependency/dep'], 'commit', '0001'),
+                        (context, 'backend', 'mir-c11'), (context['tools'], 'on1xc', 'B')), 6):
+                    record[key] = value
+                    check()
+                    self.assertEqual(len(checks), count)
+                context['backend'] = 'mir-vm'
+                with self.assertRaisesRegex(ValueError, 'invalid body'):
+                    cache.check('', 'App', graph, lambda: project.fail('invalid body'))
+                check()
+                self.assertEqual(len(checks), 10)
+                foreign = project.ModuleGraphInputs(graph.sources, graph.edges, graph.auxiliary, False)
+                cache.check('', 'App', foreign, lambda: checks.append('unchecked profile'))
+                cache.check('', 'App', foreign, lambda: checks.append('unchecked profile'))
+                self.assertEqual(len(checks), 12)
+
+    def test_cache_directory_rejects_untrusted_locations(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            staged = root / 'project'
+            staged.mkdir()
+            with self.assertRaisesRegex(ValueError, 'must be separate'):
+                with project.module_cache_directory(staged / '.on1x-cache', staged, None):
+                    self.fail('accepted cache content from the project checkout')
+            cache = root / 'cache'
+            cache.mkdir()
+            cache.chmod(0o755)
+            with self.assertRaisesRegex(ValueError, 'must be private'):
+                with project.module_cache_directory(cache, staged, None):
+                    self.fail('accepted a public cache')
+            link = root / 'linked'
+            link.symlink_to(cache, target_is_directory=True)
+            with self.assertRaises(OSError):
+                with project.module_cache_directory(link, staged, None):
+                    self.fail('accepted a cache symlink')
 
     def test_module_header_agreement_uses_compiler_tokens(self):
         tokens = ('1:1  module\n1:8  Math\n1:12  .\n1:13  Checked\n1:20  ;\n').encode()

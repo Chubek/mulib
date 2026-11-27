@@ -587,10 +587,10 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  out<<"]}\n";
  return out.str();
 }
-std::string project_module_graph(const on1x::LoadedUnit& loaded){
+std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_extensions){
  using on1x::project_index::json::quote;
  std::ostringstream result;
- result<<"{\"schema\":\"on1x.project-module-graph/v1\",\"sources\":[";
+ result<<"{\"schema\":\"on1x.project-module-graph/v2\",\"sources\":[";
  bool first=true;
  std::set<std::filesystem::path> sources;
  for(const auto& source:loaded.dependencies){
@@ -606,7 +606,16 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
   if(!first)result<<',';
   first=false;result<<'['<<quote(importer.string())<<','<<quote(imported.string())<<']';
  }
- result<<"]}\n";
+ // Signature inputs constrain a loaded unit but do not initialize it.
+ // Keep them out of computational edges and report their canonical paths.
+ result<<"],\"auxiliary\":[";first=true;
+ const std::set<std::filesystem::path> auxiliary(loaded.signature_dependencies.begin(),
+                                                 loaded.signature_dependencies.end());
+ for(const auto& path:auxiliary){
+  if(!first)result<<',';
+  first=false;result<<quote(path.string());
+ }
+ result<<"],\"cacheable\":"<<(!loaded.source_capabilities&&!explicit_extensions?"true":"false")<<"}\n";
  return result.str();
 }
  std::string callable_signature(const on1x::Function& function){
@@ -796,7 +805,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
    "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
    "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
-   "       on1xc --project-module-graph INPUT.on1x --project-module-index FILE (staged graph JSON)\n"
+   "       on1xc --project-module-graph INPUT.on1x [--project-module-index FILE | --stdlib ROOT]\n"
    "       on1xc --operator-info [--source-only] INPUT.on1x [-o OUTPUT] (checked operator information as JSON)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
    "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
@@ -1316,7 +1325,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
          };
           const bool interface_mode=mode=="--check-interfaces";
          if((!interface_mode&&!loader.interfaces.empty())||
-            (interface_mode&&loader.interfaces.empty()&&project_module_index.empty()))
+            (interface_mode&&loader.interfaces.empty()&&project_module_index.empty()&&!loader.stdlib_explicit))
           throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
           loader.declaration_interfaces=interface_mode;
          if(interface_mode&&(source.empty()||!out.empty()||ir_input||memory||type_safety||optimize||opt_limit||
@@ -1352,8 +1361,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
         write_all(out,roots.front().string()+"\n");return 0;
        }
          if(source.empty()){usage();return 2;}
-         if(mode=="--project-module-graph"&&project_module_index.empty())
-          throw std::runtime_error("--project-module-graph requires --project-module-index");
+         if(mode=="--project-module-graph"&&project_module_index.empty()&&!loader.stdlib_explicit)
+          throw std::runtime_error("--project-module-graph requires --project-module-index or --stdlib");
          on1x::proxy::apply(on1x::proxy::current_project());
          loader.extensions.execute=!source_only&&mode!="--deps"&&mode!="--project-module-graph"&&
           mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
@@ -1485,10 +1494,12 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
      write_all(out,paths.str());return 0;
     }
     if(mode=="--project-module-graph"){
-     write_all(out,project_module_graph(loaded));return 0;
+     write_all(out,project_module_graph(loaded,!loader.extensions.enabled.empty()));return 0;
     }
        auto& unit=loaded.unit;
         if(interface_mode){
+         if(loader.interfaces.empty()&&project_module_index.empty()&&loaded.signature_dependencies.empty())
+          throw std::runtime_error("--check-interfaces requires at least one loaded module signature or --interface FILE");
          on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
          // Only legacy obligations run the original whole-unit checker. An
          // abstract module signature verifies declarations, not bodies, and

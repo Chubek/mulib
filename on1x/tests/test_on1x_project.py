@@ -160,6 +160,84 @@ class ProjectTests(unittest.TestCase):
              'dependencies': [{'package': 'dep', 'name': 'Inner'}]},
         ])
 
+    def test_named_module_cache_reuses_only_current_dependency_closure(self):
+        root = self.write('On1xfile', 'on1xfile 1\nkind library\nname "sample"\n'
+                          'module "App" "app.on1xm"\nmodule "Base" "base.on1xm"\n'
+                          'module-interface "Base" "base.on1xi"\n'
+                          'module "Unrelated" "unrelated.on1xm"\n')
+        initial_base = 'module Base; public fn base()->i64{return 1;}\n'
+        base = self.write('base.on1xm', initial_base)
+        signature = self.write('base.on1xi', 'abstract module Base; fn base()->i64;\n')
+        self.write('app.on1xm', 'module App; import Base : base; public fn app()->i64{return base();}\n')
+        unrelated = self.write('unrelated.on1xm', 'module Unrelated; public fn spare()->i64{return 1;}\n')
+        cache = self.root / 'cache'
+        stdlib = self.root / 'stdlib'
+        shutil.copytree(ON1X / 'stdlib', stdlib)
+        argv = [sys.executable, OPTIONS.driver, 'plan', str(self.project),
+                '--on1xc', OPTIONS.on1xc, '--stdlib', str(stdlib), '--module-cache', str(cache)]
+
+        def plan(*flags, negative=None):
+            result = subprocess.run([*argv, *flags], text=True, capture_output=True, timeout=60)
+            if negative is not None:
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(negative, result.stderr)
+            else:
+                self.assertEqual(result.returncode, 0, result.stderr)
+                return result.stdout
+
+        slot_name = hashlib.sha256(json.dumps([str(self.project.resolve()), '', 'App'],
+                                              separators=(',', ':')).encode('ascii')).hexdigest()
+        slot = cache / slot_name
+        cold = plan()
+        initial = slot.read_bytes()
+        inode = slot.stat().st_ino
+        self.assertEqual(plan(), cold)
+        self.assertEqual(slot.stat().st_ino, inode)
+        unrelated.write_text(unrelated.read_text().replace('return 1', 'return 2'))
+        plan()
+        self.assertEqual(slot.read_bytes(), initial)
+        self.assertEqual(slot.stat().st_ino, inode)
+        times = base.stat()
+        base.write_text(initial_base.replace('return 1', 'return 2'))
+        os.utime(base, ns=(times.st_atime_ns, times.st_mtime_ns))
+        plan()
+        changed = slot.read_bytes()
+        self.assertNotEqual(changed, initial)
+        signature.write_text(signature.read_text() + '\n# signature content\n')
+        plan()
+        self.assertNotEqual(slot.read_bytes(), changed)
+        changed = slot.read_bytes()
+        root.write_text(root.read_text() + 'module-interface-policy "Base" required\n')
+        plan()
+        self.assertNotEqual(slot.read_bytes(), changed)
+        changed = slot.read_bytes()
+        prelude = stdlib / 'pervasive.on1x'
+        prelude.write_text(prelude.read_text() + '\n# changed implicit dependency\n')
+        plan()
+        self.assertNotEqual(slot.read_bytes(), changed)
+        changed = slot.read_bytes()
+        plan('--release')
+        self.assertNotEqual(slot.read_bytes(), changed)
+        # Native/extension capability closures never publish cache markers,
+        # even when an extern is not reachable from the check carrier.
+        root.write_text(root.read_text() + 'module "Foreign" "foreign.on1xm"\n')
+        self.write('foreign.on1xm', 'module Foreign; extern fn fixture_foreign()->i64; '
+                   'public fn local()->i64{return 1;}\n')
+        plan()
+        foreign_slot = hashlib.sha256(json.dumps([str(self.project.resolve()), '', 'Foreign'],
+                                                  separators=(',', ':')).encode('ascii')).hexdigest()
+        self.assertFalse((cache / foreign_slot).exists())
+        cache_options = ('--stdlib', str(stdlib), '--module-cache', str(cache))
+        output = self.build(*cache_options)
+        report = (output / '.on1x-build.json').read_bytes()
+        current = slot.read_bytes()
+        base.write_text(initial_base.replace('return 1', 'return "not an integer"'))
+        self.build(*cache_options, negative='failed')
+        self.assertEqual((output / '.on1x-build.json').read_bytes(), report)
+        self.assertEqual(slot.read_bytes(), current)
+        base.write_text('module Base; import App : app; public fn base()->i64{return app();}\n')
+        plan(negative='import cycle')
+
     def test_scrutiny_precedence(self):
         probe = self.root / 'analysis-probe.on1x'
         probe.write_text('fn main()->i64{return 42/0;}\n')
