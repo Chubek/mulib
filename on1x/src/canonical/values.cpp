@@ -3,6 +3,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/patterns.hpp>
 #include <on1x/nominal.hpp>
+#include <on1x/module_opaque.hpp>
 #include <algorithm>
 #include <functional>
 #include <iterator>
@@ -19,6 +20,7 @@ ExprPtr equal(ExprPtr a,ExprPtr b,const Location& at){auto e=value(E::Binary,Typ
 Stmt leave(std::size_t target,const Location& at){Stmt s;s.kind=S::Leave;s.control_target=target;s.where=at;return s;}
 class Lower {
   Unit& unit;NominalCatalog catalog;std::size_t serial=0,budget=262144,copy_budget=262144,bytes=8*1024*1024;
+  std::string_view representation_owner;
   struct LoopValue {std::size_t target,done;std::string result;Type type;};
   std::vector<LoopValue> loops;
  void tick(const Location& at){if(!budget--)throw Error(at,"canonical value expansion budget exhausted","ON1X-VALUES-LIMIT");}
@@ -71,6 +73,7 @@ class Lower {
  }
  void old_match(Expr& e){
   if(e.children.empty()||!e.children[0]||e.children[0]->type.kind()!=Type::Sum||e.children.size()!=e.labels.size()+1)fail(e.where,"legacy match requires checked closed-sum arms");
+  opaque::require_access(unit,e.children[0]->type.nominal(),representation_owner,e.where);
   auto schema=e.children.at(0)->type;std::vector<ExprPtr> arms;arms.push_back(std::move(e.children[0]));
   for(std::size_t i=0;i<e.labels.size();++i){auto ctor=e.labels[i];auto tag=std::find(schema.labels().begin(),schema.labels().end(),ctor);auto t=schema.elements().at(static_cast<std::size_t>(tag-schema.labels().begin()));
    auto name=fresh();auto arm=value(E::Case,Type::Void,e.where);Pattern p;p.kind=P::Variant;p.name=ctor;p.type=schema;p.where=e.where;Pattern binding;binding.name=name;binding.type=t;binding.where=e.where;p.elements.push_back(std::move(binding));arm->patterns.push_back(std::move(p));
@@ -91,6 +94,7 @@ class Lower {
     }
     if(e.kind==E::Propagate){
      if(e.children.size()!=1||!e.children[0])fail(e.where,"propagation requires one checked operand");
+     opaque::require_access(unit,e.children[0]->type.nominal(),representation_owner,e.where);
      auto t=e.children[0]->type;catalog.verify(t,e.where);catalog.verify(e.result,e.where);
      if(t.kind()!=Type::Sum||t.nominal().empty())fail(e.where,"propagation requires a checked nominal Result");
      (void)catalog.result(t.nominal(),e.where);
@@ -139,7 +143,12 @@ class Lower {
   if(e.kind==E::Match)old_match(e);
   if(e.kind==E::PatternMatch){
    if(e.children.size()<2||e.children[0]->type==Type::Invalid||e.children[0]->type==Type::Void||e.type==Type::Invalid||e.type.has_holes()||e.type.has_generics())fail(e.where,"match requires checked concrete value/result types");
-   for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=E::Case||arm.patterns.size()!=1||arm.children.size()!=2||arm.children[0]->type!=Type::Bool)fail(arm.where,"malformed checked match arm");(void)patterns::check(arm.patterns[0],e.children[0]->type);}
+   patterns::HiddenRepresentation hidden;
+   if(!unit.opaque_nominal_owners.empty())hidden=[this](const Type& type){
+    return opaque::hidden(unit,type.nominal(),representation_owner);
+   };
+   if(e.sum_match&&hidden&&hidden(e.children[0]->type))opaque::inaccessible(e.where);
+   for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];if(arm.kind!=E::Case||arm.patterns.size()!=1||arm.children.size()!=2||arm.children[0]->type!=Type::Bool)fail(arm.where,"malformed checked match arm");(void)patterns::check(arm.patterns[0],e.children[0]->type,true,hidden);}
    expression(*e.children.at(0));for(std::size_t i=1;i<e.children.size();++i){auto& arm=*e.children[i];expression(*arm.children.at(0));body(arm.body);expression(*arm.children.at(1));}
    Expr region;region.kind=E::Region;region.type=e.type;region.where=e.where;region.noreturn=e.noreturn;
     auto root=e.text.empty()?fresh():e.text;auto input_type=e.children[0]->type;const bool consuming=input_type.is_move_only();
@@ -203,7 +212,9 @@ public:
    auto scan=[&](auto&& self,const Expr& e)->void{serial=std::max(serial,e.control_target);if(e.callee)self(self,*e.callee);for(const auto& c:e.children)self(self,*c);auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)self(self,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,e.body);};
   for(const auto& f:u.functions){auto visit=[&](auto&& walk,const std::vector<Stmt>& b)->void{for(const auto& s:b){serial=std::max(serial,s.control_target);if(s.value)scan(scan,*s.value);walk(walk,s.body);walk(walk,s.otherwise);}};visit(visit,f.body);}
  }
- void run(){for(auto& f:unit.functions)if(!f.prototype)body(f.body);}
+ void run(){for(auto& f:unit.functions)if(!f.prototype){
+  representation_owner=opaque::function_owner(unit,f.name);body(f.body);
+ }}
 };
 }
 bool needs_values(const Unit& unit){

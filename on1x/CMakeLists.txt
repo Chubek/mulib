@@ -840,6 +840,15 @@ if(BUILD_TESTING)
   add_executable(on1x_module_signature_tests tests/test_module_signature.cpp)
   target_link_libraries(on1x_module_signature_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.module_signature COMMAND on1x_module_signature_tests)
+  add_executable(on1x_opaque_module_tests tests/test_opaque_module.cpp)
+  target_link_libraries(on1x_opaque_module_tests PRIVATE on1x_frontend on1x_mir_vm)
+  if(UNIX AND NOT CMAKE_CROSSCOMPILING)
+    add_test(NAME on1x.opaque_module
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_opaque_module.py"
+        "$<TARGET_FILE:on1x_opaque_module_tests>" "${CMAKE_C_COMPILER}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/runtime" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/opaque-module")
+    set_tests_properties(on1x.opaque_module PROPERTIES TIMEOUT 90)
+  endif()
   add_test(NAME on1x.module_signature_cli COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_module_signature_cli.py"
     "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/module-signature")

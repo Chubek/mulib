@@ -33,6 +33,9 @@ void function_profile(const on1x::Function& f){
   unsupported(f.where,"borrowed parameters require addressable-place and loan MIR descriptors (C11 HIR backend only)");
 }
 memgraph::LexicalSlots verified_places(const Unit& unit){
+ if(!unit.opaque_nominal_owners.empty())
+  unsupported(unit.module?unit.module->where:Location{"<opaque module>"},
+              "sealed module value ABI is currently supported only by direct C11 lowering");
  extensions::verify_evidence(unit);
  inherent::verify_elaborated(unit);
  cliches::verify_elaborated(unit);
