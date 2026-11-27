@@ -20,10 +20,12 @@ def main():
         entry.write_text('import "dep.on1x"; fn main(){}')
         (root / 'dep.on1x').write_text('fn answer()->i64{return 42;}')
 
-        def run(*args, ok=True):
+        def run(*args, ok=True, diagnostic=None):
             p = subprocess.run([compiler, '--no-prelude', *args, entry], cwd=root,
                                capture_output=True, timeout=10)
             assert (p.returncode == 0) == ok, (args, p.returncode, p.stderr)
+            if diagnostic is not None:
+                assert diagnostic.encode() in p.stderr, p.stderr
             assert not marker.exists(), 'graph inspection executed PPX'
             return p.stdout
 
@@ -111,6 +113,23 @@ def main():
         failure = json.loads(run('--emit-module-graph', '--graph-partial'))
         assert failure['status'] == 'partial' and failure['schema'] == 'on1x.graph-failure/v1'
         assert failure['diagnostics'] and 'nodes' not in failure
+        # Per-file parser limits are insufficient for a multi-file transaction.
+        # This remains below each 1,024-import limit but exceeds the graph's
+        # aggregate request budget without first building a huge wire packet.
+        (root / 'leaf.on1x').write_text('')
+        imports = []
+        for number in range(17):
+            path = root / f'fan{number}.on1x'
+            path.write_text('import "leaf.on1x";\n' * 1000)
+            imports.append(f'import "{path.name}";')
+        entry.write_text('\n'.join(imports) + '\nfn main(){}')
+        output.write_text('previous')
+        run('--emit-import-graph', '-o', output, ok=False,
+            diagnostic='import edge limit exceeded')
+        assert output.read_text() == 'previous'
+        limited = json.loads(run('--emit-import-graph', '--graph-partial'))
+        assert limited['status'] == 'partial'
+        assert limited['diagnostics'] and 'nodes' not in limited
 
 
 if __name__ == '__main__':

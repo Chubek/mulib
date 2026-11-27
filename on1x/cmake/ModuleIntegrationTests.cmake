@@ -21,6 +21,7 @@ module_test_binary(opaque tests/test_opaque_module.cpp on1x_frontend on1x_mir_vm
 module_test_script(opaque tests/test_opaque_module.py "$<TARGET_FILE:on1x_integration_opaque>" "${CMAKE_C_COMPILER}"
   "${CMAKE_CURRENT_SOURCE_DIR}/runtime" "${CMAKE_CURRENT_BINARY_DIR}/opaque-fixtures")
 module_test_script(signature tests/test_module_signature_cli.py "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/module-signature")
+module_test_script(nested_transparent tests/test_nested_transparent_cli.py "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/nested-transparent")
 module_test_script(project_membership tests/test_project_module_membership.py)
 module_test_script(plain_native_link tests/test_plain_native_link.py)
 if(TARGET On1x::SDK)
