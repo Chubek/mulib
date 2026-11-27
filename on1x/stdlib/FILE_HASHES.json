@@ -2683,8 +2683,8 @@
     },
     {
       "path": "daemon/lifecycle.on1x",
-      "bytes": 1892,
-      "sha256": "584ef74dfdbc4048d830d2b5afa6c6fe096bc9211bd4ee8daabb23b1a63bb8ba"
+      "bytes": 1839,
+      "sha256": "30b3a498d1d358cc5e4cc7ad9da9601a3d5764944be732e4ca92c8e7fb91ad72"
     },
     {
       "path": "daemon/lifecycle_kernels.c",
