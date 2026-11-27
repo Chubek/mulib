@@ -90,7 +90,16 @@ SealedModuleSignature verify_module_signature(const ModuleSignature&,
                                               std::string_view declared_module,
                                               const std::filesystem::path& canonical_implementation);
 
-// Current checked HIR has no opaque source type representation. Neither the
-// concrete layout nor these declaration-only identities may flow to clients.
+// The default executable boundary has no opaque transport. Preserve it for
+// callers that cannot install checked ownership and representation gates.
 void require_executable_module_signature(const ModuleSignature&);
+
+// Source-side permit for a loader that can attach authenticated opaque owners
+// and route them through a checked C11-only boundary. Call after successful
+// verification of these same originals; the frontend must still check bodies,
+// representation and operations on the resulting nominal values.
+std::set<std::string> admit_executable_opaque_signature(
+    const ModuleSignature&,const SealedModuleSignature& verified,
+    const std::vector<const Unit*>& originals,std::string_view declared_module,
+    const std::filesystem::path& canonical_implementation);
 }

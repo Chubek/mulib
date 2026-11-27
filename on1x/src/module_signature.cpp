@@ -203,6 +203,47 @@ public:
   return std::move(flat);
  }
 };
+
+class CopyRepresentation {
+ const std::map<std::string,std::vector<const NominalDeclaration*>>& declarations;
+ const Location& where;
+ std::set<std::string> checking,complete;
+ std::size_t nodes=16384;
+
+ [[noreturn]] void unsupported(const std::string& message)const{
+  throw Error(where,message,"ON1X-INTERFACE-UNSUPPORTED");
+ }
+ void field(const Type& type,std::size_t depth){
+  visit_node(where,nodes,depth);
+  if(scalar(type)&&type!=Type::String)return;
+  if(type.kind()==Type::Named&&type.arguments().empty()){
+   nominal(type.nominal(),depth+1);return;
+  }
+  if(type.is_tuple()||type.kind()==Type::Record||type.kind()==Type::Sum||
+     (type.kind()==Type::Array&&type.extent()<=256&&type.elements().size()==1)){
+   for(const auto& element:type.elements())field(element,depth+1);
+   return;
+  }
+  unsupported("opaque executable types require a closed copy-value representation; found "+type_name(type));
+ }
+public:
+ CopyRepresentation(const std::map<std::string,std::vector<const NominalDeclaration*>>& declarations,
+                    const Location& where):declarations(declarations),where(where){}
+ void nominal(const std::string& name,std::size_t depth=0){
+  visit_node(where,nodes,depth);
+  if(complete.contains(name))return;
+  auto found=declarations.find(name);
+  if(found==declarations.end()||found->second.size()!=1)
+   unsupported("opaque representation requires a unique local nominal '"+name+"'");
+  const auto& declaration=*found->second.front();
+  if(!declaration.parameters.empty()||(declaration.kind!=Type::Record&&declaration.kind!=Type::Sum))
+   unsupported("opaque executable types require monomorphic record or enum declarations");
+  if(!checking.insert(name).second)
+   unsupported("recursive opaque executable representation for '"+name+"'");
+  for(const auto& type:declaration.fields)field(type,depth+1);
+  checking.erase(name);complete.insert(name);
+ }
+};
 }
 
 ModuleSignature resolve_module_signature(const ModuleSignature& signature){
@@ -356,5 +397,46 @@ void require_executable_module_signature(const ModuleSignature& signature){
  if(!signature.types.empty())
   throw Error(signature.types.front().where,"abstract types are declaration-only: opaque module types cannot enter executable HIR",
               "ON1X-INTERFACE-UNSUPPORTED");
+}
+
+std::set<std::string> admit_executable_opaque_signature(
+    const ModuleSignature& signature,const SealedModuleSignature& verified,
+    const std::vector<const Unit*>& originals,std::string_view declared_module,
+    const std::filesystem::path& canonical_implementation){
+ if(signature.ascription||!signature.definitions.empty())
+  return admit_executable_opaque_signature(resolve_module_signature(signature),verified,originals,
+                                           declared_module,canonical_implementation);
+ if(signature.types.empty()){
+  require_executable_module_signature(signature);
+  return {};
+ }
+ if(!signature.module||*signature.module!=declared_module||!canonical_implementation.is_absolute()||originals.empty())
+  throw Error(signature.where,"opaque permit requires its canonical original provider","ON1X-INTERFACE-MODULE");
+ if(signature.seal!=SignatureSeal::Opaque||!verified.manifest_types.empty()||!verified.transparent_types.empty())
+  throw Error(signature.where,"manifest and transparent type views are declaration-only","ON1X-INTERFACE-UNSUPPORTED");
+ std::map<std::string,std::vector<const NominalDeclaration*>> declarations;
+ for(const auto* original:originals){
+  if(!original)
+   throw Error(signature.where,"opaque permit requires original module fragments","ON1X-INTERFACE-MODULE");
+  if(!original->signature_type_aliases.empty())
+   throw Error(original->signature_type_aliases.front().where,"module type equations are declaration-only",
+               "ON1X-INTERFACE-UNSUPPORTED");
+  for(const auto& declaration:original->nominals)declarations[declaration.name].push_back(&declaration);
+ }
+ std::set<std::string> names;
+ for(const auto& member:signature.types){
+  if(member.manifest||member.arity)
+   throw Error(member.where,"opaque executable type members must be abstract and monomorphic",
+               "ON1X-INTERFACE-UNSUPPORTED");
+  auto found=verified.types.find(member.name);
+  if(found==verified.types.end()||
+     found->second!=AbstractTypeIdentity{canonical_implementation,*signature.module,member.name}||
+     !names.insert(member.name).second)
+   throw Error(member.where,"opaque permit does not match the verified provider identity","ON1X-INTERFACE-MODULE");
+  CopyRepresentation(declarations,member.where).nominal(member.name);
+ }
+ if(names.size()!=verified.types.size())
+  throw Error(signature.where,"opaque permit does not match the verified signature","ON1X-INTERFACE-MODULE");
+ return names;
 }
 }

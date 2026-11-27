@@ -221,4 +221,27 @@ int main(){
   auto callable=named("signature S<T> { fn count(x:T)->i64; }; module Acme.Vault : S<i64>;");
   require_executable_module_signature(callable);
   conform(callable,implementation("fn count(input:i64)->i64 { return input; }"));
+
+  const auto permit_signature=signature("type Token;");
+  auto permit_provider=static_source("record Bits { data:array<u8,16> } "
+                                    "enum Token { None, Some(Bits, bool) }");
+  const auto permit_proof=verify_module_signature(permit_signature,permit_provider,
+                                                  "Acme.Vault","/workspace/vault.on1xm");
+  require(admit_executable_opaque_signature(permit_signature,permit_proof,{&permit_provider},
+                                            "Acme.Vault","/workspace/vault.on1xm")==
+          std::set<std::string>{"Token"},"opaque permit must export only the authorized abstract type");
+  rejects("ON1X-INTERFACE-MODULE",[&]{
+   admit_executable_opaque_signature(permit_signature,permit_proof,{&permit_provider},
+                                     "Acme.Vault","/elsewhere/vault.on1xm");
+  });
+  rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+   admit_executable_opaque_signature(transparent,visible,{&static_unit},"Acme.Vault","/workspace/vault.on1xm");
+  });
+  for(const auto* field:{"string","Box<i64>","own<Token>","Token"}){
+   auto non_copy=static_source(std::string("record Box<T> { item:T } record Token { item:")+field+" }");
+   auto proof=verify_module_signature(permit_signature,non_copy,"Acme.Vault","/workspace/vault.on1xm");
+   rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+    admit_executable_opaque_signature(permit_signature,proof,{&non_copy},"Acme.Vault","/workspace/vault.on1xm");
+   });
+  }
  }
