@@ -52,7 +52,7 @@ struct Module {
    std::map<std::string,ForeignImport> foreigns;
  std::size_t id=0;
    bool discovering=true,active=false,loaded=false,legacy=false,implicit=false;
- bool program=false,isolated=false,source_capability=false;
+ bool program=false,has_main=false,isolated=false,source_capability=false;
   std::optional<SharedKind> shared;
 };
 bool regular(const fs::path& path){std::error_code ec;return fs::is_regular_file(path,ec);}
@@ -474,21 +474,7 @@ class Loader {
                       return x.name==y.name&&x.alias==y.alias&&x.is_operator==y.is_operator;
                      });
   }
-  // Read immutable source and discover only declarations/imports. In this
-  // phase no function body is parsed and no declaration extension runs.
-  Module* metadata(const fs::path& input,const Location& at,bool allow_directory=true){
-   auto path=canonical(input,at);
-   const bool source=regular(path);
-   if(!source&&!(allow_directory&&directory(path)))
-    throw Error(at,"import is not a regular source file: "+path.string());
-   if(auto hit=modules.find(path);hit!=modules.end()){
-    if(hit->second->discovering){
-     std::string chain;for(const auto* m:discovery_stack)chain+=m->path.string()+" -> ";
-     throw Error(at,"import cycle: "+chain+path.string());
-    }
-    return hit->second.get();
-   }
-   ModuleProvenance provenance(const Module& m)const{
+    ModuleProvenance provenance(const Module& m)const{
     ModuleProvenance result{m.path,m.package_identity,{}};
     const auto& header=m.unit.module?m.unit.module:m.discovery.module;
     if(header){
@@ -561,11 +547,26 @@ class Loader {
     for(const auto& name:listed){
      auto item=target.declarations.values.find(name);
      if(item!=target.declarations.values.end())visible.values.insert(*item);
+     }
     }
-   }
-   if(modules.size()>=options.max_modules)throw Error(at,"module count limit exceeded");
-   if(stack.size()+discovery_stack.size()>=options.max_depth)
-    throw Error(at,"import recursion limit exceeded");
+   // Read immutable source and discover only declarations/imports. In this
+   // phase no function body is parsed and no declaration extension runs.
+   Module* metadata(const fs::path& input,const Location& at,bool allow_directory=true){
+    auto path=canonical(input,at);
+    const bool source=regular(path);
+    if(!source&&!(allow_directory&&directory(path)))
+     throw Error(at,"import is not a regular source file: "+path.string());
+    if(auto hit=modules.find(path);hit!=modules.end()){
+     if(hit->second->discovering){
+      std::string chain;for(const auto* m:discovery_stack)chain+=m->path.string()+" -> ";
+      throw Error(at,"import cycle: "+chain+path.string());
+     }
+     return hit->second.get();
+    }
+    if(modules.size()>=options.max_modules)throw Error(at,"module count limit exceeded");
+    if(stack.size()+discovery_stack.size()>=options.max_depth){
+     throw Error(at,"import recursion limit exceeded");
+    }
     auto storage=std::make_unique<Module>();auto* m=storage.get();m->path=path;
     if(auto member=enrolled.find(path);member!=enrolled.end()){
      m->member=member->second;m->package_identity=m->member->package;
@@ -596,8 +597,9 @@ class Loader {
      }
     if(m->discovery.imports.size()>16384-discovery_edges)throw Error(at,"import edge limit exceeded");
     discovery_edges+=m->discovery.imports.size();
-    if(options.standalone_guest&&!m->discovery.imports.empty())
+    if(options.standalone_guest&&!m->discovery.imports.empty()){
      throw Error(m->discovery.imports.front().where,"standalone ArchVirt source cannot import or activate extensions");
+    }
      for(const auto& header:m->discovery.operators){
       validate_visibility(*m,header.visibility,header.where);
       add_operator(m->operator_exports,{header,operator_identity(header)},header.where);
@@ -623,9 +625,10 @@ class Loader {
        const auto* trailing=target&&!has_signature(*target)?target->operator_exports.trailing(selection.name):nullptr;
        if(prefix&&!operator_accessible(*prefix,*m))prefix=nullptr;
        if(trailing&&!operator_accessible(*trailing,*m))trailing=nullptr;
-      if(!prefix&&!trailing)
-       throw Error(imp.where,"module '"+imp.module+"' has no operator export '"+selection.name+"'",
-                   "ON1X-OPERATOR-IMPORT");
+       if(!prefix&&!trailing){
+        throw Error(imp.where,"module '"+imp.module+"' has no operator export '"+selection.name+"'",
+                    "ON1X-OPERATOR-IMPORT");
+       }
        auto& scope=named_module(*m)?m->operator_imports:m->operator_exports;
        if(prefix)add_operator(scope,*prefix,imp.where);
        if(trailing)add_operator(scope,*trailing,imp.where);
@@ -704,6 +707,9 @@ class Loader {
      return scope;
     }
    void isolate(Module& module,const Location& at){
+    if(module.has_main&&!module.program)
+     throw Error(at,"program dependency with main needs an explicit program import: "+
+                 module.path.string(),"ON1X-PROGRAM-IMPORT");
     if(module.source_capability)
      throw Error(at,"program import dependency requests source activation or native capabilities: "+
                  module.path.string(),"ON1X-PROGRAM-CAPABILITY");
@@ -759,9 +765,14 @@ class Loader {
       throw Error(at,"inconsistent module identity in discovery and parse","ON1X-MODULE-IDENTITY");
      const auto mains=std::count_if(m->unit.functions.begin(),m->unit.functions.end(),
                                     [](const auto& f){return f.name=="main";});
+     m->has_main=mains!=0;
      if(program&&(mains!=1||std::none_of(m->unit.functions.begin(),m->unit.functions.end(),
-                                       [](const auto& f){return f.name=="main"&&!f.external;})))
-      throw Error(at,"program import requires exactly one local main function: "+path.string(),"ON1X-PROGRAM-IMPORT");
+                                       [](const auto& f){
+       return f.name=="main"&&!f.external&&f.params.empty()&&f.type_parameters.empty()&&
+              f.constraints.empty()&&(f.result==Type::Void||f.result==Type::I64);
+      })))
+      throw Error(at,"program import requires exactly one local main() returning i64 or void: "+path.string(),
+                  "ON1X-PROGRAM-IMPORT");
      if(m->unit.module&&mains)
       throw Error(at,"a declared module cannot define the program entry point main","ON1X-MODULE-IDENTITY");
      m->source_capability=!m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
@@ -812,7 +823,7 @@ class Loader {
                     "intrinsic cliche/impl declarations cannot cross legacy Category or Unit-v1 PPX expansion",
                     !m->unit.inherent_implementations.empty()?"ON1X-IMPL-UNSUPPORTED":
                                                                "ON1X-CLICHE-UNSUPPORTED");
-        if(!options.interfaces.empty()||has_signature(*m)){
+        if(options.declaration_interfaces||!options.interfaces.empty()||has_signature(*m)){
        const auto reject=[](const Location& where){
         throw Error(where,"interface verification does not execute PPX or declaration extensions",
                     "ON1X-INTERFACE-UNSUPPORTED");
@@ -1448,7 +1459,8 @@ class Loader {
                  "ON1X-KERNEL-PROFILE");
     if(options.interfaces.size()>max_interface_files)
     throw Error({input.string()},"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
-    if(!options.interfaces.empty()&&(inspection||options.kernel_c11||!options.extensions.enabled.empty()))
+    if((options.declaration_interfaces||!options.interfaces.empty())&&
+       (inspection||options.kernel_c11||!options.extensions.enabled.empty()))
     throw Error({input.string()},"interface verification cannot run with KernelBind or declaration extensions",
                  "ON1X-INTERFACE-UNSUPPORTED");
      index_membership();

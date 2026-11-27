@@ -66,6 +66,8 @@ void module_imports(const std::filesystem::path& root){
         "unknown module qualifier");
  write(helper,"extern fn number()->i64;");
  reject("import program \"program.on1x\" as p;fn main(){}","ON1X-PROGRAM-CAPABILITY");
+ write(helper,"fn main(){}fn number()->i64{return 42;}");
+ reject("import program \"program.on1x\" as p;fn main(){}","needs an explicit program import");
 
  const auto a=root/"project"/"a.on1xm",b=root/"project"/"b.on1xm";
  const auto sig=root/"project"/"signature.on1xi";
