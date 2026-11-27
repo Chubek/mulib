@@ -3,9 +3,16 @@
 
 namespace on1x {
 namespace {
-[[noreturn]] void mismatch(const InterfaceMember& member,const Function& definition,const Type& actual){
+std::string callable_name(const Type& type,bool procedure){
+ auto name=type_name(type);
+ if(procedure)name.replace(0,2,"proc");
+ return name;
+}
+
+[[noreturn]] void mismatch(const ModuleSignatureMember& member,const Function& definition,const Type& actual){
  const auto& at=definition.where;
- auto expected=type_name(member.signature),found=type_name(actual);
+ auto expected=callable_name(member.signature,member.procedure);
+ auto found=callable_name(actual,definition.procedure);
  throw Error(member.where,"interface signature mismatch for '"+member.name+"': expected "+expected+
              ", found "+found+" in "+at.file+":"+std::to_string(at.line)+":"+std::to_string(at.column),
              "ON1X-INTERFACE-MISMATCH",expected,found);
@@ -84,7 +91,8 @@ SealedModuleSignature verify_module_signature(const ModuleSignature& signature,
    throw Error(member.where,"duplicate interface member: "+member.name,"ON1X-INTERFACE-DUPLICATE");
   TypeFormOptions options;options.allow_named=true;options.allow_foralls=false;
   auto form=check_type_form(member.signature,options);
-  if(!form||!member.signature.is_function())
+  if(!form||!member.signature.is_function()||
+     (member.procedure&&member.signature.result()!=Type::Void))
    throw Error(member.where,"invalid abstract module function signature"+
                (form?std::string{}:": "+form.message),
                form.status==TypeFormStatus::Limit?"ON1X-INTERFACE-LIMIT":"ON1X-INTERFACE-SHAPE");
@@ -105,14 +113,14 @@ SealedModuleSignature verify_module_signature(const ModuleSignature& signature,
      std::any_of(definition.params.begin(),definition.params.end(),[](const auto& p){return p.type.has_holes();}))
    throw Error(definition.where,"interface member '"+member.name+
                "' requires a fully annotated signature (no inferred types)","ON1X-INTERFACE-ANNOTATION");
-  if(takes_borrows(definition)||definition.procedure||!definition.type_parameters.empty()||
+  if(takes_borrows(definition)||!definition.type_parameters.empty()||
      !definition.constraints.empty())
-   throw Error(definition.where,"borrowed, procedure and generic declarations are not supported in abstract module signatures",
+   throw Error(definition.where,"borrowed and generic declarations are not supported in abstract module signatures",
                "ON1X-INTERFACE-UNSUPPORTED");
   std::vector<Type> parameters;parameters.reserve(definition.params.size());
   for(const auto& parameter:definition.params)parameters.push_back(parameter.type);
   auto actual=Type::function(std::move(parameters),definition.result);
-  if(member.signature!=actual)mismatch(member,definition,actual);
+  if(member.procedure!=definition.procedure||member.signature!=actual)mismatch(member,definition,actual);
  }
  return sealed;
 }

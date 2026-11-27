@@ -83,6 +83,34 @@ int main(){
  conform(scalar,implementation("fn count(arg:(i64,bool))->i64 { return 42; }"));
  conform(signature("abstract type Token<T>;"),original);
 
+ auto procedure=signature("proc reset(value:i64);");
+ require(procedure.members.front().procedure&&procedure.members.front().signature.result()==Type::Void,
+         "procedure signature lost its separate source kind");
+ conform(procedure,implementation("proc reset(argument:i64) {}"));
+ require_executable_module_signature(procedure);
+ rejects("ON1X-INTERFACE-MISMATCH",[&]{
+  conform(procedure,implementation("fn reset(argument:i64) -> void {}"));
+ });
+ rejects("ON1X-INTERFACE-MISMATCH",[&]{
+  conform(signature("fn reset(value:i64)->void;"),implementation("proc reset(argument:i64) {}"));
+ });
+ rejects("ON1X-INTERFACE-MISMATCH",[&]{
+  conform(procedure,implementation("proc reset(argument:bool) {}"));
+ });
+ rejects("ON1X-INTERFACE-MISMATCH",[&]{
+  conform(procedure,implementation("proc reset(argument:i64) -> i64 { return 42; }"));
+ });
+ rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+  conform(procedure,implementation("proc reset(argument:ref i64) {}"));
+ });
+ rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+  conform(procedure,implementation("proc reset<T>(argument:T) {}"));
+ });
+ rejects("ON1X-REF",[&]{signature("proc reset(argument:ref i64);");});
+ rejects("ON1X-PARSE-EXPECTED",[&]{signature("proc reset(value:i64) -> void;");});
+ rejects("ON1X-PARSE-EXPECTED",[&]{signature("proc reset(value:i64) {}");});
+ rejects("ON1X-INTERFACE-DUPLICATE",[&]{signature("fn reset(value:i64)->void; proc reset(value:i64);");});
+
  auto legacy_tokens=scan("on1xi 1; fn next(x:i64)->i64;","legacy.on1xi");
  auto legacy=parse_module_signature(legacy_tokens);
  auto legacy_members=parse_interface(legacy_tokens);
@@ -90,5 +118,8 @@ int main(){
          legacy.members.front().signature==legacy_members.front().signature,"v1 parsing changed");
  rejects("ON1X-INTERFACE-SHAPE",[&]{
   parse_module_signature(scan("on1xi 1; fn f()->u64;","legacy.on1xi"));
+ });
+ rejects("ON1X-INTERFACE-SHAPE",[&]{
+  parse_interface(scan("on1xi 1; proc reset(value:i64);","legacy.on1xi"));
  });
 }

@@ -11,12 +11,19 @@ struct AbstractTypeMember {
  std::size_t arity=0;
 };
 
+struct ModuleSignatureMember {
+ Location where;
+ std::string name;
+ Type signature;
+ bool procedure=false;
+};
+
 // Parsed declaration-only source. An empty module denotes the legacy `.on1xi`
 // v1 format, which specifies obligations but does not control exports.
 struct ModuleSignature {
  Location where;
  std::optional<std::string> module;
- std::vector<InterfaceMember> members;
+ std::vector<ModuleSignatureMember> members;
  std::vector<AbstractTypeMember> types;
 };
 

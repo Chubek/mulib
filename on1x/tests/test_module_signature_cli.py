@@ -82,10 +82,22 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         assert "opaque module types cannot enter executable HIR" in result.stderr, result.stderr
 
         implementation.write_text(
-            "module Test.Vault; public fn make(value:i64)->i64 { return value; }\n",
+            "module Test.Vault; public fn make(value:i64)->i64 { return value; }\n"
+            "public proc reset(value:i64) {}\n",
             encoding="utf-8",
         )
-        interface.write_text("abstract module Test.Vault; fn make(input:i64)->i64;", encoding="utf-8")
+        check("abstract module Test.Vault; fn make(input:i64)->i64; proc reset(input:i64);")
+        check("abstract module Test.Vault; fn make(input:i64)->i64; fn reset(input:i64)->void;",
+              "expected fn(i64) -> void, found proc(i64) -> void")
+        interface.write_text(
+            "abstract module Test.Vault; fn make(input:i64)->i64; proc reset(input:i64);",
+            encoding="utf-8",
+        )
+        program.write_text(
+            "import Test.Vault as Vault;\n"
+            "fn main()->i64 { Vault.reset(0); return Vault.make(42); }\n",
+            encoding="utf-8",
+        )
         result = run("--emit-c", program, "--project-module-index", index, "-o", output)
         assert result.returncode == 0 and output.is_file(), result.stderr
 

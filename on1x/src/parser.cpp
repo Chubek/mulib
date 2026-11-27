@@ -1657,7 +1657,11 @@ class Parser {
     ModuleSignature module_signature(){
      ModuleSignature signature;signature.where=peek().where;
      if(!accept("abstract")){
-      signature.members=interface();
+      auto members=interface();
+      signature.members.reserve(members.size());
+      for(auto& member:members)
+       signature.members.push_back({std::move(member.where),std::move(member.name),
+                                    std::move(member.signature)});
       return signature;
      }
      consume("module");signature.module=module_name();consume(";");
@@ -1684,8 +1688,9 @@ class Parser {
        signature.types.push_back({std::move(where),std::move(name),parameters.size()});
        continue;
       }
-      if(!accept("fn"))
-       throw Error(peek().where,"abstract module accepts only 'type T;' and 'fn name(...) -> type;' declarations",
+      const bool procedure=accept("proc");
+      if(!procedure&&!accept("fn"))
+       throw Error(peek().where,"abstract module accepts only 'type T;', 'fn name(...) -> type;' and 'proc name(...);' declarations",
                    "ON1X-INTERFACE-SHAPE");
       auto where=peek().where;auto name=ident();
       if(!functions.insert(name).second)
@@ -1699,9 +1704,11 @@ class Parser {
         throw Error(at,"duplicate interface parameter","ON1X-INTERFACE-DUPLICATE");
        consume(":");parameters.push_back(type());
       }while(accept(","));
-      consume(")");consume("->");auto result=type();consume(";");
+      consume(")");Type result=Type::Void;
+      if(!procedure){consume("->");result=type();}
+      consume(";");
       signature.members.push_back({std::move(where),std::move(name),
-                                   Type::function(std::move(parameters),std::move(result))});
+                                   Type::function(std::move(parameters),std::move(result)),procedure});
      }
      if(signature.members.empty()&&signature.types.empty())
       throw Error(peek().where,"abstract module requires at least one declaration","ON1X-INTERFACE-SHAPE");

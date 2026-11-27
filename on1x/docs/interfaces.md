@@ -107,17 +107,19 @@ similarly requires a nominal declaration of the same arity. The resulting
 abstract identity belongs to the provider, not to the import spelling. Fields,
 constructors, and layout are not part of the signature.
 
-Function declarations require one original local, explicitly typed `fn`
-definition. Parameter names are not part of the match. The supported types
+Callable declarations require one original local, explicitly typed definition.
+A `fn` must match a `fn`; `proc reset(value: i64);` must match a `proc`,
+not a `fn` returning `void`. A procedure declaration has no result clause.
+Parameter names are not part of the match. The supported types
 are numeric scalars, `bool`, `char`, `string`, their tuples, and references to
 abstract types listed in the same signature. `void` is permitted only as the
-whole result. Generic functions, procedures, borrowed parameters, imports and
+whole result. Generic functions, borrowed parameters, imports and
 re-exports do not satisfy these declarations.
 
 Declared-module signature conformance compares source declarations, not
 implementation bodies. It never authorizes executable emission. When a
-loader uses a function-only signature as a module boundary, listing a
-function does not increase its visibility, and unlisted members are not part
+loader uses a callable-only signature as a module boundary, listing a
+callable does not increase its visibility, and unlisted members are not part
 of that boundary. The current executable HIR cannot carry opaque source
 types, so any executable load that reaches an associated signature declaring
 an abstract type must reject it instead of exposing its representation.
