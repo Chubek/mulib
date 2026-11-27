@@ -16,6 +16,7 @@
 #include "../hir/MEMGraph/storage.hpp"
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
+#include "project_module_index.hpp"
 #include "proxy_policy.hpp"
 #include "../hir/inspect_hir.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -561,6 +562,28 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
  out<<"]}\n";
  return out.str();
 }
+std::string project_module_graph(const on1x::LoadedUnit& loaded){
+ using on1x::project_index::json::quote;
+ std::ostringstream result;
+ result<<"{\"schema\":\"on1x.project-module-graph/v1\",\"sources\":[";
+ bool first=true;
+ std::set<std::filesystem::path> sources;
+ for(const auto& source:loaded.dependencies){
+  if(!first)result<<',';
+  first=false;result<<quote(source.string());
+  sources.insert(source);
+ }
+ result<<"],\"edges\":[";first=true;
+ for(const auto& [importer,imported]:loaded.source_edges){
+  // Namespace packages need no physical source. They are resolver vertices
+  // rather than edges in the staged-source graph.
+  if(!sources.contains(importer)||!sources.contains(imported))continue;
+  if(!first)result<<',';
+  first=false;result<<'['<<quote(importer.string())<<','<<quote(imported.string())<<']';
+ }
+ result<<"]}\n";
+ return result.str();
+}
  std::string callable_signature(const on1x::Function& function){
   std::vector<on1x::Type> parameters;
   for(const auto& parameter:function.params)parameters.push_back(parameter.type);
@@ -748,6 +771,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
    "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
    "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
+   "       on1xc --project-module-graph INPUT.on1x --project-module-index FILE (staged graph JSON)\n"
    "       on1xc --operator-info [--source-only] INPUT.on1x [-o OUTPUT] (checked operator information as JSON)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
    "       on1xc [--emit-vm | --run-vm] INPUT [-o OUTPUT] [--ir-input]\n"
@@ -907,6 +931,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
       bool type_safety=false;
     on1x::meta::PpxOptions ppx;
     auto loader=on1x::default_loader_options(argv[0]);
+    std::string project_module_index;
      std::vector<std::filesystem::path> import_paths;
      std::vector<std::filesystem::path> stdlib_paths,ppx_paths,stdppx_paths;
     std::vector<std::string> admission_files;
@@ -1030,7 +1055,13 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
        if(arg=="--kernel-stage"){loader.kernel_stage=true;continue;}
        if(arg=="--kernel-load-time"){loader.kernel_load_time=true;continue;}
          if(arg=="--check-memory"){select_mode(arg);memory=true;continue;}
-         if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"){select_mode(arg);continue;}
+         if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"||
+            arg=="--project-module-graph"){select_mode(arg);continue;}
+     if(arg=="--project-module-index"){
+      if(!project_module_index.empty()||++i>=argc||!argv[i][0])
+       throw std::runtime_error("--project-module-index requires one nonempty path");
+      project_module_index=argv[i];continue;
+     }
      if(arg=="--interface"){
       if(++i>=argc||!argv[i][0])throw std::runtime_error("--interface requires a nonempty path");
       if(loader.interfaces.size()>=on1x::max_interface_files)throw std::runtime_error("interface file count limit exceeded");
@@ -1138,11 +1169,11 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
                      !ppx.schemas.empty()||!loader.extensions.enabled.empty()))
      throw std::runtime_error("--source-only requires --operator-info without PPX or declaration extensions");
      if(loader.kernel_load_time){
-     if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces")||
+     if((mode!="--emit-c"&&mode!="--deps"&&mode!="--check-interfaces"&&mode!="--project-module-graph")||
         list_opts||!sdk_mode.empty()||ir_input||memory||type_safety||
         !archvirt_mode.empty()||cephyr_object||loader.kernel_c11||loader.kernel_stage||
         !ppx.programs.empty()||!ppx.schemas.empty()||ppx.allow_source||!loader.extensions.enabled.empty())
-      throw std::runtime_error("--kernel-load-time requires direct C11 emission, --deps, or --check-interfaces without KernelBind, PPX or declaration extensions");
+      throw std::runtime_error("--kernel-load-time requires direct C11 emission, dependency inspection, or --check-interfaces without KernelBind, PPX or declaration extensions");
      loader.extensions.execute=false;
     }
    if(archvirt_uncached&&(archvirt_mode.empty()||archvirt_mode=="--vm-run"))
@@ -1214,6 +1245,7 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
         const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
            mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
        const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
+         mode!="--project-module-graph"&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
           mode!="--print-stdlib"&&mode!="--stdlib-resource";
          if(!resource_policy.empty()&&(!checked_source||mode=="--check-interfaces"||
@@ -1292,8 +1324,11 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
         write_all(out,roots.front().string()+"\n");return 0;
        }
          if(source.empty()){usage();return 2;}
+         if(mode=="--project-module-graph"&&project_module_index.empty())
+          throw std::runtime_error("--project-module-graph requires --project-module-index");
          on1x::proxy::apply(on1x::proxy::current_project());
-         loader.extensions.execute=!source_only&&mode!="--deps"&&mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
+         loader.extensions.execute=!source_only&&mode!="--deps"&&mode!="--project-module-graph"&&
+          mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
        if(mode=="--repair"){
@@ -1383,7 +1418,16 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
 #endif
          return mir_output(module,mode,out,analysis_work,optimize?&optimization:nullptr,vm_prefixes,scratch_stack_bytes,mir_target);
     }
-   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||mode=="--project-module-graph")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
+   if(!project_module_index.empty()){
+    for(auto& [name,member]:on1x::project_index::read(project_module_index)){
+     auto& indexed=loader.module_members[name];
+     indexed.package=member.package.string();
+     indexed.declared_name=std::move(member.declared_name);
+     indexed.fragments=std::move(member.fragments);
+     indexed.interfaces=std::move(member.interfaces);
+    }
+   }
    if(mode=="--kernel-imports"){
     write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
    }
@@ -1419,6 +1463,9 @@ std::string kernel_requests(const on1x::KernelImportRequests& inspected){
     if(mode=="--deps"){
      std::ostringstream paths;for(const auto& path:loaded.dependencies)paths<<path.string()<<"\n";
      write_all(out,paths.str());return 0;
+    }
+    if(mode=="--project-module-graph"){
+     write_all(out,project_module_graph(loaded));return 0;
     }
        auto& unit=loaded.unit;
        if(interface_mode){

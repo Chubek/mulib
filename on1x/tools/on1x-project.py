@@ -1868,8 +1868,10 @@ def source_policy(executor, compiler, file, root, libraries, *, declared_module=
     for i in range(len(tokens) - 1):
         if tokens[i] == b'@' and tokens[i + 1] in (b'ppx', b'enable', b'extension'):
             fail(f'{file}: source PPX and executable extensions are not available in project builds')
-        if tokens[i] == b'import' and tokens[i + 1].startswith(b'"'):
-            quoted_import(file, tokens[i + 1][1:-1].decode('utf-8'), root, libraries)
+        if tokens[i] == b'import':
+            target = i + (2 if tokens[i + 1] == b'program' else 1)
+            if target < len(tokens) and tokens[target].startswith(b'"'):
+                quoted_import(file, tokens[target][1:-1].decode('utf-8'), root, libraries)
         if tokens[i] == b'from' and tokens[i + 1] in (b'.', b'...'):
             # Match the loader's relative `from` depth: one dot stays at
             # this module's directory; each additional dot ascends a level.
