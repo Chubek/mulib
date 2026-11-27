@@ -114,6 +114,7 @@ struct Expr {
   OperatorPosition operator_position=OperatorPosition::Infix;
   std::shared_ptr<const OperatorParse> operator_parse;
   bool operator_grouped=false;
+  bool dot_path=false; // Ungrouped dotted identifier chain, eligible for loader module lookup.
   std::vector<std::string> labels;
   std::vector<Pattern> patterns;
    bool statement_match=false;

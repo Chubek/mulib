@@ -46,6 +46,7 @@ inline ExprPtr clone_expression(const Expr& e,std::size_t& budget){
    out->operator_lexeme2=e.operator_lexeme2;out->operator_identity=e.operator_identity;
     out->operator_position=e.operator_position;
     out->operator_parse=e.operator_parse;out->operator_grouped=e.operator_grouped;
+    out->dot_path=e.dot_path;
    out->labels=e.labels;
    for(const auto& p:e.patterns)out->patterns.push_back(clone_pattern(p,budget));
     out->statement_match=e.statement_match;out->sum_match=e.sum_match;out->move_out=e.move_out;out->borrow=e.borrow;out->noreturn=e.noreturn;out->unsafe_region=e.unsafe_region;

@@ -870,13 +870,16 @@ class Parser {
      return {std::move(e)};
     }
      std::string name=ident();
-    // A qualified module reference is lowered to a lexical global by the loader.
-    // A spaced dot in macro syntax remains a dotted-list tail.
-    while(at(".")&&peek().where.offset==ts[pos-1].where.offset+ts[pos-1].text.size()&&
-          peek(1).where.offset==peek().where.offset+1){
-     ++pos;name+="."+ident();
-     if(name.size()>4096)throw Error(t.where,"qualified name exceeds 4096 bytes");
-    }
+     // Qualified macro calls have a syntax name, not a value receiver. Other
+     // dotted paths are postfix projections until the loader resolves them.
+     std::size_t path=0;
+     while(peek(path).text=="."&&is_ident(peek(path+1).text)&&
+           peek(path).where.offset==ts[pos+path-1].where.offset+ts[pos+path-1].text.size()&&
+           peek(path+1).where.offset==peek(path).where.offset+1)path+=2;
+     if(peek(path).text=="!")while(path){
+      ++pos;name+="."+ident();path-=2;
+      if(name.size()>4096)throw Error(t.where,"qualified name exceeds 4096 bytes");
+     }
    auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Variable;e->where=t.where;e->text=name;
      if(accept("!")){
       e->kind=Expr::Kind::MacroCall;consume("(");
@@ -946,6 +949,18 @@ class Parser {
        e->where=ts[pos-1].where;e->text=ident();
         e->children.push_back(std::move(value.node));
         stamp(*e,OperatorForm::Suffix);value=bounded(std::move(e),value.depth+1);continue;
+      }
+      if(at(".")&&is_ident(peek(1).text)){
+       const bool attached=peek().where.offset==ts[pos-1].where.offset+ts[pos-1].text.size()&&
+                           peek(1).where.offset==peek().where.offset+1;
+       // In macro syntax a separated dot still introduces a dotted-list tail.
+       if((templating||syntax_atoms)&&!attached)break;
+       auto e=std::make_unique<Expr>();e->kind=Expr::Kind::Field;e->where=value.node->where;
+       ++pos;e->text=ident();
+       e->dot_path=attached&&!value.node->operator_grouped&&
+                   (value.node->kind==Expr::Kind::Variable||value.node->dot_path);
+       e->children.push_back(std::move(value.node));
+       stamp(*e,OperatorForm::Suffix);value=bounded(std::move(e),value.depth+1);continue;
       }
        if(at("?")||(repeated(peek().text,'?')&&!trailing_operator(peek().text))){
        auto where=peek().where;split_after_first();

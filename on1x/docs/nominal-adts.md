@@ -26,7 +26,7 @@ enum Result<T,E> { Ok(T), Err(E) }
 
 fn main() {
   let p = record<Point>{y: 2, x: 40};
-  let answer = variant<Option<i64>>(Some, p["x"] + p["y"]);
+  let answer = Option<i64>::Some(p.x + p.y);
   println(match answer with { None() => 0, Some(n) => n });
 }
 ```
@@ -35,10 +35,13 @@ fn main() {
 
 - Declarations are intrinsic, module-level, immutable products/tagged sums.
   Existing structural data syntax and semantics remain unchanged. Constructors
-  use explicit `record<Name<args>>{fields}` and `variant<Name<args>>(Tag,payload)`
-  spellings. Empty payloads use `record{}`; multiple payloads use a tuple.
+  use `record<Name<args>>{fields}` and `Enum<args>::Tag(payload)`, or the
+  existing `variant<Name<args>>(Tag,payload)` spelling. With `::`, a tag
+  with no payload can be used bare, and multiple arguments form a tuple.
+  With `variant`, pass an explicit `record{}` or tuple for those payloads.
   Constructor tags are selected from that named enum's catalog, not global
   functions. Patterns use the existing constructor patterns on a known enum.
+  As with `p["x"]`, `p.x` projects a record, not an unchecked enum payload.
 - Identity is the declaring module plus declaration, with invariant type
   arguments, including unused (phantom) arguments. Re-export/alias references
   preserve identity. Equal representation never implies assignability.

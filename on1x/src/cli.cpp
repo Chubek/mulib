@@ -2,6 +2,7 @@
 #include <on1x/analysis.hpp>
 #include <on1x/sema.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/inherent.hpp>
 #include <on1x/operator_lowering.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/discovery.hpp>
@@ -1492,7 +1493,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
      for(const auto& registration:unit.ppx)if(extension_names.contains(registration.label))
       throw on1x::Error(registration.where,"ON1X-CAT-ENABLE: source PPX label conflicts with active bundled extension: "+registration.label,"ON1X-CAT-ENABLE");
    if(mode=="--emit-ast"){
-    on1x::expand_macros(unit);auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
+     on1x::expand_macros(unit);on1x::inherent::lower_enum_members_for_ppx(unit);
+     auto tree=on1x::meta::encode(unit);on1x::meta::base_schema().validate(tree);
     write_all(out,on1x::meta::write_sexpr(tree));return 0;
     }
      on1x::meta::rewrite(unit,ppx);

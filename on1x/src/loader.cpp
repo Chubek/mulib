@@ -1034,7 +1034,8 @@ class Loader {
   }
  void bind(Scope& scope,const Pattern& p){pattern_bindings(p,[&](const Pattern& name){scope.insert(name.name);});}
  void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
-  void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false){
+   void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false,
+                  std::size_t* value_prefix=nullptr){
   auto dot=text.find('.');auto first=text.substr(0,dot);
    if(locals.contains(first)){
     if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
@@ -1067,10 +1068,23 @@ class Loader {
      for(auto split=member.rfind('.');split!=std::string::npos;split=split?member.rfind('.',split-1):std::string::npos){
        auto child=visible.modules.find(member.substr(0,split));if(child==visible.modules.end())continue;
       module=child->second;member=member.substr(split+1);descended=true;break;
-     }
-     if(!descended)break;
-     }
-     throw Error(at,"module has no export: "+text);
+      }
+      if(!descended)break;
+      }
+      // A module value may itself be the base of a field projection. Resolve
+       // only the value prefix, under the same module/export rules as a plain
+       // qualified reference. Type and syntax lookups still require a full name.
+       if(value_prefix){
+        const auto& values=exported(*module).values;
+        for(auto split=member.rfind('.');split!=std::string::npos;
+            split=split?member.rfind('.',split-1):std::string::npos){
+         auto symbol=values.find(member.substr(0,split));
+         if(symbol==values.end())continue;
+         if(current_module)require_access(symbol->second,*current_module,at);
+         *value_prefix-=member.size()-split;text=name(symbol->second);return;
+        }
+      }
+      throw Error(at,"module has no export: "+text);
     }
     throw Error(at,"unknown module qualifier: "+text);
   }
@@ -1206,8 +1220,38 @@ class Loader {
    if(rule.expression)expression(*rule.expression,names,values,syntax);
    body(rule.body,names,values,syntax);
   }
- }
-   void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax){
+   }
+    static std::string dot_spelling(const Expr& e){
+     if(e.kind==Expr::Kind::Variable)return e.text;
+     if(!e.dot_path)return {};
+     auto spelling=dot_spelling(*e.children.front());
+     spelling+="."+e.text;
+     if(spelling.size()>4096)throw Error(e.where,"qualified name exceeds 4096 bytes");
+     return spelling;
+    }
+    bool resolve_dot_path(Expr& e,const Names& names,const Scope& values,bool direct){
+     if(!e.dot_path)return false;
+     auto spelling=dot_spelling(e);
+     const auto first=spelling.substr(0,spelling.find('.'));
+     // Consume the parser marker along the whole chain; none of these label
+     // names is a reference. A lexical binding always wins over a module.
+     for(auto* node=&e;node->dot_path;node=node->children.front().get())node->dot_path=false;
+     if(values.contains(first)||names.values.contains(first))return false;
+     Expr resolved;resolved.kind=Expr::Kind::Variable;resolved.where=e.where;resolved.text=std::move(spelling);
+     const auto original_size=resolved.text.size();
+     auto prefix_size=original_size;
+     if(!kernel_reference(resolved,values,direct)&&!foreign_reference(resolved,values))
+      reference(resolved.text,e.where,names,values,false,false,&prefix_size);
+     auto* target=&e;
+     for(auto remaining=original_size;remaining>prefix_size;target=target->children.front().get())
+      remaining-=target->text.size()+1;
+     target->kind=Expr::Kind::Variable;
+     target->text=std::move(resolved.text);
+     target->children.clear();
+     target->operator_parse.reset();
+     return true;
+    }
+    void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax,bool direct=false){
     e.result=type_reference(e.result,e.where,names);
     for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
     for(auto& parameter:e.type_parameters)constraints(parameter.bounds,names);
@@ -1230,18 +1274,18 @@ class Loader {
        e.cliche_arguments.clear();e.cliche_member.clear();
       }else cliche_reference(e.text,e.where,names);
      }
-     if(e.kind==Expr::Kind::InherentMember&&e.result==Type::Void&&e.children.size()==1&&
-        e.children[0]&&e.children[0]->kind==Expr::Kind::Variable){
-      const auto& spelling=e.children[0]->text;
-      const auto first=spelling.substr(0,spelling.find('.'));
-      if(!values.contains(first)&&!names.values.contains(spelling))
+      if(e.kind==Expr::Kind::InherentMember&&e.result==Type::Void&&e.children.size()==1&&e.children[0]){
+       const auto spelling=dot_spelling(*e.children[0]);
+       const auto first=spelling.substr(0,spelling.find('.'));
+       if(!spelling.empty()&&!values.contains(first)&&!names.values.contains(first)){
         if(auto nominal=named_reference(spelling,names,false,e.where)){
-       e.result=Type::named(*nominal);e.children.clear();
+         e.result=Type::named(*nominal);e.children.clear();
+        }
+       }
       }
-     }
-     if(e.kind==Expr::Kind::Variable&&!foreign_reference(e,values)){
-      (void)kernel_reference(e,values,false);reference(e.text,e.where,names,values,false);
-     }
+      if(resolve_dot_path(e,names,values,direct))return;
+      if(e.kind==Expr::Kind::Variable&&!kernel_reference(e,values,direct)&&!foreign_reference(e,values))
+       reference(e.text,e.where,names,values,false);
    if(options.kernel_c11&&(e.kind==Expr::Kind::SyntaxLet||e.kind==Expr::Kind::MacroCall||
       e.kind==Expr::Kind::Quote||e.kind==Expr::Kind::Run||e.kind==Expr::Kind::Splice||e.kind==Expr::Kind::Lift))
     throw Error(e.where,"ON1X-KERNEL-PROFILE: staging and local syntax are outside this C11 profile","ON1X-KERNEL-PROFILE");
@@ -1273,7 +1317,7 @@ class Loader {
    if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);body(e.body,names,inner,syntax);
     for(const auto& s:e.body)if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(inner,*s.pattern);else inner.insert(s.name);}
     expression(*e.children.at(1),names,inner,syntax);return;}
-   if(e.callee&&!kernel_reference(*e.callee,values,true))expression(*e.callee,names,values,syntax);
+    if(e.callee)expression(*e.callee,names,values,syntax,true);
   if(e.syntax_tail)expression(*e.syntax_tail,names,values,syntax);
   for(auto& child:e.children)expression(*child,names,values,syntax);
   body(e.body,names,values,syntax);

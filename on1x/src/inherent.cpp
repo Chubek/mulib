@@ -94,8 +94,8 @@ Function generated_function(const InherentImplementation& implementation,
  return out;
 }
 
-template<class F> void expressions(const Unit& unit,F&& visit){
- auto expression=[&](auto&& self,const Expr& e)->void{
+template<class U,class F> void expressions(U& unit,F&& visit){
+ auto expression=[&](auto&& self,auto& e)->void{
   visit(e);
   if(e.callee)self(self,*e.callee);
   if(e.syntax_tail)self(self,*e.syntax_tail);
@@ -282,6 +282,61 @@ Selection Catalog::find(const std::string& nominal,const std::string& name,
  if(found==members.end())
   fail(at,"type "+nominal+" has no inherent member '"+name+"'","ON1X-IMPL-MEMBER");
  return found->second;
+}
+
+bool Catalog::contains(const std::string& nominal,const std::string& name) const{
+ return members.contains({nominal,name});
+}
+
+bool lower_enum_member(Expr& e,const NominalDeclaration& declaration){
+ const bool called=e.kind==Expr::Kind::Call;
+ auto* selection=called?e.callee.get():&e;
+ if(!selection||selection->kind!=Expr::Kind::InherentMember||
+    !selection->children.empty()||selection->result.kind()!=Type::Named||
+    declaration.kind!=Type::Sum)return false;
+ auto label=std::find(declaration.labels.begin(),declaration.labels.end(),selection->text);
+ if(label==declaration.labels.end())return false;
+ const auto index=static_cast<std::size_t>(label-declaration.labels.begin());
+ if(index>=declaration.fields.size())fail(declaration.where,"malformed enum payload declaration");
+ const auto& payload=declaration.fields[index];
+ if(e.children.empty()&&(payload.kind()!=Type::Record||!payload.elements().empty()))
+  throw Error(selection->where,"variant "+*label+" requires a payload","ON1X-TYPE");
+ if(e.children.size()>1&&(!payload.is_tuple()||payload.elements().size()!=e.children.size()))
+  throw Error(selection->where,"variant "+*label+" payload arity mismatch","ON1X-TYPE");
+ auto owner=selection->result;
+ if(owner.arguments().empty()&&!declaration.parameters.empty())
+  owner=Type::named(owner.nominal(),std::vector<Type>(declaration.parameters.size(),Type::Hole));
+ // Enum declarations already represent a nullary payload as an empty record
+ // and a multi-field payload as a tuple. Let ordinary variant checking check
+ // the resulting payload against that schema.
+ if(e.children.size()!=1){
+  auto packed=std::make_unique<Expr>();
+  packed->kind=e.children.empty()?Expr::Kind::Record:Expr::Kind::Tuple;
+  packed->where=selection->where;
+  packed->children=std::move(e.children);
+  e.children.push_back(std::move(packed));
+ }
+ e.kind=Expr::Kind::Variant;
+ e.text=*label;
+ e.result=std::move(owner);
+ e.callee.reset();
+ return true;
+}
+
+void lower_enum_members_for_ppx(Unit& unit){
+ // Unit v1 does not transport inherent implementations. Do not reinterpret
+ // any associated members while reporting that existing wire restriction.
+ if(present(unit))return;
+ std::map<std::string,const NominalDeclaration*> enums;
+ for(const auto& declaration:unit.nominals)
+  if(declaration.kind==Type::Sum)enums.emplace(declaration.name,&declaration);
+ if(enums.empty())return;
+ expressions(unit,[&](Expr& e){
+  const auto* selection=e.kind==Expr::Kind::Call?e.callee.get():&e;
+  if(selection&&selection->kind==Expr::Kind::InherentMember&&selection->result.kind()==Type::Named)
+   if(auto found=enums.find(selection->result.nominal());found!=enums.end())
+    lower_enum_member(e,*found->second);
+ });
 }
 
 void prepare(Unit& unit){

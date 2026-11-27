@@ -1,6 +1,7 @@
 #include <on1x/meta.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/discovery.hpp>
+#include <on1x/inherent.hpp>
 #include <on1x/operator_scope.hpp>
 #include "ppx_internal.hpp"
 #include "ppx_regroup.hpp"
@@ -352,6 +353,7 @@ void rewrite(Unit& unit,const PpxOptions& options){
    if(!found.schema.empty())native_schemas[p.label]=found.schema.string();
   }
   for(const auto& [label,path]:options.schemas)schema.extend(read_source_file(path),label,path);
+  inherent::lower_enum_members_for_ppx(working);
   auto tree=encode(working);schema.validate(tree);
   const auto is_docstring=[](const SExpr& entry){return entry.items.front().text=="Docstring";};
   std::vector<SExpr> docs;

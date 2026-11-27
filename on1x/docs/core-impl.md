@@ -33,10 +33,13 @@ lowered to the first ordinary function argument.
 
 `::` is a distinct inherent-member namespace:
 
-- `value["field"]` projects a record field.
+- `value.field` and `value["field"]` project a record field.
 - `value::member` selects a receiver member from the value's canonical nominal
   type.
 - `Type::member` and `Type<arguments>::member` select an associated member.
+- `Enum::Variant` selects a payload-free enum variant; use
+  `Enum::Variant(payload)` for a variant with payload. A same-named inherent
+  member keeps its existing meaning.
 - Cliche lookup, such as `Show<T>::show(value)`, remains a separate namespace.
   A spelling that is simultaneously an imported cliche and nominal type is
   rejected as ambiguous.

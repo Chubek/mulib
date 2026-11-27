@@ -122,7 +122,7 @@ reject('missing_member', 'from alpha import absent;fn main(){}', "has no export 
 reject('missing_qualified', 'import alpha;fn main(){alpha.absent();}', 'module has no export')
 reject('alias_collision', 'import alpha as x,beta as x;fn main(){}', 'conflicting import')
 reject('selective_collision', 'from alpha import value;from beta import value;fn main(){}', 'conflicting import')
-reject('local_module_shadow', 'import alpha;fn main(){let alpha=1;alpha.value(2);}', 'shadowed by local')
+reject('local_module_shadow', 'import alpha;fn main(){let alpha=1;alpha.value(2);}', 'field projection requires a known record shape')
 reject('module_value', 'import alpha;fn main(){let x=alpha;}', 'not a first-class value')
 reject('namespace_leak', 'import alpha;fn main(){value(2);}', 'unknown function')
 reject('wildcard', 'from alpha import *;fn main(){}', 'expected identifier')

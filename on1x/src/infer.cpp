@@ -1311,10 +1311,9 @@ class Inference {
    }
    unify(actual,expectation,e.where);return expectation;
   }
-  Term call(Expr& e,std::optional<Term> callable_override={},
-            std::optional<Term> first_argument={}) {
-   auto& callee=*e.callee;
-   normalize_inherent_owner(callee);
+   Term call(Expr& e,std::optional<Term> callable_override={},
+             std::optional<Term> first_argument={}) {
+    auto& callee=*e.callee;
    if(!callable_override&&callee.kind==Expr::Kind::InherentMember){
     ExprPtr receiver;
     std::optional<Term> receiver_type;
@@ -1521,7 +1520,13 @@ class Inference {
    Term expression(Expr& e,std::optional<Term> hint={}) {
    Term result=0;const auto& at=e.where;
    tick(at);
-   normalize_inherent_owner(e);
+   if(auto* selection=e.kind==Expr::Kind::Call?e.callee.get():&e;selection){
+    normalize_inherent_owner(*selection);
+    if(selection->kind==Expr::Kind::InherentMember&&selection->children.empty()&&
+       selection->result.kind()==Type::Named&&
+       !inherent_members.contains(selection->result.nominal(),selection->text))
+     inherent::lower_enum_member(e,catalog.find(selection->result.nominal(),selection->where));
+   }
        switch(e.kind) {
         case Expr::Kind::OperatorReference:case Expr::Kind::OperatorUnary:
         case Expr::Kind::OperatorBinary:case Expr::Kind::OperatorTernary:

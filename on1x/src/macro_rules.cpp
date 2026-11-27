@@ -59,7 +59,8 @@ MacroCaptures MacroRules::duplicate(const MacroCaptures& source,const Location& 
 std::string MacroRules::category(const Expr& e)const{
  if(e.kind==K::OperatorReference)return "CustomOperator";
  if((e.kind==K::Unary||e.kind==K::Binary)&&e.children.empty())return "Operator";
- if(e.kind==K::Propagate)return "Expression";
+   if(e.kind==K::Propagate)return "Expression";
+   if(e.kind==K::InherentMember||e.kind==K::ClicheMember)return "Expression";
  if(e.kind>=K::Record&&e.kind<=K::Length)return "DataExpression";
   if(e.kind==K::PatternMatch||e.kind==K::Loop)return "DataExpression";
  if(e.kind==K::Case)return "MatchArm";

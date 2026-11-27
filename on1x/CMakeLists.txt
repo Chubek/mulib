@@ -1173,6 +1173,11 @@ if(BUILD_TESTING)
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_data.py" "$<TARGET_FILE:on1xc>"
     "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/data" "${CMAKE_C_COMPILER}"
     ${_test_c_flags})
+  add_test(NAME on1x.field_access COMMAND "${Python3_EXECUTABLE}" -B
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_field_access.py" "$<TARGET_FILE:on1xc>"
+    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/field-access" "${CMAKE_C_COMPILER}"
+    ${_test_c_flags})
+  set_tests_properties(on1x.field_access PROPERTIES TIMEOUT 120)
   set_tests_properties(on1x.compiler on1x.limits on1x.functions on1x.json on1x.inference on1x.closures on1x.tuples on1x.parameter_patterns on1x.data PROPERTIES TIMEOUT 120)
   set_tests_properties(on1x.json PROPERTIES SKIP_RETURN_CODE 77)
   add_test(NAME on1x.poly COMMAND "${Python3_EXECUTABLE}"

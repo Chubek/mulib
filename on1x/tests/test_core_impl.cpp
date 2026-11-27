@@ -101,6 +101,12 @@ int main(){
   for(const auto& function:unit.functions)walk_function(function,projection);
   require(!projection,"an inherent projection survived checked HIR elaboration");
 
+  auto dots=checked("record P{x:i64} enum E{Empty,Point(P)} fn main(){"
+                    "let e=E::Point(record<P>{x:42});"
+                    "println(match e with {Empty()=>0,Point(p)=>p.x});}");
+  verify_nominals(dots);
+  require(!emit_c(dots,"dots").empty(),"direct parser/checker rejected dot/variant syntax");
+
   inherent::Catalog members(unit);
   auto get=members.find("Box","get",{"core-impl-test"});
   auto answer=members.find("Box","answer",{"core-impl-test"});

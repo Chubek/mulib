@@ -11,8 +11,10 @@ fixed arrays and slices; it does not add a general list/iterator protocol.
 
 Intrinsic [nominal declarations](nominal-adts.md) add module-level
 `record Point { x:i64, y:i64 }` and `enum Option<T> { None, Some(T) }`.
-Use `record<Point>{x:40,y:2}` or `variant<Option<i64>>(Some,42)`;
-empty payloads are `record{}` and multi-field payloads are tuples. Type arguments
+Use `record<Point>{x:40,y:2}`, `Option<i64>::Some(42)` or
+`variant<Option<i64>>(Some,42)`. A payload-free variant can be selected as
+`Option<i64>::None`. In the `variant` spelling, empty payloads are `record{}`
+and multi-field payloads are tuples. Type arguments
 and nominal identities remain exact through inference, imports and C11. The
 copyable profile admits bounded, nonrecursive fields. The [unique-owner
 extension](recursive-owning-adts.md) permits recursion only across admitted
@@ -28,8 +30,10 @@ Intrinsic [nominal implementation blocks](core-impl.md) use
 `impl<T> Box<T> { ... }`, `value::member` and `Type::member` for deterministic
 static members on records and enums. Associated functions may be first-class;
 receiver methods require direct calls. By-value `self` is limited to copy-safe
-layouts, while `ref self` and `move self` currently reject. Field projection
-remains `value["field"]`.
+layouts, while `ref self` and `move self` currently reject. Use `value.field`
+or `value["field"]` for instance record fields, including record payloads
+bound by a match. Dot projection does not extract an enum payload. A lexical
+value binding takes precedence over a same-named module alias in `value.field`.
 
 Intrinsic [operators](operators.md) add module and block-local punctuation declarations,
 lexically scoped fixity directives, and `operator("...")` function values.
@@ -149,7 +153,7 @@ init      = ('let'|'var') pattern [ ':' type ] '=' expr | ID '=' expr | expr ;
 step      = ID '=' expr | expr ;
 expr    = prefix { binary_operator expr } ;
 prefix  = ('!'|'-') prefix | postfix ;
-postfix = atom { '(' [ expr { ',' expr } ] ')' | '[' ( ID | expr [ ':' expr ] ) ']' } ;
+postfix = atom { '(' [ expr { ',' expr } ] ')' | '[' ( ID | expr [ ':' expr ] ) ']' | '.' ID } ;
 atom    = '(' expr ')' | '(' expr ',' expr { ',' expr } ')'
         | literal | module | lambda | 'quote' quote_region
         | 'record' '{' [ ID ':' expr { ',' ID ':' expr } ] '}'
