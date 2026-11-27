@@ -318,27 +318,22 @@ class Loader {
    return module_bound(names,alias)||names.values.contains(alias)||names.types.contains(alias)||
           names.syntax.contains(alias)||names.cliches.contains(alias);
   }
-    fs::path legacy_standard(const fs::path& root,const std::string& module,const Location& at,bool modern=false){
-        const bool operators=module=="operators";
-        const auto checked=[&](const fs::path& base,bool chosen){
-         auto path=candidate(base/module_path(module),at,operators,modern&&chosen);
-         if(path.empty())return path;
-         auto origin=canonical(path,at);
-         if(!contained(base,origin))
-          throw Error(at,"standard module escapes its search root: "+path.string(),"ON1X-MODULE-RESOLUTION");
-         return origin;
-        };
-        auto first=checked(root,true);
+   fs::path legacy_standard_at(const fs::path& root,const std::string& module,const Location& at,bool modern=false){
+    auto path=candidate(root/module_path(module),at,module=="operators",modern);
+    if(path.empty())return path;
+    auto origin=canonical(path,at);
+    if(!contained(canonical(root,at),origin))
+     throw Error(at,"standard module escapes its search root: "+path.string(),"ON1X-MODULE-RESOLUTION");
+    return origin;
+   }
+   fs::path legacy_standard(const fs::path& root,const std::string& module,const Location& at){
+    auto first=legacy_standard_at(root,module,at);
      // Compatibility with older installed extension trees; the canonical MuLIB
      // package now lives inside stdlib, not in this legacy sibling directory.
-        auto second=checked(root.parent_path()/"std",false);
-        if(!first.empty()&&!second.empty()){
-        if(first==second)return first;
-        if(modern&&!regular(first)&&!regular(second))return first;
-       throw Error(at,"ambiguous standard module: "+module);
-      }
-      if(!first.empty()||!second.empty())return first.empty()?second:first;
-      return {};
+    auto second=legacy_standard_at(root.parent_path()/"std",module,at);
+    if(!first.empty()&&!second.empty()&&first!=second)
+     throw Error(at,"ambiguous standard module: "+module);
+    return first.empty()?second:first;
     }
   static bool contained(const fs::path& root,const fs::path& path){
    auto it=path.begin();
@@ -391,7 +386,7 @@ class Loader {
     auto file=stem;file+=".on1xm";
     if(source!=file&&source!=stem/"__init__.on1xm")
      throw Error(at,"standard implementation must use its own canonical path: "+source.string(),"ON1X-MODULE-IDENTITY");
-    auto legacy=legacy_standard(root,suffix,at,true);
+    auto legacy=legacy_standard_at(root,suffix,at,true);
     if(regular(legacy))throw Error(at,"ambiguous standard module: "+name,"ON1X-MODULE-RESOLUTION");
     Member member{root,name,{source},{}};
     const auto interface_of=[&](fs::path file,bool required){
@@ -443,7 +438,7 @@ class Loader {
    const Member* selected_standard_member(const std::string& suffix,const Location& at){
     for(const auto& root:declared_standard_roots){
      if(auto* member=standard_member(root,suffix,at))return member;
-     if(regular(legacy_standard(root,suffix,at)))break; // Earlier selected stdlib overrides later defaults.
+     if(regular(legacy_standard_at(root,suffix,at)))break; // Earlier selected stdlib overrides later defaults.
     }
     return nullptr;
    }
