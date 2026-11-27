@@ -3,6 +3,7 @@
 #include <on1x/meta.hpp>
 #include <on1x/sema.hpp>
 #include "../hir/lower_mir.hpp"
+#include "../src/ppx_internal.hpp"
 #include <iostream>
 #include <string_view>
 
@@ -35,7 +36,7 @@ void seal(Unit& unit){
 
 Unit source(std::string_view body,std::string_view before={},bool sealed=true){
  auto unit=parse(scan(std::string(prelude)+std::string(before)+"\nfn main() { "+
-                      std::string(body)+" }","provider.on1xm"));
+                      std::string(body)+" }","provider.on1x"));
  if(sealed)seal(unit);
  return unit;
 }
@@ -75,12 +76,14 @@ int main(){
   negative("projection after alias","let a=create(1); let b=a; println(b.hidden);");
   negative("nested generic projection","println(record<Wrapper<Key>>{item:create(1)}.item.hidden);");
   negative("record constructor","let forged=record<Key>{hidden:1};");
-  negative("record pattern","match create(1) with { {hidden:x}=>println(x) };");
+  negative("record pattern","let stolen=match create(1) with { record{hidden:x}=>x };");
   negative("nested record pattern",
-           "match (create(1),0) with { ({hidden:x},_)=>println(x) };");
+           "let stolen=match (create(1),0) with { (record{hidden:x},_)=>x };");
   negative("enum constructor","let forged=Choice::Number(1);");
   negative("enum nullary constructor","let forged=Choice::Empty();");
-  negative("enum match","match choose(1) with { Empty()=>(), Number(x)=>println(x) };");
+  negative("enum match","let stolen=match choose(1) with { Empty()=>0, Number(x)=>x };");
+  negative("implicit variant payload shape",
+           "let stolen=match Outer<Key>::Wrap(create(1)) with { Wrap()=>0 };");
   negative("propagate","let forged=choose(1)?;");
   negative("equality","let a=create(1); assert(a==a);");
   negative("box","let owner=box(create(1)); drop(owner);");
@@ -95,9 +98,14 @@ int main(){
 
   // A PPX processor can synthesize an ordinary nominal wire declaration, but
   // cannot replace the trusted graph and inherit its representation authority.
-  auto forged=source("println(create(1).hidden);",{},false);
-  auto wire=meta::encode(forged);
+  auto wire_source=parse(scan("record Key { hidden:i64 } "
+                              "fn main(){let k=record<Key>{hidden:1};println(k.hidden);}",
+                              "forged.on1x"));
+  auto wire=meta::encode(wire_source);
   auto original=source("println(read_key(create(1)));");
+  meta::PpxOptions attempt;
+  attempt.programs.push_back({{"forged.on1x"},"forged","not-an-authorized-transformer"});
+  rejected("PPX graph rewrite","ON1X-PPX-SCOPE",[&]{meta::rewrite(original,attempt);});
   rejected("PPX encoding","ON1X-PPX-SCOPE",[&]{(void)meta::encode(original);});
   rejected("PPX forged output","",[&]{(void)meta::decode_rewrite(wire,original);});
   if(meta::decode(wire).requires_module_boundary)
@@ -105,6 +113,7 @@ int main(){
 
   // As if a trusted IR pass accidentally moved a projection to a different
   // function. Type/layout proofs alone must not authorize C11 emission.
+  auto forged=source("println(create(1).hidden);",{},false);
   check(forged);
   seal(forged);
   rejected("forged checked projection","ON1X-INTERFACE-OPAQUE",[&]{recheck_checked_hir(forged);});
