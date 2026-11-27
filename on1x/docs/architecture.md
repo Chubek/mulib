@@ -118,14 +118,26 @@ automatic prelude is demand-loaded; explicit imports retain their definitions.
 Namespaces disappear before the v1 PPX wire boundary, preserving the existing
 type, ownership and C11 pipeline. See [the module contract](modules.md).
 
-Before resolution, the native frontend also checks a typed ASDL view of
-source units with a module header, an explicit program import, or shared
-visibility. A fresh LibStone Lua session checks selector shape and shared
-elevation bounds, preserving source locations in diagnostics. The view
-contains source spellings and annotations, not resolved bindings or
-authorization. No source text becomes Lua code. The adapter loads no Lua
-libraries from disk and does not use the ASDL search path. Bootstrap builds skip the ASDL
-pass; the C++ parser and resolver enforce the language in both profiles.
+The native frontend uses private, typed ASDL logistics at three boundaries:
+after parsing source units with a module header, program import or shared
+visibility; after checking named signature declarations; and before returning
+the resolved physical graph for a module/program load.
+The source pass checks selector shape and shared elevation with the original
+locations. The signature pass checks a projection of member names and kinds,
+not type equality or the implementation's representation. The graph pass
+checks physical endpoint references in the loader's already-resolved
+dependency sequence; it does not resolve imports, detect cycles, or affect
+publication order. The C++ parser and loader remain authoritative in both
+native and bootstrap builds. None of these facts is part of the PPX wire ABI.
+
+Each pass owns a fresh, bounded LibStone `LuaSession` and arena. The compiler
+embeds the source adapter and four versioned Lua libraries at build time.
+The pinned native loader's `new`/`version`/`describe` and `signlib` APIs
+construct and check each finalized export table; signing is not cryptographic.
+The compiler does not use the loader's filesystem-resolution or chunk-loading
+APIs. No source text becomes Lua code; there is no schema import, project Lua
+lookup, or `LIBSTONE_ASDL_PATH` execution path. Locations and diagnostics are
+copied out before the session closes. Bootstrap builds skip these projections.
 
 `stdlib/mulib/housekeeping.py` is shared by the native build helper and Exotract.
 It joins MANIFEST kernel dependencies with explicit `library/` fixture recipes,
