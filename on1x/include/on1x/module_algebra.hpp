@@ -9,6 +9,11 @@ namespace on1x::oml {
 // Only the resolver may supply owner, requester and dependency facts.
 ModuleAccess access(VisibilityRule, const ModuleProvenance& owner,
                     const ModuleProvenance& requester, bool dependency_admitted = false);
+// A resolver supplies whether the key is unoccupied, bound to the same
+// authenticated declaration, or bound to a different one. Never compare text alone.
+enum class ExistingBinding { Absent, Same, Different };
+enum class InsertDecision { Insert, Reuse, Collision };
+InsertDecision insert_view(ExistingBinding);
 bool reexport(ModuleAccess original, ModuleAccess forwarding);
 // Transaction-local views supplied by trusted adapters. No deserialization path.
 enum class Namespace { Value, NominalType, Syntax, Module, Cliche, Operator };

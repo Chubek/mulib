@@ -57,6 +57,22 @@ ModuleAccess access(VisibilityRule rule, const ModuleProvenance& owner,
                        requester.module_components.begin()), dependency_admitted};
     return static_cast<ModuleAccess>(engine().evaluate(facts, {"request", "access"}, {64, 1}));
 }
+InsertDecision insert_view(ExistingBinding binding) {
+    // The domain has three states. Compile the trusted form once per state,
+    // avoiding repeated expansion on the resolver's binding insertion path.
+    static const auto decisions = [] {
+        std::array<InsertDecision, 3> out;
+        for (auto state : {ExistingBinding::Absent, ExistingBinding::Same, ExistingBinding::Different}) {
+            auto step = judgment("insert-view", {state != ExistingBinding::Absent, state == ExistingBinding::Same});
+            if (step == "insert") out.at(static_cast<size_t>(state)) = InsertDecision::Insert;
+            else if (step == "reuse") out.at(static_cast<size_t>(state)) = InsertDecision::Reuse;
+            else if (step == "collision") out.at(static_cast<size_t>(state)) = InsertDecision::Collision;
+            else throw std::logic_error("invalid OML insert-view result");
+        }
+        return out;
+    }();
+    return decisions.at(static_cast<size_t>(binding));
+}
 bool reexport(ModuleAccess original, ModuleAccess forwarding) {
     return judgment("reexport", {original == ModuleAccess::Allowed, forwarding == ModuleAccess::Allowed}) == "true";
 }
@@ -84,9 +100,10 @@ Environment merge(const Environment& left, const Environment& right) {
     auto result = left;
     for (const auto& [key, binding] : right) {
         auto old = result.find(key);
-        auto step = judgment("insert-view", {old != result.end(), old != result.end() && identical(old->second,binding)});
-        if (step == "reuse") continue;
-        if (step != "insert") throw std::invalid_argument("OML merge collision: " + key.spelling);
+        auto step = insert_view(old == result.end() ? ExistingBinding::Absent :
+                                identical(old->second, binding) ? ExistingBinding::Same : ExistingBinding::Different);
+        if (step == InsertDecision::Reuse) continue;
+        if (step != InsertDecision::Insert) throw std::invalid_argument("OML merge collision: " + key.spelling);
         result.emplace(key, binding);
         bound(result.size());
     }
