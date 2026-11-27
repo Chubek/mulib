@@ -286,16 +286,26 @@ void clear_error(const std::shared_ptr<SessionState> &state) {
 void record_error(
     const std::shared_ptr<SessionState> &state,
     On1xSDK_CompilerCondition condition,
-    std::string code,
-    std::string message,
+    std::string_view code,
+    std::string_view message,
     std::size_t begin,
     std::size_t end,
     bool emit) noexcept {
     if (!state) return;
     try {
         state->condition = condition;
-        state->diagnostic_code = std::move(code);
-        state->diagnostic_message = std::move(message);
+        state->diagnostic_code.assign(
+            code.substr(0, ON1X_SDK_MAX_DIAGNOSTIC_TEXT_BYTES));
+        // Preserve the common diagnostic ceiling without cutting a UTF-8
+        // code point in two. Legacy source bytes can still be non-UTF-8.
+        auto length = std::min<std::size_t>(
+            message.size(), ON1X_SDK_MAX_DIAGNOSTIC_TEXT_BYTES);
+        if (length < message.size()) {
+            while (length && (static_cast<unsigned char>(message[length]) &
+                              0xc0u) == 0x80u)
+                --length;
+        }
+        state->diagnostic_message.assign(message.substr(0, length));
         state->diagnostic_begin = begin;
         state->diagnostic_end = end;
         if (emit &&
@@ -341,7 +351,7 @@ On1xSDK_Status caught(
             limited ? ON1X_SDK_COMPILER_CONDITION_NONE
                     : ON1X_SDK_COMPILER_VERIFICATION_FAILED,
             failure.diagnostic_id.empty() ? "ON1X-SDK-FRONTEND"
-                                          : failure.diagnostic_id,
+                                          : std::string_view(failure.diagnostic_id),
             failure.what(), failure.where.offset, failure.where.offset);
         return limited ? ON1X_SDK_LIMIT : ON1X_SDK_VERIFICATION_FAILED;
     } catch (const std::bad_alloc &) {
@@ -779,6 +789,10 @@ On1xSDK_Status on1x_sdk_options_set_boolean(
             next.expand_macros = value != 0; break;
         case ON1X_SDK_OPTION_STRICT_UTF8:
             next.strict_utf8 = value != 0; break;
+        case ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB:
+            if (value && next.search_paths.empty())
+                invalid("add the standard library as the first search path before selecting it");
+            next.first_search_path_is_stdlib = value != 0; break;
         default: invalid("unknown boolean option");
         }
         next.revision = publish_revision(options->state);
@@ -799,6 +813,8 @@ On1xSDK_Status on1x_sdk_options_get_boolean(
             *out_value = options->data.expand_macros; break;
         case ON1X_SDK_OPTION_STRICT_UTF8:
             *out_value = options->data.strict_utf8; break;
+        case ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB:
+            *out_value = options->data.first_search_path_is_stdlib; break;
         default: invalid("unknown boolean option");
         }
     });
@@ -854,6 +870,7 @@ On1xSDK_Status on1x_sdk_options_clear_search_paths(
     return api(options->state, [&] {
         auto next = options->data;
         next.search_paths.clear();
+        next.first_search_path_is_stdlib = false;
         next.revision = publish_revision(options->state);
         options->data = std::move(next);
     });

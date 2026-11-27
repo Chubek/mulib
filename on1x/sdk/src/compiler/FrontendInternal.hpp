@@ -69,6 +69,7 @@ struct OptionsData {
     bool prelude = false;
     bool expand_macros = false;
     bool strict_utf8 = false;
+    bool first_search_path_is_stdlib = false;
     std::vector<std::string> search_paths;
     std::vector<std::string> features;
     std::uint64_t revision = 0;
@@ -225,8 +226,8 @@ void clear_error(const std::shared_ptr<SessionState> &state);
 void record_error(
     const std::shared_ptr<SessionState> &state,
     On1xSDK_CompilerCondition condition,
-    std::string code,
-    std::string message,
+    std::string_view code,
+    std::string_view message,
     std::size_t begin = SIZE_MAX,
     std::size_t end = SIZE_MAX,
     bool emit = true) noexcept;

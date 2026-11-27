@@ -157,8 +157,15 @@ std::shared_ptr<CompilationData> compile_impl(
         loader.extensions.execute = false;
         loader.extensions.enabled.insert(
             options.features.begin(), options.features.end());
-        for (const auto &path : options.search_paths)
-            loader.paths.emplace_back(path);
+        // Reserved standard identities require a separately selected root.
+        // Do not use CLI defaults: an embedded caller supplies its own root.
+        auto path = options.search_paths.begin();
+        if (options.first_search_path_is_stdlib) {
+            loader.stdlib_paths.emplace_back(*path);
+            ++path;
+        }
+        for (; path != options.search_paths.end(); ++path)
+            loader.paths.emplace_back(*path);
         for (const auto &[path, snapshot] : snapshots)
             loader.source_overrides.emplace(
                 fs::path(path), snapshot.revision->bytes);
@@ -166,6 +173,14 @@ std::shared_ptr<CompilationData> compile_impl(
         operation.poll();
         auto loaded = on1x::load_unit(entry_revision->path, loader);
         operation.poll();
+        // The existing AST and dependency-source APIs expose full source and
+        // syntax snapshots. Do not publish them for an admitted opaque unit.
+        if (!loaded.unit.opaque_nominal_owners.empty() ||
+            !loaded.unit.opaque_function_owners.empty())
+            fail(ON1X_SDK_UNSUPPORTED,
+                 ON1X_SDK_COMPILER_CAPABILITY_DENIED,
+                 "ON1X-SDK-OPAQUE-MODULE",
+                 "opaque modules are not supported by frontend snapshots");
         if (loaded.dependencies.size() != loaded.dependency_sources.size())
             fail(ON1X_SDK_ERROR, ON1X_SDK_COMPILER_INVALID_STATE,
                  "ON1X-SDK-LOADER",

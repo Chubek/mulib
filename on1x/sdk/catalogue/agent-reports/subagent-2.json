@@ -182,6 +182,84 @@
       "proposed_signature": "On1xSDK_Status on1x_sdk_semantics_admit_ast_candidate(const On1xSDK_AST *candidate, const On1xSDK_Options *options, On1xSDK_HIR **out_checked_hir);"
     }
   ],
+  "module_logistics_followup": {
+    "baseline": "960898450e59044cf9ecfa51b696b58868a5b296",
+    "qualification_parent": "929dbc97cea53b0219fe6c506c6a4ab2d51b7149",
+    "abi": {
+      "symbols_added": [],
+      "layouts_changed": [],
+      "extension": "ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB = 4 on existing options_set_boolean/options_get_boolean",
+      "default": "off; requires a first configured search path to turn on; clearing paths revokes selection"
+    },
+    "dependency_picks": {
+      "trusted_loader": [
+        "974e7873db2f67526dcd616d15989767766c6887",
+        "dc84c68e3c36640002e9eae15c3d7c9008cb68ac",
+        "0d1a0b8858460e66c76901ffebce4877cd59b664"
+      ],
+      "private_asdl": [
+        "e3563a859afe63cb8ddcedbf6f1ef3530dcbda8d",
+        "07ba92d91ba2d3ec8fd0ea40210ca5a0a9ce044f"
+      ],
+      "signature_chain": [
+        "70e20a8bd4046356f6797c800d7902ccf62315e8",
+        "5e45dded990b1803420d8482af4f734805301b63",
+        "5c58bece3c7cfad17eb89316dfd2c7753ef5535c",
+        "b47b453cfc114a55fb01fdfb419b47635d84384c",
+        "9472a33b1d80c8318a2f0607f6e30bd290f9fae7"
+      ],
+      "opaque_and_contextual_fault_qualification": [
+        "c79a5820e4afd65ac24c8cb142a0ec543ae71f77",
+        "c01f9930e5ce53677439a48b920488db65f0e724",
+        "db108a7e7d5818373174ab846277800817e9e8a2"
+      ]
+    },
+    "canonical_route": "Physical compilation/workspace create and refresh call load_unit with the first search path as LoaderOptions::stdlib_paths only when explicitly selected. The tested named module runs check_asdl_module, check_asdl_signature on the C++-verified resolved signature, and check_asdl_graph on the canonical loaded graph. Fallback retains C++ checks. No direct SDK access to the private projection.",
+    "diagnostics": "At most one existing synchronous frontend diagnostic per failed call; record_error bounds stored/emitted text using ON1X_SDK_MAX_DIAGNOSTIC_TEXT_BYTES and preserves the canonical ID and location.",
+    "unsupported": [
+      "No source/AST/dependency snapshot publication from a loader result with opaque ownership.",
+      "No checked HIR, signature representation access, project-index API, ambient extension execution, or changes to Unit-v1.",
+      "Source-only parse remains syntax-only. Compile refresh revalidates interfaces; the existing currentness query does not witness on-disk interface freshness."
+    ],
+    "qualification": {
+      "libstone": "714cca0990225172362b300f27c4389a7cca5706",
+      "cephyr_prefix": "/mnt/nvme/mulib/build/on1x-mod-lanes/cephyr-install",
+      "focused_test": "on1x.sdk.frontend_module_logistics",
+      "relocated_static_consumer": "on1x.sdk.frontend_installed_consumer",
+      "standalone_runner": "python3 on1x/sdk/tests/frontend/module_logistics.py <build>/on1x_sdk_test_frontend_module_logistics",
+      "build_targets": ["on1x_sdk_test_frontend_module_logistics", "on1x_sdk_test_frontend", "on1x_sdk_test_frontend_c", "on1x_sdk_test_scanner_parity", "on1x_sdk_frontend_embed_example", "on1x_sdk_project", "on1x_source_asdl_tests"],
+      "ctest_filter": "^on1x\\.(sdk\\.frontend|source_asdl$)",
+      "common_build_config": "Unix Makefiles, Release (-O0 -DNDEBUG for C/C++), ON1X_BUILD_NATIVE_PPX=OFF, ON1X_WITH_PROJECT_QMR=OFF, ON1X_WITH_SYREN=OFF, ON1X_WITH_WETSTONE=OFF",
+      "results": [
+        {
+          "profile": "ON1X_REQUIRE_LIBSTONE=ON ON1X_WITH_CEPHYR=ON",
+          "command": "ctest --test-dir .verify/native-make --output-on-failure -R '^on1x\\.(sdk\\.frontend|source_asdl$)'",
+          "passed": 8,
+          "failed": 0,
+          "ctest_log_sha256": "9f4f3aa460e6acb184541d1b4c384eeda7478366a2b6af0ba4f953babf462f85",
+          "sdk_archive_sha256": "c8f763e3f533f7919ccd20208d7f366cf05b26abe429c7bc388025c5266ad695",
+          "focused_executable_sha256": "0e95eb6e0e4d01ef4a8f930449d26fe626a81f8a63f5d9d4a91a176b09be7298"
+        },
+        {
+          "profile": "ON1X_USE_FALLBACK_SCANNER=ON ON1X_WITH_CEPHYR=OFF (installed libcephyr still used by the build-host FFI generator)",
+          "command": "ctest --test-dir .verify/fallback --output-on-failure -R '^on1x\\.(sdk\\.frontend|source_asdl$)'",
+          "passed": 8,
+          "failed": 0,
+          "ctest_log_sha256": "0dfd89092d09d7b1da1c83a88520880e12c2014808a38f08db7974e4888192e8",
+          "sdk_archive_sha256": "9f10c3d6416b1485146d0777bbf884f71eb9b09a1a9924b753197e8223bdb725",
+          "focused_executable_sha256": "c1bf1098133ac01062e8ec30a4ea3a349e7a078e02234bcb223db88d0e0750d0"
+        }
+      ],
+      "observations": "Both installed consumers use a moved SDK component and real .on1xi/.on1xm syntax in a temporary fixture; neither is a full On1x distribution qualification. Strict C11 -Wall -Wextra -Wpedantic -Werror syntax check passed.",
+      "c_symbol_inventory": {
+        "count": 502,
+        "changed": false,
+        "comparison": "native SDK archive before and after the opaque guard; filtered nm -g --defined-only on1x_sdk_*",
+        "sha256": "15aceccb8c332c7d805c03f1a235f7841e8463a48a532db2856f9a0791983f98"
+      }
+    },
+    "principal_owned_changes_required": []
+  },
   "principal_integration": [
     "include the new compiler/frontend headers from the principal-owned On1xSDK.h umbrella",
     "merge compiler.embedding as EXECUTABLE and frontend.services as PARTIAL into CAPABILITY_MATRIX.json",

@@ -12,7 +12,7 @@ def run(*args):
 
 
 def main():
-    cmake, build, config, cc, cxx, source = sys.argv[1:]
+    cmake, build, config, cc, cxx, source, *module_test = sys.argv[1:]
     build_config = ["--config", config] if config else []
     with tempfile.TemporaryDirectory(prefix="frontend-package-", dir=build) as directory:
         work = Path(directory)
@@ -32,8 +32,7 @@ def main():
         consumer = work / "consumer"
         consumer.mkdir()
         shutil.copyfile(source, consumer / "main.c")
-        (consumer / "CMakeLists.txt").write_text(
-            """cmake_minimum_required(VERSION 3.20)
+        consumer_cmake = """cmake_minimum_required(VERSION 3.20)
 project(FrontendConsumer LANGUAGES C CXX)
 enable_testing()
 find_package(On1xSDK 2 CONFIG REQUIRED)
@@ -42,9 +41,20 @@ set_target_properties(frontend PROPERTIES
   C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
 target_link_libraries(frontend PRIVATE On1x::SDK)
 add_test(NAME frontend COMMAND frontend)
-""",
-            encoding="utf-8",
-        )
+"""
+        if module_test:
+            [module_source, module_runner] = module_test
+            shutil.copyfile(module_source, consumer / "module_logistics.c")
+            shutil.copyfile(module_runner, consumer / "module_logistics.py")
+            consumer_cmake += f"""
+add_executable(module_logistics module_logistics.c)
+set_target_properties(module_logistics PROPERTIES
+  C_STANDARD 11 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+target_link_libraries(module_logistics PRIVATE On1x::SDK)
+add_test(NAME module_logistics COMMAND "{Path(sys.executable).as_posix()}"
+  "${{CMAKE_CURRENT_SOURCE_DIR}}/module_logistics.py" "$<TARGET_FILE:module_logistics>")
+"""
+        (consumer / "CMakeLists.txt").write_text(consumer_cmake, encoding="utf-8")
         output = work / "build"
         run(
             cmake,

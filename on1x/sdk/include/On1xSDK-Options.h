@@ -25,7 +25,14 @@ typedef uint32_t On1xSDK_BooleanOption;
 enum {
     ON1X_SDK_OPTION_PRELUDE = 1,
     ON1X_SDK_OPTION_EXPAND_MACROS = 2,
-    ON1X_SDK_OPTION_STRICT_UTF8 = 3
+    ON1X_SDK_OPTION_STRICT_UTF8 = 3,
+    /*
+     * Opt in after adding the standard library package as the first search
+     * path. The canonical loader uses that path as an explicit stdlib root
+     * (with an On1xfile), not as an ordinary library path. Defaults to off.
+     * Clearing search paths also clears this selection.
+     */
+    ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB = 4
 };
 
 On1xSDK_Status on1x_sdk_options_create(

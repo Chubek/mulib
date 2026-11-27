@@ -86,12 +86,24 @@ if(BUILD_TESTING)
     set_tests_properties(on1x.sdk.frontend_headers PROPERTIES TIMEOUT 120)
 
     if(NOT CMAKE_CROSSCOMPILING)
+        set(_sdk_module_test_source
+            "${CMAKE_CURRENT_LIST_DIR}/../tests/frontend/module_logistics.c")
+        set(_sdk_module_test_runner
+            "${CMAKE_CURRENT_LIST_DIR}/../tests/frontend/module_logistics.py")
+        add_executable(on1x_sdk_test_frontend_module_logistics
+            "${_sdk_module_test_source}")
+        target_link_libraries(on1x_sdk_test_frontend_module_logistics PRIVATE On1x::SDK)
+        add_test(NAME on1x.sdk.frontend_module_logistics COMMAND "${Python3_EXECUTABLE}"
+            "${_sdk_module_test_runner}" "$<TARGET_FILE:on1x_sdk_test_frontend_module_logistics>")
+        set_tests_properties(on1x.sdk.frontend_module_logistics PROPERTIES TIMEOUT 60)
+
         add_test(NAME on1x.sdk.frontend_installed_consumer
             COMMAND "${Python3_EXECUTABLE}"
                 "${CMAKE_CURRENT_LIST_DIR}/../tests/frontend/check_package.py"
                 "${CMAKE_COMMAND}" "${CMAKE_CURRENT_BINARY_DIR}" "$<CONFIG>"
                 "${CMAKE_C_COMPILER}" "${CMAKE_CXX_COMPILER}"
-                "${CMAKE_CURRENT_LIST_DIR}/../examples/frontend/embed.c")
+                "${CMAKE_CURRENT_LIST_DIR}/../examples/frontend/embed.c"
+                "${_sdk_module_test_source}" "${_sdk_module_test_runner}")
         set_tests_properties(on1x.sdk.frontend_installed_consumer
             PROPERTIES TIMEOUT 180)
     endif()
