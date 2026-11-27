@@ -75,6 +75,7 @@ set(_aurocks_source "${ON1X_LIBSTONE_ROOT}/cornerstone/Aurocks")
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 if(NOT ON1X_USE_FALLBACK_SCANNER AND EXISTS "${_asdl_source}/cmake/Native.cmake" AND
    EXISTS "${_asdl_source}/include/asdl/execution.hpp" AND
+   EXISTS "${_asdl_source}/runtime/asdl_loader.h" AND
    EXISTS "${ON1X_LIBSTONE_ROOT}/third_party/lua/lua.h" AND
    EXISTS "${ON1X_LIBSTONE_ROOT}/third_party/kaguya/include/kaguya/kaguya.hpp" AND
    (ON1X_AUROCKS_HOST_EXECUTABLE OR EXISTS "${_aurocks_source}/CLI/main.cpp"))
@@ -250,9 +251,14 @@ if(ON1X_GENERATED_FRONTEND)
     grammar/On1x.asdl grammar/source_module.lua)
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/On1x.asdl" ON1X_SOURCE_ASDL)
   file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/source_module.lua" ON1X_SOURCE_ASDL_ADAPTER)
+  foreach(_library IN ITEMS policy imports signatures graph)
+    set(_script "${CMAKE_CURRENT_SOURCE_DIR}/grammar/source_${_library}.lua")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_script}")
+    file(READ "${_script}" "ON1X_SOURCE_ASDL_${_library}")
+  endforeach()
   configure_file(cmake/on1x_source_asdl.hpp.in "${_generated}/on1x_source_asdl.hpp" @ONLY)
   target_compile_definitions(on1x_source_asdl PRIVATE ON1X_ASDL_MODULES=1)
-  target_include_directories(on1x_source_asdl PRIVATE "${_generated}")
+  target_include_directories(on1x_source_asdl PRIVATE "${_generated}" "${_asdl_source}/runtime")
   target_include_directories(on1x_source_asdl SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/third_party/lua")
   target_link_libraries(on1x_source_asdl PRIVATE ASDL::runtime)
 endif()
@@ -269,11 +275,13 @@ if(ON1X_BUILD_EXTENSION_SDK)
   endif()
 endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
-  add_executable(on1x_source_asdl_tests tests/test_source_asdl.cpp)
+  add_executable(on1x_source_asdl_tests tests/test_source_asdl.cpp src/type.cpp)
   target_include_directories(on1x_source_asdl_tests PRIVATE include)
   target_link_libraries(on1x_source_asdl_tests PRIVATE on1x_source_asdl)
   add_test(NAME on1x.source_asdl COMMAND on1x_source_asdl_tests
     "$<BOOL:${ON1X_GENERATED_FRONTEND}>")
+  set_tests_properties(on1x.source_asdl PROPERTIES ENVIRONMENT
+    "LIBSTONE_ASDL_PATH=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/asdl-shadow")
 endif()
 set(_pretty_impl "${CMAKE_CURRENT_BINARY_DIR}/on1x_pretty_impl.c")
 add_custom_command(OUTPUT "${_pretty_impl}"

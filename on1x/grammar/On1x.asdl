@@ -7,7 +7,7 @@ token = Tok(string text, usize offset, token? previous)
 unit = (token? last)
 
 .language "On1x";
-.summary "Scanner tokens and pre-resolution source module facts";
+.summary "Scanner tokens, source module facts and loader observations";
 .unit :source_module;
 
 -- This view is copied from a parser-owned Unit before resolution. It is
@@ -23,6 +23,14 @@ source_decl ::= (string name, string kind, source_visibility visibility);
 -- Decimal retains the entire unsigned host value, even above Lua's signed range.
 source_visibility ::= SourcePublic | SourcePrivate | SourceShared(string<:source_elevation> elevation);
 
+-- Post-verification facts, not a second type checker or import resolver.
+source_signature ::= (string name, signature_member* members);
+signature_member ::= AbstractType(string name, usize arity)
+                   | FunctionSignature(string name)
+                   | ProcedureSignature(string name);
+source_graph ::= (string* paths, source_edge* edges);
+source_edge ::= (usize importer, usize provider);
+
 .logistics for :source_module ::= lua(root)
     local header, imports, declarations = asdl.destruct(root)
     local depth = 0
@@ -36,79 +44,21 @@ source_visibility ::= SourcePublic | SourcePrivate | SourceShared(string<:source
 .end
 
 .logistics for :module_header ::= lua(header) -> (depth)
-    local name = asdl.destruct(header)
-    local depth = 0
-    local valid = name ~= "" and not name:match("^%.") and not name:match("%.$")
-                  and not name:find("..", 1, true)
-    if valid then
-        for part in name:gmatch("[^.]+") do
-            if not part:match("^[a-zA-Z_][a-zA-Z0-9_]*$") then
-                valid = false
-                break
-            end
-            depth = depth + 1
-        end
-    end
-    if not valid then
-        asdl.diagnostic.emit({severity = "error", location = asdl.location(header),
-                              message = "invalid hierarchical module declaration"})
-        return nil
-    end
-    return depth
+    return asdl.logistics_context().value.policy.Header(header)
 .end
 
 .logistics for :source_decl ::= lua(declaration, depth) -> (checked)
-    local _, _, visibility = asdl.destruct(declaration)
-    if asdl.tag(visibility) == "SourceShared" then
-        local spelling = asdl.destruct(visibility)
-        local elevation = spelling:match("^%d+$") and tonumber(spelling)
-        if not elevation or elevation < 1 or elevation > depth then
-            asdl.diagnostic.emit({severity = "error", location = asdl.location(declaration),
-                                  code = "ON1X-MODULE-ELEVATION",
-                                  message = "shared elevation must be within the declaring module depth"})
-        end
-    end
-    return declaration
+    return asdl.logistics_context().value.policy.Declaration(declaration, depth)
 .end
 
 .logistics for :source_import ::= lua(edge)
-    local spelling, alias, relative, quoted, selective, selectors = asdl.destruct(edge)
-    local program = asdl.tag(edge) == "ProgramRequest"
-    local function report(message)
-        asdl.diagnostic.emit({severity = "error", location = asdl.location(edge), message = message})
-    end
-    local function ident(name)
-        return name:match("^[a-zA-Z_][a-zA-Z0-9_]*$") ~= nil
-    end
-    if program then
-        local valid = #spelling > 0 and #spelling <= 4096 and relative == 0
-        if quoted then
-            -- Keep quoted paths opaque; this is not a filesystem or string
-            -- interpolation pass. The parser supplies the interior spelling.
-            valid = valid and not spelling:find('[%z\\]')
-        else
-            valid = valid and not spelling:match("^%.") and not spelling:match("%.$")
-                    and not spelling:find("..", 1, true)
-            for component in spelling:gmatch("[^.]+") do
-                valid = valid and ident(component)
-            end
-        end
-        if not valid then
-            report("invalid program import request")
-            return edge
-        end
-    end
-    if selective ~= (#selectors > 0) or (alias and (selective or not ident(alias))) then
-        report("inconsistent import selector list or target alias")
-        return edge
-    end
-    for _, selector in ipairs(selectors) do
-        local name, rename, is_operator = asdl.destruct(selector)
-        if (is_operator and (program or rename or name == "")) or
-           (not is_operator and (not ident(name) or (rename and not ident(rename)))) then
-            report("invalid import selector")
-            break
-        end
-    end
-    return edge
+    return asdl.logistics_context().value.imports.Check(edge)
+.end
+
+.logistics for :source_signature ::= lua(signature)
+    return asdl.logistics_context().value.signatures.Check(signature)
+.end
+
+.logistics for :source_graph ::= lua(graph)
+    return asdl.logistics_context().value.graph.Check(graph)
 .end
