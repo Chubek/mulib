@@ -676,6 +676,7 @@ class Loader {
     for(auto* fragment:target.fragments)originals.push_back(&fragment->unit);
     if(originals.empty())originals.push_back(&target.unit);
     (void)verify_module_signature(signature,originals,header->name,target.path);
+    check_asdl_signature(signature);
     if(!options.declaration_interfaces)require_executable_module_signature(signature);
     else declaration_interface_members+=signature.members.size()+signature.types.size();
     std::set<std::string> listed;
@@ -2008,6 +2009,7 @@ class Loader {
       result.unit.operator_lazy_functions.insert(candidate);
    }
   std::erase_if(result.unit.functions,[&](const Function& f){return lazy.contains(f.name)&&!needed.contains(f.name);});
+  if(result.unit.requires_module_boundary)check_asdl_graph(result,entry_at);
   return result;
  }
 };
