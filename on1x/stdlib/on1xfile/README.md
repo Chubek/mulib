@@ -3,7 +3,8 @@
 `On1xfile` is a UTF-8, line-oriented project manifest. It is **not** an
 S-expression or a shell program. It declares project logistics; the
 `On1xfile.m` and `On1xfile.i` in each participating directory declare that
-directory's file roles. There is no root-wide file-role directive.
+directory's legacy file roles. The optional named-module membership rows
+described below belong in the root manifest.
 
 ```text
 # On1xfile
@@ -93,6 +94,40 @@ signatures](../../docs/interfaces.md) against that implementation before
 publication, including for dependencies and unused modules. A source package
 preserves the checked, fingerprinted interface bytes and declarations.
 Interface files are not loaded as program code.
+
+### Named modules
+
+Projects can declare `.on1xm` implementation fragments and their `.on1xi`
+interfaces without changing the `on1xfile 1` header:
+
+```text
+module "Math.Checked" "src/math/core.on1xm"
+module "Math.Checked" "src/math/arithmetic.on1xm"
+module-interface "Math.Checked" "src/math/api.on1xi"
+module-interface "Math.Checked" "src/math/arithmetic-api.on1xi"
+module-interface-policy "Math.Checked" required
+```
+
+Each implementation fragment starts with the exact declaration
+`module Math.Checked;`. Names are case-sensitive dotted identifiers.
+Repeated rows aggregate distinct fragments in manifest order, not filename
+order. Interface fragments are attached to the named module, rather than
+paired by stem. The optional per-module presence policy is `optional`
+(default), `required` (at least one interface fragment), or `forbidden`
+(none). It does not change interface syntax or conformance rules. All paths
+are relative to the project root and must be below its declared `directory`.
+Do not also list them in `On1xfile.m` or `On1xfile.i`.
+
+The driver checks named modules even if no target imports them. It supplies
+the compiler with only the staged members and their interface fragments;
+an undeclared `.on1xm` is not part of the project. A project imports its own
+modules by their declared names; direct dependency modules are exposed
+under the dependency name (for example, `dep.Math.Checked`). The existing
+`.on1x` import paths and directory-local roles are unchanged. Library
+packages preserve these root membership rows and all declared fragment
+paths. Build and plan reports include `module_graph` for named modules:
+each entry has `package`, `name`, and `dependencies`, in deterministic
+dependency-first order.
 
 Run from a checkout:
 

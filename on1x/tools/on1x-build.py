@@ -133,6 +133,7 @@ def main():
     cli.add_argument('--ppx-timeout-ms', type=int, default=5000)
     cli.add_argument('-I', '--module-path', action=OrderedAction, dest='search_chain')
     cli.add_argument('--stdlib', type=Path)
+    cli.add_argument('--project-module-index', type=Path, help=argparse.SUPPRESS)
     for option in ('lib-path', 'stdlib-path', 'ppx-path', 'stdppx-path'):
         cli.add_argument('--'+option, action=OrderedAction, dest='search_chain', metavar='DIR:DIR')
     cli.add_argument('--mulib-path', action='append', default=[], metavar='DIR:DIR')
@@ -296,6 +297,8 @@ def main():
             compiler.append('--no-prelude')
         if args.stdlib:
             compiler += ['--stdlib', str(args.stdlib)]
+        if args.project_module_index:
+            compiler += ['--project-module-index', str(args.project_module_index)]
         loader_flags=[]
         if args.stdlib:loader_flags += ['--stdlib',str(args.stdlib)]
         processor_paths={'--ppx-path':[], '--stdppx-path':[]}

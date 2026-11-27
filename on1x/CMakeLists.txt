@@ -1037,6 +1037,9 @@ if(BUILD_TESTING)
     add_test(NAME on1x.project_dotenv COMMAND "${Python3_EXECUTABLE}" -IB
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_dotenv.py")
     set_tests_properties(on1x.project_dotenv PROPERTIES TIMEOUT 10)
+    add_test(NAME on1x.project_module_membership COMMAND "${Python3_EXECUTABLE}" -IB
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_module_membership.py")
+    set_tests_properties(on1x.project_module_membership PROPERTIES TIMEOUT 10)
     set(_project_test_tools --mune-runner "$<TARGET_FILE:on1x-mune-runner>")
     if(TARGET on1x-qmr-compile)
       list(APPEND _project_test_tools --qmr-compiler "$<TARGET_FILE:on1x-qmr-compile>")

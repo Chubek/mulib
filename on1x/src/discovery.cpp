@@ -81,6 +81,7 @@ void package_rows(std::string_view text,const std::string& file,Finish finish_ro
  // by discovery. An explicit physical continuation can mask one head.
  constexpr std::string_view heads[]={
   "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work",
+  "module","module-interface","module-interface-policy",
   "optimization-profile","optimization","backend","target","dependency","profile",
   "profile-arg","command","define","dotenv","kernel","kernel-path","kernel-link","source","library","resource","interface",
   "compiler","assembler","linker","assembler-arg","linker-arg",
