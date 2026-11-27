@@ -229,6 +229,7 @@ namespace {
   std::vector<std::filesystem::path> import_paths,stdlib_paths;
   if(command=="--emit-latex")options.target=fmt::Target::latex;
   if(command=="--emit-troff")options.target=fmt::Target::troff;
+  if(command=="--emit-html")options.target=fmt::Target::html;
   bool check=false, inplace=false, options_done=false, isolated=false, scope_options=false;
   std::string source,out;
    auto usage_error=[](const std::string& message){
@@ -239,7 +240,7 @@ namespace {
    std::string_view arg=argv[i];
    if(!options_done&&arg=="--"){options_done=true;continue;}
    if(!options_done&&(arg=="--help"||arg=="-h")){
-     std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
+     std::cout<<"usage: on1xc fmt INPUT [--target plain|latex|troff|html] [--check | --inplace | -i | -o OUTPUT]\n"
       "  -i, --inplace  Replace INPUT atomically with plain formatted source.\n"
       "  --isolated     Do not open imports or the prelude (for editor snapshots).\n"
       "  --stdlib DIR [-I DIR | --module-path DIR] [--prelude FILE | --no-prelude]\n"
@@ -247,11 +248,12 @@ namespace {
     return 0;
    }
    if(!options_done&&arg=="--target"){
-     if(++i==argc)return usage_error("--target requires plain, latex or troff");
+     if(++i==argc)return usage_error("--target requires plain, latex, troff or html");
     std::string_view target=argv[i];
     if(target=="plain")options.target=fmt::Target::plain;
     else if(target=="latex")options.target=fmt::Target::latex;
     else if(target=="troff")options.target=fmt::Target::troff;
+    else if(target=="html")options.target=fmt::Target::html;
      else return usage_error("unknown formatter target: "+std::string(target));
     }else if(!options_done&&arg=="--check")check=true;
     else if(!options_done&&(arg=="--inplace"||arg=="-i"))inplace=true;
@@ -818,8 +820,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
     "       on1xc init (--bin | --proj | --lib) [DIRECTORY]\n"
     "       on1xc exec COMMAND [ARGS ...] (explicit On1xfile command execution)\n"
     "       on1xc aux COMMAND [ARGS ...] (project driver; see on1xc aux --help)\n"
-    "       on1xc fmt INPUT [--target plain|latex|troff] [--check | --inplace | -i | -o OUTPUT]\n"
-   "       on1xc (--format | --emit-latex | --emit-troff) INPUT [-o OUTPUT]\n"
+    "       on1xc fmt INPUT [--target plain|latex|troff|html] [--check | --inplace | -i | -o OUTPUT]\n"
+   "       on1xc (--format | --emit-latex | --emit-troff | --emit-html) INPUT [-o OUTPUT]\n"
    "--emit-ast expands macros and exports pre-PPX AST; it never executes programs.\n"
    "--emit-hir exports checked source as an inspection S-expression.\n"
   "MIR modes support i64/bool/void, direct On1x calls, control flow and scalar print/assert.\n"
@@ -867,7 +869,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
       if(argc!=3)throw std::runtime_error("--syntax-faults requires exactly one input file");
       return syntax_faults(argv[2]);
      }
-     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff")
+     if(command=="fmt"||command=="--format"||command=="--emit-latex"||command=="--emit-troff"||
+        command=="--emit-html")
      return format_command(argc,argv,command);
     if(command=="vmm"){
 #ifdef ON1X_WITH_ARCHVIRT

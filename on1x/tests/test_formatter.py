@@ -1,4 +1,5 @@
 """On1x source formatting, round trips, and target escaping."""
+from html.parser import HTMLParser
 from pathlib import Path
 import shutil
 import stat
@@ -30,6 +31,109 @@ def run_source(source, output):
     return invoke(output).stdout
 
 
+class Listing(HTMLParser):
+    """Collect the decoded listing and reject executable or unexpected tags."""
+    tags = {"html", "head", "meta", "title", "body", "pre", "code", "span"}
+
+    def __init__(self, markup):
+        super().__init__()
+        self.parts = []
+        self.in_code = False
+        self.feed(markup.decode("utf-8"))
+        self.close()
+
+    def handle_starttag(self, tag, attrs):
+        assert tag in self.tags, (tag, attrs)
+        if tag == "code":
+            assert not self.in_code
+            self.in_code = True
+
+    def handle_endtag(self, tag):
+        assert tag in self.tags, tag
+        if tag == "code":
+            self.in_code = False
+
+    def handle_data(self, data):
+        if self.in_code:
+            self.parts.append(data)
+
+    @property
+    def source(self):
+        return "".join(self.parts).encode("utf-8")
+
+
+def test_modules(work):
+    root = work / "modules"
+    root.mkdir()
+    shutil.copyfile(HOME / ".on1xfmt", root / ".on1xfmt")
+    source = root / "module.on1xm"
+    source.write_bytes(
+        b'module example.tools;import fizz.buzz : fred as ownFred,barney;'
+        b'import older, fizz.other: source as localSource;'
+        b'import program "scripts/worker.on1x": run as callWorker,Extra;'
+        b'import program runner.remote as remote;'
+        b'from ..common import (helper as pick, other);'
+        b'@ppx no_execution "must-not-run.py";'
+        b'private record Point{field:i64}'
+        b'public fn project(p:Point)->i64{return p.field+p["field"];}'
+        b'shared elevate(2) fn choice()->Choice{return Choice :: Some(42);}'
+        b'shared fn local(program:i64)->i64{return program;}'
+        b'# </code><script src="bad">&\'</script>\n'
+    )
+    plain = fmt(source, "--isolated").stdout
+    for fragment in (
+        b"module example.tools;\n",
+        b"\nimport fizz.buzz: fred as ownFred, barney;\n",
+        b"\nimport older, fizz.other: source as localSource;\n",
+        b'\nimport program "scripts/worker.on1x": run as callWorker, Extra;\n',
+        b'\nimport program runner.remote as remote;\n',
+        b"\nfrom .. common import (helper as pick, other);\n",
+        b'\n@ppx no_execution "must-not-run.py";\n',
+        b"\nprivate record Point\n{\n  field: i64\n}\n\npublic fn project",
+        b'return p.field + p["field"];',
+        b"\nshared elevate(2) fn choice",
+        b"return Choice::Some(42);",
+        b"\nshared fn local(program: i64)",
+    ):
+        assert fragment in plain, (fragment, plain)
+    fmt(source, "--isolated", "-i")
+    fmt(source, "--isolated", "--check")
+    assert source.read_bytes() == plain
+
+    html = fmt(source, "--isolated", "--target", "html").stdout
+    assert Listing(html).source == plain
+    assert html.count(b'<span class="tok-keyword">program</span>') == 2
+    assert b'<span class="tok-keyword">elevate</span>' in html
+    assert b'&lt;script src=&quot;bad&quot;&gt;&amp;' in html
+    assert invoke(ON1XC, "--emit-html", source, "--isolated").stdout == html
+    assert b"\\textbf{public}" in fmt(source, "--isolated", "--target", "latex").stdout
+    assert b"Choice::Some" in fmt(source, "--isolated", "--target", "troff").stdout
+
+    source.write_bytes(b"module example.tools; shared elevate(0) fn nope() {}")
+    err = fmt(source, "--isolated", "-i", expected=1)
+    assert not err.stdout and b"elevation" in err.stderr
+    assert b"elevate(0)" in source.read_bytes()
+
+
+def test_static_and_brackets(work):
+    source = work / "static-members.on1x"
+    source.write_bytes(
+        b'record Box{value:i64} impl Box{value answer:i64=35;}'
+        b'fn main(){let b=record<Box>{value:7};println(Box :: answer+b["value"]);}'
+    )
+    before = run_source(source, work / "members-before")
+    fmt(source, "--isolated", "-i")
+    assert b'Box::answer + b["value"]' in source.read_bytes()
+    assert run_source(source, work / "members-after") == before == b"42\n"
+
+    # Bracket fields still cross the existing Unit-v1 wire after formatting.
+    source.write_bytes(b'fn main(){let b=record{value:42};println(b["value"]);}')
+    fmt(source, "--isolated", "-i")
+    ast = invoke(ON1XC, "--emit-ast", source).stdout
+    assert b'(ValueData "field" "value"' in ast
+    invoke(ON1XC, "--check", source, "--ppx", "identity", HOME / "stdppx/identity.py")
+
+
 def test_inplace(work):
     source = work / "inplace.on1x"
     output = work / "other.on1x"
@@ -49,7 +153,7 @@ def test_inplace(work):
     source.write_bytes(original)
     for args in (("--inplace", "--check"), ("-o", output, "-i"),
                  ("-i", "-o", "-"), ("-i", "--target", "latex"),
-                 ("--target", "troff", "--inplace")):
+                 ("--target", "troff", "--inplace"), ("--target", "html", "-i")):
         result = fmt(source, *args, expected=2)
         assert not result.stdout and b"--inplace" in result.stderr
         assert source.read_bytes() == original and not output.exists()
@@ -307,7 +411,7 @@ println("hash # inside string \\\\ \\\"");} # EOF'''
     for source in (b"fn malformed(", b'fn main(){println("invalid \\q");}',
                    b"fn main() { }\n# on1xfmt: on",
                    b"# on1xfmt: maybe\nfn main() {}",
-                   b"# on1xfmt: target = html\nfn main() {}",
+                   b"# on1xfmt: target = unavailable\nfn main() {}",
                    b"# on1xfmt: target = latex\n# on1xfmt: target=troff\nfn main() {}",
                    b"# on1xfmt: off\nfn main() {}",
                    b"# on1xfmt: off\n# on1xfmt: off\n# on1xfmt: on\nfn main() {}",
@@ -367,7 +471,8 @@ println("hash # inside string \\\\ \\\"");} # EOF'''
     assert fmt(p, "--target", "unavailable", expected=2).stderr
     assert fmt(p, "--target", "latex", "--check", expected=2).stderr
 
-    for target, header in (("latex", b"\\documentclass"), ("troff", b".nf"), ("plain", b"#")):
+    for target, header in (("latex", b"\\documentclass"), ("troff", b".nf"), ("plain", b"#"),
+                           ("html", b"<!doctype html>")):
         comment = f"# on1xfmt: target = {target}\n".encode()
         source = comment + b"fn main() {\n    println(1);\n}\n"
         p.write_bytes(source)
@@ -406,5 +511,7 @@ if __name__ == "__main__":
         test_procedures(Path(directory))
         test_multiline_syntax(Path(directory))
         test_operator_environment(Path(directory))
+        test_modules(Path(directory))
+        test_static_and_brackets(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

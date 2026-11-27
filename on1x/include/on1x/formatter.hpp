@@ -9,7 +9,7 @@
 
 namespace on1x::format {
 
-enum class Target { plain, latex, troff };
+enum class Target { plain, latex, troff, html };
 struct Options {
     // An explicit value overrides a source target directive. Otherwise the
     // directive wins, falling back to plain when absent.

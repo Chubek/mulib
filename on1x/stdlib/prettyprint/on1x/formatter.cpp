@@ -124,39 +124,82 @@ struct Part {
     Location where;
     std::size_t level = 0;
     bool top = false, in_list = false;
-    bool custom_op = false, operator_decl = false;
+    bool custom_op = false, operator_decl = false, contextual_keyword = false;
 };
 
 bool one_of(View text, std::initializer_list<View> words) {
     return std::find(words.begin(), words.end(), text) != words.end();
 }
 
+std::optional<Target> parse_target(View value) {
+    if (value == "plain") return Target::plain;
+    if (value == "latex") return Target::latex;
+    if (value == "troff") return Target::troff;
+    if (value == "html") return Target::html;
+    return std::nullopt;
+}
+
 // Use the canonical scanner's byte spans. Only walk trivia between those
 // spans; comment markers inside a literal are not trivia.
 std::vector<Part> parts(const std::string& text, const std::vector<Token>& tokens, const Unit& unit,
                         std::optional<Target>& source_target) {
-    std::set<std::size_t> top, operator_declarations;
+    std::set<std::size_t> top, operator_declarations, contextual_keywords;
+    auto token_at = [&](std::size_t offset) {
+        return std::lower_bound(tokens.begin(), tokens.end(), offset,
+            [](const Token& t, std::size_t start) { return t.where.offset < start; });
+    };
     auto starts = [&](const auto& declarations) {
         for (const auto& d : declarations) top.insert(d.where.offset);
     };
+    auto declaration = [&](const auto& d) {
+        auto it = token_at(d.where.offset);
+        if (d.visibility.kind != DeclarationVisibility::Unspecified) {
+            // Declaration locations follow their visibility prefixes. Trivia
+            // is not in the scanner tokens, so intervening comments are safe.
+            if (it - tokens.begin() >= 5 && (it - 1)->text == ")" &&
+                (it - 3)->text == "(" && (it - 4)->text == "elevate" &&
+                (it - 5)->text == "shared") {
+                contextual_keywords.insert((it - 4)->where.offset);
+                it -= 5;
+            } else if (it != tokens.begin() &&
+                       one_of((it - 1)->text, {"public", "private", "shared"})) {
+                --it;
+            }
+            contextual_keywords.insert(it->where.offset);
+        }
+        top.insert(it->where.offset);
+    };
+    auto declarations = [&](const auto& items) {
+        for (const auto& item : items) declaration(item);
+    };
+    if (unit.module) {
+        top.insert(unit.module->where.offset);
+        contextual_keywords.insert(unit.module->where.offset);
+    }
     for (const auto& item : unit.module_imports) {
-        if (item.selective || item.quoted) {
+        auto it = token_at(item.where.offset);
+        if (item.kind == Import::Kind::Program) {
             top.insert(item.where.offset);
-        } else {
-            // A normal import's AST records each specifier, not the statement
-            // start (one `import` can declare multiple modules).
-            auto it = std::lower_bound(tokens.begin(), tokens.end(), item.where.offset,
-                [](const Token& t, std::size_t start) { return t.where.offset < start; });
-            if (it != tokens.begin() && (it - 1)->text == "import")
-                top.insert((it - 1)->where.offset);
+            contextual_keywords.insert((it + 1)->where.offset);
+        } else if (item.quoted) {
+            top.insert(item.where.offset);
+        } else if (it != tokens.begin() && (it - 1)->text == "import") {
+            // Dotted imports record the target start, even with colon
+            // selectors; a later target after a comma is not a new statement.
+            top.insert((it - 1)->where.offset);
+        } else if (it->text == "from" &&
+                   (it == tokens.begin() || (it - 1)->text != ",")) {
+            top.insert(item.where.offset);
         }
     }
-    starts(unit.kernel_imports); starts(unit.foreign_imports); starts(unit.functions);
-    starts(unit.features); starts(unit.ppx); starts(unit.macros); starts(unit.nominals);
+    starts(unit.kernel_imports); starts(unit.foreign_imports); declarations(unit.functions);
+    starts(unit.features); starts(unit.ppx); declarations(unit.macros); declarations(unit.nominals);
+    for (const auto& item : unit.cliches)
+        if (item.visibility.kind != DeclarationVisibility::Unspecified) declaration(item);
     starts(unit.fixity_directives);
     for (const auto& item : unit.operators) {
         operator_declarations.insert(item.header.where.offset);
-        top.insert(item.header.where.offset);
+        declaration(item.header);
     }
     std::vector<const ModuleExtension*> carriers;
     for (const auto& item : unit.extensions) carriers.push_back(&item);
@@ -203,15 +246,13 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
                     } else if (!disabled) {
                         const auto equal = command.find('=');
                         if (equal == View::npos || trim(command.substr(0, equal)) != "target")
-                            throw Error(where, "expected formatter directive off, on, or target = plain|latex|troff",
+                            throw Error(where, "expected formatter directive off, on, or target = plain|latex|troff|html",
                                         "ON1X-FMT-DIRECTIVE");
                         if (source_target)
                             throw Error(where, "duplicate formatter target directive", "ON1X-FMT-DIRECTIVE");
-                        const auto value = trim(command.substr(equal + 1));
-                        if (value == "plain") source_target = Target::plain;
-                        else if (value == "latex") source_target = Target::latex;
-                        else if (value == "troff") source_target = Target::troff;
-                        else throw Error(where, "formatter target must be plain, latex or troff", "ON1X-FMT-DIRECTIVE");
+                        source_target = parse_target(trim(command.substr(equal + 1)));
+                        if (!source_target)
+                            throw Error(where, "formatter target must be plain, latex, troff or html", "ON1X-FMT-DIRECTIVE");
                         append(Kind::line_comment, cursor, end, where, false);
                     }
                 } else if (!disabled) {
@@ -267,6 +308,7 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
             auto& item = result.back();
             item.custom_op = on1x_operator_width(spelling.data(), spelling.size()) != 0;
             item.operator_decl = operator_declarations.contains(cursor);
+            item.contextual_keyword = contextual_keywords.contains(cursor);
         }
         if (one_of(spelling, {"{", "(", "["})) {
             delimiters.push_back(spelling.front());
@@ -284,13 +326,13 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
     return result;
 }
 
-// The parser intentionally distinguishes qualified names (x.y) from a
-// spaced dot in macro syntax. Never change the two adjacency bits around a
-// dot, even for uses where the current parser ignores that distinction.
+// A dot can be a projection, a module qualifier, or a spaced macro tail.
+// Neither formatting nor the printer can resolve which spelling is meant.
 bool space_between(const Part& a, const Part& b) {
     if (a.text == "." || b.text == ".") return a.end != b.start;
     if ((a.text == ":" && one_of(b.text, {":", "="})) || (a.text == ".." && b.text == "=")) return true;
     if (is_comment(a.kind) || is_comment(b.kind)) return true;
+    if (a.text == "::" || b.text == "::") return false;
     if (one_of(b.text, {")", "]", ",", ";", ":", "?"})) return false;
     if (one_of(a.text, {"(", "[", "@", "$"})) return false;
     if (b.text == "}" && a.text == "{") return false;
@@ -305,7 +347,7 @@ bool space_between(const Part& a, const Part& b) {
 
 bool continues_block(const Part& p) {
     return p.custom_op || one_of(p.text, {
-        "else", ";", ",", ")", "]", "?", "(", "[", ".", "=>", "=", "->", ">", ">=",
+        "else", ";", ",", ")", "]", "?", "(", "[", ".", "::", "=>", "=", "->", ">", ">=",
         "+", "-", "*", "/", "%", "==", "!=", "<", "<=", "&&", "||", "|", "with", "~"
     });
 }
@@ -357,7 +399,7 @@ mulib_pretty_style_t style(const Part& p) {
         return MULIB_PRETTY_STRING;
     if (first >= '0' && first <= '9') return MULIB_PRETTY_NUMBER;
     if (p.custom_op) return MULIB_PRETTY_OPERATOR;
-    if (one_of(p.text, {
+    if (p.contextual_keyword || one_of(p.text, {
         "fn", "proc", "extern", "let", "var", "return", "if", "else", "while", "for", "loop",
         "break", "continue", "true", "false", "import", "from", "as", "forall",
         "macro", "rule", "quote", "splice", "lift", "match", "with", "record", "enum",
@@ -519,9 +561,14 @@ std::string file(const fs::path& input, const Options& options) {
     verify_tokens(tokens, plain, name);
     const auto mode = options.target.value_or(source_target.value_or(Target::plain));
     if (mode == Target::plain) return plain;
-    if (mode != Target::latex && mode != Target::troff)
-        throw Error({name, 0, 1, 1}, "unknown formatting target", "ON1X-FMT-TARGET");
-    const auto target = mode == Target::latex ? MULIB_PRETTY_LATEX : MULIB_PRETTY_TROFF;
+    const auto target = [&] {
+        switch (mode) {
+            case Target::latex: return MULIB_PRETTY_LATEX;
+            case Target::troff: return MULIB_PRETTY_TROFF;
+            case Target::html: return MULIB_PRETTY_HTML_MATHML;
+            default: throw Error({name, 0, 1, 1}, "unknown formatting target", "ON1X-FMT-TARGET");
+        }
+    }();
     std::unique_ptr<char, decltype(&std::free)> markup(mulib_pretty_emit(&layout.value, target), std::free);
     if (!markup)
         throw Error({name, 0, 1, 1}, "cannot emit PrettyPrint markup", "ON1X-FMT-DOCUMENT");

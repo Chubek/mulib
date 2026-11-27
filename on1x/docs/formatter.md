@@ -6,9 +6,10 @@ on1xc fmt src/main.on1x --check         # 0 if unchanged, 1 otherwise
 on1xc fmt src/main.on1x --inplace       # or -i; atomically replace the input
 on1xc fmt src/main.on1x --target latex -o main.tex
 on1xc fmt src/main.on1x --target troff -o main.roff
+on1xc fmt src/main.on1x --target html -o main.html
 ```
 
-`--format`, `--emit-latex`, and `--emit-troff` are leading command aliases.
+`--format`, `--emit-latex`, `--emit-troff`, and `--emit-html` are leading command aliases.
 For source using a compiler-enabled extension without `@enable`, pass the
 matching `--enable NAME`. The formatter can discover headers from
 [operator](operators.md) imports and the pervasive prelude, using the same
@@ -17,10 +18,13 @@ bodies, check types, expand macros, or run PPX or declaration extensions.
 Use `--stdlib DIR`, `-I DIR`, `--prelude FILE`, or `--no-prelude` to match
 your build's operator environment. `--isolated` restricts formatting to the
 input file and is intended for scratch or untrusted editor buffers.
+Use `--isolated` for syntax-only formatting of `.on1xm` files when a
+project index or its imports are unavailable and no imported operator fixity
+is needed. Formatting does not admit modules or certify import visibility.
 Syntactically invalid input is rejected before any output is published.
 `--inplace` (`-i`) writes plain source back
 to the input file without writing to stdout. It cannot be combined with
-`--check`, `-o`, or an explicit LaTeX or troff target. Markup targets produce
+`--check`, `-o`, or an explicit markup target. Markup targets produce
 listings, not On1x source; use the plain target if passing the input path to
 `-o`.
 
@@ -87,7 +91,7 @@ literals and protected regions is canonicalized, including blank lines.
 Nonempty output ends with LF.
 
 To select the default rendering target from the source itself, use one
-standalone `# on1xfmt: target = plain|latex|troff` comment outside protected
+standalone `# on1xfmt: target = plain|latex|troff|html` comment outside protected
 regions (write one of those values). The compiler ignores the comment in
 ordinary builds. An explicit CLI/project target takes precedence; `--check`
 and `--inplace` always use plain source. With a markup default, use an
@@ -102,7 +106,8 @@ command "listing" format latex "src/main.on1x"
 ```
 
 Run `on1xc exec listing > listing.tex` at the project root. `plain` and
-`troff` are also supported. The source must be inside the project's declared
+`troff` are also supported; use `on1xc fmt --target html` for HTML listings.
+The source must be inside the project's declared
 directory; the command uses the source's `.on1xfmt`. It writes to stdout
 without building the project or running manifest policy.
 
@@ -111,16 +116,19 @@ without building the project or running manifest policy.
 The adapter uses the canonical scanner's exact token spans and the canonical
 parser; it recovers only trivia from gaps. It keeps the byte spelling of all
 tokens (including multiline commands), preserves the adjacency of dots
-(important for qualified names versus macro dotted tails), and preserves
+(instance fields, qualified module names and macro dotted tails), and preserves
 `@extension` carriers verbatim because those source strings are observable to
 their processors. Before emitting, the adapter re-scans the plain layout to
 check that token spellings/order and dot adjacency are unchanged. The
 formatter does not promise unchanged byte locations, diagnostic positions,
 source digests, or behavior from external PPX code that depends on those.
+Visibility prefixes stay with their declarations, and `::` static or variant
+selectors stay distinct from `.` instance projections.
 
 The language adapter ends at PrettyPrint's document nodes. The language-neutral
-PrettyDoc/PrettyEmit kernels perform layout and markup escaping. LaTeX and
-groff interpret the outputs as ordinary listings with escaped text, not
+PrettyDoc/PrettyEmit kernels perform layout and markup escaping. HTML source
+text is escaped inside a code listing. LaTeX and groff interpret their
+outputs as ordinary listings with escaped text, not
 verbatim source passed through to a second interpreter. Unicode glyph coverage
 depends on the chosen TeX engine, groff device and fonts. Groff terminal devices
 use their native fixed-width output; typesetting devices request Courier Roman.
