@@ -321,9 +321,12 @@ SealedModuleSignature verify_module_signature(const ModuleSignature& signature,
    throw Error(specification.where,"abstract type arity mismatch for '"+specification.name+"'",
                "ON1X-INTERFACE-TYPE",std::to_string(specification.arity),
                std::to_string(nominal.parameters.size()));
-  auto& view=signature.seal==SignatureSeal::Opaque?sealed.types:sealed.transparent_types;
-  view.emplace(specification.name,AbstractTypeIdentity{
-        canonical_implementation,*signature.module,specification.name});
+  if(signature.seal==SignatureSeal::Opaque)
+   sealed.types.emplace(specification.name,AbstractTypeIdentity{
+      canonical_implementation,*signature.module,specification.name});
+  else
+   sealed.transparent_types.emplace(specification.name,TransparentTypeIdentity{
+      canonical_implementation,*signature.module,specification.name});
  }
  std::size_t remaining=65536;
  for(const auto& specification:signature.types){

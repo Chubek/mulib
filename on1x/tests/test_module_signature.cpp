@@ -2,6 +2,7 @@
 #include <on1x/operator_scope.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <type_traits>
 
 namespace {
 void require(bool test,const char* message){
@@ -24,6 +25,7 @@ template<class F> void rejects(const char* id,F action){
 
 int main(){
  using namespace on1x;
+ static_assert(!std::is_convertible_v<AbstractTypeIdentity,TransparentTypeIdentity>);
  auto signature=[](const std::string& body){
   return parse_module_signature(scan("abstract module Acme.Vault;\n"+body,"vault.on1xi"));
  };
