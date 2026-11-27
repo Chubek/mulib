@@ -23,3 +23,21 @@ This profile needs C++20 and the pinned header, not the deleted stdlib, generato
 * The view operations cap collections at 4096 entries. Each policy query expands only pinned syntax with Boolean inputs and bounded LibDSL work. Source text is never interpolated. Host operations currently report exceptions, not rich located OML diagnostics.
 
 W3 qualification at MuLIB base `9180386bbfce6d141bf2707aabcecf0ed856af12`: standalone CTest passed with GCC 16.2.1 (2,880 access comparisons, 64 seeded environment trials plus denial/collision cases). After installation and moving the prefix, the same test linked against the installed headers/archive and passed; installed source SHA-256 `92457cf18bdaa4fef2c713615bbfe526e55f0152b51ee6cdba346724d89165b4`. Only the access operation has a loader integration handoff. Environment operations are executable library operations, not a migration of the loader's entire environment or a separate-compilation ABI. Resolver, signature, seal, dependency and functor judgments are not implemented by this OML profile.
+
+## Optional external-asset compiler integration build
+
+The empty `/mnt/nvme/on1x/stdlib` cannot build the compiler. An explicitly selected clean external MuLIB checkout at `cbb7d66f217f188493f25b38c10101aa26469c48` contains the matching `on1x/stdlib` Git tree `bb7e7814635bb6e161e4c092b2129c493ec89a88`. The older `f3bae016` tree differs. Nothing is copied back into this source tree. The external profile requires an explicitly trusted checkout: the formatter planner **executes Python from that checkout** during the build. The generated compiler still builds all frontend/loader code from this worktree; selected formatter sources, diagnostic catalog and project runner are external. Its generated scanner, embedded ASDL/Lua scripts and FFI recipe generator need real LibStone and a compatible build-host Cephyr library.
+
+```
+cmake -S on1x -B build/integration \
+  -DON1X_MODULE_STDLIB_ROOT=/path/to/trusted/mulib/on1x/stdlib \
+  -DON1X_LIBSTONE_ROOT=/path/to/libstone \
+  -DON1X_STDFFI_CEPHYR_LIBRARY=/path/to/libcephyr.so \
+  -DON1X_WITH_WETSTONE=OFF -DON1X_WITH_SYREN=OFF \
+  -DON1X_WITH_PROJECT_QMR=OFF -DON1X_WITH_KERNEL_NATIVE=OFF \
+  -DON1X_BUILD_DYNAMIC_SDK_PLUGINS=OFF
+cmake --build build/integration -j4
+ctest --test-dir build/integration --output-on-failure
+```
+
+This deliberately selects module integration tests rather than the general regression suite, whose fixtures still refer to deleted in-tree examples/docs/libraries. Source PPX processors are not built in this profile. Do not use these results to qualify unrelated tests, packaged native PPX, or the full SDK installation. The normal full profile still rejects a missing in-tree stdlib without the explicit external option.

@@ -20,11 +20,27 @@ endif()
 
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
 option(ON1X_MODULE_CORE_ONLY "Build standalone module semantics without the removed compiler stdlib" OFF)
+set(ON1X_MODULE_STDLIB_ROOT "" CACHE PATH "Explicit trusted external checkout's on1x/stdlib for module integration builds")
+set(_stdlib "${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
+set(_planner_root "${CMAKE_CURRENT_SOURCE_DIR}/..")
+if(ON1X_MODULE_STDLIB_ROOT)
+  if(ON1X_MODULE_CORE_ONLY)
+    message(FATAL_ERROR "Select either standalone core or external-stdlib integration")
+  endif()
+  file(REAL_PATH "${ON1X_MODULE_STDLIB_ROOT}" _stdlib)
+  file(REAL_PATH "${_stdlib}/../.." _planner_root)
+  if(NOT _stdlib STREQUAL "${_planner_root}/on1x/stdlib" OR NOT EXISTS "${_planner_root}/MANIFEST.yaml")
+    message(FATAL_ERROR "The external formatter planner requires the original checkout layout: REPO/on1x/stdlib")
+  endif()
+  message(STATUS "Module integration profile: explicit external compiler assets ${_stdlib}; native PPX, examples and general regression suite disabled")
+  set(ON1X_BUILD_NATIVE_PPX OFF)
+  set(ON1X_REQUIRE_LIBSTONE ON)
+endif()
 if(NOT ON1X_MODULE_CORE_ONLY)
   foreach(asset IN ITEMS diagnostics/catalog.json prettyprint/on1x/formatter.cpp
                         prettyprint/on1x/implementation.py mulib/housekeeping.py mulib/catalog.json)
-    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/${asset}")
-      message(FATAL_ERROR "The full compiler needs removed stdlib/${asset}. Set ON1X_MODULE_CORE_ONLY=ON for the standalone module semantics profile.")
+    if(NOT EXISTS "${_stdlib}/${asset}")
+      message(FATAL_ERROR "The full compiler needs removed stdlib/${asset}. Set ON1X_MODULE_CORE_ONLY=ON for standalone semantics or select ON1X_MODULE_STDLIB_ROOT explicitly.")
     endif()
   endforeach()
 endif()
@@ -32,6 +48,10 @@ include(cmake/ModuleAlgebra.cmake)
 if(ON1X_MODULE_CORE_ONLY)
   message(STATUS "Module core only: compiler, formatter and stdlib-dependent suites unavailable")
   return()
+endif()
+if(ON1X_MODULE_STDLIB_ROOT)
+  set(_module_integration_tests ${BUILD_TESTING})
+  set(BUILD_TESTING OFF) # Other suites depend on removed in-tree stdlib, examples and docs.
 endif()
 option(ON1X_WITH_ARCHVIRT "Build native-host ArchVirt program launch support" OFF)
 option(ON1X_WITH_CEPHYR "Enable in-process Cephyr C11 compilation on native AMD64 Linux" OFF)
@@ -215,11 +235,11 @@ endif()
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS grammar/PPX.schema.json)
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/grammar/PPX.schema.json" ON1X_SCHEMA_TEXT)
 configure_file(cmake/ppx_schema.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/ppx_schema.hpp" @ONLY)
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdlib/diagnostics/catalog.json)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_stdlib}/diagnostics/catalog.json")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS tools/generate-diagnostic-catalog.py)
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/tools/generate-diagnostic-catalog.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/diagnostics/catalog.json"
+    "${_stdlib}/diagnostics/catalog.json"
     "${CMAKE_CURRENT_BINARY_DIR}/diagnostic_catalog.hpp"
   COMMAND_ERROR_IS_FATAL ANY)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS stdppx/category/features.sexpr)
@@ -248,7 +268,7 @@ endif()
 add_subdirectory(hir)
 add_subdirectory(mir)
 add_subdirectory(hir/FFIHandler)
-target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/stdlib")
+target_compile_definitions(on1x_frontend PRIVATE ON1X_STDLIB_ROOT="${_stdlib}")
 if(ON1X_WITH_WETSTONE)
   if(EXISTS "${ON1X_LIBSTONE_ROOT}/wetstone/verification/AnalysisSuite.hpp")
     target_compile_definitions(on1x_frontend PRIVATE ON1X_WITH_WETSTONE=1)
@@ -309,11 +329,11 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
 endif()
 set(_pretty_impl "${CMAKE_CURRENT_BINARY_DIR}/on1x_pretty_impl.c")
 add_custom_command(OUTPUT "${_pretty_impl}"
-  COMMAND "${Python3_EXECUTABLE}" -IB "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/prettyprint/on1x/implementation.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/.." "${_pretty_impl}"
-  DEPENDS stdlib/prettyprint/on1x/implementation.py ../MANIFEST.yaml
-    stdlib/mulib/housekeeping.py stdlib/mulib/catalog.json tools/on1x-contracts.py
-    contracts-exotract/catalog.json
+  COMMAND "${Python3_EXECUTABLE}" -IB "${_stdlib}/prettyprint/on1x/implementation.py"
+    "${_planner_root}" "${_pretty_impl}"
+  DEPENDS "${_stdlib}/prettyprint/on1x/implementation.py" "${_planner_root}/MANIFEST.yaml"
+    "${_stdlib}/mulib/housekeeping.py" "${_stdlib}/mulib/catalog.json" "${_planner_root}/on1x/tools/on1x-contracts.py"
+    "${_planner_root}/on1x/contracts-exotract/catalog.json"
   VERBATIM)
 add_library(on1x_pretty_kernels STATIC "${_pretty_impl}")
 target_include_directories(on1x_pretty_kernels PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")
@@ -321,7 +341,7 @@ target_link_libraries(on1x_pretty_kernels PUBLIC ${CMAKE_DL_LIBS})
 if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
-add_executable(on1xc src/cli.cpp src/diagnostic_filter.cpp src/proxy_policy.cpp stdlib/prettyprint/on1x/formatter.cpp)
+add_executable(on1xc src/cli.cpp src/diagnostic_filter.cpp src/proxy_policy.cpp "${_stdlib}/prettyprint/on1x/formatter.cpp")
 if(ON1X_GENERATED_FRONTEND)
   target_compile_definitions(on1xc PRIVATE ON1X_WITH_AUROCKS_FAULTS=1 ON1X_ASDL_DIAGNOSTIC_SELECTORS=1)
   target_include_directories(on1xc PRIVATE "${_generated}" "${_asdl_source}/runtime")
@@ -597,11 +617,12 @@ if(ON1X_BUILD_NATIVE_PPX)
 endif()
 
 install(TARGETS on1xc RUNTIME DESTINATION bin)
-install(DIRECTORY stdlib stdffi stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
+install(DIRECTORY "${_stdlib}" stdffi stdppx runtime grammar contracts-exoml contracts-exotract DESTINATION share/on1x
   PATTERN "__pycache__" EXCLUDE PATTERN "*.pyc" EXCLUDE
   REGEX "/stdffi/mulib(/.*)?$" EXCLUDE) # FFIHandler installs only generated executable recipes.
 install(PROGRAMS tools/on1x-build.py tools/on1x-project.py tools/on1x-mulib.py tools/on1x-exotract.py tools/on1x-contracts.py tools/on1x-native-build.py DESTINATION share/on1x/tools)
 install(PROGRAMS tools/on1x-kernel-package.py DESTINATION bin RENAME on1x-kernel-package)
+if(NOT ON1X_MODULE_STDLIB_ROOT)
 install(DIRECTORY examples/kernel/load-time-clamp DESTINATION share/on1x/examples
   PATTERN "__pycache__" EXCLUDE)
 install(DIRECTORY examples/http-probe DESTINATION share/on1x/examples
@@ -609,6 +630,7 @@ install(DIRECTORY examples/http-probe DESTINATION share/on1x/examples
 install(FILES examples/operators.on1x DESTINATION share/on1x/examples)
 include(cmake/StdlibProbeExample.cmake)
 install(FILES docs/kernel-load-time.md docs/kernel-package.md DESTINATION share/on1x/docs)
+endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   install(PROGRAMS toolchains/on1x-toolchain-probe.py DESTINATION share/on1x/tools)
 endif()
@@ -682,7 +704,7 @@ if(ON1X_WITH_EXOML)
 endif()
 
 if(UNIX)
-  add_executable(on1x-mune-runner stdlib/on1xfile/mune_runner.c)
+  add_executable(on1x-mune-runner "${_stdlib}/on1xfile/mune_runner.c")
   target_include_directories(on1x-mune-runner PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")
   target_link_libraries(on1x-mune-runner PRIVATE m ${CMAKE_DL_LIBS})
   add_dependencies(on1xc on1x-mune-runner)
@@ -699,7 +721,7 @@ if(UNIX)
       add_subdirectory("${ON1X_LIBSTONE_ROOT}/moonstone/qmr" "${CMAKE_CURRENT_BINARY_DIR}/project-qmr" EXCLUDE_FROM_ALL)
     endif()
     if(TARGET Moonstone::QmrCompiler)
-      add_executable(on1x-qmr-compile stdlib/on1xfile/qmr_compile.cpp)
+      add_executable(on1x-qmr-compile "${_stdlib}/on1xfile/qmr_compile.cpp")
       target_link_libraries(on1x-qmr-compile PRIVATE Moonstone::QmrCompiler)
       add_dependencies(on1xc on1x-qmr-compile)
       install(TARGETS on1x-qmr-compile RUNTIME DESTINATION libexec/on1x)
@@ -870,7 +892,7 @@ if(BUILD_TESTING)
   add_executable(on1x_analysis_tests tests/test_analysis.cpp)
   target_link_libraries(on1x_analysis_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.analysis_api COMMAND on1x_analysis_tests
-    "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/diagnostics/catalog.json")
+    "${_stdlib}/diagnostics/catalog.json")
   add_test(NAME on1x.diagnostic_catalog_source COMMAND "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_catalog_source.py"
     "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -1521,4 +1543,8 @@ if(ON1X_BUILD_EXTENSION_SDK)
         "$<TARGET_FILE:on1xc>")
     set_tests_properties(on1x.sdk.cli_dispatch PROPERTIES TIMEOUT 60)
   endif()
+endif()
+
+if(_module_integration_tests)
+  include(cmake/ModuleIntegrationTests.cmake)
 endif()
