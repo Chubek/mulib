@@ -103,6 +103,13 @@ SealedModuleSignature verify_module_signature(const ModuleSignature&,
 // callers that cannot install checked ownership and representation gates.
 void require_executable_module_signature(const ModuleSignature&);
 
+// Reverify the original fragments and permit exactly the listed closed scalar
+// equations. The loader attaches each result to its authenticated declaration;
+// clients cannot interpret this spelling map in their own namespace.
+std::map<std::string,Type> admit_executable_manifest_signature(
+    const ModuleSignature&,const std::vector<const Unit*>& originals,
+    std::string_view declared_module,const std::filesystem::path& canonical_implementation);
+
 // Source-side permit for a loader that can attach authenticated opaque owners
 // and route them through a checked C11-only boundary. Call after successful
 // verification of these same originals; the frontend must still check bodies,

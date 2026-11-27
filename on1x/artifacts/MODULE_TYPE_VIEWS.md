@@ -44,6 +44,24 @@ plain and under ASan/UBSan. A different provider's same-layout record failed
 nominal unification. Opaque projection, MIR and VM emission all rejected and
 preserved the prior output. Archon was not built.
 
-Manifest equations remain declaration-only; this patch does not admit them
-into executable HIR. No change to the existing opaque ABI. Static functors,
-managed/generic opaque transport and separate compilation are not delivered.
+## Scalar manifest equations
+
+W1's loader adapter (`05e8b3f5`) and the manifest permit jointly admit a
+transparent signature whose type members **all** normalize to numeric,
+Boolean or character scalars. Every implementation equation must be listed.
+For example, `type Word=i64; type Count=Word;` grants equality with `i64`,
+including through a selective import alias. It does not create two nominal
+record identities. Only authenticated type lookup substitutes the canonical
+scalar, after ordinary visibility checks. C11 uses the existing scalar
+calling convention; there is no move/drop or cleanup obligation. Missing
+or inconsistent equations, undisclosed aliases, arguments to a monomorphic
+alias, managed/string types, tuple equations, mixed profiles and opaque
+manifest ascription are rejected for execution.
+
+The CLI test above compiles and runs a two-fragment provider with `Count`
+and `Word` and a consumer using both qualified and renamed types. The
+strict-C11 executable prints `42` under ASan/UBSan. The test also rejects
+stale equations, unlisted aliases, opaque ascription, invalid arity and MIR/VM
+emission; earlier good C survives each failure. No change to the existing
+opaque ABI. Static functors, managed/generic opaque transport and separate
+compilation are not delivered.

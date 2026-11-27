@@ -230,6 +230,55 @@ signature VaultAPI<A> { include Base<A>; sharing type View = Token; };
         assert result.returncode != 0 and not output.exists(), result.stdout
         assert "declaration-only" in result.stderr, result.stderr
 
+        # Scalar manifest equations confer explicit equality with the declared
+        # scalar. A chained alias in a separate provider fragment retains that
+        # meaning through qualified references and named selectors.
+        scalar_signature = ("signature S { type Word=i64; type Count=Word; "
+                            "fn bump(n:Count)->Count; }; module Test.Vault : S;")
+        interface.write_text(scalar_signature, encoding="utf-8")
+        scalar_source = "module Test.Vault; type Word=i64;"
+        implementation.write_text(scalar_source, encoding="utf-8")
+        side.write_text("module Test.Vault; type Count=Word;"
+                        "public fn bump(n:Count)->Count { return n+1; }", encoding="utf-8")
+        membership["members"]["Test.Vault"]["fragments"].append(str(side))
+        index.write_text(json.dumps(membership), encoding="utf-8")
+        scalar_client = ("import Test.Vault as V; from Test.Vault import Count as C;"
+                         "fn step(n:C)->V.Word {return V.bump(n); }"
+                         "fn main(){println(step(41));}")
+        program.write_text(scalar_client, encoding="utf-8")
+        def emit_manifest():
+            return run("--emit-c", program, "--project-module-index", index, "-o", output)
+        result = emit_manifest()
+        assert result.returncode == 0, result.stderr
+        execute_c("scalar-manifest")
+        good_c = output.read_bytes()
+        def denied(fragment):
+            result = emit_manifest()
+            assert result.returncode and fragment in result.stderr, result.stderr
+            assert output.read_bytes() == good_c
+        implementation.write_text(scalar_source + "type Secret=i64;", encoding="utf-8")
+        denied("unlisted type equations")
+        implementation.write_text(scalar_source.replace("i64", "bool"), encoding="utf-8")
+        denied("interface type equation mismatch")
+        implementation.write_text(scalar_source, encoding="utf-8")
+        interface.write_text(scalar_signature.replace("module Test.Vault", "abstract module Test.Vault"),
+                             encoding="utf-8")
+        denied("declaration-only")
+        interface.write_text(scalar_signature, encoding="utf-8")
+        for unsupported in ("string", "(i64,bool)"):
+            implementation.write_text(scalar_source.replace("i64", unsupported), encoding="utf-8")
+            interface.write_text(scalar_signature.replace("i64", unsupported), encoding="utf-8")
+            denied("non-scalar and managed type equations")
+        implementation.write_text(scalar_source, encoding="utf-8")
+        interface.write_text(scalar_signature, encoding="utf-8")
+        program.write_text(scalar_client.replace("n:C", "n:C<bool>"), encoding="utf-8")
+        denied("manifest type takes no arguments")
+        program.write_text(scalar_client, encoding="utf-8")
+        for mode in ("--emit-ir", "--emit-vm"):
+            result = run(mode, program, "--project-module-index", index, "-o", output)
+            assert result.returncode != 0 and "direct C11" in result.stderr, result.stderr
+            assert output.read_bytes() == good_c
+
 
 if __name__ == "__main__":
     main()

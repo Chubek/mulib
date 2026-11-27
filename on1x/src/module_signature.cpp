@@ -402,6 +402,29 @@ void require_executable_module_signature(const ModuleSignature& signature){
               "ON1X-INTERFACE-UNSUPPORTED");
 }
 
+std::map<std::string,Type> admit_executable_manifest_signature(
+    const ModuleSignature& signature,const std::vector<const Unit*>& originals,
+    std::string_view declared_module,const std::filesystem::path& canonical_implementation){
+ if(signature.ascription||!signature.definitions.empty())
+  return admit_executable_manifest_signature(resolve_module_signature(signature),originals,
+                                              declared_module,canonical_implementation);
+ auto verified=verify_module_signature(signature,originals,declared_module,canonical_implementation);
+ if(signature.seal!=SignatureSeal::Transparent||verified.manifest_types.empty()||
+    verified.manifest_types.size()!=signature.types.size())
+  throw Error(signature.where,"mixed, opaque and non-manifest type equations are declaration-only",
+              "ON1X-INTERFACE-UNSUPPORTED");
+ for(const auto& member:signature.types){
+  const auto& term=verified.manifest_types.at(member.name);
+  if(!scalar(term)||term==Type::String)
+   throw Error(member.where,"non-scalar and managed type equations are declaration-only",
+               "ON1X-INTERFACE-UNSUPPORTED");
+ }
+ for(const auto* fragment:originals)for(const auto& alias:fragment->signature_type_aliases)
+  if(!verified.manifest_types.contains(alias.name))
+   throw Error(alias.where,"unlisted type equations are declaration-only","ON1X-INTERFACE-UNSUPPORTED");
+ return std::move(verified.manifest_types);
+}
+
 std::set<std::string> admit_executable_opaque_signature(
     const ModuleSignature& signature,const SealedModuleSignature& verified,
     const std::vector<const Unit*>& originals,std::string_view declared_module,
