@@ -1,0 +1,5 @@
+#pragma once
+namespace on1x::oml::embedded {
+constexpr char rules[] = R"On1xPolicy(@OML_TEXT@)On1xPolicy";
+constexpr char digest[] = "sha256:@OML_DIGEST@";
+}

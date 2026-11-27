@@ -19,6 +19,20 @@ if(DEFINED ENV{ON1X_LIBSTONE_ROOT} AND NOT "$ENV{ON1X_LIBSTONE_ROOT}" STREQUAL "
 endif()
 
 set(ON1X_LIBSTONE_ROOT "${_libstone_default}" CACHE PATH "LibStone source checkout")
+option(ON1X_MODULE_CORE_ONLY "Build standalone module semantics without the removed compiler stdlib" OFF)
+if(NOT ON1X_MODULE_CORE_ONLY)
+  foreach(asset IN ITEMS diagnostics/catalog.json prettyprint/on1x/formatter.cpp
+                        prettyprint/on1x/implementation.py mulib/housekeeping.py mulib/catalog.json)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/stdlib/${asset}")
+      message(FATAL_ERROR "The full compiler needs removed stdlib/${asset}. Set ON1X_MODULE_CORE_ONLY=ON for the standalone module semantics profile.")
+    endif()
+  endforeach()
+endif()
+include(cmake/ModuleAlgebra.cmake)
+if(ON1X_MODULE_CORE_ONLY)
+  message(STATUS "Module core only: compiler, formatter and stdlib-dependent suites unavailable")
+  return()
+endif()
 option(ON1X_WITH_ARCHVIRT "Build native-host ArchVirt program launch support" OFF)
 option(ON1X_WITH_CEPHYR "Enable in-process Cephyr C11 compilation on native AMD64 Linux" OFF)
 option(ON1X_REQUIRE_LIBSTONE "Fail if LibStone generators are unavailable" OFF)
@@ -215,6 +229,7 @@ add_library(on1x_frontend STATIC src/source.cpp src/lexer.cpp src/type.cpp src/n
   src/operator_lowering.cpp
   src/sexpr.cpp src/ppx_schema.cpp src/ppx_ast.cpp src/macros.cpp src/macro_rules.cpp src/ppx.cpp src/primitives.cpp src/staging.cpp src/extensions.cpp src/extension_evidence.cpp src/extensions_hash.c src/canonical/control.cpp src/patterns.cpp src/canonical/values.cpp src/canonical/verify_values.cpp
   src/backend/mir.cpp src/backend/serialize.cpp src/backend/evaluate.cpp src/backend/emit_c.cpp src/backend/passes.cpp)
+target_link_libraries(on1x_frontend PUBLIC on1x_module_algebra)
 target_include_directories(on1x_frontend PUBLIC include)
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(on1x_frontend PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kernels")

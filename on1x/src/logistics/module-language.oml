@@ -1,0 +1,21 @@
+(language On1xModuleLanguage
+  (form access 7)
+  (macro (access $valid $file $private $shared $package $scope $admitted)
+    (if $valid
+      (if $file (quote allowed)
+        (if $private (quote private)
+          (if $shared
+            (if $package (if $scope (quote allowed) (quote shared-scope)) (quote shared-package))
+            (if $package (quote allowed) (if $admitted (quote allowed) (quote dependency-not-admitted))))))
+      (quote invalid-visibility)))
+  (form reexport 2)
+  (macro (reexport $original $forward) (if $original $forward false))
+  (form insert-view 2)
+  (macro (insert-view $occupied $identical)
+    (if $occupied (if $identical (quote reuse) (quote collision)) (quote insert)))
+  (form project-member 2)
+  (macro (project-member $listed $hide) (if $hide (if $listed false true) $listed))
+  (form select-member 3)
+  (macro (select-member $exists $repeated $allowed)
+    (if $repeated (quote duplicate-selector)
+      (if $exists (if $allowed (quote selected) (quote denied)) (quote missing)))))
