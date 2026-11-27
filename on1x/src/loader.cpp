@@ -16,11 +16,14 @@ namespace on1x {
 namespace {
 namespace fs=std::filesystem;
 struct Module;
+enum class BindingSpace { Value, Syntax, Type, Cliche, Module, Operator, Resource };
+using BindingKey=std::pair<BindingSpace,std::string>;
 struct Symbol {
  Module* owner;
  std::string name;
  bool external=false;
  VisibilityRule visibility{};
+ const char* kind="function"; // Observation only; not part of semantic identity.
  bool operator==(const Symbol& other) const {
   return name==other.name&&external==other.external&&(owner==other.owner||external);
  }
@@ -55,6 +58,8 @@ struct Module {
    bool discovering=true,active=false,loaded=false,legacy=false,implicit=false;
  bool program=false,has_main=false,isolated=false,source_capability=false;
   std::optional<SharedKind> shared;
+  std::map<BindingKey,std::vector<std::size_t>> observed_imports;
+  std::map<std::string,std::size_t> observed_types;
 };
 bool regular(const fs::path& path){std::error_code ec;return fs::is_regular_file(path,ec);}
 bool directory(const fs::path& path){std::error_code ec;return fs::is_directory(path,ec);}
@@ -79,7 +84,20 @@ void require_kernel_import_policy(const KernelImport& request){
 }
 
 class Loader {
- using Scope=std::set<std::string>;
+ // Each lexical frame is copied just as the resolver's previous name set
+ // was. The optional payload identifies a source binding, not its spelling.
+ using Scope=std::map<std::string,std::optional<std::size_t>>;
+ struct Observation {
+  UnusedBinding finding;
+  const Module* source;
+  bool used=false,shadowed=false;
+ };
+ std::vector<Observation> observations;
+ std::size_t observation_bytes=0;
+ std::map<BindingKey,std::vector<std::size_t>> legacy_imports;
+ std::optional<std::size_t> type_definition;
+ bool in_template=false;
+ bool observe=false;
   const LoaderOptions& options;
   fs::path entry_directory;
    std::vector<fs::path> standard_roots;
@@ -117,6 +135,44 @@ class Loader {
     if(m.signature_exports)return *m.signature_exports;
     return named_module(m)||m.program||!m.fragments.empty()?m.declarations:m.names;
    }
+   bool observe_source(const Module& module)const{
+    return options.observe_unused_bindings&&!module.implicit&&!module.program&&
+      std::ranges::find(operator_preludes,&module)==operator_preludes.end()&&
+      std::ranges::none_of(standard_roots,[&](const auto& root){return contained(root,module.path);});
+   }
+   std::optional<std::size_t> observation(UnusedKind category,const Location& at,
+                  const std::string& name,const char* kind,const Module& source){
+    // The report registry is bounded. Also bound cached source observations
+    // independently, including before their used/unused status is known.
+    constexpr std::size_t max_observation_bytes=8*1024*1024;
+    const auto cost=sizeof(Observation)+at.file.size()+name.size();
+    if(observations.size()>=65536||cost>max_observation_bytes-observation_bytes||name.size()>4096)return {};
+    observation_bytes+=cost;
+    const auto id=observations.size();
+    observations.push_back({{category,at,name,kind},&source});
+    return id;
+   }
+   void observe_import(Module& module,BindingSpace space,const std::string& key,
+             const std::string& binding,const std::string& alias,const char* kind,const Location& at){
+    if(!observe_source(module)||alias.starts_with('_'))return;
+    if(auto id=observation(UnusedKind::Import,at,binding,kind,module))
+     module.observed_imports[{space,key}].push_back(*id);
+   }
+   void used_import(const Module* module,BindingSpace space,const std::string& name){
+    if(!observe||!module)return;
+    if(auto found=module->observed_imports.find({space,name});found!=module->observed_imports.end())
+     for(auto id:found->second)observations[id].used=true;
+    if(module->legacy&&space!=BindingSpace::Operator&&space!=BindingSpace::Resource)
+     if(auto found=legacy_imports.find({space,name});found!=legacy_imports.end())
+      for(auto id:found->second)observations[id].used=true;
+   }
+   void used_symbol(const Module* requester,BindingSpace space,const std::string& key,const Symbol& symbol){
+    // A declaration is not a use of a same-spelled imported binding.
+    used_import(requester,space,key);
+    if(!observe||space!=BindingSpace::Type)return;
+    if(auto found=symbol.owner->observed_types.find(symbol.name);found!=symbol.owner->observed_types.end())
+     if(found->second!=type_definition)observations[found->second].used=true;
+   }
    static bool valid_module_name(std::string_view text){
     const auto alpha=[](char c){return (c>='A'&&c<='Z')||(c>='a'&&c<='z')||c=='_';};
     bool first=true;
@@ -146,6 +202,7 @@ class Loader {
     const auto alias=e.text.substr(0,dot);
     const auto found=current_module->foreigns.find(alias);
     if(found==current_module->foreigns.end()||locals.contains(alias))return false;
+    used_import(current_module,BindingSpace::Resource,alias);
      const auto& kernel=found->second.kernel;
      auto key=std::make_pair(kernel,e.text.substr(dot+1));
      auto function=foreign_functions.find(key);
@@ -235,6 +292,7 @@ class Loader {
     const auto alias=e.text.substr(0,dot);
     auto found=current_module->kernels.find(alias);
     if(found==current_module->kernels.end()||values.contains(alias))return false;
+    used_import(current_module,BindingSpace::Resource,alias);
     if(dot==std::string::npos||!direct){
      throw Error(e.where,"ON1X-KERNEL-DIRECT: kernel exports must be called directly","ON1X-KERNEL-DIRECT");
     }
@@ -1063,11 +1121,11 @@ class Loader {
     }
      for(const auto& d:m->unit.nominals){
       validate_visibility(*m,d.visibility,d.where);
-      insert(m->declarations.types,d.name,Symbol{m,d.name,false,d.visibility},d.where);
+      insert(m->declarations.types,d.name,Symbol{m,d.name,false,d.visibility,"type"},d.where);
      }
      for(const auto& c:m->unit.cliches){
       validate_visibility(*m,c.visibility,c.where);
-      insert(m->declarations.cliches,c.name,Symbol{m,c.name,false,c.visibility},c.where);
+      insert(m->declarations.cliches,c.name,Symbol{m,c.name,false,c.visibility,"cliche"},c.where);
      }
    for(const auto& f:m->unit.functions){
    if(is_reserved_intrinsic_name(f.name))throw Error(f.where,"intrinsic name cannot be redefined: "+f.name);
@@ -1076,12 +1134,12 @@ class Loader {
     validate_visibility(*m,f.visibility,f.where);
     if(named_module(*m)&&m->declarations.values.contains(f.name))
      throw Error(f.where,"duplicate module declaration: "+f.name,"ON1X-MODULE-IDENTITY");
-    insert(m->declarations.values,f.name,Symbol{m,f.name,f.external,f.visibility},f.where);
+    insert(m->declarations.values,f.name,Symbol{m,f.name,f.external,f.visibility,f.procedure?"procedure":"function"},f.where);
   }
   for(const auto& macro:m->unit.macros){
     if(m->declarations.syntax.contains(macro.name))throw Error(macro.where,"duplicate macro: "+macro.name);
     validate_visibility(*m,macro.visibility,macro.where);
-    insert(m->declarations.syntax,macro.name,Symbol{m,macro.name,false,macro.visibility},macro.where);
+    insert(m->declarations.syntax,macro.name,Symbol{m,macro.name,false,macro.visibility,"macro"},macro.where);
    }
     m->names=m->declarations;
     if(named_module(*m)){
@@ -1117,28 +1175,48 @@ class Loader {
         throw Error(imp.where,"program path requires an explicit module alias","ON1X-PROGRAM-IMPORT");
       }
       if(!valid_module_name(alias))throw Error(imp.where,"program path requires an explicit module alias","ON1X-PROGRAM-IMPORT");
-      bind_module(m->names,alias,target,imp.where);continue;
+      bind_module(m->names,alias,target,imp.where);
+      observe_import(*m,BindingSpace::Module,alias,alias,imp.alias,"module",imp.where);
+      continue;
      }
      Names selected;
      std::set<std::string> selected_aliases;
      for(const auto& selection:imp.names){
-      if(selection.is_operator)continue; // Already included in the operator export scope.
+      if(selection.is_operator){
+       // Already resolved in the operator export scope. One selector can
+       // import both prefix and trailing bindings; either counts as use.
+       if(target&&!own_package){
+        const auto add=[&](const OperatorBinding* binding,std::optional<std::size_t>& id){
+         if(!binding||!operator_accessible(*binding,*m))return;
+         if(!id)id=observation(UnusedKind::Import,selection.where,selection.name,"operator",*m);
+         if(id)m->observed_imports[{BindingSpace::Operator,binding->identity}].push_back(*id);
+        };
+        if(observe_source(*m)){
+         std::optional<std::size_t> id;
+         add(target->operator_exports.find(selection.name,OperatorPosition::Prefix),id);
+         add(target->operator_exports.trailing(selection.name),id);
+        }
+       }
+       continue;
+      }
       const auto& name=selection.name;const auto& alias=selection.alias.empty()?name:selection.alias;
       if((named_module(*target)||explicit_program)&&!selected_aliases.insert(alias).second)
        throw Error(imp.where,"duplicate selector alias: "+alias,"ON1X-IMPORT-SELECTORS");
       bool found=false;
       if(!own_package){
        const auto& visible=exported(*target);
-       auto select=[&](auto& into,const auto& from){
+       auto select=[&](auto& into,const auto& from,BindingSpace space){
         if(auto it=from.find(name);it!=from.end()){
          require_access(it->second,*m,imp.where);
          value_alias(selected,alias,imp.where);insert(into,alias,it->second,imp.where);found=true;
+         observe_import(*m,space,alias,alias,selection.alias,it->second.kind,selection.where);
         }
        };
-       select(selected.values,visible.values);select(selected.syntax,visible.syntax);
-       select(selected.types,visible.types);select(selected.cliches,visible.cliches);
+       select(selected.values,visible.values,BindingSpace::Value);select(selected.syntax,visible.syntax,BindingSpace::Syntax);
+       select(selected.types,visible.types,BindingSpace::Type);select(selected.cliches,visible.cliches,BindingSpace::Cliche);
        if(auto it=visible.modules.find(name);it!=visible.modules.end()){
         bind_module(selected,alias,it->second,imp.where);found=true;
+        observe_import(*m,BindingSpace::Module,alias,alias,selection.alias,"module",selection.where);
        }
      }
      if(found)continue;
@@ -1165,6 +1243,7 @@ class Loader {
        throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
      visit(imported,imp.where,isolated);depend(*m,*imported);
      bind_module(selected,alias,imported,imp.where);
+     observe_import(*m,BindingSpace::Module,alias,alias,selection.alias,"module",selection.where);
      }
      merge(m->names,selected,imp.where);
    }
@@ -1179,7 +1258,11 @@ class Loader {
        throw Error(request.where,"conflicting kernel import alias: "+request.alias,"ON1X-KERNEL-ALIAS");
       }
       if(inspection)inspection->requests.push_back(request);
-      else m->kernels.emplace(request.alias,request);
+      else{
+       m->kernels.emplace(request.alias,request);
+       observe_import(*m,BindingSpace::Resource,request.alias,request.alias,
+                      request.explicit_alias?request.alias:"","resource",request.where);
+      }
     }
     for(const auto& request:m->unit.foreign_imports){
      if(++edges>16384||++kernel_requests>1024)
@@ -1192,6 +1275,8 @@ class Loader {
      if(!inspection){
       admit_foreign(request);
       m->foreigns.emplace(request.alias,request);
+      observe_import(*m,BindingSpace::Resource,request.alias,request.alias,
+                     request.explicit_alias?request.alias:"","resource",request.where);
      }
     }
     if(inspection)inspection->source_digests.merge(m->unit.source_digests);
@@ -1205,13 +1290,28 @@ class Loader {
      return std::string(nominal);
    return s.external||s.owner->legacy?s.name:prefix+std::to_string(s.owner->id)+"_"+s.name;
   }
- void bind(Scope& scope,const Pattern& p){pattern_bindings(p,[&](const Pattern& name){scope.insert(name.name);});}
- void parameters(Scope& scope,const std::vector<Param>& ps){for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else scope.insert(p.name);}}
+ void bind(Scope& scope,const std::string& name,const Location& at){
+  std::optional<std::size_t> id;
+  if(observe&&current_module&&!in_template&&observe_source(*current_module)&&
+     !name.empty()&&!name.starts_with('_')&&!name.starts_with('@'))
+   id=observation(UnusedKind::Variable,at,name,"variable",*current_module);
+  auto prior=scope.find(name);
+  if(prior!=scope.end()&&prior->second&&!in_template)
+   observations[*prior->second].shadowed=true;
+  scope.insert_or_assign(name,id);
+ }
+ void bind(Scope& scope,const Pattern& p){
+  pattern_bindings(p,[&](const Pattern& name){bind(scope,name.name,name.where);});
+ }
+ void parameters(Scope& scope,const std::vector<Param>& ps){
+  for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else bind(scope,p.name,p.where);}
+ }
    void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false,
                   std::size_t* value_prefix=nullptr){
   auto dot=text.find('.');auto first=text.substr(0,dot);
-   if(locals.contains(first)){
+   if(auto local=locals.find(first);local!=locals.end()){
     if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
+    if(!syntax&&local->second)observations[*local->second].used=true;
     return;
    }
    if(current_module&&current_module->foreigns.contains(first)){
@@ -1223,24 +1323,29 @@ class Loader {
     const auto& symbols=type?names.types:syntax?names.syntax:names.values;
    if(auto it=symbols.find(text);it!=symbols.end()){
     if(current_module)require_access(it->second,*current_module,at);
+    used_symbol(current_module,type?BindingSpace::Type:syntax?BindingSpace::Syntax:BindingSpace::Value,text,it->second);
     text=name(it->second);return;
    }
   if(dot!=std::string::npos){
    // Longest bound prefix, followed by explicitly imported/re-exported modules.
    for(auto cut=text.rfind('.');cut!=std::string::npos;cut=cut?text.rfind('.',cut-1):std::string::npos){
-    auto it=names.modules.find(text.substr(0,cut));if(it==names.modules.end())continue;
+    auto qualifier=text.substr(0,cut);
+    auto it=names.modules.find(qualifier);if(it==names.modules.end())continue;
+    used_import(current_module,BindingSpace::Module,qualifier);
     std::string member=text.substr(cut+1);auto* module=it->second;
     while(true){
       const auto& visible=exported(*module);
       const auto& exports=type?visible.types:syntax?visible.syntax:visible.values;
       if(auto symbol=exports.find(member);symbol!=exports.end()){
        if(current_module)require_access(symbol->second,*current_module,at);
+       used_symbol(module,type?BindingSpace::Type:syntax?BindingSpace::Syntax:BindingSpace::Value,member,symbol->second);
        text=name(symbol->second);return;
       }
      bool descended=false;
      for(auto split=member.rfind('.');split!=std::string::npos;split=split?member.rfind('.',split-1):std::string::npos){
        auto child=visible.modules.find(member.substr(0,split));if(child==visible.modules.end())continue;
-      module=child->second;member=member.substr(split+1);descended=true;break;
+       used_import(module,BindingSpace::Module,member.substr(0,split));
+       module=child->second;member=member.substr(split+1);descended=true;break;
       }
       if(!descended)break;
       }
@@ -1254,6 +1359,7 @@ class Loader {
          auto symbol=values.find(member.substr(0,split));
          if(symbol==values.end())continue;
          if(current_module)require_access(symbol->second,*current_module,at);
+         used_symbol(module,BindingSpace::Value,member.substr(0,split),symbol->second);
          *value_prefix-=member.size()-split;text=name(symbol->second);return;
         }
       }
@@ -1272,17 +1378,20 @@ class Loader {
     void cliche_reference(std::string& text,const Location& at,const Names& names){
      if(auto found=names.cliches.find(text);found!=names.cliches.end()){
       if(current_module)require_access(found->second,*current_module,at);
+      used_symbol(current_module,BindingSpace::Cliche,text,found->second);
      text=name(found->second);return;
     }
     if(auto dot=text.find('.');dot!=std::string::npos){
      for(auto cut=text.rfind('.');cut!=std::string::npos;
          cut=cut?text.rfind('.',cut-1):std::string::npos){
       auto module=names.modules.find(text.substr(0,cut));if(module==names.modules.end())continue;
+      used_import(current_module,BindingSpace::Module,text.substr(0,cut));
       std::string member=text.substr(cut+1);auto* owner=module->second;
       while(true){
         const auto& visible=exported(*owner);
         if(auto found=visible.cliches.find(member);found!=visible.cliches.end()){
          if(current_module)require_access(found->second,*current_module,at);
+        used_symbol(owner,BindingSpace::Cliche,member,found->second);
         text=name(found->second);return;
        }
        bool descended=false;
@@ -1290,6 +1399,7 @@ class Loader {
            split=split?member.rfind('.',split-1):std::string::npos){
          auto child=visible.modules.find(member.substr(0,split));
          if(child==visible.modules.end())continue;
+        used_import(owner,BindingSpace::Module,member.substr(0,split));
         owner=child->second;member=member.substr(split+1);descended=true;break;
        }
        if(!descended)break;
@@ -1303,13 +1413,15 @@ class Loader {
      // Preserve a source-level unknown name for the located cliche diagnostic.
     }
      std::optional<std::string> named_reference(const std::string& text,const Names& names,
-                                                bool cliche,const Location& at)const{
+                                                bool cliche,const Location& at){
+     const auto space=cliche?BindingSpace::Cliche:BindingSpace::Type;
      const auto direct=[&](const Module* module,const std::string& key)
        ->std::optional<std::string>{
        const auto& visible=exported(*module);
        const auto& symbols=cliche?visible.cliches:visible.types;
        if(auto found=symbols.find(key);found!=symbols.end()){
         if(current_module)require_access(found->second,*current_module,at);
+        used_symbol(module,space,key,found->second);
         return name(found->second);
        }
       return {};
@@ -1317,6 +1429,7 @@ class Loader {
      const auto& local=cliche?names.cliches:names.types;
       if(auto found=local.find(text);found!=local.end()){
        if(current_module)require_access(found->second,*current_module,at);
+       used_symbol(current_module,space,text,found->second);
        return name(found->second);
       }
      if(text.find('.')==std::string::npos)return {};
@@ -1325,14 +1438,18 @@ class Loader {
       auto module=names.modules.find(text.substr(0,cut));if(module==names.modules.end())continue;
       auto* owner=module->second;std::string member=text.substr(cut+1);
       while(true){
-       if(auto found=direct(owner,member))return found;
+       if(auto found=direct(owner,member)){
+        used_import(current_module,BindingSpace::Module,text.substr(0,cut));
+        return found;
+       }
        bool descended=false;
        for(auto split=member.rfind('.');split!=std::string::npos;
            split=split?member.rfind('.',split-1):std::string::npos){
          const auto& children=exported(*owner).modules;
          auto child=children.find(member.substr(0,split));
          if(child==children.end())continue;
-        owner=child->second;member=member.substr(split+1);descended=true;break;
+         used_import(owner,BindingSpace::Module,member.substr(0,split));
+         owner=child->second;member=member.substr(split+1);descended=true;break;
        }
        if(!descended)break;
       }
@@ -1346,6 +1463,7 @@ class Loader {
      const auto dot=text.find('.');
       auto found=current_module?current_module->kernels.find(text.substr(0,dot)):std::map<std::string,KernelImport>::const_iterator{};
       if(dot!=std::string::npos&&current_module&&found!=current_module->kernels.end()){
+      used_import(current_module,BindingSpace::Resource,text.substr(0,dot));
       auto member=text.substr(dot+1);
       const bool history=found->second.module=="mulib.histprice", pricing=found->second.module=="mulib.priceopt";
          if(found->second.module==ipc_kernel_module&&member=="Result")text=ipc_kernel_result_name;
@@ -1382,6 +1500,7 @@ class Loader {
     for(auto& item:items)constraint(item,names);
    }
  void macro(Macro& m,const Names& names,const Scope& values,const Scope& syntax){
+  const auto saved=in_template;in_template=true;
   auto pattern=[&](auto&& self,MacroParameter& p)->void{
    if(p.literal)expression(*p.literal,names,values,syntax);
    for(auto& child:p.elements)self(self,child);
@@ -1393,6 +1512,7 @@ class Loader {
    if(rule.expression)expression(*rule.expression,names,values,syntax);
    body(rule.body,names,values,syntax);
   }
+  in_template=saved;
    }
     static std::string dot_spelling(const Expr& e){
      if(e.kind==Expr::Kind::Variable)return e.text;
@@ -1425,6 +1545,7 @@ class Loader {
      return true;
     }
     void expression(Expr& e,const Names& names,const Scope& values,const Scope& syntax,bool direct=false){
+    if(!e.operator_identity.empty())used_import(current_module,BindingSpace::Operator,e.operator_identity);
     e.result=type_reference(e.result,e.where,names);
     for(auto& p:e.parameters)p.type=type_reference(p.type,p.where,names);
     for(auto& parameter:e.type_parameters)constraints(parameter.bounds,names);
@@ -1469,9 +1590,9 @@ class Loader {
   }
   if(e.kind==Expr::Kind::SyntaxLet){
    auto definitions=syntax;
-   if(e.text=="letrec_syntax")for(const auto& m:e.syntax_definitions)definitions.insert(m.name);
+   if(e.text=="letrec_syntax")for(const auto& m:e.syntax_definitions)definitions.try_emplace(m.name);
    for(auto& m:e.syntax_definitions)macro(m,names,values,definitions);
-   auto inner=syntax;for(const auto& m:e.syntax_definitions)inner.insert(m.name);
+   auto inner=syntax;for(const auto& m:e.syntax_definitions)inner.try_emplace(m.name);
    for(auto& child:e.children)expression(*child,names,values,inner);
    return;
   }
@@ -1486,9 +1607,9 @@ class Loader {
      expression(*e.children[0],names,inner,syntax);
      unsafe_context=saved;return;
     }
-   if(e.kind==Expr::Kind::PatternMatch){expression(*e.children.at(0),names,values,syntax);auto inner=values;if(!e.text.empty())inner.insert(e.text);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],names,inner,syntax);return;}
-   if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);body(e.body,names,inner,syntax);
-    for(const auto& s:e.body)if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(inner,*s.pattern);else inner.insert(s.name);}
+   if(e.kind==Expr::Kind::PatternMatch){expression(*e.children.at(0),names,values,syntax);auto inner=values;if(!e.text.empty())bind(inner,e.text,e.where);for(std::size_t i=1;i<e.children.size();++i)expression(*e.children[i],names,inner,syntax);return;}
+   if(e.kind==Expr::Kind::Case){auto inner=values;for(const auto& p:e.patterns)bind(inner,p);expression(*e.children.at(0),names,inner,syntax);
+    inner=body(e.body,names,inner,syntax);
     expression(*e.children.at(1),names,inner,syntax);return;}
     if(e.callee)expression(*e.callee,names,values,syntax,true);
   if(e.syntax_tail)expression(*e.syntax_tail,names,values,syntax);
@@ -1519,9 +1640,10 @@ class Loader {
      if(s.unsafe_block&&!options.kernel_c11)
       throw Error(s.where,"ON1X-KERNEL-PROFILE: unsafe blocks require KernelBind C11 mode","ON1X-KERNEL-PROFILE");
      if(s.value)expression(*s.value,names,values,syntax);
-   if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(values,*s.pattern);else values.insert(s.name);}
-    if(s.kind==Stmt::Kind::Assign)reference(s.name,s.where,names,values,false);
-    auto inner=values;if(s.kind==Stmt::Kind::Range)inner.insert(s.name);
+   if(s.kind==Stmt::Kind::Let){if(s.pattern)bind(values,*s.pattern);else bind(values,s.name,s.where);}
+    if(s.kind==Stmt::Kind::Assign&&(s.ref_store||!values.contains(s.name)))
+     reference(s.name,s.where,names,values,false);
+    auto inner=values;if(s.kind==Stmt::Kind::Range)bind(inner,s.name,s.where);
      auto saved=unsafe_context;unsafe_context=unsafe_context||s.unsafe_block;
       body(s.body,names,inner,syntax);unsafe_context=saved;
      body(s.otherwise,names,values,syntax);
@@ -1533,7 +1655,11 @@ class Loader {
     for(auto& p:f.params)p.type=type_reference(p.type,p.where,names);
     for(auto& parameter:f.type_parameters)constraints(parameter.bounds,names);
     constraints(f.constraints,names);
-     Scope locals;parameters(locals,f.params);body(f.body,names,locals,syntax);
+     Scope locals;
+     if(f.external){
+      const auto saved=in_template;in_template=true;parameters(locals,f.params);in_template=saved;
+     }else parameters(locals,f.params);
+     body(f.body,names,locals,syntax);
      for(auto& attr:f.attributes)expression(*attr,names,locals,syntax);
    }
   std::vector<InterfaceObligation> bind_interfaces(){
@@ -1733,6 +1859,24 @@ class Loader {
     else visit(entry,entry_at);
    if(inspection)return {};
     if(!named_module(*entry))legacy(entry);
+    // PPX/declaration extensions can inspect, replace or introduce
+    // references beyond those available to the ordinary source resolver.
+    // Do not run a transform solely to discover whether a binding is used.
+    observe=options.observe_unused_bindings&&
+      std::ranges::none_of(order,[](const Module* m){
+       return !m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
+        std::ranges::any_of(m->unit.functions,[](const Function& f){return !f.attributes.empty();});
+      });
+    if(observe)for(auto* m:order){
+     if(m->legacy)for(const auto& [key,ids]:m->observed_imports)
+      legacy_imports[key].insert(legacy_imports[key].end(),ids.begin(),ids.end());
+     if(!observe_source(*m))continue;
+     for(const auto& d:m->unit.nominals){
+      if(d.visibility.kind!=DeclarationVisibility::Private)continue;
+      if(auto id=observation(UnusedKind::Type,d.where,d.name,d.kind==Type::Sum?"enum type":"record type",*m))
+       m->observed_types.emplace(d.name,*id);
+     }
+    }
   // Pick an identifier prefix absent from every token, including local binders.
   while(std::any_of(tokens.begin(),tokens.end(),[&](const auto& t){return t.starts_with(prefix);}))prefix+="m_";
   Names flat;for(auto* m:order)if(m->legacy)merge(flat,m->names,{m->path.string()});
@@ -1804,7 +1948,10 @@ class Loader {
       inject(names.types,allowed.types);inject(names.cliches,allowed.cliches);
    }
       for(auto& d:m->unit.nominals){
+       if(auto observed=m->observed_types.find(d.name);observed!=m->observed_types.end())
+        type_definition=observed->second;
        for(auto& field:d.fields)field=type_reference(field,d.where,names);
+       type_definition.reset();
        const bool sealed=provider->opaque_types.contains(d.name);
        d.name=name({m,d.name});
        if(sealed)result.unit.opaque_nominal_owners.emplace(d.name,opaque_scope);
@@ -2031,6 +2178,14 @@ class Loader {
     return true;
    });
    if(result.unit.requires_module_boundary)check_asdl_graph(result,entry_at);
+   if(observe){
+    for(auto& item:observations)
+     if(!item.used&&!item.shadowed&&observe_source(*item.source))
+      result.unused_bindings.push_back(std::move(item.finding));
+    std::ranges::stable_sort(result.unused_bindings,[](const UnusedBinding& a,const UnusedBinding& b){
+     return std::tie(a.where.file,a.where.offset)<std::tie(b.where.file,b.where.offset);
+    });
+   }
   return result;
  }
 };

@@ -371,6 +371,19 @@
       "repair": "none"
     },
     {
+      "id": "ON1X-IMPORT-ALIAS",
+      "role": 0,
+      "provider": "compiler",
+      "match": "ON1X-IMPORT-ALIAS",
+      "level": "error",
+      "message": "{message}",
+      "category": "imports",
+      "phase": "frontend",
+      "guidance": "An explicit import alias must identify a real binding.",
+      "remediation": "Use an alias such as '_unused' to suppress an unused-import warning.",
+      "repair": "none"
+    },
+    {
       "id": "ON1X-OPERATOR-IMPORT",
       "role": 0,
       "provider": "compiler",

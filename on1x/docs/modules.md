@@ -114,6 +114,41 @@ cache; separate compiler/API invocations see file changes.
 
 ## Scope and compilation
 
+### Unused bindings
+
+The compiler reports unused namespace and selective import bindings as
+`unused-import` in diagnostic group `unused`. It identifies what was imported
+(for example, a function, procedure, module, type or resource). A **written**
+alias starting with `_` opts out: `import Data as _data` or
+`from Data import fetch as _fetch`. An unaliased `_data` import is not opted
+out. `as _` is an error (`invalid-import-alias`, group `imports`), including
+for selector aliases; hiding the diagnostic cannot make the source valid.
+
+Source variables, including parameters and pattern binders, use
+`unused-variable` in the same group. Use `_` for an ignored binding or prefix
+a binder with `_` to opt out. Only a visible **outer** variable is suppressed
+when shadowed; a new unused inner variable may itself be reported. A
+nonrecursive `let` or `var` introduces its binding after its initializer. Block,
+lambda, match arm and loop scopes do not extend past their lexical boundaries.
+Plain assignment does not read the destination. A label or field name is not
+a lexical value reference. For `unused-type`, both private records and private
+enums are checked, including generic declarations. Their own representations
+do not count as a use of themselves; references from other declarations do.
+Public, shared and unannotated declarations are not reported.
+
+These are source-level observations rather than reachability or post-expansion
+lint. Macro definition-site references and references explicitly passed in
+macro arguments count; copied macro binders are not reported. The report does
+not interpret whether a macro will expand or keep its argument. It does not run
+PPX for discovery; source graphs using PPX, attributes or declaration
+extensions are excluded. Internal compiler bindings, standard-library files,
+configured preludes and the source of an imported program whose entry point
+has been removed are not analyzed for findings. Legacy quoted includes open a
+flat scope and do not introduce one reportable namespace binding; an
+indistinguishable legacy re-export or repeated import of the same binding is
+conservatively counted as used if a reference resolves to that binding. The
+ordinary loader and checker still enforce admission and type semantics.
+
 Named imports have file-local bindings. Two modules may independently define
 `helper` without collisions. The loader assigns collision-free deterministic
 internal identifiers and rewrites references with lexical scope awareness,

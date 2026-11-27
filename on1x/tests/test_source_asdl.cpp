@@ -39,6 +39,17 @@ int main(int argc, char** argv) {
         const Location program_at{"request.on1x", 80, 5, 7};
         const Location selector_at{"request.on1x", 120, 7, 3};
         const Location declaration_at{"request.on1x", 140, 8, 1};
+        const auto warnings = collect_asdl_unused({
+            {UnusedKind::Import, program_at, "action", "procedure"},
+            {UnusedKind::Variable, selector_at, "local", "variable"},
+            {UnusedKind::Type, declaration_at, "Variant", "enum type"},
+        }, {.name="warning",.sarif="warning",.kind=diagnostic::Severity::Warning});
+        if (warnings.size() != 3 || warnings[0].name != "unused-import" ||
+            warnings[0].origin != (native ? "On1x.asdl" : "on1x-resolver") ||
+            warnings[0].group != "unused" || warnings[0].message != "unused import of procedure 'action'" ||
+            warnings[0].where.file != program_at.file || warnings[0].where.offset != program_at.offset ||
+            warnings[1].message != "unused variable 'local'" ||
+            warnings[2].message != "unused private enum type 'Variant'") return 5;
         const auto rejects_elevation = [&] {
             return rejects_at(unit, "shared elevation must be within the declaring module depth",
                               declaration_at, native, "ON1X-MODULE-ELEVATION");

@@ -210,6 +210,7 @@ std::size_t record_bytes(const Record& record){
  std::size_t total=sizeof(Record);
  auto add=[&](const std::string& value){if(value.size()>std::numeric_limits<std::size_t>::max()-total)throw std::length_error(std::string{});total+=value.size();};
  add(record.id);add(record.message);add(record.category);add(record.phase);add(record.origin);add(record.check);add(record.remediation);
+ add(record.name);add(record.group);
  add(record.level.name);add(record.level.sarif);add(record.where.file);
  for(const auto& note:record.notes)add(note);
  return total;
@@ -532,9 +533,14 @@ Record Catalog::record(const CatalogEntry& entry,Location where,const TemplateAr
  record.remediation=entry.remediation;record.notes.push_back(entry.guidance);return record;
 }
 Record Catalog::record(const Error& error)const{
+ if(error.diagnostic_id=="ON1X-IMPORT-ALIAS"&&!find(error.diagnostic_id))
+  return embedded().record(error);
  const auto& entry=compiler(error.diagnostic_id);
  try{
   auto bounded=record(entry,error.where,{error.what(),error.expected,error.found,{},{}});
+  if(error.diagnostic_id=="ON1X-IMPORT-ALIAS"){
+   bounded.name="invalid-import-alias";bounded.group="imports";
+  }
   if(bounded.message.empty())throw std::length_error(std::string{});
   return bounded;
  }
@@ -558,7 +564,8 @@ bool Registry::emit(Record record){
  if(!diagnostic_id(record.id)||record.message.empty()||record.message.size()>16384||
     record.where.file.size()>4096||record.where.offset>max_source_bytes||
     !record.where.line||!record.where.column||record.where.line>max_source_bytes+1||record.where.column>max_source_bytes+1||
-    record.notes.size()>32||!word_name(record.level.name)||!word_name(record.level.sarif)||
+    record.notes.size()>32||(!record.name.empty()&&!word_name(record.name))||
+    (!record.group.empty()&&!word_name(record.group))||!word_name(record.level.name)||!word_name(record.level.sarif)||
     record.level.color>107||static_cast<unsigned>(record.level.kind)>2)
   throw Catalog::embedded().failure(Role::ProtocolFailure,record.where);
  for(const auto& note:record.notes)if(note.size()>4096)throw Catalog::embedded().failure(Role::ProtocolFailure,record.where);

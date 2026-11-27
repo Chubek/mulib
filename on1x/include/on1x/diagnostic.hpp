@@ -90,6 +90,7 @@ struct Record {
  Level level;
  Location where;
  std::vector<std::string> notes;
+ std::string name,group;
 };
 
 class Catalog {

@@ -15,6 +15,7 @@ struct Report {
  diagnostic::Level level;
  diagnostic::Presentation presentation;
  std::string category,phase,origin,check,remediation;
+ std::string name,group;
 };
 struct Bundle {
  std::vector<Report> diagnostics;

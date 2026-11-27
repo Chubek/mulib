@@ -7,4 +7,5 @@ inline constexpr char policy[] = R"on1x_asdl(@ON1X_SOURCE_ASDL_policy@)on1x_asdl
 inline constexpr char imports[] = R"on1x_asdl(@ON1X_SOURCE_ASDL_imports@)on1x_asdl";
 inline constexpr char signatures[] = R"on1x_asdl(@ON1X_SOURCE_ASDL_signatures@)on1x_asdl";
 inline constexpr char graph[] = R"on1x_asdl(@ON1X_SOURCE_ASDL_graph@)on1x_asdl";
+inline constexpr char unused[] = R"on1x_asdl(@ON1X_SOURCE_ASDL_unused@)on1x_asdl";
 }

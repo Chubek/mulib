@@ -296,7 +296,7 @@ struct ModuleExtension {
  std::vector<Token> tokens;
 };
 struct ModuleHeader { Location where; std::string name; };
-struct ImportName { std::string name,alias; bool is_operator=false; };
+struct ImportName { std::string name,alias; bool is_operator=false; Location where; };
 struct Import {
  Location where;
  std::string module,alias;
@@ -312,12 +312,14 @@ struct KernelImport {
  std::string module,alias;
  bool is_unsafe=false;
  bool dynlib=false;
+ bool explicit_alias=false;
 };
 // A source-only request for a portable, compiler-supplied On1x definition.
 // Unlike KernelImport, this cannot request an ABI, linkage, or unsafe mode.
 struct ForeignImport {
  Location where;
  std::string kernel,alias; // Bare kernel name under stdffi.
+ bool explicit_alias=false;
 };
 struct NominalDeclaration {
  Location where;

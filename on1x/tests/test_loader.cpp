@@ -3,10 +3,97 @@
 #include <on1x/stdffi.hpp>
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <set>
 
 namespace {
+void unused_bindings(const std::filesystem::path& root){
+ namespace fs=std::filesystem;
+ using namespace on1x;
+ auto write=[](const fs::path& path,std::string_view source){
+  fs::create_directories(path.parent_path());
+  std::ofstream out(path);out<<source;
+  if(!out)throw std::runtime_error("cannot create unused-binding fixture");
+ };
+ const auto entry=root/"main.on1x";
+ write(root/"Lib.on1xm",R"(
+module Lib;
+public fn _not_alias()->i64{return 4;}
+public proc action(){}
+public fn helper()->i64{return 3;}
+public fn takes_value(x:i64)->i64{return x;}
+public record Exported{n:i64}
+private record HiddenRecord{n:i64}
+private enum HiddenEnum{Nothing,Something(i64)}
+private record Live{n:i64}
+public fn touch(x:Live)->i64{return x.n;}
+public macro expand{rule()=>expression{42};}
+public operator(lexeme: "%%", arity: "binary", formals: x:i64,y:i64)->i64{return x+y;}
+)");
+ write(root/"solo.on1x","fn legacy()->i64{return 8;}");
+ write(entry,R"(
+import "solo.on1x";
+import Lib as _intentional;
+import Lib as spare;
+from Lib import action, helper as local_name, _not_alias, Exported as RemoteType, takes_value;
+from Lib import helper as _skip;
+from Lib import expand, operator("%%"), helper as def_site;
+macro apply{rule()=>expression{fn(generated:i64)->i64{return def_site();}(0)};}
+fn main(){
+ let unused_local=8;
+ let _unused=8;
+ let _=8;
+ let local_name=8;
+ let outer=7;
+ {let outer=9; assert(outer==9);}
+ {let inherited=10; {let inherited=inherited+1; assert(inherited==11);}}
+ {let outer=10;}
+ {let spare=record{n:42}; assert(spare.n==42);}
+ let (unused_tuple, kept) = (0, 5);
+ assert(((local_name+kept+legacy()) %% takes_value(2))==23);
+ assert(expand!()==42);
+ assert(apply!()==3);
+}
+)");
+ LoaderOptions options;options.prelude=false;
+ if(!load_unit(entry,options).unused_bindings.empty())throw std::runtime_error("loader observation must be opt-in");
+ options.observe_unused_bindings=true;
+ auto loaded=load_unit(entry,options);
+ check(loaded.unit);
+ std::multiset<std::pair<std::string,std::string>> actual;
+ for(const auto& item:loaded.unused_bindings)actual.emplace(item.binding_kind,item.name);
+ const decltype(actual) expected{
+  {"record type","HiddenRecord"},{"enum type","HiddenEnum"},
+  {"module","spare"},{"procedure","action"},{"function","local_name"},{"function","_not_alias"},
+  {"type","RemoteType"},{"variable","unused_local"},{"variable","unused_tuple"},{"variable","outer"},
+ };
+ if(actual!=expected){
+  for(const auto& [kind,name]:actual)std::fprintf(stderr,"unexpected set member seen: %s %s\n",kind.c_str(),name.c_str());
+  throw std::runtime_error("wrong unused binding provenance");
+ }
+ for(const auto syntax:{"import Lib as _;","from Lib import action as _;",
+                         "import Lib : action as _;","import program Missing as _;",
+                         "import foreign stdffi.clamp as _;","unsafe import kernel mulib.clamp as _;"}){
+  write(entry,std::string(syntax)+"fn main(){}");
+  try{(void)load_unit(entry,options);}
+  catch(const Error& e){
+   if(e.diagnostic_id=="ON1X-IMPORT-ALIAS")continue;
+   throw;
+  }
+  throw std::runtime_error("lone underscore import alias accepted");
+ }
+ write(entry,"import foreign stdffi.clamp as port;fn main(){}");
+ if(stdffi::has_kernel("clamp")){
+  options.kernel_load_time=true;
+  auto resources=load_unit(entry,options);
+  check(resources.unit);
+  if(resources.unused_bindings.size()!=1||resources.unused_bindings.front().binding_kind!="resource")
+   throw std::runtime_error("missing unused resource import");
+ }
+}
+
 void standard_module_imports(const std::filesystem::path& root){
  namespace fs=std::filesystem;
  using namespace on1x;
@@ -217,6 +304,7 @@ void module_imports(const std::filesystem::path& root){
 int main(int argc,char** argv){
  assert(argc==2);namespace fs=std::filesystem;
  fs::path root=argv[1];fs::create_directories(root);
+ unused_bindings(fs::canonical(root)/"unused-bindings");
  module_imports(fs::canonical(root)/"module-imports");
  standard_module_imports(fs::canonical(root)/"standard-module-imports");
  std::ofstream(root/"a.on1x")<<"import b;fn main(){}";

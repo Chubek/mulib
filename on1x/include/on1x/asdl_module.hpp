@@ -1,4 +1,6 @@
 #pragma once
+#include <on1x/diagnostic.hpp>
+#include <on1x/unused_binding.hpp>
 
 namespace on1x {
 
@@ -18,5 +20,9 @@ void check_asdl_module(const Unit&);
 // the published graph. Legacy declaration-only interfaces do not use this ABI.
 void check_asdl_signature(const ModuleSignature&);
 void check_asdl_graph(const LoadedUnit&, const Location&);
+
+// Report-only bridge; no source, PPX or user libraries are executed.
+std::vector<diagnostic::Record> collect_asdl_unused(
+    const std::vector<UnusedBinding>&, const diagnostic::Level&);
 
 } // namespace on1x

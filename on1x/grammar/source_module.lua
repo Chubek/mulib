@@ -48,7 +48,16 @@ local function graph(facts)
     return asdl.make("source_graph", nil, {paths = facts.paths, edges = edges}, facts.where)
 end
 
-local project = ({module = module, signature = signature, graph = graph})[on1x_source_facts.kind]
+local function unused(facts)
+    local bindings = {}
+    for i, binding in ipairs(facts.bindings) do
+        bindings[i] = asdl.make("unused_binding", binding.tag,
+            {name = binding.name, kind = binding.kind}, binding.where)
+    end
+    return asdl.make("source_unused", nil, {bindings = bindings})
+end
+
+local project = ({module = module, signature = signature, graph = graph, unused = unused})[on1x_source_facts.kind]
 local root = project(on1x_source_facts)
 local checked, reason = asdl.run_logistics({transform = true, context = on1x_source_libraries}, root)
 -- The native engine keeps reported diagnostics even if it rejects the root.

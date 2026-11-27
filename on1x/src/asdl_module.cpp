@@ -1,4 +1,36 @@
 #include <on1x/asdl_module.hpp>
+#include <algorithm>
+#include <span>
+
+namespace on1x {
+namespace {
+// One beyond the ordinary presentation cap allows its registry to signal
+// truncation. This pass remains advisory even if the Lua budget is exceeded.
+constexpr std::size_t max_unused_reports=1025;
+constexpr const char* unused_group="unused";
+struct UnusedPattern {const char* tag;const char* code;const char* name;};
+constexpr UnusedPattern unused_pattern(UnusedKind kind){
+    switch(kind){
+    case UnusedKind::Import: return {"UnusedImport","ON1X-UNUSED-IMPORT","unused-import"};
+    case UnusedKind::Variable: return {"UnusedVariable","ON1X-UNUSED-VARIABLE","unused-variable"};
+    case UnusedKind::Type: return {"UnusedType","ON1X-UNUSED-TYPE","unused-type"};
+    }
+    throw std::logic_error("unknown source observation");
+}
+void native_unused_records(std::span<const UnusedBinding> observations, const diagnostic::Level& level,
+                           std::vector<diagnostic::Record>& records) {
+    for (const auto& item : observations) {
+        const auto pattern=unused_pattern(item.kind);
+        const char* prefix="unused ";
+        if (item.kind==UnusedKind::Import) prefix="unused import of ";
+        if (item.kind==UnusedKind::Type) prefix="unused private ";
+        records.push_back({.id=pattern.code,.message=prefix+item.binding_kind+" '"+item.name+"'",
+            .category=unused_group,.phase="frontend",.origin="on1x-resolver",.level=level,.where=item.where,
+            .name=pattern.name,.group=unused_group});
+    }
+}
+}
+}
 
 #ifdef ON1X_ASDL_MODULES
 #include <on1x/loader.hpp>
@@ -8,7 +40,7 @@
 #include <asdl/lua.hpp>
 #include <asdl/schema.hpp>
 #include "on1x_source_asdl.hpp"
-#include <algorithm>
+#include "on1x_std_diagnostics.hpp"
 #include <string_view>
 #include <utility>
 
@@ -195,17 +227,36 @@ void push_graph(lua_State* lua, const LoadedUnit& graph, const Location& where) 
     lua_setfield(lua, -2, "edges");
 }
 
+void push_unused(lua_State* lua, std::span<const UnusedBinding> observations) {
+    lua_newtable(lua);
+    text(lua, "kind", "unused");
+    lua_newtable(lua);
+    lua_Integer index = 0;
+    for (const auto& item : observations) {
+        lua_newtable(lua);
+        text(lua, "tag", unused_pattern(item.kind).tag);
+        text(lua, "name", item.name);
+        text(lua, "kind", item.binding_kind);
+        location(lua, item.where);
+        lua_rawseti(lua, -2, ++index);
+    }
+    lua_setfield(lua, -2, "bindings");
+}
+
 struct Library {
     const char* key;
     const char* name;
     std::string_view bytes;
+    const char* version="1";
 };
 constexpr Library libraries[]{
     {"policy", "on1x.source.policy", source_asdl::policy},
     {"imports", "on1x.source.imports", source_asdl::imports},
     {"signatures", "on1x.source.signatures", source_asdl::signatures},
     {"graph", "on1x.source.graph", source_asdl::graph},
+    {"unused", "on1x.source.unused", source_asdl::unused},
 };
+constexpr Library diagnostics_library{"diagnostics", "std.diagnostics", source_asdl::std_diagnostics, nullptr};
 
 void install_signer(lua_State* lua) {
     // This pinned installer always reads LIBSTONE_ASDL_PATH to populate its
@@ -227,7 +278,7 @@ void push_library(lua_State* lua, const Library& library) {
     // Each bundle gets only the named utilities and its own LIB binding.
     lua_newtable(lua);
     const int environment = lua_gettop(lua);
-    for (const char* name : {"asdl", "ipairs", "tonumber"}) {
+    for (const char* name : {"asdl", "ipairs", "tonumber", "pairs", "next", "assert", "type", "tostring", "error", "string"}) {
         lua_getglobal(lua, name);
         lua_setfield(lua, environment, name);
     }
@@ -255,7 +306,8 @@ void push_library(lua_State* lua, const Library& library) {
     lua_pop(lua, 1);
     lua_getfield(lua, -1, "version");
     const char* version = lua_tostring(lua, -1);
-    if (!signed_exports || !correct_name || !version || std::string_view(version) != "1")
+    if (!signed_exports || !correct_name ||
+        (library.version && (!version || std::string_view(version) != library.version)))
         throw std::runtime_error("wrong signed ASDL library identity or version");
     lua_settop(lua, exports);
     lua_remove(lua, environment);
@@ -266,6 +318,7 @@ struct Input {
     const Unit* unit = nullptr;
     const ModuleSignature* signature = nullptr;
     const LoadedUnit* graph = nullptr;
+    std::span<const UnusedBinding> observations{};
 };
 
 // Called under LuaSession::extend's protected call and instruction budget.
@@ -280,10 +333,15 @@ int initialize(lua_State* lua) {
         push_library(lua, library);
         lua_setfield(lua, -2, library.key);
     }
+    if (!input.observations.empty()) {
+        push_library(lua, diagnostics_library);
+        lua_setfield(lua, -2, diagnostics_library.key);
+    }
     lua_setglobal(lua, "on1x_source_libraries");
     if (input.unit) push_module(lua, *input.unit);
     else if (input.signature) push_signature(lua, *input.signature);
-    else push_graph(lua, *input.graph, input.where);
+    else if (input.graph) push_graph(lua, *input.graph, input.where);
+    else push_unused(lua, input.observations);
     lua_setglobal(lua, "on1x_source_facts");
     return 0;
 }
@@ -322,6 +380,31 @@ int read_error(lua_State* lua) {
             return 0;
         }
         lua_pop(lua, 1);
+    }
+    return 0;
+}
+
+struct Warnings {
+    const diagnostic::Level& level;
+    std::vector<diagnostic::Record>& records;
+};
+int read_warnings(lua_State* lua) {
+    auto& output = *static_cast<Warnings*>(lua_touserdata(lua, 2));
+    lua_getfield(lua, 1, "diagnostic");
+    lua_getfield(lua, -1, "records");
+    lua_call(lua, 0, 1);
+    for (lua_Integer i = 1; i <= static_cast<lua_Integer>(lua_rawlen(lua, -1)); ++i) {
+        lua_rawgeti(lua, -1, i);
+        diagnostic::Record record{.id=read_text(lua,"code"),.message=read_text(lua,"message"),
+            .category=unused_group,.phase="frontend",.origin="On1x.asdl",.level=output.level,
+            .name=read_text(lua,"name"),.group=read_text(lua,"group")};
+        if (read_text(lua, "severity") != "warning" || record.name.empty() || record.group != unused_group)
+            throw std::runtime_error("missing unused ASDL diagnostic metadata");
+        lua_getfield(lua, -1, "location");
+        record.where = {read_text(lua, "file"), read_integer(lua, "offset"),
+                        read_integer(lua, "line"), read_integer(lua, "column")};
+        output.records.push_back(std::move(record));
+        lua_pop(lua, 2);
     }
     return 0;
 }
@@ -366,9 +449,40 @@ void check_asdl_graph(const LoadedUnit& graph, const Location& where) {
     check({.where = where, .graph = &graph});
 }
 
+std::vector<diagnostic::Record> collect_asdl_unused(
+        const std::vector<UnusedBinding>& observations, const diagnostic::Level& level) {
+    std::vector<diagnostic::Record> records;
+    Warnings output{level,records};
+    auto bounded=std::span(observations).first(std::min(observations.size(),max_unused_reports));
+    while (!bounded.empty()) {
+        auto batch=bounded.first(std::min(bounded.size(),std::size_t{128}));
+        bounded=bounded.subspan(batch.size());
+        Input input{.where=batch.front().where,.observations=batch};
+        const auto before=records.size();
+        try {
+            asdl::LuaSession session(module_schema());
+            session.extend(initialize, &input);
+            session.run(source_asdl::adapter, "=On1x source ASDL adapter");
+            if (session.diagnostic_count("warning") != batch.size())
+                throw std::runtime_error("source ASDL did not report every unused binding");
+            session.extend(read_warnings, &output);
+        } catch (const std::runtime_error&) {
+            records.resize(before);
+            native_unused_records(batch,level,records);
+        }
+    }
+    return records;
+}
+
 } // namespace on1x
 #else
 void on1x::check_asdl_module(const Unit&) {}
 void on1x::check_asdl_signature(const ModuleSignature&) {}
 void on1x::check_asdl_graph(const LoadedUnit&, const Location&) {}
+std::vector<on1x::diagnostic::Record> on1x::collect_asdl_unused(
+        const std::vector<UnusedBinding>& observations, const diagnostic::Level& level) {
+    std::vector<diagnostic::Record> records;
+    native_unused_records(std::span(observations).first(std::min(observations.size(),max_unused_reports)),level,records);
+    return records;
+}
 #endif

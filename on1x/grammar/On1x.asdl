@@ -31,6 +31,12 @@ signature_member ::= AbstractType(string name, usize arity)
 source_graph ::= (string* paths, source_edge* edges);
 source_edge ::= (usize importer, usize provider);
 
+-- Resolved source observations; logistics only presents them.
+source_unused ::= (unused_binding* bindings);
+unused_binding ::= UnusedImport(string name, string kind)
+                 | UnusedVariable(string name, string kind)
+                 | UnusedType(string name, string kind);
+
 .logistics for :source_module ::= lua(root)
     local header, imports, declarations = asdl.destruct(root)
     local depth = 0
@@ -61,4 +67,15 @@ source_edge ::= (usize importer, usize provider);
 
 .logistics for :source_graph ::= lua(graph)
     return asdl.logistics_context().value.graph.Check(graph)
+.end
+
+.logistics for :source_unused ::= lua(batch)
+    local bindings = asdl.destruct(batch)
+    for _, binding in ipairs(bindings) do asdl.logistics(binding) end
+    return batch
+.end
+
+.logistics for :unused_binding ::= lua(binding)
+    local libraries = asdl.logistics_context().value
+    return libraries.unused.Report(libraries.diagnostics, binding)
 .end

@@ -97,7 +97,10 @@ std::string report_object(const Report& report){
   ",\"offset\":"+std::to_string(report.offset)+",\"line\":"+std::to_string(item.primary.line)+
   ",\"byteColumn\":"+std::to_string(item.primary.column)+"},\"category\":"+quote(report.category)+
   ",\"phase\":"+quote(report.phase)+",\"origin\":"+quote(report.origin)+",\"check\":"+quote(report.check)+
-  ",\"remediation\":"+quote(report.remediation)+",\"notes\":[";
+  ",\"remediation\":"+quote(report.remediation);
+ if(!report.name.empty())out+=",\"name\":"+quote(report.name);
+ if(!report.group.empty())out+=",\"group\":"+quote(report.group);
+ out+=",\"notes\":[";
  bool first=true;
  for(const auto& note:item.notes){if(!first)out+=',';first=false;out+=quote(note);}
   out+="],\"repairs\":[";first=true;
@@ -138,6 +141,7 @@ Report describe(const Error& error,std::optional<std::string> source,const diagn
  report.diagnostic.id=entry.id;report.diagnostic.primary=span;
  report.diagnostic.message=bounded.message;
  report.diagnostic.severity=severity(entry.level.kind);metadata(report,entry);
+ report.name=bounded.name;report.group=bounded.group;
  if(source&&source->size()<=max_source_bytes&&located(error.where,*source))report.source=std::move(source);
  if(!report.source)return report;
  const auto& snapshot=*report.source;
@@ -207,6 +211,7 @@ Report describe(const diagnostic::Record& record,std::optional<std::string> sour
  report.diagnostic.primary={record.where.file,narrow(record.where.line),narrow(record.where.column),narrow(record.where.line),narrow(record.where.column)};
  report.diagnostic.notes=record.notes;
  report.category=record.category;report.phase=record.phase;report.origin=record.origin;report.check=record.check;report.remediation=record.remediation;
+ report.name=record.name;report.group=record.group;
  if(source&&source->size()<=max_source_bytes&&located(record.where,*source))report.source=std::move(source);
  return report;
 }
@@ -313,7 +318,10 @@ std::string sarif(const Bundle& bundle){
   }
   out+=",\"properties\":{\"category\":"+quote(report.category)+",\"phase\":"+quote(report.phase)+
    ",\"origin\":"+quote(report.origin)+",\"check\":"+quote(report.check)+
-   ",\"remediation\":"+quote(report.remediation)+",\"on1xReport\":"+report_object(report)+"}}";
+   ",\"remediation\":"+quote(report.remediation);
+  if(!report.name.empty())out+=",\"name\":"+quote(report.name);
+  if(!report.group.empty())out+=",\"group\":"+quote(report.group);
+  out+=",\"on1xReport\":"+report_object(report)+"}}";
  }
  out+="],\"properties\":{\"droppedDiagnostics\":"+std::to_string(bundle.dropped)+"}}]}\n";
  return out;

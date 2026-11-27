@@ -2124,17 +2124,23 @@ class Parser {
      declaration.identity=operator_identity(header);function.name=declaration.identity;
      return declaration;
     }
+     std::string import_alias(){
+      const auto at=peek().where;
+      auto alias=ident();
+      if(alias=="_")throw Error(at,"import alias '_' is not allowed; use a name such as '_unused'","ON1X-IMPORT-ALIAS");
+      return alias;
+     }
      void import_selectors(Import& declaration,bool parens=false){
       declaration.selective=true;
       do{
-       ImportName name;
+       ImportName name;name.where=peek().where;
        if(at("operator")&&peek(1).text=="("){
         if(declaration.kind==Import::Kind::Program)
          throw Error(peek().where,"program imports cannot select operators","ON1X-OPERATOR-IMPORT");
         pos+=2;name.is_operator=true;name.name=operator_literal(peek());++pos;consume(")");
         if(at("as"))throw Error(peek().where,"selective operator imports cannot be aliased","ON1X-OPERATOR-IMPORT");
        }else{
-        name.name=ident();if(accept("as"))name.alias=ident();
+        name.name=ident();if(accept("as"))name.alias=import_alias();
        }
        declaration.names.push_back(std::move(name));
       }while(accept(",")&&!(parens&&at(")")));
@@ -2170,7 +2176,8 @@ class Parser {
       consume("import");consume("foreign");consume("stdffi");consume(".");
       item.kernel=ident();
       if(item.kernel.size()>4096)throw Error(item.where,"stdffi kernel name exceeds 4096 bytes");
-      item.alias=accept("as")?ident():item.kernel;
+      item.explicit_alias=accept("as");
+      item.alias=item.explicit_alias?import_alias():item.kernel;
       consume(";");
       u.foreign_imports.push_back(std::move(item));
       check_import_count();
@@ -2185,7 +2192,7 @@ class Parser {
      if(accept("[")){consume("dynlib");consume("]");item.dynlib=true;}
      item.module=module_name();
      if(item.module.size()>4096)throw Error(item.where,"kernel module name exceeds 4096 bytes");
-     if(accept("as"))item.alias=ident();
+     if((item.explicit_alias=accept("as")))item.alias=import_alias();
      else item.alias=item.module.substr(item.module.rfind('.')+1);
      consume(";");
      u.kernel_imports.push_back(std::move(item));
@@ -2209,7 +2216,7 @@ class Parser {
        if(item.module.size()>4096)
         throw Error(item.where,"program import name exceeds 4096 bytes","ON1X-PROGRAM-IMPORT");
       }
-      if(accept("as"))item.alias=ident();
+      if(accept("as"))item.alias=import_alias();
       colon_import_selectors(item);
       consume(";");
       u.module_imports.push_back(std::move(item));check_import_count();return true;
@@ -2232,7 +2239,7 @@ class Parser {
        declaration.quoted=true;declaration.module=token.text.substr(1,token.text.size()-2);
        u.imports.push_back(declaration.module);u.module_imports.push_back(std::move(declaration));++pos;
       }else do{
-       Import item;item.where=peek().where;item.module=module_name();if(accept("as"))item.alias=ident();
+       Import item;item.where=peek().where;item.module=module_name();if(accept("as"))item.alias=import_alias();
        const bool selective=colon_import_selectors(item);
        u.module_imports.push_back(std::move(item));
        if(selective)break;

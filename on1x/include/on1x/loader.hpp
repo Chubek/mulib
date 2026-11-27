@@ -1,6 +1,7 @@
 #pragma once
 #include <on1x/ast.hpp>
 #include <on1x/extensions.hpp>
+#include <on1x/unused_binding.hpp>
 #include <filesystem>
 #include <set>
 
@@ -33,6 +34,7 @@ struct LoaderOptions {
   std::map<std::string,ModuleMember> module_members;
   std::map<std::filesystem::path,std::map<std::string,ModuleMember>> scoped_module_members;
   std::map<std::string,std::filesystem::path> program_members;
+  bool observe_unused_bindings=false;
 };
 struct LoadedUnit {
  Unit unit;
@@ -49,7 +51,8 @@ struct LoadedUnit {
    std::vector<std::filesystem::path> signature_dependencies;
    bool source_capabilities=false; // Parsed source requested PPX, native or extension capabilities.
   // Direct edges between physical source files, not synthetic module groups.
-  std::vector<std::pair<std::filesystem::path,std::filesystem::path>> source_edges;
+ std::vector<std::pair<std::filesystem::path,std::filesystem::path>> source_edges;
+ std::vector<UnusedBinding> unused_bindings;
 };
 // Reads the new *_PATH lists and legacy ON1X_STDLIB/ON1X_PATH aliases.
  LoaderOptions default_loader_options(const std::string& executable);
