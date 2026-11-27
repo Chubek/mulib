@@ -1,5 +1,6 @@
 #include <on1x/asdl_module.hpp>
-#include <on1x/ast.hpp>
+#include <on1x/loader.hpp>
+#include <on1x/module_signature.hpp>
 #include <iostream>
 #include <limits>
 #include <string_view>
@@ -7,10 +8,11 @@
 namespace {
 using namespace on1x;
 
-bool rejects_at(const Unit& unit, std::string_view message, const Location& where, bool native,
+template<class Check>
+bool rejects_at(Check check, std::string_view message, const Location& where, bool native,
                 std::string_view code = "ON1X-MODULE-ASDL") {
     try {
-        check_asdl_module(unit);
+        check();
         if (native) std::cerr << "expected rejection: " << message << '\n';
         return !native;
     } catch (const Error& error) {
@@ -20,6 +22,11 @@ bool rejects_at(const Unit& unit, std::string_view message, const Location& wher
         if (!matches) std::cerr << "unexpected rejection: " << error.diagnostic_id << ": " << error.what() << '\n';
         return matches;
     }
+}
+
+bool rejects_at(const Unit& unit, std::string_view message, const Location& where, bool native,
+                std::string_view code = "ON1X-MODULE-ASDL") {
+    return rejects_at([&] { check_asdl_module(unit); }, message, where, native, code);
 }
 }
 
@@ -57,6 +64,9 @@ int main(int argc, char** argv) {
         declaration.visibility = {DeclarationVisibility::Shared, 2};
         unit.macros.push_back(std::move(declaration));
         check_asdl_module(unit);
+        unit.module_imports.front().module = "tools/echo'on1x\n-- error('not code')";
+        check_asdl_module(unit);
+        unit.module_imports.front().module = request.module;
         auto& elevation = unit.macros.front().visibility.elevation;
         elevation = 1;
         check_asdl_module(unit);
@@ -122,6 +132,49 @@ int main(int argc, char** argv) {
         headerless.visibility = {DeclarationVisibility::Shared, 1};
         unit.macros.push_back(std::move(headerless));
         if (!rejects_elevation()) return 6;
+
+        // Signature members and physical graph inputs arrive after the host has
+        // verified the source and resolved imports. These negative cases
+        // simulate damaged projections, not new language-policy diagnostics.
+        ModuleSignature signature;
+        signature.where = module_at;
+        check_asdl_signature(signature); // Legacy signatures do not invoke this projection.
+        signature.module = "Apps.Echo";
+        const auto signature_check = [&] { check_asdl_signature(signature); };
+        if (!rejects_at(signature_check, "empty verified module signature projection", module_at, native)) return 7;
+        signature.types.push_back({module_at, "Item", 1});
+        // Type and value namespaces are separate (the callable type remains C++-owned).
+        signature.members.push_back({program_at, "Item", Type::function({}, Type::Void), true});
+        signature_check();
+        signature.types.push_back({declaration_at, "Item", 0});
+        if (!rejects_at(signature_check, "invalid verified signature member projection", declaration_at, native))
+            return 7;
+        signature.types.pop_back();
+        signature_check(); // A failed run cannot leave diagnostics or nodes in the next run.
+
+        LoadedUnit graph;
+        graph.dependencies = {"/tmp/provider.on1x", "/tmp/importer'\n.on1xm"};
+        graph.source_edges.emplace_back(graph.dependencies[1], graph.dependencies[0]);
+        const auto graph_check = [&] { check_asdl_graph(graph, module_at); };
+        graph_check();
+        graph.source_edges[0].second = "/tmp/missing.on1x";
+        if (!rejects_at(graph_check, "missing physical dependency endpoint", module_at, native)) return 8;
+        graph.source_edges[0].second = graph.dependencies[0];
+        graph.dependencies.push_back(graph.dependencies[0]);
+        if (!rejects_at(graph_check, "invalid physical dependency path projection", module_at, native)) return 8;
+        graph.dependencies.pop_back();
+        graph_check();
+        if (native) {
+            // The compiler's edge budget must fit in one native pass.
+            graph.dependencies.clear();
+            graph.source_edges.clear();
+            for (unsigned i = 0; i < 1024; ++i)
+                graph.dependencies.emplace_back("/tmp/source-" + std::to_string(i) + ".on1xm");
+            for (unsigned i = 32; i < graph.dependencies.size() && graph.source_edges.size() < 16384; ++i)
+                for (unsigned j = 0; j < 32; ++j)
+                    graph.source_edges.emplace_back(graph.dependencies[i], graph.dependencies[j]);
+            graph_check();
+        }
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
         return 5;
