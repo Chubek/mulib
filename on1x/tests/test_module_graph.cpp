@@ -20,6 +20,7 @@ static ModuleGraph graph(unsigned n) {
 static void request(ModuleGraph &g, unsigned from, unsigned to) {
   GraphRequest r;
   r.id = std::to_string(g.requests.size());
+  r.kind = "quoted";
   r.source = "f" + std::to_string(from);
   r.spelling = "import \"x\";";
   r.end = r.spelling.size();
