@@ -1669,64 +1669,130 @@ class Parser {
     }
      return members;
     }
-    ModuleSignature module_signature(){
-     ModuleSignature signature;signature.where=peek().where;
-     if(!accept("abstract")){
-      auto members=interface();
+     std::vector<std::string> signature_parameters(){
+      std::vector<std::string> parameters;
+      std::set<std::string> seen;
+      if(accept("<")){
+       do{
+        auto where=peek().where;
+        if(parameters.size()>=32)
+         throw Error(where,"interface type parameter limit exceeded","ON1X-INTERFACE-LIMIT");
+        auto name=ident();
+        if(!seen.insert(name).second)
+         throw Error(where,"duplicate interface type parameter: "+name,"ON1X-INTERFACE-DUPLICATE");
+        parameters.push_back(std::move(name));
+       }while(accept(","));
+       close_angle();
+      }
+      return parameters;
+     }
+     SignatureReference signature_reference(){
+      SignatureReference reference;reference.where=peek().where;reference.name=ident();
+      if(accept("<")){
+       do{
+        if(reference.arguments.size()>=32)
+         throw Error(peek().where,"signature argument limit exceeded","ON1X-INTERFACE-LIMIT");
+        reference.arguments.push_back(type());
+       }while(accept(","));
+       close_angle();
+      }
+      return reference;
+     }
+     bool signature_keyword(ModuleSignature& signature,const char* spelling){
+      if(!at(spelling))return false;
+      signature.context_keywords.push_back(peek().where.offset);consume(spelling);
+      return true;
+     }
+     void signature_declarations(ModuleSignature& signature,NamedSignature& body,bool named){
+      std::set<std::string> functions,types;
+      while(!at("<eof>")&&!(named&&at("}"))){
+       if(body.members.size()+body.types.size()+body.includes.size()+body.sharing.size()>=256)
+        throw Error(peek().where,"interface member limit exceeded","ON1X-INTERFACE-LIMIT");
+       if(named&&signature_keyword(signature,"include")){
+        body.includes.push_back(signature_reference());consume(";");continue;
+       }
+       if(named&&signature_keyword(signature,"sharing")){
+        if(!signature_keyword(signature,"type"))consume("type");
+        auto where=peek().where;auto name=ident();consume("=");
+        body.sharing.push_back({std::move(where),std::move(name),type()});consume(";");continue;
+       }
+       if(at("abstract")||at("type")){
+        const bool abstract=signature_keyword(signature,"abstract");
+        if(!signature_keyword(signature,"type"))consume("type");
+        auto where=peek().where;auto name=ident();
+        if(!types.insert(name).second)
+         throw Error(where,"duplicate interface type: "+name,"ON1X-INTERFACE-DUPLICATE");
+        if(named&&bound_types.contains(name))
+         throw Error(where,"signature parameter and type member have the same name: "+name,"ON1X-INTERFACE-DUPLICATE");
+        const auto arity=signature_parameters().size();
+        std::optional<Type> manifest;
+        if(named&&!abstract&&accept("=")){
+         if(arity)throw Error(where,"manifest type equations must be monomorphic","ON1X-INTERFACE-UNSUPPORTED");
+         manifest=type();
+        }
+        consume(";");
+        body.types.push_back({std::move(where),std::move(name),arity,std::move(manifest)});
+        continue;
+       }
+       const bool procedure=accept("proc");
+       if(!procedure&&!accept("fn"))
+        throw Error(peek().where,named?"expected a signature type, callable, include or sharing declaration":
+                    "abstract module accepts only 'type T;', 'fn name(...) -> type;' and 'proc name(...);' declarations",
+                    "ON1X-INTERFACE-SHAPE");
+       auto where=peek().where;auto name=ident();
+       if(!functions.insert(name).second)
+        throw Error(where,"duplicate interface member: "+name,"ON1X-INTERFACE-DUPLICATE");
+       consume("(");std::vector<Type> parameters;std::set<std::string> parameter_names;
+       if(!at(")"))do{
+        auto at=peek().where;
+        if(parameters.size()>=32)
+         throw Error(at,"interface parameter limit exceeded","ON1X-INTERFACE-LIMIT");
+        if(!parameter_names.insert(ident()).second)
+         throw Error(at,"duplicate interface parameter","ON1X-INTERFACE-DUPLICATE");
+        consume(":");parameters.push_back(type());
+       }while(accept(","));
+       consume(")");Type result=Type::Void;
+       if(!procedure){consume("->");result=type();}
+       consume(";");
+       body.members.push_back({std::move(where),std::move(name),
+                               Type::function(std::move(parameters),std::move(result)),procedure});
+      }
+     }
+     ModuleSignature module_signature(){
+      ModuleSignature signature;signature.where=peek().where;
+      if(!at("signature")&&!at("module")&&!at("abstract")){
+       auto members=interface();
       signature.members.reserve(members.size());
       for(auto& member:members)
        signature.members.push_back({std::move(member.where),std::move(member.name),
                                     std::move(member.signature)});
-      return signature;
-     }
-     consume("module");signature.module=module_name();consume(";");
-     std::set<std::string> functions,types;
-     while(!at("<eof>")){
-      if(signature.members.size()+signature.types.size()>=256)
-       throw Error(peek().where,"interface member limit exceeded","ON1X-INTERFACE-LIMIT");
-      if(at("abstract")||at("type")){
-       accept("abstract");consume("type");auto where=peek().where;auto name=ident();
-       if(!types.insert(name).second)
-        throw Error(where,"duplicate interface type: "+name,"ON1X-INTERFACE-DUPLICATE");
-       std::set<std::string> parameters;
-       if(accept("<")){
-        do{
-         auto at=peek().where;
-         if(parameters.size()>=32)
-          throw Error(at,"interface type parameter limit exceeded","ON1X-INTERFACE-LIMIT");
-         if(!parameters.insert(ident()).second)
-          throw Error(at,"duplicate interface type parameter","ON1X-INTERFACE-DUPLICATE");
-        }while(accept(","));
-        close_angle();
-       }
-       consume(";");
-       signature.types.push_back({std::move(where),std::move(name),parameters.size()});
-       continue;
+       return signature;
       }
-      const bool procedure=accept("proc");
-      if(!procedure&&!accept("fn"))
-       throw Error(peek().where,"abstract module accepts only 'type T;', 'fn name(...) -> type;' and 'proc name(...);' declarations",
-                   "ON1X-INTERFACE-SHAPE");
-      auto where=peek().where;auto name=ident();
-      if(!functions.insert(name).second)
-       throw Error(where,"duplicate interface member: "+name,"ON1X-INTERFACE-DUPLICATE");
-      consume("(");std::vector<Type> parameters;std::set<std::string> parameter_names;
-      if(!at(")"))do{
-       auto at=peek().where;
-       if(parameters.size()>=32)
-        throw Error(at,"interface parameter limit exceeded","ON1X-INTERFACE-LIMIT");
-       if(!parameter_names.insert(ident()).second)
-        throw Error(at,"duplicate interface parameter","ON1X-INTERFACE-DUPLICATE");
-       consume(":");parameters.push_back(type());
-      }while(accept(","));
-      consume(")");Type result=Type::Void;
-      if(!procedure){consume("->");result=type();}
+      while(signature_keyword(signature,"signature")){
+       if(signature.definitions.size()>=64)
+        throw Error(peek().where,"named signature limit exceeded","ON1X-INTERFACE-LIMIT");
+       NamedSignature definition;definition.where=peek().where;definition.name=ident();
+       definition.parameters=signature_parameters();
+       for(const auto& p:definition.parameters)bound_types.emplace(p,bound_types.size());
+       consume("{");signature_declarations(signature,definition,true);consume("}");consume(";");
+       bound_types.clear();signature.definitions.push_back(std::move(definition));
+      }
+      signature.where=peek().where;
+      const bool opaque=signature_keyword(signature,"abstract");
+      if(!signature_keyword(signature,"module"))consume("module");
+      signature.module=module_name();
+      if(accept(":")){
+       signature.seal=opaque?SignatureSeal::Opaque:SignatureSeal::Transparent;
+       signature.ascription=signature_reference();consume(";");consume("<eof>");
+       return signature;
+      }
+      if(!opaque||!signature.definitions.empty())
+       throw Error(peek().where,"named signature requires a module ascription","ON1X-INTERFACE-SHAPE");
       consume(";");
-      signature.members.push_back({std::move(where),std::move(name),
-                                   Type::function(std::move(parameters),std::move(result)),procedure});
-     }
-     if(signature.members.empty()&&signature.types.empty())
-      throw Error(peek().where,"abstract module requires at least one declaration","ON1X-INTERFACE-SHAPE");
+      NamedSignature body;signature_declarations(signature,body,false);
+      signature.members=std::move(body.members);signature.types=std::move(body.types);
+      if(signature.members.empty()&&signature.types.empty())
+       throw Error(peek().where,"abstract module requires at least one declaration","ON1X-INTERFACE-SHAPE");
      return signature;
     }
     std::string module_name(){
@@ -2293,13 +2359,27 @@ class Parser {
      }
      result.imports=std::move(imports.module_imports);return result;
     }
-      Unit parse(std::vector<Docstring> docs){Unit u;
+      Unit parse(std::vector<Docstring> docs,bool declaration_interfaces=false){Unit u;
        std::size_t operator_total=0;operator_count=&operator_total;
         u.docstrings=std::move(docs);docstrings=&u.docstrings;declarations=&u.operators;directives=&u.fixity_directives;
        u.module=module_header();
        while(!at("<eof>")){
-       if(at("module"))
-        throw Error(peek().where,"a module header must appear once, before all declarations","ON1X-MODULE-HEADER");
+        if(at("module"))
+         throw Error(peek().where,"a module header must appear once, before all declarations","ON1X-MODULE-HEADER");
+        if(u.module&&at("type")&&is_ident(peek(1).text)&&peek(2).text=="="){
+         auto where=peek().where;consume("type");auto name=ident();consume("=");
+         if(!declaration_interfaces)
+          throw Error(where,"module type equations are declaration-only","ON1X-INTERFACE-UNSUPPORTED");
+         static const std::set<std::string> reserved_types={
+          "_","i64","f64","f32","u8","u16","u32","u64","bool","string","char","void",
+          "json","json_view","sexpr","buffer","code","own","xfiber"};
+         if(reserved_types.contains(name))
+          throw Error(where,"built-in type cannot be redefined: "+name,"ON1X-INTERFACE-TYPE");
+         if(u.signature_type_aliases.size()>=256)
+          throw Error(where,"module type equation limit exceeded","ON1X-INTERFACE-LIMIT");
+         u.signature_type_aliases.push_back({std::move(where),std::move(name),type()});
+         consume(";");continue;
+        }
        const auto visibility=declaration_visibility(u.module.has_value());
        if(operator_declaration_start()){
         parse_operator_declaration(nullptr,visibility);continue;
@@ -2397,8 +2477,8 @@ class Parser {
   return ts.empty()?OperatorDiscovery{}:Parser(ts,{}).discover();
  }
  Unit parse_with_operators(const std::vector<Token>& ts,const std::vector<std::string>& enabled,
-                           std::vector<Docstring> docs,OperatorScope scope){
-  return ts.empty()?Unit{}:Parser(ts,enabled,&scope).parse(std::move(docs));
+                           std::vector<Docstring> docs,OperatorScope scope,bool declaration_interfaces){
+  return ts.empty()?Unit{}:Parser(ts,enabled,&scope).parse(std::move(docs),declaration_interfaces);
  }
  Unit parse(const std::vector<Token>&ts,const std::vector<std::string>& enabled,std::vector<Docstring> docs){
   if(ts.empty())return {};
