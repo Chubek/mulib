@@ -302,9 +302,12 @@ target_link_libraries(on1x_pretty_kernels PUBLIC ${CMAKE_DL_LIBS})
 if(UNIX)
   target_link_libraries(on1x_pretty_kernels PUBLIC m)
 endif()
-add_executable(on1xc src/cli.cpp src/proxy_policy.cpp stdlib/prettyprint/on1x/formatter.cpp)
+add_executable(on1xc src/cli.cpp src/diagnostic_filter.cpp src/proxy_policy.cpp stdlib/prettyprint/on1x/formatter.cpp)
 if(ON1X_GENERATED_FRONTEND)
-  target_compile_definitions(on1xc PRIVATE ON1X_WITH_AUROCKS_FAULTS=1)
+  target_compile_definitions(on1xc PRIVATE ON1X_WITH_AUROCKS_FAULTS=1 ON1X_ASDL_DIAGNOSTIC_SELECTORS=1)
+  target_include_directories(on1xc PRIVATE "${_generated}" "${_asdl_source}/runtime")
+  target_include_directories(on1xc SYSTEM PRIVATE "${ON1X_LIBSTONE_ROOT}/third_party/lua")
+  target_link_libraries(on1xc PRIVATE ASDL::runtime)
 endif()
 target_link_libraries(on1xc PRIVATE on1x_hir_adapters)
 if(ON1X_WITH_ARCHVIRT)
@@ -1079,6 +1082,16 @@ if(BUILD_TESTING)
     add_test(NAME on1x.project_module_membership COMMAND "${Python3_EXECUTABLE}" -IB
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_project_module_membership.py")
     set_tests_properties(on1x.project_module_membership PROPERTIES TIMEOUT 10)
+    if(ON1X_GENERATED_FRONTEND)
+      set(_diagnostic_selector_test_flags)
+      if(ON1X_WITH_SYREN)
+        list(APPEND _diagnostic_selector_test_flags --json)
+      endif()
+      add_test(NAME on1x.diagnostic_selectors COMMAND "${Python3_EXECUTABLE}" -IB
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_diagnostic_selectors.py"
+        --on1xc "$<TARGET_FILE:on1xc>" --cc "${CMAKE_C_COMPILER}" ${_diagnostic_selector_test_flags})
+      set_tests_properties(on1x.diagnostic_selectors PROPERTIES TIMEOUT 120)
+    endif()
     add_test(NAME on1x.module_acceptance COMMAND "${Python3_EXECUTABLE}" -B
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_module_acceptance.py" --on1xc "$<TARGET_FILE:on1xc>"
       --cc "${CMAKE_C_COMPILER}"

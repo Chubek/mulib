@@ -53,6 +53,7 @@ def frontend_flags(flags):
         "--stdppx-path": 1, "--stdppx": 1, "--use-ppx": 1,
         "--enable": 1, "--disable": 1, "--ppx-timeout-ms": 1,
         "--scrutiny": 1, "--project-scrutiny": 1, "--scrutiny-work": 1, "--diagnostics": 1,
+        "--diagnostic-enable": 1, "--diagnostic-disable": 1,
         "--color": 1, "--diagnostic-catalog": 1, "--opt-work": 1, "--opt-rewrites": 1,
         "--ppx": 2, "--ppx-schema": 2,
     }
@@ -83,7 +84,7 @@ class Runner:
         resource.setrlimit(resource.RLIMIT_FSIZE, (self.max_bytes, self.max_bytes))
         resource.setrlimit(resource.RLIMIT_NOFILE, (128, 128))
 
-    def run(self, command, toolchain=False, cwd=None):
+    def run(self, command, toolchain=False, cwd=None, *, frontend=False, selected_presentation=False):
         remaining = self.deadline - time.monotonic()
         if remaining <= 0:
             raise BuildError("native build deadline exceeded")
@@ -117,6 +118,11 @@ class Runner:
                 raise
         with log.open("rb") as output:
             text = output.read(65536).decode("utf-8", errors="replace")
+        if frontend and (not code or selected_presentation and code > 0):
+            if text:
+                sys.stderr.write(text)
+            if code:
+                raise subprocess.CalledProcessError(code, command)
         if code:
             raise BuildError("stage failed (%d): %s\n%s" % (code, command[0], text))
         return text.strip()
@@ -273,7 +279,8 @@ def main(argv=None):
         command += optimization.flags(args.opt_profile, args.opt_select)
         if args.optimize_ir:
             command.append("--optimize-ir")
-        runner.run(command + forwarded)
+        runner.run(command + forwarded, frontend=True, selected_presentation=any(
+            flag in ("--diagnostic-enable", "--diagnostic-disable") for flag in forwarded))
         bounded_artifact(mir, MAX_BYTES)
         assembly = stage / "program.s"
         command = [archon, "--ir-input", mir, "--target", args.target, "-o", assembly,
@@ -325,6 +332,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, interrupted)
     try:
         sys.exit(main())
+    except subprocess.CalledProcessError as error:
+        sys.exit(error.returncode)
     except (BuildError, OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("on1x-native-build: " + str(error), file=sys.stderr)
         sys.exit(1)

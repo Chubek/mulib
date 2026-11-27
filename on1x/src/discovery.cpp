@@ -80,7 +80,7 @@ void package_rows(std::string_view text,const std::string& file,Finish finish_ro
  // Match the build driver's head words, including directives not evaluated
  // by discovery. An explicit physical continuation can mask one head.
  constexpr std::string_view heads[]={
-  "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work",
+  "on1xfile","kind","name","directory","vm","scrutiny","scrutiny-work","diagnostic",
   "module","module-interface","module-interface-policy","program",
   "optimization-profile","optimization","backend","target","dependency","profile",
   "profile-arg","command","define","dotenv","kernel","kernel-path","kernel-link","source","library","resource","interface",

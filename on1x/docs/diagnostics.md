@@ -21,6 +21,40 @@ build/on1x/on1xc --check --diagnostics sarif --scrutiny strict input.on1x
 build/on1x/on1xc --repair input.on1x -o proposed.on1x
 ```
 
+## Diagnostic presentation controls
+
+With the LibStone ASDL frontend, use `--diagnostic-disable SELECTOR` and
+`--diagnostic-enable SELECTOR` on `on1xc`, `on1x-build.py`, or an On1xfile build
+command. For example:
+
+```sh
+on1xc --check --diagnostic-disable all --diagnostic-enable name:unused-import app.on1x
+on1xc exec build --diagnostic-disable warning --diagnostic-enable group:unused
+```
+
+Selectors are `error`, `warning`, `info` (also covers compiler notes), `all`,
+`name:ID`, and `group:ID`. Name and group matches are exact and case sensitive;
+they are not globs. For On1x reports without a specific name or group, use
+the diagnostic ID or category, respectively. The unused notices have names
+`unused-import`, `unused-variable`, and `unused-type`, all in the `unused`
+group. An invalid import alias has name `invalid-import-alias` and group
+`imports`.
+
+Project `diagnostic` directives are applied in [root On1xfile
+order](../stdlib/on1xfile/README.md#diagnostic-presentation), followed by CLI
+operations in argument order. LibStone `std.diagnostics` gives an exact name
+priority over a group, and a group priority over the severity; for the same
+selector the last setting wins. `all` resets every severity and clears all
+name/group overrides, so place exceptions after it. Omitted controls retain
+normal presentation.
+
+This is a filter, not a scrutiny setting or a recovery mechanism. A hidden
+error still rejects invalid input, returns nonzero, and cannot publish an
+artifact or certify a checked module. The filter applies to On1x findings
+in text, JSON, and SARIF, not to requested program output, command usage
+errors, or independent host toolchain messages. The bootstrap scanner build
+does not implement the LibStone selector switches.
+
 ## Scrutiny policy and precedence
 
 The embedded catalog declares `off`, `standard`, and `strict`:

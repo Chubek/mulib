@@ -38,6 +38,10 @@ _proxy_spec = importlib.util.spec_from_file_location(
     '_on1x_proxy', Path(__file__).resolve().with_name('on1x_proxy.py'))
 proxy = importlib.util.module_from_spec(_proxy_spec)
 _proxy_spec.loader.exec_module(proxy)
+_project_spec = importlib.util.spec_from_file_location(
+    '_on1x_project_helpers', Path(__file__).resolve().with_name('on1x_project.py'))
+project_helpers = importlib.util.module_from_spec(_project_spec)
+_project_spec.loader.exec_module(project_helpers)
 
 try:
     import fcntl
@@ -81,7 +85,7 @@ TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
 # Reserve heads even where the directive is forbidden; validation decides
 # authority, not the lexer. Keep compiler package discovery in sync.
 HEADS = frozenset((
-    'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work',
+    'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work', 'diagnostic',
     'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
     'profile-arg', 'command', 'define', 'dotenv', 'kernel', 'kernel-path', 'kernel-link',
     'source', 'library', 'resource', 'interface', 'module', 'module-interface', 'module-interface-policy', 'program',
@@ -491,6 +495,16 @@ def root_manifest(payload, origin, dependency=False):
             elif verb == 'scrutiny-work' and not dependency:
                 value, = fields(args, 'w')
                 unique(options, verb, scrutiny_work(value))
+            elif verb == 'diagnostic':
+                if dependency:
+                    fail('diagnostic directives are only allowed in the root project On1xfile')
+                selector, state = fields(args, '"w' if args and args[0][1] else 'ww')
+                if state not in ('on', 'off'):
+                    fail('diagnostic selection must be on or off')
+                diagnostics = options.setdefault('diagnostic_selectors', [])
+                if len(diagnostics) >= project_helpers.MAX_DIAGNOSTIC_SELECTORS:
+                    fail('diagnostic selector count budget exceeded')
+                diagnostics.append((project_helpers.diagnostic_selector(selector), state == 'on'))
             elif verb == 'optimization-profile' and not dependency:
                 value, = fields(args, 'w')
                 if value not in optimization.PROFILES:
@@ -991,7 +1005,14 @@ def declared_names(config):
     return set(config['selections']).union(*config['scoped'].values()) - {'all'}
 
 
-def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memory=None):
+class CompilerFailure(Exception):
+    """An already reported frontend failure; the empty report can be intentional."""
+    def __init__(self, status):
+        self.status = status if status > 0 else 128 - status
+
+
+def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memory=None,
+        notices=None, selected_presentation=False):
     def limit():
         resource.setrlimit(resource.RLIMIT_FSIZE, (MAX_PROCESS, MAX_PROCESS))
         if memory is not None:
@@ -1011,8 +1032,16 @@ def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memo
                 fail(f'{command[0]} exceeded {timeout}-second subprocess limit')
             if child.returncode:
                 errors.seek(0)
-                diagnostic = errors.read(8192).decode('utf-8', 'replace').rstrip()
+                diagnostic = errors.read(8192)
+                if selected_presentation and child.returncode > 0:
+                    if diagnostic:
+                        notices(diagnostic)
+                    raise CompilerFailure(child.returncode)
+                diagnostic = diagnostic.decode('utf-8', 'replace').rstrip()
                 fail(f'{command[0]} failed ({child.returncode})' + (f':\n{diagnostic}' if diagnostic else ''))
+        if notices and errors.tell():
+            errors.seek(0)
+            notices(errors.read(8192))
         if output.tell() > bound:
             fail(f'{command[0]}: output byte limit exceeded')
         output.seek(0)
@@ -1346,6 +1375,9 @@ class Execution:
     def __init__(self, args, work, compiler, cc, mulib, *, env=ENV, load_time=False):
         self.work = work
         self.env = env
+        self.selector_flags = []
+        self.notice_count = 0
+        self.notice_keys = set()
         self.python = Path(sys.executable)
         self.bwrap = None
         self.prefix = []
@@ -1440,15 +1472,31 @@ class Execution:
     def path(self, path):
         return Path('/work') / path.relative_to(self.work) if self.prefix else path
 
-    def run(self, command, *, extra_env=None, **kwargs):
+    def run(self, command, *, extra_env=None, frontend=False, forward_selectors=True, **kwargs):
         # Only the explicit FFI generator may receive its staged kernel roots.
         # Neither bwrap nor ordinary compiler/build subprocesses inherit them.
         prefix = self.prefix
         if prefix and extra_env:
             prefix = [*prefix, *(arg for key, value in extra_env.items() for arg in ('--setenv', key, value))]
         env = dict(self.env, **extra_env) if extra_env and not prefix else self.env
+        if frontend:
+            if forward_selectors:
+                command = [*command, *self.selector_flags]
+            kwargs.update(notices=self.frontend_notice, selected_presentation=bool(self.selector_flags))
         return run([*prefix, *(['--'] if prefix else []), *command], self.work / 'cwd', env=env, **kwargs)
 
+    def frontend_notice(self, data):
+        self.notice_count += 1
+        text = data.decode('utf-8', 'replace')
+        # Do not publish per-build private staging names in diagnostics.
+        for name, display in (('input/project', 'project'), ('input/deps', 'dependency'),
+                              ('input', 'build'), ('cwd', 'build')):
+            text = text.replace(str(self.path(self.work / name)) + '/', display + '/')
+        key = digest(text.encode('utf-8'))
+        if key not in self.notice_keys:
+            if len(self.notice_keys) < MAX_FILES:
+                self.notice_keys.add(key)
+            sys.stderr.write(text + ('' if text.endswith('\n') else '\n'))
 
 def stage_bytes(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1494,6 +1542,8 @@ def local_roles(data, origin, manifest, kind):
                 root_only_kernel_path()
             if role == 'kernel-link':
                 root_only_kernel_link()
+            if role == 'diagnostic':
+                fail('diagnostic directives are only allowed in the root project On1xfile')
             if role in toolchain.DIRECTIVES:
                 fail('native toolchain directives are only allowed in the root project On1xfile')
             if role not in allowed or role == 'source' and kind == 'library':
@@ -1880,7 +1930,7 @@ def quoted_import(file, spelling, root, libraries, *, standard_aliases=()):
 
 def source_policy(executor, compiler, file, root, libraries, *, declared_module=None,
                   programs=(), program_paths=(), standard_aliases=()):
-    listed = executor.run([compiler, '--tokens', executor.path(file)], bound=16 * MAX_SOURCE)
+    listed = executor.run([compiler, '--tokens', executor.path(file)], frontend=True, bound=16 * MAX_SOURCE)
     # Use the canonical scanner. Only the exact directive token pair matters:
     # comments, string data and hygienic syntax are not regex-scanned as source.
     tokens = []
@@ -1931,7 +1981,7 @@ def source_policy(executor, compiler, file, root, libraries, *, declared_module=
 
 
 def verify_graph(executor, compiler, source, flags, permitted, trusted_roots):
-    data = executor.run([compiler, '--deps', source, *flags], bound=8 * MAX_MANIFEST)
+    data = executor.run([compiler, '--deps', source, *flags], frontend=True, bound=8 * MAX_MANIFEST)
     for item in data.decode('utf-8').splitlines():
         path = Path(item)
         if path not in permitted and not any(path.is_relative_to(root) for root in trusted_roots):
@@ -2130,7 +2180,8 @@ class ModuleCheckCache:
                     return
             except (OSError, ValueError):
                 pass
-        verify()
+        if verify() is False:
+            return  # Do not memoize away visible diagnostics on later builds.
         # Do not certify reused standard-library inputs that changed while
         # checking. Staged sources and carrier bytes are still present here.
         if key is None or self.key(graph) != key:
@@ -2161,7 +2212,7 @@ def module_certificate(members):
 
 def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_roots, edges,
                          expected=(), *, auxiliary_permitted=(), expected_auxiliary=()):
-    data = executor.run([compiler, '--project-module-graph', entry, *flags], bound=MAX_BUILD_REPORT)
+    data = executor.run([compiler, '--project-module-graph', entry, *flags], frontend=True, bound=MAX_BUILD_REPORT)
     graph = json.loads(data, object_pairs_hook=unique_json_object)
     v1 = {'schema', 'sources', 'edges'}
     v2 = v1 | {'auxiliary', 'cacheable'}
@@ -2233,9 +2284,11 @@ def check_manifest_members(executor, compiler, stage, members, loader, compiler_
                 expected_auxiliary=(executor.path(stage / path) for path in declaration.interfaces))
 
             def verify():
+                mark = executor.notice_count
                 if declaration.interfaces:
-                    executor.run([compiler, '--check-interfaces', entry, *compiler_flags])
-                executor.run([compiler, '--check', entry, *compiler_flags])
+                    executor.run([compiler, '--check-interfaces', entry, *compiler_flags], frontend=True)
+                executor.run([compiler, '--check', entry, *compiler_flags], frontend=True)
+                return mark == executor.notice_count
 
             if cache is None:
                 verify()
@@ -2251,7 +2304,7 @@ def verify_interfaces(executor, compiler, staged, roles, loader, flags, permitte
         if entry not in graph_checked:
             verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
         executor.run([compiler, '--check-interfaces', entry, '--interface',
-                      executor.path(staged / path), *flags])
+                      executor.path(staged / path), *flags], frontend=True)
 
 
 def publish(stage, output, report):
@@ -2597,6 +2650,8 @@ def build(args):
     disk = Disk(project)
     rootinput = snapshot.record('project/On1xfile', disk.get(Path('On1xfile'), MAX_MANIFEST))
     config = root_manifest(rootinput, project / 'On1xfile')
+    diagnostic_selectors = [*config.get('diagnostic_selectors', []), *(args.diagnostic_selectors or [])]
+    diagnostic_flags = project_helpers.diagnostic_flags(diagnostic_selectors)
     child_env = dotenv_environment(project, config, args)
     vm_policy = config.get('vm')
     load_time = config.get('kernel-link') == 'load-time'
@@ -2618,7 +2673,7 @@ def build(args):
                     or args.mune_runner or args.offline or args.locked or args.frozen
                      or args.scrutiny or args.scrutiny_work is not None
                       or args.opt_select or args.opt_profile or args.backend or args.optimize_ir
-                      or args.module_cache):
+                      or args.module_cache or args.diagnostic_selectors):
                 fail('project formatting commands do not take build options')
             target, source = selected
             sys.stdout.buffer.write(format_project_source(
@@ -2691,6 +2746,7 @@ def build(args):
         (work / 'cwd').mkdir()
         (work / 'artifact').mkdir()
         executor = Execution(args, work, compiler, cc, mulib, env=child_env, load_time=load_time)
+        executor.selector_flags = diagnostic_flags
         chosen_tools = {'on1xc': compiler, 'project': Path(__file__).resolve(),
                          'optimization_helper': Path(optimization.__file__)}
         if executor.bwrap is not None:
@@ -2975,6 +3031,7 @@ def build(args):
                     project=str(project), directory=directory.as_posix(), profile=chosen,
                     compiler=str(compiler), runtime=runtime, standard='project' if std_package else str(standard),
                     backend=backend_info, cflags=cflags, analysis=analysis_flags, check=check_flags,
+                    diagnostics=diagnostic_flags,
                     environment=fingerprint(child_env),
                     optimization=policy, toolchain={key: tool_digest(path) for key, path in chosen_tools.items()},
                 )
@@ -3033,14 +3090,15 @@ def build(args):
                 artifact = guest if launching else work / 'artifact' / key
                 mode = '--vm-build' if launching else '--vm-launcher=' + vm_policy
                 executor.run([compiler, mode, entry, '-o', executor.path(artifact),
-                              '--vm-uncached', *loader, *analysis_flags, *opt_flags, *map_flags], timeout=180)
+                              '--vm-uncached', *loader, *analysis_flags, *opt_flags, *map_flags],
+                             frontend=True, timeout=180)
                 outputs[key] = digest(read(artifact, MAX_PROCESS))
                 continue
             output = executor.path(work / 'artifact' / key)
             if backend == 'mir-vm':
                 tape = work / 'artifact' / (key + '.o1vm')
                 executor.run([compiler, '--emit-vm', entry, '-o', executor.path(tape),
-                              *loader, *analysis_flags, *opt_flags, *map_flags])
+                              *loader, *analysis_flags, *opt_flags, *map_flags], frontend=True)
                 executor.run([executor.path(bundled), '--verify', executor.path(tape)])
                 launcher = work / 'artifact' / key
                 stage_bytes(launcher, vm_launcher(key))
@@ -3050,8 +3108,9 @@ def build(args):
                 continue
             if backend == 'mir-archon':
                 executor.run([*native_command, entry, '-o', output, *opt_flags,
-                              *(f'--on1xc-arg={flag}' for flag in [*loader, *analysis_flags]),
-                              *(f'--cflag={flag}' for flag in cflags)], timeout=180)
+                              *(f'--on1xc-arg={flag}' for flag in [*loader, *analysis_flags, *diagnostic_flags]),
+                              *(f'--cflag={flag}' for flag in cflags)],
+                             frontend=True, forward_selectors=False, timeout=180)
                 outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
                 continue
             toolchain.assert_available(missing)
@@ -3077,7 +3136,7 @@ def build(args):
             if config['kernels']:
                 command.extend(('--mulib-plan', executor.path(work / 'artifact' / (key + '.mulib.json'))))
             executor.mount(executor.python)
-            executor.run(command, timeout=180)
+            executor.run(command, frontend=True, timeout=180)
             outputs[key] = digest(read(work / 'artifact' / key, MAX_PROCESS))
         if guest is not None:
             # --sandbox controls the build only. The runtime validates and
@@ -3093,7 +3152,7 @@ def build(args):
                                    'fn main() -> i64 { return 0; }\n'.encode())
                 entry = executor.path(check)
                 verify_graph(executor, compiler, entry, loader, permitted | {entry}, trusted_roots)
-                executor.run([compiler, '--check', entry, *compiler_flags])
+                executor.run([compiler, '--check', entry, *compiler_flags], frontend=True)
         if config['kind'] == 'library' and args.command != 'plan':
             package = work / 'artifact' / 'library'
             shutil.copytree(project_stage, package)
@@ -3128,6 +3187,8 @@ def build(args):
             report['module_graph'] = named_graph
         if analysis_work is not None:
             report['scrutiny_work'] = analysis_work
+        if diagnostic_selectors:
+            report['diagnostic_selectors'] = diagnostic_selectors
         if lock_payload is not None:
             report['lockfile'] = digest(lock_payload)
         if kernel_inputs:
@@ -3225,6 +3286,7 @@ def main():
     command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
     command.add_argument('--scrutiny-work', metavar='UNITS',
                          help='override the On1xfile static-analysis work budget (1..10000000)')
+    project_helpers.diagnostic_arguments(command)
     command.add_argument('--offline', action='store_true',
                          help='explicitly require the normal network-free build behavior')
     command.add_argument('--locked', action='store_true',
@@ -3293,6 +3355,8 @@ def main():
                   FFI_GENERATE: ffi_generator,
                   'vm-rerun': archvirt_cache_command, 'vm-cache-clear': archvirt_cache_command,
                   'lock': lock_dependencies}[arguments.command](arguments)
+    except CompilerFailure as error:
+        return error.status
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)
         return 1

@@ -11,6 +11,42 @@ import sys
 TOOLS = Path(__file__).resolve().parent
 
 
+MAX_DIAGNOSTIC_SELECTORS = 256
+
+
+def diagnostic_selector(value):
+    if value not in ('all', 'error', 'warning', 'info') and not re.fullmatch(
+            r'(?:name|group):[A-Za-z0-9_.-]{1,127}', value):
+        raise ValueError('expected diagnostic selector: all, error, warning, info, name:ID, or group:ID')
+    return value
+
+
+class DiagnosticAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        try:
+            value = diagnostic_selector(value)
+        except ValueError as error:
+            raise argparse.ArgumentError(self, str(error)) from error
+        selections = getattr(namespace, self.dest) or []
+        if len(selections) >= MAX_DIAGNOSTIC_SELECTORS:
+            raise argparse.ArgumentError(self, 'diagnostic selector count budget exceeded')
+        setattr(namespace, self.dest, [*selections, (value, option_string == '--diagnostic-enable')])
+
+
+def diagnostic_arguments(parser):
+    for action in ('enable', 'disable'):
+        parser.add_argument(f'--diagnostic-{action}', action=DiagnosticAction, dest='diagnostic_selectors',
+                            metavar='SELECTOR', help=f'{action} presentation of all, error, warning, info, '
+                            'name:ID, or group:ID (repeatable)')
+
+
+def diagnostic_flags(selections):
+    if len(selections) > MAX_DIAGNOSTIC_SELECTORS:
+        raise ValueError('combined On1xfile and CLI diagnostic selector count budget exceeded')
+    return [word for key, enabled in selections
+            for word in ('--diagnostic-enable' if enabled else '--diagnostic-disable', key)]
+
+
 def _mode(path):
     try:
         return path.lstat().st_mode

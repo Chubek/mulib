@@ -87,6 +87,7 @@ def main():
         from on1x_project import main as project_main
         return project_main(sys.argv[1:])
     import on1x_toolchain as toolchain
+    from on1x_project import diagnostic_arguments, diagnostic_flags
     cli = argparse.ArgumentParser(description=__doc__, epilog=
         'Projects: use "init --bin|--proj|--lib [DIRECTORY]" to scaffold, '
         'or "exec COMMAND" to run a command defined by an On1xfile.')
@@ -117,6 +118,7 @@ def main():
     cli.add_argument('--diagnostic-catalog', type=Path, metavar='FILE',
                      help='validated external diagnostic catalog')
     cli.add_argument('--diagnostics', choices=('text', 'json', 'sarif'))
+    diagnostic_arguments(cli)
     cli.add_argument('--color', choices=('auto', 'always', 'never'))
     cli.add_argument('--optimize-ir', action='store_true', help='enable verified scalar passes (requires --via-mir)')
     import on1x_optimization as optimization
@@ -291,6 +293,7 @@ def main():
             compiler += ['--diagnostic-catalog', str(args.diagnostic_catalog)]
         if args.diagnostics:
             compiler += ['--diagnostics', args.diagnostics]
+        compiler += diagnostic_flags(args.diagnostic_selectors or [])
         if args.color:
             compiler += ['--color', args.color]
         if args.no_prelude:

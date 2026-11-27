@@ -424,6 +424,28 @@ is recorded as `scrutiny_work` in `plan` and `.on1x-build.json`. If neither
 setting is supplied, the compiler uses its default. The budget does not limit
 mandatory type, ownership, or borrow checking. Dependency manifests cannot set it.
 
+### Diagnostic presentation
+
+Only the root `On1xfile` may control which On1x diagnostics are displayed:
+
+```text
+diagnostic all off
+diagnostic "name:unused-import" on
+```
+
+Use a severity (`error`, `warning`, `info`), `all`, or a quoted exact selector
+(`"name:ID"` or `"group:ID"`). Repeat the directive to set multiple selectors.
+`--diagnostic-enable SELECTOR` and `--diagnostic-disable SELECTOR` apply after
+the root directives on `build`, `plan`, and `run` (or through `on1xc exec`).
+An exact name overrides a group, a group overrides a severity, and a later
+`all` clears earlier exceptions. Explicit settings are recorded in plan and
+build reports under `diagnostic_selectors`.
+
+This changes presentation only: errors still fail the build, even with no
+message, and an invalid project cannot publish build outputs or cache a
+successful check. Dependency `On1xfile`s and directory declarations such as
+`On1xfile.m` and `On1xfile.i` cannot set this policy.
+
 `on1x-project.py format PATH [--check]` validates and canonically spaces a
 plain root, module, or interface manifest, preserving comment text and order.
 It writes to stdout (no overwrite); `--check` fails if bytes would change.
