@@ -48,6 +48,7 @@ struct Module {
  Names names;
  Names declarations; // Own declarations, excluding lexically imported names.
  std::optional<Names> signature_exports;
+ std::map<std::string,Type> manifest_types; // Verified closed equations owned by this fragment.
  std::set<std::string> opaque_types; // Source names admitted by the verified executable signature.
  std::vector<Module*> fragments;
  Module* group=nullptr;
@@ -800,7 +801,14 @@ class Loader {
     if(originals.empty())originals.push_back(&target.unit);
      const auto verified=verify_module_signature(signature,originals,header->name,target.path);
      check_asdl_signature(signature);
-     if(!options.declaration_interfaces)
+     if(!options.declaration_interfaces&&!verified.manifest_types.empty()){
+      const auto manifest=admit_executable_manifest_signature(signature,originals,header->name,target.path);
+      for(const auto& [key,type]:manifest){
+       const auto& declaration=target.declarations.types.at(key);
+       declaration.owner->manifest_types.emplace(key,type);
+      }
+      direct_views=true;
+     }else if(!options.declaration_interfaces)
       target.opaque_types=admit_executable_opaque_signature(signature,verified,originals,header->name,target.path);
     else declaration_interface_members+=signature.members.size()+signature.types.size();
     std::set<std::string> listed;
@@ -809,6 +817,8 @@ class Loader {
      if(!options.declaration_interfaces)for(const auto& [type,_]:verified.transparent_types){
       visible.types.emplace(type,target.declarations.types.at(type));direct_views=true;
      }
+     if(!options.declaration_interfaces)for(const auto& [type,_]:verified.manifest_types)
+      visible.types.emplace(type,target.declarations.types.at(type));
      for(const auto& type:target.opaque_types){
       auto item=target.declarations.types.find(type);
       if(item==target.declarations.types.end())
@@ -1053,7 +1063,7 @@ class Loader {
      m->operator_visibility=visible_operators(*m,at);
      m->unit=parse_with_operators(m->scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},
                                   std::move(m->docs),m->operator_visibility,
-                                  options.declaration_interfaces&&has_signature(*m));
+                                  has_signature(*m));
      check_asdl_module(m->unit);
      if(m->discovery.module.has_value()!=m->unit.module.has_value()||
         (m->unit.module&&m->unit.module->name!=m->discovery.module->name))
@@ -1204,6 +1214,8 @@ class Loader {
       validate_visibility(*m,d.visibility,d.where);
       insert(m->declarations.types,d.name,Symbol{m,d.name,false,d.visibility,"type"},d.where);
      }
+     if(!options.declaration_interfaces)for(const auto& alias:m->unit.signature_type_aliases)
+      insert(m->declarations.types,alias.name,Symbol{m,alias.name,false,{},"type"},alias.where);
      for(const auto& c:m->unit.cliches){
       validate_visibility(*m,c.visibility,c.where);
       insert(m->declarations.cliches,c.name,Symbol{m,c.name,false,c.visibility,"cliche"},c.where);
@@ -1396,7 +1408,7 @@ class Loader {
   for(const auto& p:ps){if(p.pattern)bind(scope,*p.pattern);else bind(scope,p.name,p.where);}
  }
    void reference(std::string& text,const Location& at,const Names& names,const Scope& locals,bool syntax,bool type=false,
-                  std::size_t* value_prefix=nullptr){
+                  std::size_t* value_prefix=nullptr,const Symbol** declaration=nullptr){
   auto dot=text.find('.');auto first=text.substr(0,dot);
    if(auto local=locals.find(first);local!=locals.end()){
     if(dot!=std::string::npos)throw Error(at,"qualified reference is shadowed by local binding: "+first);
@@ -1413,6 +1425,7 @@ class Loader {
    if(auto it=symbols.find(text);it!=symbols.end()){
     if(current_module)require_access(it->second,*current_module,at);
     used_symbol(current_module,type?BindingSpace::Type:syntax?BindingSpace::Syntax:BindingSpace::Value,text,it->second);
+    if(declaration)*declaration=&it->second;
     text=name(it->second);return;
    }
   if(dot!=std::string::npos){
@@ -1428,6 +1441,7 @@ class Loader {
       if(auto symbol=exports.find(member);symbol!=exports.end()){
        if(current_module)require_access(symbol->second,*current_module,at);
        used_symbol(module,type?BindingSpace::Type:syntax?BindingSpace::Syntax:BindingSpace::Value,member,symbol->second);
+       if(declaration)*declaration=&symbol->second;
        text=name(symbol->second);return;
       }
      bool descended=false;
@@ -1561,7 +1575,17 @@ class Loader {
           !(pricing&&(member=="DemandKind"||member=="Objective"||member=="DemandModel"||member=="Constraints"||member=="Decision")))
         throw Error(at,"ON1X-KERNEL-MEMBER: no kernel type "+text,"ON1X-KERNEL-MEMBER");
        else text=kernel_type_prefix(history)+member;
-     }else reference(text,at,names,{},false,true);
+     }else{
+      const Symbol* symbol=nullptr;
+      reference(text,at,names,{},false,true,nullptr,&symbol);
+      if(symbol){
+       const auto& equations=symbol->owner->manifest_types;
+       if(auto alias=equations.find(symbol->name);alias!=equations.end()){
+        if(!t.arguments().empty())throw Error(at,"manifest type takes no arguments","ON1X-INTERFACE-ARITY");
+        return alias->second;
+       }
+      }
+     }
     std::vector<Type> args;for(const auto& a:t.arguments())args.push_back(type_reference(a,at,names));
     return Type::named(std::move(text),std::move(args));
    }
@@ -2000,6 +2024,9 @@ class Loader {
    result.unit.functions.reserve(count);
      for(auto* m:order){
        current_module=m;
+       if(!options.declaration_interfaces)for(const auto& alias:m->unit.signature_type_aliases)
+        if(!m->manifest_types.contains(alias.name))
+         throw Error(alias.where,"module type equations are declaration-only without a verified scalar manifest","ON1X-INTERFACE-UNSUPPORTED");
        result.source_capabilities|=m->source_capability;
       result.unit.requires_module_boundary|=named_module(*m)||m->program;
       const auto scope_key=m->path.string();
