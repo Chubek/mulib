@@ -72,7 +72,7 @@ void module_imports(const std::filesystem::path& root){
  const auto a=root/"project"/"a.on1xm",b=root/"project"/"b.on1xm";
  const auto sig=root/"project"/"signature.on1xi";
  write(a,"module Work.Joined;public fn first()->i64{return second();}");
- write(b,"module Work.Joined;public fn second()->i64{return 42;}");
+ write(b,"module Work.Joined;shared fn second()->i64{return 42;}");
  write(sig,"abstract module Work.Joined;fn first()->i64;");
  options.project_package=root;
  options.module_members.emplace("Work.Joined",LoaderOptions::ModuleMember{root,"Work.Joined",{a,b},{sig}});
@@ -85,6 +85,16 @@ void module_imports(const std::filesystem::path& root){
  reject("import Work.Joined as w;fn main(){w.second();}","no export");
  write(sig,"abstract module Work.Joined;fn first()->bool;");
  reject("import Work.Joined as w;fn main(){}","ON1X-INTERFACE");
+ write(helper,"fn number()->i64{return 42;}");
+ options.program_members.emplace("Tool",program);
+ write(entry,"import program Tool as p;fn main(){assert(p.public_result()==42);}");
+ auto indexed=load_unit(entry,options);
+ check(indexed.unit);
+ write(entry,"import program \"program.on1x\" : public_result;fn main(){assert(public_result()==42);}");
+ indexed=load_unit(entry,options);
+ check(indexed.unit);
+ reject("import program;fn main(){}","requires an explicit program import");
+ reject("import program \"helper.on1x\" as h;fn main(){}","program path is not in the project index");
 }
 }
 

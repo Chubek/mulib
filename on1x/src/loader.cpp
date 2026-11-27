@@ -85,6 +85,7 @@ class Loader {
   using Member=LoaderOptions::ModuleMember;
   std::map<std::pair<fs::path,std::string>,std::unique_ptr<Module>> groups;
   std::map<fs::path,const Member*> enrolled;
+  std::set<fs::path> known_packages,indexed_programs;
   std::map<std::string,fs::path> conventional_names;
   std::set<fs::path> verified_signatures;
   std::map<fs::path,fs::path> explicit_interfaces;
@@ -375,8 +376,14 @@ class Loader {
    if(imp.relative||(imp.selective&&!imp.alias.empty()))
     throw Error(imp.where,"program imports cannot combine relative or namespace aliases with selectors","ON1X-PROGRAM-IMPORT");
    if(!options.project_package.empty()){
-    if(imp.quoted||parent.package_identity!=options.project_package)
+    if(parent.package_identity!=options.project_package)
      throw Error(imp.where,"project program imports require an admitted program name","ON1X-PROGRAM-IMPORT");
+    if(imp.quoted){
+     auto origin=canonical(parent.path.parent_path()/imp.module,imp.where);
+     if(!indexed_programs.contains(origin))
+      throw Error(imp.where,"program path is not in the project index: "+imp.module,"ON1X-PROGRAM-IMPORT");
+     return origin;
+    }
     auto found=options.program_members.find(imp.module);
     if(found==options.program_members.end())
      throw Error(imp.where,"program is not in the project index: "+imp.module,"ON1X-PROGRAM-IMPORT");
@@ -511,6 +518,7 @@ class Loader {
     return owner!=modules.end()&&accessible(*owner->second,requester,binding.header.visibility);
    }
    bool has_signature(const Module& module)const{
+    if(!named_module(module))return false;
     auto interface=module.path;interface.replace_extension(".on1xi");
     return (module.member&&!module.member->interfaces.empty())||explicit_interfaces.contains(interface);
    }
@@ -571,8 +579,9 @@ class Loader {
     if(auto member=enrolled.find(path);member!=enrolled.end()){
      m->member=member->second;m->package_identity=m->member->package;
     }
-    else if(!options.project_package.empty()&&contained(options.project_package,path))
-     m->package_identity=options.project_package;
+     else for(const auto& root:known_packages)
+      if(contained(root,path)&&root.native().size()>m->package_identity.native().size())
+       m->package_identity=root;
    modules.emplace(path,std::move(storage));discovery_stack.push_back(m);
    if(source){
     auto replacement=options.source_overrides.find(path);
@@ -677,6 +686,8 @@ class Loader {
     if(program_import(imp)){
      if(named_module(*target)||target->path.extension()!=".on1x")
       throw Error(imp.where,"program import requires a headerless .on1x source","ON1X-PROGRAM-IMPORT");
+    }else if(indexed_programs.contains(target->path)){
+     throw Error(imp.where,"an indexed program requires an explicit program import: "+imp.module,"ON1X-PROGRAM-IMPORT");
     }else if(named_module(*target)){
      if(imp.quoted||imp.relative||enrolled.contains(target->path)||
         (!options.project_package.empty()&&!imp.module.starts_with("std."))||
@@ -918,9 +929,11 @@ class Loader {
     if(named_module(*m)){
      auto source_interface=path;source_interface.replace_extension(".on1xi");
      if(auto found=explicit_interfaces.find(source_interface);found!=explicit_interfaces.end()){
-      if(m->member&&!m->member->interfaces.empty()&&m->member->interfaces!=std::vector<fs::path>{found->second})
-       throw Error({found->second.string()},"explicit interface conflicts with module membership","ON1X-INTERFACE-DUPLICATE");
-      if(!m->member||m->member->interfaces.empty())verify_signatures(*m,{found->second},at);
+      if(m->member){
+       const auto& interfaces=m->member->interfaces;
+       if(std::find(interfaces.begin(),interfaces.end(),found->second)==interfaces.end())
+        throw Error({found->second.string()},"explicit interface is not in module membership","ON1X-INTERFACE-MEMBERSHIP");
+      }else verify_signatures(*m,{found->second},at);
      }
     }
    for(std::size_t i=0;i<m->unit.module_imports.size();++i){
@@ -971,6 +984,8 @@ class Loader {
        if(directory(root)&&directory(target->path)&&target->path==canonical(root,imp.where)){child=standard(name,imp.where);break;}
     if(child.empty())throw Error(imp.where,"module '"+imp.module+"' has no export or submodule '"+name+"'");
      auto* imported=metadata(child,imp.where);
+     if(indexed_programs.contains(imported->path))
+      throw Error(imp.where,"an indexed program requires an explicit program import: "+name,"ON1X-PROGRAM-IMPORT");
      if(named_module(*imported))throw Error(imp.where,"submodule requires a canonical named import","ON1X-MODULE-IDENTITY");
      visit(imported,imp.where,isolated);depend(*m,*imported);
      bind_module(selected,alias,imported,imp.where);
@@ -1350,6 +1365,7 @@ class Loader {
     const auto valid_root=[&](const fs::path& root){
      if(!root.is_absolute()||canonical(root,at)!=root||!directory(root))
       throw Error(at,"expected a canonical project package directory: "+root.string(),"ON1X-MODULE-MEMBERSHIP");
+     known_packages.insert(root);
     };
     const auto valid_file=[&](const fs::path& file,const fs::path& root,std::string_view suffix){
      if(!contained(root,file)||file.extension()!=suffix||canonical(file,at)!=file||!regular(file))
@@ -1389,6 +1405,7 @@ class Loader {
     for(const auto& [name,path]:options.program_members){
      if(!valid_module_name(name))throw Error(at,"invalid project program name: "+name,"ON1X-MODULE-MEMBERSHIP");
      valid_file(path,options.project_package,".on1x");
+     indexed_programs.insert(path);
     }
     for(const auto& path:options.interfaces){
      const Location where{path.string()};
@@ -1473,6 +1490,8 @@ class Loader {
     for(auto* module:discovered.configured)preludes.push_back(visit(module,prelude_at));
     const Location entry_at{input.string()};
     auto* entry=metadata(input,entry_at,false);
+    if(!options.project_package.empty()&&named_module(*entry)&&!entry->member)
+     throw Error(entry_at,"declared module entry is not in project membership","ON1X-MODULE-MEMBERSHIP");
     if(entry->member)visit(group_metadata(*entry->member,entry_at),entry_at);
     else visit(entry,entry_at);
    if(inspection)return {};
