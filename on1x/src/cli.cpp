@@ -1420,12 +1420,15 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded){
     }
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||mode=="--project-module-graph")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(!project_module_index.empty()){
-    for(auto& [name,member]:on1x::project_index::read(project_module_index)){
-     auto& indexed=loader.module_members[name];
-     indexed.package=member.package.string();
-     indexed.declared_name=std::move(member.declared_name);
-     indexed.fragments=std::move(member.fragments);
-     indexed.interfaces=std::move(member.interfaces);
+    auto index=on1x::project_index::read(project_module_index);
+    loader.project_package=std::move(index.project);
+    loader.program_members=std::move(index.programs);
+    for(auto& [name,member]:index.members){
+     on1x::LoaderOptions::ModuleMember indexed{member.package,member.declared_name,
+                                               std::move(member.fragments),std::move(member.interfaces)};
+     if(indexed.package!=loader.project_package)
+      loader.scoped_module_members[indexed.package].emplace(indexed.declared_name,indexed);
+     loader.module_members.emplace(name,std::move(indexed));
     }
    }
    if(mode=="--kernel-imports"){

@@ -75,7 +75,7 @@ GIT_VALIDATION_TIMEOUT = 30
 NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_-]{0,63}\Z')
 IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]{0,63}\Z')
 MODULE_NAME = re.compile(r'[A-Za-z_][A-Za-z0-9_]{0,63}(?:\.[A-Za-z_][A-Za-z0-9_]{0,63}){0,31}\Z')
-MODULE_DIRECTIVE = re.compile(rb'^[ \t\r]*module(?:-interface(?:-policy)?)?(?=[ \t\r#]|\\[ \t\r]*$|$)')
+MODULE_DIRECTIVE = re.compile(rb'^[ \t\r]*(?:program|module(?:-interface(?:-policy)?)?)(?=[ \t\r#]|\\[ \t\r]*$|$)')
 PART = re.compile(r'[A-Za-z_0-9][A-Za-z_0-9. -]{0,127}\Z')
 TOKEN = re.compile(r'"(?:[^"\\\r\n]|\\.)*"|[A-Za-z0-9_-]+')
 # Reserve heads even where the directive is forbidden; validation decides
@@ -84,7 +84,7 @@ HEADS = frozenset((
     'on1xfile', 'kind', 'name', 'directory', 'vm', 'scrutiny', 'scrutiny-work',
     'optimization-profile', 'optimization', 'backend', 'target', 'dependency', 'profile',
     'profile-arg', 'command', 'define', 'dotenv', 'kernel', 'kernel-path', 'kernel-link',
-    'source', 'library', 'resource', 'interface', 'module', 'module-interface', 'module-interface-policy',
+    'source', 'library', 'resource', 'interface', 'module', 'module-interface', 'module-interface-policy', 'program',
 )) | toolchain.DIRECTIVES | proxy.DIRECTIVES
 ROW_HINT = ('start each intended directive with a known unquoted head on its own line; '
             'quote string fields, or move a directive-looking bare field to the preceding line '
@@ -418,7 +418,7 @@ def root_manifest(payload, origin, dependency=False):
     options, targets, deps, defines, profiles, kernels, commands = {}, {}, {}, {}, {}, {}, {}
     selections, scoped, backend_scopes, profile_args = {}, {}, {}, {}
     kernel_paths = {}
-    modules, module_paths = {}, {}
+    modules, module_paths, programs = {}, {}, {}
     for start, end, verb, args in rows(payload, origin):
         at = manifest_span(origin, start, end)
         try:
@@ -505,6 +505,14 @@ def root_manifest(payload, origin, dependency=False):
             elif verb == 'target' and not dependency:
                 key, value = fields(args, '""')
                 unique(targets, name(key), local(value))
+            elif verb == 'program' and not dependency:
+                key, value = fields(args, '""')
+                path = local(value)
+                if path.suffix != '.on1x':
+                    fail('program requires an .on1x path')
+                unique(programs, name(key, MODULE_NAME), path)
+                if len(programs) > MAX_MODULES:
+                    fail('program count budget exceeded')
             elif verb in ('module', 'module-interface', 'module-interface-policy'):
                 if verb == 'module-interface-policy':
                     key, policy = fields(args, '"w')
@@ -604,6 +612,8 @@ def root_manifest(payload, origin, dependency=False):
     kind = options.get('kind')
     if not options.get('name') or not kind:
         fail(f'{origin}: name and kind are required')
+    if kind == 'library' and programs:
+        fail(f'{origin}: only executable and complex projects can admit program imports')
     if 'kernel-link' in options:
         if kind == 'library':
             root_only_kernel_link(origin)
@@ -667,7 +677,8 @@ def root_manifest(payload, origin, dependency=False):
     options.update(targets=targets, deps=deps, defines=defines,
                    profiles=profiles, profile_args=profile_args, kernels=list(kernels),
                    kernel_paths=list(kernel_paths), commands=commands,
-                   selections=selections, scoped=scoped, backend_scopes=backend_scopes, modules=modules)
+                   selections=selections, scoped=scoped, backend_scopes=backend_scopes,
+                   modules=modules, programs=programs)
     return options
 
 
@@ -1557,6 +1568,9 @@ def layouts(provider, config, label, staged, snapshot, preprocess=None, dependen
     for target, source in config['targets'].items():
         if roles.get(source) != 'source':
             fail(f'{label}: target {target!r} must name a locally declared source, not a library or interface')
+    for program, source in config['programs'].items():
+        if roles.get(source) != 'library':
+            fail(f'{label}: program {program!r} must name a locally declared .on1x library input')
     if set(config['targets'].values()) != {path for path, role in roles.items() if role == 'source'}:
         fail(f'{label}: every source role must be named by a root target')
     return roles
@@ -1848,7 +1862,7 @@ def quoted_import(file, spelling, root, libraries):
         fail(f'{file}: quoted import must name a declared library in the same package: {spelling!r}')
 
 
-def source_policy(executor, compiler, file, root, libraries, *, declared_module=None):
+def source_policy(executor, compiler, file, root, libraries, *, declared_module=None, programs=()):
     listed = executor.run([compiler, '--tokens', executor.path(file)], bound=16 * MAX_SOURCE)
     # Use the canonical scanner. Only the exact directive token pair matters:
     # comments, string data and hygienic syntax are not regex-scanned as source.
@@ -1869,9 +1883,21 @@ def source_policy(executor, compiler, file, root, libraries, *, declared_module=
         if tokens[i] == b'@' and tokens[i + 1] in (b'ppx', b'enable', b'extension'):
             fail(f'{file}: source PPX and executable extensions are not available in project builds')
         if tokens[i] == b'import':
-            target = i + (2 if tokens[i + 1] == b'program' else 1)
-            if target < len(tokens) and tokens[target].startswith(b'"'):
-                quoted_import(file, tokens[target][1:-1].decode('utf-8'), root, libraries)
+            target = tokens[i + 1]
+            following = tokens[i + 2] if i + 2 < len(tokens) else b''
+            if target == b'program' and following != b'as' and (
+                    following.startswith(b'"') or re.fullmatch(rb'[A-Za-z_][A-Za-z0-9_]*', following)):
+                if following.startswith(b'"'):
+                    fail(f'{file}: project program imports require an admitted program name')
+                parts, j = [following], i + 3
+                while j + 1 < len(tokens) and tokens[j] == b'.':
+                    parts.append(tokens[j + 1])
+                    j += 2
+                program = b'.'.join(parts).decode('utf-8')
+                if program not in programs:
+                    fail(f'{file}: program is not in the project index: {program}')
+            elif target.startswith(b'"'):
+                quoted_import(file, target[1:-1].decode('utf-8'), root, libraries)
         if tokens[i] == b'from' and tokens[i + 1] in (b'.', b'...'):
             # Match the loader's relative `from` depth: one dot stays at
             # this module's directory; each additional dot ascends a level.
@@ -1933,7 +1959,7 @@ def module_graph(members, source_edges):
             for pkg, key in order]
 
 
-def module_index(executor, destination, packages):
+def module_index(executor, destination, project_root, packages, programs=None):
     """Create one compiler view of the staged files, not of their checkouts.
 
     Each value is (stage root, modules, visible dotted prefix). An isolated
@@ -1951,11 +1977,13 @@ def module_index(executor, destination, packages):
                 unique(owners, path, (package, key))
             records[visible] = dict(package=str(executor.path(stage)), declared_name=key,
                                     fragments=list(map(str, sources)), interfaces=list(map(str, interfaces)))
-    if not records:
+    if not records and not programs:
         return [], owners
     if len(records) > MAX_MODULES:
         fail('project module index count budget exceeded')
-    payload = json.dumps({'schema': 'on1x.project-modules/v1', 'members': records}, sort_keys=True).encode()
+    program_paths = {key: str(executor.path(project_root / path)) for key, path in (programs or {}).items()}
+    payload = json.dumps({'schema': 'on1x.project-modules/v1', 'project': str(executor.path(project_root)),
+                          'members': records, 'programs': program_paths}, sort_keys=True).encode()
     if len(payload) > 8 * 1024 * 1024:
         fail('project module index exceeds its byte budget')
     stage_bytes(destination, payload)
@@ -2007,6 +2035,25 @@ def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_ro
         edges.add((importer, imported))
         if len(edges) > MAX_MODULE_EDGES:
             fail('project module graph edge budget exceeded')
+
+
+def check_manifest_members(executor, compiler, stage, members, loader, compiler_flags,
+                           permitted, trusted_roots, edges):
+    for i, (member, declaration) in enumerate(sorted(members.items())):
+        # The loader uses the carrier's canonical staged package to select
+        # its scope. A dot-prefixed name cannot be a manifest-declared path.
+        carrier = stage / f'.on1x-check-module-{i}.on1x'
+        stage_bytes(carrier, f'import {member};\nfn main() -> i64 {{ return 0; }}\n'.encode())
+        try:
+            entry = executor.path(carrier)
+            inspect_module_graph(executor, compiler, entry, loader, permitted | {entry},
+                                 trusted_roots, edges,
+                                 (executor.path(stage / path) for path in declaration.sources))
+            if declaration.interfaces:
+                executor.run([compiler, '--check-interfaces', entry, *compiler_flags])
+            executor.run([compiler, '--check', entry, *compiler_flags])
+        finally:
+            carrier.unlink()
 
 
 def verify_interfaces(executor, compiler, staged, roles, loader, flags, permitted, trusted_roots, graph_checked=()):
@@ -2581,11 +2628,12 @@ def build(args):
         project_modules = {project_stage / path for path, role in roles.items() if role == 'library'}
         project_programs = [project_stage / path for path, role in roles.items() if role in ('source', 'library')]
         for path in sorted(project_programs):
-            source_policy(executor, compiler, path, project_stage / directory, project_modules)
+            source_policy(executor, compiler, path, project_stage / directory,
+                          project_modules, programs=config['programs'])
         for name, module in sorted(root_members.items()):
             for path in module.sources:
                 source_policy(executor, compiler, project_stage / path, project_stage / directory,
-                              project_modules, declared_module=name)
+                              project_modules, declared_module=name, programs=config['programs'])
         for key, paths in dep_modules.items():
             own_files = set(paths)
             for path in sorted(paths):
@@ -2607,7 +2655,8 @@ def build(args):
         packages = {key: (deps_stage / key, members, key + '.') for key, members in dep_members.items()}
         if root_members:
             packages[config['name']] = (project_stage, root_members, '')
-        index_flags, module_owners = module_index(executor, work / 'input/module-index.json', packages)
+        index_flags, module_owners = module_index(executor, work / 'input/module-index.json', project_stage,
+                                                  packages, config['programs'])
         loader += index_flags
         module_edges = set()
         kernel_flags = ['--kernel-load-time'] if load_time else []
@@ -2622,7 +2671,7 @@ def build(args):
         compiler_flags = [*graph_loader, *analysis_flags, *check_flags]
         for key, modules in dep_modules.items():
             isolated_flags, isolated_owners = module_index(
-                executor, work / 'input' / f'dep-module-index-{key}.json',
+                executor, work / 'input' / f'dep-module-index-{key}.json', deps_stage / key,
                 {key: (deps_stage / key, dep_members[key], '')})
             dependency_loader = [*dependency_base, *isolated_flags, *kernel_flags]
             dependency_compiler_flags = [*dependency_loader, *analysis_flags, *check_flags]
@@ -2633,31 +2682,13 @@ def build(args):
             verify_interfaces(executor, compiler, deps_stage / key, dep_roles[key],
                                dependency_loader, dependency_compiler_flags,
                                own_files, trusted_roots, graph_checked=legacy_files)
-            for i, member in enumerate(sorted(dep_members[key])):
-                declaration = dep_members[key][member]
-                carrier = work / 'input' / f'check-dep-{key}-{i}.on1x'
-                stage_bytes(carrier, f'import {member};\nfn main() -> i64 {{ return 0; }}\n'.encode())
-                entry = executor.path(carrier)
-                inspect_module_graph(executor, compiler, entry, dependency_loader,
-                                     own_files | {entry}, trusted_roots, module_edges,
-                                     (executor.path(deps_stage / key / path) for path in declaration.sources))
-                if declaration.interfaces:
-                    executor.run([compiler, '--check-interfaces', entry, *dependency_compiler_flags])
-                executor.run([compiler, '--check', entry, *dependency_compiler_flags])
+            check_manifest_members(executor, compiler, deps_stage / key, dep_members[key], dependency_loader,
+                                   dependency_compiler_flags, own_files, trusted_roots, module_edges)
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]} | module_owners.keys()
         verify_interfaces(executor, compiler, project_stage, roles, graph_loader,
                           compiler_flags, permitted, trusted_roots)
-        for i, member in enumerate(sorted(root_members)):
-            declaration = root_members[member]
-            carrier = work / 'input' / f'check-module-{i}.on1x'
-            stage_bytes(carrier, f'import {member};\nfn main() -> i64 {{ return 0; }}\n'.encode())
-            entry = executor.path(carrier)
-            inspect_module_graph(executor, compiler, entry, graph_loader, permitted | {entry},
-                                 trusted_roots, module_edges,
-                                 (executor.path(project_stage / path) for path in declaration.sources))
-            if declaration.interfaces:
-                executor.run([compiler, '--check-interfaces', entry, *compiler_flags])
-            executor.run([compiler, '--check', entry, *compiler_flags])
+        check_manifest_members(executor, compiler, project_stage, root_members, graph_loader,
+                               compiler_flags, permitted, trusted_roots, module_edges)
         outputs = {}
         guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':

@@ -129,6 +129,18 @@ paths. Build and plan reports include `module_graph` for named modules:
 each entry has `package`, `name`, and `dependencies`, in deterministic
 dependency-first order.
 
+An executable or complex project can opt a declared `.on1x` library input
+into explicit program imports by name:
+
+```text
+program "Helpers.Legacy" "src/legacy.on1x"
+```
+
+The file must also have the existing `library "legacy.on1x"` directory-local
+role. Use `import program Helpers.Legacy` and the appropriate source selectors;
+this opt-in does not turn the imported file into a target or allow a dependency
+to use the project's program names.
+
 Run from a checkout:
 
 ```sh

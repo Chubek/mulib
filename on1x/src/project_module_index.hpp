@@ -22,6 +22,11 @@ struct IndexMember {
  std::vector<fs::path> fragments,interfaces;
  bool operator==(const IndexMember&) const = default;
 };
+struct Index {
+ fs::path project;
+ std::map<std::string,IndexMember> members;
+ std::map<std::string,fs::path> programs;
+};
 
 inline std::string string_field(const json::Value& value) {
  if(value.kind!='s'||value.text.empty()||value.text.size()>4096||value.text.find('\0')!=std::string::npos)
@@ -52,7 +57,7 @@ inline fs::path canonical_path(const json::Value& value,bool directory) {
  return canonical;
 }
 
-inline std::map<std::string,IndexMember> read(const fs::path& input) {
+inline Index read(const fs::path& input) {
  constexpr std::size_t max_bytes=8*1024*1024, max_members=1024, max_paths=4096;
  std::error_code error;
  if(!fs::is_regular_file(fs::symlink_status(input,error))||error)
@@ -64,15 +69,17 @@ inline std::map<std::string,IndexMember> read(const fs::path& input) {
  if(!stream.read(bytes.data(),static_cast<std::streamsize>(size))||stream.peek()!=std::char_traits<char>::eof())
   throw std::invalid_argument("could not read project module index");
  auto document=json::parse(bytes);
- if(document.kind!='o'||document.object.size()!=2||string_field(document.at("schema"))!="on1x.project-modules/v1")
+ if(document.kind!='o'||document.object.size()!=4||string_field(document.at("schema"))!="on1x.project-modules/v1")
   throw std::invalid_argument("unsupported project module index schema");
  const auto& members=document.at("members");
- if(members.kind!='o'||members.object.empty()||members.object.size()>max_members)
+ const auto& programs=document.at("programs");
+ if(members.kind!='o'||programs.kind!='o'||(members.object.empty()&&programs.object.empty())||
+    members.object.size()>max_members||programs.object.size()>max_members)
   throw std::invalid_argument("invalid project module index member count");
  std::size_t paths=0;
  std::map<fs::path,std::pair<fs::path,std::string>> owners;
  std::map<std::pair<fs::path,std::string>,IndexMember> identities;
- std::map<std::string,IndexMember> answer;
+ Index answer{.project=canonical_path(document.at("project"),true),.members={},.programs={}};
  for(const auto& [visible,value]:members.object){
   json::Value visible_name;
   visible_name.kind='s';
@@ -102,7 +109,18 @@ inline std::map<std::string,IndexMember> read(const fs::path& input) {
   const auto [prior,inserted]=identities.emplace(identity,member);
   if(!inserted&&prior->second!=member)
    throw std::invalid_argument("inconsistent project module aliases");
-  answer.emplace(visible,std::move(member));
+  answer.members.emplace(visible,std::move(member));
+ }
+ for(const auto& [key,value]:programs.object){
+  json::Value program_name;
+  program_name.kind='s';
+  program_name.text=key;
+  (void)module_name(program_name);
+  auto path=canonical_path(value,false);
+  auto relative=path.lexically_relative(answer.project);
+  if(++paths>max_paths||path.extension()!=".on1x"||relative.empty()||*relative.begin()=="..")
+   throw std::invalid_argument("invalid project program membership: "+path.string());
+  answer.programs.emplace(key,std::move(path));
  }
  return answer;
 }

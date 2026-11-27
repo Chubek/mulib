@@ -67,10 +67,12 @@ class ModuleProjects(unittest.TestCase):
             executor = type('Runner', (), {'path': staticmethod(lambda path: path)})
             index = root / 'index.json'
             flags, owners = project.module_index(
-                executor, index, {'example': (staged, membership, 'example.')})
+                executor, index, staged, {'example': (staged, membership, 'example.')})
             self.assertEqual(flags, ['--project-module-index', str(index)])
             self.assertEqual(owners[staged / 'a.on1xm'], ('example', 'X'))
-            record = json.loads(index.read_text())['members']['example.X']
+            payload = json.loads(index.read_text())
+            self.assertEqual(payload['project'], str(staged))
+            record = payload['members']['example.X']
             self.assertEqual(record['fragments'], [str(staged / 'z.on1xm'), str(staged / 'a.on1xm')])
             self.assertEqual(record['interfaces'], [str(staged / 'part.on1xi')])
             self.assertIn('dependency/example/src/part.on1xi', snapshot.inputs)
@@ -79,6 +81,26 @@ class ModuleProjects(unittest.TestCase):
             (source / 'src/a.on1xm').symlink_to('z.on1xm')
             with self.assertRaisesRegex(ValueError, 'symlinks are not allowed'):
                 project.dependency_layout(project.Disk(source), 'example', root / 'retry', project.Snapshot())
+
+    def test_program_members_require_local_library_role(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            config = project.root_manifest(
+                b'on1xfile 1\nkind executable\nname "app"\ntarget "app" "main.on1x"\n'
+                b'program "Helpers.Value" "helper.on1x"\n', 'On1xfile')
+            (root / 'On1xfile.m').write_text('on1xfile 1\nsource "main.on1x"\n')
+            (root / 'main.on1x').touch()
+            with self.assertRaisesRegex(ValueError, 'locally declared .on1x library input'):
+                project.layouts(project.Disk(root), config, 'project', root / 'bad', project.Snapshot())
+            (root / 'On1xfile.m').write_text('on1xfile 1\nsource "main.on1x"\nlibrary "helper.on1x"\n')
+            (root / 'helper.on1x').touch()
+            staged = root / 'stage'
+            project.layouts(project.Disk(root), config, 'project', staged, project.Snapshot())
+            executor = type('Runner', (), {'path': staticmethod(lambda path: path)})
+            index = root / 'index.json'
+            project.module_index(executor, index, staged, {}, config['programs'])
+            self.assertEqual(json.loads(index.read_text())['programs'],
+                             {'Helpers.Value': str(staged / 'helper.on1x')})
 
     def test_graph_uses_logical_identity_and_deterministic_order(self):
         members = {Path(k): value for k, value in {
@@ -116,6 +138,21 @@ class ModuleProjects(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'source module header does not match'):
             project.source_policy(runner, 'cc', Path('/input/a.on1xm'), Path('/input'),
                                   set(), declared_module='Math.Other')
+
+    def test_project_program_admission_has_no_no_index_fallback(self):
+        tokens = [b'import', b'program', b'Helpers', b'.', b'Value', b':', b'value', b';']
+        runner = type('Runner', (), {
+            'run': staticmethod(lambda _, **__: b''.join(b'1:1  ' + token + b'\n' for token in tokens)),
+            'path': staticmethod(lambda path: path)})
+        entry, root = Path('/input/main.on1x'), Path('/input')
+        with self.assertRaisesRegex(ValueError, 'program is not in the project index: Helpers.Value'):
+            project.source_policy(runner, 'cc', entry, root, set())
+        project.source_policy(runner, 'cc', entry, root, set(), programs={'Helpers.Value'})
+        tokens[2:] = [b'"tool.on1x"', b':', b'value', b';']
+        with self.assertRaisesRegex(ValueError, 'require an admitted program name'):
+            project.source_policy(runner, 'cc', entry, root, {root / 'tool.on1x'})
+        tokens[2:] = [b'as', b'p', b';']
+        project.source_policy(runner, 'cc', entry, root, set())
 
 
 if __name__ == '__main__':
