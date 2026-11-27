@@ -840,6 +840,9 @@ if(BUILD_TESTING)
   add_executable(on1x_module_signature_tests tests/test_module_signature.cpp)
   target_link_libraries(on1x_module_signature_tests PRIVATE on1x_frontend)
   add_test(NAME on1x.module_signature COMMAND on1x_module_signature_tests)
+  add_test(NAME on1x.module_signature_cli COMMAND "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_module_signature_cli.py"
+    "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/test-artifacts/module-signature")
   if(ON1X_WITH_NEROTYPICAL)
     add_executable(on1x_type_safety_tests tests/test_type_safety.cpp)
     target_link_libraries(on1x_type_safety_tests PRIVATE on1x_type_safety)
