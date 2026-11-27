@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Presentation policy uses exact LibStone selectors without changing admission."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -170,11 +171,17 @@ class DiagnosticSelectors(unittest.TestCase):
         self.write(second, 'src/main.on1x', SOURCE)
         self.write(second, 'src/Lib.on1xm', MODULE)
         self.manifest(second, 'diagnostic all off\ndiagnostic "name:unused-type" on\n')
-        for _ in range(2):
-            shown = self.project(second, root / 'second-result', cache).stderr
-            self.assertIn(TYPE, shown)
-            self.assertNotIn(IMPORT, shown)
-            self.assertNotIn(VARIABLE, shown)
+        second_output = root / 'second-result'
+        shown = self.project(second, second_output, cache).stderr
+        self.assertIn(TYPE, shown)
+        self.assertNotIn(IMPORT, shown)
+        self.assertNotIn(VARIABLE, shown)
+        slot = cache / hashlib.sha256(json.dumps([str(second.resolve()), '', 'Lib'],
+                                                separators=(',', ':')).encode()).hexdigest()
+        inode = slot.stat().st_ino
+        self.assertIn(TYPE.encode(), slot.read_bytes())
+        self.assertEqual(shown, self.project(second, second_output, cache).stderr)
+        self.assertEqual(inode, slot.stat().st_ino)
 
         before = {path.name: path.read_bytes() for path in cache.iterdir()}
         self.write(project, 'src/Lib.on1xm', MODULE.replace('return 42', 'return true'))

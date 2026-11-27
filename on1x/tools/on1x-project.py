@@ -70,6 +70,8 @@ MAX_MODULE_EDGES = 16384
 # A source package can record thousands of paths in both inputs and outputs.
 MAX_BUILD_REPORT = 16 * 1024 * 1024
 MAX_PROCESS = 64 * 1024 * 1024
+MAX_FRONTEND_NOTICE = 8192
+MAX_MODULE_CHECK_MARKER = 128 * 1024
 MAX_GIT_MEMORY = 512 * 1024 * 1024
 MAX_GIT_OBJECT_FILES = 32768
 MAX_GIT_OBJECT_BYTES = 128 * 1024 * 1024
@@ -1030,7 +1032,7 @@ def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memo
                 fail(f'{command[0]} exceeded {timeout}-second subprocess limit')
             if child.returncode:
                 errors.seek(0)
-                diagnostic = errors.read(8192)
+                diagnostic = errors.read(MAX_FRONTEND_NOTICE)
                 if selected_presentation and child.returncode > 0:
                     if diagnostic:
                         notices(diagnostic)
@@ -1039,7 +1041,7 @@ def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memo
                 fail(f'{command[0]} failed ({child.returncode})' + (f':\n{diagnostic}' if diagnostic else ''))
         if notices and errors.tell():
             errors.seek(0)
-            notices(errors.read(8192))
+            notices(errors.read(MAX_FRONTEND_NOTICE))
         if output.tell() > bound:
             fail(f'{command[0]}: output byte limit exceeded')
         output.seek(0)
@@ -1374,7 +1376,6 @@ class Execution:
         self.work = work
         self.env = env
         self.selector_flags = []
-        self.notice_count = 0
         self.notice_keys = set()
         self.python = Path(sys.executable)
         self.bwrap = None
@@ -1470,7 +1471,8 @@ class Execution:
     def path(self, path):
         return Path('/work') / path.relative_to(self.work) if self.prefix else path
 
-    def run(self, command, *, extra_env=None, frontend=False, forward_selectors=True, **kwargs):
+    def run(self, command, *, extra_env=None, frontend=False, forward_selectors=True,
+            notice_sink=None, **kwargs):
         # Only the explicit FFI generator may receive its staged kernel roots.
         # Neither bwrap nor ordinary compiler/build subprocesses inherit them.
         prefix = self.prefix
@@ -1480,21 +1482,30 @@ class Execution:
         if frontend:
             if forward_selectors:
                 command = [*command, *self.selector_flags]
-            kwargs.update(notices=self.frontend_notice, selected_presentation=bool(self.selector_flags))
+            def show(data):
+                text = self.normalize_frontend_notice(data)
+                self.frontend_notice(text)
+                if notice_sink is not None:
+                    notice_sink(text)
+
+            kwargs.update(notices=show, selected_presentation=bool(self.selector_flags))
         return run([*prefix, *(['--'] if prefix else []), *command], self.work / 'cwd', env=env, **kwargs)
 
-    def frontend_notice(self, data):
-        self.notice_count += 1
+    def normalize_frontend_notice(self, data):
         text = data.decode('utf-8', 'replace')
         # Do not publish per-build private staging names in diagnostics.
         for name, display in (('input/project', 'project'), ('input/deps', 'dependency'),
                               ('input', 'build'), ('cwd', 'build')):
             text = text.replace(str(self.path(self.work / name)) + '/', display + '/')
+        return text
+
+    def frontend_notice(self, text):
         key = digest(text.encode('utf-8'))
         if key not in self.notice_keys:
             if len(self.notice_keys) < MAX_FILES:
                 self.notice_keys.add(key)
             sys.stderr.write(text + ('' if text.endswith('\n') else '\n'))
+
 
 def stage_bytes(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2124,6 +2135,7 @@ class ModuleCheckCache:
 
     Every build still runs graph admission on the *fresh* staged trees and
     performs target checks/code generation and legacy verification normally.
+    Cached checks replay their bounded, already filtered diagnostic output.
     """
     def __init__(self, fd, context, roots, membership, dependency_versions):
         self.fd = fd
@@ -2160,7 +2172,7 @@ class ModuleCheckCache:
                     return None
                 inputs[self.identity(path)] = digest(data)
             return fingerprint({
-                'schema': 'on1x.module-check/v1',
+                'schema': 'on1x.module-check/v2',
                 'context': self.context, 'inputs': inputs, 'members': members, 'dependencies': versions,
                 'sources': [self.identity(path) for path in graph.sources],
                 'edges': sorted((self.identity(a), self.identity(b)) for a, b in graph.edges),
@@ -2168,27 +2180,43 @@ class ModuleCheckCache:
         except (OSError, ValueError):
             return None
 
-    def check(self, package, member, graph, verify):
+    @staticmethod
+    def consume_notice_payload(payload):
+        notices = json.loads(payload)
+        if not isinstance(notices, list) or len(notices) > 2 or any(
+                not isinstance(text, str) or not 0 < len(text) <= MAX_FRONTEND_NOTICE
+                or re.search(r'[\x00-\x08\x0b-\x1f\x7f\ud800-\udfff]', text) for text in notices):
+            fail('invalid cached module check notices')
+        return notices
+
+    def check(self, package, member, graph, verify, replay=None):
         slot = fingerprint([self.context['project'], package, member])
         key = self.key(graph)
         if key is not None:
             marker = (key + '\n').encode('ascii')
             try:
-                if read(slot, len(marker), dir_fd=self.fd) == marker:
-                    return
-            except (OSError, ValueError):
-                pass
-        if verify() is False:
-            return  # Do not memoize away visible diagnostics on later builds.
+                data = read(slot, MAX_MODULE_CHECK_MARKER, dir_fd=self.fd)
+                notices = self.consume_notice_payload(data[len(marker):]) if data.startswith(marker) else None
+            except (OSError, ValueError, RecursionError):
+                notices = None
+            if notices is not None:
+                if replay is not None:
+                    for notice in notices:
+                        replay(notice)
+                return
+        notices = verify() or []
         # Do not certify reused standard-library inputs that changed while
         # checking. Staged sources and carrier bytes are still present here.
         if key is None or self.key(graph) != key:
+            return
+        payload = json.dumps(notices, ensure_ascii=True, separators=(',', ':')).encode('ascii')
+        if len(marker) + len(payload) > MAX_MODULE_CHECK_MARKER:
             return
         temporary = '.check-' + os.urandom(16).hex()
         try:
             with os.fdopen(os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600,
                                    dir_fd=self.fd), 'wb') as stream:
-                stream.write(marker)
+                stream.write(marker + payload)
             os.replace(temporary, slot, src_dir_fd=self.fd, dst_dir_fd=self.fd)
         except OSError:
             try:
@@ -2282,16 +2310,17 @@ def check_manifest_members(executor, compiler, stage, members, loader, compiler_
                 expected_auxiliary=(executor.path(stage / path) for path in declaration.interfaces))
 
             def verify():
-                mark = executor.notice_count
+                notices = []
                 if declaration.interfaces:
-                    executor.run([compiler, '--check-interfaces', entry, *compiler_flags], frontend=True)
-                executor.run([compiler, '--check', entry, *compiler_flags], frontend=True)
-                return mark == executor.notice_count
+                    executor.run([compiler, '--check-interfaces', entry, *compiler_flags], frontend=True,
+                                 notice_sink=notices.append)
+                executor.run([compiler, '--check', entry, *compiler_flags], frontend=True, notice_sink=notices.append)
+                return notices
 
             if cache is None:
                 verify()
             else:
-                cache.check(package, member, graph, verify)
+                cache.check(package, member, graph, verify, executor.frontend_notice)
         finally:
             carrier.unlink()
 

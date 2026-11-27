@@ -600,6 +600,10 @@ endif()
 install(FILES tools/on1x_project.py tools/on1x_project_init.py tools/on1x_inline.py
   tools/on1x_optimization.py tools/on1x_toolchain.py tools/on1x_ffi_trust.py
   tools/on1x_dotenv.py tools/on1x_proxy.py DESTINATION share/on1x/tools)
+if(ON1X_BUILD_EXTENSION_SDK)
+  # The standalone SDK's manifest validator loads the canonical project engine.
+  install(FILES tools/on1x_project.py DESTINATION "${CMAKE_INSTALL_DATADIR}/on1x/tools" COMPONENT On1xSDK)
+endif()
 
 if(ON1X_WITH_EXOML OR ON1X_WITH_CHISEL OR ON1X_WITH_SYREN)
   if(NOT EXISTS "${ON1X_LIBSTONE_ROOT}/moonstone/CMakeLists.txt")
