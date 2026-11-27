@@ -87,7 +87,8 @@ class Loader {
   std::map<fs::path,const Member*> enrolled;
   std::set<fs::path> known_packages,indexed_programs;
   std::map<std::string,fs::path> conventional_names;
-  std::set<fs::path> verified_signatures;
+   std::set<fs::path> verified_signatures;
+   std::set<fs::path> legacy_interfaces;
   std::map<fs::path,fs::path> explicit_interfaces;
   std::size_t declaration_interface_members=0;
   std::vector<Module*> order,stack,preludes,operator_preludes,discovery_stack;
@@ -1389,7 +1390,8 @@ class Loader {
     if(source.size()>options.max_bytes-bytes)
      throw Error(where,"total source and interface byte limit exceeded","ON1X-INTERFACE-LIMIT");
     bytes+=source.size();
-    auto members=parse_interface(scan(source,where.file));
+     auto members=parse_interface(scan(source,where.file));
+     legacy_interfaces.insert(origin);
     std::map<std::string,std::vector<const Function*>> definitions;
     for(const auto& f:module.unit.functions)definitions[f.name].push_back(&f);
     for(auto& member:members){
@@ -1560,7 +1562,10 @@ class Loader {
     // Macro expansion or PPX can introduce the first operator in a graph.
     // Freeze module ownership even when discovery found no operators.
     result.unit.operator_entry=entry->path.string();
-   result.interfaces=bind_interfaces();
+    result.interfaces=bind_interfaces();
+    result.signature_dependencies.assign(verified_signatures.begin(),verified_signatures.end());
+    result.signature_dependencies.insert(result.signature_dependencies.end(),legacy_interfaces.begin(),legacy_interfaces.end());
+    std::sort(result.signature_dependencies.begin(),result.signature_dependencies.end());
   // Reserve storage so pointers used for identical raw-extern admission stay valid.
    std::size_t count=0;
      for(auto* m:order){
@@ -1573,7 +1578,8 @@ class Loader {
    if(count>16384)throw Error({input.string()},"loaded function count limit exceeded");
    result.unit.functions.reserve(count);
      for(auto* m:order){
-      current_module=m;
+       current_module=m;
+       result.source_capabilities|=m->source_capability;
       result.unit.requires_module_boundary|=named_module(*m)||m->program;
      const auto scope_key=m->path.string();
       record_operator_scope(result.unit,m->operator_visibility,scope_key);

@@ -44,6 +44,10 @@ struct LoadedUnit {
  std::set<std::string> internal_functions;
   std::vector<InterfaceObligation> interfaces;
   std::size_t declaration_interface_members=0;
+   // Canonical interface files read by the loader, including sealed standard
+   // and project modules. These are not executable source edges.
+   std::vector<std::filesystem::path> signature_dependencies;
+   bool source_capabilities=false; // Parsed source requested PPX, native or extension capabilities.
   // Direct edges between physical source files, not synthetic module groups.
   std::vector<std::pair<std::filesystem::path,std::filesystem::path>> source_edges;
 };
