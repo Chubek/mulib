@@ -57,6 +57,7 @@ struct Module {
  std::size_t id=0;
    bool discovering=true,active=false,loaded=false,legacy=false,implicit=false;
  bool program=false,has_main=false,isolated=false,source_capability=false;
+ bool unobservable_syntax=false;
   std::optional<SharedKind> shared;
   std::map<BindingKey,std::vector<std::size_t>> observed_imports;
   std::map<std::string,std::size_t> observed_types;
@@ -95,6 +96,7 @@ class Loader {
  std::vector<Observation> observations;
  std::size_t observation_bytes=0;
  std::map<BindingKey,std::vector<std::size_t>> legacy_imports;
+ std::set<const Module*> reported_sources;
  std::optional<std::size_t> type_definition;
  bool in_template=false;
  bool observe=false;
@@ -135,10 +137,20 @@ class Loader {
     if(m.signature_exports)return *m.signature_exports;
     return named_module(m)||m.program||!m.fragments.empty()?m.declarations:m.names;
    }
-   bool observe_source(const Module& module)const{
-    return options.observe_unused_bindings&&!module.implicit&&!module.program&&
+   bool candidate_source(const Module& module)const{
+    return options.observe_unused_bindings&&!module.program&&
       std::ranges::find(operator_preludes,&module)==operator_preludes.end()&&
       std::ranges::none_of(standard_roots,[&](const auto& root){return contained(root,module.path);});
+   }
+   void index_reported_sources(const Module* entry){
+    std::vector<const Module*> pending{entry};
+    std::set<const Module*> seen;
+    while(!pending.empty()){
+     const auto* module=pending.back();pending.pop_back();
+     if(!seen.insert(module).second)continue;
+     if(candidate_source(*module))reported_sources.insert(module);
+     pending.insert(pending.end(),module->dependencies.begin(),module->dependencies.end());
+    }
    }
    std::optional<std::size_t> observation(UnusedKind category,const Location& at,
                   const std::string& name,const char* kind,const Module& source){
@@ -154,7 +166,7 @@ class Loader {
    }
    void observe_import(Module& module,BindingSpace space,const std::string& key,
              const std::string& binding,const std::string& alias,const char* kind,const Location& at){
-    if(!observe_source(module)||alias.starts_with('_'))return;
+    if(!candidate_source(module)||alias.starts_with('_'))return;
     if(auto id=observation(UnusedKind::Import,at,binding,kind,module))
      module.observed_imports[{space,key}].push_back(*id);
    }
@@ -1002,10 +1014,10 @@ class Loader {
                   "ON1X-PROGRAM-IMPORT");
      if(m->unit.module&&mains)
       throw Error(at,"a declared module cannot define the program entry point main","ON1X-MODULE-IDENTITY");
-     m->source_capability=!m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
-                          !m->unit.kernel_imports.empty()||!m->unit.foreign_imports.empty()||
-                          std::any_of(m->unit.functions.begin(),m->unit.functions.end(),
-                                      [](const auto& f){return f.external||!f.attributes.empty();});
+     m->unobservable_syntax=!m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
+       std::ranges::any_of(m->unit.functions,[](const auto& f){return !f.attributes.empty();});
+     m->source_capability=m->unobservable_syntax||!m->unit.kernel_imports.empty()||!m->unit.foreign_imports.empty()||
+       std::ranges::any_of(m->unit.functions,[](const auto& f){return f.external;});
      if(isolated)isolate(*m,at);
      if(program)std::erase_if(m->unit.functions,[](const auto& f){return f.name=="main";});
      if(m->unit.module&&(!m->unit.extensions.empty()||!m->unit.features.empty()))
@@ -1191,7 +1203,7 @@ class Loader {
          if(!id)id=observation(UnusedKind::Import,selection.where,selection.name,"operator",*m);
          if(id)m->observed_imports[{BindingSpace::Operator,binding->identity}].push_back(*id);
         };
-        if(observe_source(*m)){
+        if(candidate_source(*m)){
          std::optional<std::size_t> id;
          add(target->operator_exports.find(selection.name,OperatorPosition::Prefix),id);
          add(target->operator_exports.trailing(selection.name),id);
@@ -1292,7 +1304,7 @@ class Loader {
   }
  void bind(Scope& scope,const std::string& name,const Location& at){
   std::optional<std::size_t> id;
-  if(observe&&current_module&&!in_template&&observe_source(*current_module)&&
+  if(observe&&reported_sources.contains(current_module)&&!in_template&&
      !name.empty()&&!name.starts_with('_')&&!name.starts_with('@'))
    id=observation(UnusedKind::Variable,at,name,"variable",*current_module);
   auto prior=scope.find(name);
@@ -1863,14 +1875,12 @@ class Loader {
     // references beyond those available to the ordinary source resolver.
     // Do not run a transform solely to discover whether a binding is used.
     observe=options.observe_unused_bindings&&
-      std::ranges::none_of(order,[](const Module* m){
-       return !m->unit.ppx.empty()||!m->unit.features.empty()||!m->unit.extensions.empty()||
-        std::ranges::any_of(m->unit.functions,[](const Function& f){return !f.attributes.empty();});
-      });
+      std::ranges::none_of(order,[](const Module* m){return m->unobservable_syntax;});
+    if(observe)index_reported_sources(entry->group?entry->group:entry);
     if(observe)for(auto* m:order){
      if(m->legacy)for(const auto& [key,ids]:m->observed_imports)
       legacy_imports[key].insert(legacy_imports[key].end(),ids.begin(),ids.end());
-     if(!observe_source(*m))continue;
+     if(!reported_sources.contains(m))continue;
      for(const auto& d:m->unit.nominals){
       if(d.visibility.kind!=DeclarationVisibility::Private)continue;
       if(auto id=observation(UnusedKind::Type,d.where,d.name,d.kind==Type::Sum?"enum type":"record type",*m))
@@ -2180,7 +2190,7 @@ class Loader {
    if(result.unit.requires_module_boundary)check_asdl_graph(result,entry_at);
    if(observe){
     for(auto& item:observations)
-     if(!item.used&&!item.shadowed&&observe_source(*item.source))
+     if(!item.used&&!item.shadowed&&reported_sources.contains(item.source))
       result.unused_bindings.push_back(std::move(item.finding));
     std::ranges::stable_sort(result.unused_bindings,[](const UnusedBinding& a,const UnusedBinding& b){
      return std::tie(a.where.file,a.where.offset)<std::tie(b.where.file,b.where.offset);
@@ -2276,6 +2286,7 @@ LoaderOptions default_loader_options(const std::string& executable){
 KernelImportRequests inspect_kernel_imports(const fs::path& input,const LoaderOptions& options){
  auto inspect_options=options;
  inspect_options.extensions.execute=false;
+ inspect_options.observe_unused_bindings=false;
  KernelImportRequests result;
  (void)Loader(inspect_options,&result).run(input);
  return result;

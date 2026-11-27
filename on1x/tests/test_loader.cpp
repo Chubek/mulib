@@ -33,10 +33,14 @@ public macro expand{rule()=>expression{42};}
 public operator(lexeme: "%%", arity: "binary", formals: x:i64,y:i64)->i64{return x+y;}
 )");
  write(root/"solo.on1x","fn legacy()->i64{return 8;}");
+ write(root/"_direct.on1x","fn endpoint()->i64{return 4;}");
+ write(root/"defaults.on1x","import default_lib;fn constant()->i64{let prelude_local=7;return default_lib.constant_value();}");
+ write(root/"default_lib.on1x","fn constant_value()->i64{let prelude_helper_local=7;return 10;}");
  write(entry,R"(
 import "solo.on1x";
 import Lib as _intentional;
 import Lib as spare;
+import _direct;
 from Lib import action, helper as local_name, _not_alias, Exported as RemoteType, takes_value;
 from Lib import helper as _skip;
 from Lib import expand, operator("%%"), helper as def_site;
@@ -45,6 +49,7 @@ fn main(){
  let unused_local=8;
  let _unused=8;
  let _=8;
+ var written_only=1;written_only=2;
  let local_name=8;
  let outer=7;
  {let outer=9; assert(outer==9);}
@@ -55,9 +60,11 @@ fn main(){
  assert(((local_name+kept+legacy()) %% takes_value(2))==23);
  assert(expand!()==42);
  assert(apply!()==3);
+ assert(constant()==10);
 }
 )");
  LoaderOptions options;options.prelude=false;
+ options.preludes.push_back(root/"defaults.on1x");
  if(!load_unit(entry,options).unused_bindings.empty())throw std::runtime_error("loader observation must be opt-in");
  options.observe_unused_bindings=true;
  auto loaded=load_unit(entry,options);
@@ -66,8 +73,9 @@ fn main(){
  for(const auto& item:loaded.unused_bindings)actual.emplace(item.binding_kind,item.name);
  const decltype(actual) expected{
   {"record type","HiddenRecord"},{"enum type","HiddenEnum"},
-  {"module","spare"},{"procedure","action"},{"function","local_name"},{"function","_not_alias"},
+  {"module","spare"},{"module","_direct"},{"procedure","action"},{"function","local_name"},{"function","_not_alias"},
   {"type","RemoteType"},{"variable","unused_local"},{"variable","unused_tuple"},{"variable","outer"},
+  {"variable","written_only"},
  };
  if(actual!=expected){
   for(const auto& [kind,name]:actual)std::fprintf(stderr,"unexpected set member seen: %s %s\n",kind.c_str(),name.c_str());
@@ -84,6 +92,10 @@ fn main(){
   }
   throw std::runtime_error("lone underscore import alias accepted");
  }
+ write(entry,"@ppx processor \"never-run.py\";import Lib as spare;fn main(){let may_be_used=1;}");
+ auto with_ppx=load_unit(entry,options);
+ if(!with_ppx.source_capabilities||!with_ppx.unused_bindings.empty())
+  throw std::runtime_error("unexpected unused advice for source PPX");
  write(entry,"import foreign stdffi.clamp as port;fn main(){}");
  if(stdffi::has_kernel("clamp")){
   options.kernel_load_time=true;
@@ -91,6 +103,9 @@ fn main(){
   check(resources.unit);
   if(resources.unused_bindings.size()!=1||resources.unused_bindings.front().binding_kind!="resource")
    throw std::runtime_error("missing unused resource import");
+  write(entry,"import foreign stdffi.clamp as _port;fn main(){}");
+  if(!load_unit(entry,options).unused_bindings.empty())
+   throw std::runtime_error("explicit underscore resource alias was not quiet");
  }
 }
 

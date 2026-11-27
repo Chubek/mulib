@@ -112,9 +112,7 @@ symlinks load one copy. Dependencies are ordered before importers. Cycles report
 the importing location and full active chain. There is no persistent process-wide
 cache; separate compiler/API invocations see file changes.
 
-## Scope and compilation
-
-### Unused bindings
+## Unused bindings
 
 The compiler reports unused namespace and selective import bindings as
 `unused-import` in diagnostic group `unused`. It identifies what was imported
@@ -142,12 +140,15 @@ macro arguments count; copied macro binders are not reported. The report does
 not interpret whether a macro will expand or keep its argument. It does not run
 PPX for discovery; source graphs using PPX, attributes or declaration
 extensions are excluded. Internal compiler bindings, standard-library files,
-configured preludes and the source of an imported program whose entry point
-has been removed are not analyzed for findings. Legacy quoted includes open a
-flat scope and do not introduce one reportable namespace binding; an
+preludes and their prelude-only dependencies, and the source of an imported
+program whose entry point has been removed are not analyzed for findings.
+Legacy quoted includes open a flat scope and do not introduce one reportable
+namespace binding; an
 indistinguishable legacy re-export or repeated import of the same binding is
 conservatively counted as used if a reference resolves to that binding. The
 ordinary loader and checker still enforce admission and type semantics.
+
+## Scope and compilation
 
 Named imports have file-local bindings. Two modules may independently define
 `helper` without collisions. The loader assigns collision-free deterministic
