@@ -74,7 +74,7 @@ fn arg(n:i64)->i64{println(2);return n;}
 exercise('closed_callbacks', closures+'''
 fn main(){
  println(choose(0,10)(arg(3)));
- let a=choose(1,10);{let bias=99;println(apply(a,arg(3)));}
+ let a=choose(1,10);{let bias=99;assert(bias==99);println(apply(a,arg(3)));}
  let b=choose(2,10);println(apply(b,arg(3)));println(b(5));
 }
 ''','1\n2\n3\n1\n2\n13\n1\n2\n4\n0\n',mir_source=False)

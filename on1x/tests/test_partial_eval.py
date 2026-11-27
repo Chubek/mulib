@@ -57,12 +57,12 @@ assert len(known) == 1 and known[0][2] == 'const' and known[0][5] == '40', known
 strict = t.source('strict', '''
 fn mark(n:i64)->i64{println(n);return n;}
 fn flag(n:i64)->bool{println(n);return true;}
-fn ignored(k:i64,x:i64)->i64{return k;}
+fn ignored(k:i64,_x:i64)->i64{return k;}
 fn repeated(k:i64,x:i64)->i64{return k+x+x;}
 fn lazy(k:bool,x:bool)->bool{return k&&x;}
 fn unconditional(k:bool,x:bool)->bool{return k||x;}
 fn several(k:i64,x:i64,y:i64)->i64{return y-x+k;}
-fn noisy(k:i64)->i64{let unused=mark(99);return k;}
+fn noisy(k:i64)->i64{let _unused=mark(99);return k;}
 fn main(){
  println(ignored(4,mark(1)));println(repeated(3,mark(2)));
  println(lazy(false,flag(3)));println(unconditional(false,flag(4)));
@@ -174,7 +174,7 @@ chain = ''.join(f'fn f{i}(x:i64)->i64{{return f{i+1}(x+1);}}\n' for i in range(1
 deep = t.source('deep', chain + 'fn f12(x:i64)->i64{return x+1;}'
                 'fn cycle(x:i64)->i64{return cycle(x);}'
                 'fn recursive()->i64{return cycle(1);}'
-                'fn drop_arg(k:i64,x:i64)->i64{return k;}'
+                 'fn drop_arg(k:i64,_x:i64)->i64{return k;}'
                 'fn divergent()->i64{return drop_arg(4,cycle(1));}'
                 'fn main(){println(f0(1));}')
 assert stats(deep, on)['limited']
