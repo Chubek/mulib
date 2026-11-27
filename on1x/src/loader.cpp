@@ -1512,6 +1512,12 @@ class Loader {
     (void)discover_preludes(input);
     const Location at{input.string()};
     auto* entry=metadata(input,at,false);
+     if(!options.project_package.empty()&&named_module(*entry)&&!entry->member)
+      throw Error(at,"declared module entry is not in project membership","ON1X-MODULE-MEMBERSHIP");
+     // Attach the same fragment group as the compiler does, so the entry sees
+     // its siblings' accessible fixities. Do not visit() the group: only the
+     // requested source is fully parsed, and signatures are never opened.
+     if(entry->member)(void)group_metadata(*entry->member,at);
      auto result=parse_with_operators(entry->scanned,
             {options.extensions.enabled.begin(),options.extensions.enabled.end()},
              std::move(entry->docs),visible_operators(*entry,at));

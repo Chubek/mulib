@@ -573,11 +573,11 @@ def root_manifest(payload, origin, dependency=False):
             elif verb == 'command' and not dependency:
                 key, action, target, path = fields(args, '"ww"')
                 if (key in ('build', 'release', *VM_COMMANDS, FFI_GENERATE)
-                        or action != 'format' or target not in ('plain', 'latex', 'troff')):
-                    fail('expected a custom command of the form: command "name" format plain|latex|troff "source.on1x"')
+                         or action != 'format' or target not in ('plain', 'latex', 'troff', 'html')):
+                    fail('expected a custom command of the form: command "name" format plain|latex|troff|html "source"')
                 source = local(path)
-                if source.suffix != '.on1x':
-                    fail('formatter commands require an .on1x source path')
+                if source.suffix not in ('.on1x', '.on1xm', '.on1xi'):
+                    fail('formatter commands require an .on1x, .on1xm, or .on1xi source path')
                 unique(commands, name(key), (target, source))
             elif verb == 'define' and not dependency:
                 if len(args) == 3 and args[1] == ('shell', False):
@@ -2309,6 +2309,97 @@ def ffi_generator(args):
     print(dest)
 
 
+def resolve_dependency_inputs(config, lock_entries):
+    resolved = {}
+    for key, dependency in sorted(config['deps'].items()):
+        if dependency.kind == 'local':
+            location, commit = dependency.source, None
+        else:
+            entry = lock_entries.get(key)
+            if dependency.selector_kind == 'commit':
+                commit = dependency.selector
+            elif entry is not None:
+                commit = entry['commit']
+            else:
+                fail(f'{key!r}: Git {dependency.selector_kind} selector is not locked; '
+                     'run on1x-project.py lock')
+            location = (dependency.source if dependency.kind == 'git'
+                        else cache_relative(key, commit))
+        resolved[key] = (dependency, location, commit)
+    return resolved
+
+
+def stage_formatter_config(original, staged):
+    # Capture the nearest original config, including one above the project.
+    # An empty config prevents inheriting an unrelated temporary-root config.
+    for directory in original.parents:
+        candidate = directory / '.on1xfmt'
+        try:
+            candidate.lstat()
+        except FileNotFoundError:
+            continue
+        stage_bytes(staged.parent / '.on1xfmt', read(candidate.resolve(strict=True), 4096))
+        return
+    stage_bytes(staged.parent / '.on1xfmt', b'')
+
+
+def format_project_source(args, compiler, project, config, disk, snapshot, source, target, env):
+    directory = config.get('directory', Path('.'))
+    if not source.is_relative_to(directory):
+        fail(f'{source}: formatter input is outside the declared project directory')
+    original = contained(project, source)
+    # Keep ordinary legacy formatter commands and source-only signatures
+    # independent of package recipes and directory-local manifests.
+    if source.suffix == '.on1xi' or (
+            source.suffix == '.on1x' and not (config['modules'] or config['programs'] or config['deps'])):
+        disk.get(source, MAX_SOURCE)
+        return run([compiler, 'fmt', original, '--target', target], project, env=env)
+
+    def reject_template(_, origin):
+        fail(f'{origin}: staged formatting requires plain manifests; no template code was executed')
+
+    locks, _ = (read_lock(project, config, strict=False, snapshot=snapshot)
+                if any(dep.kind != 'local' for dep in config['deps'].values()) else ({}, None))
+    dependencies = resolve_dependency_inputs(config, locks)
+    if any(directory.is_relative_to(location) for _, location, _ in dependencies.values()):
+        fail('the project source directory cannot be inside a dependency store')
+    disk.exclude.update(project / location for _, location, _ in dependencies.values())
+    with tempfile.TemporaryDirectory(prefix='on1x-project-format-') as tmp:
+        work = Path(tmp).resolve()
+        root, deps, cwd = (work / name for name in ('project', 'deps', 'cwd'))
+        for path in (root, deps, cwd):
+            path.mkdir()
+        executor = Execution(args, work, compiler, None, None, env=env)
+        members = {}
+        roles = layouts(disk, config, 'project', root, snapshot, reject_template, membership=members)
+        if source.suffix == '.on1xm' and roles.get(source) != 'module':
+            fail(f'{source}: formatter module input must be a declared fragment')
+        staged = root / source
+        if source not in roles:
+            stage_bytes(staged, snapshot.record(f'project/{source.as_posix()}', disk.get(source, MAX_SOURCE)))
+        stage_formatter_config(original, staged)
+        packages = {config['name']: (root, members, '')} if members else {}
+        for key, (dependency, relative, revision) in dependencies.items():
+            if key in packages:
+                fail(f'project module package shares declared dependency name {key!r}')
+            location = contained(project, relative)
+            if dependency.kind == 'git-remote' and not location.exists():
+                fail(f'{location}: remote Git objects are missing; run on1x-project.py fetch {key} explicitly')
+            stage, library_members = deps / key, {}
+            with tempfile.TemporaryDirectory(dir=work, prefix='git-') as objects:
+                provider = (Disk(location) if dependency.kind == 'local'
+                            else Git(location, revision, cwd, Path(objects) / 'git'))
+                dependency_layout(provider, key, stage, snapshot, membership=library_members)
+            packages[key] = (stage, library_members, key + '.')
+        index_flags, _ = module_index(executor, work / 'module-index.json', root, packages, config['programs'])
+        flags = ['-I', str(deps), '-I', str(root)]
+        if directory != Path('.'):
+            flags.extend(('-I', str(root / directory)))
+        if config['kind'] == 'library' and config['name'] == 'std':
+            flags.extend(('--stdlib', str(root / directory)))
+        return run([compiler, 'fmt', staged, '--target', target, *flags, *index_flags], cwd, env=env)
+
+
 def build(args):
     if args.sandbox and args.allow_shell:
         fail('--sandbox cannot be combined with --allow-shell')
@@ -2343,11 +2434,8 @@ def build(args):
                       or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
                 fail('project formatting commands do not take build options')
             target, source = selected
-            if not source.is_relative_to(config.get('directory', Path('.'))):
-                fail(f'{source}: formatter input is outside the declared project directory')
-            input_path = contained(project, source)
-            disk.get(source, MAX_SOURCE)  # Reject non-regular, oversized or linked inputs before invoking the compiler.
-            sys.stdout.buffer.write(run([compiler, 'fmt', input_path, '--target', target], project, env=child_env))
+            sys.stdout.buffer.write(format_project_source(
+                args, compiler, project, config, disk, snapshot, source, target, child_env))
             return
         args.profile = args.project_command
     analysis_work = (scrutiny_work(args.scrutiny_work) if args.scrutiny_work is not None
@@ -2387,22 +2475,7 @@ def build(args):
         strict=True, snapshot=snapshot, kernel_inputs=kernel_inputs)
     if locked:
         require_locked(lock_entries, config)
-    resolved_dependencies = {}
-    for key, dependency in sorted(config['deps'].items()):
-        if dependency.kind == 'local':
-            location, commit = dependency.source, None
-        else:
-            entry = lock_entries.get(key)
-            if dependency.selector_kind == 'commit':
-                commit = dependency.selector
-            elif entry is not None:
-                commit = entry['commit']
-            else:
-                fail(f'{key!r}: Git {dependency.selector_kind} selector is not locked; '
-                     'run on1x-project.py lock')
-            location = (dependency.source if dependency.kind == 'git'
-                        else cache_relative(key, commit))
-        resolved_dependencies[key] = (dependency, location, commit)
+    resolved_dependencies = resolve_dependency_inputs(config, lock_entries)
     directory = config.get('directory', Path('.'))
     if any(directory.is_relative_to(location)
            for _, location, _ in resolved_dependencies.values()):

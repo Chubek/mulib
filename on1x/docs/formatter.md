@@ -19,10 +19,14 @@ bodies, check types, expand macros, or run PPX or declaration extensions.
 Use `--stdlib DIR`, `-I DIR`, `--prelude FILE`, or `--no-prelude` to match
 your build's operator environment. `--isolated` restricts formatting to the
 input file and is intended for scratch or untrusted editor buffers.
-The `fmt` command does not read a staged module index. Use `--isolated` for
-`.on1xm` sources whose imports require that index, provided the file does not
-need an imported operator fixity. Formatting does not admit modules or
-certify import visibility.
+Use `--project-module-index FILE` to format against an existing staged project
+index, passing the staged source path as input. The formatter uses the same
+declared-module lookup and fragment order as the compiler when discovering
+operator headers, including accessible fixities from sibling fragments. It
+does not parse dependency bodies or read interface contents. Ordinary
+non-operator imports are preserved, not checked; formatting does not admit
+modules or certify import visibility. An index cannot be combined with
+`--isolated`, and `.on1xi` formatting does not open it.
 Syntactically invalid input is rejected before any output is published.
 The formatter accepts both `on1xi 1;` and `abstract module` [interfaces](interfaces.md)
 in `.on1xi` files. It validates declarations with the compiler's signature
@@ -113,11 +117,16 @@ Declare a named, shell-free formatter command in the root `On1xfile`:
 command "listing" format latex "src/main.on1x"
 ```
 
-Run `on1xc exec listing > listing.tex` at the project root. `plain` and
-`troff` are also supported; use `on1xc fmt --target html` for HTML listings.
-The source must be inside the project's declared
-directory; the command uses the source's `.on1xfmt`. It writes to stdout
-without building the project or running manifest policy.
+Run `on1xc exec listing > listing.tex` at the project root. Targets are `plain`,
+`latex`, `troff`, and `html`. Inputs may be `.on1x` sources, declared `.on1xm`
+fragments, or `.on1xi` signatures inside the project's declared directory.
+The command uses the original source's nearest `.on1xfmt` and writes to stdout
+without modifying the source, building the project, or running manifest policy.
+When module, program, or dependency declarations supply the source's project
+context, the command stages plain manifests and declared inputs privately.
+Templated input manifests are rejected rather than evaluated. Git dependencies
+use pinned commits or already locked selections from local object stores; the
+formatter does not fetch. Signature inputs remain source-only.
 
 ## Implementation and limits
 

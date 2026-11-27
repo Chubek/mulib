@@ -1,5 +1,6 @@
 """On1x source formatting, round trips, and target escaping."""
 from html.parser import HTMLParser
+import json
 from pathlib import Path
 import shutil
 import stat
@@ -219,7 +220,7 @@ def test_signatures(work):
     assert fmt(legacy, "--prelude", missing).stdout == (
         b"on1xi 1;\nfn f(arg: (i64, bool)) -> string;\n"
     )
-    plain = fmt(named, "--prelude", missing).stdout
+    plain = fmt(named, "--prelude", missing, "--project-module-index", missing).stdout
     assert plain == (
         b"abstract module Example.Types;\nabstract type Box < T >;\ntype Token;\n"
         b"fn make(value: i64) -> Box < i64 >;\nproc reset(x: Token); # </code><script>\n"
@@ -466,6 +467,143 @@ def test_operator_environment(work):
     assert formatted.read_bytes() == rendered
 
 
+def test_staged_module_index(work):
+    root = work / "indexed"
+    root.mkdir()
+    entry = root / "layout.on1xm"
+    sibling = root / "other-layout.on1xm"
+    operator = root / "nonconventional-filename.on1xm"
+    signature = root / "not-parsed.on1xi"
+    prelude = root / "not-executed.on1x"
+    ordinary = (
+        b'module Demo.Layout;from Demo.Operators import operator("<+>");'
+        b'enum Choice{Some(i64)} fn layout(p:record{value:i64})->Choice{'
+        b'return Choice :: Some(p.value<+>p["value"]<*>2);}'
+    )
+    entry.write_bytes(ordinary)
+    signature.write_bytes(b"\0 not a signature")
+    marker = root / "ppx-ran"
+    processor = root / "processor"
+    processor.write_text(f"#!{sys.executable}\nfrom pathlib import Path\nPath({str(marker)!r}).touch()\n")
+    processor.chmod(0o700)
+    header = 'operator (lexeme:"%s", arity:"binary", precedence:5, formals:a:i64,b:i64)->i64'
+    tripwire = '@ppx Tripwire "./processor";\n'
+    operator.write_text("module Demo.Operators;\n" + tripwire + "public " + (header % "<+>") + "{let ;}")
+    sibling.write_text("module Demo.Layout;\nshared " + (header % "<*>") + "{let ;}")
+    prelude.write_text(tripwire + "fn never_parsed(){let ;}")
+    index = root / "module-index.json"
+
+    def member(name, fragments, interfaces=()):
+        return {"package": str(root), "declared_name": name, "fragments": list(map(str, fragments)),
+                "interfaces": list(map(str, interfaces))}
+
+    payload = {"schema": "on1x.project-modules/v1", "project": str(root), "programs": {},
+               "members": {"Demo.Layout": member("Demo.Layout", [sibling, entry], [signature]),
+                           "Demo.Operators": member("Demo.Operators", [operator])}}
+    index.write_text(json.dumps(payload))
+    options = ("--project-module-index", index, "--no-prelude", "--prelude", prelude)
+    assert not fmt(entry, "--no-prelude", expected=1).stdout
+    assert not fmt(entry, "--isolated", *options[:2], expected=2).stdout
+    plain = fmt(entry, *options).stdout
+    assert b'Choice::Some(p.value <+> p["value"] <*> 2)' in plain
+    assert not marker.exists()
+    assert Listing(fmt(entry, *options, "--target", "html").stdout).source == plain
+    assert b"\\documentclass" in invoke(ON1XC, "--emit-latex", entry, *options).stdout
+    assert b"Choice::Some" in invoke(ON1XC, "--emit-troff", entry, *options).stdout
+    fmt(entry, *options, "--check", expected=1)
+    fmt(entry, *options, "--inplace")
+    fmt(entry, *options, "--check")
+    assert entry.read_bytes() == plain
+
+    # Invalid indexes and non-member module entries fail before any output
+    # or replacement; a signed dependency still does not expose fixities.
+    output = root / "output"
+    output.write_bytes(b"unchanged")
+    sibling.write_text(sibling.read_text().replace("shared ", "private "))
+    assert b"ON1X-OPERATOR-UNBOUND" in fmt(entry, *options, "-o", output, expected=1).stderr
+    sibling.write_text(sibling.read_text().replace("private ", "shared "))
+    payload["members"]["Demo.Operators"]["interfaces"] = [str(signature)]
+    payload["members"]["Demo.Layout"]["interfaces"] = []
+    index.write_text(json.dumps(payload))
+    error = fmt(entry, *options, "-o", output, expected=1)
+    assert b"has no operator export" in error.stderr and not error.stdout
+    payload["members"]["Demo.Operators"]["interfaces"] = []
+    payload["members"]["Demo.Layout"]["fragments"] = [str(sibling)]
+    index.write_text(json.dumps(payload))
+    assert b"not in project membership" in fmt(
+        entry, *options, "-o", output, expected=1
+    ).stderr
+    index.write_text('{"schema":"wrong"}')
+    assert b"project module index schema" in fmt(
+        entry, *options, "-o", output, expected=2
+    ).stderr
+    assert output.read_bytes() == b"unchanged"
+
+
+def test_project_staged_format(work):
+    scenario = work / "stage-scenario"
+    root = scenario / "stage-project"
+    source = root / "src" / "printing.on1xm"
+    dependency = root / "vendor" / "dep"
+    source.parent.mkdir(parents=True)
+    dependency.mkdir(parents=True)
+    # Inherit config from above the project's root (not the temporary stage).
+    (scenario / ".on1xfmt").write_text("tabstop=5\n")
+    original = b'module Render;from dep.Arithmetic import operator("<+>");fn render(x:i64)->i64{return x<+>2;}'
+    source.write_bytes(original)
+    manifest = root / "On1xfile"
+    manifest.write_text(
+        'on1xfile 1\nkind executable\nname "listing"\ndirectory "src"\n'
+        'target "listing" "src/main.on1x"\n'
+        'module "Render" "src/printing.on1xm"\ndependency "dep" local "vendor/dep"\n'
+        'profile "tripwire" "must-not-open.lua"\n'
+        'define DONT_RUN shell "exit 88"\n'
+        'command "fmt-signature" format plain "src/format-interface.on1xi"\n'
+        + "".join(f'command "fmt-{target}" format {target} "src/printing.on1xm"\n'
+                  for target in ("plain", "latex", "troff", "html"))
+    )
+    local_manifest = source.parent / "On1xfile.m"
+    local_manifest.write_text('on1xfile 1\nsource "main.on1x"\n')
+    source.with_name("main.on1x").write_text("fn intentionally_not_parsed(")
+    (dependency / "On1xfile").write_text(
+        'on1xfile 1\nkind library\nname "dep"\nmodule "Arithmetic" "not-arithmetic.on1xm"\n'
+    )
+    (dependency / "not-arithmetic.on1xm").write_text(
+        'module Arithmetic;@ppx Forbidden "must-not-run";'
+        'public operator (lexeme:"<+>", arity:"binary", precedence:5, formals:a:i64,b:i64)->i64{let ;}'
+    )
+    # An undeclared checkout file is not an alternative source of fixities.
+    (source.parent / "Arithmetic.on1xm").write_bytes(b"\0")
+    plain = invoke(ON1XC, "exec", "fmt-plain", cwd=root).stdout
+    assert b"\n     return x <+> 2;\n" in plain
+    assert Listing(invoke(ON1XC, "exec", "fmt-html", cwd=root).stdout).source == plain
+    assert b"\\documentclass" in invoke(ON1XC, "exec", "fmt-latex", cwd=root).stdout
+    assert b".nf" in invoke(ON1XC, "exec", "fmt-troff", cwd=root).stdout
+    assert source.read_bytes() == original
+    assert not (root / "target").exists()
+
+    pinned = dependency / "not-arithmetic.on1xm"
+    if git := shutil.which("git"):
+        invoke(git, "init", "--quiet", "--template=", cwd=dependency)
+        invoke(git, "add", "On1xfile", pinned.name, cwd=dependency)
+        invoke(git, "-c", "user.name=Format Test", "-c", "user.email=fmt@example.invalid",
+               "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+               "commit", "--quiet", "-m", "offline fixity", cwd=dependency)
+        pin = invoke(git, "rev-parse", "HEAD", cwd=dependency).stdout.decode().strip()
+        manifest.write_text(manifest.read_text().replace(
+            'local "vendor/dep"', f'git "vendor/dep" "{pin}"'))
+        # The dirty backing checkout must not be examined by the formatter.
+        pinned.write_bytes(b"\0")
+        assert invoke(ON1XC, "exec", "fmt-plain", cwd=root).stdout == plain
+
+    local_manifest.write_text("{% template must not run %}\n")
+    error = invoke(ON1XC, "exec", "fmt-plain", cwd=root, expected=1)
+    assert b"no template code was executed" in error.stderr and not error.stdout
+    interface = source.with_name("format-interface.on1xi")
+    interface.write_text("abstract module Render;fn render(x:i64)->i64;")
+    assert invoke(ON1XC, "exec", "fmt-signature", cwd=root).stdout == fmt(interface).stdout
+
+
 def run(work):
     (work / ".on1xfmt").write_text("tabstop = 4 # spaces, not tabs\nwidth = 28\n")
     root = work / "nested"
@@ -622,6 +760,8 @@ if __name__ == "__main__":
         test_procedures(Path(directory))
         test_multiline_syntax(Path(directory))
         test_operator_environment(Path(directory))
+        test_staged_module_index(Path(directory))
+        test_project_staged_format(Path(directory))
         test_modules(Path(directory))
         test_static_and_brackets(Path(directory))
         test_field_round_trip(Path(directory))
