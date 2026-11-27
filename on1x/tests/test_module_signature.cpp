@@ -198,6 +198,14 @@ int main(){
    conform(named("signature S { type A=i64; }; module Acme.Vault : S;"),
            static_source("type A=B; type B=(i64,A);"));
   });
+  rejects("ON1X-INTERFACE-LIMIT",[&]{
+   std::string growing="type A0=i64;";
+   for(int i=1;i<20;++i){
+    auto branch=std::to_string(i-1);
+    growing+="type A"+std::to_string(i)+"=(A"+branch+",A"+branch+");";
+   }
+   conform(named("signature S { type A0=i64; }; module Acme.Vault : S;"),static_source(growing));
+  });
   auto expansion_error=[&](const char* id,const std::string& source){
    rejects(id,[&]{resolve_module_signature(named(source));});
   };

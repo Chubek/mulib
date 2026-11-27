@@ -170,7 +170,8 @@ public fn read(value: Token) -> (i64, bool) { return value.secret; }
   admitted only with an associated interface in `--check-interfaces` mode.
   Equations are expanded and compared structurally in their provider;
   two distinct local nominal types do not become equal just because their
-  field layouts match. Cyclic equations reject.
+  field layouts match. Cyclic equations reject; inclusion and equation
+  expansion are subject to depth and node budgets.
 - `abstract module Name : S;` seals non-manifest nominal members under
   provider-scoped abstract identities. `module Name : S;` uses transparent
   ascription: non-manifest members retain their original nominal identities

@@ -96,9 +96,14 @@ Type normalize(const Type& t,const TypeMembers& types,const Location& where,
  }
  throw Error(where,"unsupported module interface type: "+type_name(t),"ON1X-INTERFACE-SHAPE");
 }
-Type normalize(const Type& t,const TypeMembers& types,const Location& where,bool result=false){
- std::set<std::string> active;std::size_t nodes=16384;
- return normalize(t,types,where,active,nodes,0,result);
+Type normalize_equation(const Type& t,const TypeMembers& types,const Location& where,
+                        std::size_t& remaining){
+ std::set<std::string> active;
+ auto nodes=std::min<std::size_t>(16384,remaining);
+ const auto initial=nodes;
+ auto equation=normalize(t,types,where,active,nodes,0,false);
+ remaining-=initial-nodes;
+ return equation;
 }
 Type normalize_callable(const Type& callable,const TypeMembers& types,const Location& where){
  std::set<std::string> active;std::size_t nodes=16384;
@@ -250,8 +255,9 @@ SealedModuleSignature verify_module_signature(const ModuleSignature& signature,
    require_form(alias->equation,alias->where);
    actual_types.emplace(name,TypeMember{0,&alias->equation});
   }
+  std::size_t remaining=65536;
   for(const auto& [name,alias]:aliases)
-   normalized_aliases.emplace(name,normalize(alias->equation,actual_types,alias->where));
+   normalized_aliases.emplace(name,normalize_equation(alias->equation,actual_types,alias->where,remaining));
  }
  for(const auto& specification:signature.types){
   if(!expected_types.emplace(specification.name,TypeMember{
@@ -278,9 +284,10 @@ SealedModuleSignature verify_module_signature(const ModuleSignature& signature,
   view.emplace(specification.name,AbstractTypeIdentity{
         canonical_implementation,*signature.module,specification.name});
  }
+ std::size_t remaining=65536;
  for(const auto& specification:signature.types){
   if(!specification.manifest)continue;
-  auto expected=normalize(*specification.manifest,expected_types,specification.where);
+  auto expected=normalize_equation(*specification.manifest,expected_types,specification.where,remaining);
   auto actual=normalized_aliases.find(specification.name);
   if(actual==normalized_aliases.end())
    throw Error(specification.where,"expected one local type equation for '"+specification.name+"'",
