@@ -4,6 +4,7 @@
 The explicit --cc executable performs assembly/linking outside the compiler.
 No generated program is run. The qualified executable profile is Linux AMD64
 SysV; other targets fail closed until their runtime/toolchain is qualified.
+Source builds reject output paths aliasing compiler-observed sources/interfaces.
 """
 import argparse
 import json
@@ -29,6 +30,25 @@ SAFE_FLAGS = {
     "-O0", "-O1", "-O2", "-O3", "-g", "-fno-omit-frame-pointer",
     "-fsanitize=address,undefined", "-fno-sanitize-recover=all",
 }
+FRONTEND_ARITIES = {
+    "--no-prelude": 0, "--memory-check": 0, "--verify-types": 0,
+    "--no-analysis-repairs": 0, "--allow-source-ppx": 0,
+    "--opt-profile": 1, "--profile": 1, "--enable-opt": 1, "--disable-opt": 1,
+    "--all-optimizations": 0, "--no-optimizations": 0,
+    "-I": 1, "--module-path": 1, "--stdlib": 1, "--prelude": 1, "--project-module-index": 1,
+    "--lib-path": 1, "--stdlib-path": 1, "--ppx-path": 1,
+    "--stdppx-path": 1, "--stdppx": 1, "--use-ppx": 1,
+    "--enable": 1, "--disable": 1, "--ppx-timeout-ms": 1,
+    "--scrutiny": 1, "--project-scrutiny": 1, "--scrutiny-work": 1, "--diagnostics": 1,
+    "--diagnostic-enable": 1, "--diagnostic-disable": 1,
+    "--color": 1, "--diagnostic-catalog": 1, "--opt-work": 1, "--opt-rewrites": 1,
+    "--ppx": 2, "--ppx-schema": 2,
+}
+RESOLUTION_FLAGS = {
+    "--no-prelude", "-I", "--module-path", "--stdlib", "--prelude",
+    "--project-module-index", "--lib-path", "--stdlib-path", "--ppx-path",
+    "--stdppx-path", "--enable", "--disable",
+}
 
 
 def file_path(value, executable=False):
@@ -43,27 +63,55 @@ def file_path(value, executable=False):
 
 def frontend_flags(flags):
     """Keep user ordering, while preventing a second mode/output/backend selection."""
-    arities = {
-        "--no-prelude": 0, "--memory-check": 0, "--verify-types": 0,
-        "--no-analysis-repairs": 0, "--allow-source-ppx": 0,
-        "--opt-profile": 1, "--profile": 1, "--enable-opt": 1, "--disable-opt": 1,
-        "--all-optimizations": 0, "--no-optimizations": 0,
-        "-I": 1, "--module-path": 1, "--stdlib": 1, "--prelude": 1, "--project-module-index": 1,
-        "--lib-path": 1, "--stdlib-path": 1, "--ppx-path": 1,
-        "--stdppx-path": 1, "--stdppx": 1, "--use-ppx": 1,
-        "--enable": 1, "--disable": 1, "--ppx-timeout-ms": 1,
-        "--scrutiny": 1, "--project-scrutiny": 1, "--scrutiny-work": 1, "--diagnostics": 1,
-        "--diagnostic-enable": 1, "--diagnostic-disable": 1,
-        "--color": 1, "--diagnostic-catalog": 1, "--opt-work": 1, "--opt-rewrites": 1,
-        "--ppx": 2, "--ppx-schema": 2,
-    }
     index = 0
     while index < len(flags):
         flag = flags[index]
-        if flag not in arities or index + arities[flag] >= len(flags):
+        if flag not in FRONTEND_ARITIES or index + FRONTEND_ARITIES[flag] >= len(flags):
             raise BuildError("unsupported/incomplete forwarded frontend flag: " + flag)
-        index += arities[flag] + 1
+        index += FRONTEND_ARITIES[flag] + 1
     return flags
+
+
+def source_inputs(runner, compiler, source, forwarded, stage):
+    """Observe the compiler's physical inputs without running PPX or extensions.
+
+    --deps omits signature inputs; the existing v2 project projection includes
+    both source fragments and auxiliary interfaces, without body checking.
+    """
+    flags = []
+    protected = {source}
+    index = 0
+    while index < len(forwarded):
+        flag = forwarded[index]
+        end = index + FRONTEND_ARITIES[flag] + 1
+        if flag in RESOLUTION_FLAGS:
+            flags += forwarded[index:end]
+        if flag in {"--project-module-index", "--diagnostic-catalog", "--ppx-schema"}:
+            protected.add(Path(forwarded[end - 1]).resolve(strict=True))
+        index = end
+    if not any(flag in {"--stdlib", "--project-module-index"} for flag in flags):
+        library = runner.run([compiler, "--print-stdlib", *flags])
+        if not library or not Path(library).is_absolute():
+            raise BuildError("compiler did not report an absolute standard library path")
+        flags += ["--stdlib", library]
+    report = stage / "source-inputs.json"
+    runner.run([compiler, "--project-module-graph", source, "-o", report, *flags],
+               frontend=True)
+    bounded_artifact(report, MAX_BYTES)
+    graph = json.loads(report.read_text(encoding="utf-8"))
+    if not isinstance(graph, dict) or graph.get("schema") != "on1x.project-module-graph/v2":
+        raise BuildError("unsupported compiler source-input graph")
+    for key in ("sources", "auxiliary"):
+        paths = graph.get(key)
+        if not isinstance(paths, list) or len(paths) > 16384:
+            raise BuildError("invalid compiler source-input graph " + key)
+        for path in paths:
+            if not isinstance(path, str) or not Path(path).is_absolute():
+                raise BuildError("compiler source-input graph paths must be absolute")
+            protected.add(file_path(path))
+    if str(source) not in graph["sources"]:
+        raise BuildError("compiler source-input graph omits the entry source")
+    return protected
 
 
 class Runner:
@@ -271,6 +319,10 @@ def main(argv=None):
             print(json.dumps(dict(target=args.target, abi=profile['abi'], cc_target=cc_target,
                                   assembler=str(resolved_tools['as']), linker=str(resolved_tools['ld'])), sort_keys=True))
             return 0
+        if not args.ir_input:
+            inputs = source_inputs(runner, compiler, source, forwarded, stage)
+            if destination.resolve() in inputs:
+                raise BuildError("output aliases a source, interface or frontend input")
         mir = stage / "program.mir"
         command = [compiler, "--emit-ir"]
         if args.ir_input:
