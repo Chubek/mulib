@@ -139,6 +139,16 @@ to discover unused include paths. A malicious helper under a selected source
 library was not executed. Real linker failures and unavailable kernel profiles
 preserved the previous executable. See [MODULE_NATIVE_LINK.md](MODULE_NATIVE_LINK.md).
 
+Native helper input protection was subsequently integrated from `7fb3533b`
+(parent `082b5f35`). It protects imported fragments, interfaces, index and
+explicit catalog/schema inputs during assembly/ELF publication. Eleven worker
+tests passed using the combined Debug frontend and real ELF tools with
+deterministic assembly substitution; this does not qualify Archon lowering.
+See [MODULE_NATIVE_INPUT_GUARD.md](MODULE_NATIVE_INPUT_GUARD.md).
+The test is registered in the external-profile CTest suite. A fresh parent-tree
+Debug build and combined CTest run, including this additional test, is pending;
+the earlier 16/16 result does not cover this subsequent change.
+
 ## Remaining gates and historical evidence
 
 The clean default compiler profile still cannot build without removed assets;

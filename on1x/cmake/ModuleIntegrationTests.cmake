@@ -24,6 +24,8 @@ module_test_script(signature tests/test_module_signature_cli.py "$<TARGET_FILE:o
 module_test_script(nested_transparent tests/test_nested_transparent_cli.py "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/nested-transparent")
 module_test_script(project_membership tests/test_project_module_membership.py)
 module_test_script(plain_native_link tests/test_plain_native_link.py)
+module_test_script(native_input_guard tests/test_native_input_guard.py
+  "$<TARGET_FILE:on1xc>" "${CMAKE_CURRENT_BINARY_DIR}/native-input-guard")
 if(TARGET On1x::SDK)
   module_test_binary(sdk sdk/tests/frontend/module_logistics.c On1x::SDK)
   module_test_script(sdk sdk/tests/frontend/module_logistics.py "$<TARGET_FILE:on1x_integration_sdk>")
