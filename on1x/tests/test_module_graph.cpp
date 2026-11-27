@@ -94,6 +94,7 @@ int main() {
     }
     throw std::runtime_error("invalid graph accepted");
   };
+  invalid([](auto &x) { x.requests.front().targets.clear(); });
   invalid([](auto &x) { x.requests.push_back(x.requests.front()); });
   invalid([](auto &x) { x.requests[0].targets = {"missing"}; });
   invalid([](auto &x) { x.requests[0].end = 100; });

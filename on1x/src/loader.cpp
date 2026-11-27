@@ -756,7 +756,9 @@ class Loader {
      logical.name=m->unit.module?m->unit.module->name:display.generic_string();
      if(m->group){if(logical.fragments.empty())for(auto* f:m->group->fragments)logical.fragments.push_back(f->file_id);}
      else logical.fragments.push_back(m->file_id);
-     for(auto& r:m->graph_requests){std::set<std::string> unique;std::erase_if(r.targets,[&](auto& t){return !unique.insert(t).second;});g.requests.push_back(std::move(r));}
+     for(auto& r:m->graph_requests){
+      if(r.targets.empty())throw Error({m->path.string(),r.begin},"request has no representable physical graph target","ON1X-GRAPH-PROVIDER");
+      std::set<std::string> unique;std::erase_if(r.targets,[&](auto& t){return !unique.insert(t).second;});g.requests.push_back(std::move(r));}
     }
     g.roots=entry.group?g.modules.at(graph_owner(entry)).fragments:std::vector<std::string>{entry.file_id};
     for(auto* p:operator_preludes)if(!p->file_id.empty())g.auxiliary.push_back({"prelude",entry.file_id,p->file_id,{}});

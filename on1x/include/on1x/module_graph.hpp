@@ -78,7 +78,7 @@ struct ModuleGraph {
     seen.clear();
     std::size_t count = 0;
     for (auto &r : requests) {
-      if (!seen.insert(r.id).second || r.end < r.begin ||
+      if (r.targets.empty() || !seen.insert(r.id).second || r.end < r.begin ||
           r.end - r.begin != r.spelling.size())
         throw std::invalid_argument("invalid request identity or span");
       auto &from = files.at(r.source).owner;
