@@ -405,6 +405,7 @@ struct Unit {
    std::vector<SignatureTypeAlias> signature_type_aliases;
    // Loader-only authority. Keys are resolved identities, not the caller's
    // spelling or a Location. Manifest-authorized fragments share an owner.
+   bool direct_c11_type_views=false; // Host-only executable transparent type admission.
    std::map<std::string,std::string> opaque_nominal_owners;
    std::map<std::string,std::string> opaque_function_owners;
  };

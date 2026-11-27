@@ -113,6 +113,7 @@ inline Macro clone_macro(const Macro& m,std::size_t& budget){
  Unit out;out.imports=unit.imports;out.forall_layouts=unit.forall_layouts;out.forall_elaborated=unit.forall_elaborated;out.ppx=unit.ppx;out.stages_lowered=unit.stages_lowered;
     out.module=unit.module;out.module_imports=unit.module_imports;
     out.requires_module_boundary=unit.requires_module_boundary;
+    out.direct_c11_type_views=unit.direct_c11_type_views;
     out.opaque_nominal_owners=unit.opaque_nominal_owners;
     out.opaque_function_owners=unit.opaque_function_owners;
     out.kernel_imports=unit.kernel_imports;

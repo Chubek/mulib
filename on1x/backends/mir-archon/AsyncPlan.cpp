@@ -170,7 +170,7 @@ public:
         poll({"<archon-timer>"});
         // This projection constructs a new scalar Unit, so fail before it
         // could drop the source's sealed module ABI evidence.
-        if (!source.opaque_nominal_owners.empty())
+        if (source.direct_c11_type_views || !source.opaque_nominal_owners.empty())
             unsupported({"<archon-timer>"}, "sealed module value ABI requires direct C11 lowering");
         // Reject forged CSP structure before copying or recomputing annotations;
         // then use the same full checked-candidate validation as HIR rewrites.

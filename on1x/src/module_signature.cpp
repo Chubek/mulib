@@ -415,8 +415,8 @@ std::set<std::string> admit_executable_opaque_signature(
  }
  if(!signature.module||*signature.module!=declared_module||!canonical_implementation.is_absolute()||originals.empty())
   throw Error(signature.where,"opaque permit requires its canonical original provider","ON1X-INTERFACE-MODULE");
- if(signature.seal!=SignatureSeal::Opaque||!verified.manifest_types.empty()||!verified.transparent_types.empty())
-  throw Error(signature.where,"manifest and transparent type views are declaration-only","ON1X-INTERFACE-UNSUPPORTED");
+ if(!verified.manifest_types.empty())
+  throw Error(signature.where,"manifest type views are declaration-only","ON1X-INTERFACE-UNSUPPORTED");
  std::map<std::string,std::vector<const NominalDeclaration*>> declarations;
  for(const auto* original:originals){
   if(!original)
@@ -426,6 +426,27 @@ std::set<std::string> admit_executable_opaque_signature(
                "ON1X-INTERFACE-UNSUPPORTED");
   for(const auto& declaration:original->nominals)declarations[declaration.name].push_back(&declaration);
  }
+ if(signature.seal==SignatureSeal::Transparent){
+  if(!verified.types.empty()||verified.transparent_types.size()!=signature.types.size())
+   throw Error(signature.where,"transparent permit does not match the verified signature","ON1X-INTERFACE-MODULE");
+  for(const auto& member:signature.types){
+   auto identity=verified.transparent_types.find(member.name);
+   if(identity==verified.transparent_types.end()||
+      identity->second!=TransparentTypeIdentity{canonical_implementation,*signature.module,member.name})
+    throw Error(member.where,"transparent permit requires the original provider","ON1X-INTERFACE-MODULE");
+   const auto found=declarations.find(member.name);
+   if(found==declarations.end()||found->second.size()!=1)
+    throw Error(member.where,"transparent permit requires one local declaration","ON1X-INTERFACE-TYPE");
+   const auto& nominal=*found->second.front();
+   if(member.arity||member.manifest||!nominal.parameters.empty()||nominal.kind!=Type::Record||
+      !std::all_of(nominal.fields.begin(),nominal.fields.end(),[](const Type& t){return scalar(t)&&t!=Type::String;}))
+    throw Error(member.where,"executable transparent types require monomorphic records with scalar copy fields",
+                "ON1X-INTERFACE-UNSUPPORTED");
+  }
+  return {}; // Ordinary provider-qualified nominal, never install an opaque seal.
+ }
+ if(!verified.transparent_types.empty())
+  throw Error(signature.where,"opaque permit contains transparent identities","ON1X-INTERFACE-MODULE");
  std::set<std::string> names;
  for(const auto& member:signature.types){
   if(member.manifest||member.arity)

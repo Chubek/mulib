@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise named declaration checks through real CLI/loader pairing."""
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -113,6 +114,20 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         result = run("--emit-c", program, "--project-module-index", index, "-o", output)
         assert result.returncode != 0 and "opaque module type representation" in result.stderr, result.stderr
         assert output.read_bytes() == old_output
+        # Transparent ascription exposes this scalar-copy record's provider
+        # identity through both aliases; projection now succeeds.
+        interface.write_text(
+            "signature S { type Token; fn make(n:i64)->Token; fn read(token:Token)->i64; };"
+            "module Test.Vault : S;", encoding="utf-8")
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode == 0, result.stderr
+        runtime = Path(__file__).resolve().parents[1] / "runtime"
+        binary = root / "transparent"
+        subprocess.run([os.environ.get("CC", "cc"), "-std=c11", "-Wall", "-Wextra",
+                        "-Wpedantic", "-Werror", "-I", runtime, output,
+                        runtime / "on1x_runtime.c", "-pthread", "-o", binary],
+                       check=True, timeout=30)
+        assert subprocess.check_output([binary], timeout=10) == b"42\n"
         membership["members"]["Test.Vault"]["fragments"].remove(str(side))
         index.write_text(json.dumps(membership), encoding="utf-8")
 
