@@ -20,6 +20,7 @@
 #include "../hir/lower_mir.hpp"
 #include "optimization_policy.hpp"
 #include "project_module_index.hpp"
+#include <on1x/module_graph.hpp>
 #include "proxy_policy.hpp"
 #include "../hir/inspect_hir.hpp"
 #ifdef ON1X_WITH_ARCHVIRT
@@ -838,6 +839,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    "       on1xc --stdlib-resource RELATIVE_PATH (find a standard-library resource)\n"
   "       [--no-prelude] [--prelude FILE] [--stdppx PROCESSOR]\n"
    "       on1xc --deps INPUT.on1x [-o OUTPUT] (dependency paths, no PPX execution)\n"
+   "       on1xc (--emit-import-graph | --emit-module-graph) INPUT [--graph-format json|sexpr|dot] [--graph-partial]\n"
+   "       on1xc --emit-ppx-graph-v1 INPUT  (read-only SourceModuleGraphMetadata packet)\n"
    "       on1xc --project-module-graph INPUT.on1x [--project-module-index FILE | --stdlib ROOT]\n"
    "       on1xc --operator-info [--source-only] INPUT.on1x [-o OUTPUT] (checked operator information as JSON)\n"
    "       on1xc [--emit-ir | --emit-ir-c | --ir-cfg | --run-ir] INPUT [-o OUTPUT] [--ir-input]\n"
@@ -965,6 +968,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
     }
    }
           std::string mode="--emit-c",source,out,explain_extension,stdlib_resource;bool ir_input=false,source_only=false;
+          std::string graph_format;
+          bool graph_partial=false;
           std::string archvirt_mode;
           bool archvirt_uncached=false;
           bool archvirt_standalone=false;
@@ -1133,7 +1138,14 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
        if(arg=="--kernel-load-time"){loader.kernel_load_time=true;continue;}
          if(arg=="--check-memory"){select_mode(arg);memory=true;continue;}
          if(arg=="--check-interfaces"||arg=="--dump-processor"||arg=="--dump-memgraph"||
-            arg=="--project-module-graph"){select_mode(arg);continue;}
+            arg=="--project-module-graph"||arg=="--emit-import-graph"||arg=="--emit-module-graph"||arg=="--emit-ppx-graph-v1"){select_mode(arg);continue;}
+     if(arg=="--graph-format"){
+      if(!graph_format.empty()||++i>=argc)throw std::runtime_error("--graph-format requires one of json, sexpr, dot");
+      graph_format=argv[i];
+      if(graph_format!="json"&&graph_format!="sexpr"&&graph_format!="dot")throw std::runtime_error("unknown graph format");
+      continue;
+     }
+     if(arg=="--graph-partial"){graph_partial=true;continue;}
      if(arg=="--project-module-index"){
       if(!project_module_index.empty()||++i>=argc||!argv[i][0])
        throw std::runtime_error("--project-module-index requires one nonempty path");
@@ -1242,6 +1254,15 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    else if(!arg.empty()&&arg[0]=='-')throw std::runtime_error("unknown option "+arg);
      else if(source.empty())source=arg;else throw std::runtime_error("too many input files");
     }
+    const bool graph_packet=mode=="--emit-ppx-graph-v1";
+    if(graph_packet&&(graph_partial||!graph_format.empty()))throw std::runtime_error("PPX graph v1 requires complete canonical graphs");
+    const bool graph_mode=graph_packet||mode=="--emit-import-graph"||mode=="--emit-module-graph";
+    if(!graph_mode&&(graph_partial||!graph_format.empty()))throw std::runtime_error("graph options require graph inspection mode");
+    if(graph_format.empty())graph_format="json";
+    if(graph_partial&&graph_format!="json")throw std::runtime_error("partial graph inspection requires JSON");
+    if(graph_mode&&(ppx.allow_source||!ppx.programs.empty()||!ppx.schemas.empty()||!loader.extensions.enabled.empty()||
+                    loader.kernel_c11||loader.kernel_stage||loader.kernel_load_time||!archvirt_mode.empty()||!sdk_mode.empty()||cephyr_object))
+     throw std::runtime_error("graph inspection requires plain source without PPX, declaration extensions or backend options");
     if(source_only&&(mode!="--operator-info"||ppx.allow_source||!ppx.programs.empty()||
                      !ppx.schemas.empty()||!loader.extensions.enabled.empty()))
      throw std::runtime_error("--source-only requires --operator-info without PPX or declaration extensions");
@@ -1321,7 +1342,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
         const bool analysis_mode=mode=="--emit-ir-facts"||mode=="--analyze-ir";
         const bool mir_mode=mode=="--emit-ir"||mode=="--emit-ir-c"||mode=="--ir-cfg"||
            mode=="--run-ir"||vm_mode||mode=="--dump-passes"||analysis_mode||!sdk_mode.empty();
-       const bool checked_source=!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
+       const bool checked_source=!graph_mode&&!ir_input&&mode!="--tokens"&&mode!="--emit-ast"&&mode!="--deps"&&
          mode!="--project-module-graph"&&
          mode!="--kernel-imports"&&mode!="--list-extensions"&&mode!="--explain-extension"&&
           mode!="--print-stdlib"&&mode!="--stdlib-resource";
@@ -1413,7 +1434,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
          if(mode=="--project-module-graph"&&project_module_index.empty()&&!loader.stdlib_explicit)
           throw std::runtime_error("--project-module-graph requires --project-module-index or --stdlib");
          on1x::proxy::apply(on1x::proxy::current_project());
-         loader.extensions.execute=!source_only&&mode!="--deps"&&mode!="--project-module-graph"&&
+         loader.extensions.execute=!graph_mode&&!source_only&&mode!="--deps"&&mode!="--project-module-graph"&&
           mode!="--emit-ast"&&mode!="--repair"&&!interface_mode;
        loader.extensions.timeout_ms=ppx.timeout_ms;
        for(const auto& name:loader.extensions.enabled)if(loader.extensions.disabled.contains(name))throw on1x::Error({"<command-line>"},"ON1X-CAT-ENABLE: enabled/disabled conflict: "+name,"ON1X-CAT-ENABLE");
@@ -1508,6 +1529,36 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
     }
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||mode=="--project-module-graph")&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(!project_module_index.empty())apply_project_module_index(loader,project_module_index);
+   if(graph_mode){
+    const bool logical=mode=="--emit-module-graph";
+    std::string report;
+    try{
+     const auto graph=on1x::inspect_module_graph(source,loader);
+     if(graph_packet){
+      using namespace on1x::meta;
+      auto imports=graph.serialize(false,"json"),modules=graph.serialize(true,"json");
+      if(imports.size()>max_wire_bytes||modules.size()>max_wire_bytes-imports.size())
+       throw std::runtime_error("PPX graph packet byte limit exceeded");
+      auto packet=list({symbol("SourceModuleGraphMetadata"),symbol("1"),string(std::move(imports)),string(std::move(modules))});
+      base_schema().validate(packet,"SourceModuleGraphMetadata");
+      report=write_sexpr(packet);
+     }else report=graph.serialize(logical,graph_format);
+    }
+    catch(const on1x::Error& error){
+     if(!graph_partial)throw;
+     // A failed loader transaction has no authenticated nodes or requests.
+     std::ostringstream partial;
+     partial<<"{\"schema\":\"on1x.graph-failure/v1\",\"status\":\"partial\",\"graph\":\""
+            <<(logical?"module":"import")<<"\",\"diagnostics\":[{\"id\":";
+     operator_json_string(partial,error.diagnostic_id.empty()?"ON1X-GRAPH-RESOLUTION":error.diagnostic_id);
+     partial<<",\"source\":";operator_json_string(partial,std::filesystem::path(error.where.file).filename().string());
+     partial<<",\"byteOffset\":\""<<error.where.offset<<"\"}]}\n";
+     report=partial.str();
+    }
+    if(out.empty()||out=="-")write_all(out,report);
+    else publish_regular_file(out,report,"module graph",".on1x-graph-XXXXXX");
+    return 0;
+   }
    if(mode=="--kernel-imports"){
     write_all(out,kernel_requests(on1x::inspect_kernel_imports(source,loader)));return 0;
    }

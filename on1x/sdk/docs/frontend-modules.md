@@ -40,3 +40,15 @@ Token and source-only parsing still do not resolve modules. Compilation does
 not execute source PPX or grant foreign capabilities. Its AST remains a
 candidate and cannot be promoted by `on1x_sdk_elaborate`. Unit-v1's wire
 contract is unchanged.
+
+### Canonical graph observations (v1)
+
+Set `ON1X_SDK_OPTION_CAPTURE_MODULE_GRAPH` before creating a workspace or
+compilation. Call `on1x_sdk_compilation_graph_json_v1` with `logical` 0
+(import requests) or 1 (module dependencies). On success the returned UTF-8
+bytes and byte count belong to the compilation until release. Refresh returns
+a new compilation; it does not change previous bytes. Source overrides are
+captured in the same loader transaction as the frontend AST. The existing
+`on1x_sdk_compilation_dependency_count` counts physical sources. Virtual-only
+entries and opaque frontend snapshots are unsupported. An observation does
+not establish type checking or grant permission to compile or execute.

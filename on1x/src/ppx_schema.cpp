@@ -92,7 +92,7 @@ bool scalar(const SExpr& n,const std::string& expected){
   static const std::set<std::string_view> roots={
    "ExtensionInput","ExtensionOutput","DeclarationCarrier","SourceToken",
    "ExtensionFact","EvidenceContract","EvidenceMember","EvidenceImplementation",
-   "EvidenceBinding","EvidenceInput","EvidenceOutput","TypedFunction","EvidenceChoice","SourceModuleMetadata",
+   "EvidenceBinding","EvidenceInput","EvidenceOutput","TypedFunction","EvidenceChoice","SourceModuleGraphMetadata","SourceModuleMetadata",
    "SourceModuleHeader","SourceImport","SourceImportTarget","SourceImportSelector","SourceImportAlias","SourceVisibility",
    "SourceDeclarationVisibility","SourceDeclarationKind"};
   auto it=schema.parents.find(category);

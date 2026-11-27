@@ -69,6 +69,7 @@ struct OptionsData {
     bool prelude = false;
     bool expand_macros = false;
     bool strict_utf8 = false;
+    bool capture_module_graph = false;
     bool first_search_path_is_stdlib = false;
     std::vector<std::string> search_paths;
     std::vector<std::string> features;
@@ -178,6 +179,7 @@ struct CompilationData {
     OptionsData options;
     std::shared_ptr<ASTData> ast;
     std::vector<DependencyData> dependencies;
+    std::string import_graph, module_graph;
     std::uint64_t revision = 0;
     std::uint64_t session_revision = 0;
     std::uint64_t vfs_revision = 0;

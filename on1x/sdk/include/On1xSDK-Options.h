@@ -32,7 +32,8 @@ enum {
      * (with an On1xfile), not as an ordinary library path. Defaults to off.
      * Clearing search paths also clears this selection.
      */
-    ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB = 4
+    ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB = 4,
+    ON1X_SDK_OPTION_CAPTURE_MODULE_GRAPH = 5
 };
 
 On1xSDK_Status on1x_sdk_options_create(

@@ -20,6 +20,13 @@ typedef struct On1xSDK_DependencyInfo {
     uint32_t from_overlay;
 } On1xSDK_DependencyInfo;
 
+/* Requires CAPTURE_MODULE_GRAPH. logical=0: physical imports, 1: logical
+ * dependencies. Returned UTF-8 JSON bytes are borrowed until compilation
+ * release; later workspace edits do not mutate this observation. */
+On1xSDK_Status on1x_sdk_compilation_graph_json_v1(
+    const On1xSDK_Compilation *compilation, uint32_t logical,
+    const char **out_bytes, size_t *out_size);
+
 /* Dependencies are canonical, deduplicated, and dependency-first. */
 On1xSDK_Status on1x_sdk_compilation_dependency_count(
     const On1xSDK_Compilation *compilation,

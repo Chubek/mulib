@@ -174,6 +174,12 @@ if mode == "fmt":
         sys.exit(1)
     else:
         sys.stdout.buffer.write(text.replace(b"  ", b" "))
+elif mode == "--emit-module-graph":
+    assert args == ["--graph-partial"]
+    if b"race" in text:
+        path.write_bytes(b"changed")
+    print(json.dumps({"schema": "on1x.graph-failure/v1", "graph": "module", "status": "partial",
+                      "diagnostics": [{"id": "MISSING", "source": path.name, "byteOffset": "0"}]}))
 elif mode == "--deps":
     assert args == ["--diagnostics", "json", "--color", "never"]
     if b"no-json" in text:
@@ -277,6 +283,22 @@ class Protocol(Base):
                     {**os.environ, "ON1X_PPX_PATH": "/invalid", "ON1X_STDLIB": "/invalid",
                      "MULIB_FOREIGNLIB_PATH": "/ambient-ignored"})
 
+    def test_module_graph_saved_snapshot(self):
+        wire = self.launch()
+        wire.initialize()
+        path = self.work / "μ entry.on1x"
+        path.write_text("import Missing;")
+        uri = path.as_uri()
+        wire.open(uri, path.read_text())
+        params = {"textDocument": {"uri": uri}}
+        report = wire.request("on1x/moduleGraph", params)["result"]
+        self.assertEqual((report["entryVersion"], report["graph"]["status"]), (1, "partial"))
+        wire.change(uri, 2, [{"text": "race"}])
+        self.assertIn("exact saved", wire.request("on1x/moduleGraph", params)["error"]["message"])
+        path.write_text("race")
+        self.assertIn("changed during", wire.request("on1x/moduleGraph", params)["error"]["message"])
+        wire.finish()
+
     def test_manifest_diagnostics_and_buffer_format(self):
         wire = self.launch()
         wire.initialize()
@@ -315,6 +337,7 @@ class Protocol(Base):
         self.assertEqual(initialized["id"], 17)
         capabilities = initialized["result"]["capabilities"]
         self.assertEqual(capabilities, {"positionEncoding": "utf-16",
+                                        "experimental": {"on1xModuleGraph": {"version": 1, "source": "saved"}},
                                         "textDocumentSync": {"openClose": True, "change": 1,
                                                              "save": {"includeText": False}},
                                         "documentFormattingProvider": True,

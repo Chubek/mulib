@@ -578,6 +578,7 @@ class Server:
         self.state = "ready"
         return {"capabilities": {
             "positionEncoding": self.encoding,
+            "experimental": {"on1xModuleGraph": {"version": 1, "source": "saved"}},
             "textDocumentSync": {"openClose": True, "change": 1, "save": {"includeText": False}},
             "documentFormattingProvider": True,
             "hoverProvider": True,
@@ -661,6 +662,28 @@ class Server:
             self.log(f"On1x save inspection skipped: {exc}")
         doc.actions = actions
         self.publish(uri, doc, diagnostics)
+
+    def module_graph(self, doc):
+        if not doc or doc.source is None or doc.path.suffix not in (".on1x", ".on1xm"):
+            raise RequestError(-32602, "expected an open On1x source document")
+        try:
+            path = doc.path.resolve(strict=True)
+            before = read_saved(path)
+            if before[0] != doc.source:
+                raise ToolError("module graph requires the exact saved entry revision")
+            code, output, errors = run_cli(self.compiler_for(doc),
+                ["--emit-module-graph", "--graph-partial", str(path)], self.scratch, self.foreignlibs)
+            if code:
+                raise ToolError(f"module graph failed (exit {code}): {concise(errors)}")
+            if doc.path.resolve(strict=True) != path or read_saved(path) != before:
+                raise ToolError("saved entry changed during graph inspection")
+            graph = parse_json(output)
+            if (not isinstance(graph, dict) or (graph.get("schema"), graph.get("status")) not in
+                    (("on1x.module-dependency-graph/v1", "resolved"), ("on1x.graph-failure/v1", "partial"))):
+                raise ToolError("unsupported module graph response")
+            return {"entryVersion": doc.version, "source": "saved", "graph": graph}
+        except (OSError, RuntimeError, RecursionError, ValueError, ToolError) as exc:
+            raise RequestError(-32803, str(exc)) from exc
 
     def operator_navigation(self, method, uri, doc, params):
         if not doc or doc.source is None or doc.path.suffix != ".on1x":
@@ -833,6 +856,8 @@ class Server:
                 result = None
             elif method == "textDocument/formatting":
                 result = self.formatting(doc)
+            elif method == "on1x/moduleGraph":
+                result = self.module_graph(doc)
             elif method == "textDocument/codeAction":
                 result = self.code_actions(uri, doc, params)
             elif method in ("textDocument/hover", "textDocument/definition"):

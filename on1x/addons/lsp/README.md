@@ -140,3 +140,11 @@ Syren to test real formatting and diagnostics-unavailable behavior; the
 JSON/PPX import smoke then skips. The real syntax smoke checks an LF
 buffer over a CRLF file, an astral character before the diagnostic, and
 formatting against a real compiler rather than the protocol fixture.
+
+`on1x/moduleGraph` accepts `{ "textDocument": { "uri": "file:///..." } }`.
+The experimental capability reports version 1 and `source: "saved"`. The
+result contains the open entry version, `source: "saved"`, and the compiler's
+module graph or explicitly partial diagnostic. Dependency inputs are saved
+files; this method refuses an unsaved or concurrently changed entry. It uses
+the same bounded compiler subprocess as other inspections and keeps no graph
+cache. Use the SDK workspace for overlays on imported files.

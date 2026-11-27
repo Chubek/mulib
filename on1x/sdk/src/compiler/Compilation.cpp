@@ -5,6 +5,7 @@
 #include <on1x/clone.hpp>
 #include <on1x/loader.hpp>
 #include <on1x/meta.hpp>
+#include <on1x/module_graph.hpp>
 #include <on1x/operator_scope.hpp>
 
 #include <fstream>
@@ -155,6 +156,7 @@ std::shared_ptr<CompilationData> compile_impl(
         loader.max_depth = options.max_import_depth;
         loader.max_bytes = options.max_total_bytes;
         loader.extensions.execute = false;
+        loader.capture_module_graph = options.capture_module_graph;
         loader.extensions.enabled.insert(
             options.features.begin(), options.features.end());
         // Reserved standard identities require a separately selected root.
@@ -190,6 +192,13 @@ std::shared_ptr<CompilationData> compile_impl(
                  "ON1X-SDK-MODULE-LIMIT",
                  "loaded dependency count exceeds configured limit");
 
+        if (options.capture_module_graph) {
+            if (!loaded.module_graph) invalid("loader omitted requested module graph");
+            result->import_graph = loaded.module_graph->serialize(false, "json");
+            operation.charge(result->import_graph.size());
+            result->module_graph = loaded.module_graph->serialize(true, "json");
+            operation.charge(result->module_graph.size());
+        }
         std::size_t total_bytes = 0;
         std::size_t total_tokens = 0;
         std::vector<std::shared_ptr<RevisionData>> sources;
@@ -252,6 +261,9 @@ std::shared_ptr<CompilationData> compile_impl(
             ON1X_SDK_AST_PARSED_CANDIDATE, std::move(source_operator_imports));
         result->ast = maybe_expand(result->ast, options);
     } else {
+        if (options.capture_module_graph)
+            fail(ON1X_SDK_UNSUPPORTED, ON1X_SDK_COMPILER_CAPABILITY_DENIED,
+                 "ON1X-SDK-VIRTUAL-GRAPH", "graph capture requires a physical entry path");
         auto ast = parse_revision_impl(entry_revision, options);
         on1x::require_no_kernel_imports(*ast->unit);
         if (!ast->unit->module_imports.empty())
@@ -354,6 +366,21 @@ On1xSDK_Status on1x_sdk_compilation_is_current(
     if (!compilation || !out_current) return ON1X_SDK_INVALID_ARGUMENT;
     return api(compilation->data->state, [&] {
         *out_current = compilation_current(*compilation->data) ? 1u : 0u;
+    }, true);
+}
+
+On1xSDK_Status on1x_sdk_compilation_graph_json_v1(
+    const On1xSDK_Compilation *compilation, uint32_t logical,
+    const char **out_bytes, size_t *out_size) {
+    if (!out_bytes || !out_size) return ON1X_SDK_INVALID_ARGUMENT;
+    *out_bytes = nullptr;
+    *out_size = 0;
+    if (!compilation || logical > 1) return ON1X_SDK_INVALID_ARGUMENT;
+    if (!compilation->data->options.capture_module_graph) return ON1X_SDK_UNSUPPORTED;
+    return api(compilation->data->state, [&] {
+        const auto &graph = logical ? compilation->data->module_graph : compilation->data->import_graph;
+        *out_bytes = graph.data();
+        *out_size = graph.size();
     }, true);
 }
 

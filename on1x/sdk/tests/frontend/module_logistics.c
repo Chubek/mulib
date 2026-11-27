@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
     on1x_sdk_source_release(source);
     on1x_sdk_workspace_release(workspace);
 
+    assert(on1x_sdk_options_set_boolean(options, ON1X_SDK_OPTION_CAPTURE_MODULE_GRAPH, 1) == ON1X_SDK_OK);
     const uint64_t before = on1x_sdk_options_revision(options);
     assert(on1x_sdk_options_set_boolean(options, stdlib_option, 1) == ON1X_SDK_OK);
     assert(on1x_sdk_options_revision(options) > before);
@@ -103,6 +104,10 @@ int main(int argc, char **argv) {
     size_t count = 0;
     assert(on1x_sdk_compilation_dependency_count(compilation, &count) == ON1X_SDK_OK);
     assert(count == 2);
+    const char *graph = NULL;
+    size_t graph_size = 0;
+    assert(on1x_sdk_compilation_graph_json_v1(compilation, 1, &graph, &graph_size) == ON1X_SDK_OK);
+    assert(graph && strlen(graph) == graph_size && strstr(graph, "on1x.module-dependency-graph/v1"));
     dependency(compilation, 0, "/Tools.on1xm", 0);
     dependency(compilation, 1, "/entry.on1x", 1);
     assert(on1x_sdk_compilation_ast(compilation, &candidate) == ON1X_SDK_OK);

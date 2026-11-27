@@ -789,6 +789,8 @@ On1xSDK_Status on1x_sdk_options_set_boolean(
             next.expand_macros = value != 0; break;
         case ON1X_SDK_OPTION_STRICT_UTF8:
             next.strict_utf8 = value != 0; break;
+        case ON1X_SDK_OPTION_CAPTURE_MODULE_GRAPH:
+            next.capture_module_graph = value != 0; break;
         case ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB:
             if (value && next.search_paths.empty())
                 invalid("add the standard library as the first search path before selecting it");
@@ -813,6 +815,8 @@ On1xSDK_Status on1x_sdk_options_get_boolean(
             *out_value = options->data.expand_macros; break;
         case ON1X_SDK_OPTION_STRICT_UTF8:
             *out_value = options->data.strict_utf8; break;
+        case ON1X_SDK_OPTION_CAPTURE_MODULE_GRAPH:
+            *out_value = options->data.capture_module_graph; break;
         case ON1X_SDK_OPTION_FIRST_SEARCH_PATH_IS_STDLIB:
             *out_value = options->data.first_search_path_is_stdlib; break;
         default: invalid("unknown boolean option");
