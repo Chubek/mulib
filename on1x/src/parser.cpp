@@ -6,6 +6,7 @@
 #include <on1x/extensions.hpp>
 #include <on1x/operator_scan.h>
 #include <on1x/operator_scope.hpp>
+#include "module_elevation_fault.hpp"
 #include <charconv>
 #include <cctype>
 #include <algorithm>
@@ -1764,8 +1765,12 @@ class Parser {
       const auto& n=peek();
       const auto end=n.text.data()+n.text.size();
       const auto [next,ec]=std::from_chars(n.text.data(),end,visibility.elevation);
-      if(ec!=std::errc{}||next!=end||visibility.elevation==0)
-       throw Error(n.where,"elevation must be a positive decimal integer in range","ON1X-MODULE-ELEVATION");
+      const bool decimal=ec==std::errc{}&&next==end;
+      if(!decimal||visibility.elevation==0){
+       const auto* fault=decimal&&peek(1).text==")"?zero_elevation_fault():nullptr;
+       throw Error(n.where,fault?fault:"elevation must be a positive decimal integer in range",
+                   "ON1X-MODULE-ELEVATION");
+      }
       ++pos;consume(")");
      }
      if(!at("fn")&&!at("proc")&&!at("extern")&&!at("@")&&!operator_declaration_start()&&

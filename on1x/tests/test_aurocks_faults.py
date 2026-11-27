@@ -10,19 +10,28 @@ from tempfile import TemporaryDirectory
 compiler = Path(sys.argv[1]).resolve()
 
 with TemporaryDirectory(prefix="on1x-faults-") as work:
-    source = Path(work) / "sample.on1x"
-
-    def run(data, mode="--syntax-faults"):
+    def run(data, mode="--syntax-faults", name="sample.on1x"):
+        source = Path(work) / name
         source.write_bytes(data)
         result = subprocess.run([compiler, mode, source], capture_output=True, timeout=20)
         assert source.read_bytes() == data, "fault inspection changed the original file"
         return result
+
+    contextual = b"module sample;\nshared elevate(0) fn f() {}"
+    result = run(contextual, "--check", "sample.on1xm")
+    assert result.returncode == 1 and not result.stdout, result
+    assert b"sample.on1xm:2:16" in result.stderr, result
+    assert result.stderr.count(b"shared elevation cannot be zero") == 1, result
+    assert b"aurocks:" not in result.stderr, result
 
     if "--bootstrap" in sys.argv:
         result = run(b"fn main(){}")
         assert result.returncode == 2 and b"requires the generated Aurocks scanner" in result.stderr
         assert result.stdout == b""
         raise SystemExit(0)
+
+    result = run(contextual, name="sample.on1xm")
+    assert result.returncode == 0 and result.stdout == contextual and not result.stderr, result
 
     valid = 'fn main(){ println("雪 ≤"); } # NBSP \u00a0\n'.encode()
     result = run(valid)
@@ -96,7 +105,8 @@ with TemporaryDirectory(prefix="on1x-faults-") as work:
         b"\x1b", b"\x7f", b"\x01", "\u0081", b"\x80", "é", b"\xf0\x9f",
     ]
     grammar = (Path(__file__).resolve().parents[1] / "grammar/On1x.g").read_text(encoding="utf-8")
-    directives = [line for line in grammar.splitlines() if line.startswith("%fault ")]
+    lexical_banks = grammar.split("/* ON1X_FAULT_BANK_END */", 1)[0]
+    directives = [line for line in lexical_banks.splitlines() if line.startswith("%fault ")]
     assert 110 <= len(directives) == len(witnesses) <= 135
     quoted = r'"(?:\\.|[^"\\])*"'
     for directive, sample in zip(directives, witnesses):
