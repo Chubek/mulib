@@ -10,6 +10,16 @@ JSON strings in the S-expression projection use JSON escaping; `(object ("key" v
 
 Standalone evidence: `c++ -std=c++20 -fsanitize=address,undefined -Wall -Wextra -Werror -Ion1x/include on1x/tests/test_module_graph.cpp -o "$BUILD/test_module_graph"` and `python3 on1x/tests/test_module_graph_wire.py "$BUILD/test_module_graph"`. The C++ test compares both oriented closures and SCCs against independent Floyd–Warshall reachability on 500 seeded graphs, validates orders/witnesses and malformed facts. The Python test independently decodes both wire formats and compares repeated runs. `on1x/tests/test_loader.cpp` adds an overlay and legacy-edge differential fixture for full frontend builds. Full driver execution requires the missing package catalog.
 
+## Hardening follow-up
+
+`analyze` also rejects map-key/record-ID disagreement, unknown kinds,
+empty logical providers, package/fragment contradictions, duplicate roots
+or physical targets, dangling auxiliary inputs, and collection sizes beyond
+the published schemas. Limits are checked before traversal. The standalone
+test includes a 1,024-node maximum-depth chain and 500 seeded reference graphs.
+Loader capture checks the request/selector cap while building facts, rather
+than waiting until serialization.
+
 ## External-root runtime qualification (2026-11-27)
 
 The explicit external profile in `MODULE_ALGEBRA.md` supplied the previously missing assets; none were restored in-tree. W1 ran `test_loader.cpp` with **assertions enabled** against the existing W4 generated frontend archives, independently of their Release CTest settings. It passed the legacy physical-edge comparison and immutable overlay revision checks. W1 then relinked the updated loader (`5459f295`, `05e8b3f5`), W2 manifest signature TU (`97155478`), and W3 OML archive (`86a30ab8`) with those already built frontend/scanner/ASDL archives. The expanded assertion-enabled fixture passed with two ordered fragments, one separately revisioned interface, and two aliased requests with both witnesses on one quotient edge. This is a targeted runtime qualification, not a second clean compiler build. W4 ran the integrated real graph driver separately.

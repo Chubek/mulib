@@ -99,6 +99,34 @@ int main() {
   invalid([](auto &x) { x.requests[0].targets = {"missing"}; });
   invalid([](auto &x) { x.requests[0].end = 100; });
   invalid([](auto &x) { x.modules["1"].fragments = {"f0"}; });
+  invalid([](auto &x) { x.files["f0"].id = "forged"; });
+  invalid([](auto &x) { x.modules["0"].id = "forged"; });
+  invalid([](auto &x) { x.files["f0"].package = "different"; });
+  invalid([](auto &x) { x.modules["empty"] = {"empty", "named", "N", "", {}}; });
+  invalid([](auto &x) { x.modules["0"].kind = "unknown"; });
+  invalid([](auto &x) { x.roots.push_back(x.roots.front()); });
+  invalid([](auto &x) { x.roots.resize(1025, "f0"); });
+  invalid([](auto &x) { x.requests[0].id.clear(); });
+  invalid([](auto &x) { x.requests[0].kind = "unknown"; });
+  invalid([](auto &x) { x.requests[0].targets.push_back("f1"); });
+  invalid([](auto &x) { x.requests[0].selectors.push_back({"unknown", "f", ""}); });
+  invalid([](auto &x) { x.requests[0].selectors.resize(16385, {"name", "f", ""}); });
+  invalid([](auto &x) { x.requests[0].declarations.resize(65537, "d"); });
+  invalid([](auto &x) { x.auxiliary.resize(16385); });
+  invalid([](auto &x) { x.auxiliary.push_back({"unknown", "f0", "f1", ""}); });
+  invalid([](auto &x) { x.auxiliary.push_back({"prelude", "f0", "missing", ""}); });
+  invalid([](auto &x) { x.auxiliary.push_back({"signature", "missing", "i", "rev"}); });
+  invalid([](auto &x) { x.auxiliary.push_back({"signature", "0", "f1", "rev"}); });
+  invalid([](auto &x) { x.requests.resize(16385); });
+  invalid([](auto &x) { x = graph(1025); });
+  auto chain = graph(1024);
+  for (unsigned i = 1; i < 1024; ++i)
+    request(chain, i, i - 1);
+  auto linear = chain.analyze();
+  check(linear.order.size() == 1024 && linear.cycles.empty());
+  check(linear.closure("1023").size() == 1023);
+  for (unsigned i = 0; i < 1024; ++i)
+    check(linear.order[i] == std::to_string(i));
   for (auto logical : {false, true})
     for (auto format : {"json", "sexpr"})
       std::cout << g.serialize(logical, format) << '\n';

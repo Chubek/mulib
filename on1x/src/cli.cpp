@@ -1264,7 +1264,8 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
     if(graph_format.empty())graph_format="json";
     if(graph_partial&&graph_format!="json")throw std::runtime_error("partial graph inspection requires JSON");
     if(graph_mode&&(ppx.allow_source||!ppx.programs.empty()||!ppx.schemas.empty()||!loader.extensions.enabled.empty()||
-                    loader.kernel_c11||loader.kernel_stage||loader.kernel_load_time||!archvirt_mode.empty()||!sdk_mode.empty()||cephyr_object))
+                    loader.kernel_c11||loader.kernel_stage||loader.kernel_load_time||!archvirt_mode.empty()||!sdk_mode.empty()||cephyr_object||
+                    ir_input||memory||type_safety||legacy_optimize||opt_limit||analysis_limit||scratch_stack_bytes))
      throw std::runtime_error("graph inspection requires plain source without PPX, declaration extensions or backend options");
     if(source_only&&(mode!="--operator-info"||ppx.allow_source||!ppx.programs.empty()||
                      !ppx.schemas.empty()||!loader.extensions.enabled.empty()))
@@ -1533,10 +1534,21 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
    if((mode=="--tokens"||mode=="--emit-ast"||mode=="--kernel-imports"||project_inspection)&&(!ppx.programs.empty()||!ppx.schemas.empty()))throw std::runtime_error("inspection modes cannot be combined with --ppx/--ppx-schema");
    if(!project_module_index.empty())apply_project_module_index(loader,project_module_index);
    if(graph_mode){
+    std::filesystem::path graph_destination;
+    if(!out.empty()&&out!="-"){
+     graph_destination=std::filesystem::weakly_canonical(std::filesystem::absolute(out));
+     auto protect=[&](const std::filesystem::path& input){
+      if(graph_destination==std::filesystem::weakly_canonical(std::filesystem::absolute(input)))
+       throw std::runtime_error("module graph output would overwrite a loaded input file");
+     };
+     protect(source);
+     if(!project_module_index.empty())protect(project_module_index);
+     for(const auto& input:loader.interfaces)protect(input);
+    }
     const bool logical=mode=="--emit-module-graph";
     std::string report;
     try{
-     const auto graph=on1x::inspect_module_graph(source,loader);
+     const auto graph=on1x::inspect_module_graph(source,loader,graph_destination);
      if(graph_packet){
       using namespace on1x::meta;
       auto imports=graph.serialize(false,"json"),modules=graph.serialize(true,"json");
@@ -1548,7 +1560,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
      }else report=graph.serialize(logical,graph_format);
     }
     catch(const on1x::Error& error){
-     if(!graph_partial)throw;
+     if(!graph_partial||error.diagnostic_id=="ON1X-GRAPH-OUTPUT")throw;
      // A failed loader transaction has no authenticated nodes or requests.
      std::ostringstream partial;
      partial<<"{\"schema\":\"on1x.graph-failure/v1\",\"status\":\"partial\",\"graph\":\""

@@ -14,6 +14,13 @@ source basename (display only), and decimal zero-based UTF-8 byte offset.
 Invalid options and internal failures are still errors. Partial SCCs and
 precise explanations are not recovered from a failed transaction.
 
+Graph publication refuses to replace the entry, membership index, explicit
+interfaces, or any source/interface visited by inspection. The loader enforces
+the destination exclusion even when a later resolver error would otherwise
+produce `--graph-partial` output. Symlink and nonregular destinations reject;
+staged files are removed on failure. Graph inspection also rejects independent
+checker/backend requests rather than silently ignoring them.
+
 `--emit-ppx-graph-v1` explicitly requests `(SourceModuleGraphMetadata 1
 "import JSON" "module JSON")` from one successful snapshot. The encoded
 S-expression is limited to 4 MiB. The packet is host-owned, may be inspected

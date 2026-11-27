@@ -1,6 +1,7 @@
 """Standalone full-driver gate: python3 test_graph_driver.py /path/to/on1xc."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -35,9 +36,26 @@ def main():
             for fmt in ('sexpr', 'dot'):
                 assert run(flag, '--graph-format', fmt)
         assert run('--emit-ppx-graph-v1').startswith(b'(SourceModuleGraphMetadata 1 ')
+        for target in (entry, root / 'dep.on1x'):
+            before = target.read_bytes()
+            run('--emit-module-graph', '-o', target, ok=False)
+            assert target.read_bytes() == before
+        # Atomic publication must not follow a symlink or block on a FIFO.
+        alias_output = root / 'linked.json'
+        alias_output.symlink_to(root / 'dep.on1x')
+        before = (root / 'dep.on1x').read_bytes()
+        run('--emit-module-graph', '-o', alias_output, ok=False)
+        assert alias_output.is_symlink() and (root / 'dep.on1x').read_bytes() == before
+        fifo = root / 'fifo.json'
+        os.mkfifo(fifo)
+        run('--emit-module-graph', '-o', fifo, ok=False)
+        assert not list(root.glob('.on1x-graph-*'))
         for args in [('--emit-module-graph', '--deps'), ('--graph-format', 'json'),
-                     ('--emit-import-graph', '--ppx', 'probe', probe),
-                     ('--emit-module-graph', '--allow-source-ppx')]:
+                      ('--emit-import-graph', '--ppx', 'probe', probe),
+                      ('--emit-module-graph', '--allow-source-ppx'),
+                      ('--emit-module-graph', '--ir-input'),
+                      ('--emit-import-graph', '--memory-check'),
+                      ('--emit-module-graph', '--verify-types')]:
             run(*args, ok=False)
         # The project projection must use compiler quotient edges even when
         # several fragment requests witness the same logical dependency.
@@ -77,6 +95,15 @@ def main():
         entry.write_text('@ppx probe "./probe"; fn main(){}')
         run('--emit-module-graph', '--graph-partial')
         entry.write_text('import "absent.on1x"; fn main(){}')
+        before = entry.read_bytes()
+        run('--emit-module-graph', '--graph-partial', '-o', entry, ok=False)
+        assert entry.read_bytes() == before
+        # A failed observational transaction must not overwrite a provider
+        # discovered before the missing import, even though no graph is returned.
+        entry.write_text('import "dep.on1x"; import "absent.on1x"; fn main(){}')
+        before = (root / 'dep.on1x').read_bytes()
+        run('--emit-module-graph', '--graph-partial', '-o', root / 'dep.on1x', ok=False)
+        assert (root / 'dep.on1x').read_bytes() == before
         output = root / 'previous.json'
         output.write_text('previous')
         run('--emit-module-graph', '-o', output, ok=False)

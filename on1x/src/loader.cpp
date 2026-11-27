@@ -129,7 +129,8 @@ class Loader {
  bool implicit=false;
   KernelImportRequests* inspection;
   bool graph_only=false,direct_views=false;
-  std::size_t graph_targets=0;
+  fs::path graph_output;
+  std::size_t graph_targets=0,graph_request_count=0;
   std::vector<GraphAux> graph_aux;
    const Module* current_module=nullptr;
    bool unsafe_context=false;
@@ -741,7 +742,12 @@ class Loader {
     if(!name.empty())return "named:"+extensions::digest((m.package_identity.empty()?m.path:m.package_identity).generic_string())+":"+name;
     return (m.program?"program:":m.path.stem()=="__init__"?"initializer:":"legacy:")+m.file_id;
    }
+   void protect_graph_input(const fs::path& path)const{
+    if(!graph_output.empty()&&path==graph_output)
+     throw Error({path.string()},"module graph output would overwrite a loaded input file","ON1X-GRAPH-OUTPUT");
+   }
    void record_interface(const Module& m,const fs::path& path,const std::string& bytes){
+    protect_graph_input(path);
     if(options.capture_module_graph)graph_aux.push_back({"signature",graph_owner(m),"i:"+extensions::digest(path.generic_string()),"sha256:"+extensions::digest(bytes)});
    }
    void graph_target(GraphRequest& request,const Module& target){
@@ -846,6 +852,7 @@ class Loader {
    // phase no function body is parsed and no declaration extension runs.
    Module* metadata(const fs::path& input,const Location& at,bool allow_directory=true){
     auto path=canonical(input,at);
+    protect_graph_input(path);
     const bool source=regular(path);
     if(!source&&!(allow_directory&&directory(path)))
      throw Error(at,"import is not a regular source file: "+path.string());
@@ -1102,6 +1109,8 @@ class Loader {
       throw Error(at,"declaration extensions are not supported across a module boundary","ON1X-MODULE-EXTENSION");
     if(options.capture_module_graph){
      for(const auto& imp:m->unit.module_imports){
+      if(++graph_request_count>16384||imp.names.size()>16384)
+       throw Error(imp.where,"module graph request budget exceeded","ON1X-GRAPH-LIMIT");
       auto& r=m->graph_requests.emplace_back();r.source=m->file_id;r.begin=imp.where.offset;
       r.id="r:"+m->file_id+":"+std::to_string(r.begin);r.module=imp.module;r.alias=imp.alias;r.relative=imp.relative;
       r.kind=program_import(imp)?"program":imp.quoted?"quoted":imp.relative?"relative":imp.selective?"selective":"named";
@@ -1933,9 +1942,10 @@ class Loader {
      return metadata(path,at,false);
     }
   public:
-    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr,bool graph_inspection=false)
+    explicit Loader(const LoaderOptions& opts,KernelImportRequests* inspect=nullptr,bool graph_inspection=false,
+                    fs::path protected_output={})
      :options(opts),standard_roots(standard_library_roots(opts)),declared_standard_roots(stdlib_roots(opts,false)),
-      inspection(inspect),graph_only(graph_inspection){
+      inspection(inspect),graph_only(graph_inspection),graph_output(std::move(protected_output)){
       for(const auto& root:standard_roots)
       for(const auto& [kind,file]:shared_modules){
        std::error_code ec;
@@ -2407,9 +2417,9 @@ LoaderOptions default_loader_options(const std::string& executable){
 std::string graph_file_id(const fs::path& canonical_file){
  return "f:"+extensions::digest(canonical_file.generic_string());
 }
-ModuleGraph inspect_module_graph(const fs::path& input,const LoaderOptions& options){
+ModuleGraph inspect_module_graph(const fs::path& input,const LoaderOptions& options,const fs::path& protected_output){
  auto opts=options;opts.capture_module_graph=true;opts.extensions.execute=false;opts.observe_unused_bindings=false;
- return *Loader(opts,nullptr,true).run(input).module_graph;
+ return *Loader(opts,nullptr,true,protected_output.empty()?fs::path{}:fs::weakly_canonical(fs::absolute(protected_output))).run(input).module_graph;
 }
 KernelImportRequests inspect_kernel_imports(const fs::path& input,const LoaderOptions& options){
  auto inspect_options=options;

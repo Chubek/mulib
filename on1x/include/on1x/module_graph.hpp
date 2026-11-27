@@ -60,30 +60,65 @@ struct ModuleGraph {
     }
   };
   Analysis analyze() const {
-    if (modules.size() > 1024 || files.size() > 1024 || requests.size() > 16384)
+    if (modules.size() > 1024 || files.size() > 1024 || requests.size() > 16384 ||
+        roots.size() > 1024 || auxiliary.size() > 16384)
       throw std::length_error("module graph budget exceeded");
     Analysis a;
     std::set<std::string> seen;
     for (auto &[id, m] : modules) {
+      if (id.empty() || m.id != id || m.fragments.empty() ||
+          (m.kind != "named" && m.kind != "program" &&
+           m.kind != "initializer" && m.kind != "legacy"))
+        throw std::invalid_argument("invalid module identity or kind");
+      if (m.fragments.size() > 1024)
+        throw std::length_error("module graph fragment budget exceeded");
       a.forward[id];
       a.reverse[id];
       for (auto &f : m.fragments)
-        if (files.at(f).owner != id || !seen.insert(f).second)
+        if (f.empty() || files.at(f).id != f || files.at(f).owner != id ||
+            files.at(f).package != m.package || !seen.insert(f).second)
           throw std::invalid_argument("invalid fragment ownership");
     }
     if (seen.size() != files.size())
       throw std::invalid_argument("missing fragment membership");
-    for (auto &root : roots)
+    seen.clear();
+    for (auto &root : roots) {
+      if (!seen.insert(root).second)
+        throw std::invalid_argument("duplicate graph root");
       (void)files.at(root);
+    }
+    for (const auto &x : auxiliary) {
+      if (x.kind == "signature") {
+        if (!modules.contains(x.source) || x.target.empty() || x.revision.empty() ||
+            files.contains(x.target) || modules.contains(x.target))
+          throw std::invalid_argument("invalid signature input");
+      } else if (x.kind == "prelude") {
+        (void)files.at(x.source);
+        (void)files.at(x.target);
+      } else
+        throw std::invalid_argument("invalid auxiliary relation kind");
+    }
     seen.clear();
     std::size_t count = 0;
     for (auto &r : requests) {
-      if (r.targets.empty() || !seen.insert(r.id).second || r.end < r.begin ||
+      if (r.id.empty() || r.targets.empty() || !seen.insert(r.id).second || r.end < r.begin ||
           r.end - r.begin != r.spelling.size())
         throw std::invalid_argument("invalid request identity or span");
+      if (r.kind != "quoted" && r.kind != "named" && r.kind != "program" &&
+          r.kind != "selective" && r.kind != "relative")
+        throw std::invalid_argument("invalid request kind");
+      if (r.targets.size() > 1024 || r.selectors.size() > 16384 ||
+          r.declarations.size() > 65536)
+        throw std::length_error("module graph request budget exceeded");
+      for (const auto &selector : r.selectors)
+        if (selector.name.empty() ||
+            (selector.kind != "name" && selector.kind != "operator"))
+          throw std::invalid_argument("invalid graph selector");
       auto &from = files.at(r.source).owner;
-      std::set<std::string> owners;
+      std::set<std::string> owners, targets;
       for (auto &t : r.targets) {
+        if (!targets.insert(t).second)
+          throw std::invalid_argument("duplicate physical request target");
         if (++count > 65536)
           throw std::length_error("module graph witness budget exceeded");
         owners.insert(files.at(t).owner);
@@ -144,6 +179,7 @@ struct ModuleGraph {
 // Projection of an already canonical loader origin; does not read the filesystem.
 std::string graph_file_id(const std::filesystem::path &canonical_file);
 ModuleGraph inspect_module_graph(const std::filesystem::path &,
-                                 const LoaderOptions &);
+                                  const LoaderOptions &,
+                                  const std::filesystem::path &protected_output = {});
 } // namespace on1x
 #include <on1x/module_graph_format.hpp>
