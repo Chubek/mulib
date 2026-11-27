@@ -141,6 +141,8 @@ struct ModuleGraph {
   }
   std::string serialize(bool logical, std::string_view format) const;
 };
+// Projection of an already canonical loader origin; does not read the filesystem.
+std::string graph_file_id(const std::filesystem::path &canonical_file);
 ModuleGraph inspect_module_graph(const std::filesystem::path &,
                                  const LoaderOptions &);
 } // namespace on1x

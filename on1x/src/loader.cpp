@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <sstream>
+#include <type_traits>
 
 namespace on1x {
 namespace {
@@ -345,9 +346,20 @@ class Loader {
  }
  void charge(const Location& at){if(++bindings>262144)throw Error(at,"module binding limit exceeded");}
  template<class T> void insert(std::map<std::string,T>& into,const std::string& name,const T& value,const Location& at){
-  auto [it,added]=into.emplace(name,value);
-  if(!added&&it->second!=value)throw Error(at,"conflicting import or declaration: "+name);
-  if(added)charge(at);
+  auto it=into.lower_bound(name);
+  auto state=oml::ExistingBinding::Absent;
+  if(it!=into.end()&&it->first==name){
+   bool same=it->second==value;
+   if constexpr(std::is_same_v<T,Symbol>)
+    if(it->second.owner!=value.owner&&(named_module(*it->second.owner)||named_module(*value.owner)))same=false;
+   state=same?oml::ExistingBinding::Same:oml::ExistingBinding::Different;
+  }
+  switch(oml::insert_view(state)){
+   case oml::InsertDecision::Insert:charge(at);into.emplace_hint(it,name,value);return;
+   case oml::InsertDecision::Reuse:return;
+   case oml::InsertDecision::Collision:throw Error(at,"conflicting import or declaration: "+name);
+  }
+  throw std::logic_error("invalid OML insertion decision");
  }
   bool module_bound(const Names& names,const std::string& alias)const{
   for(const auto& [key,module]:names.modules){(void)module;if(key==alias||key.starts_with(alias+"."))return true;}
@@ -857,7 +869,7 @@ class Loader {
        m->package_identity=root;
    modules.emplace(path,std::move(storage));discovery_stack.push_back(m);
    if(source){
-    if(options.capture_module_graph)m->file_id="f:"+extensions::digest(path.generic_string());
+    if(options.capture_module_graph)m->file_id=graph_file_id(path);
     auto replacement=options.source_overrides.find(path);
     m->source=replacement==options.source_overrides.end()?read_source_file(path.string()):replacement->second;
     if(m->source.size()>options.max_bytes-bytes)throw Error(at,"total imported source byte limit exceeded");
@@ -2392,6 +2404,9 @@ LoaderOptions default_loader_options(const std::string& executable){
   snapshot.extensions.execute=false;
   return Loader(snapshot).parse_source(path);
  }
+std::string graph_file_id(const fs::path& canonical_file){
+ return "f:"+extensions::digest(canonical_file.generic_string());
+}
 ModuleGraph inspect_module_graph(const fs::path& input,const LoaderOptions& options){
  auto opts=options;opts.capture_module_graph=true;opts.extensions.execute=false;opts.observe_unused_bindings=false;
  return *Loader(opts,nullptr,true).run(input).module_graph;
