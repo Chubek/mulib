@@ -29,12 +29,12 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
                 text=True, capture_output=True, timeout=30, check=False,
             )
 
-        def check(text, expected_error=None):
+        def check(text, expected_error=None, count=2):
             interface.write_text(text, encoding="utf-8")
             result = run("--check-interfaces", implementation, "--interface", interface)
             if expected_error is None:
                 assert result.returncode == 0, result.stderr
-                assert result.stdout == "OK: 2 interface members\n", result.stdout
+                assert result.stdout == f"OK: {count} interface members\n", result.stdout
             else:
                 assert result.returncode != 0, result.stdout
                 assert not result.stdout, result.stdout
@@ -109,6 +109,54 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         result = run("--emit-c", program, "--project-module-index", index, "-o", output)
         assert result.returncode != 0 and not output.exists(), result.stdout
         assert "interface signature mismatch" in result.stderr, result.stderr
+
+        check("""
+signature Caller<T> { fn make(value:T)->T; };
+signature VaultAPI { include Caller<i64>; proc reset(value:i64); };
+module Test.Vault : VaultAPI;
+""")
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode == 0 and output.is_file(), result.stderr
+        output.unlink()
+
+        implementation.write_text(
+            """module Test.Vault;
+record Token { label:i64 }
+type View = Token;
+type Payload = (i64,bool);
+public fn make(value:Payload)->View { return deliberately_unchecked; }
+""",
+            encoding="utf-8",
+        )
+        catalog = """
+signature Base<A> {
+  type Token;
+  type View;
+  type Payload = (A,bool);
+  fn make(value:Payload)->View;
+};
+signature VaultAPI<A> { include Base<A>; sharing type View = Token; };
+"""
+        check(catalog + "module Test.Vault : VaultAPI<i64>;", count=4)
+        check(catalog + "abstract module Test.Vault : VaultAPI<i64>;", count=4)
+        program.write_text(
+            "import Test.Vault as Vault;\n"
+            "fn main()->i64 { return Vault.make((42,true)); }\n",
+            encoding="utf-8",
+        )
+        result = run("--check-interfaces", program, "--project-module-index", index)
+        assert result.returncode == 0 and result.stdout == "OK: 4 interface members\n", result.stderr
+        check(catalog + "module Test.Vault : VaultAPI<u64>;", "interface type equation mismatch")
+        check(catalog + "module Test.Vault : VaultAPI<i64>;", count=4)
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode != 0 and not output.exists(), result.stdout
+        assert "declaration-only" in result.stderr, result.stderr
+
+        # A private copy with no module-interface association cannot smuggle
+        # declaration-only type equations past ordinary admission.
+        result = run("--emit-c", implementation, "-o", output)
+        assert result.returncode != 0 and not output.exists(), result.stdout
+        assert "declaration-only" in result.stderr, result.stderr
 
 
 if __name__ == "__main__":

@@ -327,6 +327,12 @@ struct NominalDeclaration {
  std::vector<Type> fields; // Bound indices refer to parameters; no inferred layout.
  VisibilityRule visibility;
 };
+// Declaration-only implementation evidence. Not an executable type synonym.
+struct SignatureTypeAlias {
+ Location where;
+ std::string name;
+ Type equation;
+};
 // Host-retained declaration-extension requests, never accepted from ordinary
 // Unit-v1 PPX output. They are proposals, not cached typing/ownership proofs.
 struct ExtensionMember { std::string name; Type scheme; Location where; };
@@ -393,6 +399,7 @@ struct Unit {
    // Loader-owned: this flattened graph requires per-module PPX readmission.
    // Never reconstructed from Unit-v1 wire or inferred from output locations.
    bool requires_module_boundary=false;
+   std::vector<SignatureTypeAlias> signature_type_aliases;
  };
 std::string read_source_file(const std::string& filename);
 // Docstrings are trivia: optionally append them separately, in source order.

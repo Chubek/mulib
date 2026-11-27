@@ -9,6 +9,7 @@ struct AbstractTypeMember {
  Location where;
  std::string name;
  std::size_t arity=0;
+ std::optional<Type> manifest;
 };
 
 struct ModuleSignatureMember {
@@ -18,6 +19,27 @@ struct ModuleSignatureMember {
  bool procedure=false;
 };
 
+struct SignatureReference {
+ Location where;
+ std::string name;
+ std::vector<Type> arguments;
+};
+struct SignatureSharing {
+ Location where;
+ std::string member;
+ Type equation;
+};
+struct NamedSignature {
+ Location where;
+ std::string name;
+ std::vector<std::string> parameters;
+ std::vector<ModuleSignatureMember> members;
+ std::vector<AbstractTypeMember> types;
+ std::vector<SignatureReference> includes;
+ std::vector<SignatureSharing> sharing;
+};
+enum class SignatureSeal { Opaque, Transparent };
+
 // Parsed declaration-only source. An empty module denotes the legacy `.on1xi`
 // v1 format, which specifies obligations but does not control exports.
 struct ModuleSignature {
@@ -25,6 +47,11 @@ struct ModuleSignature {
  std::optional<std::string> module;
  std::vector<ModuleSignatureMember> members;
  std::vector<AbstractTypeMember> types;
+ SignatureSeal seal=SignatureSeal::Opaque;
+ std::vector<NamedSignature> definitions;
+ std::optional<SignatureReference> ascription;
+ // Source-only offsets for contextual words. Not used by conformance.
+ std::vector<std::size_t> context_keywords;
 };
 
 // A seal is an identity, not a checked HIR type. It deliberately contains no
@@ -39,9 +66,16 @@ struct AbstractTypeIdentity {
 
 struct SealedModuleSignature {
  std::map<std::string,AbstractTypeIdentity> types;
+ std::map<std::string,AbstractTypeIdentity> transparent_types;
+ // Source-normalized equations: named leaves refer to types or
+ // transparent_types in *this* provider; never use a spelling as global ID.
+ std::map<std::string,Type> manifest_types;
 };
 
-ModuleSignature parse_module_signature(const std::vector<Token>&);
+ ModuleSignature parse_module_signature(const std::vector<Token>&);
+ // Instantiate the file-local signature catalog and validate its expansion.
+ // Resolve each file independently before merging interface fragments.
+ ModuleSignature resolve_module_signature(const ModuleSignature&);
 
 // Verify new-format declarations against exactly one original (unflattened)
 // implementation. This does not run the implementation or authorize emission.
@@ -56,7 +90,16 @@ SealedModuleSignature verify_module_signature(const ModuleSignature&,
                                               std::string_view declared_module,
                                               const std::filesystem::path& canonical_implementation);
 
-// Current checked HIR has no opaque source type representation. Neither the
-// concrete layout nor these declaration-only identities may flow to clients.
+// The default executable boundary has no opaque transport. Preserve it for
+// callers that cannot install checked ownership and representation gates.
 void require_executable_module_signature(const ModuleSignature&);
+
+// Source-side permit for a loader that can attach authenticated opaque owners
+// and route them through a checked C11-only boundary. Call after successful
+// verification of these same originals; the frontend must still check bodies,
+// representation and operations on the resulting nominal values.
+std::set<std::string> admit_executable_opaque_signature(
+    const ModuleSignature&,const SealedModuleSignature& verified,
+    const std::vector<const Unit*>& originals,std::string_view declared_module,
+    const std::filesystem::path& canonical_implementation);
 }

@@ -123,3 +123,72 @@ callable does not increase its visibility, and unlisted members are not part
 of that boundary. The current executable HIR cannot carry opaque source
 types, so any executable load that reaches an associated signature declaring
 an abstract type must reject it instead of exposing its representation.
+
+### Named signatures, type equations, and ascription
+
+A module interface can instead define a file-local catalog of named signatures
+and ascribe one signature to the declared module:
+
+```on1x
+# vault.on1xi
+signature Base<A> {
+    type Token;
+    type View;
+    type Payload = (A, bool);
+    fn open(payload: Payload) -> Token;
+};
+signature Vault<A> {
+    include Base<A>;
+    sharing type View = Token;
+    fn read(value: View) -> Payload;
+};
+abstract module Acme.Vault : Vault<i64>;
+```
+
+```on1x
+# vault.on1xm
+module Acme.Vault;
+record Token { secret: (i64, bool) }
+type Payload = (i64, bool);
+type View = Token;
+public fn open(payload: Payload) -> Token { return Token { secret: payload }; }
+public fn read(value: Token) -> (i64, bool) { return value.secret; }
+```
+
+- `signature S<T, ...> { ... };` defines a static signature with optional type
+  parameters. Arguments are closed scalar or tuple types. An `include` may
+  forward its enclosing signature's parameters. Included declarations become
+  part of the same type and callable member namespaces; duplicate declarations
+  reject. References resolve only within a single `.on1xi` file. Every
+  definition must participate in the final ascription, and recursive includes
+  reject.
+- `type T = RHS;` specifies a manifest equation. `sharing type T = RHS;`
+  refines one unrefined monomorphic type member, including an included
+  member, into a manifest equation. The right side can mention listed
+  type members or signature parameters. Each manifest requires an original
+  module-local `type T = RHS;` equation. These implementation declarations are
+  admitted only with an associated interface in `--check-interfaces` mode.
+  Equations are expanded and compared structurally in their provider;
+  two distinct local nominal types do not become equal just because their
+  field layouts match. Cyclic equations reject; inclusion and equation
+  expansion are subject to depth and node budgets.
+- `abstract module Name : S;` seals non-manifest nominal members under
+  provider-scoped abstract identities. `module Name : S;` uses transparent
+  ascription: non-manifest members retain their original nominal identities
+  in the declaration checker's result. Manifest equations remain visible
+  in that result in either mode; they do not disclose fields or constructors.
+  Callable conformance follows the same local declaration rules as direct
+  signatures. Source-spelled function parameter names do not affect equality.
+- Type equations and transparent nominal views are declaration-only:
+  they do not create executable aliases, layouts, or additional import
+  privileges. A callable-only named signature may still be used as a module
+  boundary under the existing callable-only rules. Multiple associated
+  interface fragments must agree on ascription. Resolve named signatures per
+  interface file before merging obligations; catalogs cannot share names
+  across files.
+
+Signature declarations are not `.on1x` keywords. Unsupported forms include
+type-constructor equations with parameters, cross-module type equations,
+module-valued parameters, nested modules, functors, separate signature imports,
+recursive inclusion or equations, borrowed or generic callables, raw externs,
+and re-exported definitions as implementation evidence.

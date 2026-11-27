@@ -1,4 +1,5 @@
 #include <on1x/module_signature.hpp>
+#include <on1x/operator_scope.hpp>
 #include <cstdlib>
 #include <iostream>
 
@@ -119,7 +120,128 @@ int main(){
  rejects("ON1X-INTERFACE-SHAPE",[&]{
   parse_module_signature(scan("on1xi 1; fn f()->u64;","legacy.on1xi"));
  });
- rejects("ON1X-INTERFACE-SHAPE",[&]{
-  parse_interface(scan("on1xi 1; proc reset(value:i64);","legacy.on1xi"));
- });
-}
+  rejects("ON1X-INTERFACE-SHAPE",[&]{
+   parse_interface(scan("on1xi 1; proc reset(value:i64);","legacy.on1xi"));
+  });
+
+  auto named=[](const std::string& source){
+   return parse_module_signature(scan(source,"vault.on1xi"));
+  };
+  auto static_source=[](const std::string& source){
+   return parse_with_operators(scan("module Acme.Vault;\n"+source,"/workspace/vault.on1xm"),
+                               {},{},OperatorScope{},true);
+  };
+  const std::string catalog=R"(
+   signature Base<P> {
+    type Token;
+    type View;
+    type Payload = P;
+    fn make(payload:Payload)->Token;
+   };
+   signature API<A> {
+    include Base<(A, bool)>;
+    sharing type View = Token;
+    fn reveal(value:View)->Payload;
+   };
+  )";
+  const std::string provider=R"(
+   record Token { secret:i64 }
+   type Payload = (i64,bool);
+   type View = Token;
+   fn make(payload:Payload)->View { return unchecked; }
+   fn reveal(token:Token)->(i64,bool) { return unchecked; }
+  )";
+  auto opaque=named(catalog+"abstract module Acme.Vault : API<i64>;");
+  auto transparent=named(catalog+"module Acme.Vault : API<i64>;");
+  auto flat=resolve_module_signature(opaque);
+  require(opaque.definitions.size()==2&&opaque.ascription&&opaque.ascription->name=="API"&&
+          opaque.context_keywords.size()>=8&&flat.definitions.empty()&&!flat.ascription&&
+          flat.members.size()==2&&flat.types.size()==3,
+          "a named signature retains source shape then expands before conformance");
+  auto static_unit=static_source(provider);
+  auto hidden=verify_module_signature(opaque,static_unit,"Acme.Vault","/workspace/vault.on1xm");
+  auto visible=verify_module_signature(transparent,static_unit,"Acme.Vault","/workspace/vault.on1xm");
+  auto distinct=verify_module_signature(transparent,static_unit,"Acme.Vault","/elsewhere/vault.on1xm");
+  require(hidden.types.contains("Token")&&hidden.transparent_types.empty()&&visible.types.empty()&&
+          visible.transparent_types.at("Token")!=distinct.transparent_types.at("Token"),
+          "ascription distinguishes opacity without erasing provider identity");
+  require(hidden.manifest_types==visible.manifest_types&&
+          hidden.manifest_types.at("View")==Type::named("Token")&&
+          hidden.manifest_types.at("Payload")==Type::tuple({Type::I64,Type::Bool}),
+          "sharing and parameter substitution normalize equations without exposing layout");
+  rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{require_executable_module_signature(opaque);});
+  rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{require_executable_module_signature(transparent);});
+  rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+   parse(scan("module Acme.Vault; type Payload = i64;","/workspace/vault.on1xm"));
+  });
+  auto former_identifiers=parse(scan(
+      "record sharing { type:i64 }\n"
+      "fn signature(include:i64)->i64 { let abstract=include; return abstract; }",
+      "legacy.on1x"));
+  require(former_identifiers.functions.front().name=="signature"&&
+          former_identifiers.nominals.front().name=="sharing","signature words must remain contextual");
+
+  rejects("ON1X-INTERFACE-MISMATCH",[&]{
+   conform(named(catalog+"module Acme.Vault : API<u64>;"),static_unit);
+  });
+  rejects("ON1X-INTERFACE-TYPE",[&]{
+   conform(opaque,static_source("record Token{secret:i64} type Payload=(i64,bool);"));
+  });
+  rejects("ON1X-INTERFACE-MISMATCH",[&]{
+   conform(opaque,static_source("record Token{a:i64} record Other{a:i64} "
+                               "type Payload=(i64,bool); type View=Other;"));
+  });
+  rejects("ON1X-INTERFACE-CYCLE",[&]{
+   conform(named("signature S { type A=B; type B=A; }; module Acme.Vault : S;"),static_unit);
+  });
+  rejects("ON1X-INTERFACE-CYCLE",[&]{
+   conform(named("signature S { type A=i64; }; module Acme.Vault : S;"),
+           static_source("type A=B; type B=(i64,A);"));
+  });
+  rejects("ON1X-INTERFACE-LIMIT",[&]{
+   std::string growing="type A0=i64;";
+   for(int i=1;i<20;++i){
+    auto branch=std::to_string(i-1);
+    growing+="type A"+std::to_string(i)+"=(A"+branch+",A"+branch+");";
+   }
+   conform(named("signature S { type A0=i64; }; module Acme.Vault : S;"),static_source(growing));
+  });
+  auto expansion_error=[&](const char* id,const std::string& source){
+   rejects(id,[&]{resolve_module_signature(named(source));});
+  };
+  expansion_error("ON1X-INTERFACE-CYCLE",
+                  "signature A { include B; }; signature B { include A; }; module Acme.Vault : A;");
+  expansion_error("ON1X-INTERFACE-ARITY",catalog+"module Acme.Vault : API;");
+  expansion_error("ON1X-INTERFACE-UNSUPPORTED",catalog+"module Acme.Vault : API<Token>;");
+  expansion_error("ON1X-INTERFACE-SIGNATURE","module Acme.Vault : Missing;");
+  expansion_error("ON1X-INTERFACE-DUPLICATE",
+                  "signature B { type X; }; signature A { include B; type X; }; module Acme.Vault : A;");
+  expansion_error("ON1X-INTERFACE-TYPE",
+                  "signature S { type T=i64; sharing type T=i64; }; module Acme.Vault : S;");
+  auto callable=named("signature S<T> { fn count(x:T)->i64; }; module Acme.Vault : S<i64>;");
+  require_executable_module_signature(callable);
+  conform(callable,implementation("fn count(input:i64)->i64 { return input; }"));
+
+  const auto permit_signature=signature("type Token;");
+  auto permit_provider=static_source("record Bits { data:array<u8,16> } "
+                                    "enum Token { None, Some(Bits, bool) }");
+  const auto permit_proof=verify_module_signature(permit_signature,permit_provider,
+                                                  "Acme.Vault","/workspace/vault.on1xm");
+  require(admit_executable_opaque_signature(permit_signature,permit_proof,{&permit_provider},
+                                            "Acme.Vault","/workspace/vault.on1xm")==
+          std::set<std::string>{"Token"},"opaque permit must export only the authorized abstract type");
+  rejects("ON1X-INTERFACE-MODULE",[&]{
+   admit_executable_opaque_signature(permit_signature,permit_proof,{&permit_provider},
+                                     "Acme.Vault","/elsewhere/vault.on1xm");
+  });
+  rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+   admit_executable_opaque_signature(transparent,visible,{&static_unit},"Acme.Vault","/workspace/vault.on1xm");
+  });
+  for(const auto* field:{"string","Box<i64>","own<Token>","Token"}){
+   auto non_copy=static_source(std::string("record Box<T> { item:T } record Token { item:")+field+" }");
+   auto proof=verify_module_signature(permit_signature,non_copy,"Acme.Vault","/workspace/vault.on1xm");
+   rejects("ON1X-INTERFACE-UNSUPPORTED",[&]{
+    admit_executable_opaque_signature(permit_signature,proof,{&non_copy},"Acme.Vault","/workspace/vault.on1xm");
+   });
+  }
+ }

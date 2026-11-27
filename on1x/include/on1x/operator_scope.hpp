@@ -93,5 +93,5 @@ struct OperatorDiscovery {
 };
 OperatorDiscovery discover_operators(const std::vector<Token>&);
 Unit parse_with_operators(const std::vector<Token>&,const std::vector<std::string>& enabled,
-                          std::vector<Docstring>,OperatorScope);
+                          std::vector<Docstring>,OperatorScope,bool declaration_interfaces=false);
 }
