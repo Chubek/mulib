@@ -57,6 +57,8 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         output = root / "app.c"
         index.write_text(json.dumps({
             "schema": "on1x.project-modules/v1",
+            "project": str(root),
+            "programs": {},
             "members": {
                 "Test.Vault": {
                     "package": str(root),
