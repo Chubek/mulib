@@ -145,9 +145,16 @@ explicit catalog/schema inputs during assembly/ELF publication. Eleven worker
 tests passed using the combined Debug frontend and real ELF tools with
 deterministic assembly substitution; this does not qualify Archon lowering.
 See [MODULE_NATIVE_INPUT_GUARD.md](MODULE_NATIVE_INPUT_GUARD.md).
-The test is registered in the external-profile CTest suite. A fresh parent-tree
-Debug build and combined CTest run, including this additional test, is pending;
-the earlier 16/16 result does not cover this subsequent change.
+The test is registered in the external-profile CTest suite. The fresh parent-tree
+Debug build at `aa48bf57` succeeded and **17/17 CTests passed in 14.70 seconds**,
+including the native input guard. Build directory:
+`/mnt/warble/tempdir/opencode/module-hardening-parent-build`. Configuration
+matches the external-root Debug command above. The first build hit the
+harness's 120-second timeout; continuing the incremental build with a
+1,200-second timeout completed successfully. CTest output:
+`/mnt/warble/tempdir/opencode/module-hardening-parent-ctest.log`.
+This supersedes the earlier pending combined-tree status, not the feature
+exclusions or general-regression limitations.
 
 ## Remaining gates and historical evidence
 
