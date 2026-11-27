@@ -54,10 +54,19 @@ int main(int argc, char** argv) {
         if (!rejects_at(unit, "invalid program import request", program_at, native)) return 3;
         unit.module_imports.front().relative = 0;
         check_asdl_module(unit);
+        auto& selective_program = unit.module_imports.front();
+        selective_program.module = "Tools.Echo";
+        selective_program.quoted = false;
+        selective_program.alias.clear();
+        selective_program.selective = true;
+        selective_program.names.push_back({"entry", "run", false});
+        check_asdl_module(unit);
+        selective_program.selective = false;
+        if (!rejects_at(unit, "invalid program import request", program_at, native)) return 4;
         unit.module_imports.erase(unit.module_imports.begin());
         check_asdl_module(unit);
     } catch (const std::exception& error) {
         std::cerr << error.what() << '\n';
-        return 4;
+        return 5;
     }
 }

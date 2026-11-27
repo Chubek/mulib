@@ -51,7 +51,7 @@ source_visibility ::= SourcePublic | SourcePrivate | SourceShared(usize elevatio
 .logistics for :source_import ::= lua(edge)
     local spelling, _, relative, _, selective, selectors = asdl.destruct(edge)
     if asdl.tag(edge) == "ProgramRequest" and
-       (spelling == "" or relative ~= 0 or selective or #selectors ~= 0) then
+       (spelling == "" or relative ~= 0 or (not selective and #selectors ~= 0)) then
         asdl.diagnostic.emit({severity = "error", location = asdl.location(edge),
                               message = "invalid program import request"})
     end
