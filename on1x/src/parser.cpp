@@ -2127,7 +2127,11 @@ class Parser {
      std::string import_alias(){
       const auto at=peek().where;
       auto alias=ident();
-      if(alias=="_")throw Error(at,"import alias '_' is not allowed; use a name such as '_unused'","ON1X-IMPORT-ALIAS");
+      if(alias=="_"){
+       Error error(at,"import alias '_' is not allowed; use a name such as '_unused'","ON1X-IMPORT-ALIAS");
+       error.diagnostic_name="invalid-import-alias";error.diagnostic_group="imports";
+       throw error;
+      }
       return alias;
      }
      void import_selectors(Import& declaration,bool parens=false){

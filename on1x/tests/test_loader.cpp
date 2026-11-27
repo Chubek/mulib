@@ -87,7 +87,8 @@ fn main(){
   write(entry,std::string(syntax)+"fn main(){}");
   try{(void)load_unit(entry,options);}
   catch(const Error& e){
-   if(e.diagnostic_id=="ON1X-IMPORT-ALIAS")continue;
+   if(e.diagnostic_id=="ON1X-IMPORT-ALIAS"&&e.diagnostic_name=="invalid-import-alias"&&
+      e.diagnostic_group=="imports")continue;
    throw;
   }
   throw std::runtime_error("lone underscore import alias accepted");

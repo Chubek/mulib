@@ -19,6 +19,7 @@ struct Error : std::runtime_error {
  Location where;
  // Reporting metadata only: never used to recover or accept an invalid program.
  std::string diagnostic_id,expected,found;
+ std::string diagnostic_name,diagnostic_group;
  Error(Location at, std::string message, std::string id={}, std::string want={}, std::string got={})
   : std::runtime_error(std::move(message)), where(std::move(at)), diagnostic_id(std::move(id)),
     expected(std::move(want)), found(std::move(got)) {}

@@ -533,14 +533,14 @@ Record Catalog::record(const CatalogEntry& entry,Location where,const TemplateAr
  record.remediation=entry.remediation;record.notes.push_back(entry.guidance);return record;
 }
 Record Catalog::record(const Error& error)const{
- if(error.diagnostic_id=="ON1X-IMPORT-ALIAS"&&!find(error.diagnostic_id))
-  return embedded().record(error);
+ if(!error.diagnostic_name.empty()&&!find(error.diagnostic_id)){
+  const auto& trusted=embedded();
+  if(this!=&trusted&&trusted.find(error.diagnostic_id))return trusted.record(error);
+ }
  const auto& entry=compiler(error.diagnostic_id);
  try{
   auto bounded=record(entry,error.where,{error.what(),error.expected,error.found,{},{}});
-  if(error.diagnostic_id=="ON1X-IMPORT-ALIAS"){
-   bounded.name="invalid-import-alias";bounded.group="imports";
-  }
+  bounded.name=error.diagnostic_name;bounded.group=error.diagnostic_group;
   if(bounded.message.empty())throw std::length_error(std::string{});
   return bounded;
  }
