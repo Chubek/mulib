@@ -11,9 +11,10 @@ python3 -B on1x/tests/test_interfaces.py --on1xc /absolute/path/to/on1xc --cc cc
 ```
 
 The module suite compiles and runs actual generated C11. It checks named and
-colon-selector module and program imports next to quoted legacy imports, visibility after aliasing,
-source-kind and name validation, program entry-point isolation, fail-closed
-program capability admission and legacy PPX, multiple manifest fragments, deterministic
+colon-selector module and program imports next to quoted legacy imports,
+visibility after aliasing and field projection, source-kind and name
+validation, program entry-point isolation, fail-closed program capability
+admission and legacy PPX, multiple manifest fragments, deterministic
 dependency reporting, and signature enforcement on the actual build. Failure
 checks verify that neither an existing emitted file nor a published project
 artifact is replaced. The legacy interface suite is separate: its v1 contract

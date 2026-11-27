@@ -95,6 +95,31 @@ fn main() { println(get()); }
         source = self.write("entry.on1x", "import A.Answer;\nfn main() {}\n")
         self.compiler("--check", source, error=r"A\.Answer|A\.Other")
 
+    def test_dotted_receivers_do_not_bypass_named_module_scope(self):
+        self.write("A/Choice.on1xm", """
+module A.Choice;
+public enum Option { Ready }
+private enum Hidden { Never }
+private fn hidden() -> i64 { return 99; }
+""")
+        entry = self.write("main.on1x", """
+import A.Choice as C;
+fn main() {
+  let option = C.Option::Ready;
+  println(match option with { Ready() => 42 });
+  let C = record{answer: 43}; println(C.answer);
+}
+""")
+        self.assertEqual(self.emit_and_run(entry), "42\n43\n")
+        cases = (
+            ("println(C.hidden.field);", r"hidden.*(?:private|visible)|(?:private|visible).*hidden"),
+            ("let x = C.Hidden::Never;", r"Hidden.*(?:private|visible)|(?:private|visible).*Hidden"),
+        )
+        for statement, diagnostic in cases:
+            with self.subTest(statement=statement):
+                self.write("main.on1x", f"import A.Choice as C;\nfn main() {{ {statement} }}\n")
+                self.compiler("--check", entry, error=diagnostic)
+
     def test_explicit_program_main_is_not_exported_or_run(self):
         self.write("tool.on1x", """
 fn answer() -> i64 { return 42; }
@@ -220,6 +245,10 @@ public fn hidden() -> i64 { return 99; }
         self.project(output, error=r"hidden.*(?:signature|export|visible)|(?:signature|export|visible).*hidden")
         self.assertEqual(marker.read_bytes(), before)
         self.assertEqual(self.command(output / "app"), "42\n")
+
+        self.write("src/main.on1x", "import A.API as API;\nfn main() { println(API.hidden.field); }\n")
+        self.project(output, error=r"hidden.*(?:signature|export|visible)|(?:signature|export|visible).*hidden")
+        self.assertEqual(marker.read_bytes(), before)
 
         self.write("src/main.on1x", "import A.API as API;\nfn main() { println(API.answer()); }\n")
         self.write("src/api.on1xi", "abstract module A.API;\nfn answer() -> bool;\n")
