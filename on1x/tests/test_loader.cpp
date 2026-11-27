@@ -36,6 +36,7 @@ void standard_module_imports(const std::filesystem::path& root){
                "fn via_relative()->i64{return relative_answer();}");
  write(untrusted/"On1xfile","(On1xfile 1 (kind \"stdlib\") (name \"std\") (root \".\"))");
  write(untrusted/"Tools.on1x","fn answer()->i64{return -13;}");
+ write(root/"std"/"Tools.on1x","fn answer()->i64{return -16;}");
  write(project/"std"/"Tools.on1xm","module std.Tools; fn answer()->i64{return -17;}");
  write(entry,"import std.Tools as A; from std import Tools as B; import std.Compat as C;import Tools as D;"
              "import \"../stdlib/Tools.on1x\"; "
@@ -43,6 +44,7 @@ void standard_module_imports(const std::filesystem::path& root){
              "assert(C.answer()==answer());assert(D.answer()==42);assert(A.extra()==3);}");
  auto loaded=load_unit(entry,options);
  require(loaded.unit.requires_module_boundary,"legacy alias erased standard module boundary");
+ require(!loaded.source_capabilities,"pure signed graph recorded a native or extension capability");
  require(loaded.dependencies==std::vector<fs::path>{primary,side,wrapper,entry},
          "standard aliases did not share one group");
  require(loaded.signature_dependencies==std::vector<fs::path>{side_signature,signature},
@@ -56,6 +58,16 @@ void standard_module_imports(const std::filesystem::path& root){
  write(entry,"import std.Tools as A;from std import Tools as B;fn main(){A.extra();B.extra();}");
  auto trusted=load_unit(entry,options);
  check(trusted.unit);
+ const auto initializer=stdlib/"Pack"/"__init__.on1xm";
+ write(initializer,"module std.Pack; public fn test()->i64{return 42;}");
+ write(stdlib/"Pack"/"__init__.on1xi","abstract module std.Pack; fn test()->i64;");
+ write(entry,"import std.Pack as A;import std.Pack.__init__ as B;"
+             "import \"../stdlib/Pack/__init__.on1x\";"
+             "fn main(){assert(A.test()==B.test());assert(test()==42);}");
+ auto package_client=load_unit(entry,options);
+ require(package_client.dependencies==std::vector<fs::path>{initializer,entry},
+         "standard initializer compatibility routes duplicated source identity");
+ check(package_client.unit);
  const auto reject=[&](const std::string& source,const std::string& message){
   write(entry,source);
   try{(void)load_unit(entry,options);}
@@ -229,7 +241,8 @@ int main(int argc,char** argv){
   options.kernel_c11=true;
   reject("ON1X-KERNEL-NOT-ADMITTED");
   options.kernel_stage=true;
-  auto scalar=on1x::load_unit(root/"a.on1x",options);
+   auto scalar=on1x::load_unit(root/"a.on1x",options);
+   assert(scalar.source_capabilities);
   on1x::check(scalar.unit);
   auto code=on1x::emit_c(scalar.unit,"a.on1x");
   assert(code.find("extern int64_t on1x_kernel_scalar_v1_mulib_clamp_add_i64")!=std::string::npos);
