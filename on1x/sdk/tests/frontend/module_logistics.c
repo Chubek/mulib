@@ -143,6 +143,23 @@ int main(int argc, char **argv) {
     on1x_sdk_compilation_release(next);
     next = NULL;
 
+    On1xSDK_CompilationInfo ci = ON1X_SDK_COMPILER_INIT(On1xSDK_CompilationInfo);
+    assert(on1x_sdk_compilation_info(compilation, &ci) == ON1X_SDK_OK);
+    static const char replacement[] = "fn main(){}";
+    assert(on1x_sdk_source_replace(source, ci.entry_source_revision, replacement, sizeof(replacement)-1,
+                                   ON1X_SDK_SOURCE_UTF8, &snapshot) == ON1X_SDK_OK);
+    on1x_sdk_source_revision_release(snapshot);
+    assert(on1x_sdk_compilation_refresh(compilation, &next) == ON1X_SDK_OK);
+    const char *updated = NULL;
+    size_t updated_size = 0;
+    assert(on1x_sdk_compilation_graph_json_v1(next, 1, &updated, &updated_size) == ON1X_SDK_OK);
+    assert(updated_size && strcmp(graph, updated) != 0);
+    assert(strstr(graph, "std.Tools") && !strstr(updated, "std.Tools"));
+    assert(on1x_sdk_compilation_dependency_count(next, &count) == ON1X_SDK_OK && count == 1);
+    assert(on1x_sdk_compilation_dependency_count(compilation, &count) == ON1X_SDK_OK && count == 2);
+    on1x_sdk_compilation_release(next);
+    next = NULL;
+
     static const char cycle_path[] = "cycle.on1x";
     On1xSDK_Source *cycle = NULL;
     assert(on1x_sdk_workspace_open(workspace, cycle_path, sizeof(cycle_path) - 1,

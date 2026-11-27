@@ -46,3 +46,18 @@ public report orders manifest display labels deterministically across those
 inspections. It does not infer logical dependencies from physical pairs.
 The original `--project-module-graph` continues emitting v2; a build requesting
 v3 does not silently accept an older compiler response.
+
+Integrated qualification at `662aa5ee` (W1 `9dab0cd6`, W2 `1928c04b`, W3
+`e4437581`, W4 projection `4b00c2cd`) used the explicit external profile in
+`MODULE_ALGEBRA.md`. Five CTests passed: `project_membership`, `graph_driver`,
+`lsp`, `sdk` and `graph_packet`. The real driver fixture compared nested v2
+facts with the standalone v2 command, preserved both fragment request witnesses
+on one logical edge and consumed the v3 packet with the Python driver. SDK
+refresh after removing an import changed the new graph and dependency count
+without changing the old snapshot. `Modules.test_plan_projects_compiler_edges`
+passed via the public project `plan` command using `--stdlib` pointed at the
+trusted external root. `Modules.test_manifest_fragments_graph_and_atomic_publish`
+reached native linking but failed because `tools/on1x-build.py` loads the
+removed in-tree `stdlib/mulib/housekeeping.py`. The explicit source-library
+option does not grant permission to import Python helpers from a project
+stdlib. Full project executable publication remains unqualified on this lane.

@@ -43,12 +43,12 @@ class Modules(unittest.TestCase):
         return result.stdout
 
     def compiler(self, *args, error=None):
-        return self.command(OPTIONS.on1xc, "--stdlib", ON1X / "stdlib", *args, error=error)
+        return self.command(OPTIONS.on1xc, "--stdlib", OPTIONS.stdlib, *args, error=error)
 
     def project(self, output, *, error=None, backend="c11", root=None):
         return self.command(
             sys.executable, ON1X / "tools/on1x-project.py", "build", root or self.root,
-            "--on1xc", OPTIONS.on1xc, "--cc", OPTIONS.cc, "--stdlib", ON1X / "stdlib",
+            "--on1xc", OPTIONS.on1xc, "--cc", OPTIONS.cc, "--stdlib", OPTIONS.stdlib,
             "--backend", backend, "--output-dir", output, error=error,
         )
 
@@ -180,6 +180,17 @@ fn main() { println(answer()); }
         self.compiler("--ppx", "denied", "/bin/false", "--emit-c", entry, "-o", out,
                       error=r"ppx.*(?:module|scope|admission)|(?:module|scope).*ppx")
         self.assertEqual(out.read_text(encoding="utf-8"), "keep me\n")
+
+    def test_plan_projects_compiler_edges(self):
+        self.application('module "X" "src/x.on1xm"\nmodule "Y" "src/y.on1xm"\n')
+        self.write('src/x.on1xm', 'module X; import Y as V; public fn value()->i64{return V.value();}')
+        self.write('src/y.on1xm', 'module Y; public fn value()->i64{return 42;}')
+        self.write('src/main.on1x', 'import X as V; fn main(){println(V.value());}')
+        raw = self.command(sys.executable, ON1X / 'tools/on1x-project.py', 'plan', self.root,
+                           '--on1xc', OPTIONS.on1xc, '--stdlib', OPTIONS.stdlib, '--backend', 'c11')
+        self.assertEqual(json.loads(raw)['module_graph'], [
+            dict(package='app', name='Y', dependencies=[]),
+            dict(package='app', name='X', dependencies=[dict(package='app', name='Y')])])
 
     def test_manifest_fragments_graph_and_atomic_publish(self):
         self.application("""module "A.Wrapper" "src/api.on1xm"
@@ -393,6 +404,7 @@ def main():
     global OPTIONS
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--on1xc", type=lambda value: Path(value).resolve(), required=True)
+    parser.add_argument("--stdlib", type=lambda value: Path(value).resolve(), default=ON1X / "stdlib")
     parser.add_argument("--cc", default="cc")
     parser.add_argument("--work-dir", type=lambda value: Path(value).resolve(), required=True)
     OPTIONS, rest = parser.parse_known_args()
