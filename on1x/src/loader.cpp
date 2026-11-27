@@ -528,6 +528,7 @@ class Loader {
     ModuleSignature signature;
     signature.where={input.front().string()};
     signature.module=header->name;
+    bool first=true;
     for(const auto& origin:input){
      if(verified_signatures.size()>=max_interface_files)
       throw Error(at,"interface file count limit exceeded","ON1X-INTERFACE-LIMIT");
@@ -540,6 +541,11 @@ class Loader {
      auto fragment=parse_module_signature(scan(source,origin.string()));
      if(fragment.module!=signature.module)
       throw Error(fragment.where,"signature does not declare module '"+header->name+"'","ON1X-INTERFACE-IMPLEMENTATION");
+     fragment=resolve_module_signature(fragment);
+     if(!first&&signature.seal!=fragment.seal)
+      throw Error(fragment.where,"module signature fragments disagree on ascription",
+                  "ON1X-INTERFACE-IMPLEMENTATION");
+     signature.seal=fragment.seal;first=false;
      std::move(fragment.members.begin(),fragment.members.end(),std::back_inserter(signature.members));
      std::move(fragment.types.begin(),fragment.types.end(),std::back_inserter(signature.types));
     }
@@ -769,7 +775,8 @@ class Loader {
     if(!m->scanned.empty()){
      m->operator_visibility=visible_operators(*m,at);
      m->unit=parse_with_operators(m->scanned,{options.extensions.enabled.begin(),options.extensions.enabled.end()},
-                                  std::move(m->docs),m->operator_visibility);
+                                  std::move(m->docs),m->operator_visibility,
+                                  options.declaration_interfaces&&has_signature(*m));
      check_asdl_module(m->unit);
      if(m->discovery.module.has_value()!=m->unit.module.has_value()||
         (m->unit.module&&m->unit.module->name!=m->discovery.module->name))
