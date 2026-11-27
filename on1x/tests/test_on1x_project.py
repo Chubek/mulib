@@ -134,6 +134,10 @@ class ProjectTests(unittest.TestCase):
         self.app('program "tool" "src/tool.on1x"\n', source)
         self.write('src/On1xfile.m', roles)
         self.run_bin(self.build())
+        self.write('src/main.on1x', 'import program "tool.on1x" : value as get; fn main(){println(get());}\n')
+        self.run_bin(self.build())
+        self.write('src/main.on1x', 'import tool; fn main(){println(tool.value());}\n')
+        self.build(negative='indexed program requires an explicit program import')
 
     def test_published_module_package_reloads_scoped_members(self):
         rules = ('module "Outer" "lib/outer.on1xm"\n'
