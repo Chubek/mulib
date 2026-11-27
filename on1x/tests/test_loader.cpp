@@ -1,11 +1,104 @@
 #include <on1x/loader.hpp>
 #include <on1x/clone.hpp>
 #include <on1x/stdffi.hpp>
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 #include <fstream>
 
 namespace {
+void standard_module_imports(const std::filesystem::path& root){
+ namespace fs=std::filesystem;
+ using namespace on1x;
+ const auto stdlib=root/"stdlib",project=root/"project",untrusted=root/"untrusted",alternate=root/"alternate";
+ const auto entry=project/"entry.on1x";
+ const auto primary=stdlib/"Tools.on1xm",side=stdlib/"Tools.fragments"/"second.on1xm";
+ const auto signature=stdlib/"Tools.on1xi",side_signature=stdlib/"Tools.fragments"/"second.on1xi";
+ const auto wrapper=stdlib/"Compat"/"__init__.on1x";
+ const auto write=[](const fs::path& path,const std::string& source){
+  fs::create_directories(path.parent_path());
+  std::ofstream out(path);out<<source;
+  if(!out)throw std::runtime_error("cannot create standard module fixture");
+ };
+ const auto require=[](bool ok,const char* msg){if(!ok)throw std::runtime_error(msg);};
+ LoaderOptions options;
+ options.prelude=false;
+ options.stdlib=stdlib;
+ write(primary,"module std.Tools; public fn answer()->i64{return impl();}"
+               "public fn omitted()->i64{return -1;}"
+               "public operator(lexeme: \"%%\", arity: \"binary\", formals: x:i64,y:i64)"
+               "->i64{return x+y;}");
+ write(side,"module std.Tools; shared fn impl()->i64{return 42;}"
+            "public fn extra()->i64{return 3;}");
+ write(signature,"abstract module std.Tools; fn answer()->i64;");
+ write(side_signature,"abstract module std.Tools; fn extra()->i64;");
+ write(wrapper,"import \"../Tools.on1x\"; from ..Tools import answer as relative_answer;"
+               "fn via_relative()->i64{return relative_answer();}");
+ write(untrusted/"On1xfile","(On1xfile 1 (kind \"stdlib\") (name \"std\") (root \".\"))");
+ write(untrusted/"Tools.on1x","fn answer()->i64{return -13;}");
+ write(project/"std"/"Tools.on1xm","module std.Tools; fn answer()->i64{return -17;}");
+ write(entry,"import std.Tools as A; from std import Tools as B; import std.Compat as C;import Tools as D;"
+             "import \"../stdlib/Tools.on1x\"; "
+             "fn main(){assert(A.answer()==B.answer());assert(B.answer()==C.via_relative());"
+             "assert(C.answer()==answer());assert(D.answer()==42);assert(A.extra()==3);}");
+ auto loaded=load_unit(entry,options);
+ require(loaded.unit.requires_module_boundary,"legacy alias erased standard module boundary");
+ require(loaded.dependencies==std::vector<fs::path>{primary,side,wrapper,entry},
+         "standard aliases did not share one group");
+ require(loaded.signature_dependencies==std::vector<fs::path>{side_signature,signature},
+         "trusted interfaces were not reported");
+ require(std::count_if(loaded.unit.functions.begin(),loaded.unit.functions.end(),
+                       [](const auto& f){return f.name.ends_with("_answer");})==1,
+         "standard body duplicated or dropped its canonical name");
+ check(loaded.unit);
+ (void)emit_c(loaded.unit,"standard-client.on1x");
+ options.paths={untrusted};
+ write(entry,"import std.Tools as A;from std import Tools as B;fn main(){A.extra();B.extra();}");
+ auto trusted=load_unit(entry,options);
+ check(trusted.unit);
+ const auto reject=[&](const std::string& source,const std::string& message){
+  write(entry,source);
+  try{(void)load_unit(entry,options);}
+  catch(const Error& error){
+   if(std::string(error.what()).find(message)!=std::string::npos||error.diagnostic_id.starts_with(message))return;
+   throw;
+  }
+  throw std::runtime_error("unexpectedly accepted: "+source);
+ };
+ reject("import std.Compat as C;fn main(){C.omitted();}","no export");
+ reject("import std.Tools as C;fn main(){C.impl();}","no export");
+ reject("from std.Tools import (operator(\"%%\"));fn main(){}","no operator export");
+ reject("import \"std/Tools.on1xm\";fn main(){}","reserved standard identity");
+ reject("import \"../stdlib/Tools.on1xm\";fn main(){}","identity");
+ write(alternate/"On1xfile","(On1xfile 1 (kind \"stdlib\") (name \"std\") (root \".\"))");
+ write(alternate/"Tools.on1xm","module std.Tools; fn answer()->i64{return -2;}");
+ write(alternate/"Tools.on1xi","abstract module std.Tools; fn answer()->i64;");
+ options.stdlib_explicit=true;
+ options.stdlib_paths={alternate};
+ reject("import \"../alternate/Tools.on1x\";import std.Tools;fn main(){}","nonselected root");
+ options.stdlib_explicit=false;
+ options.stdlib_paths.clear();
+ write(side,"module std.Tools; fn extra()->i64{return +;}");
+ const auto parsed=parse_source_with_operator_imports(entry,
+   "import \"../stdlib/Tools.on1x\";fn main(){answer();}",options);
+ require(parsed.functions.size()==1,"formatting parsed a dependency body");
+ write(side,"module std.Tools; shared fn impl()->i64{return 42;}"
+            "public fn extra()->i64{return 3;}");
+ options.project_package=project;
+ write(entry,"import std.Tools as A;fn main(){assert(A.answer()==42);}");
+ auto project_client=load_unit(entry,options);
+ check(project_client.unit);
+ options.module_members.emplace("std.Tools",LoaderOptions::ModuleMember{
+                                  project,"std.Tools",{project/"std"/"Tools.on1xm"},{}});
+ reject("import std.Tools;fn main(){}","invalid project module membership");
+ options.module_members.clear();
+ write(side_signature,"abstract module std.Tools; fn extra()->bool;");
+ reject("import std.Tools;fn main(){}","ON1X-INTERFACE");
+ write(side_signature,"abstract module std.Tools; fn extra()->i64;");
+ fs::remove(signature);
+ reject("import std.Tools;fn main(){}","expected a local interface");
+ write(signature,"abstract module std.Tools; fn answer()->i64;");
+}
 void module_imports(const std::filesystem::path& root){
  namespace fs=std::filesystem;
  using namespace on1x;
@@ -113,6 +206,7 @@ int main(int argc,char** argv){
  assert(argc==2);namespace fs=std::filesystem;
  fs::path root=argv[1];fs::create_directories(root);
  module_imports(fs::canonical(root)/"module-imports");
+ standard_module_imports(fs::canonical(root)/"standard-module-imports");
  std::ofstream(root/"a.on1x")<<"import b;fn main(){}";
  std::ofstream(root/"b.on1x")<<"fn value()->i64{return 42;}";
  on1x::LoaderOptions options;options.prelude=false;

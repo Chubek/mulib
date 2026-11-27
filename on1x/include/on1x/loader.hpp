@@ -42,8 +42,8 @@ struct LoadedUnit {
  // includes tooling overrides and avoids a racy second filesystem read.
  std::vector<std::string> dependency_sources;
  std::set<std::string> internal_functions;
-  std::vector<InterfaceObligation> interfaces;
-  std::size_t declaration_interface_members=0;
+   std::vector<InterfaceObligation> interfaces;
+   std::size_t declaration_interface_members=0;
    // Canonical interface files read by the loader, including sealed standard
    // and project modules. These are not executable source edges.
    std::vector<std::filesystem::path> signature_dependencies;
