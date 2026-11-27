@@ -41,3 +41,5 @@ ctest --test-dir build/integration --output-on-failure
 ```
 
 This deliberately selects module integration tests rather than the general regression suite, whose fixtures still refer to deleted in-tree examples/docs/libraries. Source PPX processors are not built in this profile. Do not use these results to qualify unrelated tests, packaged native PPX, or the full SDK installation. The normal full profile still rejects a missing in-tree stdlib without the explicit external option.
+
+Qualification at W3 `86a30ab8`: the full external-profile build completed, including `on1xc`, SDK and generated frontend. All 9 registered CTest cases passed (9.84 seconds): module algebra, PPX metadata, loader, signature API and CLI, strict direct-C11 opaque execution, project membership, SDK module logistics, and LSP. This was the W3 branch, not the combined W1/W2/W4 revision. The first target-only build omitted four test executables; the documented untargeted build produced them and the complete run passed. The FFI generator reported one recipe and 2,077 catalogue entries (322 unsupported, 1,755 missing views, zero malformed). No claim is made for unsupported kernel views.
