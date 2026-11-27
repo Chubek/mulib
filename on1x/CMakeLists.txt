@@ -257,6 +257,17 @@ if(ON1X_GENERATED_FRONTEND)
   target_link_libraries(on1x_source_asdl PRIVATE ASDL::runtime)
 endif()
 target_link_libraries(on1x_frontend PRIVATE on1x_source_asdl)
+if(ON1X_BUILD_EXTENSION_SDK)
+  # CompilerSupport is static and retains its private archive dependencies.
+  install(TARGETS on1x_source_asdl EXPORT On1xSDKTargets
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK)
+  if(ON1X_GENERATED_FRONTEND)
+    # The pinned ASDL subdirectory is EXCLUDE_FROM_ALL, so its own install
+    # rule does not provide this archive to consumers of the On1x SDK.
+    install(TARGETS asdl_runtime EXPORT On1xSDKTargets
+      ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT On1xSDK)
+  endif()
+endif()
 if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
   add_executable(on1x_source_asdl_tests tests/test_source_asdl.cpp)
   target_include_directories(on1x_source_asdl_tests PRIVATE include)
