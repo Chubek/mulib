@@ -70,7 +70,6 @@ bool scalar(const SExpr& n,const std::string& expected){
   if(expected=="Boolean")return !quoted&&(s=="true"||s=="false");
   if(expected=="OperatorLexeme")return quoted&&on1x_operator_spelling(s.data(),s.size());
    if(expected=="UnaryPosition")return quoted&&(s=="prefix"||s=="postfix");
-   if(expected=="SourceDeclarationKind")return !quoted&&(s=="function"||s=="nominal"||s=="macro"||s=="cliche");
  if(expected=="UnaryOperator")return !quoted&&(s=="!"||s=="-");
  if(expected=="BinaryOperator"){
   static const std::set<std::string> operators={"+","-","*","/","%","<",">","<=",">=","==","!=","&&","||"};return !quoted&&operators.contains(s);
@@ -86,7 +85,7 @@ bool scalar(const SExpr& n,const std::string& expected){
    if(expected=="UnsignedSpelling")return quoted&&unsigned_spelling(s);
  return false;
 }
-  const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","OperatorLexeme","UnaryPosition","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling","SourceDeclarationKind"};
+  const std::set<std::string> scalars={"Bytes","File","Name","Version","Nat","Positive","Boolean","UnaryOperator","BinaryOperator","OperatorLexeme","UnaryPosition","DecimalSpelling","HexSpelling","FloatSpelling","UnsignedSpelling"};
  // These categories are compiler/extension protocol envelopes, not syntax
  // that ordinary processors can introduce via an extensible Syntax field.
  bool host_category(const Schema& schema,const std::string& category){
@@ -95,7 +94,7 @@ bool scalar(const SExpr& n,const std::string& expected){
    "ExtensionFact","EvidenceContract","EvidenceMember","EvidenceImplementation",
    "EvidenceBinding","EvidenceInput","EvidenceOutput","TypedFunction","EvidenceChoice","SourceModuleMetadata",
    "SourceModuleHeader","SourceImport","SourceImportTarget","SourceImportSelector","SourceImportAlias","SourceVisibility",
-   "SourceDeclarationVisibility"};
+   "SourceDeclarationVisibility","SourceDeclarationKind"};
   auto it=schema.parents.find(category);
   for(std::size_t i=0;it!=schema.parents.end()&&i<=schema.parents.size();++i){
    if(roots.contains(it->first))return true;

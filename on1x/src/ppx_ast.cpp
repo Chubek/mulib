@@ -437,7 +437,7 @@ SExpr encode_source_module_metadata(const Unit& unit){
   if(!program)fields.insert(fields.begin()+1,symbol(std::to_string(request.relative)));
   imports.push_back(form(program?"SourceProgramImport":"SourceModuleImport",std::move(fields)));
  }
- auto rule=[&](std::string_view kind,const std::string& spelling,const VisibilityRule& visibility,const Location& where){
+ auto rule=[&](const char* kind,const std::string& spelling,const VisibilityRule& visibility,const Location& where){
   SExpr spec;
   switch(visibility.kind){
   case DeclarationVisibility::Unspecified:return;
@@ -446,17 +446,17 @@ SExpr encode_source_module_metadata(const Unit& unit){
   case DeclarationVisibility::Private:spec=form("SourcePrivate");break;
   }
   auto fields=std::vector<SExpr>{string(spelling),std::move(spec),loc(where)};
-  if(kind=="operator")declarations.push_back(form("SourceOperatorVisibility",std::move(fields)));
+  if(!kind)declarations.push_back(form("SourceOperatorVisibility",std::move(fields)));
   else{
-   fields.insert(fields.begin(),symbol(std::string(kind)));
+   fields.insert(fields.begin(),form(kind));
    declarations.push_back(form("SourceDeclarationVisibility",std::move(fields)));
   }
  };
- for(const auto& f:unit.functions)rule("function",f.name,f.visibility,f.where);
- for(const auto& d:unit.nominals)rule("nominal",d.name,d.visibility,d.where);
- for(const auto& d:unit.operators)rule("operator",d.header.lexeme,d.header.visibility,d.header.where);
- for(const auto& m:unit.macros)rule("macro",m.name,m.visibility,m.where);
- for(const auto& c:unit.cliches)rule("cliche",c.name,c.visibility,c.where);
+ for(const auto& f:unit.functions)rule("SourceFunctionKind",f.name,f.visibility,f.where);
+ for(const auto& d:unit.nominals)rule("SourceNominalKind",d.name,d.visibility,d.where);
+ for(const auto& d:unit.operators)rule(nullptr,d.header.lexeme,d.header.visibility,d.header.where);
+ for(const auto& m:unit.macros)rule("SourceMacroKind",m.name,m.visibility,m.where);
+ for(const auto& c:unit.cliches)rule("SourceClicheKind",c.name,c.visibility,c.where);
  auto tree=form("SourceModuleMetadata",{symbol("1"),std::move(header),list(std::move(imports)),list(std::move(declarations))});
  base_schema().validate(tree,"SourceModuleMetadata");
  return tree;

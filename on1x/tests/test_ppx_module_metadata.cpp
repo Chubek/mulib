@@ -43,7 +43,7 @@ int main(){
    "(Loc \"/source/acme/main.on1x\" 11 2 1)) "
    "(SourceModuleImport (SourceNamedTarget (\"acme\" \"ops\")) 1 true (SourceNoAlias) ((SourceOperatorSelector \"%%\")) "
    "(Loc \"/source/acme/main.on1x\" 11 2 1))) "
-   "((SourceDeclarationVisibility function \"main\" (SourceShared 1) (Loc \"/source/acme/main.on1x\" 0 1 1))))\n",
+   "((SourceDeclarationVisibility (SourceFunctionKind) \"main\" (SourceShared 1) (Loc \"/source/acme/main.on1x\" 0 1 1))))\n",
    "source metadata must contain spellings, selections and 1-based visibility");
   require(write_sexpr(encode(unit))==legacy,"module metadata changed the Unit-v1 wire");
   reject([&]{(void)decode(packet);},"expected Unit");
