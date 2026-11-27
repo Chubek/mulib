@@ -1977,6 +1977,31 @@ class Parser {
      declaration.identity=operator_identity(header);function.name=declaration.identity;
      return declaration;
     }
+     void import_selectors(Import& declaration,bool parens=false){
+      declaration.selective=true;
+      do{
+       ImportName name;
+       if(at("operator")&&peek(1).text=="("){
+        if(declaration.kind==Import::Kind::Program)
+         throw Error(peek().where,"program imports cannot select operators","ON1X-OPERATOR-IMPORT");
+        pos+=2;name.is_operator=true;name.name=operator_literal(peek());++pos;consume(")");
+        if(at("as"))throw Error(peek().where,"selective operator imports cannot be aliased","ON1X-OPERATOR-IMPORT");
+       }else{
+        name.name=ident();if(accept("as"))name.alias=ident();
+       }
+       declaration.names.push_back(std::move(name));
+      }while(accept(",")&&!(parens&&at(")")));
+      if(parens)consume(")");
+     }
+     bool colon_import_selectors(Import& declaration){
+      if(!at(":"))return false;
+      if(!declaration.alias.empty())
+       throw Error(peek().where,"a selective import cannot alias its whole target; alias individual selectors instead",
+                   "ON1X-IMPORT-SELECTORS");
+      consume(":");
+      import_selectors(declaration);
+      return true;
+     }
      bool import_declaration(Unit& u){
     // `foreign` and `kernel` are contextual: bare, dotted, and aliased
     // ordinary module imports still use the ordinary import grammar.
@@ -2038,27 +2063,18 @@ class Parser {
         throw Error(item.where,"program import name exceeds 4096 bytes","ON1X-PROGRAM-IMPORT");
       }
       if(accept("as"))item.alias=ident();
+      colon_import_selectors(item);
       consume(";");
       u.module_imports.push_back(std::move(item));check_import_count();return true;
      }
     if(at("import")||at("from")){
-     Import declaration;declaration.where=peek().where;declaration.selective=accept("from");
-     if(declaration.selective){
+      Import declaration;declaration.where=peek().where;
+      if(accept("from")){
        while(at(".")||at("..")||at("...")){declaration.relative+=peek().text.size();++pos;}
       if(!at("import"))declaration.module=module_name();
       if(declaration.module.empty()&&!declaration.relative)throw Error(peek().where,"expected module name");
-      consume("import");bool parens=accept("(");
-       do{
-        ImportName name;
-        if(at("operator")&&peek(1).text=="("){
-         pos+=2;name.is_operator=true;name.name=operator_literal(peek());++pos;consume(")");
-         if(at("as"))throw Error(peek().where,"selective operator imports cannot be aliased","ON1X-OPERATOR-IMPORT");
-        }else{
-         name.name=ident();if(accept("as"))name.alias=ident();
-        }
-        declaration.names.push_back(std::move(name));
-       }while(accept(",")&&!(parens&&at(")")));
-      if(parens)consume(")");
+       consume("import");
+       import_selectors(declaration,accept("("));
       u.module_imports.push_back(std::move(declaration));
      }else{
       consume("import");
@@ -2070,7 +2086,9 @@ class Parser {
        u.imports.push_back(declaration.module);u.module_imports.push_back(std::move(declaration));++pos;
       }else do{
        Import item;item.where=peek().where;item.module=module_name();if(accept("as"))item.alias=ident();
+       const bool selective=colon_import_selectors(item);
        u.module_imports.push_back(std::move(item));
+       if(selective)break;
       }while(accept(","));
      }
      check_import_count();

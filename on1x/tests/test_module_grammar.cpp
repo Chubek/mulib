@@ -83,6 +83,37 @@ void legacy() {
     require(signature.size() == 1 && signature[0].name == "f", "legacy interface changed");
 }
 
+void colon_imports() {
+    const auto tokens = scan(
+        "module selector.example;\n"
+        "import fizz.buzz : fred, barney, Welma;\n"
+        "import program \"k.on1x\" : foo, bar, MyRecord;\n"
+        "import program worker.tool : foo as localFoo, bar;\n"
+        "import program : still_a_module;\n"
+        "import fizz.other : source as localSource, operator(\"%%\");\n",
+        "selector.on1xm");
+    const auto unit = parse(tokens);
+    const auto discovery = discover_operators(tokens);
+    for (const auto* imports : {&unit.module_imports, &discovery.imports}) {
+        require(imports->size() == 5, "selective imports split into multiple targets");
+        const auto& module = (*imports)[0];
+        require(module.kind == Import::Kind::Module && module.module == "fizz.buzz" &&
+                module.selective && module.names.size() == 3 &&
+                module.names[0].name == "fred" && module.names[1].name == "barney" &&
+                module.names[2].name == "Welma", "module colon selectors were not preserved");
+        const auto& program = (*imports)[1];
+        require(program.kind == Import::Kind::Program && program.module == "k.on1x" &&
+                program.quoted && program.selective && program.names.size() == 3 &&
+                program.names[0].name == "foo" && program.names[1].name == "bar" &&
+                program.names[2].name == "MyRecord", "program colon selectors were not preserved");
+        require((*imports)[2].names[0].alias == "localFoo" &&
+                (*imports)[3].kind == Import::Kind::Module && (*imports)[3].module == "program" &&
+                (*imports)[4].names[0].alias == "localSource" &&
+                (*imports)[4].names[1].is_operator,
+                "selector alias, operator selector, or contextual module name was lost");
+    }
+}
+
 void visibility() {
     const auto tokens = scan(
         "module alpha.beta.gamma;\n"
@@ -124,6 +155,7 @@ int main() {
     try {
         module_and_imports();
         legacy();
+        colon_imports();
         visibility();
         rejects("", "empty.on1xm", "ON1X-MODULE-HEADER");
         rejects("fn f() {}", "missing.on1xm", "ON1X-MODULE-HEADER");
@@ -137,6 +169,12 @@ int main() {
         rejects("module a; import program \"\";", "path.on1xm", "ON1X-PROGRAM-IMPORT");
         rejects("module a; import program \"foo\\n.on1x\";", "escape.on1xm", "ON1X-PROGRAM-IMPORT");
         rejects("module a; import program foo as ;", "alias.on1xm", "");
+        rejects("import fizz.buzz : ;", "empty_selector.on1x", "");
+        rejects("import program \"k.on1x\" : foo, ;", "trailing_selector.on1x", "");
+        rejects("import fizz.buzz as wide : fred;", "wide_alias.on1x", "ON1X-IMPORT-SELECTORS");
+        rejects("import program \"k.on1x\" as wide : foo;", "wide_program.on1x", "ON1X-IMPORT-SELECTORS");
+        rejects("import program \"k.on1x\" : operator(\"%%\");", "operator_program.on1x", "ON1X-OPERATOR-IMPORT");
+        rejects("import \"k.on1x\" : foo;", "legacy_quote.on1x", "ON1X-PARSE-EXPECTED");
         rejects("public fn f() {}", "program.on1x", "ON1X-MODULE-VISIBILITY");
         rejects("module a; private public fn f() {}", "double.on1xm", "ON1X-MODULE-VISIBILITY");
         rejects("module a; public import b;", "import.on1xm", "ON1X-MODULE-VISIBILITY");

@@ -113,6 +113,12 @@ check('contextual_module_words',
       valid=True, spellings=[b'module', b'abstract', b'.', b'module', b';',
                              b'import', b'program', b'"tool.on1x"', b'as', b'tool', b';',
                              b'public', b'private', b'shared', b'elevate', b'(', b'12', b')', b';'])
+check('colon_selectors',
+      b'import program "k.on1x" : foo, bar as public;\n'
+      b'import fizz.buzz : fred; # import nope : still_comment\n',
+      valid=True, spellings=[b'import', b'program', b'"k.on1x"', b':', b'foo', b',', b'bar',
+                             b'as', b'public', b';', b'import', b'fizz', b'.', b'buzz',
+                             b':', b'fred', b';'])
 
 prefix = b'# layout\r\n\t"snow: \xe9\x9b\xaa" ; '
 check('defer_result', b'enum Result<T,E>{Ok(T),Err(E)} fn f(){defer println(1); read()??[0];}', valid=True)

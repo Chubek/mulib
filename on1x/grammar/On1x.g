@@ -10,10 +10,11 @@
  * productions live in src/parser.cpp and bridge to include/on1x/ast.hpp:
  *   module_header := 'module' qualified_identifier ';'     (.on1xm, first item)
  *   abstract_header := 'abstract' 'module' qualified_identifier ';' (.on1xi)
- *   module_import := 'import' qualified_identifier ['as' identifier] ';'
+ *   module_import := 'import' qualified_identifier import_scope ';'
  *                  | 'from' module_path 'import' selectors ';'
  *   program_import := 'import' 'program' (qualified_identifier | quoted_path)
- *                     ['as' identifier] ';'
+ *                     import_scope ';'
+ *   import_scope := empty | 'as' identifier | ':' selectors
  *   visibility := 'public' | 'private' | 'shared' ['elevate' '(' decimal ')']
  * These words are contextual. Module syntax and numeric validation use the
  * ordinary identifier, punctuation and number terminals; no new %fault rules.
