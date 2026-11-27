@@ -140,6 +140,19 @@ paths. Build and plan reports include `module_graph` for named modules:
 each entry has `package`, `name`, and `dependencies`, in deterministic
 dependency-first order.
 
+`build` and `plan` can opt into incremental named-module checks with
+`--module-cache DIR`. Choose a private, user-owned directory outside the
+project and its output; do not use a cache supplied by a checkout or another
+user. The driver creates the directory if its parent already exists. Each
+successful check is keyed by the freshly admitted dependency graph: loaded
+source and interface bytes, fragment order and interface policies, dependency
+revisions, compiler and linked runtime identities, and the active build and
+analysis profile. An edit outside a module's dependency closure need not
+invalidate that module. Source PPX, extension or foreign-capability closures
+and other contexts that cannot be fingerprinted safely are checked uncached.
+This does not cache target binaries, replace graph admission, or alter the
+build or plan report. Remove the cache directory to discard all saved checks.
+
 An executable or complex project can opt a declared `.on1x` library input
 into explicit program imports by name:
 

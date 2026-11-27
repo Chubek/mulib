@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build a declared On1x project without running dependency build programs."""
 import argparse
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 import ctypes
 from dataclasses import dataclass
 import errno
@@ -111,6 +111,14 @@ class ModuleMembership:
     interface_policy: str
 
 
+@dataclass(frozen=True)
+class ModuleGraphInputs:
+    sources: tuple
+    edges: tuple
+    auxiliary: tuple
+    cacheable: bool
+
+
 def fail(message):
     raise ValueError(str(message))
 
@@ -151,6 +159,13 @@ def tool_digest(path):
 def name(value, pattern=NAME):
     if not pattern.fullmatch(value):
         fail(f'invalid name {value!r}')
+    return value
+
+
+def project_module_name(value):
+    value = name(value, MODULE_NAME)
+    if value == 'std' or value.startswith('std.'):
+        fail(f'{value!r}: the std namespace is reserved for the standard library')
     return value
 
 
@@ -1843,7 +1858,7 @@ def lock_dependencies(args):
     print(path)
 
 
-def quoted_import(file, spelling, root, libraries):
+def quoted_import(file, spelling, root, libraries, *, standard_aliases=()):
     parts = spelling.split('/')
     parents = 0
     while parents < len(parts) and parts[parents] == '..':
@@ -1858,13 +1873,13 @@ def quoted_import(file, spelling, root, libraries):
         fail(f'{file}: relative import escapes the declared package: {spelling!r}')
     for _ in range(parents):
         base = base.parent
-    if base / tail not in libraries:
+    if base / tail not in libraries and base / tail not in standard_aliases:
         fail(f'{file}: quoted import must name a declared library in the same package: {spelling!r}')
     return base / tail
 
 
 def source_policy(executor, compiler, file, root, libraries, *, declared_module=None,
-                  programs=(), program_paths=()):
+                  programs=(), program_paths=(), standard_aliases=()):
     listed = executor.run([compiler, '--tokens', executor.path(file)], bound=16 * MAX_SOURCE)
     # Use the canonical scanner. Only the exact directive token pair matters:
     # comments, string data and hygienic syntax are not regex-scanned as source.
@@ -1902,7 +1917,8 @@ def source_policy(executor, compiler, file, root, libraries, *, declared_module=
                     if program not in programs:
                         fail(f'{file}: program is not in the project index: {program}')
             elif target.startswith(b'"'):
-                quoted_import(file, target[1:-1].decode('utf-8'), root, libraries)
+                quoted_import(file, target[1:-1].decode('utf-8'), root, libraries,
+                              standard_aliases=standard_aliases)
         if tokens[i] == b'from' and tokens[i + 1] in (b'.', b'...'):
             # Match the loader's relative `from` depth: one dot stays at
             # this module's directory; each additional dot ascends a level.
@@ -1964,7 +1980,7 @@ def module_graph(members, source_edges):
             for pkg, key in order]
 
 
-def module_index(executor, destination, project_root, packages, programs=None):
+def module_index(executor, destination, project_root, packages, programs=None, *, trusted_standard=False):
     """Create one compiler view of the staged files, not of their checkouts.
 
     Each value is (stage root, modules, visible dotted prefix). An isolated
@@ -1973,13 +1989,19 @@ def module_index(executor, destination, project_root, packages, programs=None):
     records, owners = {}, {}
     for package, (stage, members, prefix) in sorted(packages.items()):
         for key, member in sorted(members.items()):
-            visible = prefix + key
-            if visible in records:
-                fail(f'ambiguous project module name {visible!r}')
             sources = [executor.path(stage / path) for path in member.sources]
-            interfaces = [executor.path(stage / path) for path in member.interfaces]
             for path in sources:
                 unique(owners, path, (package, key))
+            if trusted_standard and stage == project_root and package == 'std' and (
+                    key == 'std' or key.startswith('std.')):
+                # The stdlib resolver, not a user module index, authorizes
+                # this namespace. Retain the staged paths for graph admission.
+                continue
+            project_module_name(key)
+            visible = project_module_name(prefix + key)
+            if visible in records:
+                fail(f'ambiguous project module name {visible!r}')
+            interfaces = [executor.path(stage / path) for path in member.interfaces]
             records[visible] = dict(package=str(executor.path(stage)), declared_name=key,
                                     fragments=list(map(str, sources)), interfaces=list(map(str, interfaces)))
     if not records and not programs:
@@ -1995,6 +2017,137 @@ def module_index(executor, destination, project_root, packages, programs=None):
     return ['--project-module-index', str(executor.path(destination))], owners
 
 
+def fingerprint(value):
+    return digest(json.dumps(value, sort_keys=True, separators=(',', ':')).encode('ascii'))
+
+
+@contextmanager
+def module_cache_directory(path, project, output):
+    """The operator, not the project or one of its dependencies, selects this cache."""
+    if path is None:
+        yield None
+        return
+    path = path.absolute()
+    if path.name in ('', '.', '..'):
+        fail('module cache requires a dedicated directory')
+    path = path.parent.resolve(strict=True) / path.name
+    if paths_overlap(path, project) or output is not None and paths_overlap(path, output):
+        fail('module cache must be separate from the project and its output')
+    path.mkdir(mode=0o700, exist_ok=True)
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+    try:
+        info = os.fstat(fd)
+        if info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            fail(f'{path}: module cache must be private and owned by the current user')
+        yield fd
+    finally:
+        os.close(fd)
+
+
+def compiler_runtime(executor, compiler):
+    """Fingerprint the native frontend's linked runtime; unknown launchers are misses."""
+    ldd = Path('/usr/bin/ldd')
+    if not sys.platform.startswith('linux') or not ldd.is_file():
+        return None
+    try:
+        with compiler.open('rb') as binary:
+            if binary.read(4) != b'\x7fELF':
+                return None
+        libraries = {}
+        listing = executor.run([ldd, compiler], bound=64 * 1024, timeout=10).decode('utf-8')
+        for line in listing.splitlines():
+            item = line.strip()
+            if re.fullmatch(r'linux-(?:vdso|gate)[^ ]* \(0x[0-9a-f]+\)', item):
+                continue
+            resolved = re.fullmatch(r'(?:\S+ => )?(/.+) \(0x[0-9a-f]+\)', item)
+            if not resolved:
+                return None
+            path = Path(resolved[1])
+            canonical = path.resolve(strict=True)
+            libraries[str(path)] = [str(canonical), tool_digest(canonical)]
+        # Includes the ELF interpreter for the ordinary dynamically linked SDK.
+        return libraries or None
+    except (OSError, ValueError):
+        return None
+
+
+class ModuleCheckCache:
+    """Bounded positive-only memoization of named-module frontend checks.
+
+    Every build still runs graph admission on the *fresh* staged trees and
+    performs target checks/code generation and legacy verification normally.
+    """
+    def __init__(self, fd, context, roots, membership, dependency_versions):
+        self.fd = fd
+        self.context = context
+        self.roots = roots
+        self.membership = membership
+        self.dependency_versions = dependency_versions
+
+    def identity(self, path):
+        for label, root in self.roots:
+            if path.is_relative_to(root):
+                return f'{label}/{path.relative_to(root).as_posix()}'
+        return str(path)
+
+    def key(self, graph):
+        if not graph.cacheable:
+            return None
+        paths = set(graph.sources + graph.auxiliary)
+        # Include explicit manifest policy/order in addition to consumed
+        # interface bytes. Policies for unrelated members cannot affect a hit.
+        members = {self.membership[path][0]: self.membership[path][1]
+                   for path in paths if path in self.membership}
+        try:
+            total = 0
+            inputs = {}
+            versions = {}
+            for path in sorted(paths):
+                for label, root in self.roots:
+                    if label in self.dependency_versions and path.is_relative_to(root):
+                        versions[label] = self.dependency_versions[label]
+                data = read(path, MAX_SOURCE)
+                total += len(data)
+                if total > MAX_INPUT:
+                    return None
+                inputs[self.identity(path)] = digest(data)
+            return fingerprint({
+                'schema': 'on1x.module-check/v1',
+                'context': self.context, 'inputs': inputs, 'members': members, 'dependencies': versions,
+                'sources': [self.identity(path) for path in graph.sources],
+                'edges': sorted((self.identity(a), self.identity(b)) for a, b in graph.edges),
+            })
+        except (OSError, ValueError):
+            return None
+
+    def check(self, package, member, graph, verify):
+        slot = fingerprint([self.context['project'], package, member])
+        key = self.key(graph)
+        if key is not None:
+            marker = (key + '\n').encode('ascii')
+            try:
+                if read(slot, len(marker), dir_fd=self.fd) == marker:
+                    return
+            except (OSError, ValueError):
+                pass
+        verify()
+        # Do not certify reused standard-library inputs that changed while
+        # checking. Staged sources and carrier bytes are still present here.
+        if key is None or self.key(graph) != key:
+            return
+        temporary = '.check-' + os.urandom(16).hex()
+        try:
+            with os.fdopen(os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600,
+                                   dir_fd=self.fd), 'wb') as stream:
+                stream.write(marker)
+            os.replace(temporary, slot, src_dir_fd=self.fd, dst_dir_fd=self.fd)
+        except OSError:
+            try:
+                os.unlink(temporary, dir_fd=self.fd)
+            except OSError:
+                pass
+
+
 def module_certificate(members):
     lines = []
     for key, member in sorted(members.items()):
@@ -2006,23 +2159,31 @@ def module_certificate(members):
     return ''.join(lines)
 
 
-def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_roots, edges, expected=()):
+def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_roots, edges,
+                         expected=(), *, auxiliary_permitted=(), expected_auxiliary=()):
     data = executor.run([compiler, '--project-module-graph', entry, *flags], bound=MAX_BUILD_REPORT)
     graph = json.loads(data, object_pairs_hook=unique_json_object)
-    if (not isinstance(graph, dict) or set(graph) != {'schema', 'sources', 'edges'}
-            or graph['schema'] != 'on1x.project-module-graph/v1'
-            or not isinstance(graph['sources'], list) or not isinstance(graph['edges'], list)):
+    v1 = {'schema', 'sources', 'edges'}
+    v2 = v1 | {'auxiliary', 'cacheable'}
+    version = graph.get('schema') if isinstance(graph, dict) else None
+    if (not isinstance(graph, dict)
+            or not ((version == 'on1x.project-module-graph/v1' and set(graph) == v1)
+                    or (version == 'on1x.project-module-graph/v2' and set(graph) == v2
+                        and isinstance(graph['auxiliary'], list) and type(graph['cacheable']) is bool))
+            or not isinstance(graph['sources'], list) or not isinstance(graph['edges'], list)
+            or len(graph['edges']) > MAX_MODULE_EDGES):
         fail('compiler returned invalid project module graph')
 
     def path_field(value):
         if not isinstance(value, str) or not value or '\0' in value:
             fail('compiler returned an invalid project module graph path')
         path = Path(value)
-        if not path.is_absolute() or '..' in path.parts or str(path) != value:
+        if not path.is_absolute() or '..' in path.parts or str(path) != value or value.startswith('//'):
             fail('compiler returned a noncanonical project module graph path')
         return path
 
-    inputs = {path_field(value) for value in graph['sources']}
+    sources = tuple(map(path_field, graph['sources']))
+    inputs = set(sources)
     if entry not in inputs or len(inputs) != len(graph['sources']) or len(inputs) > MAX_FILES:
         fail('compiler returned invalid project module graph sources')
     missing = set(expected) - inputs
@@ -2031,32 +2192,55 @@ def inspect_module_graph(executor, compiler, entry, flags, permitted, trusted_ro
     for path in sorted(inputs):
         if path not in permitted and not any(path.is_relative_to(root) for root in trusted_roots):
             fail(f'{entry}: import is outside the declared module graph: {path}')
+    auxiliary = tuple(map(path_field, graph.get('auxiliary', ())))
+    if len(auxiliary) > MAX_FILES or len(set(auxiliary)) != len(auxiliary):
+        fail('compiler returned invalid project module graph auxiliary inputs')
+    if version == 'on1x.project-module-graph/v2':
+        missing_auxiliary = set(expected_auxiliary) - set(auxiliary)
+        if missing_auxiliary:
+            fail(f'{entry}: module graph did not load the declared interface {min(missing_auxiliary)}')
+    for path in auxiliary:
+        if path not in auxiliary_permitted and not any(path.is_relative_to(root) for root in trusted_roots):
+            fail(f'{entry}: auxiliary input is outside the declared module graph: {path}')
+    found_edges = []
     for edge in graph['edges']:
         if not isinstance(edge, list) or len(edge) != 2:
             fail('compiler returned an invalid project module graph edge')
         importer, imported = map(path_field, edge)
         if importer not in inputs or imported not in inputs:
             fail('compiler returned a project module graph edge outside its sources')
+        found_edges.append((importer, imported))
         edges.add((importer, imported))
         if len(edges) > MAX_MODULE_EDGES:
             fail('project module graph edge budget exceeded')
+    return ModuleGraphInputs(sources, tuple(found_edges), auxiliary, graph.get('cacheable', False))
 
 
 def check_manifest_members(executor, compiler, stage, members, loader, compiler_flags,
-                           permitted, trusted_roots, edges, *, directory=Path('.')):
-    for i, (member, declaration) in enumerate(sorted(members.items())):
+                           permitted, trusted_roots, edges, *, directory=Path('.'),
+                           auxiliary_permitted=(), cache=None, package=None):
+    for member, declaration in sorted(members.items()):
         # The loader uses the carrier's canonical staged package to select
         # its scope. A dot-prefixed name cannot be a manifest-declared path.
-        carrier = stage / directory / f'.on1x-check-module-{i}.on1x'
+        carrier = stage / directory / '.on1x-check-module.on1x'
         stage_bytes(carrier, f'import {member};\nfn main() -> i64 {{ return 0; }}\n'.encode())
         try:
             entry = executor.path(carrier)
-            inspect_module_graph(executor, compiler, entry, loader, permitted | {entry},
-                                 trusted_roots, edges,
-                                 (executor.path(stage / path) for path in declaration.sources))
-            if declaration.interfaces:
-                executor.run([compiler, '--check-interfaces', entry, *compiler_flags])
-            executor.run([compiler, '--check', entry, *compiler_flags])
+            graph = inspect_module_graph(
+                executor, compiler, entry, loader, permitted | {entry}, trusted_roots, edges,
+                (executor.path(stage / path) for path in declaration.sources),
+                auxiliary_permitted=auxiliary_permitted,
+                expected_auxiliary=(executor.path(stage / path) for path in declaration.interfaces))
+
+            def verify():
+                if declaration.interfaces:
+                    executor.run([compiler, '--check-interfaces', entry, *compiler_flags])
+                executor.run([compiler, '--check', entry, *compiler_flags])
+
+            if cache is None:
+                verify()
+            else:
+                cache.check(package, member, graph, verify)
         finally:
             carrier.unlink()
 
@@ -2340,7 +2524,8 @@ def build(args):
                     or args.cc is not None or toolchain.requested(args) or args.mulib_root or args.libstone_root or args.qmr_compiler
                     or args.mune_runner or args.offline or args.locked or args.frozen
                      or args.scrutiny or args.scrutiny_work is not None
-                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir):
+                      or args.opt_select or args.opt_profile or args.backend or args.optimize_ir
+                      or args.module_cache):
                 fail('project formatting commands do not take build options')
             target, source = selected
             if not source.is_relative_to(config.get('directory', Path('.'))):
@@ -2424,7 +2609,7 @@ def build(args):
             fail(f'{dest}: project output cannot overlap a declared kernel-path')
         disk.exclude.add(dest)
     disk.exclude.update(project / location for _, location, _ in resolved_dependencies.values())
-    with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp:
+    with tempfile.TemporaryDirectory(prefix='on1x-project-') as tmp, ExitStack() as stack:
         work = Path(tmp).resolve()
         (work / 'input/project').mkdir(parents=True)
         (work / 'input/deps').mkdir()
@@ -2632,15 +2817,20 @@ def build(args):
 
         project_modules = {project_stage / path for path, role in roles.items() if role == 'library'}
         program_paths = {project_stage / path for path in config['programs'].values()}
+        standard_aliases = {
+            (project_stage / member.sources[0]).with_suffix('.on1x')
+            for key, member in root_members.items() if std_package and (key == 'std' or key.startswith('std.'))
+        }
         project_programs = [project_stage / path for path, role in roles.items() if role in ('source', 'library')]
         for path in sorted(project_programs):
             source_policy(executor, compiler, path, project_stage / directory,
-                          project_modules, programs=config['programs'], program_paths=program_paths)
+                          project_modules, programs=config['programs'], program_paths=program_paths,
+                          standard_aliases=standard_aliases)
         for module_name, module in sorted(root_members.items()):
             for path in module.sources:
                 source_policy(executor, compiler, project_stage / path, project_stage / directory,
                               project_modules, declared_module=module_name, programs=config['programs'],
-                              program_paths=program_paths)
+                              program_paths=program_paths, standard_aliases=standard_aliases)
         for key, paths in dep_modules.items():
             own_files = set(paths)
             for path in sorted(paths):
@@ -2663,7 +2853,7 @@ def build(args):
         if root_members:
             packages[config['name']] = (project_stage, root_members, '')
         index_flags, module_owners = module_index(executor, work / 'input/module-index.json', project_stage,
-                                                  packages, config['programs'])
+                                                  packages, config['programs'], trusted_standard=std_package)
         if index_flags and directory != Path('.'):
             loader += ['-I', str(executor.path(project_stage / directory))]
         loader += index_flags
@@ -2678,6 +2868,43 @@ def build(args):
         if analysis_work is not None:
             analysis_flags.extend(('--scrutiny-work', str(analysis_work)))
         compiler_flags = [*graph_loader, *analysis_flags, *check_flags]
+        root_auxiliary = {executor.path(project_stage / path) for path, role in roles.items()
+                          if role in ('interface', 'module-interface')}
+        dep_auxiliary = {
+            key: {executor.path(deps_stage / key / path) for path, role in entries.items()
+                  if role in ('interface', 'module-interface')}
+            for key, entries in dep_roles.items()
+        }
+        all_auxiliary = root_auxiliary.union(*dep_auxiliary.values())
+        cache = None
+        if (args.module_cache is not None and module_owners and not args.sandbox and not args.allow_shell
+                and not load_time and not config['kernels'] and 'dotenv' not in config):
+            fd = stack.enter_context(module_cache_directory(args.module_cache, project, dest))
+            runtime = compiler_runtime(executor, compiler)
+            if runtime is not None:
+                roots = [('project', project_stage)]
+                membership = {}
+                for package, (stage, members, prefix) in sorted(packages.items()):
+                    label = 'project' if not prefix else f'dependency/{package}'
+                    if prefix:
+                        roots.append((label, stage))
+                    for member, declaration in sorted(members.items()):
+                        record = dict(
+                            policy=declaration.interface_policy,
+                            sources=[path.as_posix() for path in declaration.sources],
+                            interfaces=[path.as_posix() for path in declaration.interfaces],
+                        )
+                        for path in (*declaration.sources, *declaration.interfaces):
+                            membership[executor.path(stage / path)] = (f'{label}:{member}', record)
+                context = dict(
+                    project=str(project), directory=directory.as_posix(), profile=chosen,
+                    compiler=str(compiler), runtime=runtime, standard='project' if std_package else str(standard),
+                    backend=backend_info, cflags=cflags, analysis=analysis_flags, check=check_flags,
+                    environment=fingerprint(child_env),
+                    optimization=policy, toolchain={key: tool_digest(path) for key, path in chosen_tools.items()},
+                )
+                versions = {f'dependency/{key}': record for key, record in dep_report.items()}
+                cache = ModuleCheckCache(fd, context, roots, membership, versions)
         for key, modules in dep_modules.items():
             isolated_flags, isolated_owners = module_index(
                 executor, work / 'input' / f'dep-module-index-{key}.json', deps_stage / key,
@@ -2692,12 +2919,22 @@ def build(args):
                                dependency_loader, dependency_compiler_flags,
                                own_files, trusted_roots, graph_checked=legacy_files)
             check_manifest_members(executor, compiler, deps_stage / key, dep_members[key], dependency_loader,
-                                   dependency_compiler_flags, own_files, trusted_roots, module_edges)
+                                   dependency_compiler_flags, own_files, trusted_roots, module_edges,
+                                   auxiliary_permitted=dep_auxiliary[key], cache=cache, package=key)
         permitted = {executor.path(path) for path in [*project_modules, *dep_sources]} | module_owners.keys()
         verify_interfaces(executor, compiler, project_stage, roles, graph_loader,
                           compiler_flags, permitted, trusted_roots)
         check_manifest_members(executor, compiler, project_stage, root_members, graph_loader,
-                               compiler_flags, permitted, trusted_roots, module_edges, directory=directory)
+                               compiler_flags, permitted, trusted_roots, module_edges, directory=directory,
+                               auxiliary_permitted=all_auxiliary, cache=cache, package='')
+        for _, source in sorted(targets.items()):
+            entry = executor.path(project_stage / source)
+            if index_flags:
+                inspect_module_graph(executor, compiler, entry, graph_loader, permitted | {entry},
+                                     trusted_roots, module_edges, auxiliary_permitted=all_auxiliary)
+            else:
+                verify_graph(executor, compiler, entry, graph_loader, permitted | {entry}, trusted_roots)
+        named_graph = module_graph(module_owners, sorted(module_edges)) if module_owners else None
         outputs = {}
         guest = work / 'artifact' / (next(iter(targets)) + '.elf') if launching else None
         if backend == 'mir-vm' and args.command != 'plan':
@@ -2707,11 +2944,6 @@ def build(args):
             outputs[bundled.name] = tool_digest(bundled)
         for key, source in sorted(targets.items()):
             entry = executor.path(project_stage / source)
-            if index_flags:
-                inspect_module_graph(executor, compiler, entry, graph_loader, permitted | {entry},
-                                     trusted_roots, module_edges)
-            else:
-                verify_graph(executor, compiler, entry, graph_loader, permitted | {entry}, trusted_roots)
             if args.command == 'plan':
                 continue
             if backend in ('archvirt', 'mir-vm'):
@@ -2817,8 +3049,8 @@ def build(args):
                       scrutiny=args.scrutiny or config.get('scrutiny'),
                       dependencies=dep_report, inputs=snapshot.inputs, outputs=outputs,
                       tools={key: tool_digest(path) for key, path in chosen_tools.items()})
-        if module_owners:
-            report['module_graph'] = module_graph(module_owners, sorted(module_edges))
+        if named_graph is not None:
+            report['module_graph'] = named_graph
         if analysis_work is not None:
             report['scrutiny_work'] = analysis_work
         if lock_payload is not None:
@@ -2911,6 +3143,8 @@ def main():
     command.add_argument('--target')
     command.add_argument('--project-command', help=argparse.SUPPRESS)
     command.add_argument('--output-dir', type=Path, help='exact generation output directory')
+    command.add_argument('--module-cache', type=Path, metavar='DIR',
+                         help='reuse named-module check results in a trusted private directory outside the project')
     command.add_argument('--sandbox', action='store_true', help='require Linux bubblewrap isolation; no fallback')
     command.add_argument('--allow-shell', action='store_true', help='allow explicit root shell defines outside sandbox')
     command.add_argument('--scrutiny', help='override source and On1xfile static-analysis scrutiny')
