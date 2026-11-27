@@ -301,6 +301,20 @@ void module_imports(const std::filesystem::path& root){
  require(grouped.dependencies==std::vector<fs::path>{a,b,entry},"fragment dependency order changed");
  require(grouped.source_edges==std::vector<std::pair<fs::path,fs::path>>{{entry,a},{entry,b}},
          "module graph did not report both fragment edges");
+ const auto graph=inspect_module_graph(entry,options);
+ require(graph.requests.size()==1&&graph.roots==std::vector<std::string>{graph_file_id(entry)},
+         "unexpected grouped request or root");
+ const auto& request=graph.requests.front();
+ const std::vector<std::string> membership{graph_file_id(a),graph_file_id(b)};
+ require(request.targets==membership&&graph.modules.at(graph.files.at(membership.front()).owner).fragments==membership,
+         "request did not preserve manifest fragment order");
+ require(graph.auxiliary.size()==1&&graph.auxiliary.front().kind=="signature"&&
+         graph.auxiliary.front().revision.starts_with("sha256:"),"missing separate signature relation");
+ options.source_overrides.emplace(entry,"import Work.Joined as w;import Work.Joined as w2;fn main(){}");
+ auto repeated=inspect_module_graph(entry,options);auto quotient=repeated.analyze();
+ require(repeated.requests.size()==2&&quotient.edges.size()==1&&quotient.edges.begin()->second.size()==2,
+         "duplicate target requests lost witnesses or created duplicate logical edges");
+ options.source_overrides.clear();
  check(grouped.unit);
  reject("import Work.Joined as w;fn main(){w.second();}","no export");
  write(sig,"abstract module Work.Joined;fn first()->bool;");
