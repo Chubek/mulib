@@ -106,7 +106,7 @@ void push_declaration(lua_State* lua, const Location& where, std::string_view na
     case DeclarationVisibility::Shared:
         text(lua, "visibility", "SourceShared");
         lua_newtable(lua);
-        integer(lua, "elevation", visibility.elevation);
+        text(lua, "elevation", std::to_string(visibility.elevation));
         lua_setfield(lua, -2, "fields");
         break;
     case DeclarationVisibility::Unspecified:
@@ -173,11 +173,12 @@ int read_error(lua_State* lua) {
         auto severity = read_text(lua, "severity");
         if (severity == "error" || severity == "fatal") {
             auto message = read_text(lua, "message");
+            auto code = read_text(lua, "code");
             lua_getfield(lua, -1, "location");
             Location where{read_text(lua, "file"), read_integer(lua, "offset"),
                            read_integer(lua, "line"), read_integer(lua, "column")};
             *static_cast<std::optional<Error>*>(lua_touserdata(lua, 2)) =
-                Error(std::move(where), std::move(message), "ON1X-MODULE-ASDL");
+                Error(std::move(where), std::move(message), code.empty() ? "ON1X-MODULE-ASDL" : std::move(code));
             return 0;
         }
         lua_pop(lua, 1);
@@ -192,6 +193,11 @@ void check_asdl_module(const Unit& unit) {
     if (!where) {
         auto first = std::ranges::find(unit.module_imports, Import::Kind::Program, &Import::kind);
         if (first != unit.module_imports.end()) where = &first->where;
+    }
+    if (!where) {
+        explicit_declarations(unit, [&](const Location& at, auto&&, auto, VisibilityRule visibility) {
+            if (!where && visibility.kind == DeclarationVisibility::Shared) where = &at;
+        });
     }
     if (!where) return;
 
