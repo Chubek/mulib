@@ -207,6 +207,7 @@ public:
 class CopyRepresentation {
  const std::map<std::string,std::vector<const NominalDeclaration*>>& declarations;
  const Location& where;
+ const std::set<std::string>* transparent_names;
  std::set<std::string> checking,complete;
  std::size_t nodes=16384;
 
@@ -219,6 +220,9 @@ class CopyRepresentation {
   if(type.kind()==Type::Named&&type.arguments().empty()){
    nominal(type.nominal(),depth+1);return;
   }
+  if(transparent_names)
+   unsupported("transparent executable record fields require scalars or exported monomorphic records; found "+
+               type_name(type));
   if(type.is_tuple()||type.kind()==Type::Record||type.kind()==Type::Sum||
      (type.kind()==Type::Array&&type.extent()<=256&&type.elements().size()==1)){
    for(const auto& element:type.elements())field(element,depth+1);
@@ -228,18 +232,24 @@ class CopyRepresentation {
  }
 public:
  CopyRepresentation(const std::map<std::string,std::vector<const NominalDeclaration*>>& declarations,
-                    const Location& where):declarations(declarations),where(where){}
+                    const Location& where,const std::set<std::string>* transparent_names=nullptr)
+     :declarations(declarations),where(where),transparent_names(transparent_names){}
  void nominal(const std::string& name,std::size_t depth=0){
   visit_node(where,nodes,depth);
   if(complete.contains(name))return;
+  if(transparent_names&&!transparent_names->contains(name))
+   unsupported("transparent executable record refers to unexported representation type '"+name+"'");
   auto found=declarations.find(name);
   if(found==declarations.end()||found->second.size()!=1)
    unsupported("opaque representation requires a unique local nominal '"+name+"'");
   const auto& declaration=*found->second.front();
+  if(transparent_names&&declaration.kind!=Type::Record)
+   unsupported("transparent executable types require monomorphic record declarations");
   if(!declaration.parameters.empty()||(declaration.kind!=Type::Record&&declaration.kind!=Type::Sum))
    unsupported("opaque executable types require monomorphic record or enum declarations");
   if(!checking.insert(name).second)
-   unsupported("recursive opaque executable representation for '"+name+"'");
+   unsupported(std::string(transparent_names?"recursive executable representation for '":
+                                            "recursive opaque executable representation for '")+name+"'");
   for(const auto& type:declaration.fields)field(type,depth+1);
   checking.erase(name);complete.insert(name);
  }
@@ -452,6 +462,7 @@ std::set<std::string> admit_executable_opaque_signature(
  if(signature.seal==SignatureSeal::Transparent){
   if(!verified.types.empty()||verified.transparent_types.size()!=signature.types.size())
    throw Error(signature.where,"transparent permit does not match the verified signature","ON1X-INTERFACE-MODULE");
+  std::set<std::string> transparent_names;
   for(const auto& member:signature.types){
    auto identity=verified.transparent_types.find(member.name);
    if(identity==verified.transparent_types.end()||
@@ -461,11 +472,13 @@ std::set<std::string> admit_executable_opaque_signature(
    if(found==declarations.end()||found->second.size()!=1)
     throw Error(member.where,"transparent permit requires one local declaration","ON1X-INTERFACE-TYPE");
    const auto& nominal=*found->second.front();
-   if(member.arity||member.manifest||!nominal.parameters.empty()||nominal.kind!=Type::Record||
-      !std::all_of(nominal.fields.begin(),nominal.fields.end(),[](const Type& t){return scalar(t)&&t!=Type::String;}))
-    throw Error(member.where,"executable transparent types require monomorphic records with scalar copy fields",
+   if(member.arity||member.manifest||!nominal.parameters.empty()||nominal.kind!=Type::Record)
+    throw Error(member.where,"executable transparent types require monomorphic copy records",
                 "ON1X-INTERFACE-UNSUPPORTED");
+   transparent_names.insert(member.name);
   }
+  CopyRepresentation representation(declarations,signature.where,&transparent_names);
+  for(const auto& member:signature.types)representation.nominal(member.name);
   return {}; // Ordinary provider-qualified nominal, never install an opaque seal.
  }
  if(!verified.transparent_types.empty())

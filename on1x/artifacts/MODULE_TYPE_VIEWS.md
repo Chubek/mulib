@@ -6,8 +6,9 @@ the original provider's nominal type; this is neither structural subtyping nor
 an opaque handle. Only names present in the signature are projected, under
 the original declaration visibility. Values use the existing direct-C11
 record calling convention. These layouts have no destructor, failure cleanup
-or move-only transport. Strings, generic records, enums, nested aggregates,
-recursive and managed fields are outside this transparent profile.
+or move-only transport. Strings, generic records, enums, structural aggregates,
+recursive and managed fields are outside this transparent profile. The later
+hardening slice below permits nested explicitly exported monomorphic records.
 
 The loader must export the verified transparent names separately from opaque
 names and retain `Unit::direct_c11_type_views` for the entire combined unit.
@@ -65,3 +66,57 @@ stale equations, unlisted aliases, opaque ascription, invalid arity and MIR/VM
 emission; earlier good C survives each failure. No change to the existing
 opaque ABI. Static functors, managed/generic opaque transport and separate
 compilation are not delivered.
+
+## Nested transparent copy records (hardening)
+
+On integrated base `58f109f8`, transparent records can contain another
+monomorphic record from the same authenticated provider, provided **every**
+reachable nominal is explicitly listed in that transparent signature. Leaves
+remain numeric, Boolean or character scalars. This does not implicitly export
+private helper representations, grant structural equivalence, or widen opaque
+construction/projection authority. One bounded representation traversal checks
+all transparent members (16,384 visits, depth 128); cycles, generic applications,
+structural tuple/array fields, enums and managed fields still reject.
+
+`tests/test_nested_transparent_cli.py` executes a real two-fragment provider,
+qualified and renamed aliases, nested field projection, client construction,
+value copying and provider argument/result transport. Strict C11 prints three
+lines containing `42`. The same executable passes ASan/UBSan. There are no
+managed resources in this profile, hence no move/drop or failure-cleanup
+contract is being added. The combined-Unit C11 representation and calling
+convention are unchanged; this is not separate compilation.
+
+```
+BUILD=/mnt/warble/tempdir/opencode/on1x-hardening-semantics-build
+python3 -B on1x/tests/test_nested_transparent_cli.py "$BUILD/on1xc" "$BUILD/nested-plain"
+ON1X_TEST_VIEW_CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  python3 -B on1x/tests/test_nested_transparent_cli.py "$BUILD/on1xc" "$BUILD/nested-sanitized"
+ON1X_TEST_VIEW_CFLAGS='-fsanitize=address,undefined -fno-omit-frame-pointer' \
+  python3 -B on1x/tests/test_module_signature_cli.py "$BUILD/on1xc" "$BUILD/signature-sanitized"
+c++ -std=c++20 -fsanitize=address,undefined -fno-omit-frame-pointer \
+  -Wall -Wextra -Werror -Ion1x/include on1x/src/type.cpp \
+  on1x/src/module_signature.cpp on1x/tests/test_transparent_permit.cpp \
+  -o "$BUILD/transparent-permit-sanitized"
+"$BUILD/transparent-permit-sanitized"
+```
+
+All commands passed with GCC 16.2.1. Both CLI fixtures preserve prior C output
+on rejection. The nested fixture rejects peer nominal mismatch, unexported
+representation types, string fields, recursive fields, generic misuse, opaque
+projection and MIR/VM emission. The standalone permit test additionally checks
+provider authentication, enum rejection and acyclic depth-budget exhaustion.
+The previous compiler rejects the new executable fixture at its old
+scalar-only representation gate, establishing that this is newly admitted
+executable behavior rather than a declaration-only test.
+
+The worker's clean external-root build used the exact stdlib, LibStone and
+Cephyr roots in `MODULE_ALGEBRA.md` (absolute selections above), with Release
+and the documented optional components disabled. All 14 registered CTests
+passed (10.00 seconds); Release assertions are not relied on for the new tests,
+which use explicit exceptions/Python assertions and the separately compiled
+ASan/UBSan permit test. The SDK was built: the attempted `ON1X_BUILD_SDK=OFF`
+option was unused, not an effective exclusion.
+
+Functor applications, generic/managed opaque transport, mixed manifest/nominal
+executable signatures and genuine separately compiled provider contracts
+remain unimplemented. MIR/VM/native backend parity is not claimed.

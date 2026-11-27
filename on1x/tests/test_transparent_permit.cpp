@@ -25,4 +25,32 @@ int main(){
  for(const Type& field:std::vector<Type>{Type::String,Type::named("Token"),Type::tuple({Type::I64,Type::Bool})}){
   provider.nominals.front().fields={field};rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
  }
+ // Every nested nominal must be an explicitly exported record from the same
+ // provider. Equal shape or a hidden local helper is not sufficient.
+ provider.nominals.front().fields={Type::named("Payload")};
+ record.name="Payload";record.labels={"number"};record.fields={Type::I64};
+ provider.nominals.push_back(record);
+ rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
+ signature.types.push_back({{"interface"},"Payload",0,{}});
+ if(!permit("/left","/left").empty())throw std::runtime_error("nested transparent identity was sealed");
+ rejects("ON1X-INTERFACE-MODULE","/right");
+ provider.nominals.back().fields={Type::String};
+ rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
+ provider.nominals.back().fields={Type::named("Token")};
+ rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
+ provider.nominals.back().fields={Type::I64};
+ provider.nominals.front().fields={Type::named("Payload",{Type::Bool})};
+ rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
+ provider.nominals.front().fields={Type::named("Payload")};
+ provider.nominals.back().kind=Type::Sum;
+ rejects("ON1X-INTERFACE-UNSUPPORTED","/left");
+ // Expansion is bounded even for a well-formed acyclic declaration graph.
+ signature.types.clear();provider.nominals.clear();
+ for(std::size_t i=0;i<70;++i){
+  record.name="Level"+std::to_string(i);record.kind=Type::Record;
+  record.fields={i==69?Type::I64:Type::named("Level"+std::to_string(i+1))};
+  provider.nominals.push_back(record);
+  signature.types.push_back({{"interface"},record.name,0,{}});
+ }
+ rejects("ON1X-INTERFACE-LIMIT","/left");
 }
