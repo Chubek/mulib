@@ -332,8 +332,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, interrupted)
     try:
         sys.exit(main())
-    except subprocess.CalledProcessError as error:
-        sys.exit(error.returncode)
+    except subprocess.CalledProcessError:
+        sys.exit(1)
     except (BuildError, OSError, ValueError, subprocess.TimeoutExpired) as error:
         print("on1x-native-build: " + str(error), file=sys.stderr)
         sys.exit(1)

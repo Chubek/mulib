@@ -103,6 +103,22 @@ class DiagnosticSelectors(unittest.TestCase):
                                  (ALIAS, 'invalid-import-alias', 'imports'))
             else:
                 self.assertIn(ALIAS, error.stderr)
+        wrapped = self.run_command(sys.executable, ON1X / 'tools/on1x-build.py', self.source,
+                                   '-o', output, '--on1xc', options.on1xc, '--stdlib', ON1X / 'stdlib',
+                                   '--cc', options.cc, '--emit-only', *OFF, status=1)
+        self.assertEqual((wrapped.stdout, wrapped.stderr), ('', ''))
+        self.assertFalse(output.exists())
+
+    def test_hidden_optimization_notice_preserves_fallback(self):
+        self.source.write_text('fn main() { println(40 + 2); }\n', encoding='utf-8')
+        before = self.compile('--emit-ir')
+        fallback_flags = ('--emit-ir', '--optimize-ir', '--opt-work', '0')
+        visible = self.compile(*fallback_flags)
+        self.assertIn('using last verified MIR prefix', visible.stderr)
+        hidden = self.compile(*fallback_flags, *OFF)
+        self.assertEqual(hidden.stderr, '')
+        self.assertEqual(hidden.stdout, visible.stdout)
+        self.assertEqual(hidden.stdout, before.stdout)
 
     def test_structured_and_info(self):
         if not options.json:

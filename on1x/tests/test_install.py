@@ -28,6 +28,17 @@ fn main(){
         'ON1X_PPX_PATH','ON1X_STDPPX_PATH','ON1X_MULIB_PATH','ON1X_MULIB_ROOT',
         'MULIB_FOREIGNLIB_PATH')}
     assert (library/'stdlib/On1xfile').is_file()
+    # The selector library is embedded; it must not depend on the external
+    # LibStone checkout, current directory or an installed Lua search path.
+    unsupported=run([compiler,'--print-stdlib','--diagnostic-disable','all'],cwd=base,env=env)
+    if unsupported.returncode==0:
+        invalid=base/'invalid.on1x';artifact=base/'invalid.c'
+        invalid.write_text('fn main()->i64 { return true; }\n', encoding='utf-8')
+        p=run([sys.executable,library/'tools/on1x-build.py',invalid,'--on1xc',compiler,
+               '--cc',t.cc,'--emit-only','-o',artifact,'--diagnostic-disable','all'],cwd=base,env=env)
+        assert p.returncode==1 and not p.stderr and not artifact.exists(),p
+    else:
+        assert unsupported.returncode==2 and 'require the LibStone ASDL frontend' in unsupported.stderr,unsupported
     for installed_recipe in sorted((library/'stdffi/mulib').glob('*.ffi')):
         if not re.fullmatch(r'[a-z][a-z0-9]*', installed_recipe.stem):
             continue

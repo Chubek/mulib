@@ -1007,8 +1007,6 @@ def declared_names(config):
 
 class CompilerFailure(Exception):
     """An already reported frontend failure; the empty report can be intentional."""
-    def __init__(self, status):
-        self.status = status if status > 0 else 128 - status
 
 
 def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memory=None,
@@ -1036,7 +1034,7 @@ def run(command, cwd, *, data=None, env=ENV, timeout=60, bound=MAX_PROCESS, memo
                 if selected_presentation and child.returncode > 0:
                     if diagnostic:
                         notices(diagnostic)
-                    raise CompilerFailure(child.returncode)
+                    raise CompilerFailure
                 diagnostic = diagnostic.decode('utf-8', 'replace').rstrip()
                 fail(f'{command[0]} failed ({child.returncode})' + (f':\n{diagnostic}' if diagnostic else ''))
         if notices and errors.tell():
@@ -3355,8 +3353,8 @@ def main():
                   FFI_GENERATE: ffi_generator,
                   'vm-rerun': archvirt_cache_command, 'vm-cache-clear': archvirt_cache_command,
                   'lock': lock_dependencies}[arguments.command](arguments)
-    except CompilerFailure as error:
-        return error.status
+    except CompilerFailure:
+        return 1
     except (ValueError, OSError, KeyError, TypeError) as error:
         print(f'on1x-project: {error}', file=sys.stderr)
         return 1
