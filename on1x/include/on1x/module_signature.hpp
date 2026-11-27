@@ -64,9 +64,18 @@ struct AbstractTypeIdentity {
  auto operator<=>(const AbstractTypeIdentity&) const = default;
 };
 
+// Transparent ascription preserves a nominal key rather than introducing an
+// abstract seal. Do not compare or convert these two identity domains.
+struct TransparentTypeIdentity {
+ std::filesystem::path implementation;
+ std::string module;
+ std::string member;
+ auto operator<=>(const TransparentTypeIdentity&) const = default;
+};
+
 struct SealedModuleSignature {
  std::map<std::string,AbstractTypeIdentity> types;
- std::map<std::string,AbstractTypeIdentity> transparent_types;
+ std::map<std::string,TransparentTypeIdentity> transparent_types;
  // Source-normalized equations: named leaves refer to types or
  // transparent_types in *this* provider; never use a spelling as global ID.
  std::map<std::string,Type> manifest_types;
