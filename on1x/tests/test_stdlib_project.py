@@ -134,11 +134,10 @@ fn main() {
                      negative="no export or submodule 'on1x_mulib_ini_get'")
 
     def test_legacy_parsec_paths_share_one_implementation(self):
-        legacy = (STDLIB / 'parsec/parsec.on1x').as_posix()
-        implementation = (STDLIB / 'parsec/parsec.on1xm').as_posix()
+        implementation = (STDLIB / 'parsec/parsec.on1x').as_posix()
         initializer = (STDLIB / 'parsec/__init__.on1x').as_posix()
         source = self.write('mixed.on1x', f'''
-import "{legacy}";
+import "{implementation}";
 import "{initializer}";
 import std.parsec as Entry;
 import std.parsec.__init__ as ExplicitEntry;
@@ -159,61 +158,57 @@ fn main() {{
     assert(unsigned_ok && unsigned_value == 42 && unsigned_end == 2);
 }}
 ''')
-        self.assertFalse(Path(legacy).exists())
         graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', STDLIB).splitlines()
         self.assertEqual(graph.count(implementation), 1)
         self.assertEqual(graph.count(initializer), 1)
-        self.assertNotIn(legacy, graph)
         exe = self.work / 'mixed'
         self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
                      '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', STDLIB, '-o', exe)
         self.execute(exe)
 
-    def test_initializer_survives_packaging(self):
-        root = self.work / 'parsec-stdlib'
+    def test_signed_initializer_dependency_survives_packaging(self):
+        root = self.work / 'rpc-stdlib'
         records = ''.join(line + '\n' for line in (STDLIB / 'On1xfile').read_text().splitlines()
-                          if '"std.parsec.parsec"' in line)
-        self.write('parsec-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n' + records)
-        self.write('parsec-stdlib/On1xfile.m', 'on1xfile 1\nlibrary "pervasive.on1x"\n')
-        self.write('parsec-stdlib/pervasive.on1x', 'fn unused() {}\n')
-        shutil.copytree(STDLIB / 'parsec', root / 'parsec')
-        package = (self.build(root) / 'library').rename(self.work / 'relocated parsec stdlib')
+                          if '"std.rpc.rpc"' in line)
+        self.write('rpc-stdlib/On1xfile', 'on1xfile 1\nkind library\nname "std"\n' + records)
+        self.write('rpc-stdlib/On1xfile.m', 'on1xfile 1\nlibrary "pervasive.on1x"\n')
+        self.write('rpc-stdlib/pervasive.on1x', 'fn unused() {}\n')
+        shutil.copytree(STDLIB / 'rpc', root / 'rpc')
+        package = (self.build(root) / 'library').rename(self.work / 'relocated rpc stdlib')
         source = self.write('consumer.on1x', '''
-import "relocated parsec stdlib/parsec/parsec.on1x";
-import std.parsec as Parse;
+import "relocated rpc stdlib/rpc/rpc.on1x";
+import std.rpc as Rpc;
 fn main() {
-    assert(Parse.parsec_literal("on1x", 0, "on"));
-    assert(parsec_literal("on1x", 0, "on"));
+    assert(Rpc.rpc_escape("ping") == "ping");
+    assert(rpc_escape("pong") == "pong");
 }
 ''')
         graph = self.execute(OPTIONS.on1xc, '--deps', source, '--stdlib', package).splitlines()
-        self.assertIn(str(package / 'parsec/__init__.on1x'), graph)
-        self.assertEqual(graph.count(str(package / 'parsec/parsec.on1xm')), 1)
-        self.assertFalse((package / 'parsec/parsec.on1x').exists())
+        self.assertIn(str(package / 'rpc/__init__.on1x'), graph)
+        self.assertEqual(graph.count(str(package / 'rpc/rpc.on1xm')), 1)
+        self.assertFalse((package / 'rpc/rpc.on1x').exists())
         self.execute(OPTIONS.on1xc, '--check', source, '--stdlib', package)
         exe = self.work / 'relocated-consumer'
         self.execute(sys.executable, ON1X / 'tools/on1x-build.py', source,
                      '--on1xc', OPTIONS.on1xc, '--cc', OPTIONS.cc, '--stdlib', package,
                      '--cflag=-Werror', '-o', exe)
         self.execute(exe)
-        declaration = package / 'parsec/parsec.on1xi'
-        self.assertEqual(declaration.read_bytes(), (STDLIB / 'parsec/parsec.on1xi').read_bytes())
+        declaration = package / 'rpc/rpc.on1xi'
+        self.assertEqual(declaration.read_bytes(), (STDLIB / 'rpc/rpc.on1xi').read_bytes())
         self.execute(OPTIONS.on1xc, '--check-interfaces', source, '--stdlib', package)
 
         # Keep the function internally well typed; a different result type
         # must fail because of the declared contract, not a body type error.
-        implementation = package / 'parsec/parsec.on1xm'
+        implementation = package / 'rpc/rpc.on1xm'
         original = implementation.read_text(encoding='utf-8')
-        start = original.index('public fn parsec_in_range')
-        end = original.index('public fn parsec_literal', start)
-        implementation.write_text(original[:start] +
-                                  'public fn parsec_in_range(text: string, pos: i64, '
-                                  'low: i64, high: i64) -> i64 { return 1; }\n' +
-                                  original[end:], encoding='utf-8')
+        start = original.index('public fn rpc_notification')
+        implementation.write_text(original[:start] + 'public fn rpc_notification('
+                                  'method: string, raw_params: string) -> i64 { return 1; }\n',
+                                  encoding='utf-8')
         emitted = self.work / 'unexpected.c'
-        for spelling in ('import std.parsec.parsec as Parse;',
-                         'import std.parsec as Parse;',
-                         'import "relocated parsec stdlib/parsec/parsec.on1x";'):
+        for spelling in ('import std.rpc.rpc as Rpc;',
+                         'import std.rpc as Rpc;',
+                         'import "relocated rpc stdlib/rpc/rpc.on1x";'):
             with self.subTest(spelling=spelling):
                 consumer = self.write('drift-consumer.on1x', spelling + '\nfn main() {}\n')
                 self.execute(OPTIONS.on1xc, '--emit-c', consumer, '--stdlib', package, '-o', emitted,
@@ -224,7 +219,7 @@ fn main() {
         implementation.write_text(original, encoding='utf-8')
         declaration.unlink()
         self.execute(OPTIONS.on1xc, '--emit-c', source, '--stdlib', package, '-o', emitted,
-                     negative='expected a local interface for std.parsec.parsec')
+                     negative='expected a local interface for std.rpc.rpc')
         self.assertFalse(emitted.exists())
 
     def test_whole_stdlib_and_downstream(self):

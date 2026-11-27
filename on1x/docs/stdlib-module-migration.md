@@ -58,20 +58,21 @@ any SML Basis conformance status.
 |---|---|---:|
 | `std.base.ordering` | `base/ordering.on1xm` | 3 |
 | `std.http.http` | `http/http.on1xm` | 5 |
-| `std.parsec.parsec` | `parsec/parsec.on1xm` | 5 |
 | `std.rpc.rpc` | `rpc/rpc.on1xm` | 2 |
 
-The restricted bundle certifies these four members in its root `On1xfile`.
+The restricted bundle certifies these three members in its root `On1xfile`.
 They keep their existing bodies and public signatures. The sibling signature
-is mandatory and checked on ordinary use; in particular, the old v1 build-only
-Parsec interface is now an authoritative named boundary. Old same-stem `.on1x`
+is mandatory and checked on ordinary use. Old same-stem `.on1x`
 imports within the selected standard-library roots are compatibility paths,
-not shipped copies or forwarding implementations. The original dotted,
-quoted and relative Parsec imports are exercised from the checkout and after
-bundling; changing a signed implementation's type fails even on the ordinary
-C emission path.
+not shipped copies or forwarding implementations. Dotted and old quoted RPC
+imports are exercised after bundling; changing the signed implementation's type
+fails even on the ordinary C emission path.
 
-There are 210 shipped implementation files (four named and 206 legacy), four
+Parsec stays headerless with its original build-time v1 interface. This keeps
+the existing `stdlib_extensions.on1x` Unit-v1 PPX route working without
+authorizing that protocol to transform checked signed modules.
+
+There are 210 shipped implementation files (three named and 207 legacy), three
 shipped named interfaces, and 33 independent executable/negative fixtures.
 All package initializers remain legacy. Their selective re-exports and
 submodule aliases still select the original targets; the supported signature

@@ -1499,7 +1499,7 @@ std::string project_module_graph(const on1x::LoadedUnit& loaded,bool explicit_ex
        auto& unit=loaded.unit;
         if(interface_mode){
          if(loader.interfaces.empty()&&project_module_index.empty()&&loaded.signature_dependencies.empty())
-          throw std::runtime_error("--check-interfaces requires at least one loaded module signature or --interface FILE");
+          throw std::runtime_error("--check-interfaces and at least one --interface FILE must be used together");
          on1x::analysis::Context context{*diagnostic_catalog,diagnostic_registry,scrutiny,{}};
          // Only legacy obligations run the original whole-unit checker. An
          // abstract module signature verifies declarations, not bodies, and
