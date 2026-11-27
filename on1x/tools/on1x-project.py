@@ -2575,11 +2575,13 @@ def format_project_source(args, compiler, project, config, disk, snapshot, sourc
                             else Git(location, revision, cwd, Path(objects) / 'git'))
                 dependency_layout(provider, key, stage, snapshot, membership=library_members)
             packages[key] = (stage, library_members, key + '.')
-        index_flags, _ = module_index(executor, work / 'module-index.json', root, packages, config['programs'])
+        std_package = config['kind'] == 'library' and config['name'] == 'std'
+        index_flags, _ = module_index(executor, work / 'module-index.json', root, packages,
+                                      config['programs'], trusted_standard=std_package)
         flags = ['-I', str(deps), '-I', str(root)]
         if directory != Path('.'):
             flags.extend(('-I', str(root / directory)))
-        if config['kind'] == 'library' and config['name'] == 'std':
+        if std_package:
             flags.extend(('--stdlib', str(root / directory)))
         return run([compiler, 'fmt', staged, '--target', target, *flags, *index_flags], cwd, env=env)
 

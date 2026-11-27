@@ -622,6 +622,33 @@ def test_project_staged_format(work):
     assert invoke(ON1XC, "exec", "fmt-signature", cwd=root).stdout == fmt(interface).stdout
 
 
+def test_staged_standard_format(work):
+    root = work / "stage-standard"
+    source = root / "src"
+    fragments = source / "layout.fragments"
+    fragments.mkdir(parents=True)
+    (root / "On1xfile").write_text(
+        'on1xfile 1\nkind library\nname "std"\ndirectory "src"\n'
+        'module "std.layout" "src/layout.on1xm"\n'
+        'module "std.layout" "src/layout.fragments/fixity.on1xm"\n'
+        'module-interface "std.layout" "src/layout.on1xi"\n'
+        'module "Internal" "src/other.on1xm"\n'
+        'command "listing" format html "src/layout.on1xm"\n'
+    )
+    (source / "On1xfile.m").write_text('on1xfile 1\nlibrary "pervasive.on1x"\n')
+    (source / "pervasive.on1x").write_text("fn not_parsed(){let ;}")
+    (source / "other.on1xm").write_bytes(b"\0 not discovered")
+    (source / "layout.on1xi").write_bytes(b"\0 not parsed")
+    (fragments / "fixity.on1xm").write_text(
+        'module std.layout;'
+        'shared operator (lexeme:"<+>", arity:"binary", precedence:5, formals:a:i64,b:i64)->i64{let ;}'
+    )
+    (source / "layout.on1xm").write_text("module std.layout;fn demo()->i64{return 40<+>2;}")
+    result = invoke(ON1XC, "exec", "listing", cwd=root)
+    assert b"return 40 <+> 2;" in Listing(result.stdout).source
+    assert not (root / "target").exists()
+
+
 def run(work):
     (work / ".on1xfmt").write_text("tabstop = 4 # spaces, not tabs\nwidth = 28\n")
     root = work / "nested"
@@ -780,6 +807,7 @@ if __name__ == "__main__":
         test_operator_environment(Path(directory))
         test_staged_module_index(Path(directory))
         test_project_staged_format(Path(directory))
+        test_staged_standard_format(Path(directory))
         test_modules(Path(directory))
         test_static_and_brackets(Path(directory))
         test_field_round_trip(Path(directory))

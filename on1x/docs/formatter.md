@@ -128,6 +128,8 @@ context, the command stages plain manifests and declared inputs privately.
 Templated input manifests are rejected rather than evaluated. Git dependencies
 use pinned commits or already locked selections from local object stores; the
 formatter does not fetch. Signature inputs remain source-only.
+The standard library's own staged formatter commands use the staged standard
+root and its canonical module discovery, not reserved names in a project index.
 
 ## Implementation and limits
 
