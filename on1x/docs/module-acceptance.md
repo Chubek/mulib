@@ -17,14 +17,19 @@ validation, program entry-point isolation, fail-closed program capability
 admission and legacy PPX, multiple manifest fragments, deterministic
 dependency reporting, and signature enforcement on the actual build. Failure
 checks verify that neither an existing emitted file nor a published project
-artifact is replaced. The legacy interface suite is separate: its v1 contract
-checks are not an export allowlist.
+artifact is replaced. It also runs the portable backend matrix below on both
+the legacy and sealed-module versions of the energy-budget example; keep
+`on1x-vm` from the same build next to `on1xc`. The legacy interface suite is
+separate: its v1 contract checks are not an export allowlist.
 
 ## Backend smoke matrix
 
-Build and run the `examples/energy-budget` project through each requested
-route. Run from the repository root with a fresh work directory under `build/`.
-`on1x-vm` must come from the same build as `on1xc`.
+To rerun only the two-variant matrix, append
+`Modules.test_energy_budget_legacy_and_sealed_portable_backends` to the module
+suite command above. Both variants must match `expected.txt` with no runtime
+diagnostics, pass bytecode verification, and match the same output when
+evaluated from saved MIR. To manually exercise just the legacy project, run
+from the repository root with a fresh work directory under `build/`:
 
 ```sh
 set -eu

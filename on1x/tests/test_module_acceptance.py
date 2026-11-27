@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -27,12 +28,14 @@ class Modules(unittest.TestCase):
         path.write_text(text, encoding="utf-8")
         return path
 
-    def command(self, *args, error=None):
+    def command(self, *args, error=None, quiet=False):
         args = [str(arg) for arg in args]
         result = subprocess.run(args, cwd=self.root, capture_output=True, text=True, timeout=90,
                                 env={**os.environ, "TMPDIR": str(self.root / "tmp")})
         if error is None:
             self.assertEqual(result.returncode, 0, (args, result.stderr))
+            if quiet:
+                self.assertEqual(result.stderr, "", args)
         else:
             self.assertNotEqual(result.returncode, 0, args)
             self.assertEqual(result.stdout, "")
@@ -42,11 +45,11 @@ class Modules(unittest.TestCase):
     def compiler(self, *args, error=None):
         return self.command(OPTIONS.on1xc, "--stdlib", ON1X / "stdlib", *args, error=error)
 
-    def project(self, output, *, error=None):
+    def project(self, output, *, error=None, backend="c11", root=None):
         return self.command(
-            sys.executable, ON1X / "tools/on1x-project.py", "build", self.root,
+            sys.executable, ON1X / "tools/on1x-project.py", "build", root or self.root,
             "--on1xc", OPTIONS.on1xc, "--cc", OPTIONS.cc, "--stdlib", ON1X / "stdlib",
-            "--backend", "c11", "--output-dir", output, error=error,
+            "--backend", backend, "--output-dir", output, error=error,
         )
 
     def emit_and_run(self, entry):
@@ -272,6 +275,47 @@ public fn hidden() -> i64 { return 99; }
         self.project(output, error=r"program.*(?:not.*(?:declared|index|admit)|admission|opt.in)")
         self.assertEqual(marker.read_bytes(), before)
         self.assertEqual(self.command(output / "app"), "42\n")
+
+    def test_energy_budget_legacy_and_sealed_portable_backends(self):
+        example = ON1X / "examples/energy-budget"
+        expected = (example / "expected.txt").read_text(encoding="utf-8")
+        for variant in ("legacy", "sealed"):
+            with self.subTest(variant=variant):
+                root = self.root / variant
+                shutil.copytree(example, root)
+                entry = root / "src/main.on1x"
+                if variant == "sealed":
+                    legacy_import = 'import "schedule.on1x";'
+                    main = entry.read_text(encoding="utf-8")
+                    self.assertIn(legacy_import, main)
+                    entry.write_text(main.replace(legacy_import, "import demo.energy : duty_minutes;"),
+                                     encoding="utf-8")
+                    schedule = root / "src/schedule.on1x"
+                    body = schedule.read_text(encoding="utf-8")
+                    self.assertIn("fn duty_minutes(", body)
+                    schedule.unlink()
+                    self.write(f"{variant}/src/demo/energy.on1xm", "module demo.energy;\n" +
+                               body.replace("fn duty_minutes(", "public fn duty_minutes(", 1))
+                    self.write(f"{variant}/src/demo/energy.on1xi", "abstract module demo.energy;\n"
+                               "fn duty_minutes(day: i64) -> (i64, i64, i64);\n")
+                    self.write(f"{variant}/src/On1xfile.m", 'on1xfile 1\nsource "main.on1x"\n')
+                    manifest = root / "On1xfile"
+                    self.write(f"{variant}/On1xfile", manifest.read_text(encoding="utf-8") +
+                               'module "demo.energy" "src/demo/energy.on1xm"\n'
+                               'module-interface "demo.energy" "src/demo/energy.on1xi"\n'
+                               'module-interface-policy "demo.energy" required\n')
+                for backend in ("c11", "mir-c11", "mir-vm"):
+                    with self.subTest(backend=backend):
+                        output = self.root / f"{variant}-{backend}"
+                        self.project(output, backend=backend, root=root)
+                        self.assertEqual(self.command(output / "energy-budget", quiet=True), expected)
+                        if backend == "mir-vm":
+                            self.command(OPTIONS.on1xc.with_name("on1x-vm"), "--verify",
+                                         output / "energy-budget.o1vm")
+                saved = self.root / f"{variant}.mir"
+                self.compiler("--emit-ir", entry, "-o", saved)
+                self.assertEqual(self.command(OPTIONS.on1xc, "--ir-input", "--run-ir", saved, quiet=True),
+                                 expected)
 
 
 def main():
