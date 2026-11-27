@@ -1,9 +1,0 @@
-%% pipelines: A vertical compiler pipeline diagram
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-pipelines}[2026/11/24 v0.1 On1x book: pipelines]
-\RequirePackage{on1x-diagrams}
-\newcounter{onxpipelinestep}
-\newenvironment{OnxPipeline}{\begin{center}\begin{tikzpicture}[node distance=9mm]\setcounter{onxpipelinestep}{0}}{\end{tikzpicture}\end{center}}
-\newcommand{\OnxPipelineStage}[2]{\stepcounter{onxpipelinestep}\ifnum\value{onxpipelinestep}=1\node[onxnode] (#1) {#2};\else\node[onxnode,below=of onxprevious] (#1) {#2};\draw[onxarrow] (onxprevious) -- (#1);\fi\coordinate (onxprevious) at (#1);}
-
-\endinput

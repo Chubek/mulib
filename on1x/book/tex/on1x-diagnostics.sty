@@ -1,9 +1,0 @@
-%% diagnostics: Formatted compiler diagnostics
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-diagnostics}[2026/11/24 v0.1 On1x book: diagnostics]
-\RequirePackage{on1x-boxes}
-\newtcolorbox{OnxDiagnostic}[2][]{onxpanel,title={Diagnostic: #2},colback=onxDanger!4!white,colframe=onxDanger,#1}
-\newcommand{\OnxErrorCode}[1]{\texttt{\textbf{#1}}}
-\newcommand{\OnxSourcePosition}[3]{\texttt{#1:#2:#3}}
-
-\endinput

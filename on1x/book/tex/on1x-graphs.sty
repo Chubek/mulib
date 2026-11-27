@@ -1,9 +1,0 @@
-%% graphs: Labeled dependency and dataflow edges
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-graphs}[2026/11/24 v0.1 On1x book: graphs]
-\RequirePackage{on1x-diagrams}
-\newcommand{\OnxGraphNode}[3][]{\node[onxnode,#1] (#2) {#3};}
-\newcommand{\OnxGraphEdge}[3][]{\draw[onxarrow,#1] (#2) -- (#3);}
-\newcommand{\OnxGraphEdgeLabel}[3]{\draw[onxarrow] (#1) -- node[above,font=\scriptsize]{#3} (#2);}
-
-\endinput

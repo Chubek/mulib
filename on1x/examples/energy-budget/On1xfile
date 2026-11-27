@@ -1,5 +1,0 @@
-on1xfile 1
-kind executable
-name "energy-budget"
-directory "src"
-target "energy-budget" "src/main.on1x"

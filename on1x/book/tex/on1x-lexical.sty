@@ -1,9 +1,0 @@
-%% lexical: Token descriptors and lexer rules
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-lexical}[2026/11/24 v0.1 On1x book: lexical]
-\RequirePackage{tabularx}
-\RequirePackage{booktabs}
-\newenvironment{OnxTokens}{\par\noindent\begin{tabular}{@{}p{.21\linewidth}p{.42\linewidth}p{.28\linewidth}@{}}\toprule Token & Recognition & Example\\\midrule}{\bottomrule\end{tabular}\par\smallskip}
-\newcommand{\OnxTokenRow}[3]{\texttt{#1} & #2 & \texttt{#3}\\}
-
-\endinput

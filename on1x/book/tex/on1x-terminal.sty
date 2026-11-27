@@ -1,9 +1,0 @@
-%% terminal: Shell commands and terminal output blocks
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-terminal}[2026/11/24 v0.1 On1x book: terminal]
-\RequirePackage{on1x-code}
-\lstdefinestyle{onxterminal}{basicstyle=\ttfamily\footnotesize,frame=single,backgroundcolor=\color{onxInk},basicstyle=\color{white}\ttfamily\footnotesize,rulecolor=\color{onxInk},breaklines=true,columns=fullflexible,showstringspaces=false}
-\lstnewenvironment{OnxShell}[1][]{\lstset{style=onxterminal,#1}}{}
-\newcommand{\OnxPrompt}[1]{\par\noindent\texttt{\$ #1}\par}
-
-\endinput

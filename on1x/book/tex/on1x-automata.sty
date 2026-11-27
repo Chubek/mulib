@@ -1,9 +1,0 @@
-%% automata: Finite state diagram shapes and transition edges
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-automata}[2026/11/24 v0.1 On1x book: automata]
-\RequirePackage{on1x-diagrams}
-\newenvironment{OnxAutomaton}{\begin{center}\begin{tikzpicture}[node distance=20mm,>=Stealth]}{\end{tikzpicture}\end{center}}
-\newcommand{\OnxState}[3][]{\node[circle,draw=onxAccent,minimum size=11mm,#1] (#2) {#3};}
-\newcommand{\OnxTransitionArrow}[3]{\draw[->,thick] (#1) -- node[above,font=\scriptsize]{#3} (#2);}
-
-\endinput

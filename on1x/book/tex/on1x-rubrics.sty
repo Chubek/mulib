@@ -1,9 +1,0 @@
-%% rubrics: Explicit assessment criteria tables
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-rubrics}[2026/11/24 v0.1 On1x book: rubrics]
-\RequirePackage{tabularx}
-\RequirePackage{booktabs}
-\newenvironment{OnxRubric}{\par\smallskip\par\noindent\begin{tabular}{@{}p{.27\linewidth}p{.56\linewidth}r@{}}\toprule Criterion & Evidence & Points\\\midrule}{\bottomrule\end{tabular}\par\smallskip}
-\newcommand{\OnxRubricRow}[3]{#1 & #2 & #3\\}
-
-\endinput

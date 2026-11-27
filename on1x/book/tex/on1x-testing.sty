@@ -1,9 +1,0 @@
-%% testing: Test cases with expected outcomes
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-testing}[2026/11/24 v0.1 On1x book: testing]
-\RequirePackage{on1x-boxes}
-\newtcolorbox{OnxTestCase}[2][]{onxpanel,title={Test: #2},colframe=onxSuccess,colback=onxSuccess!3!white,#1}
-\newcommand{\OnxExpect}[1]{\par\noindent\textbf{Expected:} #1\par}
-\newcommand{\OnxObserved}[1]{\par\noindent\textbf{Observed:} #1\par}
-
-\endinput

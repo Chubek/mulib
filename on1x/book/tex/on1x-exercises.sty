@@ -1,9 +1,0 @@
-%% exercises: Chapter-numbered exercises with difficulty tags
-\NeedsTeXFormat{LaTeX2e}
-\ProvidesPackage{on1x-exercises}[2026/11/24 v0.1 On1x book: exercises]
-\RequirePackage{on1x-boxes}
-\newcounter{onxexercise}[chapter]
-\renewcommand{\theonxexercise}{\thechapter.\arabic{onxexercise}}
-\NewDocumentEnvironment{OnxExercise}{O{Practice} O{}}{\refstepcounter{onxexercise}\begin{OnxPanel}[colback=white]{Exercise~\theonxexercise: #1\if\relax\detokenize{#2}\relax\else\space[#2]\fi}}{\end{OnxPanel}}
-
-\endinput
