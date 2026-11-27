@@ -69,7 +69,7 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
             },
         }), encoding="utf-8")
         program.write_text(
-            "import Test.Vault as Vault; fn main()->i64 { return Vault.make(42); }\n",
+            "import Test.Vault as Vault; fn main() { Vault.make(42); }\n",
             encoding="utf-8",
         )
         interface.write_text(
@@ -81,7 +81,40 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
         assert result.stdout == "OK: 2 interface members\n", result.stdout
         result = run("--emit-c", program, "--project-module-index", index, "-o", output)
         assert result.returncode != 0 and not output.exists(), result.stdout
-        assert "opaque module types cannot enter executable HIR" in result.stderr, result.stderr
+        assert "deliberate_unchecked_body" in result.stderr, result.stderr
+
+        # The loader must authenticate the same owner for two physical
+        # implementation fragments, but never pass it to the client.
+        side = root / "read.on1xm"
+        side.write_text(
+            "module Test.Vault; public fn read(token:Token)->i64{return token.secret;}",
+            encoding="utf-8",
+        )
+        membership = json.loads(index.read_text(encoding="utf-8"))
+        membership["members"]["Test.Vault"]["fragments"].append(str(side))
+        index.write_text(json.dumps(membership), encoding="utf-8")
+        implementation.write_text(
+            "module Test.Vault; record Token { secret:i64 }\n"
+            "public fn make(n:i64)->Token{return record<Token>{secret:n};}",
+            encoding="utf-8",
+        )
+        interface.write_text(
+            "abstract module Test.Vault; type Token; fn make(n:i64)->Token;\n"
+            "fn read(token:Token)->i64;",
+            encoding="utf-8",
+        )
+        client = ("import Test.Vault as Vault;from Test.Vault import Token as Key;\n"
+                  "fn pass(t:Key)->Vault.Token{return t;}\n")
+        program.write_text(client + "fn main(){println(Vault.read(pass(Vault.make(42))));}", encoding="utf-8")
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode == 0 and output.is_file(), result.stderr
+        old_output = output.read_bytes()
+        program.write_text(client + "fn main(){println(pass(Vault.make(42)).secret);}", encoding="utf-8")
+        result = run("--emit-c", program, "--project-module-index", index, "-o", output)
+        assert result.returncode != 0 and "opaque module type representation" in result.stderr, result.stderr
+        assert output.read_bytes() == old_output
+        membership["members"]["Test.Vault"]["fragments"].remove(str(side))
+        index.write_text(json.dumps(membership), encoding="utf-8")
 
         implementation.write_text(
             "module Test.Vault; public fn make(value:i64)->i64 { return value; }\n"

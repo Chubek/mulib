@@ -42,6 +42,7 @@ struct Module {
  Names names;
  Names declarations; // Own declarations, excluding lexically imported names.
  std::optional<Names> signature_exports;
+ std::set<std::string> opaque_types; // Source names admitted by the verified executable signature.
  std::vector<Module*> fragments;
  Module* group=nullptr;
  const LoaderOptions::ModuleMember* member=nullptr;
@@ -675,13 +676,20 @@ class Loader {
     std::vector<const Unit*> originals;
     for(auto* fragment:target.fragments)originals.push_back(&fragment->unit);
     if(originals.empty())originals.push_back(&target.unit);
-    (void)verify_module_signature(signature,originals,header->name,target.path);
-    check_asdl_signature(signature);
-    if(!options.declaration_interfaces)require_executable_module_signature(signature);
+     const auto verified=verify_module_signature(signature,originals,header->name,target.path);
+     check_asdl_signature(signature);
+     if(!options.declaration_interfaces)
+      target.opaque_types=admit_executable_opaque_signature(signature,verified,originals,header->name,target.path);
     else declaration_interface_members+=signature.members.size()+signature.types.size();
     std::set<std::string> listed;
     for(const auto& declaration:signature.members)listed.insert(declaration.name);
-    auto& visible=target.signature_exports.emplace();
+     auto& visible=target.signature_exports.emplace();
+     for(const auto& type:target.opaque_types){
+      auto item=target.declarations.types.find(type);
+      if(item==target.declarations.types.end())
+       throw Error(signature.where,"verified opaque type does not belong to this provider: "+type,"ON1X-INTERFACE-TYPE");
+      visible.types.insert(*item);
+     }
     for(const auto& name:listed){
      auto item=target.declarations.values.find(name);
      if(item!=target.declarations.values.end())visible.values.insert(*item);
@@ -1758,7 +1766,9 @@ class Loader {
        current_module=m;
        result.source_capabilities|=m->source_capability;
       result.unit.requires_module_boundary|=named_module(*m)||m->program;
-     const auto scope_key=m->path.string();
+      const auto scope_key=m->path.string();
+       const auto* provider=m->group?m->group:m;
+       const auto opaque_scope=provider->opaque_types.empty()?std::string{}:provider->path.string();
       record_operator_scope(result.unit,m->operator_visibility,scope_key);
     for(auto& doc:m->unit.docstrings)result.unit.docstrings.push_back(std::move(doc));
      auto names=m->legacy?flat:m->names;
@@ -1793,9 +1803,12 @@ class Loader {
       inject(names.values,allowed.values);inject(names.syntax,allowed.syntax);
       inject(names.types,allowed.types);inject(names.cliches,allowed.cliches);
    }
-     for(auto& d:m->unit.nominals){
-      for(auto& field:d.fields)field=type_reference(field,d.where,names);
-      d.name=name({m,d.name});result.unit.nominals.push_back(std::move(d));
+      for(auto& d:m->unit.nominals){
+       for(auto& field:d.fields)field=type_reference(field,d.where,names);
+       const bool sealed=provider->opaque_types.contains(d.name);
+       d.name=name({m,d.name});
+       if(sealed)result.unit.opaque_nominal_owners.emplace(d.name,opaque_scope);
+       result.unit.nominals.push_back(std::move(d));
      }
      for(auto& c:m->unit.cliches){
       constraints(c.constraints,names);
@@ -1858,9 +1871,11 @@ class Loader {
        }
        result.unit.inherent_implementations.push_back(std::move(implementation));
       }
-    for(auto& op:m->unit.operators){
-     function_body(op.function,names);
-     result.unit.operator_owners.emplace(op.identity,scope_key);
+     for(auto& op:m->unit.operators){
+      function_body(op.function,names);
+      result.unit.operator_owners.emplace(op.identity,scope_key);
+      if(!opaque_scope.empty()&&!op.function.external&&!op.function.extension_generated)
+       result.unit.opaque_function_owners.emplace(op.identity,opaque_scope);
      result.internal_functions.insert(op.identity);
      if(m->implicit)result.unit.operator_lazy_functions.insert(op.identity);
      result.unit.operators.push_back(std::move(op));
@@ -1868,8 +1883,10 @@ class Loader {
     for(auto& directive:m->unit.fixity_directives)result.unit.fixity_directives.push_back(std::move(directive));
     for(auto& f:m->unit.functions){
      function_body(f,names);
-     f.name=name({m,f.name,f.external});
-      result.unit.operator_owners.emplace(f.name,scope_key);
+      f.name=name({m,f.name,f.external});
+       result.unit.operator_owners.emplace(f.name,scope_key);
+       if(!opaque_scope.empty()&&!f.external&&!f.extension_generated)
+        result.unit.opaque_function_owners.emplace(f.name,opaque_scope);
     if(m->implicit)lazy.insert(f.name);
     if(!m->legacy)result.internal_functions.insert(f.name);
     if(f.external){
@@ -2008,8 +2025,12 @@ class Loader {
      if(needed.contains(candidate)&&!original.contains(candidate))
       result.unit.operator_lazy_functions.insert(candidate);
    }
-  std::erase_if(result.unit.functions,[&](const Function& f){return lazy.contains(f.name)&&!needed.contains(f.name);});
-  if(result.unit.requires_module_boundary)check_asdl_graph(result,entry_at);
+   std::erase_if(result.unit.functions,[&](const Function& f){
+    if(!lazy.contains(f.name)||needed.contains(f.name))return false;
+    result.unit.opaque_function_owners.erase(f.name);
+    return true;
+   });
+   if(result.unit.requires_module_boundary)check_asdl_graph(result,entry_at);
   return result;
  }
 };
