@@ -7,6 +7,7 @@ on1xc fmt src/main.on1x --inplace       # or -i; atomically replace the input
 on1xc fmt src/main.on1x --target latex -o main.tex
 on1xc fmt src/main.on1x --target troff -o main.roff
 on1xc fmt src/main.on1x --target html -o main.html
+on1xc fmt api.on1xi --check             # format/check declarations without loading code
 ```
 
 `--format`, `--emit-latex`, `--emit-troff`, and `--emit-html` are leading command aliases.
@@ -23,6 +24,10 @@ The `fmt` command does not read a staged module index. Use `--isolated` for
 need an imported operator fixity. Formatting does not admit modules or
 certify import visibility.
 Syntactically invalid input is rejected before any output is published.
+The formatter accepts both `on1xi 1;` and `abstract module` [interfaces](interfaces.md)
+in `.on1xi` files. It validates declarations with the compiler's signature
+parser, without opening imports or the prelude, loading an implementation,
+or checking conformance.
 `--inplace` (`-i`) writes plain source back
 to the input file without writing to stdout. It cannot be combined with
 `--check`, `-o`, or an explicit markup target. Markup targets produce
@@ -42,6 +47,7 @@ width = 80   # 1..4096, preferred maximum display columns (not a hard limit)
 tabstop = 2  # 1..16, spaces per block or continuation indentation
 algorithm = fits          # fits or search
 brace_style = same-line   # same-line or allman
+target = plain            # plain, latex, troff or html
 nested_block_newlines = 1    # 1..16
 top_level_block_newlines = 1 # 1..16
 ```
@@ -94,9 +100,10 @@ Nonempty output ends with LF.
 To select the default rendering target from the source itself, use one
 standalone `# on1xfmt: target = plain|latex|troff|html` comment outside protected
 regions (write one of those values). The compiler ignores the comment in
-ordinary builds. An explicit CLI/project target takes precedence; `--check`
-and `--inplace` always use plain source. With a markup default, use an
-explicit `--target plain` if rewriting the source via `-o`.
+ordinary builds. Target precedence is explicit CLI/project target, then
+source directive, then `.on1xfmt` `target`, then plain. `--check` and
+`--inplace` always use plain source; they reject an explicit markup target.
+With a markup default, use `--target plain` if rewriting the source via `-o`.
 
 ## Project commands
 

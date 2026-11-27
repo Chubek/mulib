@@ -1,6 +1,7 @@
 # Prefer 80 columns with two-space indentation.
 width = 80
 tabstop = 2
+target = plain
 
 # Use bounded layout search for lists and put block braces on separate lines.
 # These settings also apply to module source; qualifiers are syntax, not style.

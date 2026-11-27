@@ -168,6 +168,83 @@ def test_field_round_trip(work):
     assert run_source(source, work / "field-after") == before == b"42\n42\n7\n"
 
 
+def test_config_target(work):
+    root = work / "config-target"
+    inner = root / "child"
+    inner.mkdir(parents=True)
+    source, config = inner / "main.on1x", root / ".on1xfmt"
+    body = b"fn main(){println(42);}\n"
+    headers = {"latex": b"\\documentclass", "troff": b".nf", "html": b"<!doctype html>"}
+    source.write_bytes(body)
+    plain = fmt(source, "--isolated").stdout
+    for target, header in headers.items():
+        config.write_text(f"target = {target} # inherited unless a nearer file wins\n")
+        assert fmt(source, "--isolated", cwd=HOME).stdout.startswith(header)
+    config.write_text("target = plain\n")
+    assert fmt(source, "--isolated").stdout == plain
+
+    config.write_text("target = html\n")
+    source.write_bytes(b"# on1xfmt: target = latex\n" + body)
+    assert fmt(source, "--isolated").stdout.startswith(headers["latex"])
+    assert fmt(source, "--isolated", "--target", "troff").stdout.startswith(headers["troff"])
+    plain_with_directive = fmt(source, "--isolated", "--target", "plain").stdout
+    fmt(source, "--isolated", "--check", expected=1)
+    fmt(source, "--isolated", "--inplace")
+    assert source.read_bytes() == plain_with_directive
+    fmt(source, "--isolated", "--check")
+    assert fmt(source, "--isolated", "--inplace", "--target", "html", expected=2).stderr
+
+    source.write_bytes(b"# on1xfmt: target = plain\n" + body)
+    assert fmt(source, "--isolated").stdout == b"# on1xfmt: target = plain\n" + plain
+    source.write_bytes(body)
+    (inner / ".on1xfmt").write_text("width = 80\n")
+    assert fmt(source, "--isolated").stdout == plain
+    for broken in ("target = pdf\n", "target =\n", "target = html\ntarget = plain\n"):
+        (inner / ".on1xfmt").write_text(broken)
+        err = fmt(source, "--isolated", "--target", "plain", "--inplace", expected=1)
+        assert not err.stdout and b".on1xfmt" in err.stderr
+        assert source.read_bytes() == body
+
+
+def test_signatures(work):
+    root = work / "signatures"
+    root.mkdir()
+    legacy, named = root / "legacy.on1xi", root / "named.on1xi"
+    missing = root / "unavailable-prelude.on1x"
+    legacy.write_bytes(b"on1xi 1;fn f(arg:(i64,bool))->string;")
+    named.write_bytes(
+        b"abstract module Example.Types;abstract type Box<T>;type Token;"
+        b"fn make(value:i64)->Box<i64>;proc reset(x:Token); # </code><script>\n"
+    )
+    assert fmt(legacy, "--prelude", missing).stdout == (
+        b"on1xi 1;\nfn f(arg: (i64, bool)) -> string;\n"
+    )
+    plain = fmt(named, "--prelude", missing).stdout
+    assert plain == (
+        b"abstract module Example.Types;\nabstract type Box < T >;\ntype Token;\n"
+        b"fn make(value: i64) -> Box < i64 >;\nproc reset(x: Token); # </code><script>\n"
+    )
+    assert Listing(fmt(named, "--target", "html").stdout).source == plain
+    fmt(legacy, "--isolated", "-i")
+    fmt(legacy, "--isolated", "--check")
+    fmt(named, "-i")
+    fmt(named, "--check")
+    assert named.read_bytes() == plain
+    for malformed in (
+        b"on1xi 2; fn f()->i64;",
+        b"on1xi 1; proc p();",
+        b"abstract module Example.Types; fn bad()->i64{return 1;}",
+        b"abstract module Example.Types; proc bad()->i64;",
+        b'abstract module Example.Types; import "must-not-open.on1x";',
+        b'abstract module Example.Types; @ppx noexec "must-not-run.py";',
+        b"abstract module Example.Types; abstract type Box<T,T>;",
+    ):
+        named.write_bytes(malformed)
+        err = fmt(named, "-i", expected=1)
+        assert b"named.on1xi" in err.stderr and not err.stdout
+        assert named.read_bytes() == malformed
+
+
 def test_inplace(work):
     source = work / "inplace.on1x"
     output = work / "other.on1x"
@@ -548,5 +625,7 @@ if __name__ == "__main__":
         test_modules(Path(directory))
         test_static_and_brackets(Path(directory))
         test_field_round_trip(Path(directory))
+        test_config_target(Path(directory))
+        test_signatures(Path(directory))
         run(Path(directory))
     print("On1x format configuration, round trips, C11 execution and markup passed")

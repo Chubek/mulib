@@ -1,6 +1,7 @@
 #include <on1x/formatter.hpp>
 #include <on1x/ast.hpp>
 #include <on1x/literal_scan.h>
+#include <on1x/module_signature.hpp>
 #include <on1x/operator_scan.h>
 #include <mulib-prettyemit.h>
 
@@ -24,8 +25,17 @@ struct Config {
     std::size_t width = 80, tabstop = 2;
     std::size_t nested_block_newlines = 1, top_level_block_newlines = 1;
     mulib_pretty_algorithm_t algorithm = MULIB_PRETTY_FITS;
+    Target target = Target::plain;
     bool allman = false;
 };
+
+std::optional<Target> parse_target(View value) {
+    if (value == "plain") return Target::plain;
+    if (value == "latex") return Target::latex;
+    if (value == "troff") return Target::troff;
+    if (value == "html") return Target::html;
+    return std::nullopt;
+}
 
 bool horizontal(char c) { return c == ' ' || c == '\t' || c == '\r'; }
 
@@ -100,6 +110,9 @@ Config read_config(const fs::path& input) {
                         if (val == "same-line") result.allman = false;
                         else if (val == "allman") result.allman = true;
                         else fail(offset, line, "brace_style must be same-line or allman");
+                    } else if (key == "target") {
+                        if (auto target = parse_target(val)) result.target = *target;
+                        else fail(offset, line, "target must be plain, latex, troff or html");
                     } else {
                         fail(offset, line, "unknown .on1xfmt key");
                     }
@@ -131,17 +144,10 @@ bool one_of(View text, std::initializer_list<View> words) {
     return std::find(words.begin(), words.end(), text) != words.end();
 }
 
-std::optional<Target> parse_target(View value) {
-    if (value == "plain") return Target::plain;
-    if (value == "latex") return Target::latex;
-    if (value == "troff") return Target::troff;
-    if (value == "html") return Target::html;
-    return std::nullopt;
-}
-
 // Use the canonical scanner's byte spans. Only walk trivia between those
 // spans; comment markers inside a literal are not trivia.
 std::vector<Part> parts(const std::string& text, const std::vector<Token>& tokens, const Unit& unit,
+                        const ModuleSignature* signature,
                         std::optional<Target>& source_target) {
     std::set<std::size_t> top, operator_declarations, contextual_keywords;
     auto token_at = [&](std::size_t offset) {
@@ -172,6 +178,19 @@ std::vector<Part> parts(const std::string& text, const std::vector<Token>& token
     auto declarations = [&](const auto& items) {
         for (const auto& item : items) declaration(item);
     };
+    if (signature) {
+        auto header = token_at(signature->where.offset);
+        contextual_keywords.insert(header->where.offset);
+        if (signature->module) contextual_keywords.insert((header + 1)->where.offset);
+        for (const auto& item : signature->types) {
+            // The signature parser records the name, after `type` and any
+            // `abstract` prefix. Do not style those words in identifier slots.
+            auto keyword = token_at(item.where.offset) - 1;
+            contextual_keywords.insert(keyword->where.offset);
+            if (keyword != tokens.begin() && (keyword - 1)->text == "abstract")
+                contextual_keywords.insert((keyword - 1)->where.offset);
+        }
+    }
     if (unit.module) {
         top.insert(unit.module->where.offset);
         contextual_keywords.insert(unit.module->where.offset);
@@ -517,9 +536,10 @@ std::string file(const fs::path& input, const Options& options) {
     std::error_code ec;
     if (!fs::is_regular_file(input, ec))
         throw Error({input.string(), 0, 1, 1}, "expected regular On1x source file", "ON1X-FMT-INPUT");
-    // '-' after an option terminator has historically addressed a real file by
-    // that name. Keep it source-only rather than using it as a graph anchor.
-    const bool discover = options.operator_loader.has_value() && input != fs::path("-");
+    // Signatures are declarations, never graph anchors. Likewise, '-' after
+    // an option terminator addresses a real file in source-only mode.
+    const bool discover = options.operator_loader.has_value() && input != fs::path("-") &&
+                          input.extension() != ".on1xi";
     const auto path = discover ? fs::canonical(input, ec) : input;
     if (ec) throw Error({input.string()}, "cannot resolve formatter input: " + ec.message(),
                         "ON1X-FMT-INPUT");
@@ -530,7 +550,12 @@ std::string file(const fs::path& input, const Options& options) {
     const auto tokens = scan(source, name);
     if (tokens.size() > max_tokens)
         throw Error({name, 0, 1, 1}, "formatter token limit exceeded", "ON1X-FMT-LIMIT");
+    std::optional<ModuleSignature> signature;
     const auto unit = [&] {
+        if (path.extension() == ".on1xi") {
+            signature = parse_module_signature(tokens);
+            return Unit{};
+        }
         if (discover) {
             auto loader = *options.operator_loader;
             loader.extensions.enabled.insert(options.enabled_extensions.begin(),
@@ -547,7 +572,7 @@ std::string file(const fs::path& input, const Options& options) {
         }
     }();
     std::optional<Target> source_target;
-    const auto items = parts(source, tokens, unit, source_target);
+    const auto items = parts(source, tokens, unit, signature ? &*signature : nullptr, source_target);
     Document doc(name);
     const auto root = make_document(doc, items, source, cfg);
     struct Layout {
@@ -559,7 +584,7 @@ std::string file(const fs::path& input, const Options& options) {
                     "ON1X-FMT-LIMIT");
     const std::string plain(layout.value.text, layout.value.length);
     verify_tokens(tokens, plain, name);
-    const auto mode = options.target.value_or(source_target.value_or(Target::plain));
+    const auto mode = options.target.value_or(source_target.value_or(cfg.target));
     if (mode == Target::plain) return plain;
     const auto target = [&] {
         switch (mode) {
