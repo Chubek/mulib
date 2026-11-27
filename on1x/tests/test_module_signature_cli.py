@@ -42,7 +42,7 @@ public fn make(value: i64) -> Token { return deliberate_unchecked_body; }
 
         check("abstract module Test.Vault; type Token; fn make(input:i64)->Token;")
         check("abstract module Other.Vault; type Token; fn make(input:i64)->Token;",
-              "abstract module name must match")
+              "signature does not declare module 'Test.Vault'")
         check("abstract module Test.Vault; type Wrong; fn make(input:i64)->Wrong;",
               "expected one local nominal definition")
         check("abstract module Test.Vault; type Token; fn other(input:i64)->Token;",
