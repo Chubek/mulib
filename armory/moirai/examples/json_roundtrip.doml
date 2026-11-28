@@ -1,0 +1,13 @@
+let sample = %{
+    :name => "domweave",
+    :count => 3,
+    :flags => [:fast, :portable, :deterministic],
+    :nested => %{ :ok => true, :pi => 3.14 },
+}
+
+let encoded = Unwrap(json.encode(sample))
+Print(encoded)
+Print(Unwrap(json.pretty(sample)))
+let decoded = Unwrap(json.decode(encoded))
+Print(decoded)
+import std.json

@@ -1,0 +1,46 @@
+// Merge sort (functional style: split down the middle, merge two sorted Lists).
+
+fn merge(a, b) {
+    let result = []
+    let ia = 0
+    let ib = 0
+
+    while ia < Len(a) and ib < Len(b) {
+        let va = Unwrap(Get(a, ia))
+        let vb = Unwrap(Get(b, ib))
+        if va <= vb {
+            Push(result, va)
+            ia = ia + 1
+        } else {
+            Push(result, vb)
+            ib = ib + 1
+        }
+    }
+
+    while ia < Len(a) { Push(result, Unwrap(Get(a, ia))); ia = ia + 1 }
+    while ib < Len(b) { Push(result, Unwrap(Get(b, ib))); ib = ib + 1 }
+
+    result
+}
+
+fn mergesort(xs) {
+    if Len(xs) <= 1 { return xs }
+
+    let mid = Len(xs) / 2
+    let left = []
+    let right = []
+
+    for i in Iota(Len(xs)) {
+        if i < mid { Push(left, Unwrap(Get(xs, i))) }
+        else { Push(right, Unwrap(Get(xs, i))) }
+    }
+
+    merge(mergesort(left), mergesort(right))
+}
+
+let data = [9, 1, 8, 2, 7, 3, 6, 4, 5, 0]
+
+Print("unsorted:")
+Print(data)
+Print("sorted:")
+Print(mergesort(data))

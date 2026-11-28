@@ -1,0 +1,91 @@
+// This example demonstrates how to use the grammar construct
+// (backed by dependencies/libglr: keywords are literal terminals,
+// lexemes are scannerless patterns or custom readers, rules are GLR
+// productions; absyn declares constructors as tagged lists).
+
+import std.io : read_file, file_exists;
+
+grammar gJSON {
+    keyword NULL ::= "null";
+    keyword TRUE ::= "true";
+    keyword FALSE ::= "false";
+
+    lexeme NUMBER ::= /[-+]?(?:[0-9]+\.?[0-9]*|\.[0-9]+)([eE][-+]?[0-9]+)?/;
+    lexeme IDENT ::= /[a-zA-Z_][a-zA-Z0-9_]*/;
+
+    lexeme STRING ::= fn(reader) {
+    if reader[0] == #\" {
+        let result = "";
+        reader.advance();
+
+        while Head(reader) != #\" {
+            if Head(reader) == #\/ {
+                Advance(reader)
+
+                if reader[0] == #\" {
+                    result += #\";
+                } else if reader[0] == #\\ {
+                    result += #\\;
+                } else if reader[0] == #\/ {
+                    result += #\/;
+                } else if reader[0] == #\n {
+                    result += #\newline;
+                } else if reader[0] == #\r {
+                    result += #\return;
+                } else if reader[0] == #\t {
+                    result += #\tab;
+                } else if reader[0] == #\b {
+                    result += #\bell;
+                } else if reader[0] == #\f {
+                    result += #\feed;
+                } else {
+                    // Invalid escape sequence.
+                    return null;
+                }
+            } else {
+                result += Head(reader);
+            }
+
+            Advance(reader);
+        }
+
+        Advance(reader);
+        return result;
+     }
+
+        return null;
+    };
+
+    rule value ::= NULL | TRUE | FALSE | NUMBER | STRING | array | object;
+    rule array ::= #\[ (value ( #\, value )*)? #\];
+    rule object ::= #\{ (STRING #\: value ( #\, STRING #\: value )*)? #\};
+}
+
+absyn tJSON {
+  value ::=
+        | Null
+        | Bool(bool value)
+        | Number(float value)
+        | String(identifier value)
+        | Array(value* elements)
+        | Object(member* members)
+        ;
+
+   member ::= Member(identifier key, value value);
+}
+
+fn create_json_reader(input)
+{
+   const parser = DeriveParser(:gJSON);
+   const tree = DeriveTree(:tJSON);
+   const visitor = DeriveVisitor(:tJSON);
+
+   if TypeOf(input) == :String and file_exists(input)
+   {
+       input = read_file(input) ~ IOError("File $input does not exist or is inaccessible");
+   }
+
+   const json_reader = CreateReader(parser, tree, visitor, input);
+
+   return json_reader;
+}

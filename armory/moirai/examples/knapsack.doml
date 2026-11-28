@@ -1,0 +1,74 @@
+// 0/1 Knapsack via bottom-up dynamic programming.
+// items: a List of [weight, value] pairs. capacity: an Int.
+
+fn max_int(a, b) { if a > b { a } else { b } }
+
+// Returns :Solution[best_value, dp_table].
+fn knapsack(items, capacity) {
+    let n = Len(items)
+    let dp = []
+
+    for i in Iota(n + 1) {
+        let row = []
+        for c in Iota(capacity + 1) { Push(row, 0) }
+        Push(dp, row)
+    }
+
+    for i in Iota(1, n + 1) {
+        let item = Unwrap(Get(items, i - 1))
+        let w = Unwrap(Get(item, 0))
+        let v = Unwrap(Get(item, 1))
+        let prev_row = Unwrap(Get(dp, i - 1))
+        let row = Unwrap(Get(dp, i))
+
+        for c in Iota(capacity + 1) {
+            let without = Unwrap(Get(prev_row, c))
+            if w <= c {
+                let with_item = Unwrap(Get(prev_row, c - w)) + v
+                Set(row, c, max_int(with_item, without))
+            } else {
+                Set(row, c, without)
+            }
+        }
+    }
+
+    let last_row = Unwrap(Get(dp, n))
+    :Solution[Unwrap(Get(last_row, capacity)), dp]
+}
+
+// Walks the dp table backwards to recover which items were chosen.
+fn chosen_items(dp, items, capacity) {
+    let chosen = []
+    let c = capacity
+    let n = Len(items)
+
+    for step in Iota(n) {
+        let i = n - step
+        let row = Unwrap(Get(dp, i))
+        let prev_row = Unwrap(Get(dp, i - 1))
+
+        if Unwrap(Get(row, c)) != Unwrap(Get(prev_row, c)) {
+            let item = Unwrap(Get(items, i - 1))
+            Push(chosen, item)
+            c = c - Unwrap(Get(item, 0))
+        }
+    }
+    chosen
+}
+
+let items = [
+    [2, 3],
+    [3, 4],
+    [4, 5],
+    [5, 6],
+]
+let capacity = 5
+
+match knapsack(items, capacity) {
+    :Solution[best_value, dp] => {
+        Print("best value:")
+        Print(best_value)
+        Print("chosen items:")
+        for item in chosen_items(dp, items, capacity) { Print(item) }
+    }
+}

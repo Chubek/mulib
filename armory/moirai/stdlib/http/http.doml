@@ -1,0 +1,10 @@
+module std.http
+
+let http = %{
+  get => __http_get,
+  post => __http_post,
+  request => __http_request,
+  delete => __http_delete,
+  encode_form => __http_encode_form,
+  decode_form => __http_decode_form,
+}

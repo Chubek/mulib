@@ -1,0 +1,88 @@
+// Tic-tac-toe: sum-type cells (:Empty / :X / :O), win detection via
+// pattern matching, and `~` to catch a genuine out-of-range access.
+
+fn cell_at(board, pos) {
+    Unwrap(Get(board, pos))     // raises if pos is out of range
+}
+
+fn is_taken(board, pos) {
+    cell_at(board, pos) != :Empty
+}
+
+let win_lines = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+]
+
+// Returns :Some[:X] or :Some[:O] if that mark has a completed line, else :None.
+fn winner(board) {
+    for line in win_lines {
+        let a = cell_at(board, Unwrap(Get(line, 0)))
+        let b = cell_at(board, Unwrap(Get(line, 1)))
+        let c = cell_at(board, Unwrap(Get(line, 2)))
+        if a != :Empty and a == b and b == c { return ?a }
+    }
+    ?
+}
+
+fn rows(board) {
+    [
+        [cell_at(board, 0), cell_at(board, 1), cell_at(board, 2)],
+        [cell_at(board, 3), cell_at(board, 4), cell_at(board, 5)],
+        [cell_at(board, 6), cell_at(board, 7), cell_at(board, 8)],
+    ]
+}
+
+// Attempts to place `mark` at `pos`. Prints what happened; returns
+// true if the game should keep going.
+fn try_move(board, pos, mark) {
+    ~ is_taken(board, pos)
+    match ~ {
+        :Error[?] => {
+            Print("move rejected: position out of range")
+            true
+        }
+        :Success[?taken] => {
+            if taken {
+                Print("move rejected: cell already taken")
+                true
+            } else {
+                Set(board, pos, mark)
+                match winner(board) {
+                    :Some[w] => {
+                        Print("winner:")
+                        Print(w)
+                        false
+                    }
+                    :None => true
+                }
+            }
+        }
+    }
+}
+
+let board = []
+for i in Iota(9) { Push(board, :Empty) }
+
+let moves = [
+    [10, :X],   // rejected: out of range
+    [0, :X],    // ok
+    [0, :O],    // rejected: cell taken
+    [3, :O],    // ok
+    [1, :X],    // ok
+    [4, :O],    // ok
+    [2, :X],    // ok -> X completes [0, 1, 2]
+]
+
+let playing = true
+for move in moves {
+    if playing {
+        let pos = Unwrap(Get(move, 0))
+        let mark = Unwrap(Get(move, 1))
+        playing = try_move(board, pos, mark)
+    }
+}
+
+Print("final board:")
+for row in rows(board) { Print(row) }

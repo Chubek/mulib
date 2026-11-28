@@ -1,0 +1,88 @@
+// Sudoku solver via backtracking search over a 9x9 grid (0 = empty cell).
+// The grid is mutated in place; Set(list, i, v) assigns element i of a List.
+
+fn get_cell(grid, r, c) { Unwrap(Get(Unwrap(Get(grid, r)), c)) }
+fn set_cell(grid, r, c, v) { Set(Unwrap(Get(grid, r)), c, v) }
+
+fn row_ok(grid, r, num) {
+    let ok = true
+    for c in Iota(9) {
+        if get_cell(grid, r, c) == num { ok = false }
+    }
+    ok
+}
+
+fn col_ok(grid, c, num) {
+    let ok = true
+    for r in Iota(9) {
+        if get_cell(grid, r, c) == num { ok = false }
+    }
+    ok
+}
+
+fn box_ok(grid, r, c, num) {
+    let box_r = (r / 3) * 3
+    let box_c = (c / 3) * 3
+    let ok = true
+    for dr in Iota(3) {
+        for dc in Iota(3) {
+            if get_cell(grid, box_r + dr, box_c + dc) == num { ok = false }
+        }
+    }
+    ok
+}
+
+fn is_valid(grid, r, c, num) {
+    row_ok(grid, r, num) and col_ok(grid, c, num) and box_ok(grid, r, c, num)
+}
+
+// Returns :Some[[r, c]] for the next empty cell, or :None if the grid is full.
+fn find_empty(grid) {
+    for r in Iota(9) {
+        for c in Iota(9) {
+            if get_cell(grid, r, c) == 0 { return ?[r, c] }
+        }
+    }
+    ?
+}
+
+fn solve(grid) {
+    match find_empty(grid) {
+        :None => true
+        :Some[pos] => {
+            let r = Unwrap(Get(pos, 0))
+            let c = Unwrap(Get(pos, 1))
+            let solved = false
+
+            for num in Iota(1, 10) {
+                if is_valid(grid, r, c, num) {
+                    set_cell(grid, r, c, num)
+                    if solve(grid) {
+                        solved = true
+                        break
+                    }
+                    set_cell(grid, r, c, 0)
+                }
+            }
+            solved
+        }
+    }
+}
+
+let puzzle = [
+    [5, 3, 0, 0, 7, 0, 0, 0, 0],
+    [6, 0, 0, 1, 9, 5, 0, 0, 0],
+    [0, 9, 8, 0, 0, 0, 0, 6, 0],
+    [8, 0, 0, 0, 6, 0, 0, 0, 3],
+    [4, 0, 0, 8, 0, 3, 0, 0, 1],
+    [7, 0, 0, 0, 2, 0, 0, 0, 6],
+    [0, 6, 0, 0, 0, 0, 2, 8, 0],
+    [0, 0, 0, 4, 1, 9, 0, 0, 5],
+    [0, 0, 0, 0, 8, 0, 0, 7, 9],
+]
+
+if solve(puzzle) {
+    for r in Iota(9) { Print(Unwrap(Get(puzzle, r))) }
+} else {
+    Print("no solution")
+}

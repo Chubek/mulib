@@ -1,0 +1,28 @@
+module std.array
+
+let array = %{
+  new => __array_new,
+  len => __array_len,
+  get => __array_get,
+  set => __array_set,
+  push => __array_push,
+  pop => __array_pop,
+  shift => __array_shift,
+  unshift => __array_unshift,
+  slice => __array_slice,
+  concat => __array_concat,
+  map => __array_map,
+  filter => __array_filter,
+  reduce => __array_reduce,
+  find => __array_find,
+  sort => __array_sort,
+  reverse => __array_reverse,
+  join => __array_join,
+  fill => __array_fill,
+  includes => __array_includes,
+  index_of => __array_index_of,
+  last_index_of => __array_last_index_of,
+  every => __array_every,
+  some => __array_some,
+  for_each => __array_for_each,
+}

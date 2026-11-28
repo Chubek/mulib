@@ -1,0 +1,11 @@
+module std.url
+
+let url = %{
+  parse => __url_parse,
+  encode => __url_encode,
+  decode => __url_decode,
+  join => __url_join,
+  query_encode => __url_query_encode,
+  query_decode => __url_query_decode,
+  build => __url_build,
+}

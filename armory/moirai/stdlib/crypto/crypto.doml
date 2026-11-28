@@ -1,0 +1,11 @@
+module std.crypto
+
+let crypto = %{
+  sha256 => __crypto_sha256,
+  sha512 => __crypto_sha512,
+  md5 => __crypto_md5,
+  hmac_sha256 => __crypto_hmac_sha256,
+  hmac_sha512 => __crypto_hmac_sha512,
+  random_bytes => __crypto_random_bytes,
+  constant_time_compare => __crypto_constant_time_compare,
+}

@@ -1,0 +1,39 @@
+let original = "https://example.com/search/domscript?query=std lib&sort=asc#docs"
+match url.parse(original) {
+    :Success[parsed] => Print(parsed)
+    :Error[e] => Print(e)
+}
+
+let encoded = url.encode("domscript stdlib / url")
+Print(encoded)
+match url.decode(encoded) {
+    :Success[decoded] => Print(decoded)
+    :Error[e] => Print(e)
+}
+
+match url.join("https://example.com/docs/", "../stdlib/url.html") {
+    :Success[s] => Print(s)
+    :Error[e] => Print(e)
+}
+
+let params = %{
+    "query" => "domscript stdlib",
+    "page" => 2,
+    "sort" => "asc",
+}
+let query = url.query_encode(params)
+Print(query)
+match url.query_decode(query) {
+    :Success[decoded] => Print(decoded)
+    :Error[e] => Print(e)
+}
+
+let rebuilt = url.build(%{
+    :scheme => "https",
+    :host => "example.com",
+    :path => "/search/domscript",
+    :query => query,
+    :fragment => "docs",
+})
+Print(rebuilt)
+import std.url

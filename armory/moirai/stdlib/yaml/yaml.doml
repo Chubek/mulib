@@ -1,0 +1,10 @@
+module std.yaml
+
+let yaml = %{
+  encode => __yaml_encode,
+  decode => __yaml_decode,
+  pretty => __yaml_pretty,
+  validate => __yaml_validate,
+  encode_to_file => __yaml_encode_to_file,
+  decode_from_file => __yaml_decode_from_file,
+}

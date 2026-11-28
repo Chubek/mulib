@@ -1,0 +1,38 @@
+fn edit_distance(a, b) {
+    let rows = Len(a) + 1
+    let cols = Len(b) + 1
+    let dp = []
+    for i in Iota(rows) {
+        let row = []
+        for j in Iota(cols) {
+            if i == 0 {
+                Push(row, j)
+            } else if j == 0 {
+                Push(row, i)
+            } else {
+                Push(row, 0)
+            }
+        }
+        Push(dp, row)
+    }
+
+    for i in Iota(1, rows) {
+        for j in Iota(1, cols) {
+            let cost = 0
+            if Unwrap(Get(a, i - 1)) != Unwrap(Get(b, j - 1)) {
+                cost = 1
+            }
+            let deletion = Unwrap(Get(Unwrap(Get(dp, i - 1)), j)) + 1
+            let insertion = Unwrap(Get(Unwrap(Get(dp, i)), j - 1)) + 1
+            let substitution = Unwrap(Get(Unwrap(Get(dp, i - 1)), j - 1)) + cost
+            let best = deletion
+            if insertion < best { best = insertion }
+            if substitution < best { best = substitution }
+            Set(Unwrap(Get(dp, i)), j, best)
+        }
+    }
+
+    Unwrap(Get(Unwrap(Get(dp, rows - 1)), cols - 1))
+}
+
+Print(edit_distance("kitten", "sitting"))

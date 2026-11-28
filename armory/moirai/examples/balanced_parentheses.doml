@@ -1,0 +1,22 @@
+fn balanced(s) {
+    let stack = []
+    for i in Iota(Len(s)) {
+        let ch = Unwrap(Get(s, i))
+        if ch == "(" or ch == "[" or ch == "{" {
+            Push(stack, ch)
+        } else if ch == ")" {
+            if Len(stack) == 0 or Unwrap(Get(stack, Len(stack) - 1)) != "(" { return false }
+            let _ = array.pop(stack)
+        } else if ch == "]" {
+            if Len(stack) == 0 or Unwrap(Get(stack, Len(stack) - 1)) != "[" { return false }
+            let _ = array.pop(stack)
+        } else if ch == "}" {
+            if Len(stack) == 0 or Unwrap(Get(stack, Len(stack) - 1)) != "{" { return false }
+            let _ = array.pop(stack)
+        }
+    }
+    Len(stack) == 0
+}
+
+Print(balanced("([]{}){}"))
+import std.array

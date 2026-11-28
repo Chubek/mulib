@@ -1,0 +1,10 @@
+let text = "Domscript makes static analysis scripts readable, and scripts make analysis repeatable."
+let words = regex.find_all(regex.compile("[A-Za-z]+"), text)
+let counts = %{}
+for w in words {
+    let key = string.lower(w)
+    Set(counts, key, UnwrapOr(Get(counts, key), 0) + 1)
+}
+Print(counts)
+import std.regex
+import std.stringmod as string

@@ -1,0 +1,10 @@
+module std.json
+
+let json = %{
+  encode => __json_encode,
+  decode => __json_decode,
+  pretty => __json_pretty,
+  validate => __json_validate,
+  encode_to_file => __json_encode_to_file,
+  decode_from_file => __json_decode_from_file,
+}

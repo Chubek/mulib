@@ -1,0 +1,11 @@
+module std.hash
+
+let hash = %{
+  fnv1a => __hash_fnv1a,
+  crc32 => __hash_crc32,
+  sha1 => __hash_sha1,
+  sha256 => __hash_sha256,
+  sha512 => __hash_sha512,
+  md5 => __hash_md5,
+  hash_file => __hash_hash_file,
+}

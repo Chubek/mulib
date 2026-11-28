@@ -1,0 +1,8 @@
+module std.csv
+
+let csv = %{
+  read => __csv_read,
+  write => __csv_write,
+  parse_line => __csv_parse_line,
+  format_line => __csv_format_line,
+}

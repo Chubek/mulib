@@ -1,0 +1,18 @@
+module std.unicode
+
+let unicode = %{
+  is_letter => __unicode_is_letter,
+  is_digit => __unicode_is_digit,
+  is_space => __unicode_is_space,
+  is_punct => __unicode_is_punct,
+  is_upper => __unicode_is_upper,
+  is_lower => __unicode_is_lower,
+  to_upper => __unicode_to_upper,
+  to_lower => __unicode_to_lower,
+  to_title => __unicode_to_title,
+  codepoint => __unicode_codepoint,
+  from_codepoint => __unicode_from_codepoint,
+  len => __unicode_len,
+  normalize_nfc => __unicode_normalize_nfc,
+  normalize_nfd => __unicode_normalize_nfd,
+}

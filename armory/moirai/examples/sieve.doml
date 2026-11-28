@@ -1,0 +1,28 @@
+fn sieve(n) {
+    let prime = []
+    for _ in Iota(n + 1) { Push(prime, true) }
+    Set(prime, 0, false)
+    if n >= 1 { Set(prime, 1, false) }
+
+    let p = 2
+    while p * p <= n {
+        if Unwrap(Get(prime, p)) {
+            let k = p * p
+            while k <= n {
+                Set(prime, k, false)
+                k = k + p
+            }
+        }
+        p = p + 1
+    }
+
+    let out = []
+    for i in Iota(n + 1) {
+        if Unwrap(Get(prime, i)) {
+            Push(out, i)
+        }
+    }
+    out
+}
+
+Print(sieve(30))

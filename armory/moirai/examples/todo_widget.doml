@@ -1,0 +1,52 @@
+// A small todo-list widget: Node literals for structure, a Selector to
+// find each part, `on` for click handling, and an asynchronous
+// `~ Fetch` call to persist changes with the host.
+
+fn make_item(text) {
+    let li = %<li class="todo-item">
+        <span>{text}</span>
+        <button class="remove">x</button>
+    </li>%>
+
+    let remove_btn = UnwrapOr(QueryOne(li, $"button.remove"), li)
+    on remove_btn click(e) {
+        match Parent(li) {
+            :Some[list] => RemoveChild(list, li)
+            :None => ()
+        }
+    }
+
+    li
+}
+
+fn save_progress() {
+    ~ Fetch("/todos/save")
+    match ~ {
+        :Success[?]  => Print("saved")
+        :Error[?err] => Print("save failed: " + err)
+    }
+}
+
+let widget = %<div class="todo-widget">
+    <h2>Todo</h2>
+    <ul class="todo-list"></ul>
+    <button class="add">Add item</button>
+</div>%>
+
+let list_node = UnwrapOr(QueryOne(widget, $"ul.todo-list"), widget)
+let add_button = UnwrapOr(QueryOne(widget, $"button.add"), widget)
+let task_names = ["Buy milk", "Walk the dog", "Write report", "Read a book"]
+let counter = 0
+
+on add_button click(e) {
+    let name = Unwrap(Get(task_names, counter % Len(task_names)))
+    counter = counter + 1
+    AppendChild(list_node, make_item(name))
+    save_progress()
+}
+
+~ AppendChild(document, widget)
+match ~ {
+    :Success[?]  => Print("todo widget mounted")
+    :Error[?err] => Print("mount failed: " + err)
+}

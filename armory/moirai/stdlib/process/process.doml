@@ -1,0 +1,9 @@
+module std.process
+
+let process = %{
+  run => __process_run,
+  exec => __process_exec,
+  start => __process_start,
+  pid => __process_pid,
+  signal => __process_signal,
+}

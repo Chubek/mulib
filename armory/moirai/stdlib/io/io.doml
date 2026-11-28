@@ -1,0 +1,13 @@
+module std.io
+
+let io = %{
+  print => __io_print,
+  println => __io_println,
+  input => __io_input,
+  read_file => __io_read_file,
+  write_file => __io_write_file,
+  read_all => __io_read_all,
+  file_exists => __io_file_exists,
+  stdout_write => __io_stdout_write,
+  stderr_write => __io_stderr_write,
+}

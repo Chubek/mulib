@@ -1,0 +1,4 @@
+module std.asdl
+
+let asdl = %{
+}

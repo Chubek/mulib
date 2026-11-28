@@ -1,0 +1,17 @@
+module std.mapmod
+
+let map = %{
+  new => __map_new,
+  len => __map_len,
+  get => __map_get,
+  set => __map_set,
+  has => __map_has,
+  delete => __map_delete,
+  keys => __map_keys,
+  values => __map_values,
+  entries => __map_entries,
+  clear => __map_clear,
+  for_each => __map_for_each,
+  merge => __map_merge,
+  from_list => __map_from_list,
+}

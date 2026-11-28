@@ -1,0 +1,17 @@
+module std.set
+
+let set = %{
+  new => __set_new,
+  len => __set_len,
+  add => __set_add,
+  has => __set_has,
+  delete => __set_delete,
+  clear => __set_clear,
+  values => __set_values,
+  union => __set_union,
+  intersection => __set_intersection,
+  difference => __set_difference,
+  subset => __set_subset,
+  superset => __set_superset,
+  from_list => __set_from_list,
+}

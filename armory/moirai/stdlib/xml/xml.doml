@@ -1,0 +1,10 @@
+module std.xml
+
+let xml = %{
+  encode => __xml_encode,
+  decode => __xml_decode,
+  pretty => __xml_pretty,
+  validate => __xml_validate,
+  encode_to_file => __xml_encode_to_file,
+  decode_from_file => __xml_decode_from_file,
+}

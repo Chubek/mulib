@@ -1,0 +1,12 @@
+module std.dns
+
+let dns = %{
+  resolve => __dns_resolve,
+  resolve_a => __dns_resolve_a,
+  resolve_aaaa => __dns_resolve_aaaa,
+  resolve_mx => __dns_resolve_mx,
+  resolve_ns => __dns_resolve_ns,
+  resolve_cname => __dns_resolve_cname,
+  resolve_txt => __dns_resolve_txt,
+  reverse_lookup => __dns_reverse_lookup,
+}

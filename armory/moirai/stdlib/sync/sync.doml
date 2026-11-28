@@ -1,0 +1,17 @@
+module std.sync
+
+let sync = %{
+  mutex_new => __sync_mutex_new,
+  mutex_lock => __sync_mutex_lock,
+  mutex_unlock => __sync_mutex_unlock,
+  mutex_try_lock => __sync_mutex_try_lock,
+  atomic_load => __sync_atomic_load,
+  atomic_add => __sync_atomic_add,
+  atomic_store => __sync_atomic_store,
+  atomic_swap => __sync_atomic_swap,
+  atomic_cas => __sync_atomic_cas,
+  waitgroup_new => __sync_waitgroup_new,
+  waitgroup_add => __sync_waitgroup_add,
+  waitgroup_done => __sync_waitgroup_done,
+  waitgroup_wait => __sync_waitgroup_wait,
+}

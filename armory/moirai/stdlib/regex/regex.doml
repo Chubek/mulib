@@ -1,0 +1,11 @@
+module std.regex
+
+let regex = %{
+  compile => __regex_compile,
+  match => __regex_match,
+  search => __regex_search,
+  find_all => __regex_find_all,
+  replace => __regex_replace,
+  split => __regex_split,
+  escape => __regex_escape,
+}

@@ -1,0 +1,8 @@
+module std.ffi
+
+let ffi = %{
+  size_of => __ffi_size_of,
+  align_of => __ffi_align_of,
+  c_string => __ffi_c_string,
+  go_string => __ffi_go_string,
+}

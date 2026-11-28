@@ -1,0 +1,8 @@
+module std.traceback
+
+let traceback = %{
+  current => __traceback_current,
+  format => __traceback_format,
+  extract => __traceback_extract,
+  last_error => __traceback_last_error,
+}

@@ -1,0 +1,16 @@
+module std.path
+
+let path = %{
+  join => __path_join,
+  basename => __path_basename,
+  dirname => __path_dirname,
+  ext => __path_ext,
+  split => __path_split,
+  is_abs => __path_is_abs,
+  abs => __path_abs,
+  normalize => __path_normalize,
+  relative => __path_relative,
+  match => __path_match,
+  glob => __path_glob,
+  volume => __path_volume,
+}

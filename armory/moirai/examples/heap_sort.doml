@@ -1,0 +1,16 @@
+import std.heap as heaplib
+
+let heap = heaplib.new()
+for n in [5, 1, 9, 2, 8, 3, 7, 4, 6, 0] {
+    heaplib.push(heap, n)
+}
+
+let out = []
+while heaplib.len(heap) > 0 {
+    match heaplib.pop(heap) {
+        :Some[v] => Push(out, v)
+        :None => Print("unexpected empty heap")
+    }
+}
+
+Print(out)

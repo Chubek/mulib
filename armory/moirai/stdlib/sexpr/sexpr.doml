@@ -1,0 +1,8 @@
+module std.sexpr
+
+let sexpr = %{
+  parse => __sexpr_parse,
+  encode => __sexpr_encode,
+  pretty => __sexpr_pretty,
+  validate => __sexpr_validate,
+}

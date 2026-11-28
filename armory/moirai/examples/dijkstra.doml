@@ -1,0 +1,75 @@
+fn reconstruct(prev, goal) {
+    let path = [goal]
+    let node = goal
+    while IsSome(Get(prev, node)) {
+        node = Unwrap(Get(prev, node))
+        Push(path, node)
+    }
+    let out = []
+    for i in Iota(Len(path)) {
+        Push(out, Unwrap(Get(path, Len(path) - 1 - i)))
+    }
+    out
+}
+
+fn dijkstra(graph, start, goal) {
+    let dist = %{ start => 0 }
+    let prev = %{}
+    let open = [start]
+    while Len(open) > 0 {
+        let best_i = 0
+        let best = Unwrap(Get(open, 0))
+        let best_dist = UnwrapOr(Get(dist, best), 999999)
+        for i in Iota(1, Len(open)) {
+            let node = Unwrap(Get(open, i))
+            let node_dist = UnwrapOr(Get(dist, node), 999999)
+            if node_dist < best_dist {
+                best = node
+                best_dist = node_dist
+                best_i = i
+            }
+        }
+
+        let rest = []
+        for i in Iota(Len(open)) {
+            if i != best_i {
+                Push(rest, Unwrap(Get(open, i)))
+            }
+        }
+        open = rest
+
+        if best == goal {
+            return ?reconstruct(prev, goal)
+        }
+
+        for edge in UnwrapOr(Get(graph, best), []) {
+            let node = Unwrap(Get(edge, 0))
+            let weight = Unwrap(Get(edge, 1))
+            let alt = best_dist + weight
+            let current = UnwrapOr(Get(dist, node), 999999)
+            if alt < current {
+                Set(dist, node, alt)
+                Set(prev, node, best)
+                Push(open, node)
+            }
+        }
+    }
+    ?
+}
+
+let graph = %{
+    :A => [[:B, 7], [:C, 9], [:F, 14]],
+    :B => [[:A, 7], [:C, 10], [:D, 15]],
+    :C => [[:A, 9], [:B, 10], [:D, 11], [:F, 2]],
+    :D => [[:B, 15], [:C, 11], [:E, 6]],
+    :E => [[:D, 6], [:F, 9]],
+    :F => [[:A, 14], [:C, 2], [:E, 9]],
+}
+
+match dijkstra(graph, :A, :E) {
+    :Some[path] => {
+        Print("dijkstra path")
+        Print(path)
+    }
+    :None => Print("no path")
+}

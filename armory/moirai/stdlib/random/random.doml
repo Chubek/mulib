@@ -1,0 +1,14 @@
+module std.random
+
+let random = %{
+  seed => __random_seed,
+  random => __random_random,
+  randint => __random_randint,
+  uniform => __random_uniform,
+  choice => __random_choice,
+  choices => __random_choices,
+  shuffle => __random_shuffle,
+  sample => __random_sample,
+  gauss => __random_gauss,
+  bytes => __random_bytes,
+}

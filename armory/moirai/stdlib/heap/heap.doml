@@ -1,0 +1,11 @@
+module std.heap
+
+let heap = %{
+  new => __heap_new,
+  push => __heap_push,
+  pop => __heap_pop,
+  peek => __heap_peek,
+  len => __heap_len,
+  heapify => __heap_heapify,
+  replace => __heap_replace,
+}

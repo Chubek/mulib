@@ -1,0 +1,46 @@
+// Breadth-first search over a graph given as an adjacency-list Table:
+// each key is a node Tag, each value a List of neighbor Tags.
+
+fn bfs(graph, start, goal) {
+    let visited = %{ start => true }
+    let queue = [[start]]   // each queue entry is a path (List of Tags) so far
+
+    while Len(queue) > 0 {
+        let path = Unwrap(Get(queue, 0))
+        let rest = []
+        for i in Iota(1, Len(queue)) { Push(rest, Unwrap(Get(queue, i))) }
+        queue = rest
+
+        let node = Unwrap(Get(path, Len(path) - 1))
+        if node == goal { return ?path }
+
+        let neighbors = UnwrapOr(Get(graph, node), [])
+        for n in neighbors {
+            if IsNone(Get(visited, n)) {
+                Set(visited, n, true)
+                let extended = []
+                for step in path { Push(extended, step) }
+                Push(extended, n)
+                Push(queue, extended)
+            }
+        }
+    }
+
+    ?
+}
+
+let graph = %{
+    :A => [:B, :C],
+    :B => [:A, :D],
+    :C => [:A, :D],
+    :D => [:B, :C, :E],
+    :E => [:D],
+}
+
+match bfs(graph, :A, :E) {
+    :Some[path] => {
+        Print("path found:")
+        for node in path { Print(node) }
+    }
+    :None => Print("no path found")
+}

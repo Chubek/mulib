@@ -1,0 +1,126 @@
+// A* pathfinding over a grid of 0 (open) / 1 (wall) cells.
+// Coordinates are encoded as a single Int (x * 1000 + y) so they can be
+// used as Table keys, since Lists are not valid Table keys.
+
+fn encode(x, y) { x * 1000 + y }
+
+fn in_bounds(grid, x, y) {
+    x >= 0 and y >= 0 and x < Len(grid) and y < Len(Unwrap(Get(grid, 0)))
+}
+
+fn cell(grid, x, y) {
+    Unwrap(Get(Unwrap(Get(grid, x)), y))
+}
+
+fn heuristic(x0, y0, x1, y1) {
+    let dx = x0 - x1
+    let dy = y0 - y1
+    (if dx < 0 { -dx } else { dx }) + (if dy < 0 { -dy } else { dy })
+}
+
+fn neighbors(x, y) {
+    [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
+}
+
+// Pulls the entry with the lowest f-score out of the open list.
+// Returns :Some[[entry, rest_of_open]], or :None if open is empty.
+fn pop_lowest(open) {
+    if Len(open) == 0 { return ? }
+
+    let best_i = 0
+    let best_f = Unwrap(Get(Unwrap(Get(open, 0)), 0))
+
+    for i in Iota(Len(open)) {
+        let f = Unwrap(Get(Unwrap(Get(open, i)), 0))
+        if f < best_f {
+            best_f = f
+            best_i = i
+        }
+    }
+
+    let best_entry = Unwrap(Get(open, best_i))
+    let rest = []
+    for i in Iota(Len(open)) {
+        if i != best_i { Push(rest, Unwrap(Get(open, i))) }
+    }
+
+    ?[best_entry, rest]
+}
+
+fn reconstruct(came_from, gx, gy) {
+    let path = [[gx, gy]]
+    let cx = gx
+    let cy = gy
+
+    while IsSome(Get(came_from, encode(cx, cy))) {
+        let parent = Unwrap(Get(came_from, encode(cx, cy)))
+        cx = Unwrap(Get(parent, 0))
+        cy = Unwrap(Get(parent, 1))
+        Push(path, [cx, cy])
+    }
+
+    let reversed = []
+    for i in Iota(Len(path)) {
+        Push(reversed, Unwrap(Get(path, Len(path) - 1 - i)))
+    }
+    reversed
+}
+
+// Returns :Some[path] (a List of [x, y] Lists, start to goal), or :None.
+fn astar(grid, sx, sy, gx, gy) {
+    let open = [[heuristic(sx, sy, gx, gy), 0, sx, sy]]
+    let g_score = %{ encode(sx, sy) => 0 }
+    let came_from = %{}
+
+    while Len(open) > 0 {
+        let pair = Unwrap(pop_lowest(open))
+        let entry = Unwrap(Get(pair, 0))
+        open = Unwrap(Get(pair, 1))
+
+        let cx = Unwrap(Get(entry, 2))
+        let cy = Unwrap(Get(entry, 3))
+        let cg = Unwrap(Get(entry, 1))
+
+        if cx == gx and cy == gy {
+            return ?reconstruct(came_from, gx, gy)
+        }
+
+        for n in neighbors(cx, cy) {
+            let nx = Unwrap(Get(n, 0))
+            let ny = Unwrap(Get(n, 1))
+
+            if in_bounds(grid, nx, ny) and cell(grid, nx, ny) == 0 {
+                let tentative = cg + 1
+                let better = match Get(g_score, encode(nx, ny)) {
+                    :None => true
+                    :Some[old] => tentative < old
+                }
+
+                if better {
+                    Set(g_score, encode(nx, ny), tentative)
+                    Set(came_from, encode(nx, ny), [cx, cy])
+                    let f = tentative + heuristic(nx, ny, gx, gy)
+                    Push(open, [f, tentative, nx, ny])
+                }
+            }
+        }
+    }
+
+    ?
+}
+
+let grid = [
+    [0, 0, 0, 1, 0],
+    [0, 1, 0, 1, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0],
+]
+
+match astar(grid, 0, 0, 4, 4) {
+    :Some[path] => {
+        Print("path found:")
+        for step in path { Print(step) }
+    }
+    :None => Print("no path found")
+}

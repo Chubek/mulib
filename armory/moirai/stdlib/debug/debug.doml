@@ -1,0 +1,12 @@
+module std.debug
+
+let debug = %{
+  stack => __debug_stack,
+  mem_stats => __debug_mem_stats,
+  gc => __debug_gc,
+  set_gc_percent => __debug_set_gc_percent,
+  free_os_memory => __debug_free_os_memory,
+  build_info => __debug_build_info,
+  breakpoint => __debug_breakpoint,
+  goroutine_id => __debug_goroutine_id,
+}

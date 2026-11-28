@@ -1,0 +1,32 @@
+// Quicksort (functional style: returns a new sorted List, no in-place mutation).
+
+fn quicksort(xs) {
+    if Len(xs) <= 1 { return xs }
+
+    let pivot = Unwrap(Get(xs, 0))
+    let less = []
+    let equal = []
+    let greater = []
+
+    for x in xs {
+        if x < pivot { Push(less, x) }
+        else if x == pivot { Push(equal, x) }
+        else { Push(greater, x) }
+    }
+
+    let sorted_less = quicksort(less)
+    let sorted_greater = quicksort(greater)
+
+    let result = []
+    for x in sorted_less { Push(result, x) }
+    for x in equal { Push(result, x) }
+    for x in sorted_greater { Push(result, x) }
+    result
+}
+
+let data = [5, 3, 8, 1, 9, 2, 7, 4, 6, 0]
+
+Print("unsorted:")
+Print(data)
+Print("sorted:")
+Print(quicksort(data))

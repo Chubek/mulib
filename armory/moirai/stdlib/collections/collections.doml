@@ -1,0 +1,17 @@
+module std.collections
+
+let collections = %{
+  deque_new => __collections_deque_new,
+  deque_push_left => __collections_deque_push_left,
+  deque_push_right => __collections_deque_push_right,
+  deque_pop_left => __collections_deque_pop_left,
+  deque_pop_right => __collections_deque_pop_right,
+  deque_len => __collections_deque_len,
+  counter_new => __collections_counter_new,
+  counter_add => __collections_counter_add,
+  counter_get => __collections_counter_get,
+  counter_most_common => __collections_counter_most_common,
+  default_dict_new => __collections_default_dict_new,
+  default_dict_get => __collections_default_dict_get,
+  default_dict_set => __collections_default_dict_set,
+}

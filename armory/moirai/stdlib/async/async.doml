@@ -1,0 +1,11 @@
+module std.async
+
+let async = %{
+  channel_new => __async_channel_new,
+  channel_send => __async_channel_send,
+  channel_recv => __async_channel_recv,
+  channel_close => __async_channel_close,
+  channel_len => __async_channel_len,
+  wait => __async_wait,
+  cancel => __async_cancel,
+}

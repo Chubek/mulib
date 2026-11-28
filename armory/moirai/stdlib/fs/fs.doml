@@ -1,0 +1,19 @@
+module std.fs
+
+let fs = %{
+  exists => __fs_exists,
+  is_dir => __fs_is_dir,
+  is_file => __fs_is_file,
+  read => __fs_read,
+  write => __fs_write,
+  remove => __fs_remove,
+  mkdir => __fs_mkdir,
+  list_dir => __fs_list_dir,
+  stat => __fs_stat,
+  rename => __fs_rename,
+  copy => __fs_copy,
+  walk => __fs_walk,
+  ext => __fs_ext,
+  base => __fs_base,
+  dir => __fs_dir,
+}

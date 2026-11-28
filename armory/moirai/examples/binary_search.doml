@@ -1,0 +1,23 @@
+fn binary_search(xs, needle) {
+    let lo = 0
+    let hi = Len(xs)
+    while lo < hi {
+        let mid = (lo + hi) / 2
+        let value = Unwrap(Get(xs, mid))
+        if value == needle {
+            return ?mid
+        }
+        if value < needle {
+            lo = mid + 1
+        } else {
+            hi = mid
+        }
+    }
+    ?
+}
+
+let xs = [2, 4, 6, 8, 10, 12, 14, 16]
+match binary_search(xs, 10) {
+    :Some[i] => Print(i)
+    :None => Print("missing")
+}

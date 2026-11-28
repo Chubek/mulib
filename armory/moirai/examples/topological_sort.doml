@@ -1,0 +1,49 @@
+fn pop_front(queue) {
+    let head = Unwrap(Get(queue, 0))
+    let tail = []
+    for i in Iota(1, Len(queue)) {
+        Push(tail, Unwrap(Get(queue, i)))
+    }
+    [head, tail]
+}
+
+let graph = %{
+    :build => [:lint, :test],
+    :lint => [:package],
+    :test => [:package],
+    :package => [:deploy],
+    :deploy => [],
+}
+
+let indegree = %{
+    :build => 0,
+    :lint => 1,
+    :test => 1,
+    :package => 2,
+    :deploy => 1,
+}
+
+let queue = []
+for node in [:build, :lint, :test, :package, :deploy] {
+    if UnwrapOr(Get(indegree, node), 0) == 0 {
+        Push(queue, node)
+    }
+}
+
+let order = []
+while Len(queue) > 0 {
+    let pair = pop_front(queue)
+    let node = Unwrap(Get(pair, 0))
+    queue = Unwrap(Get(pair, 1))
+    Push(order, node)
+
+    for next in UnwrapOr(Get(graph, node), []) {
+        let current = UnwrapOr(Get(indegree, next), 0)
+        Set(indegree, next, current - 1)
+        if current - 1 == 0 {
+            Push(queue, next)
+        }
+    }
+}
+
+Print(order)

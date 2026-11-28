@@ -1,0 +1,28 @@
+fn knapsack(weights, values, capacity) {
+    let dp = []
+    let n = Len(weights)
+    for _ in Iota(n + 1) {
+        let row = []
+        for _ in Iota(capacity + 1) { Push(row, 0) }
+        Push(dp, row)
+    }
+
+    for i in Iota(1, n + 1) {
+        let w = Unwrap(Get(weights, i - 1))
+        let v = Unwrap(Get(values, i - 1))
+        for c in Iota(capacity + 1) {
+            let best = Unwrap(Get(Unwrap(Get(dp, i - 1)), c))
+            if c >= w {
+                let candidate = Unwrap(Get(Unwrap(Get(dp, i - 1)), c - w)) + v
+                if candidate > best { best = candidate }
+            }
+            Set(Unwrap(Get(dp, i)), c, best)
+        }
+    }
+
+    Unwrap(Get(Unwrap(Get(dp, n)), capacity))
+}
+
+let weights = [2, 3, 4, 5]
+let values = [3, 4, 5, 8]
+Print(knapsack(weights, values, 5))

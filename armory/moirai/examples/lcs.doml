@@ -1,0 +1,26 @@
+fn lcs(a, b) {
+    let rows = Len(a) + 1
+    let cols = Len(b) + 1
+    let dp = []
+    for _ in Iota(rows) {
+        let row = []
+        for _ in Iota(cols) { Push(row, 0) }
+        Push(dp, row)
+    }
+
+    for i in Iota(1, rows) {
+        for j in Iota(1, cols) {
+            if Unwrap(Get(a, i - 1)) == Unwrap(Get(b, j - 1)) {
+                Set(Unwrap(Get(dp, i)), j, Unwrap(Get(Unwrap(Get(dp, i - 1)), j - 1)) + 1)
+            } else {
+                let up = Unwrap(Get(Unwrap(Get(dp, i - 1)), j))
+                let left = Unwrap(Get(Unwrap(Get(dp, i)), j - 1))
+                Set(Unwrap(Get(dp, i)), j, if up > left { up } else { left })
+            }
+        }
+    }
+
+    Unwrap(Get(Unwrap(Get(dp, rows - 1)), cols - 1))
+}
+
+Print(lcs("dynamic", "programming"))

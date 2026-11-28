@@ -1,0 +1,8 @@
+module std.net
+
+let net = %{
+  dial => __net_dial,
+  listen => __net_listen,
+  resolve => __net_resolve,
+  local_addr => __net_local_addr,
+}

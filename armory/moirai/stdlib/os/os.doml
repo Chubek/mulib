@@ -1,0 +1,22 @@
+module std.os
+
+let os = %{
+  getenv => __os_getenv,
+  setenv => __os_setenv,
+  environ => __os_environ,
+  args => __os_args,
+  exit => __os_exit,
+  cwd => __os_cwd,
+  chdir => __os_chdir,
+  platform => __os_platform,
+  arch => __os_arch,
+  hostname => __os_hostname,
+  pid => __os_pid,
+  uid => __os_uid,
+  tmpdir => __os_tmpdir,
+  homedir => __os_homedir,
+  separator => __os_separator,
+  list_separator => __os_list_separator,
+  shell => __os_shell,
+  executable => __os_executable,
+}

@@ -1,0 +1,13 @@
+module std.encoding
+
+let encoding = %{
+  base64_encode => __encoding_base64_encode,
+  base64_decode => __encoding_base64_decode,
+  hex_encode => __encoding_hex_encode,
+  hex_decode => __encoding_hex_decode,
+  url_encode => __encoding_url_encode,
+  url_decode => __encoding_url_decode,
+  utf8_encode => __encoding_utf8_encode,
+  utf8_decode => __encoding_utf8_decode,
+  utf8_valid => __encoding_utf8_valid,
+}

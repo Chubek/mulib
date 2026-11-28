@@ -1,0 +1,19 @@
+module std.inspect
+
+let inspect = %{
+  type_of => __inspect_type_of,
+  kind => __inspect_kind,
+  is_bool => __inspect_is_bool,
+  is_int => __inspect_is_int,
+  is_float => __inspect_is_float,
+  is_string => __inspect_is_string,
+  is_list => __inspect_is_list,
+  is_table => __inspect_is_table,
+  is_fn => __inspect_is_fn,
+  is_tag => __inspect_is_tag,
+  is_node => __inspect_is_node,
+  is_unit => __inspect_is_unit,
+  is_none => __inspect_is_none,
+  is_some => __inspect_is_some,
+  repr => __inspect_repr,
+}

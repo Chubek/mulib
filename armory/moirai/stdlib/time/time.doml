@@ -1,0 +1,24 @@
+module std.time
+
+let time = %{
+  now => __time_now,
+  unix => __time_unix,
+  unix_nano => __time_unix_nano,
+  monotonic => __time_monotonic,
+  sleep => __time_sleep,
+  format => __time_format,
+  parse => __time_parse,
+  from_unix => __time_from_unix,
+  year => __time_year,
+  month => __time_month,
+  day => __time_day,
+  hour => __time_hour,
+  minute => __time_minute,
+  second => __time_second,
+  weekday => __time_weekday,
+  add => __time_add,
+  sub => __time_sub,
+  since => __time_since,
+  timer => __time_timer,
+  iso8601 => __time_iso8601,
+}
