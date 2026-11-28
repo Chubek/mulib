@@ -24,7 +24,7 @@
     "keepBlotter": true,
     "archiveBlotter": true,
     "finalReview": true,
-    "plannerModel": "openai-codex/sol-6.2",
+    "plannerModel": "openai-codex/gpt-6.1-terra",
     "workerModel": "nous/tencent/hy4-flash:free",
     "reviewModel": "nous/deekseek/deepseek-v4.1-flash-1017"
 }
