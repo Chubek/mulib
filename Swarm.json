@@ -26,9 +26,5 @@
     "finalReview": true,
     "plannerModel": "openai-codex/sol-6.2",
     "workerModel": "nous/tencent/hy4-flash:free",
-    "reviewModel": "nous/deekseek/deepseek-v4.1-flash-1017",
-    "childExtensions": [
-        "/home/user/.pi/agent/extensions/nous.ts",
-        "/home/user/.pi/agent/extensions/nous-logger.ts"
-    ]
+    "reviewModel": "nous/deekseek/deepseek-v4.1-flash-1017"
 }
