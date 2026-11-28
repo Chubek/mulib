@@ -134,7 +134,7 @@ make check-openai
 For a remote endpoint, set `OPENAI_API_KEY` in the environment and pass a model
 and prompt. No example embeds credentials. MuLL exposes the complete API as
 `G:MulibWrap("openai-client")`; records, callbacks and ownership follow the
-[shared MuLL bridge contract](../mudsl/mull/bridge/Mulib/README.md).
+[shared MuLL bridge contract](../armory/mull/bridge/Mulib/README.md).
 
 <!-- manual-reference -->
 ## Source and build reference

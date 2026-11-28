@@ -79,12 +79,12 @@ Then regenerate dependency documentation with `python3 tools/stratify.py`.
 Neither command implements APIs or replaces handwritten examples/manuals.
 
 Public-header changes also require refreshing the MuLL native bridge with
-`python3 mudsl/scripts/generate_mulib.py --include kernels` (Python libclang
+`python3 armory/scripts/generate_mulib.py --include kernels` (Python libclang
 bindings are required for generation). The normal verification suite runs
-`python3 mudsl/scripts/check_mulib_inventory.py --include kernels` without
+`python3 armory/scripts/check_mulib_inventory.py --include kernels` without
 libclang to catch missing registrations and stale generated artifacts. Add
-MuLL integration fixtures under `mudsl/tests/mull/mulib/` when introducing
-new callable APIs; MuDSL CTest exercises them through both available hosts.
+MuLL integration fixtures under `armory/tests/mull/mulib/` when introducing
+new callable APIs; Armory CTest exercises them through both available hosts.
 
 Follow the [manual authoring guide](manual/authoring.md) for ownership, return
 values, supported profiles, and runnable examples. After changing a header or

@@ -214,7 +214,7 @@ callbacks, public roots, cycles, allocation failure, runtime limits and static
 errors before side effects. `tests/test_language_tools.c` retains mutation and
 allocation-failure coverage; `tests/test_language_refinement.c` retains long
 compensated numeric literals and subnormal regressions. The MuLL fixture is
-`mudsl/tests/mull/mulib/microjs.mull`.
+`armory/tests/mull/mulib/microjs.mull`.
 
 This replaces the old finite, typed JS-like evaluator. Existing type/status enum
 values and function names remain, but the public value struct has grown (rebuild

@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<snippet>
+  <content>#include "Armory.hpp"
+
+struct ${1:Language} : dsl::DSL&lt;$1, dsl::Pipeline, dsl::Operators&gt; {};
+$0</content>
+  <tabTrigger>armory</tabTrigger>
+  <scope>source.c++</scope>
+  <description>Armory feature composition</description>
+</snippet>

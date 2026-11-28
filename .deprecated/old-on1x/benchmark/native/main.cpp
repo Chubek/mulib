@@ -1,5 +1,5 @@
 // Generic embedding services only. Benchmark policy is authored in MuLL.
-#include "MuDSL.hpp"
+#include "Armory.hpp"
 #include "mull/stdlib/Stdlib.hpp"
 extern "C" {
 #include "bench_host.h"
@@ -20,7 +20,7 @@ static std::string path(const V &v) {
   return s;
 }
 int main(int argc, char **argv) try {
-  mull::Runtime vm({fs::path(BENCH_ROOT) / "lib", fs::path(MULIB_ROOT) / "mudsl/mull/stdlib"});
+  mull::Runtime vm({fs::path(BENCH_ROOT) / "lib", fs::path(MULIB_ROOT) / "armory/mull/stdlib"});
   mull::stdlib::install(vm);
   vm.maxSteps = 50000000;
   vm.maxFrames = 3000000;

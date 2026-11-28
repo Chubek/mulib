@@ -2,7 +2,7 @@
 
 MuLIB is a collection of reusable C11 kernels, compiled libraries, language
 tools, and runtime interfaces. Select individual modules rather than adopting
-an application framework. The repository also contains MuDSL and MuLL, the
+an application framework. The repository also contains Armory and MuLL, the
 On1x compiler and SDK, and the On1xRT embedding interface.
 
 [Usage guide](GUIDE.md) · [Build and installation](INSTALL.md) ·
@@ -47,8 +47,8 @@ subset. See the [media review](manual/media-review.md) and individual manuals.
 Shiraz, Virtio, YANTLR, and higher-level compositions. Their build and dependency
 requirements are separate from the core header model.
 
-[MuDSL](mudsl/README.md) supplies language-building facilities;
-[MuLL](mudsl/mull/README.md) includes a native MuLIB bridge. Generated declaration
+[Armory](armory/README.md) supplies language-building facilities;
+[MuLL](armory/mull/README.md) includes a native MuLIB bridge. Generated declaration
 inventory and callable wrappers are distinct capabilities.
 
 [On1x](on1x/docs/architecture.md) is a statically compiled language with a C11 backend.

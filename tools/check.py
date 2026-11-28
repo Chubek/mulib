@@ -88,7 +88,7 @@ def main():
         failures.append(('manual references', manuals.stderr or manuals.stdout))
     else:
         print(manuals.stdout.strip())
-    mull = subprocess.run([sys.executable, str(root / 'mudsl/scripts/check_mulib_inventory.py'),
+    mull = subprocess.run([sys.executable, str(root / 'armory/scripts/check_mulib_inventory.py'),
                            '--include', str(root / 'kernels')], capture_output=True, text=True)
     if mull.returncode:
         failures.append(('MuLL bindings', mull.stderr or mull.stdout))

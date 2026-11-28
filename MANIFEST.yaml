@@ -16366,13 +16366,13 @@ project_files:
   purpose: Complete implementation placement for focused web and pricing regression suites.
 - file: tests/test_money_reference.py
   purpose: Exact integer oracle for full-width money scaling and overflow rejection.
-- file: mudsl/tests/mull/mulib/web-primitives.mull
+- file: armory/tests/mull/mulib/web-primitives.mull
   purpose: MuLL native integration of money, forecasts, origins, cache, ranges and event callbacks.
-- file: mudsl/tests/mull/mulib/web-primitives.expected
+- file: armory/tests/mull/mulib/web-primitives.expected
   purpose: Expected output of the MuLL web and pricing integration fixture.
-- file: mudsl/tests/mull/mulib/openai.mull
+- file: armory/tests/mull/mulib/openai.mull
   purpose: MuLL OpenAI catalog, configuration, JSON and live callback binding smoke test.
-- file: mudsl/tests/mull/mulib/openai.expected
+- file: armory/tests/mull/mulib/openai.expected
   purpose: Expected result for the shared MuLL OpenAI binding fixture.
 - file: tools/generate_openai.py
   purpose: Reproducible standard-library-only OpenAI catalog generator and freshness check.
@@ -16622,19 +16622,19 @@ project_files:
   purpose: Independent structural checks of publishing output with Python standard-library readers.
 - file: manual/publishing-integration.md
   purpose: Publishing integration recipes, documented subset status and deferred conformance work.
-- file: mudsl/mull/bridge/Mulib/Generated.inc
+- file: armory/mull/bridge/Mulib/Generated.inc
   purpose: Generated native bridge wrappers and metadata-only library registration.
-- file: mudsl/mull/bridge/Mulib/Implementation.c
+- file: armory/mull/bridge/Mulib/Implementation.c
   purpose: Single generated MuLL TU for the legacy implementation switches.
-- file: mudsl/mull/bridge/Mulib/Inventory.json
+- file: armory/mull/bridge/Mulib/Inventory.json
   purpose: Generated MuLL discovery inventory, legacy-raw subset and artifact fingerprints.
 - file: kernels/detail/mulib-webscan.h
   purpose: Internal allocation-free HTML subset scanner shared by web extractors.
 - file: tests/run-all.sh
   purpose: Strict standalone web-module and allocation-failure regression runner.
-- file: mudsl/tests/mull/mulib/web-additions.mull
+- file: armory/tests/mull/mulib/web-additions.mull
   purpose: MuLL integration fixture for URL, MIME, charset, policy, scraping and storage additions.
-- file: mudsl/tests/mull/mulib/web-additions.expected
+- file: armory/tests/mull/mulib/web-additions.expected
   purpose: Expected output for the web-additions MuLL fixture.
 - file: manual/mulib-pricing-suite.md
   purpose: Combined integration, testing, numerical contracts and solver boundaries for pricing modules.
@@ -16660,9 +16660,9 @@ project_files:
   purpose: Metamorphic price estimator properties and constrained optimizer feasibility checks.
 - file: tests/test_pricing_cpp.cpp
   purpose: C++17 public-header ABI client linked with the single C implementation unit.
-- file: mudsl/tests/mull/mulib/pricing.mull
+- file: armory/tests/mull/mulib/pricing.mull
   purpose: Native pricing/statistics/SAT calls exercised through both MuLL hosts.
-- file: mudsl/tests/mull/mulib/pricing.expected
+- file: armory/tests/mull/mulib/pricing.expected
   purpose: Expected output of the MuLL pricing integration fixture.
 - file: kernels/mulib-docstring-data.inc
   purpose: Embedded default ldocstr constructors, filters and Lua stylesheet helpers.
@@ -16684,9 +16684,9 @@ project_files:
   purpose: Pandoc-like postorder walk filter example.
 - file: library/ldocstr/examples/style.lua
   purpose: Lua stylesheet filter example.
-- file: mudsl/tests/mull/mulib/docstring.mull
+- file: armory/tests/mull/mulib/docstring.mull
   purpose: MuLL native documentation compiler, validation and stream integration fixture.
-- file: mudsl/tests/mull/mulib/docstring.expected
+- file: armory/tests/mull/mulib/docstring.expected
   purpose: Expected output for the MuLL documentation integration fixture.
 - file: examples/modules/linebreak.c
   purpose: Standalone checked usage example for linebreak.
@@ -16866,9 +16866,9 @@ project_files:
   purpose: Android looper API declarations for deterministic native-backend tests.
 - file: tests/fixtures/android-sdk/android/log.h
   purpose: Android log API declarations for deterministic native-backend tests.
-- file: mudsl/tests/mull/mulib/android.mull
+- file: armory/tests/mull/mulib/android.mull
   purpose: MuLL bridge integration fixture for Android/JNI and Android ELF ABI queries.
-- file: mudsl/tests/mull/mulib/android.expected
+- file: armory/tests/mull/mulib/android.expected
   purpose: Expected Android MuLL integration fixture output.
 - file: tools/check_archml.py
   purpose: Independent LLVM MC and optional SPIRV-Tools oracles for ArchML instruction encoding fixtures.
@@ -18540,11 +18540,11 @@ project_files:
   purpose: Independent zlib, ZIP, EPUB XML and PDF interoperability checks.
 - file: tests/fuzz_ebooks.c
   purpose: Bounded mutation fuzzing for publication formats and compression.
-- file: mudsl/scripts/check_mulib_inventory.py
+- file: armory/scripts/check_mulib_inventory.py
   purpose: Dependency-free MuLL inventory and raw-policy freshness gate.
-- file: mudsl/tests/test_mulib_inventory.py
+- file: armory/tests/test_mulib_inventory.py
   purpose: Regressions for MuLL discovery, raw-policy separation and dependency fingerprints.
-- file: mudsl/tests/mull/mulib/ebooks.mull
+- file: armory/tests/mull/mulib/ebooks.mull
   purpose: Shared C++/D MuLL coverage for publication APIs, compression and ownership.
 - file: examples/modules/docstring.c
   purpose: "Standalone checked usage example for docstring."
@@ -18598,9 +18598,9 @@ project_files:
   purpose: Automatically loaded script profiles, transcription and native glyph-provider bindings.
 - file: library/lpaleo/README.md
   purpose: Paleography Lua extension recipe, output formats and limitations.
-- file: mudsl/tests/mull/mulib/notation.mull
+- file: armory/tests/mull/mulib/notation.mull
   purpose: Shared C++/D MuLL integration for tables, symbols, equations, chemistry, charts and paleography.
-- file: mudsl/tests/mull/mulib/notation.expected
+- file: armory/tests/mull/mulib/notation.expected
   purpose: Expected result for MuLL notation integration.
 - file: examples/modules/androidlibs.c
   purpose: "Standalone checked usage example for androidlibs."
@@ -19552,9 +19552,9 @@ project_files:
   purpose: Independent bidirectional compression interoperability checks.
 - file: manual/compression-codecs.md
   purpose: Common compression ownership, limits, errors and verification scope.
-- file: mudsl/tests/mull/mulib/compression.mull
+- file: armory/tests/mull/mulib/compression.mull
   purpose: MuLL compression and bounded ZIP native bridge integration fixture.
-- file: mudsl/tests/mull/mulib/compression.expected
+- file: armory/tests/mull/mulib/compression.expected
   purpose: Expected MuLL compression integration output.
 - file: examples/mulib-autonumber.c
   purpose: "Standalone checked usage example for mulib-autonumber."
@@ -20504,19 +20504,19 @@ project_files:
   purpose: "Generated source-level inventory of the existing engineering slice and ImGTK host."
 - file: manual/engineering-status.md
   purpose: "Bounded M0 repair handoff, evidence, owner map and remaining acceptance gaps."
-- file: mudsl/tests/mull/mulib/eda-ids.mull
+- file: armory/tests/mull/mulib/eda-ids.mull
   purpose: "Shared MuLL host fixture for EDA ID lifetime and stale-handle rejection."
-- file: mudsl/tests/mull/mulib/eda-ids.expected
+- file: armory/tests/mull/mulib/eda-ids.expected
   purpose: "Expected output for the EDA ID MuLL fixture."
-- file: mudsl/tests/mull/mulib/eda-transaction.mull
+- file: armory/tests/mull/mulib/eda-transaction.mull
   purpose: "Shared MuLL host fixture for EDA snapshot rollback, publication and conflicts."
-- file: mudsl/tests/mull/mulib/eda-transaction.expected
+- file: armory/tests/mull/mulib/eda-transaction.expected
   purpose: "Expected output for the EDA snapshot transaction MuLL fixture."
 - file: tests/test_microjs_engine.c
   purpose: "Focused regression suite for test_microjs_engine."
-- file: mudsl/tests/mull/mulib/microjs.mull
+- file: armory/tests/mull/mulib/microjs.mull
   purpose: "MuLL embedding fixture for MicroJS closures and rooted values."
-- file: mudsl/tests/mull/mulib/microjs.expected
+- file: armory/tests/mull/mulib/microjs.expected
   purpose: "Expected result of the MicroJS MuLL embedding fixture."
 - file: examples/modules/aes-gcm.c
   purpose: "Standalone checked usage example for aes-gcm."
@@ -21040,9 +21040,9 @@ project_files:
   purpose: Exact supplied-kernel inventory plus the explicitly reviewed PCM helper.
 - file: manual/media-review.md
   purpose: Reproduction commands, contract boundaries and remaining integration gates.
-- file: mudsl/mull/bridge/Mulib/LegacyExports.json
+- file: armory/mull/bridge/Mulib/LegacyExports.json
   purpose: Frozen trusted-raw MuLL export policy, independent of header discovery.
-- file: mudsl/scripts/generate_mulib.py
+- file: armory/scripts/generate_mulib.py
   purpose: Compiler-backed declaration discovery and regeneration of the pinned MuLL bridge.
 - file: tests/test_substrate_core.c
   purpose: "Focused regression suite for test_substrate_core."

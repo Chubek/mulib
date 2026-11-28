@@ -100,4 +100,4 @@ ctest --test-dir build/web-check -R 'mulib_test_web_(pricing|extraction|browser|
 
 Each `examples/modules/<name>.c` is a complete offline program. MuLL's generated
 native bridge registers the same headers, types and functions; integration
-fixtures live under `mudsl/tests/mull/mulib/`.
+fixtures live under `armory/tests/mull/mulib/`.

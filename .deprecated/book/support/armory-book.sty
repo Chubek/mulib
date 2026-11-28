@@ -1,0 +1,40 @@
+\NeedsTeXFormat{LaTeX2e}[2022-06-01]
+\ProvidesPackage{support/armory-book}[2026/11/09 Armory book design suite]
+% Load order is intentional: foundations, page furniture, content, navigation.
+\newif\ifMuPrint
+\DeclareOption{screen}{\MuPrintfalse}
+\DeclareOption{print}{\MuPrinttrue}
+\DeclareOption*{\PackageError{armory-book}{Unknown option `\CurrentOption'}{Use screen or print.}}
+\ExecuteOptions{screen}
+\ProcessOptions\relax
+\RequirePackage{support/armory-engine}
+\RequirePackage{support/armory-palette}
+\RequirePackage{support/armory-fonts}
+\RequirePackage{support/armory-math}
+\RequirePackage{support/armory-page}
+\RequirePackage{support/armory-microtype}
+\RequirePackage{support/armory-paragraphs}
+\RequirePackage{support/armory-headings}
+\RequirePackage{support/armory-chapters}
+\RequirePackage{support/armory-parts}
+\RequirePackage{support/armory-titlepage}
+\RequirePackage{support/armory-runningheads}
+\RequirePackage{support/armory-contents}
+\RequirePackage{support/armory-lists}
+\RequirePackage{support/armory-inline}
+\RequirePackage{support/armory-code}
+\RequirePackage{support/armory-tables}
+\RequirePackage{support/armory-captions}
+\RequirePackage{support/armory-floats}
+\RequirePackage{support/armory-figures}
+\RequirePackage{support/armory-footnotes}
+\RequirePackage{support/armory-quotes}
+\RequirePackage{support/armory-boxes}
+\RequirePackage{support/armory-pedagogy}
+\RequirePackage{support/armory-backmatter}
+\RequirePackage{support/armory-pagination}
+\RequirePackage{support/armory-links}
+\RequirePackage{support/armory-markdown}
+\RequirePackage{support/armory-references}
+\RequirePackage{support/armory-manuals}
+\endinput

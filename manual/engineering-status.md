@@ -43,11 +43,11 @@ Machine-readable change inventory (runtime results are detailed under Evidence):
     "tools/audit_engineering.py", "manual/engineering-inventory.json", "manual/engineering-status.md",
     "MANIFEST.yaml", "manual/strata.md", "tests/declarations.c",
     "tests/implementation.c", "tests/test_hardening.c", "tools/check.py",
-    "mudsl/mull/bridge/Mulib/Generated.inc",
-    "mudsl/mull/bridge/Mulib/Implementation.c",
-    "mudsl/mull/bridge/Mulib/Inventory.json",
-    "mudsl/tests/mull/mulib/eda-ids.mull",
-    "mudsl/tests/mull/mulib/eda-ids.expected"
+    "armory/mull/bridge/Mulib/Generated.inc",
+    "armory/mull/bridge/Mulib/Implementation.c",
+    "armory/mull/bridge/Mulib/Inventory.json",
+    "armory/tests/mull/mulib/eda-ids.mull",
+    "armory/tests/mull/mulib/eda-ids.expected"
   ]
 }
 ```
@@ -89,7 +89,7 @@ python3 tools/audit_engineering.py --check
   a different ID whose record is 3,300, while lookup of the removed ID fails.
 - `manual/mulib-eda-ids.md`: ownership, failure guarantees, pool-local identity,
   complexity, concurrency, limits and unsupported persistence contracts.
-- `mudsl/tests/mull/mulib/eda-ids.{mull,expected}`: native binding lifecycle and
+- `armory/tests/mull/mulib/eda-ids.{mull,expected}`: native binding lifecycle and
   stale-ID checks, shared by both MuLL hosts.
 
 Initialization remains O(capacity), creation remains first-fit O(length) with
@@ -204,17 +204,17 @@ python3 tools/sync_inventory.py
 python3 tools/stratify.py
 python3 tools/manuals.py --write
 python3 tools/manuals.py --check
-python3 mudsl/scripts/generate_mulib.py --include kernels
-python3 mudsl/scripts/check_mulib_inventory.py --include kernels
+python3 armory/scripts/generate_mulib.py --include kernels
+python3 armory/scripts/check_mulib_inventory.py --include kernels
 ```
 
 All completed successfully with the installed libclang bindings. MuLL validation:
 
 ```sh
-cmake -S mudsl -B /tmp/opencode/mulib-mudsl -DMULL_ENABLE_MULIB=ON \
+cmake -S armory -B /tmp/opencode/mulib-armory -DMULL_ENABLE_MULIB=ON \
   -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
-cmake --build /tmp/opencode/mulib-mudsl --target mull_tests mull_d_test_build -j 2
-ctest --test-dir /tmp/opencode/mulib-mudsl \
+cmake --build /tmp/opencode/mulib-armory --target mull_tests mull_d_test_build -j 2
+ctest --test-dir /tmp/opencode/mulib-armory \
   -R 'mull_(host|conformance|mulib_inventory)' --output-on-failure
 ```
 
@@ -320,10 +320,10 @@ to transaction begin and focused coverage of existing commit/rollback behavior.
     "tests/test_eda_transaction.c",
     "tests/test_eda_alloc.c",
     "tests/test_cpp_link.cpp",
-    "mudsl/tests/mull/mulib/eda-transaction.mull",
-    "mudsl/tests/mull/mulib/eda-transaction.expected",
+    "armory/tests/mull/mulib/eda-transaction.mull",
+    "armory/tests/mull/mulib/eda-transaction.expected",
     "MANIFEST.yaml",
-    "mudsl/mull/bridge/Mulib/Inventory.json",
+    "armory/mull/bridge/Mulib/Inventory.json",
     "manual/engineering-inventory.json",
     "manual/engineering-status.md"
   ]
@@ -377,14 +377,14 @@ REPRODUCE:
 python3 tools/sync_inventory.py
 python3 tools/stratify.py
 python3 tools/manuals.py --write
-python3 mudsl/scripts/generate_mulib.py --include kernels
-python3 mudsl/scripts/check_mulib_inventory.py --include kernels
+python3 armory/scripts/generate_mulib.py --include kernels
+python3 armory/scripts/check_mulib_inventory.py --include kernels
 python3 tools/audit_engineering.py --write
 # Reuse the first slice's sanitizer-enabled CMake configuration:
 cmake --build /tmp/opencode/mulib-build-engineering -j 2
 ctest --test-dir /tmp/opencode/mulib-build-engineering --output-on-failure -j 2
-cmake --build /tmp/opencode/mulib-mudsl --target mull_tests mull_d_test_build -j 2
-ctest --test-dir /tmp/opencode/mulib-mudsl \
+cmake --build /tmp/opencode/mulib-armory --target mull_tests mull_d_test_build -j 2
+ctest --test-dir /tmp/opencode/mulib-armory \
   -R 'mull_(host|conformance|mulib_inventory)' --output-on-failure
 python3 -u tools/check.py -j 4
 ```

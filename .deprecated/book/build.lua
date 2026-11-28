@@ -1,0 +1,17 @@
+-- texlua entry point for the Makefile workflow.
+local action = arg[1] or "build"
+local commands = {
+  build = "make all",
+  clean = "latexmk -C -outdir=build the-book-of-armory.ltx",
+  check = "make check",
+  generate = "make generate",
+  typography = "make typography",
+  export = "python3 export_manual.py"
+}
+if not commands[action] then
+  io.stderr:write("usage: texlua build.lua [build|clean|check|export|generate|typography]\n")
+  os.exit(2)
+end
+local ok, _, status = os.execute(commands[action])
+if type(ok) == "number" then os.exit(ok) end
+os.exit(ok and 0 or (status or 1))

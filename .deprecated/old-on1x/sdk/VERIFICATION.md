@@ -130,7 +130,7 @@ were found with `nm -g --defined-only "$c/sdk/libon1x_rt_sdk.a"`. This
 checks symbol presence, not behavior beyond the suites above.
 
 The root failures are `mulib_dependency_strata` (`tools/stratify.py --check`)
-and `mulib_mull_inventory` (`mudsl/scripts/check_mulib_inventory.py --include
+and `mulib_mull_inventory` (`armory/scripts/check_mulib_inventory.py --include
 include`). Their root scripts, build rules, manifest and headers are unchanged
 from `bdbd79aedc806468195cb67df402591ae7209551`. The graphics and CDD gates
 passed. No generated root inventory or unrelated graphics code was changed.

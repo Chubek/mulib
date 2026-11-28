@@ -301,10 +301,10 @@ if(MULIB_BUILD_TESTS)
     add_test(NAME mulib_dependency_strata
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stratify.py --check)
     add_test(NAME mulib_mull_inventory
-      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/scripts/check_mulib_inventory.py
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/armory/scripts/check_mulib_inventory.py
         --include ${CMAKE_CURRENT_SOURCE_DIR}/kernels)
     add_test(NAME mulib_mull_inventory_regressions
-      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/mudsl/tests/test_mulib_inventory.py)
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/armory/tests/test_mulib_inventory.py)
     add_test(NAME mulib_manual_inventory
       COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/manuals.py --check)
     add_test(NAME mulib_lprowse_embedded

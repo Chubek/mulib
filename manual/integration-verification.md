@@ -32,7 +32,7 @@ worked as `ON1X_LIBSTONE_ROOT`.
 - Root GCC Debug build and full CTest: **749/749 passed**, including refreshed
   inventories, manuals, regeneration, and C composition fixtures. Direct
   strata/manual/graphics/media/MuLL checks and compiler-backed MuLL checks passed.
-- MuDSL/MuLL Debug with `MULL_ENABLE_MULIB=ON`: **6/6 selected tests passed**
+- Armory/MuLL Debug with `MULL_ENABLE_MULIB=ON`: **6/6 selected tests passed**
   across C++/D hosts, inventory/regressions, and optimized/unoptimized
   conformance.
 - Focused On1x GCC generated-scanner integration: **20/20 passed** with

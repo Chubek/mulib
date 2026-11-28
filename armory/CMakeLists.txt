@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.24)
+project(Armory VERSION 1.1.0 LANGUAGES CXX)
+include(GNUInstallDirs)
+include(CTest)
+include(CMakePackageConfigHelpers)
+
+add_library(Armory INTERFACE)
+add_library(Armory::Armory ALIAS Armory)
+target_include_directories(Armory INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_compile_features(Armory INTERFACE cxx_std_20)
+include(cmake/Mulib.cmake)
+if(MULL_ENABLE_MULIB)
+    target_link_libraries(Armory INTERFACE mull-mulib-bridge)
+    install(TARGETS mull-mulib-bridge EXPORT ArmoryTargets)
+endif()
+
+option(BUILD_EXAMPLES "Build the Armory and MuLL examples" OFF)
+if(BUILD_EXAMPLES)
+    file(GLOB examples CONFIGURE_DEPENDS examples/*.cpp)
+    foreach(source IN LISTS examples)
+        get_filename_component(name ${source} NAME_WE)
+        add_executable(armory_${name} ${source})
+        target_link_libraries(armory_${name} PRIVATE Armory)
+    endforeach()
+endif()
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+add_subdirectory(mull)
+
+install(FILES Armory.hpp Armory.d DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(TARGETS Armory EXPORT ArmoryTargets)
+install(EXPORT ArmoryTargets FILE ArmoryTargets.cmake NAMESPACE Armory::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Armory)
+configure_package_config_file(cmake/ArmoryConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/ArmoryConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Armory)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/ArmoryConfigVersion.cmake
+    VERSION ${PROJECT_VERSION} COMPATIBILITY SameMajorVersion)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ArmoryConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/ArmoryConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Armory)
+configure_file(cmake/Armory.pc.in ${CMAKE_CURRENT_BINARY_DIR}/Armory.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Armory.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(DIRECTORY mull/stdlib/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mull/stdlib)
+install(DIRECTORY mull/stdlib/ DESTINATION ${CMAKE_INSTALL_DATADIR}/mull/stdlib)
+install(DIRECTORY mull/native mull/bridge mull/mullier mull/mu3ac DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mull)
+install(DIRECTORY mull/mu3ac/rewrite/ DESTINATION ${CMAKE_INSTALL_DATADIR}/mull/mu3ac/rewrite)
+install(DIRECTORY mull/rewrite/ DESTINATION ${CMAKE_INSTALL_DATADIR}/mull/rewrite)
+install(DIRECTORY manual/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory/manual)
+install(FILES Armory.hpp Armory.d DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../MANIFEST.yaml")
+    install(FILES ../MANIFEST.yaml DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory/reference)
+    install(DIRECTORY ../manual/ DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory/reference/manual)
+endif()
+install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory)
+install(FILES mull/README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory/mull)
+install(FILES mull/stdlib/README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/Armory/mull/stdlib)

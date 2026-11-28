@@ -28,7 +28,7 @@ ctest --test-dir build/eda --output-on-failure -j 6
 CC=clang CXX=clang++ python3 tools/check.py -j 12
 python3 tools/manuals.py --check
 python3 tools/stratify.py --check
-python3 mudsl/scripts/check_mulib_inventory.py --include kernels
+python3 armory/scripts/check_mulib_inventory.py --include kernels
 ```
 
 The CMake/CTest run passes all 303 registered tests. The complete Clang optimized checker passes 668/668 module examples, 3/3 composition examples, 253/253 focused tests, 10/10 combined builds and 1,995/1,995 isolated header builds. Manual, dependency-strata and MuLL inventories pass. A GCC 16 optimized-check run encountered internal compiler crashes on existing files; the four affected container examples subsequently built and ran successfully on retry, and the complete optimized validation passed with Clang. Local network and process tests and LeakSanitizer need an execution environment that permits their operating-system facilities.

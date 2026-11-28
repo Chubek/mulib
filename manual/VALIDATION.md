@@ -22,7 +22,7 @@ Verified on Linux:
   inventory passed their consistency checks (761 headers).
 - MuLL C++ and D hosts, optimized/unoptimized cross-host conformance (including
   a new networking fixture), and bridge inventory/regression checks passed:
-  **6/6 selected MuDSL CTest cases**.
+  **6/6 selected Armory CTest cases**.
 - Supplemental library-wide `test_hardening.c` passed Clang ASan/UBSan at `-O1`;
   `test_hostile_inputs.c` passed at `-O0`. The latter triggered a Clang 22.1.8
   optimizer crash at `-O1` with sanitizers, so that optimized configuration is

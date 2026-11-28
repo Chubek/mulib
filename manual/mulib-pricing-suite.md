@@ -122,7 +122,7 @@ enumeration plus an independent integer Floyd–Warshall oracle, fail successive
 allocations to verify rollback and output preservation, and cover extreme-value
 interpolation, floating tick endpoints, scenario variance cancellation, solver
 model invalidation, and unrepresentable SMT witnesses. The MuLL bridge has a
-native-call fixture in `mudsl/tests/mull/mulib/pricing.mull`.
+native-call fixture in `armory/tests/mull/mulib/pricing.mull`.
 
 The test script validates compilation under `-Wall -Wextra -Wpedantic -Werror`
 with assertions enabled. These tests are not a substitute for independent

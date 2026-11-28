@@ -1,6 +1,6 @@
 # Reproducible On1x benchmarks in MuLL
 
-The suite executes actual `mudsl/mull` programs through `mull::Runtime`, its
+The suite executes actual `armory/mull` programs through `mull::Runtime`, its
 MuLLIER pipeline, and standard-library packages. All benchmark policy lives in
 `main.mull` and `lib/*/Package.mull`: fixture generation and independent oracles,
 configuration, process orchestration, JSON, MIR metrics, statistical summaries,
@@ -20,7 +20,7 @@ ctest --test-dir /mnt/andromeda/tempdir/opencode/on1x-benchmark-build --output-o
 ```
 
 The executable loads the checkout's authored `.mull` files at runtime. It needs
-C++20, C11, Linux/POSIX, and the existing MuDSL headers. Neither an installed
+C++20, C11, Linux/POSIX, and the existing Armory headers. Neither an installed
 `mull` command nor the optional MuLIB MuLL bridge is required. The native
 benchmark backend additionally requires the real generated Archon toolchain,
 `on1xc`, and `on1x-archon-mir`; see
@@ -213,5 +213,5 @@ Excluding blank and whole-line comments across all these files gives
 1,393 MuLL / 332 native source lines (**80.8% MuLL**). The extra MuLL implements
 comparability enforcement, stage-cost analysis, opcode deltas, the annihilator
 diagnostic, and their positive/negative tests. Documentation, JSON evidence/
-configuration, CMake, generated On1x/MIR/C/assembly, and the existing MuDSL
+configuration, CMake, generated On1x/MIR/C/assembly, and the existing Armory
 implementation are excluded. C++ embedding remains explicitly disclosed.
