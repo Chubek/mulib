@@ -1,7 +1,0 @@
-mir-bank 1 ordered-reflexivity;
-
-# The ordered opcodes here compare i64 only.
-pattern lt_self backend * target * mode safe match "lt"($x, $x) replace 0 requires identity;
-pattern le_self backend * target * mode safe match "le"($x, $x) replace 1 requires identity;
-pattern gt_self backend * target * mode safe match "gt"($x, $x) replace 0 requires identity;
-pattern ge_self backend * target * mode safe match "ge"($x, $x) replace 1 requires identity;

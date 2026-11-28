@@ -1,3 +1,0 @@
-mir-bank 1 store-forwarding;
-
-pattern forward_slot backend * target * mode safe match "load"() replace $stored requires local-store;

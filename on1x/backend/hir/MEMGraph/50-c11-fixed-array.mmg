@@ -1,6 +1,0 @@
-memgraph 1;
-budget steps 1048576 nodes 131072 depth 128;
-pass c11_fixed_array_v1 stage pre_codegen mode rewrite priority 400;
-profile c11_fixed_array_v1;
-include "c11-fixed-array.mmgi";
-endpass;

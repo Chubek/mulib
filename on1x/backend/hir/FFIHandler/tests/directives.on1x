@@ -1,5 +1,0 @@
-import foreign stdffi.ffifixture as Test;
-
-fn main() -> i64 {
-    return Test.bump(2);
-}

@@ -1,5 +1,0 @@
-#pragma once
-
-namespace on1x::source_asdl {
-inline constexpr char std_diagnostics[] = R"on1x_asdl(@ON1X_STD_DIAGNOSTICS@)on1x_asdl";
-}

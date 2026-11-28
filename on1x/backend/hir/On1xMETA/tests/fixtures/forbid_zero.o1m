@@ -1,4 +1,0 @@
-meta 1;
-budget steps 100000 nodes 100000 depth 128;
-constraint forbid_integer phase semantic
-match Integer require forbidden "true" message "fixture policy forbids integer literals";

@@ -1,5 +1,0 @@
-memgraph 1;
-budget steps 1048576 nodes 131072 depth 128;
-pass types stage post_infer mode verify priority 900;
-include "types.mmgi";
-endpass;

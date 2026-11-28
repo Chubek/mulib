@@ -1,9 +1,0 @@
-# Reproducible snapshots checked by the bootstrap/freshness gates.
-!/generated/
-/generated/*
-!/generated/On1xMETA.py
-!/generated/parser_manifest.json
-!/generated/on1x_meta_rules.hpp
-!/generated/rules_manifest.json
-!/generated/on1x_meta_source.hpp
-!/generated/source_manifest.json

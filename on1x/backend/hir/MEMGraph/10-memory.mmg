@@ -1,5 +1,0 @@
-memgraph 1;
-budget steps 1048576 nodes 131072 depth 128;
-pass memory stage post_ownership mode verify priority 800;
-include "memory.mmgi";
-endpass;

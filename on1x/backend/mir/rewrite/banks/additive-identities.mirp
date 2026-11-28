@@ -1,6 +1,0 @@
-mir-bank 1 additive-identities;
-
-pattern add_zero backend * target * mode safe match "add.checked"($x, 0) replace $x requires identity;
-pattern zero_add backend * target * mode safe match "add.checked"(0, $x) replace $x requires identity;
-pattern sub_zero backend * target * mode safe match "sub.checked"($x, 0) replace $x requires identity;
-pattern sub_self backend * target * mode safe match "sub.checked"($x, $x) replace 0 requires identity;

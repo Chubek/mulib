@@ -1,5 +1,0 @@
-memgraph 1;
-budget steps 1048576 nodes 131072 depth 128;
-pass ffi stage pre_codegen mode verify priority 600;
-include "ffi.mmgi";
-endpass;

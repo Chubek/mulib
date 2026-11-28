@@ -1,3 +1,0 @@
-#pragma once
-inline constexpr char on1x_extension_registry[]=R"on1x(@ON1X_EXTENSION_REGISTRY@)on1x";
-inline constexpr char on1x_extension_host[]="@CMAKE_HOST_SYSTEM_NAME@/@CMAKE_HOST_SYSTEM_PROCESSOR@";
