@@ -1,0 +1,34 @@
+{
+    "names": [
+        "Ada",
+        "Grace",
+        "Edsger",
+        "Barbara",
+        "Donald",
+        "Alan"
+    ],
+    "orchestratorName": "Athena",
+    "minWorkers": 1,
+    "maxWorkers": 6,
+    "maxParallel": 4,
+    "cpuPerWorker": 1,
+    "memoryPerWorkerMiB": 256,
+    "reserveMemoryMiB": 512,
+    "workspace": "worktree",
+    "apply": true,
+    "failFast": true,
+    "enforceScopes": true,
+    "workerTimeoutSeconds": 1200,
+    "queueDepth": 8,
+    "messageBytes": 4096,
+    "keepBlotter": true,
+    "archiveBlotter": true,
+    "finalReview": true,
+    "plannerModel": "openai-codex/sol-6.2",
+    "workerModel": "nous/tencent/hy4-flash:free",
+    "reviewModel": "nous/deekseek/deepseek-v4.1-flash-1017",
+    "childExtensions": [
+        "/home/user/.pi/agent/extensions/nous.ts",
+        "/home/user/.pi/agent/extensions/nous-logger.ts"
+    ]
+}
