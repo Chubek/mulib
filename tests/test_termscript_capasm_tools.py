@@ -65,8 +65,7 @@ def main():
     if os.name != "posix":
         print("Skipping POSIX Termscript tool test")
         return
-    temp_root = Path("/mnt/andromeda/tempdir/opencode")
-    with tempfile.TemporaryDirectory(dir=temp_root if temp_root.is_dir() else None) as directory:
+    with tempfile.TemporaryDirectory(prefix="mulib-termscript-capasm-") as directory:
         work = Path(directory)
         log = work / "tools.log"
         env = dict(os.environ, TEST_TOOL_LOG=str(log), TMPDIR=str(work))

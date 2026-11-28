@@ -13,6 +13,9 @@ zero and configure policy/transport explicitly. Cross-origin enabled requests
 still require outbound policy checks. There is no CORS, preflight, credential,
 referrer, mixed-content or Fetch Standard implementation. Origin checks do not
 replace resolved-address and redirect enforcement in the transport.
+The [fetch adapter](mulib-fetch.md) accepts only final responses and rejects
+body bytes for 204, 205 and 304; it does not implement upgrades or parse the
+wire response.
 
 ## Integration and ownership
 

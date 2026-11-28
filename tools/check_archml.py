@@ -263,10 +263,7 @@ def main():
         if not match or not all(re.fullmatch(r'0x[0-9a-fA-F]{2}', b.strip()) for b in match[1].split(',')):
             raise RuntimeError(f'non-concrete oracle encoding: {assembly}: {assembled.stdout}')
         expected = ''.join(b.strip()[2:] for b in match[1].split(',')).lower()
-        suffix = ('aml' if arch in
-                  ['amd64', 'arm64', 'riscv64', 'ppc64', 'mips', 'avr32', 'wasm']
-                  else 'am')
-        actual = subprocess.check_output([args.encoder, '--encode', str(ROOT/'library/archml'/f'{arch}.{suffix}'),
+        actual = subprocess.check_output([args.encoder, '--encode', str(ROOT/'library/archml'/f'{arch}.am'),
                                           form, *map(str, values)], text=True).strip()
         if actual != expected:
             raise AssertionError(f'{arch}/{form}: {assembly}: ArchML {actual}, LLVM MC {expected}')

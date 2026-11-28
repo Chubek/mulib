@@ -29,12 +29,8 @@ extern "C"
 #ifdef MULIB_IMPL_CSS_CASCADE
 #ifndef MULIB_IMPL_CSS_CASCADE_ONCE
 #define MULIB_IMPL_CSS_CASCADE_ONCE
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
+#include "detail/mulib-css-declarations.h"
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 int
@@ -56,26 +52,20 @@ mulib_css_cascade_compute (const mulib_css_parsed_sheet_t *sheet,
       result.font_size_px = parent->font_size_px;
       memcpy (result.color, parent->color, sizeof result.color);
     }
+  int ranks[MULIB_CSS_DECL_COUNT_] = { 0 };
   for (size_t i = 0; i < sheet->len; i++)
-    if (!memchr (sheet->rules[i].selector, 0, sizeof sheet->rules[i].selector)
-        || mulib_css_selector_specificity (sheet->rules[i].selector) < 0)
-      return 0;
-  for (int specificity = 0; specificity <= 100;
-       specificity += specificity == 0   ? 1
-                      : specificity == 1 ? 9
-                                         : 90)
     {
-      for (size_t i = 0; i < sheet->len; i++)
-        {
-          int spec = mulib_css_selector_specificity (sheet->rules[i].selector);
-          if (spec != specificity
-              || !mulib_css_selector_matches (node, sheet->rules[i].selector))
-            continue;
-          if (!mulib_css_computed_apply (&result,
-                                         sheet->rules[i].declarations.data,
-                                         sheet->rules[i].declarations.len))
-            return 0;
-        }
+      const mulib_css_rule_t *rule = &sheet->rules[i];
+      if (!memchr (rule->selector, 0, sizeof rule->selector))
+        return 0;
+      int spec = mulib_css_selector_specificity (rule->selector);
+      if (spec < 0)
+        return 0;
+      if (mulib_css_selector_matches (node, rule->selector)
+          && !mulib_css_declarations_apply_ (&result, ranks, spec,
+                                            rule->declarations.data,
+                                            rule->declarations.len))
+        return 0;
     }
   *out = result;
   return 1;

@@ -12,7 +12,7 @@ main (void)
 {
   mulib_css_computed_t style;
   assert (mulib_css_computed_defaults (&style));
-  const char *css = "width : 120px; color: blue";
+  const char *css = "width : 120px !important; width: 100px; color: blue";
   assert (mulib_css_computed_apply (&style, css, strlen (css))
           && style.width_px == 120);
   return 0;

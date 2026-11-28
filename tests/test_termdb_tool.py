@@ -11,7 +11,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE = ROOT / ".sot" / "term"
+SOURCE = ROOT / "tools" / "fixtures" / "termdb"
 TOOL = ROOT / "tools" / "mk-termdb.py"
 
 
@@ -29,12 +29,6 @@ class TermdbTool(unittest.TestCase):
         return subprocess.run(args, cwd=self.root, capture_output=True, text=True, check=check)
 
     def test_bundled_database(self):
-        if not all((SOURCE / name).is_file() for name in (
-            "Terminfo.man", "Termcap.man", "vt100.txt", "ecma-48-code-sequence.txt",
-            "console_commands.txt", "dec_ansi_parser.txt", "kitty-escape-seq.txt",
-            "wezterm-escape-sequences.txt", "xterm-ctrl-seqs.txt",
-        )):
-            self.skipTest("full local .sot/term reference corpus not supplied")
         db_path = self.root / "terminal.sqlite3"
         proc = self.run_tool(db_path)
         self.assertIn("xterm-ctrl-seqs.txt", proc.stderr)

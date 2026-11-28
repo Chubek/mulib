@@ -16,8 +16,10 @@ int
 main (void)
 {
   mulib_dom_document_t *document = mulib_dom_document_new ();
-  mulib_dom_node_t *root, *text;
+  mulib_dom_node_t *root, *text, *tail;
   mulib_dom_event_t *event;
+  mulib_dom_live_range_t *range;
+  mulib_dom_boundary_t end;
   mulib_dom_error_t error;
   mulib_buffer_t content = { 0 }, utf8 = { 0 };
   mulib_dom_string_t value;
@@ -29,6 +31,12 @@ main (void)
   assert (mulib_dom_append_child (mulib_dom_document_node (document), root,
                                   &error));
   assert (mulib_dom_append_child (root, text, &error));
+  range = mulib_dom_live_range_new (text, 0, &error);
+  assert (range && mulib_dom_live_range_set_end (range, text, 11, &error));
+  tail = mulib_dom_split_text (text, 7, &error);
+  assert (tail && mulib_dom_live_range_get (range, NULL, &end));
+  assert (end.node == tail && end.offset == 4);
+  mulib_dom_live_range_destroy (range);
   assert (mulib_dom_add_event_listener (root, "change", changed, &calls, NULL,
                                         &error));
   event = mulib_dom_event_new ("change", 1, 0, NULL);

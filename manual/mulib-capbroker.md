@@ -20,15 +20,19 @@ required grant, charges request bytes, bounds the handler's output capacity,
 charges actual reply bytes, and audits the outcome. A missing/denied operation,
 invalid input, limit violation, or handler failure is sticky for the job.
 A malicious worker cannot recover a successful commit by ignoring denied
-requests. Unknown operation is deny, not pass-through.
+requests. Unknown operation is deny, not pass-through. Only forward reply
+bytes from a successful call; a failing handler may have written to the buffer.
 
 Transactional hooks are all-or-none (`begin`, `commit`, `abort`). The trusted
 handler may stage changes only, with no untracked commits. Begin failure must
 clean its own partial initialization. A failed hook/worker rolls back staged
-changes with abort. A successful hook calls commit once, preserving
-`MULIB_SB_UNCERTAIN` (do not abort or blindly retry). Other commit errors must
-represent definite pre-publication failure and are followed by abort. Without
-hooks, use pure/read-only handlers or explicitly documented irreversible
+changes with abort. Pass exactly `1` as `worker_success` only after known
+worker success; other values (including error codes) deny and abort. Commit
+is called at most once. `MULIB_SB_UNCERTAIN` leaves that broker unable to begin
+another job; no abort is attempted. Reconcile the outcome outside the broker
+before initializing a new one, and never blindly retry. Other commit errors
+must represent definite pre-publication failure and are followed by abort.
+Without hooks, use pure/read-only handlers or explicitly documented irreversible
 operations; this library cannot roll back remote requests. Worker death or a
 malformed frame must cause `finish(0)` by the host.
 

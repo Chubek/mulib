@@ -7,13 +7,24 @@ Transport-agnostic bounded HTTP retrieval with explicit policy enforcement.
 ## Contract and supported profile
 
 A client borrows its transport function/context. Get checks policy before
-calling the synchronous transport, which must append to the supplied owned
-temporary buffer, honor its limit, terminate content type and return 1 on success.
-Status must be 100..599 (HTTP errors are successful retrievals). The response
-limit defaults to 16 MiB and is rechecked independently of mutable buffer metadata.
-Successful bodies append to output; status/type publish only after success.
-Failure preserves caller outputs and releases partial transport output. Transport
-must enforce TLS, resolved-peer policy and every redirect; this layer does no I/O.
+calling the synchronous transport. The callback must return 1 for a successful
+retrieval and report the final status (200..599, including HTTP errors). It
+must handle interim 1xx responses internally and cannot hand off an upgrade.
+Statuses 204, 205 and 304 must have no body bytes.
+
+The callback must use the supplied owned temporary buffer, respect its byte
+limit and return a NUL-terminated Content-Type value (empty if absent). Control
+bytes other than horizontal tab, including DEL, are rejected; this is not a MIME
+syntax parser. The response limit defaults to 16 MiB and is rechecked
+independently of mutable buffer metadata. Nonempty successful bodies append to
+output, subject to the caller buffer's own limit. Empty successful bodies leave
+that buffer untouched. Status and type publish only after success. Failure
+preserves caller outputs and releases partial transport output.
+
+The callback must maintain valid buffer ownership and allocation metadata and
+enforce limits while receiving or decoding. It must also enforce TLS,
+resolved-peer policy and every redirect; this layer does no I/O and cannot
+make an untrusted callback safe.
 
 ## Integration and ownership
 
@@ -37,6 +48,8 @@ releases owned state. Behavioral coverage is in
 [`tests/test_web_browser.c`](../tests/test_web_browser.c), with moving-allocation
 failure coverage in [test_web_alloc.c](../tests/test_web_alloc.c) and bounded
 malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
+[`tests/test_browser_network.c`](../tests/test_browser_network.c) checks the
+transport handoff and output preservation through the browser adapter.
 
 <!-- manual-interface -->
 ## Public header reference

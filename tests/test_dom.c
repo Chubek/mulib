@@ -235,6 +235,220 @@ strings_and_attributes (void)
           && mulib_dom_document_destroy (other));
 }
 
+static mulib_dom_live_range_t *
+live_range (mulib_dom_node_t *n, size_t offset)
+{
+  mulib_dom_error_t e = MULIB_DOM_INVALID_STATE_ERR;
+  mulib_dom_live_range_t *r = mulib_dom_live_range_new (n, offset, &e);
+  assert (r && e == MULIB_DOM_OK);
+  return r;
+}
+static void
+assert_range (mulib_dom_live_range_t *r, mulib_dom_node_t *start,
+              size_t start_offset, mulib_dom_node_t *end, size_t end_offset)
+{
+  mulib_dom_boundary_t a, b;
+  assert (mulib_dom_live_range_get (r, &a, &b));
+  assert (a.node == start && a.offset == start_offset);
+  assert (b.node == end && b.offset == end_offset);
+}
+static void
+live_range_tree (void)
+{
+  mulib_dom_document_t *d = mulib_dom_document_new (),
+                       *other = mulib_dom_document_new ();
+  mulib_dom_node_t *doc = mulib_dom_document_node (d),
+                    *root = element (d, "root"), *a = element (d, "a"),
+                    *b = element (d, "b"), *t = text (d, "text"),
+                    *f = mulib_dom_create_fragment (d, NULL),
+                    *x = element (d, "x"), *y = element (d, "y"),
+                    *dt = mulib_dom_create_doctype (d, "root", NULL, NULL,
+                                                    NULL);
+  mulib_dom_live_range_t *r, *in_b, *in_fragment, *before_b;
+  mulib_dom_error_t e;
+  assert (d && other && f && dt);
+  assert (mulib_dom_append_child (doc, root, NULL));
+  assert (mulib_dom_append_child (root, a, NULL));
+  assert (mulib_dom_append_child (root, b, NULL));
+  assert (mulib_dom_append_child (b, t, NULL));
+  r = live_range (root, 1);
+  assert (mulib_dom_live_range_set_end (r, t, 4, &e) && e == MULIB_DOM_OK);
+  assert_range (r, root, 1, t, 4);
+  assert (mulib_dom_live_range_set_end (r, root, 0, &e));
+  assert_range (r, root, 0, root, 0);
+  assert (mulib_dom_live_range_set_start (r, t, 1, &e));
+  assert_range (r, t, 1, t, 1);
+  assert (mulib_dom_live_range_set_start (r, root, 2, &e));
+  assert_range (r, root, 2, root, 2);
+  assert (mulib_dom_live_range_set_start (r, root, 1, &e));
+  assert (!mulib_dom_live_range_set_end (r, t, 5, &e)
+          && e == MULIB_DOM_INDEX_SIZE_ERR);
+  assert (!mulib_dom_live_range_set_end (r, dt, 0, &e)
+          && e == MULIB_DOM_INVALID_NODE_TYPE_ERR);
+  assert_range (r, root, 1, root, 2);
+  in_b = live_range (t, 3);
+  assert (mulib_dom_append_child (f, x, NULL));
+  assert (mulib_dom_append_child (f, y, NULL));
+  in_fragment = live_range (y, 0);
+  assert (!mulib_dom_replace_child (doc, f, root, &e)
+          && e == MULIB_DOM_HIERARCHY_REQUEST_ERR);
+  assert_range (in_fragment, y, 0, y, 0);
+  assert_range (r, root, 1, root, 2);
+  assert (mulib_dom_insert_before (root, f, b, NULL) == f);
+  assert_range (in_fragment, f, 0, f, 0);
+  assert_range (r, root, 1, root, 4);
+  assert_range (in_b, t, 3, t, 3);
+  assert (mulib_dom_child_at (root, 1) == x && mulib_dom_child_at (root, 2) == y);
+  before_b = live_range (y, 0);
+  assert (mulib_dom_live_range_set_end (before_b, root, 3, NULL));
+  assert (mulib_dom_insert_before (root, b, a, NULL) == b);
+  assert_range (in_b, root, 4, root, 4);
+  assert_range (before_b, y, 0, root, 4);
+  mulib_dom_live_range_destroy (before_b);
+  assert_range (r, root, 2, root, 4);
+  assert (mulib_dom_first_child (root) == b && mulib_dom_first_child (b) == t);
+  assert (mulib_dom_replace_child (root, y, x, NULL) == x);
+  assert_range (r, root, 2, root, 2);
+  assert (mulib_dom_child_at (root, 2) == y && !mulib_dom_parent (x));
+  assert (mulib_dom_remove_child (root, y, NULL) == y);
+  assert_range (r, root, 2, root, 2);
+  assert (mulib_dom_set_text_content (root, span (NULL, 0), NULL));
+  assert_range (r, root, 0, root, 0);
+  /* Cross-root setters collapse and migrate to the new document. */
+  assert (mulib_dom_live_range_set_end (r, mulib_dom_document_node (other),
+                                        0, NULL));
+  assert (mulib_dom_document_destroy (d));
+  assert_range (r, mulib_dom_document_node (other), 0,
+                mulib_dom_document_node (other), 0);
+  assert (!mulib_dom_live_range_get (in_fragment, NULL, NULL));
+  mulib_dom_live_range_destroy (r);
+  mulib_dom_live_range_destroy (in_b);
+  mulib_dom_live_range_destroy (in_fragment);
+  assert (mulib_dom_document_destroy (other));
+}
+static void
+live_range_data (void)
+{
+  const uint16_t units[] = { 'a', 0xd83d, 0xde00, 0, 'b' };
+  mulib_dom_document_t *d = mulib_dom_document_new ();
+  mulib_dom_node_t *root = element (d, "root"), *empty = text (d, ""),
+                    *t = mulib_dom_create_character_data (
+                        d, MULIB_DOM_TEXT, NULL, span (units, 5), NULL),
+                    *tail, *comment = mulib_dom_create_character_data (
+                               d, MULIB_DOM_COMMENT, NULL, span (units, 5),
+                               NULL);
+  mulib_dom_live_range_t *r, *gap, *leading;
+  mulib_dom_error_t e;
+  assert (t && comment && mulib_dom_append_child (root, empty, NULL)
+          && mulib_dom_append_child (root, t, NULL)
+          && mulib_dom_append_child (root, comment, NULL));
+  r = live_range (t, 2);
+  assert (mulib_dom_live_range_set_end (r, t, 5, NULL));
+  gap = live_range (root, 2);
+  assert (mulib_dom_live_range_set_end (gap, root, 3, NULL));
+  leading = live_range (empty, 0);
+  allocations = 0;
+  fail_at = 1;
+  assert (!mulib_dom_live_range_new (t, 0, &e) && e == MULIB_DOM_OUT_OF_MEMORY);
+  allocations = 0;
+  assert (!mulib_dom_replace_data (t, 0, 1, span (units, 5), &e)
+          && e == MULIB_DOM_OUT_OF_MEMORY);
+  allocations = 0;
+  assert (!mulib_dom_split_text (t, 2, &e) && e == MULIB_DOM_OUT_OF_MEMORY);
+  fail_at = 0;
+  assert_range (r, t, 2, t, 5);
+  assert_range (gap, root, 2, root, 3);
+  tail = mulib_dom_split_text (t, 2, NULL);
+  assert (tail && mulib_dom_node_value (tail).data[0] == 0xde00);
+  assert_range (r, t, 2, tail, 3);
+  assert_range (gap, root, 3, root, 4);
+  assert (mulib_dom_live_range_set_start (gap, root, 2, NULL));
+  allocations = 0;
+  fail_at = 2;
+  assert (!mulib_dom_normalize (root, &e) && e == MULIB_DOM_OUT_OF_MEMORY);
+  fail_at = 0;
+  assert_range (leading, empty, 0, empty, 0);
+  assert_range (r, t, 2, tail, 3);
+  assert_range (gap, root, 2, root, 4);
+  assert (mulib_dom_normalize (root, NULL));
+  assert_range (leading, root, 0, root, 0);
+  assert_range (r, t, 2, t, 5);
+  assert_range (gap, t, 2, root, 2);
+  assert (!mulib_dom_parent (tail) && mulib_dom_first_child (root) == t
+          && !memcmp (mulib_dom_node_value (t).data, units, sizeof units));
+  assert (mulib_dom_replace_data (t, 1, 2, span (units, 1), NULL));
+  assert_range (r, t, 1, t, 4);
+  assert (mulib_dom_replace_data (t, 1, 0, span (units, 1), NULL));
+  assert_range (r, t, 1, t, 5);
+  assert (mulib_dom_set_node_value (t, span (units, 5), NULL));
+  assert_range (r, t, 0, t, 0);
+  assert (mulib_dom_live_range_set_start (r, comment, 4, NULL));
+  assert (mulib_dom_set_text_content (comment, span (units, 1), NULL));
+  assert_range (r, comment, 0, comment, 0);
+  assert (mulib_dom_live_range_set_end (r, tail, 3, NULL));
+  assert (mulib_dom_split_text (tail, 1, NULL));
+  assert_range (r, tail, 1, tail, 1);
+  mulib_dom_live_range_destroy (r);
+  mulib_dom_live_range_destroy (gap);
+  mulib_dom_live_range_destroy (leading);
+  assert (mulib_dom_document_destroy (d));
+}
+static void
+live_range_adoption (void)
+{
+  const uint16_t value[] = { 'v' };
+  mulib_dom_document_t *d = mulib_dom_document_new (),
+                       *other = mulib_dom_document_new ();
+  mulib_dom_node_t *root = element (d, "root"), *child = text (d, "1"),
+                    *destination = element (other, "destination"), *attr,
+                    *connected = element (d, "connected"),
+                    *fragment = mulib_dom_create_fragment (d, NULL);
+  mulib_dom_live_range_t *r, *inside, *attribute, *relocated, *fragment_range;
+  mulib_dom_boundary_t out = { NULL, SIZE_MAX };
+  mulib_dom_error_t e;
+  assert (mulib_dom_append_child (root, child, NULL));
+  assert (mulib_dom_set_attribute (root, NULL, "id", span (value, 1), NULL));
+  attr = mulib_dom_get_attribute_node (root, NULL, "id");
+  assert (!mulib_dom_live_range_new (attr, 1, &e) && e == MULIB_DOM_INDEX_SIZE_ERR);
+  attribute = live_range (attr, 0);
+  inside = live_range (child, 1);
+  r = live_range (root, 0);
+  assert (mulib_dom_live_range_set_end (r, root, 1, NULL));
+  assert (mulib_dom_append_child (destination, root, NULL) == root);
+  assert (mulib_dom_append_child (mulib_dom_document_node (d), connected, NULL));
+  relocated = live_range (connected, 0);
+  assert (mulib_dom_append_child (destination, connected, NULL) == connected);
+  assert_range (relocated, mulib_dom_document_node (d), 0,
+                mulib_dom_document_node (d), 0);
+  assert (mulib_dom_append_child (fragment, element (d, "former-child"), NULL));
+  fragment_range = live_range (mulib_dom_first_child (fragment), 0);
+  assert (mulib_dom_append_child (destination, fragment, NULL) == fragment);
+  assert_range (fragment_range, fragment, 0, fragment, 0);
+  assert (mulib_dom_owner_document (attr) == other
+          && mulib_dom_owner_document (child) == other);
+  assert (mulib_dom_document_destroy (d));
+  assert (!mulib_dom_live_range_get (relocated, NULL, NULL));
+  assert_range (fragment_range, fragment, 0, fragment, 0);
+  assert_range (r, root, 0, root, 1);
+  assert_range (inside, child, 1, child, 1);
+  assert_range (attribute, attr, 0, attr, 0);
+  assert (mulib_dom_remove_attribute (root, NULL, "id", NULL));
+  assert_range (attribute, attr, 0, attr, 0);
+  assert (mulib_dom_document_destroy (other));
+  assert (!mulib_dom_live_range_get (r, &out, NULL));
+  assert (!out.node && out.offset == SIZE_MAX);
+  assert (!mulib_dom_live_range_set_start (r, NULL, 0, &e)
+          && e == MULIB_DOM_INVALID_STATE_ERR);
+  assert (!mulib_dom_live_range_get (inside, NULL, NULL));
+  assert (!mulib_dom_live_range_get (attribute, NULL, NULL));
+  assert (!mulib_dom_live_range_get (fragment_range, NULL, NULL));
+  mulib_dom_live_range_destroy (r);
+  mulib_dom_live_range_destroy (inside);
+  mulib_dom_live_range_destroy (attribute);
+  mulib_dom_live_range_destroy (relocated);
+  mulib_dom_live_range_destroy (fragment_range);
+}
+
 typedef struct event_log
 {
   mulib_dom_document_t *document;
@@ -432,6 +646,9 @@ main (void)
 {
   trees ();
   strings_and_attributes ();
+  live_range_tree ();
+  live_range_data ();
+  live_range_adoption ();
   events ();
   limits_and_failures ();
   return 0;

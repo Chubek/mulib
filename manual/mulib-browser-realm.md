@@ -9,9 +9,10 @@ Browser realm IDs with immutable origin metadata and isolation keys.
 Init copies nonzero realm/context IDs and canonical HTTP(S) origin metadata,
 serializing normalized host and explicit port (IPv6 bracketed). Flags are opaque
 host metadata. Invalid or oversized origin leaves output unchanged. Same-origin
-compares canonical origin strings of initialized records, not context IDs;
-context isolation decisions must check context_id separately. These are value
-records, not VM realms, opaque origins, process isolation or script execution.
+requires nonzero realm/context IDs and matching, canonical origin strings with
+an explicit port. The two context IDs need not match; context isolation
+decisions must check `context_id` separately. These are value records, not VM
+realms, opaque origins, process isolation or script execution.
 
 ## Integration and ownership
 

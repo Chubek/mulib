@@ -1005,7 +1005,7 @@ canonical entry points and compatibility behavior.
 | [keyremap](mulib-keyremap.md) | Stateful key remapping with balanced many-to-one releases. | [header](../kernels/mulib-keyremap.h) · [example](../examples/modules/keyremap.c) |
 | [kf8write](mulib-kf8write.md) | KF8 FDST flow table construction (building block, not an AZW3 ebook writer). | [header](../kernels/mulib-kf8write.h) · [example](../examples/mulib-kf8write.c) |
 | [kmm](mulib-kmm.md) | Kernel mean matching by projected gradient on a capped simplex. | [header](../kernels/mulib-kmm.h) · [example](../examples/modules/kmm.c) |
-| [kronvm](mulib-kronvm.md) | Persistent KronQL promises with caller-clocked dispatch. | [header](../kernels/mulib-kronvm.h) · [example](../examples/modules/kronvm.c) |
+| [kronvm](mulib-kronvm.md) | Persistent KronQL promises and typed application jobs with caller-clocked dispatch. | [header](../kernels/mulib-kronvm.h) · [example](../examples/modules/kronvm.c) |
 | [kvdb](mulib-kvdb.md) | Persistent binary-safe key-value storage with integrity validation. | [header](../kernels/mulib-kvdb.h) · [example](../examples/modules/kvdb.c) |
 | [kvm](mulib-kvm.md) | Linux KVM device, VM, memory-slot and vCPU lifetime helpers. | [header](../kernels/mulib-kvm.h) · [example](../examples/modules/kvm.c) |
 | [kvmcontainer](mulib-kvmcontainer.md) | Owning Linux KVM device/VM/single-vCPU bundle, not a guest OS runtime. | [header](../kernels/mulib-kvmcontainer.h) · [example](../examples/modules/kvmcontainer.c) |

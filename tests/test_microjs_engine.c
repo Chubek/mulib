@@ -127,6 +127,33 @@ static void language(mulib_microjs_t *v) {
   fails(v, "x=7; throw 'failed'", MULIB_MICROJS_EXCEPTION); number(v, "x", 7);
   fails(v, "function recurse(){return recurse();} recurse()", MULIB_MICROJS_LIMIT);
 }
+static void logical_assignment(mulib_microjs_t *v) {
+  number(v, "let logical=0; logical &&= missing", 0);
+  number(v, "logical ||= 3", 3);
+  number(v, "logical ||= missing", 3);
+  number(v, "logical &&= 4", 4);
+  number(v, "logical", 4);
+  boolean(v, "logical=false; (logical ?" "?= missing) === false", 1);
+  number(v, "logical=null; logical ?" "?= 7", 7);
+  number(v, "let uninitializedValue; logical &&= uninitializedValue ?" "?= 8", 8);
+  number(v, "uninitializedValue", 8);
+  number(v, "const skipWrite=9; skipWrite ||= missing", 9);
+  fails(v, "skipWrite &&= (logical=10)", MULIB_MICROJS_TYPE);
+  number(v, "logical", 10);
+  fails(v, "missing ||= (logical=11)", MULIB_MICROJS_NAME);
+  fails(v, "{pending ?" "?= (logical=12); let pending;}", MULIB_MICROJS_NAME);
+  number(v, "logical", 10);
+  fails(v, "logical=13; (1+2) &&= 3", MULIB_MICROJS_SYNTAX);
+  number(v, "logical", 10);
+  boolean(v,
+      "let target=[0], original=target, keyCalls=0, baseCalls=0;"
+      "function base(){baseCalls++;return target;}"
+      "let assigned=(base()[keyCalls++] ||= (target=[9], 5));"
+      "let skipped=(base()[keyCalls++ - 1] ||= missing);"
+      "assigned===5 && skipped===9 && original[0]===5 && target[0]===9"
+      " && keyCalls===2 && baseCalls===2", 1);
+  string(v, "'x'[0] ||= missing", "x", 1);
+}
 static void embedding(mulib_microjs_t *v) {
   mulib_microjs_value_t f = {0}, arg = {0}, out = {0}, object = {0};
   mulib_microjs_error_t e; double base = 10; size_t before, after, i;
@@ -170,6 +197,79 @@ static void limits(void) {
   fails(v, "1", MULIB_MICROJS_LIMIT); mulib_microjs_destroy(v);
   assert(!mulib_microjs_create_with_heap(NULL, 0));
 }
+static mulib_microjs_status_t host_queue_job(mulib_microjs_t *v,
+    const mulib_microjs_value_t *args, size_t count, mulib_microjs_value_t *out, void *user) {
+  size_t attempted = 42;
+  mulib_microjs_error_t error;
+  (void)user;
+  assert(mulib_microjs_drain_jobs(v, 1, &attempted, &error) == MULIB_MICROJS_INVALID);
+  assert(attempted == 42 && error.code == MULIB_MICROJS_INVALID);
+  out->type = MULIB_MICROJS_UNDEFINED;
+  return count ? mulib_microjs_enqueue_job(v, args) : MULIB_MICROJS_TYPE;
+}
+static void jobs(void) {
+  mulib_microjs_t *v = mulib_microjs_create(NULL), *other = mulib_microjs_create(NULL);
+  mulib_microjs_value_t job, out = {0};
+  mulib_microjs_error_t error;
+  size_t n, baseline;
+  assert(v && other);
+  assert(mulib_microjs_bind(v, "queueMicrotask", host_queue_job, NULL) == MULIB_MICROJS_OK);
+  number(v, "let jobLog=0; jobLog", 0);
+  baseline = mulib_microjs_collect(v);
+  job = run(v, "(function(){let data={n:1};data.self=data;"
+               "return function(){jobLog=jobLog*10+data.n;"
+               "queueMicrotask(function(){jobLog=jobLog*10+3;});};})()");
+  assert(mulib_microjs_enqueue_job(other, &job) == MULIB_MICROJS_INVALID);
+  assert(mulib_microjs_enqueue_job(v, &out) == MULIB_MICROJS_TYPE);
+  allocation_budget = 0;
+  assert(mulib_microjs_enqueue_job(v, &job) == MULIB_MICROJS_MEMORY);
+  allocation_budget = SIZE_MAX;
+  assert(mulib_microjs_drain_jobs(v, 1, &n, &error) == MULIB_MICROJS_OK && n == 0);
+  assert(mulib_microjs_enqueue_job(v, &job) == MULIB_MICROJS_OK);
+  mulib_microjs_value_free(&job);
+  number(v, "queueMicrotask(function(){jobLog=jobLog*10+2;}); jobLog", 0);
+  assert(mulib_microjs_collect(v) > baseline);
+  assert(mulib_microjs_drain_jobs(v, 0, &n, &error) == MULIB_MICROJS_OK && n == 0);
+  assert(mulib_microjs_drain_jobs(v, 2, &n, &error) == MULIB_MICROJS_OK && n == 2 && !error.code);
+  number(v, "jobLog", 12);
+  assert(mulib_microjs_drain_jobs(v, 2, &n, &error) == MULIB_MICROJS_OK && n == 1);
+  number(v, "jobLog", 123);
+  assert(mulib_microjs_collect(v) == baseline);
+  fails(v, "queueMicrotask(0)", MULIB_MICROJS_TYPE);
+  fails(v, "queueMicrotask(function(){jobLog++; throw 'job error';});"
+           "queueMicrotask(function(){jobLog++;}); throw 'script error'", MULIB_MICROJS_EXCEPTION);
+  assert(mulib_microjs_drain_jobs(v, 10, &n, &error) == MULIB_MICROJS_EXCEPTION);
+  assert(n == 1 && error.code == MULIB_MICROJS_EXCEPTION && error.line == 1 && error.column == 1);
+  number(v, "jobLog", 124);
+  assert(mulib_microjs_drain_jobs(v, 10, &n, &error) == MULIB_MICROJS_OK && n == 1);
+  number(v, "jobLog", 125);
+  number(v, "queueMicrotask(function(){queueMicrotask(function(){jobLog++;});}); jobLog", 125);
+  assert(mulib_microjs_drain_jobs(v, 10, NULL, NULL) == MULIB_MICROJS_OK);
+  number(v, "jobLog", 126);
+  job = run(v, "(function(){return 42;})");
+  assert(mulib_microjs_enqueue_job(v, &job) == MULIB_MICROJS_OK);
+  mulib_microjs_destroy(v);
+  assert(mulib_microjs_drain_jobs(v, 1, NULL, NULL) == MULIB_MICROJS_INVALID);
+  mulib_microjs_value_free(&job);
+  mulib_microjs_destroy(other);
+}
+static void job_heap_limit(void) {
+  mulib_microjs_t *v = mulib_microjs_create_with_heap(NULL, 2048);
+  mulib_microjs_value_t job = {0};
+  double base = 0;
+  mulib_microjs_status_t status;
+  size_t n = 0, attempted;
+  assert(v && mulib_microjs_bind(v, "job", host_sum, &base) == MULIB_MICROJS_OK);
+  assert(mulib_microjs_get_global(v, "job", &job) == MULIB_MICROJS_OK);
+  while (n < 2048 && (status = mulib_microjs_enqueue_job(v, &job)) == MULIB_MICROJS_OK)
+    ++n;
+  assert(n > 0 && n < 2048 && status == MULIB_MICROJS_LIMIT);
+  assert(mulib_microjs_drain_jobs(v, 1, &attempted, NULL) == MULIB_MICROJS_OK && attempted == 1);
+  assert(mulib_microjs_enqueue_job(v, &job) == MULIB_MICROJS_OK);
+  mulib_microjs_value_free(&job);
+  assert(mulib_microjs_drain_jobs(v, 2048, &attempted, NULL) == MULIB_MICROJS_OK && attempted == n);
+  mulib_microjs_destroy(v);
+}
 static void allocation_failures(void) {
   const char source[] = "function factory(x){return function(y){return {n:x+y,s:'kept'};};} factory(2)(3)";
   size_t budget; int success = 0;
@@ -210,6 +310,7 @@ static void malformed_programs(void) {
 }
 int main(void) {
   mulib_microjs_t *v = mulib_microjs_create(NULL); assert(v);
-  primitives(v); language(v); embedding(v); limits(); allocation_failures(); malformed_programs();
+  primitives(v); language(v); logical_assignment(v); embedding(v); limits();
+  jobs(); job_heap_limit(); allocation_failures(); malformed_programs();
   puts("microjs engine tests passed"); return 0;
 }

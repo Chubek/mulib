@@ -14,6 +14,12 @@ caller output, but native callback side effects are not rolled back. The bridge
 owns no object table or JavaScript values. The host must authorize IDs/property
 access and keep contexts alive; this is not a JS interpreter or a sandbox.
 
+The [WebIDL compiler's MicroJS mode](mulib-webidl.md#microjs-native-bindings)
+does not use this bridge; it calls statically linked native functions with
+typed values. For actual DOM wrappers, use the existing native tree as the
+source of truth and add VM receiver, brand, descriptor and lifetime support
+first. See the [WebIDL integration ledger](webidl-integration-status.md).
+
 ## Integration and ownership
 
 Include `kernels/mulib-jsdom.h`. Define the following switches in exactly one C11

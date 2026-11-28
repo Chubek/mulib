@@ -8,7 +8,6 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     target_include_directories(Armory INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/..)
     target_compile_features(Armory INTERFACE cxx_std_20)
     include(GNUInstallDirs)
-    include(../cmake/QBE.cmake)
     include(../cmake/Mulib.cmake)
     if(MULL_ENABLE_MULIB)
         target_link_libraries(Armory INTERFACE mull-mulib-bridge)
@@ -24,6 +23,9 @@ endif()
 
 # Optional legacy tests are usable when their separate sources are present.
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../MetaML.hpp")
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    include(../cmake/QBE.cmake)
+endif()
 # MetaML language, portable host modules, and a genuinely C-compiled client.
 option(Armory_TEST_D "Test the D module when a D compiler is available" ON)
 enable_language(C)
@@ -216,6 +218,8 @@ endif()
 add_test(NAME metaml_manual_native COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/check_native_manual.py ${_manual_native_args})
 
+elseif(METAML_ENABLE_QBE)
+    message(STATUS "SKIP: legacy MetaML QBE tests require the MetaML source tree")
 endif()
 
 add_executable(armory_enum_tests test_enum_reflection.cpp enum_odr.cpp)

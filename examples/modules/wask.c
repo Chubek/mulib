@@ -10,15 +10,20 @@
 int
 main (void)
 {
+  /* Exported function 0 forwards both arguments to private function 1. */
   const unsigned char bytes[]
-      = { 0,    97, 115,  109, 1, 0, 0, 0,    1, 7,    1, 0x60, 2,   0x7f,
-          0x7f, 1,  0x7f, 3,   2, 1, 0, 7,    7, 1,    3, 'a',  'd', 'd',
-          0,    0,  10,   9,   1, 7, 0, 0x20, 0, 0x20, 1, 0x6a, 0x0b };
+      = { 0, 97, 115, 109, 1, 0, 0, 0,
+          1, 7, 1, 0x60, 2, 0x7f, 0x7f, 1, 0x7f,
+          3, 3, 2, 0, 0,
+          7, 7, 1, 3, 'a', 'd', 'd', 0, 0,
+          10, 18, 2,
+          8, 0, 0x20, 0, 0x20, 1, 0x10, 1, 0x0b,
+          7, 0, 0x20, 0, 0x20, 1, 0x6a, 0x0b };
   uint32_t args[] = { 20, 22 }, result;
   mulib_wask_error_t error;
   mulib_wask_t *module = mulib_wask_load (bytes, sizeof (bytes), &error);
   assert (module);
-  assert (mulib_wask_call (module, "add", args, 2, 100, &result, &error)
+  assert (mulib_wask_call (module, "add", args, 2, 8, &result, &error)
           == MULIB_WASK_OK);
   assert (result == 42);
   mulib_wask_destroy (module);

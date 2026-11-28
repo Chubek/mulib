@@ -243,7 +243,7 @@ int main (int argc, char **argv)
   for (size_t i = 0; i < sizeof(names)/sizeof(*names); ++i) {
     mulib_archml_t *a = NULL;
     mulib_archml_error_t e;
-    assert (snprintf(path,sizeof(path),"%s/%s.%s",directory,names[i],i<7 ? "aml" : "am") < (int)sizeof(path));
+    assert (snprintf(path,sizeof(path),"%s/%s.am",directory,names[i]) < (int)sizeof(path));
     int rc = mulib_archml_load(path,NULL,&a,&e);
     if (rc != MULIB_ARCHML_OK) fprintf(stderr,"%s:%zu:%zu %s\n",path,e.line,e.column,e.message);
     assert (rc == MULIB_ARCHML_OK && !strcmp(mulib_archml_name(a),names[i]));

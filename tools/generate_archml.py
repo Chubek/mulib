@@ -1,16 +1,55 @@
 #!/usr/bin/env python3
 """Deterministic ArchML compiler profiles. No downloaded/generated ISA claims.
 
-The reviewed tables are the source for library/archml/*.{aml,am}. --check
-verifies checked-in assets. Concrete forms have encodings and P-code; other
+The reviewed tables and checked-in metadata are the source for library/archml/*.am.
+--check verifies the full assets. Concrete forms have encodings and P-code; other
 extensions are explicitly marked metadata-only. Encoding examples are tested
 against independent assembler fixtures in tests/test_archml.c.
 """
 import argparse
 import json
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parent.parent
+PROFILE_DIR = ROOT / 'library' / 'archml'
+METADATA_DIR = PROFILE_DIR / 'metadata'
+BANK_ENTRY = re.compile(r'^  \(x-bank ([\w-]+)\n(.*?)^  \)\n', re.M | re.S)
+BANK_SCOPE = '    (scope "cross-architecture")\n'
+
+
+def load_metadata(profiles):
+    """Resolve the historical optional records without an external scraper."""
+    bank_source = (PROFILE_DIR / 'banks.am').read_text()
+    banks = {}
+    for name, body in BANK_ENTRY.findall(bank_source):
+        if name in banks or body.count(BANK_SCOPE) != 1:
+            raise ValueError(f'invalid ArchML bank catalog entry: {name}')
+        banks[name] = body
+    if len(banks) != bank_source.count('\n  (x-bank '):
+        raise ValueError('malformed ArchML bank catalog')
+    source = json.loads((METADATA_DIR / 'profile-supplements.json').read_text())
+    if not isinstance(source, dict) or set(source) != set(profiles):
+        raise ValueError('ArchML supplements do not cover exactly the generated profiles')
+    metadata = {}
+    for profile, items in source.items():
+        if not isinstance(items, list) or not all(isinstance(item, str) for item in items):
+            raise ValueError(f'invalid ArchML supplements for {profile}')
+        records, seen = [], set()
+        for item in items:
+            if item in seen:
+                raise ValueError(f'duplicate ArchML supplement for {profile}: {item}')
+            seen.add(item)
+            if item.startswith(('  (microarch ', '  (x-image ')):
+                records.append(item)
+            elif item in banks:
+                body = banks[item].replace(BANK_SCOPE, f'    (target (ref target {profile}))\n')
+                body = body.replace('classification=agent.', 'classification=heuristic.')
+                records.append(f'  (x-bank {item}\n{body}  )')
+            else:
+                raise ValueError(f'unknown ArchML bank for {profile}: {item}')
+        metadata[profile] = records
+    return metadata
 
 
 def q(s):
@@ -755,10 +794,16 @@ def main():
     from archml_extra import profiles
     from archml_targets import profiles as target_profiles
     from archml_android import dex
-    for build in [amd64, arm64, riscv64, *profiles(), *target_profiles(), dex]:
-        profile = build()
-        path = ROOT / 'library' / 'archml' / getattr(profile, 'filename', profile.name + '.aml')
+    generated = [build() for build in [amd64, arm64, riscv64, *profiles(), *target_profiles(), dex]]
+    try:
+        metadata = load_metadata(profile.name for profile in generated)
+    except (OSError, ValueError) as error:
+        parser.exit(1, f'{error}\n')
+    for profile in generated:
+        path = PROFILE_DIR / getattr(profile, 'filename', profile.name + '.am')
         text = profile.render(trim=hasattr(profile, 'filename'))
+        if metadata[profile.name]:
+            text = text[:-2] + '\n'.join(metadata[profile.name]) + '\n)\n'
         if args.check:
             if not path.is_file() or path.read_text() != text:
                 parser.exit(1, f'stale ArchML profile: {path}\n')
@@ -766,7 +811,8 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text)
         print(f'{profile.name}: {len(profile.instructions)} concrete instructions, '
-              f'{len(profile.operations)} non-binary operations, {len(profile.records)} records')
+              f'{len(profile.operations)} non-binary operations, '
+              f'{len(profile.records) + len(metadata[profile.name])} records')
 
 
 if __name__ == '__main__':

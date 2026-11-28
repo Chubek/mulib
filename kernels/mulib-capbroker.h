@@ -47,14 +47,33 @@ int mulib_capbroker_init(mulib_capbroker_t*b,const char*subject,const mulib_capb
     for(size_t i=0;i<n;i++){if(!mulib_capbroker_name_(o[i].name)||!mulib_capbroker_name_(o[i].capability)||!o[i].handler)return MULIB_SB_INVALID;for(size_t j=0;j<i;j++)if(!strcmp(o[i].name,o[j].name))return MULIB_SB_INVALID;}
     for(size_t i=0;i<ng;i++){if(!mulib_capbroker_name_(g[i]))return MULIB_SB_INVALID;for(size_t j=0;j<i;j++)if(!strcmp(g[i],g[j]))return MULIB_SB_INVALID;}
     memset(b,0,sizeof *b);b->subject=subject;b->ops=o;b->op_count=n;b->grants=g;b->grant_count=ng;if(h)b->hooks=*h;b->max_bytes=p->max_broker_bytes;b->max_requests=p->max_broker_requests;b->max_frame=p->max_frame_bytes;return 0;}
-int mulib_capbroker_begin(mulib_capbroker_t*b){if(!b||!b->subject||b->active||b->busy)return MULIB_SB_STATE;b->bytes=0;b->requests=0;b->failed=0;b->busy=1;int r=b->hooks.begin?b->hooks.begin(b->hooks.context,b->subject):0;b->busy=0;if(r)return r;b->active=1;return 0;}
+int mulib_capbroker_begin(mulib_capbroker_t*b){
+    if(!b||!b->subject||b->active||b->busy||b->failed==MULIB_SB_UNCERTAIN)
+        return MULIB_SB_STATE;
+    b->bytes=0;b->requests=0;b->failed=0;b->busy=1;
+    int r=b->hooks.begin?b->hooks.begin(b->hooks.context,b->subject):0;
+    b->busy=0;if(r)return r;b->active=1;return 0;}
 static int mulib_capbroker_fail_(mulib_capbroker_t*b,const char*name,int r){b->failed=1;if(b->hooks.audit){b->busy=1;b->hooks.audit(b->hooks.context,b->subject,name,r);b->busy=0;}return r;}
 int mulib_capbroker_call(mulib_capbroker_t*b,const char*name,const void*req,size_t n,void*reply,size_t cap,size_t*out){if(!b||!b->active||b->busy)return MULIB_SB_STATE;if(b->failed)return MULIB_SB_DENIED;if(!mulib_capbroker_name_(name)||(!req&&n)||(!reply&&cap)||!out)return mulib_capbroker_fail_(b,"invalid",MULIB_SB_INVALID);
-    if(b->requests==b->max_requests||n>b->max_frame||n>b->max_bytes-b->bytes)return mulib_capbroker_fail_(b,name,MULIB_SB_LIMIT);
+    if(b->requests>=b->max_requests||b->bytes>b->max_bytes||
+       n>b->max_frame||n>b->max_bytes-b->bytes)
+        return mulib_capbroker_fail_(b,name,MULIB_SB_LIMIT);
     b->requests++;b->bytes+=n;const mulib_capbroker_op_t*o=NULL;for(size_t i=0;i<b->op_count;i++)if(!strcmp(name,b->ops[i].name)){o=&b->ops[i];break;}
     int granted=0;if(o)for(size_t i=0;i<b->grant_count;i++)if(!strcmp(o->capability,b->grants[i])){granted=1;break;}if(!granted)return mulib_capbroker_fail_(b,name,MULIB_SB_DENIED);
     if(cap>b->max_frame)cap=b->max_frame;
     if((uint64_t)cap>b->max_bytes-b->bytes)cap=(size_t)(b->max_bytes-b->bytes);
     size_t len=0;b->busy=1;int r=o->handler(o->context,b->subject,req,n,reply,cap,&len);b->busy=0;if(r||len>cap)return mulib_capbroker_fail_(b,name,r?r:MULIB_SB_PROTOCOL);b->bytes+=len;*out=len;if(b->hooks.audit){b->busy=1;b->hooks.audit(b->hooks.context,b->subject,name,0);b->busy=0;}return 0;}
-int mulib_capbroker_finish(mulib_capbroker_t*b,int ok){if(!b||!b->active||b->busy)return MULIB_SB_STATE;int r=0;b->busy=1;if(!ok||b->failed){if(b->hooks.abort)b->hooks.abort(b->hooks.context);r=MULIB_SB_DENIED;}else if(b->hooks.commit){r=b->hooks.commit(b->hooks.context);if(r&&r!=MULIB_SB_UNCERTAIN)b->hooks.abort(b->hooks.context);}b->active=0;b->failed=0;b->busy=0;return r;}
+int mulib_capbroker_finish(mulib_capbroker_t*b,int ok){
+    if(!b||!b->active||b->busy)return MULIB_SB_STATE;
+    int r=0;b->busy=1;
+    if(ok!=1||b->failed||b->requests>b->max_requests||b->bytes>b->max_bytes){
+        if(b->hooks.abort)b->hooks.abort(b->hooks.context);
+        r=MULIB_SB_DENIED;
+    }else if(b->hooks.commit){
+        r=b->hooks.commit(b->hooks.context);
+        if(r&&r!=MULIB_SB_UNCERTAIN)b->hooks.abort(b->hooks.context);
+    }
+    /* An indeterminate commit cannot be made safe by beginning a new job. */
+    b->active=0;b->failed=r==MULIB_SB_UNCERTAIN?MULIB_SB_UNCERTAIN:0;
+    b->busy=0;return r;}
 #endif

@@ -466,11 +466,6 @@ if(MULIB_BUILD_TESTS)
     add_test(NAME mulib_termdb_tool COMMAND ${Python3_EXECUTABLE}
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_termdb_tool.py")
     set_tests_properties(mulib_termdb_tool PROPERTIES TIMEOUT 60)
-    add_test(NAME mulib_kernelbind_inventory COMMAND ${Python3_EXECUTABLE}
-      "${CMAKE_CURRENT_SOURCE_DIR}/tools/extend-kernelbind.py" --check)
-    add_test(NAME mulib_kernelbind_generator COMMAND ${Python3_EXECUTABLE}
-      "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_extend_kernelbind.py")
-    set_tests_properties(mulib_kernelbind_inventory mulib_kernelbind_generator PROPERTIES TIMEOUT 60)
   endif()
 
   file(GLOB focused_tests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_*.c"
@@ -490,6 +485,9 @@ if(MULIB_BUILD_TESTS)
   endif()
   foreach(source_file IN LISTS focused_tests)
     get_filename_component(test_name "${source_file}" NAME_WE)
+    if(test_name STREQUAL "test_prettybridge")
+      continue() # Historical fixture for the removed On1x PrettyPrint runtime.
+    endif()
     if(test_name MATCHES "^test_ssh_" AND NOT MULIB_BUILD_SSH_OPENSSL)
       continue() # OpenSSL-backed SSH kernels are opt-in.
     endif()

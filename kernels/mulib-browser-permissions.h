@@ -55,16 +55,22 @@ extern "C"
 #include <stdlib.h>
 #include <string.h>
 
+#define MULIB_BROWSER_PERMISSIONS_KNOWN_                                        \
+  ((uint32_t)(MULIB_BROWSER_ALLOW_NETWORK | MULIB_BROWSER_ALLOW_STORAGE          \
+              | MULIB_BROWSER_ALLOW_SCRIPT | MULIB_BROWSER_ALLOW_CROSS_ORIGIN   \
+              | MULIB_BROWSER_ALLOW_FILE_URL))
+
 int
 mulib_browser_permissions_check (mulib_browser_permissions_t p, uint32_t need)
 {
-  return !(need & ~31u) && !(p.allowed & ~31u) && (p.allowed & need) == need;
+  return !((need | p.allowed) & ~MULIB_BROWSER_PERMISSIONS_KNOWN_)
+         && (p.allowed & need) == need;
 }
 int
 mulib_browser_permissions_grant (mulib_browser_permissions_t *p,
                                  uint32_t flags)
 {
-  if (!p || flags & ~31u)
+  if (!p || (p->allowed | flags) & ~MULIB_BROWSER_PERMISSIONS_KNOWN_)
     return 0;
   p->allowed |= flags;
   return 1;
@@ -74,7 +80,8 @@ mulib_browser_permissions_revoke (mulib_browser_permissions_t *p,
                                   uint32_t flags)
 {
   if (p)
-    p->allowed &= ~flags;
+    p->allowed &= ~(flags & MULIB_BROWSER_PERMISSIONS_KNOWN_);
 }
+#undef MULIB_BROWSER_PERMISSIONS_KNOWN_
 #endif
 #endif

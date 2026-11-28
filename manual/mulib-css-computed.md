@@ -10,10 +10,19 @@ Defaults are block/black/16px with width=height=-1 (auto). Apply consumes
 declarations in order, case-folds property names and supports display (block,
 inline, none, flex, grid), opaque color text<=63 bytes, and nonnegative numeric
 font-size/width/height with px or unitless values; width/height accept auto.
-Whitespace before the colon is supported. Unknown properties are ignored after
-lexical parsing; malformed supported values and !important fail atomically.
-No units other than px, variables, shorthand expansion or color interpretation.
-Apply operates on an initialized style; inherited fields are handled by cascade.
+Whitespace before the colon is supported. A supported property can have a
+trailing top-level `!important` (ASCII case-insensitive, with optional CSS
+whitespace after `!`). That marker takes precedence over ordinary declarations
+of the same property in the same call; equal priority uses the last declaration.
+The marker is not stored in the computed value. Separate calls do not retain
+earlier priority. Quoted text and text inside parentheses do not set priority.
+
+Unknown properties are ignored after lexical parsing. Malformed supported values
+or priority suffixes fail atomically, even on declarations that would lose.
+Standalone apply does not strip CSS comments; css-parser strips them in
+stylesheet rules. No units other than px, variables, shorthand expansion or
+color interpretation. Apply operates on an initialized style; inherited fields
+are handled by cascade.
 
 ## Integration and ownership
 
@@ -93,7 +102,7 @@ extern "C"
 | --- | --- |
 | Header | [`kernels/mulib-css-computed.h`](../kernels/mulib-css-computed.h) |
 | Implementation switch | `MULIB_IMPL_CSS_COMPUTED` |
-| Repository-local includes | [mulib-bounded-text](mulib-bounded-text.md) |
+| Repository-local includes | [`kernels/detail/mulib-css-declarations.h`](../kernels/detail/mulib-css-declarations.h), [mulib-bounded-text](mulib-bounded-text.md) |
 | Complete example | [`examples/modules/css-computed.c`](../examples/modules/css-computed.c) |
 
 The include list includes conditional and implementation-only includes;

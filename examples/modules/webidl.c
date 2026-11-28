@@ -19,7 +19,8 @@ main (int argc, char **argv)
   int result = 1;
   if (argc > 3)
     {
-      fprintf (stderr, "usage: %s [--ast|--cst|--yaml|--c99] [file.idl]\n",
+      fprintf (stderr,
+               "usage: %s [--ast|--cst|--yaml|--c99|--microjs] [file.idl]\n",
                argv[0]);
       return 1;
     }
@@ -31,6 +32,12 @@ main (int argc, char **argv)
         options.format = MULIB_WEBIDL_CODEYAML;
       else if (!strcmp (argv[1], "--c99"))
         options.format = MULIB_WEBIDL_C99;
+      else if (!strcmp (argv[1], "--microjs"))
+        {
+          source = "namespace Host { long echo(long value); };";
+          length = strlen (source);
+          options.format = MULIB_WEBIDL_MICROJS;
+        }
       else if (strcmp (argv[1], "--ast"))
         {
           fprintf (stderr, "unknown format: %s\n", argv[1]);

@@ -1,5 +1,6 @@
 /** @file mulib-webidl.h
- * @brief WebIDL source compiler: S-expression CST/AST, CodeYAML and C99.
+ * @brief WebIDL source compiler: S-expression CST/AST, CodeYAML, C99 and
+ * bounded MicroJS native bindings.
  * Define MULIB_IMPL_WEBIDL, DBSCHEMA, BUFFER and JSON dependencies.
  * See manual/mulib-webidl.md for grammar, output schemas and C ABI mapping.
  * The older flat-schema dictionary generator remains available. */
@@ -21,7 +22,9 @@ extern "C"
   {
     MULIB_WEBIDL_SEXPR = 0,
     MULIB_WEBIDL_CODEYAML = 1,
-    MULIB_WEBIDL_C99 = 2
+    MULIB_WEBIDL_C99 = 2,
+    /** C11 source for strict primitive namespace operations (flat globals). */
+    MULIB_WEBIDL_MICROJS = 3
   } mulib_webidl_format_t;
   typedef enum mulib_webidl_tree
   {
@@ -45,7 +48,7 @@ extern "C"
   /** Compile a byte span (NULL is allowed only for zero length).
    * Appends atomically without a NUL; returns 1 on success, 0 on any failure.
    * Input may alias out. NULL options selects S-expression AST.
-   * No filesystem access, retained input, global state or generated bindings.
+   * No filesystem access, retained input, global state or execution.
    * Limits: 16 MiB input, 64 MiB output, 262144 tokens, 65536 AST nodes,
    * nesting depth 64; see the manual for work/cache limits. */
   int mulib_webidl_compile (const char *source, size_t length,
@@ -2217,6 +2220,182 @@ done:
   return ok;
 }
 
+typedef struct mulib_webidl_native_type_
+{
+  const char *idl, *c, *reject_if, *unbox, *integer_check, *result;
+} mulib_webidl_native_type_;
+
+static const mulib_webidl_native_type_ *
+mulib_webidl_native_type_for_ (const mulib_webidl_node_ *type, int result)
+{
+  static const mulib_webidl_native_type_ types[] = {
+    { "boolean", "bool", "input->type != MULIB_MICROJS_BOOLEAN",
+      "input->boolean != 0", NULL,
+      "out->type = MULIB_MICROJS_BOOLEAN; out->boolean = value;" },
+    { "long", "int32_t", "input->type != MULIB_MICROJS_NUMBER", NULL,
+      "mulib_webidl_to_int32",
+      "out->type = MULIB_MICROJS_NUMBER; out->number = value;" },
+    { "unsigned long", "uint32_t", "input->type != MULIB_MICROJS_NUMBER", NULL,
+      "mulib_webidl_to_uint32",
+      "out->type = MULIB_MICROJS_NUMBER; out->number = value;" },
+    { "double", "double",
+      "input->type != MULIB_MICROJS_NUMBER || !isfinite(input->number)",
+      "input->number", NULL,
+      "if (!isfinite(value)) return MULIB_MICROJS_TYPE;\n"
+      "  out->type = MULIB_MICROJS_NUMBER; out->number = value;" },
+    { "undefined", "void", NULL, NULL, NULL,
+      "out->type = MULIB_MICROJS_UNDEFINED;" },
+    { "void", "void", NULL, NULL, NULL, "out->type = MULIB_MICROJS_UNDEFINED;" }
+  };
+  size_t i;
+  if (type && !type->child)
+    for (i = 0; i < sizeof types / sizeof *types; ++i)
+      if ((result || types[i].reject_if)
+          && mulib_webidl_value_is_ (type, types[i].idl))
+        return types + i;
+  return NULL;
+}
+
+static int
+mulib_webidl_native_op_ (mulib_webidl_parser_ *p, mulib_buffer_t *b,
+                         const mulib_webidl_node_ *d,
+                         const mulib_webidl_node_ *op, size_t ordinal)
+{
+  const mulib_webidl_native_type_ *args[32], *ret;
+  const mulib_webidl_node_ *a, *other;
+  const mulib_webidl_node_ *name = mulib_webidl_child_ (op, "name");
+  size_t n = 0, i;
+  char text[512], suffix[64];
+  if (strcmp (op->kind, "operation") || !name)
+    return mulib_webidl_fail_ (p, op->offset,
+                               "MicroJS requires named namespace operations");
+  for (other = d->child; other != op; other = other->next)
+    {
+      const mulib_webidl_node_ *prev = mulib_webidl_child_ (other, "name");
+      if (++p->checks > 4194304)
+        return mulib_webidl_fail_ (p, op->offset, "binding work limit exceeded");
+      if (prev && mulib_webidl_equal_ (prev->value, name->value))
+        return mulib_webidl_fail_ (p, name->offset,
+                                   "MicroJS overloads are not supported");
+    }
+  ret = mulib_webidl_native_type_for_ (mulib_webidl_child_ (op, "type"), 1);
+  if (!ret)
+    return mulib_webidl_fail_ (p, op->offset, "unsupported MicroJS return type");
+  for (a = op->child; a; a = a->next)
+    {
+      const mulib_webidl_node_ *part;
+      if (!strcmp (a->kind, "name") || !strcmp (a->kind, "type"))
+        continue;
+      if (strcmp (a->kind, "argument"))
+        return mulib_webidl_fail_ (p, a->offset,
+                                   "unsupported MicroJS operation modifier");
+      for (part = a->child; part; part = part->next)
+        if (strcmp (part->kind, "name") && strcmp (part->kind, "type"))
+          return mulib_webidl_fail_ (p, part->offset,
+                                     "unsupported MicroJS argument modifier");
+      if (n == sizeof args / sizeof *args)
+        return mulib_webidl_fail_ (p, a->offset, "MicroJS binding argument limit");
+      args[n] = mulib_webidl_native_type_for_ (mulib_webidl_child_ (a, "type"), 0);
+      if (!args[n])
+        return mulib_webidl_fail_ (p, a->offset,
+                                   "unsupported MicroJS argument type");
+      ++n;
+    }
+  (void)snprintf (suffix, sizeof suffix, "call_%zu", ordinal);
+  if (!mulib_webidl_text_ (b, ret->c) || !mulib_webidl_text_ (b, " ")
+      || !mulib_webidl_csymbol_ (b, d, op, suffix)
+      || !mulib_webidl_text_ (b, "(")
+      || (!n && !mulib_webidl_text_ (b, "void")))
+    return 0;
+  for (i = 0; i < n; ++i)
+    if ((i && !mulib_webidl_text_ (b, ", "))
+        || !mulib_webidl_text_ (b, args[i]->c))
+      return 0;
+  if (!mulib_webidl_text_ (b, ");\nstatic mulib_microjs_status_t\n")
+      || !mulib_webidl_csymbol_ (b, d, op, "native")
+      || !mulib_webidl_text_ (
+          b, "(mulib_microjs_t *vm, const mulib_microjs_value_t *args,\n"
+             "    size_t count, mulib_microjs_value_t *out, void *user)\n"
+             "{\n  (void)vm; (void)args; (void)user;\n"))
+    return 0;
+  (void)snprintf (text, sizeof text,
+                  "  if (count != %zu) return MULIB_MICROJS_TYPE;\n", n);
+  if (!mulib_webidl_text_ (b, text)
+      || (n && !mulib_webidl_text_ (
+                   b, "  const mulib_microjs_value_t *input;\n")))
+    return 0;
+  for (i = 0; i < n; ++i)
+    {
+      const mulib_webidl_native_type_ *type = args[i];
+      int written = snprintf (
+          text, sizeof text,
+          "  input = &args[%zu];\n  if (%s) "
+          "return MULIB_MICROJS_TYPE;\n",
+          i, type->reject_if);
+      if (written < 0 || (size_t)written >= sizeof text
+          || !mulib_webidl_text_ (b, text))
+        return 0;
+      if (type->integer_check)
+        written = snprintf (text, sizeof text,
+                             "  %s arg%zu;\n  if (!%s(input->number, 0, "
+                             "&arg%zu)) return MULIB_MICROJS_TYPE;\n",
+                             type->c, i, type->integer_check, i);
+      else
+        written = snprintf (text, sizeof text, "  %s arg%zu = %s;\n",
+                             type->c, i, type->unbox);
+      if (written < 0 || (size_t)written >= sizeof text
+          || !mulib_webidl_text_ (b, text))
+        return 0;
+    }
+  if (!mulib_webidl_text_ (b, "  ")
+      || (ret->reject_if && (!mulib_webidl_text_ (b, ret->c)
+                             || !mulib_webidl_text_ (b, " value = ")))
+      || !mulib_webidl_csymbol_ (b, d, op, suffix)
+      || !mulib_webidl_text_ (b, "("))
+    return 0;
+  for (i = 0; i < n; ++i)
+    {
+      (void)snprintf (text, sizeof text, "%sarg%zu", i ? ", " : "", i);
+      if (!mulib_webidl_text_ (b, text))
+        return 0;
+    }
+  return mulib_webidl_text_ (b, ");\n  ")
+         && mulib_webidl_text_ (b, ret->result)
+         && mulib_webidl_text_ (b, "\n  return MULIB_MICROJS_OK;\n}\n"
+                                   "static inline mulib_microjs_status_t\n")
+         && mulib_webidl_csymbol_ (b, d, op, "install")
+         && mulib_webidl_text_ (b, "(mulib_microjs_t *vm)\n{\n"
+                                    "  return mulib_microjs_bind(vm, \"")
+         && mulib_webidl_csymbol_ (b, d, op, "invoke")
+         && mulib_webidl_text_ (b, "\",\n      ")
+         && mulib_webidl_csymbol_ (b, d, op, "native")
+         && mulib_webidl_text_ (b, ", NULL);\n}\n");
+}
+
+static int
+mulib_webidl_microjs_ (mulib_webidl_parser_ *p, mulib_buffer_t *b)
+{
+  const mulib_webidl_node_ *d, *m;
+  if (!mulib_webidl_text_ (
+          b, "/* Generated strict primitive WebIDL bindings for MicroJS. */\n"
+             "#include <stdbool.h>\n#include <math.h>\n"
+             "#include \"mulib-microjs.h\"\n#include \"mulib-webidl-runtime.h\"\n"))
+    return 0;
+  for (d = p->root->child; d; d = d->next)
+    {
+      size_t ordinal = 0;
+      if (strcmp (d->kind, "namespace") || mulib_webidl_child_ (d, "partial")
+          || mulib_webidl_child_ (d, "extended-attributes"))
+        return mulib_webidl_fail_ (p, d->offset,
+                                   "MicroJS requires plain full namespaces");
+      for (m = d->child; m; m = m->next)
+        if (strcmp (m->kind, "name")
+            && !mulib_webidl_native_op_ (p, b, d, m, ordinal++))
+          return 0;
+    }
+  return 1;
+}
+
 int
 mulib_webidl_compile (const char *source, size_t length,
                       const mulib_webidl_options_t *options,
@@ -2235,7 +2414,7 @@ mulib_webidl_compile (const char *source, size_t length,
   if (options)
     opts = *options;
   if ((!source && length) || !out || length > 16777216
-      || opts.format < MULIB_WEBIDL_SEXPR || opts.format > MULIB_WEBIDL_C99
+      || opts.format < MULIB_WEBIDL_SEXPR || opts.format > MULIB_WEBIDL_MICROJS
       || opts.tree < MULIB_WEBIDL_AST || opts.tree > MULIB_WEBIDL_CST
       || (opts.tree == MULIB_WEBIDL_CST && opts.format != MULIB_WEBIDL_SEXPR))
     {
@@ -2264,6 +2443,8 @@ mulib_webidl_compile (const char *source, size_t length,
                 && mulib_webidl_text_ (&result, "\n"));
   else if (opts.format == MULIB_WEBIDL_CODEYAML)
     ok = mulib_webidl_yaml_ (&result, p.root, 0);
+  else if (opts.format == MULIB_WEBIDL_MICROJS)
+    ok = mulib_webidl_microjs_ (&p, &result);
   else
     ok = mulib_webidl_c99_ (&p, &result);
   if (ok)

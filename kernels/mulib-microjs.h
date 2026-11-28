@@ -66,7 +66,8 @@ extern "C"
     size_t source_bytes, steps, depth, variables, string_bytes;
   } mulib_microjs_limits_t;
   /** Arguments are borrowed. Return an owned result initialized from zero.
-   * Callbacks may use get/set/make APIs, but cannot reenter eval/call/collect.
+   * Callbacks may use get/set/make/enqueue APIs, but cannot reenter
+   * eval/call/drain. Collection is deferred during callbacks.
    * user is borrowed until state destruction. */
   typedef mulib_microjs_status_t (*mulib_microjs_native_fn) (
       mulib_microjs_t *, const mulib_microjs_value_t *, size_t,
@@ -115,6 +116,18 @@ extern "C"
                       const mulib_microjs_value_t *arguments, size_t count,
                       mulib_microjs_value_t *out,
                       mulib_microjs_error_t *error);
+  /** Queue a borrowed function handle of this state. The GC keeps it alive
+   * until consumed or the state is destroyed. Safe from native callbacks. */
+  mulib_microjs_status_t
+  mulib_microjs_enqueue_job (mulib_microjs_t *,
+                             const mulib_microjs_value_t *function);
+  /** Attempt at most budget FIFO jobs, including newly queued jobs. Each is
+   * called with no arguments and undefined this; its result is ignored.
+   * Stop on the first failed job (consumed). Optional attempted includes a
+   * failing job and is unchanged on invalid arguments/reentry. */
+  mulib_microjs_status_t
+  mulib_microjs_drain_jobs (mulib_microjs_t *, size_t budget, size_t *attempted,
+                            mulib_microjs_error_t *error);
   /** Copy an ordinary own property (or string/array length) into an owned
    * result. */
   mulib_microjs_status_t
@@ -162,7 +175,8 @@ extern "C"
     MULIB_MICROJS_B_,
     MULIB_MICROJS_F_,
     MULIB_MICROJS_N_,
-    MULIB_MICROJS_P_
+    MULIB_MICROJS_P_,
+    MULIB_MICROJS_JOB_
   };
   enum
   {
@@ -204,6 +218,9 @@ extern "C"
     MULIB_MICROJS_MULSET_,
     MULIB_MICROJS_DIVSET_,
     MULIB_MICROJS_MODSET_,
+    MULIB_MICROJS_ANDSET_,
+    MULIB_MICROJS_ORSET_,
+    MULIB_MICROJS_NULLISHSET_,
     MULIB_MICROJS_TYPEOF_,
     MULIB_MICROJS_VOID_,
     MULIB_MICROJS_NEG_,
@@ -243,6 +260,7 @@ extern "C"
   {
     mulib_microjs_limits_t limits;
     mulib_microjs_object_t *heap, *global, *intrinsics;
+    mulib_microjs_object_t *job_head, *job_tail;
     size_t heap_bytes, heap_limit, bindings, roots, steps, calls;
     int running, destroyed;
     mulib_microjs_error_t error;
@@ -365,6 +383,7 @@ extern "C"
       o->marked = 0;
     mulib_microjs_mark_ (v->global, &work);
     mulib_microjs_mark_ (v->intrinsics, &work);
+    mulib_microjs_mark_ (v->job_head, &work);
     for (o = v->heap; o; o = o->heap_next)
       if (o->roots)
         mulib_microjs_mark_ (o, &work);
@@ -441,6 +460,7 @@ extern "C"
       return;
     v->destroyed = 1;
     v->global = v->intrinsics = NULL;
+    v->job_head = v->job_tail = NULL;
     (void)mulib_microjs_collect (v);
     if (!v->roots)
       free (v);
@@ -1140,7 +1160,9 @@ extern "C"
         = { { ">>>", MULIB_MICROJS_USHR_ },  { "===", MULIB_MICROJS_SEQ_ },
             { "!==", MULIB_MICROJS_SNE_ },   { "==", MULIB_MICROJS_EQ_ },
             { "!=", MULIB_MICROJS_NE_ },     { "<=", MULIB_MICROJS_LE_ },
-            { ">=", MULIB_MICROJS_GE_ },     { "&&", MULIB_MICROJS_AND_ },
+            { ">=", MULIB_MICROJS_GE_ },     { "&&=", MULIB_MICROJS_ANDSET_ },
+            { "||=", MULIB_MICROJS_ORSET_ }, { "?" "?=", MULIB_MICROJS_NULLISHSET_ },
+            { "&&", MULIB_MICROJS_AND_ },
             { "||", MULIB_MICROJS_OR_ },     { "??", MULIB_MICROJS_NULLISH_ },
             { "**", MULIB_MICROJS_POW_ },    { "<<", MULIB_MICROJS_SHL_ },
             { ">>", MULIB_MICROJS_SHR_ },    { "++", MULIB_MICROJS_INC_ },
@@ -1771,6 +1793,9 @@ extern "C"
       case MULIB_MICROJS_MULSET_:
       case MULIB_MICROJS_DIVSET_:
       case MULIB_MICROJS_MODSET_:
+      case MULIB_MICROJS_ANDSET_:
+      case MULIB_MICROJS_ORSET_:
+      case MULIB_MICROJS_NULLISHSET_:
         return 2;
       case '?':
         return 3;
@@ -2301,6 +2326,36 @@ extern "C"
             || mulib_microjs_emit_ (c, MULIB_MINIVM_DROP, 0, NULL) == SIZE_MAX
             || !mulib_microjs_compile_expr_ (c, n->b, 1))
           goto done;
+        ok = 1;
+        goto done;
+      case MULIB_MICROJS_ANDSET_:
+      case MULIB_MICROJS_ORSET_:
+      case MULIB_MICROJS_NULLISHSET_:
+        /* Keep the original reference below its value. Test a copy of
+         * the value so the skipped path can return it without a write. */
+        if (!mulib_microjs_compile_expr_ (c, n->a, 0)
+            || mulib_microjs_emit_ (c, MULIB_MINIVM_DUP, 0, NULL) == SIZE_MAX
+            || !mulib_microjs_simple_ (c, MULIB_MICROJS_GET_)
+            || mulib_microjs_emit_ (c, MULIB_MINIVM_DUP, 0, NULL) == SIZE_MAX
+            || !mulib_microjs_simple_ (c, op == MULIB_MICROJS_NULLISHSET_
+                                              ? MULIB_MICROJS_ISNULL_
+                                              : MULIB_MICROJS_TRUTH_))
+          goto done;
+        branch = mulib_microjs_emit_ (
+            c, op == MULIB_MICROJS_ORSET_ ? MULIB_MINIVM_JNZ : MULIB_MINIVM_JZ,
+            0, NULL);
+        if (branch == SIZE_MAX
+            || mulib_microjs_emit_ (c, MULIB_MINIVM_DROP, 0, NULL) == SIZE_MAX
+            || !mulib_microjs_compile_expr_ (c, n->b, 1)
+            || !mulib_microjs_host_emit_ (c, n))
+          goto done;
+        end = mulib_microjs_emit_ (c, MULIB_MINIVM_JMP, 0, NULL);
+        mulib_microjs_target_ (c, branch);
+        if (end == SIZE_MAX
+            || mulib_microjs_emit_ (c, MULIB_MINIVM_SWAP, 0, NULL) == SIZE_MAX
+            || mulib_microjs_emit_ (c, MULIB_MINIVM_DROP, 0, NULL) == SIZE_MAX)
+          goto done;
+        mulib_microjs_target_ (c, end);
         ok = 1;
         goto done;
       case '=':
@@ -3733,6 +3788,9 @@ extern "C"
         ok = 0;
         break;
       case '=':
+      case MULIB_MICROJS_ANDSET_:
+      case MULIB_MICROJS_ORSET_:
+      case MULIB_MICROJS_NULLISHSET_:
       case MULIB_MICROJS_ADDSET_:
       case MULIB_MICROJS_SUBSET_:
       case MULIB_MICROJS_MULSET_:
@@ -3740,7 +3798,8 @@ extern "C"
       case MULIB_MICROJS_MODSET_:
         if (!mulib_microjs_get_ (v, b_ref, &y))
           goto done;
-        if (op != '=')
+        if (op != '=' && op != MULIB_MICROJS_ANDSET_
+            && op != MULIB_MICROJS_ORSET_ && op != MULIB_MICROJS_NULLISHSET_)
           {
             if (!mulib_microjs_get_ (v, a, &x))
               goto done;
@@ -4163,6 +4222,62 @@ extern "C"
     v->running = 0;
     mulib_microjs_diagnostic_ (v, NULL, 0, error);
     (void)mulib_microjs_collect (v);
+    return v->error.code;
+  }
+  mulib_microjs_status_t
+  mulib_microjs_enqueue_job (mulib_microjs_t *v,
+                             const mulib_microjs_value_t *function)
+  {
+    mulib_microjs_v_ f;
+    mulib_microjs_object_t *job;
+    if (!function || !mulib_microjs_api_ (v))
+      return MULIB_MICROJS_INVALID;
+    if (function->type != MULIB_MICROJS_FUNCTION)
+      return MULIB_MICROJS_TYPE;
+    if (!mulib_microjs_import_ (v, function, &f))
+      return v->error.code;
+    job = mulib_microjs_cell_ (v, MULIB_MICROJS_JOB_);
+    if (!job)
+      return v->error.code;
+    job->value = f;
+    if (v->job_tail)
+      v->job_tail->next = job;
+    else
+      v->job_head = job;
+    v->job_tail = job;
+    return MULIB_MICROJS_OK;
+  }
+  mulib_microjs_status_t
+  mulib_microjs_drain_jobs (mulib_microjs_t *v, size_t budget,
+                            size_t *attempted, mulib_microjs_error_t *error)
+  {
+    size_t n = 0;
+    mulib_microjs_object_t *job;
+    mulib_microjs_v_ ignored;
+    if (!v || v->destroyed || v->running)
+      return mulib_microjs_invalid_ (error);
+    (void)mulib_microjs_api_ (v);
+    while (n < budget && v->job_head)
+      {
+        /* The dequeued job is protected by the no-collection execution
+         * window, like other execution-local values. */
+        v->running = 1;
+        job = v->job_head;
+        v->job_head = job->next;
+        if (!v->job_head)
+          v->job_tail = NULL;
+        v->steps = v->calls = 0;
+        ++n;
+        (void)mulib_microjs_invoke_ (v, job->value, mulib_microjs_undefined_ (),
+                                     NULL, 0, &ignored);
+        v->running = 0;
+        (void)mulib_microjs_collect (v);
+        if (v->error.code)
+          break;
+      }
+    if (attempted)
+      *attempted = n;
+    mulib_microjs_diagnostic_ (v, NULL, 0, error);
     return v->error.code;
   }
   mulib_microjs_status_t

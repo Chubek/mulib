@@ -45,10 +45,11 @@ extern "C"
                                  mulib_wask_error_t *error);
   /** @brief Release owned bytes and module; NULL safe. */
   void mulib_wask_destroy (mulib_wask_t *module);
-  /** @brief Invoke an exported function with i32 bit-pattern arguments.
-   * Output changes only on success; void functions write zero. Zero fuel
-   * allows no instructions. Module is immutable; independent calls may run
-   * concurrently.
+   /** @brief Invoke an exported function with i32 bit-pattern arguments.
+    * Use only with controlled input; validation is not a sandbox guarantee.
+    * Output changes only on success; void functions write zero. Fuel is
+    * shared by all callees. Zero fuel allows no instructions. Module is
+    * immutable; independent calls may run concurrently.
    */
   mulib_wask_status_t mulib_wask_call (const mulib_wask_t *module,
                                        const char *name,
@@ -104,6 +105,18 @@ extern "C"
     size_t at, end;
     mulib_wask_error_t *error;
   } mulib_wask_reader_;
+  enum
+  {
+    MULIB_WASK_STACK_LIMIT_ = 256,
+    MULIB_WASK_FRAME_LIMIT_ = 16,
+    MULIB_WASK_OP_CALL_ = 18
+  };
+  typedef struct mulib_wask_frame_
+  {
+    uint32_t function;
+    size_t resume, height;
+    uint32_t stack[MULIB_WASK_STACK_LIMIT_], locals[MULIB_WASK_STACK_LIMIT_];
+  } mulib_wask_frame_;
   static int
   mulib_wask_fail_ (mulib_wask_reader_ *r, mulib_wask_status_t code,
                     const char *message)
@@ -167,7 +180,7 @@ extern "C"
       = { "unreachable", "nop",       "end",       "drop",      "select",
           "local.get",   "local.set", "local.tee", "i32.const", "i32.add",
           "i32.sub",     "i32.mul",   "i32.div_s", "i32.and",   "i32.or",
-          "i32.xor",     "i32.eqz" };
+          "i32.xor",     "i32.eqz",   "call" };
   int
   mulib_wask_supports (const char *name)
   {
@@ -210,27 +223,50 @@ extern "C"
     mulib_dsymspec_destroy (spec);
     return ok;
   }
-  /* Validation and execution share decoding; validation never performs
-   * arithmetic. */
+  static void
+  mulib_wask_enter_ (const mulib_wask_t *m, mulib_wask_frame_ *frame,
+                      uint32_t index, const uint32_t *args)
+  {
+    const mulib_wask_function_ *f = &m->functions[index];
+    uint32_t count = m->types[f->type].parameters;
+    frame->function = index;
+    if (count)
+      memcpy (frame->locals, args, count * sizeof (*args));
+    if (f->locals)
+      memset (frame->locals + count, 0, f->locals * sizeof (*frame->locals));
+  }
+  /* Validation and execution share decoding. Validation uses one frame and
+   * checks callees by signature; the loader validates every body separately.
+   * Execution uses a bounded frame array, not native recursion. */
   static int
   mulib_wask_body_ (const mulib_wask_t *m, uint32_t index,
                     const uint32_t *args, size_t fuel, uint32_t *out,
-                    int execute, mulib_wask_error_t *error)
+                    mulib_wask_frame_ *frames, size_t capacity,
+                    mulib_wask_error_t *error)
   {
-    const mulib_wask_function_ *f = &m->functions[index];
-    const mulib_wask_type_ *t = &m->types[f->type];
-    mulib_wask_reader_ r = { m->bytes, f->start, f->end, error };
-    uint32_t stack[256], locals[256] = { 0 };
-    size_t sp = 0;
-    if (execute && t->parameters)
-      memcpy (locals, args, t->parameters * sizeof (*args));
+    mulib_wask_reader_ r = { m->bytes, m->functions[index].start,
+                             m->functions[index].end, error };
+    size_t depth = 1, sp = 0;
+    int execute = out != NULL;
+    if (execute)
+      mulib_wask_enter_ (m, frames, index, args);
+    else
+      frames[0].function = index;
     while (r.at < r.end)
       {
+        mulib_wask_frame_ *frame = &frames[depth - 1];
+        const mulib_wask_function_ *f = &m->functions[frame->function];
+        const mulib_wask_type_ *t = &m->types[f->type];
+        uint32_t *stack = frame->stack, *locals = frame->locals;
         unsigned byte, op;
-        uint32_t imm = 0, a, b, value;
-        if (execute && !fuel--)
-          return mulib_wask_fail_ (&r, MULIB_WASK_LIMIT,
-                                   "instruction fuel exhausted");
+        uint32_t imm = 0;
+        if (execute)
+          {
+            if (!fuel)
+              return mulib_wask_fail_ (&r, MULIB_WASK_LIMIT,
+                                       "instruction fuel exhausted");
+            --fuel;
+          }
         if (!mulib_wask_byte_ (&r, &byte))
           return 0;
         op = m->operations[byte];
@@ -242,9 +278,53 @@ extern "C"
             if (r.at != r.end || sp != t->results)
               return mulib_wask_fail_ (&r, MULIB_WASK_INVALID,
                                        "invalid function result stack or end");
+            if (depth == 1)
+              {
+                if (execute)
+                  *out = sp ? stack[0] : 0;
+                return 1;
+              }
+            --depth;
+            mulib_wask_frame_ *parent = &frames[depth - 1];
+            sp = parent->height;
+            if (t->results)
+              parent->stack[sp++] = stack[0];
+            r.at = parent->resume;
+            r.end = m->functions[parent->function].end;
+            continue;
+          }
+        if (op == MULIB_WASK_OP_CALL_)
+          {
+            if (!mulib_wask_leb_ (&r, &imm, 0))
+              return 0;
+            if (imm >= m->function_count)
+              return mulib_wask_fail_ (&r, MULIB_WASK_INVALID,
+                                       "call function index out of range");
+            const mulib_wask_function_ *callee = &m->functions[imm];
+            const mulib_wask_type_ *type = &m->types[callee->type];
+            if (sp < type->parameters)
+              return mulib_wask_fail_ (&r, MULIB_WASK_INVALID,
+                                       "call stack underflow");
+            sp -= type->parameters;
+            if (type->results && sp == MULIB_WASK_STACK_LIMIT_)
+              return mulib_wask_fail_ (&r, MULIB_WASK_LIMIT,
+                                       "call result exceeds operand stack");
             if (execute)
-              *out = sp ? stack[0] : 0;
-            return 1;
+              {
+                if (depth == capacity)
+                  return mulib_wask_fail_ (&r, MULIB_WASK_LIMIT,
+                                           "call frame limit");
+                frame->resume = r.at;
+                frame->height = sp;
+                mulib_wask_enter_ (m, &frames[depth], imm, stack + sp);
+                ++depth;
+                r.at = callee->start;
+                r.end = callee->end;
+                sp = 0;
+              }
+            else
+              sp += type->results;
+            continue;
           }
         if (op >= 6 && op <= 9)
           {
@@ -289,10 +369,12 @@ extern "C"
           }
         if (op == 6 || op == 9)
           {
-            if (sp == 256)
+            if (sp == MULIB_WASK_STACK_LIMIT_)
               return mulib_wask_fail_ (&r, MULIB_WASK_LIMIT,
                                        "operand stack limit");
-            stack[sp++] = execute ? (op == 6 ? locals[imm] : imm) : 0;
+            if (execute)
+              stack[sp] = op == 6 ? locals[imm] : imm;
+            ++sp;
             continue;
           }
         if (op == 5)
@@ -308,49 +390,49 @@ extern "C"
         if (sp < 2)
           return mulib_wask_fail_ (&r, MULIB_WASK_INVALID,
                                    "binary stack underflow");
-        a = stack[sp - 2];
-        b = stack[sp - 1];
-        value = 0;
         if (execute)
-          switch (op)
-            {
-            case 10:
-              value = a + b;
-              break;
-            case 11:
-              value = a - b;
-              break;
-            case 12:
-              value = (uint32_t)((uint64_t)a * b);
-              break;
-            case 13:
+          {
+            uint32_t a = stack[sp - 2], b = stack[sp - 1], value;
+            switch (op)
               {
-                int64_t sa = a <= INT32_MAX
-                                 ? (int64_t)a
-                                 : (int64_t)a - INT64_C (4294967296);
-                int64_t sb = b <= INT32_MAX
-                                 ? (int64_t)b
-                                 : (int64_t)b - INT64_C (4294967296);
-                if (!b || (sa == INT32_MIN && sb == -1))
-                  return mulib_wask_fail_ (&r, MULIB_WASK_TRAP,
-                                           "integer division trap");
-                value = (uint32_t)(sa / sb);
+              case 10:
+                value = a + b;
                 break;
+              case 11:
+                value = a - b;
+                break;
+              case 12:
+                value = (uint32_t)((uint64_t)a * b);
+                break;
+              case 13:
+                {
+                  int64_t sa = a <= INT32_MAX
+                                   ? (int64_t)a
+                                   : (int64_t)a - INT64_C (4294967296);
+                  int64_t sb = b <= INT32_MAX
+                                   ? (int64_t)b
+                                   : (int64_t)b - INT64_C (4294967296);
+                  if (!b || (sa == INT32_MIN && sb == -1))
+                    return mulib_wask_fail_ (&r, MULIB_WASK_TRAP,
+                                             "integer division trap");
+                  value = (uint32_t)(sa / sb);
+                  break;
+                }
+              case 14:
+                value = a & b;
+                break;
+              case 15:
+                value = a | b;
+                break;
+              case 16:
+                value = a ^ b;
+                break;
+              default:
+                return mulib_wask_fail_ (&r, MULIB_WASK_UNSUPPORTED,
+                                         "unsupported operation");
               }
-            case 14:
-              value = a & b;
-              break;
-            case 15:
-              value = a | b;
-              break;
-            case 16:
-              value = a ^ b;
-              break;
-            default:
-              return mulib_wask_fail_ (&r, MULIB_WASK_UNSUPPORTED,
-                                       "unsupported operation");
-            }
-        stack[sp - 2] = value;
+            stack[sp - 2] = value;
+          }
         --sp;
       }
     return mulib_wask_fail_ (&r, MULIB_WASK_INVALID, "missing function end");
@@ -615,7 +697,9 @@ extern "C"
                   }
                 f->start = r.at;
                 f->end = body_end;
-                if (!mulib_wask_body_ (m, i, NULL, 0, NULL, 0, error))
+                mulib_wask_frame_ frame;
+                if (!mulib_wask_body_ (m, i, NULL, 0, NULL, &frame, 1,
+                                       error))
                   goto fail;
                 r.at = body_end;
                 r.end = end;
@@ -663,7 +747,9 @@ extern "C"
                               "argument count mismatch");
             return r.error->code;
           }
-        (void)mulib_wask_body_ (m, e->function, args, fuel, out, 1, r.error);
+        mulib_wask_frame_ frames[MULIB_WASK_FRAME_LIMIT_];
+        (void)mulib_wask_body_ (m, e->function, args, fuel, out, frames,
+                                MULIB_WASK_FRAME_LIMIT_, r.error);
         return r.error->code;
       }
     mulib_wask_fail_ (&r, MULIB_WASK_NOT_FOUND, "export not found");

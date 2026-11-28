@@ -13,6 +13,8 @@ Shift moves both endpoints by a signed delta without under/overflow, requiring
 the original and final range within length (including INT64_MIN handling).
 Operations return one on success and preserve output on failure. No tree nodes,
 live mutation adjustment or Unicode code-unit interpretation is provided.
+For live UTF-16 and child-index boundaries over native nodes, see
+[Native DOM live ranges](mulib-dom.md#live-ranges).
 
 ## Integration and ownership
 

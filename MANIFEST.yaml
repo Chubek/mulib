@@ -8493,8 +8493,8 @@ modules:
   header: kernels/mulib-html-dombridge.h
   manual: manual/mulib-html-dombridge.md
   macro: MULIB_IMPL_HTML_DOMBRIDGE
-  purpose: Tree walker with caller-provided native DOM construction callbacks.
-  dependencies: [html-treebuilder]
+  purpose: Callback tree walker and opt-in bounded native HTML document parser.
+  dependencies: [dom, html-treebuilder]
   status: implemented
 - name: dom-query
   header: kernels/mulib-dom-query.h
@@ -8564,7 +8564,7 @@ modules:
   manual: manual/mulib-browser-eventloop.md
   macro: MULIB_IMPL_BROWSER_EVENTLOOP
   purpose: Deterministic bounded FIFO tasks and run-to-completion microtask checkpoints.
-  dependencies: [microjs-promise]
+  dependencies: [microjs, microjs-promise]
   status: implemented
 - name: browser-origin
   header: kernels/mulib-browser-origin.h
@@ -16096,13 +16096,9 @@ project_files:
   purpose: "Noncanonical Money fallback for isolated test smoke only; never installed."
 - file: tools/extend-kernelbind.py
   purpose: "Update On1x's discovery-only KernelBind coverage from the kernel manifest."
-- file: on1x/contracts-exotract/kernel-auto.json
-  purpose: "Generated metadata-only inventory for KernelBind inspection."
 - file: tests/test_extend_kernelbind.py
   purpose: "KernelBind generator freshness, additions, malformed manifest and idempotence checks."
-- file: on1x/tests/test_kernel_auto_discovery_sdk.py
-  purpose: "Real ExoLib declaration extraction, future kernels and fail-closed KernelBind admission."
-- file: .sot/term/termscript-profile.md
+- file: artifactory/term/termscript-profile.md
   purpose: "In-tree terminal capability source profile and xterm mode definitions."
 - file: examples/imtui/headless.c
   purpose: "Immediate-mode settings form and headless snapshot."
@@ -16312,54 +16308,10 @@ project_files:
   purpose: Loopback TCP MCP HTTP wire tests with independent HTTP and JSON fixtures.
 - file: tests/run-mcp.sh
   purpose: Focused MCP C11, C/C++17 linkage, and real stdio regression runner.
-- file: on1x/stdlib/_bridge/mulib_bridge.c
-  purpose: Bounded raw scalar standard-library adapters calling canonical MuLIB kernels.
-- file: on1x/stdlib/_bridge/mulib_bridge.h
-  purpose: Exact C11 standard-library adapter ABI with explicit operation status.
-- file: on1x/stdlib/_bridge/status.on1x
-  purpose: Shared raw adapter status declaration and named status constants.
-- file: on1x/stdlib/_bridge/README.md
-  purpose: Native standard-library linkage, bounds, statuses and trust-boundary manual.
-- file: on1x/stdlib/base/shape.on1x
-  purpose: Bounded structural checks for persistent extension-library values.
-- file: on1x/tests/test_stdlib_extensions.py
-  purpose: Executed pure libraries, canonical native adapters and loopback binary transport tests.
-- file: on1x/tests/test_stdlib_bridge_allocation.c
-  purpose: Deterministic native adapter allocation and budget failure cleanup tests.
-- file: on1x/examples/stdlib_extensions.on1x
-  purpose: Recoverable INI and JSON standard-library example.
-- file: on1x/stdppx/native/common.on1x
+- file: .deprecated/old-on1x/stdppx/native/common.on1x
   purpose: Shared syntactic constructors and checked output for native standard processors.
-- file: on1x/stdppx/examples/native_extensions.on1x
+- file: .deprecated/old-on1x/stdppx/examples/native_extensions.on1x
   purpose: Equivalent Python/native standard processor composition example.
-- file: on1x/stdlib/mulib/__init__.on1x
-  purpose: On1x MuLIB housekeeping namespace and checked fixture access.
-- file: on1x/stdlib/mulib/Native.on1x
-  purpose: Exact scalar native metadata ABI and host allocation-size checks.
-- file: on1x/stdlib/mulib/runtime.h
-  purpose: C11 ABI for immutable selected-kernel and binary fixture metadata.
-- file: on1x/stdlib/mulib/runtime.c
-  purpose: Allocation-free native housekeeping implementation.
-- file: on1x/stdlib/mulib/catalog.json
-  purpose: Explicit kernel-to-library fixture associations and native companion recipes.
-- file: on1x/stdlib/mulib/housekeeping.py
-  purpose: Shared dependency closure, fixture matching, fingerprinting and implementation placement.
-- file: on1x/stdlib/mulib/README.md
-  purpose: MuLIB interoperability housekeeping manual and supported boundary.
-- file: on1x/tools/on1x-mulib.py
-  purpose: Native fixture inventory, audit, relocatable bundling and verification.
-- file: on1x/examples/mulib.on1x
-  purpose: On1x kernel and fixture housekeeping example.
-- file: on1x/tests/test_mulib.py
-  purpose: Executed kernel/fixture interoperability and packaging regressions.
-- file: on1x/tests/mulib/yantlr.c
-  purpose: Exact scalar test adapter executing the real YANTLR standard provider.
-- file: on1x/tests/mulib/optml.c
-  purpose: Exact scalar test adapter parsing the shipped optimization policy.
-- file: on1x/tests/mulib/shiraz.c
-  purpose: Exact scalar test adapter exercising the separate Shiraz registry runtime.
-- file: on1x/tests/mulib/lmuw3.c
-  purpose: Exact scalar test adapter executing the canonical MuW3 engine and embedded lmuw3 offline.
 - file: manual/web-primitives.md
   purpose: Shared composition, lifecycle, security and verification contracts for web and pricing primitives.
 - file: tests/fixtures/web_primitives_impl.h
@@ -16428,12 +16380,6 @@ project_files:
   purpose: RFC packet protection, Retry, reassembly and QPACK vectors and HTTP/3 oracle client.
 - file: tests/test_http3_integration.py
   purpose: Independent loopback HTTP/3 interoperability, authentication and packet loss tests.
-- file: on1x/contracts-exoml/quic.exocontract.json
-  purpose: Source-pinned unreviewed QUIC codec and client API contracts.
-- file: on1x/contracts-exoml/http3.exocontract.json
-  purpose: Source-pinned unreviewed HTTP/3 codec and GET API contracts.
-- file: on1x/contracts-exotract/examples/http3.c
-  purpose: Separate C11 consumer of the Exotract QUIC and HTTP/3 archive.
 - file: library/lmuw3/lmuw3.lua
   purpose: Lua request workflows, structured data, sessions and IPC channels.
 - file: library/lmuw3/runtime.c
@@ -16808,19 +16754,19 @@ project_files:
   purpose: Mune C bindings, audio editing, filters, timeline and score tests.
 - file: tools/check_audio.py
   purpose: Optional independent FFmpeg and FLAC interoperability oracles.
-- file: library/archml/amd64.aml
+- file: library/archml/amd64.am
   purpose: AMD64 compiler profile with concrete encodings, P-code and backend metadata.
-- file: library/archml/arm64.aml
+- file: library/archml/arm64.am
   purpose: AArch64 compiler profile with concrete encodings, P-code and backend metadata.
-- file: library/archml/riscv64.aml
+- file: library/archml/riscv64.am
   purpose: RV64 RISC-V compiler profile with concrete encodings, P-code and backend metadata.
-- file: library/archml/ppc64.aml
+- file: library/archml/ppc64.am
   purpose: Big-endian PowerPC64 selected integer encodings and P-code.
-- file: library/archml/mips.aml
+- file: library/archml/mips.am
   purpose: Big-endian MIPS32 selected integer encodings with explicit delay-slot semantics.
-- file: library/archml/avr32.aml
+- file: library/archml/avr32.am
   purpose: AVR32A selected encodings and P-code from local SLEIGH descriptions, distinct from AVR8.
-- file: library/archml/wasm.aml
+- file: library/archml/wasm.am
   purpose: WebAssembly MVP selected stack operations and bounded single-byte LEB constants.
 - file: library/archml/amdgpu.am
   purpose: GCN gfx600 ordinary-SGPR SALU encodings, SCC effects and wave termination.
@@ -16842,6 +16788,10 @@ project_files:
   purpose: Hexagon V60 scalar integer encodings in complete single-instruction packets.
 - file: library/archml/README.md
   purpose: ArchML profile coverage and compiler integration contracts.
+- file: library/archml/banks.am
+  purpose: Checked-in historical ArchML source provenance catalog.
+- file: library/archml/metadata/profile-supplements.json
+  purpose: Ordered profile annotations and bank references used by the offline generator.
 - file: tools/generate_archml.py
   purpose: Deterministic source tables and generator for the ArchML architecture profiles.
 - file: tools/archml_extra.py
@@ -20684,16 +20634,6 @@ project_files:
   purpose: C11 example for all PrettyPrint output targets.
 - file: examples/prettyprint.on1x
   purpose: On1x example using the language-neutral PrettyPrint document DSL.
-- file: on1x/stdlib/prettyprint/runtime.c
-  purpose: Declaration-only PrettyPrint companion calling the planner-linked kernels.
-- file: on1x/stdlib/prettyprint/on1x/formatter.cpp
-  purpose: Canonical On1x source adapter to language-neutral PrettyPrint documents.
-- file: on1x/stdlib/prettyprint/on1x/implementation.py
-  purpose: Generate the compiler's single PrettyPrint implementation TU from the MuLIB planner.
-- file: on1x/tests/test_formatter.py
-  purpose: Test source formatter idempotence, semantics, configuration, directives, and escaped markup.
-- file: on1x/contracts-exoml/prettyprint.exocontract.json
-  purpose: Unreviewed CDecl-backed contract annotations for the raw PrettyPrint bridge.
 - file: tests/check_prettyprint.py
   purpose: CLI, planned On1x builds and typed raw contract verification.
 - file: tools/ppfmt.c

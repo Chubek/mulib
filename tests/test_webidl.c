@@ -75,6 +75,16 @@ static const char fixture[]
       "typedef unsigned long long _boolean; interface _long {};"
       "dictionary Escaped { _boolean count; _long _object; };\n";
 
+static const char native_fixture[]
+    = "namespace Local {\n"
+      "  long keep(long n);\n"
+      "  unsigned /* trivia */ long bits(unsigned long n);\n"
+      "  boolean flip(boolean b);\n"
+      "  double scale(double n, boolean fail);\n"
+      "  undefined note();\n"
+      "};\n"
+      "namespace local-test { boolean _return(); };\n";
+
 static int
 contains (const mulib_buffer_t *b, const char *s)
 {
@@ -132,6 +142,7 @@ main (int argc, char **argv)
     }
   if (argc == 2)
     {
+      const char *source = fixture;
       if (!strcmp (argv[1], "--source"))
         {
           assert (fwrite (fixture, 1, sizeof fixture - 1, stdout)
@@ -140,13 +151,18 @@ main (int argc, char **argv)
         }
       if (!strcmp (argv[1], "--emit"))
         o.format = MULIB_WEBIDL_C99;
+      else if (!strcmp (argv[1], "--emit-microjs"))
+        {
+          o.format = MULIB_WEBIDL_MICROJS;
+          source = native_fixture;
+        }
       else if (!strcmp (argv[1], "--emit-yaml"))
         o.format = MULIB_WEBIDL_CODEYAML;
       else if (!strcmp (argv[1], "--emit-cst"))
         o.tree = MULIB_WEBIDL_CST;
       else
         assert (!strcmp (argv[1], "--emit-ast"));
-      assert (mulib_webidl_compile (fixture, sizeof fixture - 1, &o, &b, &e));
+      assert (mulib_webidl_compile (source, strlen (source), &o, &b, &e));
       assert (fwrite (b.data, 1, b.length, stdout) == b.length);
       mulib_buffer_free (&b);
       return 0;
@@ -177,6 +193,61 @@ main (int argc, char **argv)
   assert (contains (&b, "webidl__has_1") && contains (&b, "webidl__count_0"));
   assert (contains (&b, "webidl_Utility__webidl_run__call_1(void)"));
   mulib_buffer_free (&b);
+  {
+    static const char *const unsupported[] = {
+      "interface X { long x(); };",
+      "[Exposed=Window] namespace X { long x(); };",
+      "namespace X {}; partial namespace X { long x(); };",
+      "namespace X { long a(); long a(long n); };",
+      "namespace X { readonly attribute long x; };",
+      "namespace X { long x(optional long n = 0); };",
+      "namespace X { long x(long... n); };",
+      "namespace X { long x(long? n); };",
+      "namespace X { long x(_long n); };",
+      "namespace X { long x([Clamp] long n); };",
+      "namespace X { long x(sequence<long> n); };",
+      "namespace X { [SecureContext] long x(); };",
+      "namespace X { DOMString x(); };",
+    };
+    for (i = 0; i < sizeof unsupported / sizeof *unsupported; ++i)
+      {
+        assert (mulib_webidl_compile (unsupported[i], strlen (unsupported[i]),
+                                      NULL, &b, &e));
+        b.length = 0;
+        reject (unsupported[i], MULIB_WEBIDL_MICROJS);
+      }
+    mulib_buffer_free (&b);
+    o.format = MULIB_WEBIDL_MICROJS;
+    assert (mulib_webidl_compile (NULL, 0, &o, &b, &e));
+    assert (!e.message && contains (&b, "#include \"mulib-microjs.h\""));
+    mulib_buffer_free (&b);
+    assert (mulib_buffer_append (&b, native_fixture, sizeof native_fixture - 1));
+    assert (mulib_webidl_compile ((const char *)b.data, b.length, &o, &b, &e));
+    assert (!memcmp (b.data, native_fixture, sizeof native_fixture - 1));
+    assert (contains (&b, "webidl_local_htest__webidl_return__install"));
+    mulib_buffer_free (&b);
+    {
+      char source[768];
+      size_t length = (size_t)snprintf (source, sizeof source,
+                                        "namespace X { void f(");
+      for (i = 0; i < 33; ++i)
+        {
+          if (i == 32)
+            {
+              memcpy (source + length, "); };", sizeof "); };");
+              assert (mulib_webidl_compile (source, length + 5, &o, &b, &e));
+              assert (contains (&b, "if (count != 32)"));
+              mulib_buffer_free (&b);
+            }
+          length += (size_t)snprintf (source + length, sizeof source - length,
+                                       "%slong n%zu", i ? ", " : "", i);
+        }
+      memcpy (source + length, "); };", sizeof "); };");
+      assert (!mulib_webidl_compile (source, length + 5, &o, &b, &e));
+      assert (strstr (e.message, "binding argument limit") && !b.length);
+    }
+    o.format = MULIB_WEBIDL_C99;
+  }
   {
     const mulib_dbschema_field_t fields[]
         = { { "name", MULIB_JSON_STRING, 1, 0 },
@@ -387,12 +458,13 @@ main (int argc, char **argv)
   }
   mulib_buffer_free (&b);
   /* Every allocation site is fallible, with atomic output and a diagnostic. */
-  for (i = 0; i < 3; ++i)
+  for (i = 0; i <= MULIB_WEBIDL_MICROJS; ++i)
     {
+      const char *source = i == MULIB_WEBIDL_MICROJS ? native_fixture : fixture;
       size_t j;
       o.format = (mulib_webidl_format_t)i;
       allocation_count = 0;
-      assert (mulib_webidl_compile (fixture, sizeof fixture - 1, &o, &b, &e));
+      assert (mulib_webidl_compile (source, strlen (source), &o, &b, &e));
       total = allocation_count;
       mulib_buffer_free (&b);
       for (j = 1; j <= total; ++j)
@@ -400,7 +472,7 @@ main (int argc, char **argv)
           allocation_count = 0;
           fail_at = j;
           assert (
-              !mulib_webidl_compile (fixture, sizeof fixture - 1, &o, &b, &e));
+              !mulib_webidl_compile (source, strlen (source), &o, &b, &e));
           assert (e.message && b.length == 0);
           mulib_buffer_free (&b);
         }

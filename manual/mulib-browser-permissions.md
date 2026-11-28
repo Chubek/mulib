@@ -7,10 +7,13 @@ Explicit bitmask permissions for browser capabilities.
 ## Contract and supported profile
 
 Permissions are explicit copied bitmasks for network/storage/script/cross-
-origin/file-URL capabilities. Grant rejects unknown bits without mutation; check
-requires all requested bits and rejects unknown bits in either mask (zero
-requirements pass for a valid mask). Revoke clears requested bits and tolerates
-NULL. Zero-initialized state grants nothing. These predicates do not intercept
+origin/file-URL capabilities. Grant rejects unknown bits in either the grant
+request or stored mask without mutation. Check requires all requested bits
+and rejects unknown bits in either mask (zero requirements pass for a valid
+mask). Revoke clears requested known bits only and tolerates NULL; it cannot
+turn an invalid stored mask into a valid one. To recover from invalid state,
+start over with an empty host-approved mask. Zero-initialized state grants
+nothing. These predicates do not intercept
 operations: hosts must call them before protected actions. No ambient authority,
 OS sandbox, user prompt or automatic browser-engine integration is implied.
 

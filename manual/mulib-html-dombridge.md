@@ -4,6 +4,10 @@
 
 Tree walker with caller-provided native DOM construction callbacks.
 
+For direct document construction, see the opt-in
+[native HTML profile](html-native-dom-profile.md). It does not use this
+walker's intermediate tree or callbacks.
+
 ## Contract and supported profile
 
 Walk visits the supplied node and its sibling forest in preorder, calling
@@ -48,7 +52,7 @@ Include the header in application code; dependency types come from its includes.
 
 ```c
 /** @file mulib-html-dombridge.h
- * @brief Tree walker with caller-provided native DOM construction callbacks.
+ * @brief Callback tree walker and opt-in bounded native HTML document parser.
  * C11 single-header module. Define MULIB_IMPL_HTML_DOMBRIDGE in exactly one C
  * translation unit.
  *
@@ -73,8 +77,29 @@ extern "C"
   /** @brief See manual/mulib-html-dombridge.md for this operation's contract.
    */
   int mulib_html_dombridge_walk (const mulib_html_tree_node_t *root,
-                                 const mulib_html_dombridge_ops_t *ops,
-                                 void *ctx, void *parent, size_t depth_limit);
+                                  const mulib_html_dombridge_ops_t *ops,
+                                  void *ctx, void *parent, size_t depth_limit);
+  typedef struct mulib_dom_document mulib_dom_document_t;
+  typedef struct mulib_html_dombridge_limits
+  {
+    size_t max_bytes, max_nodes, max_depth;
+  } mulib_html_dombridge_limits_t;
+  typedef enum mulib_html_dombridge_status
+  {
+    MULIB_HTML_DOMBRIDGE_OK,
+    MULIB_HTML_DOMBRIDGE_INVALID_ARGUMENT,
+    MULIB_HTML_DOMBRIDGE_INVALID_INPUT,
+    MULIB_HTML_DOMBRIDGE_UNSUPPORTED,
+    MULIB_HTML_DOMBRIDGE_LIMIT,
+    MULIB_HTML_DOMBRIDGE_OUT_OF_MEMORY
+  } mulib_html_dombridge_status_t;
+  /** Requires MULIB_IMPL_HTML_DOMBRIDGE_NATIVE. Publishes a new owned native
+   * document only on success; neither walks nor builds the legacy HTML tree.
+   * See manual/html-native-dom-profile.md for grammar and resource limits. */
+  mulib_html_dombridge_status_t
+  mulib_html_dombridge_parse (const char *html, size_t length,
+                              const mulib_html_dombridge_limits_t *limits,
+                              mulib_dom_document_t **out);
 #ifdef __cplusplus
 }
 #endif
@@ -93,7 +118,7 @@ extern "C"
 | --- | --- |
 | Header | [`kernels/mulib-html-dombridge.h`](../kernels/mulib-html-dombridge.h) |
 | Implementation switch | `MULIB_IMPL_HTML_DOMBRIDGE` |
-| Repository-local includes | [mulib-html-treebuilder](mulib-html-treebuilder.md) |
+| Repository-local includes | [`kernels/detail/mulib-html-native-document.h`](../kernels/detail/mulib-html-native-document.h), [mulib-dom](mulib-dom.md), [mulib-html-treebuilder](mulib-html-treebuilder.md) |
 | Complete example | [`examples/modules/html-dombridge.c`](../examples/modules/html-dombridge.c) |
 
 The include list includes conditional and implementation-only includes;

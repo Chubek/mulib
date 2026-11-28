@@ -320,7 +320,7 @@ static void test_arch (const char *directory)
   };
   mulib_mir_native_block_t block = {0,6};
   mulib_mir_native_program_t p = {code,6,&block,1,4,2,NULL,0,NULL,0};
-  const char *files[] = {"amd64.aml","riscv64.aml"};
+  const char *files[] = {"amd64.am","riscv64.am"};
   {
     char path[1024], source[8192];
     mulib_optml_rules_t policy = {0};

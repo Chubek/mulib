@@ -98,12 +98,6 @@ def main():
                                 capture_output=True, text=True)
     if tool_tests.returncode:
         failures.append(('tool regressions', tool_tests.stderr or tool_tests.stdout))
-    kernelbind = subprocess.run([sys.executable, str(root / 'tools/extend-kernelbind.py'), '--check'],
-                               capture_output=True, text=True)
-    if kernelbind.returncode:
-        failures.append(('On1x KernelBind inventory', kernelbind.stderr or kernelbind.stdout))
-    else:
-        print(kernelbind.stdout.strip())
     manifest = (root / 'MANIFEST.yaml').read_text()
     entries = {}
     for block in re.split(r'^- name: ', manifest.split('project_files:')[0], flags=re.M)[1:]:
@@ -446,8 +440,10 @@ def main():
             ('composition examples', sorted((root / 'examples').glob('*.c'))),
             # SSH fixtures use separately compiled kernels and optional libcrypto.
             # Run them with make check-ssh or opt in to the CMake SSH profile.
+            # The historical PrettyPrint bridge fixture requires removed On1x sources.
             ('focused tests', sorted(p for p in (root / 'tests').glob('test_*.c')
-                                     if not p.name.startswith('test_ssh_'))
+                                     if not p.name.startswith('test_ssh_')
+                                     and p.name != 'test_prettybridge.c')
              + sorted((root / 'tests').glob('test-*.c'))),
         ]:
             passed = check_many([
@@ -505,9 +501,9 @@ def main():
         engineering_flags = ['-Wno-misleading-indentation']
         if engineering:
             includes = ''.join(f'#include "{name}"\n' for name in sorted(engineering))
-            dependencies = set().union(*(closure(name) for name in engineering))
+            engineering_dependencies = set().union(*(closure(name) for name in engineering))
             cases.append(dict(label='engineering combined implementations',
-                              source_text=header_switches(dependencies) + includes + main_source,
+                              source_text=header_switches(engineering_dependencies) + includes + main_source,
                               extra_flags=engineering_flags))
             if have_cxx:
                 cases.append(dict(label='engineering C++ declarations', source_text=includes + main_source,

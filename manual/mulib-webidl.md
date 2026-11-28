@@ -9,10 +9,11 @@
   whitespace, comments, original spellings and byte offsets.
 * **CodeYAML**: the same semantic AST as YAML mappings and sequences.
 * **C99**: a standalone declaration header with explicit data representations.
+* **MicroJS**: C11 native call thunks for a strict namespace-operation subset.
 
-This is a syntax compiler and declaration generator, **not** an implementation of
-ECMAScript conversions, browser bindings, overload resolution or all WebIDL
-validation rules. Unsupported C lowering fails with a diagnostic; semantic
+The syntax compiler is **not** an implementation of full ECMAScript
+conversions, browser bindings, overload resolution or all WebIDL validation
+rules. Unsupported C or MicroJS lowering fails with a diagnostic; semantic
 formats can represent declarations whose types are supplied in another file.
 
 ## Integration and API
@@ -34,7 +35,8 @@ int ok = mulib_webidl_compile(source, sizeof source - 1, &options, &out, &error)
 mulib_buffer_free(&out);
 ```
 
-Select `MULIB_WEBIDL_CODEYAML` or `MULIB_WEBIDL_C99` as `format`. Select
+Select `MULIB_WEBIDL_CODEYAML`, `MULIB_WEBIDL_C99` or `MULIB_WEBIDL_MICROJS`
+as `format`. Select
 `MULIB_WEBIDL_CST` as `tree` only with `MULIB_WEBIDL_SEXPR`; other combinations
 fail. NULL options selects S-expression AST. Empty input is valid. NULL source
 is valid only for zero length. There is no filesystem access in the API: read a
@@ -47,6 +49,7 @@ cc -std=c99 -Ikernels examples/modules/webidl.c -o webidl
 ./webidl --cst input.idl
 ./webidl --yaml input.idl
 ./webidl --c99 input.idl > declarations.h
+./webidl --microjs > host-bindings.inc # built-in Host namespace example
 ```
 
 Returns 1 on success, 0 on failure. Append is atomic, including allocation and
@@ -221,6 +224,62 @@ iterable/maplike/setlike/bare stringifiers, nonnumeric constants and constants
 with nonnumeric/nullable types fail explicitly. Extended attributes remain metadata in the
 semantic formats and have no binding behavior in C declarations.
 
+## MicroJS native bindings
+
+This output uses the same parser and identifier encoding as the other modes.
+It only accepts full namespaces with named, non-overloaded operations and up
+to 32 required, fixed-position parameters per operation. There are no
+extended attributes, types with modifiers or aliases, attributes, interfaces,
+inheritance, dictionaries, unions, callbacks, or async operations in this
+profile. The entire compile fails on unsupported input, even if earlier
+operations could be generated.
+
+| IDL type | Native C type | Accepted MicroJS arguments |
+| --- | --- | --- |
+| `boolean` | `bool` | Boolean values only |
+| `long` | `int32_t` | Exact, finite in-range integer numbers |
+| `unsigned long` | `uint32_t` | Exact, finite in-range integer numbers |
+| `double` | `double` | Finite numbers; the native return must be finite too |
+| `undefined` or legacy `void` | `void` | Return only: produces JS `undefined` |
+
+The native call requires exact arity, with no JS coercion, integer wrapping or
+default substitution. A mismatch returns `MULIB_MICROJS_TYPE` before calling
+native code. A nonfinite `double` result also returns that status, but native
+side effects are not rolled back. The native implementation gets unboxed C
+values, not borrowed script objects, and this ABI has no native error-value
+channel.
+
+Include the generated source once per consumer translation unit that uses the
+install helpers. Define the native function declared by the generated source;
+its name follows the C99 `OWNER__webidl_NAME__call_N` scheme. In one
+implementation translation unit enable `MULIB_IMPL_MICROJS`,
+`MULIB_IMPL_MINIVM`, `MULIB_IMPL_WEBIDL_RUNTIME`, `MULIB_IMPL_BOUNDED_TEXT`
+and `MULIB_IMPL_UTF8` before inclusion and link `-lm`. The compiler itself
+does not link to these runtime implementations.
+
+For the example `namespace Host { long echo(long value); };`:
+
+```c
+#include "host-bindings.inc"
+
+int32_t webidl_Host__webidl_echo__call_0(int32_t n) { return n; }
+
+mulib_microjs_status_t install_host(mulib_microjs_t *vm)
+{
+    return webidl_Host__webidl_echo__install(vm);
+}
+```
+
+Call `install_host` for each intended VM before evaluation. In JS, call
+`webidl_Host__webidl_echo__invoke(42)`, **not** `Host.echo(42)`. The install
+helper publishes one mutable global via `mulib_microjs_bind` and returns its
+status unchanged. The host reserves the encoded names, selects which functions
+to install, and handles partial setup if it makes several install calls.
+Registration is not a realm bootstrap, authorization, or sandbox. Use only
+trusted scripts. The generated code uses static C references to the native
+functions; it does not load symbols dynamically. See the
+[WebIDL integration ledger](webidl-integration-status.md) for DOM blockers.
+
 ## Compatibility: schema generation
 
 `mulib_webidl_generate(schema, out)` retains its API. It generates one flat WebIDL
@@ -236,7 +295,9 @@ valid WebIDL. Append is atomic without a trailing NUL. See also
 `tests/test_webidl.c` covers all formats, grammar failures, source/output aliasing,
 empty input, invalid UTF-8/options, recursion limits and allocation failure at
 every allocation in each backend. `tools/check_webidl.py` compiles generated
-output as strict C99 and verifies concrete-token roundtrips and YAML structure.
+output as strict C99, compiles and executes the MicroJS output with local
+native functions and trusted fixture scripts, and verifies concrete-token
+roundtrips and YAML structure.
 It also runs all 1,033 `.idl`/`.webidl` inputs in `library/webidl`: 989 parse and
 44 produce expected diagnostics for explicitly identified vendor/preprocessor
 constructs. The checker does not preprocess or rewrite those inputs. Native DOM

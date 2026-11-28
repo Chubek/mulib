@@ -8,8 +8,12 @@ int
 main (void)
 {
   mulib_webstorage_t s = { 0 };
-  assert (mulib_webstorage_set (&s, "x", "y"));
+  /* One entry, four string bytes including both terminating NULs. */
+  assert (mulib_webstorage_set_limited (&s, "x", "y", 1, 4));
   assert (!strcmp (mulib_webstorage_get (&s, "x"), "y"));
+  assert (!mulib_webstorage_set_limited (&s, "z", "more", 1, 4));
+  assert (mulib_webstorage_remove (&s, mulib_webstorage_key (&s, 0)));
+  assert (mulib_webstorage_key (&s, 0) == NULL);
   mulib_webstorage_free (&s);
   return 0;
 }

@@ -5,10 +5,10 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PROFILES = [("amd64", "amd64.aml", "MPU"),
-            ("aarch64", "arm64.aml", "MPU"),
-            ("riscv64", "riscv64.aml", "MPU"),
-            ("avr32", "avr32.aml", "MCU"),
+PROFILES = [("amd64", "amd64.am", "MPU"),
+            ("aarch64", "arm64.am", "MPU"),
+            ("riscv64", "riscv64.am", "MPU"),
+            ("avr32", "avr32.am", "MCU"),
             ("xtensa", "xtensa.am", "MCU"),
             ("amdgpu", "amdgpu.am", "GPU"),
             ("nvptx", "nvptx.am", "GPU")]

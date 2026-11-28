@@ -6,14 +6,16 @@ Deterministic resource-budget accounting and abort flags for browser tasks.
 
 ## Contract and supported profile
 
-Init copies validated limits into fresh value storage and zeroes counters.
+Init copies validated limits and zeroes counters, including when explicitly
+resetting from the sandbox's own `limits`. Invalid limits leave state unchanged.
 Charge atomically adds response bytes, nodes, script steps and tasks only if all
 remain within bounds. It rejects corrupt over-budget counters before subtraction,
 avoiding unsigned underflow, and preserves counters on failure. Cancel sets an
 irreversible flag until reinitialization; cancelled charges fail even for zero.
 This is cooperative accounting, not memory interception, execution preemption,
-time limits or an OS/process sandbox. Callers must charge every relevant action
-and synchronize shared state externally.
+time limits or an OS/process sandbox. Depth and URL limits are not charged by
+this API. Callers must enforce those separately, charge every relevant action
+before doing it, honor denials, and synchronize shared state externally.
 
 ## Integration and ownership
 

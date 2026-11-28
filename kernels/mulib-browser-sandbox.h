@@ -53,8 +53,9 @@ mulib_browser_sandbox_init (mulib_browser_sandbox_t *s,
 {
   if (!s || !mulib_browser_limits_valid (l))
     return 0;
-  memset (s, 0, sizeof *s);
-  s->limits = *l;
+  mulib_browser_sandbox_t fresh = { 0 };
+  fresh.limits = *l;
+  *s = fresh;
   return 1;
 }
 int

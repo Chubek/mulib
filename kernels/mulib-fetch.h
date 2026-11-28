@@ -37,13 +37,19 @@ extern "C"
 #ifdef MULIB_IMPL_FETCH
 #ifndef MULIB_IMPL_FETCH_ONCE
 #define MULIB_IMPL_FETCH_ONCE
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+
+static int
+mulib_fetch_content_type_ (const char *s, size_t len)
+{
+  for (size_t i = 0; i < len; i++)
+    {
+      unsigned char c = (unsigned char)s[i];
+      if ((c < 0x20 && c != '\t') || c == 0x7f)
+        return 0;
+    }
+  return 1;
+}
 
 int
 mulib_fetch_get (const mulib_fetch_client_t *c, const char *url,
@@ -57,31 +63,28 @@ mulib_fetch_get (const mulib_fetch_client_t *c, const char *url,
   size_t limit = c->policy.max_bytes ? c->policy.max_bytes : 16 * 1024 * 1024;
   tmp.limit = limit;
   char ct[128] = { 0 };
+  const char *end;
   unsigned st = 0;
-  int ok = c->transport (c->ctx, url, &tmp, &st, ct, sizeof ct);
-  if (ok && st >= 100 && st <= 599 && memchr (ct, 0, sizeof ct)
-      && strlen (ct) < cap && !strpbrk (ct, "\r\n") && tmp.len <= limit
-      && tmp.len < tmp.cap && tmp.data)
+  int ok = 0;
+  if (c->transport (c->ctx, url, &tmp, &st, ct, sizeof ct) != 1
+      || st < 200 || st > 599 || tmp.len > limit
+      || (tmp.len && (st == 204 || st == 205 || st == 304)))
+    goto done;
+  if (tmp.data ? tmp.len >= tmp.cap : (tmp.len || tmp.cap))
+    goto done;
+  end = (const char *)memchr (ct, 0, sizeof ct);
+  if (end)
     {
-      if (body->len <= SIZE_MAX - tmp.len)
-        ok = mulib_bounded_text_append (body, tmp.data, tmp.len);
-      else
-        ok = 0;
-      if (ok)
+      size_t len = (size_t)(end - ct);
+      if (len < cap && mulib_fetch_content_type_ (ct, len)
+          && (!tmp.len || mulib_bounded_text_append (body, tmp.data, tmp.len)))
         {
           *status = st;
-          memmove (type, ct, strlen (ct) + 1);
+          memmove (type, ct, len + 1);
+          ok = 1;
         }
     }
-  else if (ok && !tmp.len && st >= 100 && st <= 599
-           && memchr (ct, 0, sizeof ct) && strlen (ct) < cap
-           && !strpbrk (ct, "\r\n"))
-    {
-      *status = st;
-      memmove (type, ct, strlen (ct) + 1);
-    }
-  else
-    ok = 0;
+done:
   mulib_bounded_text_buffer_free (&tmp);
   return ok;
 }

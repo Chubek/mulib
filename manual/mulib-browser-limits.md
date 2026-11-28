@@ -7,12 +7,15 @@ Validated resource limits for untrusted document execution.
 ## Contract and supported profile
 
 Default writes budgets of 16 MiB response bytes, 100000 nodes, depth 128,
-10000 tasks, one million script steps and 10000 URLs. Valid requires response
-bytes 1024..512 MiB, nodes 1..10000000, depth 1..1024, tasks 1..1000000, and
-nonzero script-step/URL budgets. These are copied configuration values, not an
-automatic enforcement mechanism. Browser-engine enforces response/node/depth/
-history limits; sandbox explicitly accounts charged resources. No process memory,
-wall-clock or OS security guarantee follows from validation.
+10000 tasks, one million script steps and 10000 URLs. Valid requires a response
+budget between 1024 bytes and 512 MiB, nodes 1..10000000, depth 1..1024, tasks
+1..1000000, and nonzero script-step/URL budgets. These are copied configuration
+values, not an
+automatic enforcement mechanism. Browser-engine uses `max_response_bytes`,
+`max_nodes`, `max_depth`, and `max_urls` for responses, nodes, depth, and history
+capacity, respectively. Sandbox accounts for explicitly charged response bytes,
+nodes, tasks, and script steps. No process memory, wall-clock or OS security
+guarantee follows from validation.
 
 For HTML loading, max_depth uses the tree builder's element-depth convention;
 the synthetic document root and text nodes do not consume element depth.

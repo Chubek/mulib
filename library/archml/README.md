@@ -168,10 +168,15 @@ backend data foundation, not a claim of a complete production compiler target.
 
 The public schema and ownership contracts are in
 [`manual/mulib-archml.md`](../../manual/mulib-archml.md).
-The AML is generated deterministically from
+The `.am` profiles are generated deterministically from
 [`tools/generate_archml.py`](../../tools/generate_archml.py),
 [`tools/archml_extra.py`](../../tools/archml_extra.py) and
 [`tools/archml_targets.py`](../../tools/archml_targets.py), and
 [`tools/archml_android.py`](../../tools/archml_android.py); use `--check` in CI.
+The checked-in [bank catalog](banks.am) and
+[profile supplements](metadata/profile-supplements.json) reproduce the historical
+provenance and descriptive metadata without rerunning a scraper. The supplements
+do not add instruction encodings or measured timing. After regenerating the
+profiles, run `python3 tools/embed_units.py` to update the built-in copies.
 Tests load these actual files, roundtrip every form, and compare representative
 forms with independent LLVM MC encodings.

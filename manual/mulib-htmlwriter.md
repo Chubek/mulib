@@ -17,9 +17,22 @@ int mulib_htmlwriter_document(const char *title,const char *body,mulib_typecore_
 
 ## Behavior and limitations
 
-One-paragraph semantic HTML document; document tree and CSS integration are separate.
+Appends a fixed English-language, one-paragraph HTML document to the
+caller-owned `out` buffer. `title` and `body` are borrowed, NUL-terminated
+UTF-8 plain-text strings; empty strings are accepted. Their bytes are copied,
+escaping markup-sensitive characters. Malformed UTF-8 (including truncated
+sequences, overlong encodings, surrogate values and values above U+10FFFF)
+is rejected rather than copied into a document labeled UTF-8.
 
-The public API validates arguments and most size/range boundaries; check integer and memory errors, and do not assume advanced standard conformance. For untrusted files or documents, add fuzzing and independent-format validation before production deployment.
+Initialize `out` to zero or pass an existing initialized typecore buffer.
+The function returns 1 on success and 0 on invalid arguments, malformed UTF-8,
+size overflow or allocation failure. Failure leaves `out` unchanged. No NUL
+terminator is appended; use `mulib_typecore_ends` when a C string is needed,
+and release the buffer with `mulib_typecore_free`.
+
+Embedded NUL, raw markup, document-tree and CSS integration are outside this
+API. UTF-8 validation does not enforce HTML-specific restrictions on Unicode
+controls or noncharacters, and HTML parsers may normalize literal line endings.
 
 ## Integrating with MuLIB
 

@@ -68,9 +68,15 @@ int
 mulib_browser_realm_same_origin (const mulib_browser_realm_t *a,
                                  const mulib_browser_realm_t *b)
 {
-  return a && b && a->id && b->id && memchr (a->origin, 0, sizeof a->origin)
-         && memchr (b->origin, 0, sizeof b->origin) && a->origin[0]
-         && !strcmp (a->origin, b->origin);
+  if (!a || !b || !a->id || !b->id || !a->context_id || !b->context_id
+      || !memchr (a->origin, 0, sizeof a->origin)
+      || !memchr (b->origin, 0, sizeof b->origin)
+      || strcmp (a->origin, b->origin))
+    return 0;
+  mulib_browser_realm_t canonical;
+  return mulib_browser_realm_init (&canonical, a->id, a->context_id, a->origin,
+                                   a->flags)
+         && !strcmp (a->origin, canonical.origin);
 }
 #endif
 #endif

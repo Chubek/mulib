@@ -1,8 +1,8 @@
 /** @file mulib-dom.h
  * @brief Native DOM trees, UTF-16 character data, attributes and event
- * dispatch. Define MULIB_IMPL_DOM plus BUFFER and UTF8 in one translation
- * unit. Documents own all their nodes, including detached nodes. See
- * manual/mulib-dom.md.
+ * dispatch, with live tree ranges. Define MULIB_IMPL_DOM plus BUFFER and UTF8
+ * in one translation unit. Documents own all their nodes, including detached
+ * nodes. See manual/mulib-dom.md.
  */
 #ifndef MULIB_DOM_H
 #define MULIB_DOM_H
@@ -15,6 +15,12 @@ extern "C"
   typedef struct mulib_dom_document mulib_dom_document_t;
   typedef struct mulib_dom_node mulib_dom_node_t;
   typedef struct mulib_dom_event mulib_dom_event_t;
+  typedef struct mulib_dom_live_range mulib_dom_live_range_t;
+  typedef struct mulib_dom_boundary
+  {
+    mulib_dom_node_t *node;
+    size_t offset;
+  } mulib_dom_boundary_t;
   /** Borrowed DOMString; length counts UTF-16 units, including NUL/surrogates.
    */
   typedef struct mulib_dom_string
@@ -50,6 +56,7 @@ extern "C"
     MULIB_DOM_INUSE_ATTRIBUTE_ERR = 10,
     MULIB_DOM_INVALID_STATE_ERR = 11,
     MULIB_DOM_NAMESPACE_ERR = 14,
+    MULIB_DOM_INVALID_NODE_TYPE_ERR = 24,
     MULIB_DOM_OUT_OF_MEMORY = 100,
     MULIB_DOM_LIMIT_ERR = 101
   } mulib_dom_error_t;
@@ -71,6 +78,7 @@ extern "C"
 #define MULIB_DOM_STRING_LIMIT 16777216
 #define MULIB_DOM_XML_NAMESPACE "http://www.w3.org/XML/1998/namespace"
 #define MULIB_DOM_XMLNS_NAMESPACE "http://www.w3.org/2000/xmlns/"
+#define MULIB_DOM_HTML_NAMESPACE "http://www.w3.org/1999/xhtml"
   /** Allocate an empty XML-style document. NULL on allocation failure. */
   mulib_dom_document_t *mulib_dom_document_new (void);
   /** Free all nodes/listeners. Returns 0 during dispatch; NULL is harmless. */
@@ -186,6 +194,34 @@ extern "C"
                                           mulib_dom_error_t *);
   /** Merge adjacent Text nodes and detach empty ones, atomically. */
   int mulib_dom_normalize (mulib_dom_node_t *, mulib_dom_error_t *);
+  /** Create a caller-owned, collapsed live range at a native boundary.
+   * Offsets count UTF-16 units for CharacterData and children otherwise.
+   * Doctypes are invalid. The tree updates positions on successful edits.
+   * Document destruction invalidates the range without freeing it. */
+  mulib_dom_live_range_t *mulib_dom_live_range_new (mulib_dom_node_t *,
+                                                    size_t offset,
+                                                    mulib_dom_error_t *);
+  /** Unregister and free a range; NULL is harmless. */
+  void mulib_dom_live_range_destroy (mulib_dom_live_range_t *);
+  /** Copy current positions with borrowed nodes. Either output may be NULL.
+   * Returns 0 and leaves outputs untouched if the range is invalid. */
+  int mulib_dom_live_range_get (const mulib_dom_live_range_t *,
+                                mulib_dom_boundary_t *start,
+                                mulib_dom_boundary_t *end);
+  /** Set an endpoint. A new root or reversed order collapses the other
+   * endpoint to the new position. Invalid input leaves both unchanged. */
+  int mulib_dom_live_range_set_start (mulib_dom_live_range_t *,
+                                      mulib_dom_node_t *, size_t offset,
+                                      mulib_dom_error_t *);
+  int mulib_dom_live_range_set_end (mulib_dom_live_range_t *,
+                                     mulib_dom_node_t *, size_t offset,
+                                     mulib_dom_error_t *);
+  /** Append selected Text/CDATA as UTF-16 bytes, without a terminator.
+   * Bounds count visited tree nodes and appended UTF-16 units, respectively.
+   * Invalid or exhausted inputs leave the caller's buffer unchanged. */
+  int mulib_dom_live_range_text (const mulib_dom_live_range_t *,
+                                 size_t max_nodes, size_t max_units,
+                                 mulib_buffer_t *, mulib_dom_error_t *);
   /** NamedNodeMap access in insertion order; Attr has no parentNode. */
   size_t mulib_dom_attribute_count (const mulib_dom_node_t *);
   mulib_dom_node_t *mulib_dom_attribute_at (const mulib_dom_node_t *, size_t);
@@ -201,6 +237,13 @@ extern "C"
   int mulib_dom_remove_attribute (mulib_dom_node_t *,
                                   const char *namespace_uri,
                                   const char *local_name, mulib_dom_error_t *);
+  /** First descendant matching one ASCII type, #id, .class, or *.
+   * A successful miss stores NULL. Invalid syntax or exhaustion leaves *out
+   * untouched. A visit counts every descendant node, not just elements. */
+  int mulib_dom_query_native_first (const mulib_dom_node_t *root,
+                                    const char *selector, size_t max_nodes,
+                                    mulib_dom_node_t **out,
+                                    mulib_dom_error_t *);
   /** Descendant-only tree-order query; UTF-16 id matches the no-namespace id.
    */
   mulib_dom_node_t *mulib_dom_get_element_by_id (const mulib_dom_node_t *,
@@ -294,7 +337,14 @@ struct mulib_dom_node
 struct mulib_dom_document
 {
   mulib_dom_node_t *node, *allocated;
+  mulib_dom_live_range_t *ranges;
   size_t count, dispatches;
+};
+struct mulib_dom_live_range
+{
+  mulib_dom_document_t *document;
+  mulib_dom_live_range_t *previous, *next;
+  mulib_dom_boundary_t points[2]; /* start, end */
 };
 struct mulib_dom_event
 {
@@ -359,6 +409,29 @@ mulib_dom_character_ (const mulib_dom_node_t *n)
          && (n->type == MULIB_DOM_TEXT || n->type == MULIB_DOM_CDATA
              || n->type == MULIB_DOM_COMMENT
              || n->type == MULIB_DOM_PROCESSING_INSTRUCTION);
+}
+static void
+mulib_dom_range_unlink_ (mulib_dom_live_range_t *r)
+{
+  if (!r->document)
+    return;
+  if (r->previous)
+    r->previous->next = r->next;
+  else
+    r->document->ranges = r->next;
+  if (r->next)
+    r->next->previous = r->previous;
+  r->previous = r->next = NULL;
+  r->document = NULL;
+}
+static void
+mulib_dom_range_link_ (mulib_dom_document_t *d, mulib_dom_live_range_t *r)
+{
+  r->document = d;
+  r->next = d->ranges;
+  if (r->next)
+    r->next->previous = r;
+  d->ranges = r;
 }
 static void
 mulib_dom_unlink_allocation_ (mulib_dom_node_t *n)
@@ -447,6 +520,12 @@ mulib_dom_document_destroy (mulib_dom_document_t *d)
     return 1;
   if (d->dispatches)
     return 0;
+  while (d->ranges)
+    {
+      mulib_dom_live_range_t *r = d->ranges;
+      mulib_dom_range_unlink_ (r);
+      r->points[0] = r->points[1] = (mulib_dom_boundary_t){ NULL, 0 };
+    }
   while (d->allocated)
     mulib_dom_free_node_ (d->allocated);
   free (d);
@@ -750,12 +829,130 @@ mulib_dom_child_at (const mulib_dom_node_t *n, size_t i)
   return (mulib_dom_node_t *)n;
 }
 
+static size_t
+mulib_dom_index_ (const mulib_dom_node_t *n)
+{
+  size_t i = 0;
+  for (; n->previous; n = n->previous)
+    ++i;
+  return i;
+}
+static int
+mulib_dom_boundary_valid_ (const mulib_dom_node_t *n, size_t offset,
+                            mulib_dom_error_t *e)
+{
+  if (!n)
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
+  if (n->type == MULIB_DOM_DOCUMENT_TYPE)
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_NODE_TYPE_ERR);
+  if (offset > (mulib_dom_character_ (n) ? n->length
+                                       : mulib_dom_child_count (n)))
+    return mulib_dom_error_ (e, MULIB_DOM_INDEX_SIZE_ERR);
+  return 1;
+}
+
+/* Compare distinct or equal boundary points within the same root. */
+static int
+mulib_dom_boundary_before_ (mulib_dom_boundary_t a, mulib_dom_boundary_t b)
+{
+  const mulib_dom_node_t *n;
+  if (a.node == b.node)
+    return a.offset < b.offset;
+  if (mulib_dom_contains (a.node, b.node))
+    {
+      for (n = b.node; n->parent != a.node; n = n->parent)
+        ;
+      return a.offset <= mulib_dom_index_ (n);
+    }
+  if (mulib_dom_contains (b.node, a.node))
+    {
+      for (n = a.node; n->parent != b.node; n = n->parent)
+        ;
+      return mulib_dom_index_ (n) < b.offset;
+    }
+  return !!(mulib_dom_compare_document_position (a.node, b.node)
+            & MULIB_DOM_DOCUMENT_POSITION_FOLLOWING);
+}
+mulib_dom_live_range_t *
+mulib_dom_live_range_new (mulib_dom_node_t *n, size_t offset,
+                          mulib_dom_error_t *e)
+{
+  mulib_dom_live_range_t *r;
+  if (!mulib_dom_boundary_valid_ (n, offset, e))
+    return NULL;
+  r = (mulib_dom_live_range_t *)calloc (1, sizeof *r);
+  if (!r)
+    {
+      mulib_dom_error_ (e, MULIB_DOM_OUT_OF_MEMORY);
+      return NULL;
+    }
+  r->points[0] = r->points[1] = (mulib_dom_boundary_t){ n, offset };
+  mulib_dom_range_link_ (n->document, r);
+  mulib_dom_error_ (e, MULIB_DOM_OK);
+  return r;
+}
+void
+mulib_dom_live_range_destroy (mulib_dom_live_range_t *r)
+{
+  if (r)
+    {
+      mulib_dom_range_unlink_ (r);
+      free (r);
+    }
+}
+int
+mulib_dom_live_range_get (const mulib_dom_live_range_t *r,
+                          mulib_dom_boundary_t *start,
+                          mulib_dom_boundary_t *end)
+{
+  if (!r || !r->document)
+    return 0;
+  if (start)
+    *start = r->points[0];
+  if (end)
+    *end = r->points[1];
+  return 1;
+}
+static int
+mulib_dom_range_set_ (mulib_dom_live_range_t *r, mulib_dom_node_t *n,
+                       size_t offset, unsigned end, mulib_dom_error_t *e)
+{
+  mulib_dom_boundary_t point = { n, offset }, other;
+  if (!r || !r->document)
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
+  if (!mulib_dom_boundary_valid_ (n, offset, e))
+    return 0;
+  other = r->points[1 - end];
+  if (mulib_dom_get_root_node (n) != mulib_dom_get_root_node (other.node)
+      || (end ? mulib_dom_boundary_before_ (point, other)
+              : mulib_dom_boundary_before_ (other, point)))
+    r->points[1 - end] = point;
+  r->points[end] = point;
+  if (n->document != r->document)
+    {
+      mulib_dom_range_unlink_ (r);
+      mulib_dom_range_link_ (n->document, r);
+    }
+  return mulib_dom_error_ (e, MULIB_DOM_OK);
+}
+int
+mulib_dom_live_range_set_start (mulib_dom_live_range_t *r, mulib_dom_node_t *n,
+                                size_t offset, mulib_dom_error_t *e)
+{
+  return mulib_dom_range_set_ (r, n, offset, 0, e);
+}
+int
+mulib_dom_live_range_set_end (mulib_dom_live_range_t *r, mulib_dom_node_t *n,
+                              size_t offset, mulib_dom_error_t *e)
+{
+  return mulib_dom_range_set_ (r, n, offset, 1, e);
+}
+
 /* Iterative preorder bounded by a root, excluding attribute lists. */
 static mulib_dom_node_t *
-mulib_dom_next_ (const mulib_dom_node_t *n, const mulib_dom_node_t *root)
+mulib_dom_after_subtree_ (const mulib_dom_node_t *n,
+                         const mulib_dom_node_t *root)
 {
-  if (n->first)
-    return n->first;
   while (n != root)
     {
       if (n->next)
@@ -764,12 +961,30 @@ mulib_dom_next_ (const mulib_dom_node_t *n, const mulib_dom_node_t *root)
     }
   return NULL;
 }
+static mulib_dom_node_t *
+mulib_dom_next_ (const mulib_dom_node_t *n, const mulib_dom_node_t *root)
+{
+  return n->first ? n->first : mulib_dom_after_subtree_ (n, root);
+}
 static void
 mulib_dom_detach_ (mulib_dom_node_t *n)
 {
   mulib_dom_node_t *p = n->parent ? n->parent : n->owner_element;
   if (!p)
     return;
+  if (n->parent && p->document->ranges)
+    {
+      size_t index = mulib_dom_index_ (n);
+      for (mulib_dom_live_range_t *r = p->document->ranges; r; r = r->next)
+        for (size_t i = 0; i < 2; ++i)
+          {
+            mulib_dom_boundary_t *b = &r->points[i];
+            if (b->node == p)
+              b->offset -= b->offset > index;
+            else if (mulib_dom_contains (n, b->node))
+              *b = (mulib_dom_boundary_t){ p, index };
+          }
+    }
   if (n->previous)
     n->previous->next = n->next;
   else if (n->owner_element)
@@ -783,6 +998,19 @@ mulib_dom_detach_ (mulib_dom_node_t *n)
   else
     p->last = n->previous;
   n->next = n->previous = n->parent = n->owner_element = NULL;
+}
+static void
+mulib_dom_range_insert_ (mulib_dom_node_t *p, mulib_dom_node_t *ref,
+                         size_t count)
+{
+  if (ref && count && p->document->ranges)
+    {
+      size_t index = mulib_dom_index_ (ref);
+      for (mulib_dom_live_range_t *r = p->document->ranges; r; r = r->next)
+        for (size_t i = 0; i < 2; ++i)
+          if (r->points[i].node == p && r->points[i].offset > index)
+            r->points[i].offset += count;
+    }
 }
 static void
 mulib_dom_attach_ (mulib_dom_node_t *p, mulib_dom_node_t *n,
@@ -836,6 +1064,20 @@ mulib_dom_transfer_ (mulib_dom_document_t *d, mulib_dom_node_t *root)
   mulib_dom_node_t *n, *a;
   if (root->document == d)
     return;
+  for (mulib_dom_live_range_t *r = root->document->ranges, *next; r; r = next)
+    {
+      mulib_dom_node_t *start = r->points[0].node;
+      next = r->next;
+      /* Both endpoints have the same tree root; Attr is its own root,
+       * but its storage travels with its owner element. */
+      if (mulib_dom_contains (root,
+                              start->owner_element ? start->owner_element
+                                                   : start))
+        {
+          mulib_dom_range_unlink_ (r);
+          mulib_dom_range_link_ (d, r);
+        }
+    }
   for (n = root; n; n = mulib_dom_next_ (n, root))
     {
       mulib_dom_unlink_allocation_ (n);
@@ -910,6 +1152,11 @@ mulib_dom_preinsert_ (mulib_dom_node_t *p, mulib_dom_node_t *n,
     }
   if (p->type != MULIB_DOM_DOCUMENT)
     return 1;
+  /* Appending a comment/PI cannot change element/doctype constraints. */
+  if (!old && !ref
+      && (n->type == MULIB_DOM_COMMENT
+          || n->type == MULIB_DOM_PROCESSING_INSTRUCTION))
+    return 1;
   /* Validate the complete prospective child sequence before any detach. */
   for (v = p->first;; v = v->next)
     {
@@ -950,6 +1197,12 @@ mulib_dom_insert_ (mulib_dom_node_t *p, mulib_dom_node_t *n,
     mulib_dom_detach_ (old);
   mulib_dom_detach_ (n);
   mulib_dom_transfer_ (p->document, n);
+  /* Offsets use the tree after removals, including same-parent moves. */
+  if (ref && p->document->ranges)
+    mulib_dom_range_insert_ (p, ref,
+                             n->type == MULIB_DOM_DOCUMENT_FRAGMENT
+                                 ? mulib_dom_child_count (n)
+                                 : 1);
   if (n->type == MULIB_DOM_DOCUMENT_FRAGMENT)
     {
       while (n->first)
@@ -1126,9 +1379,10 @@ mulib_dom_set_node_value (mulib_dom_node_t *n, mulib_dom_string_t s,
 {
   if (!n)
     return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
-  return (mulib_dom_character_ (n) || n->type == MULIB_DOM_ATTRIBUTE)
-             ? mulib_dom_data_ (n, s, e)
-             : mulib_dom_error_ (e, MULIB_DOM_OK);
+  if (mulib_dom_character_ (n))
+    return mulib_dom_replace_data (n, 0, n->length, s, e);
+  return n->type == MULIB_DOM_ATTRIBUTE ? mulib_dom_data_ (n, s, e)
+                                       : mulib_dom_error_ (e, MULIB_DOM_OK);
 }
 static int
 mulib_dom_append_data_ (mulib_buffer_t *b, const uint16_t *data, size_t length)
@@ -1139,6 +1393,75 @@ mulib_dom_append_data_ (mulib_buffer_t *b, const uint16_t *data, size_t length)
                 <= MULIB_DOM_STRING_LIMIT * sizeof *data - b->length
          && mulib_buffer_append (b, data, length * sizeof *data);
 }
+/* Map a range edge to its inclusive start / exclusive end in preorder.
+   Text/CDATA at a fractional endpoint is sliced during traversal. */
+static mulib_dom_node_t *
+mulib_dom_range_text_edge_ (mulib_dom_boundary_t edge, mulib_dom_node_t *root,
+                            int end)
+{
+  mulib_dom_node_t *n = edge.node;
+  if (mulib_dom_character_ (n))
+    {
+      if (end ? edge.offset == 0 : edge.offset < n->length)
+        return n;
+    }
+  else
+    {
+      mulib_dom_node_t *child = mulib_dom_child_at (n, edge.offset);
+      if (child)
+        return child;
+    }
+  return mulib_dom_after_subtree_ (n, root);
+}
+
+int
+mulib_dom_live_range_text (const mulib_dom_live_range_t *r, size_t max_nodes,
+                           size_t max_units, mulib_buffer_t *out,
+                           mulib_dom_error_t *e)
+{
+  if (!r || !r->document || !out)
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
+  mulib_dom_boundary_t a = r->points[0], b = r->points[1];
+  if (a.node == b.node && a.offset == b.offset)
+    return mulib_dom_error_ (e, MULIB_DOM_OK);
+  mulib_dom_node_t *root = mulib_dom_get_root_node (a.node);
+  mulib_dom_node_t *first = mulib_dom_range_text_edge_ (a, root, 0),
+                   *stop = mulib_dom_range_text_edge_ (b, root, 1);
+  mulib_buffer_t result = { 0 };
+  mulib_dom_error_t status = MULIB_DOM_OK;
+  if (max_units > MULIB_DOM_STRING_LIMIT)
+    max_units = MULIB_DOM_STRING_LIMIT;
+  for (mulib_dom_node_t *n = first; n && n != stop; n = mulib_dom_next_ (n, root))
+    {
+      if (!max_nodes)
+        {
+          status = MULIB_DOM_LIMIT_ERR;
+          break;
+        }
+      --max_nodes;
+      if (n->type != MULIB_DOM_TEXT && n->type != MULIB_DOM_CDATA)
+        continue;
+      size_t start = n == a.node ? a.offset : 0;
+      size_t length = (n == b.node ? b.offset : n->length) - start;
+      if (length > max_units)
+        {
+          status = MULIB_DOM_LIMIT_ERR;
+          break;
+        }
+      max_units -= length;
+      if (length && !mulib_dom_append_data_ (&result, n->data + start, length))
+        {
+          status = MULIB_DOM_OUT_OF_MEMORY;
+          break;
+        }
+    }
+  if (status == MULIB_DOM_OK
+      && !mulib_buffer_append (out, result.data, result.length))
+    status = MULIB_DOM_OUT_OF_MEMORY;
+  mulib_buffer_free (&result);
+  return mulib_dom_error_ (e, status);
+}
+
 int
 mulib_dom_text_content (const mulib_dom_node_t *n, mulib_buffer_t *out,
                         mulib_dom_error_t *e)
@@ -1168,7 +1491,7 @@ mulib_dom_set_text_content (mulib_dom_node_t *n, mulib_dom_string_t s,
   if (!n)
     return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
   if (mulib_dom_character_ (n) || n->type == MULIB_DOM_ATTRIBUTE)
-    return mulib_dom_data_ (n, s, e);
+    return mulib_dom_set_node_value (n, s, e);
   if (n->type != MULIB_DOM_ELEMENT && n->type != MULIB_DOM_DOCUMENT_FRAGMENT)
     return mulib_dom_error_ (e, MULIB_DOM_OK);
   if (!mulib_dom_string_valid_ (s))
@@ -1209,6 +1532,20 @@ mulib_dom_substring_data (const mulib_dom_node_t *n, size_t offset,
              ? MULIB_DOM_OK
              : MULIB_DOM_OUT_OF_MEMORY);
 }
+static void
+mulib_dom_range_replace_data_ (mulib_dom_node_t *n, size_t offset,
+                                size_t removed, size_t added)
+{
+  for (mulib_dom_live_range_t *r = n->document->ranges; r; r = r->next)
+    for (size_t i = 0; i < 2; ++i)
+      {
+        mulib_dom_boundary_t *b = &r->points[i];
+        if (b->node == n && b->offset > offset)
+          b->offset = b->offset <= offset + removed
+                          ? offset
+                          : (b->offset - removed) + added;
+      }
+}
 int
 mulib_dom_replace_data (mulib_dom_node_t *n, size_t offset, size_t count,
                         mulib_dom_string_t s, mulib_dom_error_t *e)
@@ -1239,6 +1576,7 @@ mulib_dom_replace_data (mulib_dom_node_t *n, size_t offset, size_t count,
         memcpy (data + offset + s.length, n->data + offset + count,
                 tail * sizeof *data);
     }
+  mulib_dom_range_replace_data_ (n, offset, count, s.length);
   free (n->data);
   n->data = data;
   n->length = length;
@@ -1266,7 +1604,25 @@ mulib_dom_split_text (mulib_dom_node_t *n, size_t offset, mulib_dom_error_t *e)
   if (!tail)
     return NULL;
   if (n->parent)
-    mulib_dom_attach_ (n->parent, tail, n->next);
+    {
+      mulib_dom_node_t *parent = n->parent;
+      mulib_dom_attach_ (parent, tail, n->next);
+      if (n->document->ranges)
+        {
+          size_t index = mulib_dom_index_ (tail);
+          for (mulib_dom_live_range_t *r = n->document->ranges; r; r = r->next)
+            for (size_t i = 0; i < 2; ++i)
+              {
+                mulib_dom_boundary_t *b = &r->points[i];
+                if (b->node == n && b->offset > offset)
+                  *b = (mulib_dom_boundary_t){ tail, b->offset - offset };
+                else if (b->node == parent && b->offset >= index)
+                  ++b->offset;
+              }
+        }
+    }
+  else
+    mulib_dom_range_replace_data_ (n, offset, n->length - offset, 0);
   n->length = offset;
   return tail;
 }
@@ -1276,6 +1632,29 @@ typedef struct mulib_dom_normalize_
   mulib_dom_node_t *start, *end, *keep;
   mulib_buffer_t data;
 } mulib_dom_normalize_;
+static void
+mulib_dom_normalize_ranges_ (mulib_dom_node_t *keep,
+                             const mulib_dom_node_t *end)
+{
+  const mulib_dom_node_t *n, *parent = keep->parent;
+  size_t length = keep->length, index;
+  if (!keep->document->ranges)
+    return;
+  index = mulib_dom_index_ (keep) + 1;
+  for (n = keep->next; n != end; n = n->next, ++index)
+    {
+      for (mulib_dom_live_range_t *r = keep->document->ranges; r; r = r->next)
+        for (size_t i = 0; i < 2; ++i)
+          {
+            mulib_dom_boundary_t *b = &r->points[i];
+            if (b->node == n)
+              *b = (mulib_dom_boundary_t){ keep, length + b->offset };
+            else if (b->node == parent && b->offset == index)
+              *b = (mulib_dom_boundary_t){ keep, length };
+          }
+      length += n->length;
+    }
+}
 int
 mulib_dom_normalize (mulib_dom_node_t *root, mulib_dom_error_t *e)
 {
@@ -1327,15 +1706,18 @@ mulib_dom_normalize (mulib_dom_node_t *root, mulib_dom_error_t *e)
       plans = plan->next;
       if (ok)
         {
-          for (n = plan->start; n != plan->end;)
+          /* Remove leading empty nodes before remapping boundaries among
+           * the remaining siblings in this run. Plans are fully staged. */
+          for (n = plan->start; n != plan->keep && n != plan->end; n = v)
             {
               v = n->next;
-              if (n != plan->keep)
-                mulib_dom_detach_ (n);
-              n = v;
+              mulib_dom_detach_ (n);
             }
           if (plan->keep)
             {
+              mulib_dom_normalize_ranges_ (plan->keep, plan->end);
+              while (plan->keep->next != plan->end)
+                mulib_dom_detach_ (plan->keep->next);
               free (plan->keep->data);
               plan->keep->data = (uint16_t *)plan->data.data;
               plan->keep->length = plan->data.length / sizeof (uint16_t);
@@ -1504,6 +1886,112 @@ mulib_dom_compare_document_position (const mulib_dom_node_t *a,
     }
   return 1;
 }
+static unsigned char
+mulib_dom_ascii_lower_ (unsigned char c)
+{
+  return c >= 'A' && c <= 'Z' ? (unsigned char)(c + 32) : c;
+}
+
+static int
+mulib_dom_query_start_ (unsigned char c)
+{
+  c = mulib_dom_ascii_lower_ (c);
+  return (c >= 'a' && c <= 'z') || c == '_';
+}
+
+static int
+mulib_dom_query_space_ (uint16_t c)
+{
+  return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f';
+}
+
+static int
+mulib_dom_query_word_ (const uint16_t *s, size_t n, const char *word, size_t k)
+{
+  if (n != k)
+    return 0;
+  for (size_t i = 0; i < n; ++i)
+    if (s[i] != (unsigned char)word[i])
+      return 0;
+  return 1;
+}
+
+static int
+mulib_dom_query_native_match_ (const mulib_dom_node_t *n, char kind,
+                                const char *word, size_t k)
+{
+  if (n->type != MULIB_DOM_ELEMENT)
+    return 0;
+  if (kind == '*')
+    return 1;
+  if (!kind)
+    {
+      if (!mulib_dom_equal_c_ (n->namespace_uri, MULIB_DOM_HTML_NAMESPACE))
+        return !strcmp (n->local_name, word);
+      for (size_t i = 0; i < k; ++i)
+        if (!n->local_name[i]
+            || mulib_dom_ascii_lower_ (n->local_name[i])
+                   != mulib_dom_ascii_lower_ (word[i]))
+          return 0;
+      return n->local_name[k] == '\0';
+    }
+  mulib_dom_node_t *a = mulib_dom_get_attribute_node (
+      n, NULL, kind == '#' ? "id" : "class");
+  if (!a)
+    return 0;
+  if (kind == '#')
+    return mulib_dom_query_word_ (a->data, a->length, word, k);
+  for (size_t i = 0; i < a->length;)
+    {
+      while (i < a->length && mulib_dom_query_space_ (a->data[i]))
+        ++i;
+      size_t start = i;
+      while (i < a->length && !mulib_dom_query_space_ (a->data[i]))
+        ++i;
+      if (i != start && mulib_dom_query_word_ (a->data + start, i - start, word, k))
+        return 1;
+    }
+  return 0;
+}
+
+int
+mulib_dom_query_native_first (const mulib_dom_node_t *root, const char *selector,
+                              size_t max_nodes, mulib_dom_node_t **out,
+                              mulib_dom_error_t *e)
+{
+  if (!root || !selector || !out)
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_STATE_ERR);
+  char kind = *selector == '#' || *selector == '.' || *selector == '*'
+                  ? *selector++
+                  : '\0';
+  size_t k = 0;
+  if (kind == '*' ? *selector != '\0'
+                  : !(mulib_dom_query_start_ (selector[0])
+                      || (selector[0] == '-'
+                          && (selector[1] == '-'
+                              || mulib_dom_query_start_ (selector[1])))))
+    return mulib_dom_error_ (e, MULIB_DOM_INVALID_CHARACTER_ERR);
+  for (; selector[k]; ++k)
+    {
+      unsigned char c = (unsigned char)selector[k];
+      if (k == 63)
+        return mulib_dom_error_ (e, MULIB_DOM_LIMIT_ERR);
+      if (!mulib_dom_query_start_ (c) && c != '-' && (c < '0' || c > '9'))
+        return mulib_dom_error_ (e, MULIB_DOM_INVALID_CHARACTER_ERR);
+    }
+  mulib_dom_node_t *n = root->first;
+  for (; n; n = mulib_dom_next_ (n, root))
+    {
+      if (!max_nodes)
+        return mulib_dom_error_ (e, MULIB_DOM_LIMIT_ERR);
+      --max_nodes;
+      if (mulib_dom_query_native_match_ (n, kind, selector, k))
+        break;
+    }
+  *out = n;
+  return mulib_dom_error_ (e, MULIB_DOM_OK);
+}
+
 mulib_dom_node_t *
 mulib_dom_get_element_by_id (const mulib_dom_node_t *root,
                              mulib_dom_string_t id)

@@ -37,6 +37,11 @@ extern "C"
    */
   int mulib_browser_engine_navigate (mulib_browser_engine_t *engine,
                                      const char *url, unsigned *status);
+  /** @brief Reload a relative history entry without changing history length.
+   * Zero reloads the current entry. On failure, document, cursor and status
+   * are unchanged. See manual/mulib-browser-engine.md. */
+  int mulib_browser_engine_traverse (mulib_browser_engine_t *engine,
+                                     int delta, unsigned *status);
   /** @brief See manual/mulib-browser-engine.md for this operation's contract.
    */
   void mulib_browser_engine_destroy (mulib_browser_engine_t *engine);
@@ -70,11 +75,11 @@ mulib_browser_engine_init (mulib_browser_engine_t *e,
   e->history.limit = limits.max_urls;
   return 1;
 }
-int
-mulib_browser_engine_navigate (mulib_browser_engine_t *e, const char *url,
-                               unsigned *status)
+static int
+mulib_browser_engine_load (mulib_browser_engine_t *e, const char *url,
+                           size_t target, unsigned *status)
 {
-  if (!e || e->navigating || !url || !status
+  if (!e || e->navigating || e->stream.dispatching || !url || !status
       || !mulib_browser_limits_valid (&e->limits) || strlen (url) > 8192
       || e->stream.sequence == UINT64_MAX)
     return 0;
@@ -87,10 +92,12 @@ mulib_browser_engine_navigate (mulib_browser_engine_t *e, const char *url,
   int ok = mulib_browser_documentload_bounded (
       &e->fetch, owned, e->limits.max_nodes, e->limits.max_depth,
       e->limits.max_response_bytes, &root, &code);
-  if (ok)
+  if (ok && target == SIZE_MAX)
     ok = mulib_browser_navigation_visit (&e->history, owned);
   if (ok)
     {
+      if (target != SIZE_MAX)
+        e->history.current = target;
       mulib_html_tree_free (e->document);
       e->document = root;
       *status = code;
@@ -103,6 +110,25 @@ mulib_browser_engine_navigate (mulib_browser_engine_t *e, const char *url,
   e->navigating = 0;
   free (owned);
   return ok;
+}
+int
+mulib_browser_engine_navigate (mulib_browser_engine_t *e, const char *url,
+                               unsigned *status)
+{
+  return mulib_browser_engine_load (e, url, SIZE_MAX, status);
+}
+int
+mulib_browser_engine_traverse (mulib_browser_engine_t *e, int delta,
+                               unsigned *status)
+{
+  if (!e || e->navigating || e->stream.dispatching || !status)
+    return 0;
+  /* Borrow history entries for lookup; advance the real cursor at commit. */
+  mulib_browser_navigation_t view = {
+    .urls = e->history.urls, .len = e->history.len, .current = e->history.current
+  };
+  const char *url = mulib_browser_navigation_move (&view, delta);
+  return mulib_browser_engine_load (e, url, view.current, status);
 }
 void
 mulib_browser_engine_destroy (mulib_browser_engine_t *e)

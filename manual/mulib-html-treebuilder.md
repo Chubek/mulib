@@ -9,7 +9,17 @@ Owned bounded HTML element/text tree with basic optional-end-tag recovery.
 Parse constructs an owned #document root with linked element/text nodes,
 copied raw tag/attribute bytes, copied raw text and source offsets. Comments and
 declarations are omitted; entities remain encoded. Void/self-closing elements
-do not push depth; repeated active li/p/option elements close the prior peer.
+do not push depth. Incoming `li`, `p`, `option`, and `optgroup` start tags can
+implicitly close an open peer; `dt` and `dd` can close one another. Recovery can
+pop intervening open descendants while leaving already-built nodes in place.
+A new `optgroup` also closes an open `option`. Recovery stops at boundaries
+such as nested lists (for list items), `select`, `template`, or table cells.
+Within an explicit `table`, a new `td`/`th`, `tr`, or `thead`/`tbody`/`tfoot`
+can close the preceding cell, row, or section respectively. Table recovery
+does not reach into an outer table through a nested table or template.
+This is not general insertion-mode processing: it does not synthesize
+elements (including `tbody`), foster-parent text, reconstruct formatting,
+or close paragraphs on other block starts.
 Explicit positive node/depth limits are required (depth<=1024); root is excluded
 from the node count. Empty input creates an empty document. On failure out is
 unchanged and the partial tree is freed. Successful out must be fresh storage;
@@ -41,6 +51,8 @@ releases owned state. Behavioral coverage is in
 [`tests/test_web_extraction.c`](../tests/test_web_extraction.c), with moving-allocation
 failure coverage in [test_web_alloc.c](../tests/test_web_alloc.c) and bounded
 malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
+Scoped optional-end-tag recovery and its node and depth limits are exercised by
+[`tests/test_html_tree_recovery.c`](../tests/test_html_tree_recovery.c).
 
 <!-- manual-interface -->
 ## Public header reference

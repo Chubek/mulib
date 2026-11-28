@@ -59,6 +59,15 @@ not support concurrent mutation.
   `MULIB_MICROJS_UNDEFINED` for no return value. Callback user data is borrowed
   and must outlive all use of the state. A non-OK callback status aborts execution.
 * `call` invokes a rooted function with borrowed arguments. Its result is owned.
+* `enqueue_job` appends a borrowed function from this state to its FIFO job
+  queue. The queue keeps the closure alive even after the host releases its
+  value. Non-functions and functions from other states are rejected.
+* `drain_jobs` is an explicit host checkpoint: it attempts up to the requested
+  number of callbacks, including callbacks posted by earlier jobs. Zero attempts
+  none. Jobs receive no arguments and undefined `this`; their results are
+  discarded. A failed job is consumed, its diagnostic is returned (location
+  1:1), and later jobs remain queued. The optional attempted count includes
+  the failed job. `eval` and `call` never drain automatically.
 * `make_object` creates an empty object or array. `get_property` and
   `set_property` copy values across the C boundary using NUL-terminated WTF-8
   property names. A missing ordinary property returns undefined. These APIs
@@ -89,8 +98,9 @@ indices but four UTF-8 bytes.
 String results own independent buffers. Object/function results hold explicit
 collector roots. Both remain safe to release after `destroy`: a destroyed state
 with outstanding object roots defers final heap release until the last root is
-freed. It cannot execute again. Callbacks can use copy/get/set/make APIs; they
-cannot reenter `eval` or `call`. `destroy` is a no-op during execution.
+freed. It cannot execute again and pending jobs are discarded. Callbacks can
+use copy/get/set/make/enqueue APIs; they cannot reenter `eval`, `call`, or
+`drain_jobs`. `destroy` is a no-op during execution.
 
 ## Compiler and runtime
 
@@ -116,6 +126,15 @@ active. Transient values and dead loop environments count against limits until
 execution finishes; long-running allocating programs can reach limits even if
 some allocations are already unreachable.
 
+Each job uses fresh per-invocation execution limits, and collection can run
+between jobs. Queued records and their reachable closures count against the
+managed heap. The host chooses when to drain, for example after a trusted
+script or event handler returns, and supplies a finite budget to bound
+callbacks that keep posting more work. A host can expose an enqueue-only
+`queueMicrotask` callback with `bind`; the engine does not install that Web API
+itself. The queue does not share ordering with the separate native queue in
+`mulib-microjs-promise.h` or implement a browser event loop.
+
 ## Implemented language
 
 * Primitive values: undefined, null, Boolean, binary64 Number (including NaN,
@@ -127,8 +146,10 @@ some allocations are already unreachable.
 * Primitive coercion, strict/loose equality, relational and bitwise operators,
   arithmetic, exponentiation, unary operators, `typeof`, `void`, prefix/postfix
   updates, simple/arithmetic compound assignments and comma expressions.
-* `&&`, `||`, `??` return operand values and short-circuit. Conditional expressions
-  evaluate one arm. Invalid unparenthesized nullish/logical mixing is rejected.
+* `&&`, `||`, `??` return operand values and short-circuit. `&&=`, `||=`, `??=`
+  evaluate the target once and skip both the right operand and the write when
+  short-circuiting. Conditional expressions evaluate one arm. Invalid
+  unparenthesized nullish/logical mixing is rejected.
 * `let`, `const`, `var`, multiple declarators, lexical blocks, temporal dead zones,
   function-scoped `var` hoisting and function declarations. Global bindings persist.
 * Ordinary function declarations/expressions, recursion, closures, simple named
@@ -165,12 +186,13 @@ ECMAScript global object, and their property attributes are not standardized yet
 | §7.1–7.2 abstract operations | Primitive truthiness/conversion/equality and ordering tested. Object-to-primitive hooks, boxed primitives, Symbol and BigInt conversions are missing; object coercion is incomplete. |
 | §8–10 environments/objects | Lexical scope, TDZ, closures and cyclic ownership tested. Full environment records, realms, prototypes, descriptors, accessors, extensibility, exotic objects and proxy internal methods remain. |
 | §12 lexical grammar | Supported literals/comments and ASI restrictions tested. Full Unicode identifiers/escapes, RegExp lexical goals, hashbang, templates and all legacy/strict numeric restrictions remain. |
-| §13 expressions | Evaluation order, primitive operators, properties, calls and assignments tested. `new`, optional chaining, spread, destructuring, `delete`, `in`, `instanceof`, logical/bitwise compound assignment and other productions remain. |
+| §13 expressions | Evaluation order, primitive operators, properties, calls and assignments (including short-circuiting logical assignment) tested. `new`, optional chaining, spread, destructuring, `delete`, `in`, `instanceof`, bitwise compound assignment, anonymous function name inference and other productions remain. |
 | §14 statements | Supported blocks, declarations, branching, loops, per-iteration closures and abrupt returns tested. Labels, switch, do/while, for-in/of, try/catch/finally and complete completion-record propagation remain. |
 | §15 functions/classes | Ordinary simple-parameter closures tested. Strict/sloppy distinctions, global `this`, arguments objects, full declaration merging, arrows, methods, constructors, classes, rest/default parameters, generators and async functions remain. |
-| §16 scripts/modules | Script compilation and persistent execution tested. Module parsing, linking, live bindings and host loading remain. |
+| §16 scripts/modules | Script compilation and persistent execution tested. The separate native module registry stores source only. Module parsing, linking, live bindings, evaluation and host loading remain. |
 | §18–28 built-ins | Only the enumerated intrinsic subset exists. Complete Object/Function/Array/String/Number APIs, errors, Date, RegExp, JSON, collections, iterators, typed arrays, buffers, Atomics, promises and weak references remain. |
-| Annex B / host integration | Legacy web compatibility, agents/jobs, module hooks and Test262 host hooks remain. No browser/DOM APIs are provided. |
+| §9.5 / host job integration | One-state, GC-traced FIFO for host-scheduled function callbacks with explicit bounded checkpoints. The separate native promise substrate offers only C callback jobs and one-shot settlement. No multi-realm/agent scheduling, Promise reaction jobs, cross-queue ordering, or automatic browser checkpoints. |
+| Annex B / other host integration | Legacy web compatibility, module hooks and Test262 host hooks remain. No browser/DOM APIs are provided. |
 
 Unsupported syntax generally produces `MULIB_MICROJS_SYNTAX`; unsupported
 properties behave as missing own properties. The existing strict-like unbound
@@ -211,7 +233,9 @@ beyond 1:1. Exception objects/stacks are not yet exposed.
 `tests/test_microjs_engine.c` covers spec-derived primitive behavior, operand
 evaluation order, Unicode, scopes, recursion, loop closures, objects/arrays,
 callbacks, public roots, cycles, allocation failure, runtime limits and static
-errors before side effects. `tests/test_language_tools.c` retains mutation and
+errors before side effects. Its job tests cover closure retention and reclamation,
+FIFO ordering, budget exhaustion, reentry, and resuming after callback failure.
+`tests/test_language_tools.c` retains mutation and
 allocation-failure coverage; `tests/test_language_refinement.c` retains long
 compensated numeric literals and subnormal regressions. The MuLL fixture is
 `armory/tests/mull/mulib/microjs.mull`.

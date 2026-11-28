@@ -10,9 +10,15 @@ Init requires fresh/released storage, a transport and validated limits; it
 copies fetch configuration and sets the history count budget. Navigate fetches
 static text/html and enforces response bytes, nodes and configured tree depth,
 then commits document/history/status together. Failures preserve the old document
-and history. After commit it emits a synchronous network event: observer rejection
-does not turn successful navigation into failure or undo the document. Nested
-navigate is rejected; destroy during navigation/dispatch is ignored. Destroy
+and history. `mulib_browser_engine_traverse` reloads the entry at a signed
+offset from the current entry (zero reloads it), committing the document,
+cursor and status together without appending or pruning history. Unlike
+moving the standalone history cursor, traversal uses the engine's transport
+and document budgets; this is a reload, not back/forward cache restoration.
+An out-of-range offset does not invoke transport. After commit either operation
+emits a synchronous network event: observer rejection does not turn success
+into failure or undo the document. Navigation and traversal are rejected
+during navigation/dispatch; destroy during navigation/dispatch is ignored. Destroy
 otherwise frees document/history/stream. Script/task budgets are not exercised
 because this engine executes no scripts/tasks; no CSS rendering, CORS, subresource
 loading, cookies or cache integration is implied.
@@ -36,9 +42,22 @@ borrowed views, allocation failure and reentrancy requirements.
 
 The complete [offline example](../examples/modules/browser-engine.c) checks results and
 releases owned state. Behavioral coverage is in
-[`tests/test_web_browser.c`](../tests/test_web_browser.c), with moving-allocation
+[`tests/test_web_browser.c`](../tests/test_web_browser.c) and the
+[offline timer/turn traversal regression](../tests/test-browser-engine-timed-traversal.c),
+with moving-allocation
 failure coverage in [test_web_alloc.c](../tests/test_web_alloc.c) and bounded
 malformed-input coverage in [test_web_hostile.c](../tests/test_web_hostile.c).
+
+## Browser host integration status
+
+| Ledger area | Verified slice | Not integrated |
+| --- | --- | --- |
+| Engine, documentload, navigation | Reload an existing static HTML history entry and commit document, cursor and status together. Preserve all three on failure. | Browsing context ownership, same-document navigation, joint session history and BFCache. |
+| Eventloop, webtimers | A host can poll a timer, post a navigation task, and run observer-posted microtasks before the next task. | Internal timer dispatch, asynchronous I/O and browser scheduling phases. |
+| Context, window and document lifecycle | Outside this slice; history contains URLs, not live documents. | Context/window identity, readiness/load blockers, unload and document discard. |
+| Script and resource orchestration | No scripts run, and no subresources are fetched. | Script preparation/queues, module loading and subresource scheduling. |
+| Frame, viewport, observers and input | Not used by the static engine. | Frame scheduling, geometry, trusted input and activation. |
+| Profiles, downloads, protocol handlers and process providers | Not used by the static engine. | Host provider integration and associated authorization. |
 
 <!-- manual-interface -->
 ## Public header reference
@@ -89,6 +108,11 @@ extern "C"
    */
   int mulib_browser_engine_navigate (mulib_browser_engine_t *engine,
                                      const char *url, unsigned *status);
+  /** @brief Reload a relative history entry without changing history length.
+   * Zero reloads the current entry. On failure, document, cursor and status
+   * are unchanged. See manual/mulib-browser-engine.md. */
+  int mulib_browser_engine_traverse (mulib_browser_engine_t *engine,
+                                     int delta, unsigned *status);
   /** @brief See manual/mulib-browser-engine.md for this operation's contract.
    */
   void mulib_browser_engine_destroy (mulib_browser_engine_t *engine);

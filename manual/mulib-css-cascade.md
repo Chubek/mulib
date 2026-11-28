@@ -6,13 +6,18 @@ Deterministic selected-property cascade with basic specificity and source orderi
 
 ## Contract and supported profile
 
-Compute starts with defaults, inherits only color/font-size from an optional
-initialized parent, then applies matching flat author rules in ascending simple
-specificity, preserving source order within each level. It rejects unsupported
-selectors rather than silently ignoring their syntax. Only css-computed's five
-properties participate; !important, inline styles, layers, origins and general
-inheritance are not supported. Inputs are borrowed; a complete result commits
-only on success. No rendering or element-default display model is inferred.
+Compute starts with defaults and inherits only color/font-size from an optional
+initialized parent. For each of css-computed's five properties, matching flat
+author rules rank by importance, then simple-selector specificity, then source
+order (later wins at equal rank, including duplicates within a rule). It rejects
+unsupported selectors even in rules that do not match. A malformed supported
+value in a matching rule fails even if it would have lost the cascade.
+
+Inputs are borrowed; a complete result commits only on success. Inline styles,
+layers, multiple origins and general inheritance are not supported. No rendering
+or element-default display model is inferred.
+See the [CSS integration ledger](css-integration-status.md) for the separate
+XML-backed path and remaining integration work.
 
 ## Integration and ownership
 
@@ -89,7 +94,7 @@ extern "C"
 | --- | --- |
 | Header | [`kernels/mulib-css-cascade.h`](../kernels/mulib-css-cascade.h) |
 | Implementation switch | `MULIB_IMPL_CSS_CASCADE` |
-| Repository-local includes | [mulib-css-computed](mulib-css-computed.md), [mulib-css-parser](mulib-css-parser.md), [mulib-css-selector](mulib-css-selector.md) |
+| Repository-local includes | [`kernels/detail/mulib-css-declarations.h`](../kernels/detail/mulib-css-declarations.h), [mulib-css-computed](mulib-css-computed.md), [mulib-css-parser](mulib-css-parser.md), [mulib-css-selector](mulib-css-selector.md) |
 | Complete example | [`examples/modules/css-cascade.c`](../examples/modules/css-cascade.c) |
 
 The include list includes conditional and implementation-only includes;

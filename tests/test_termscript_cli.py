@@ -12,7 +12,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "library" / "termscript"
-TERM_SOURCES = ROOT / ".sot" / "term"
+TERM_SOURCES = ROOT / "artifactory" / "term"
 
 
 def run(args, data=None, want=None, fail=False, env=None):

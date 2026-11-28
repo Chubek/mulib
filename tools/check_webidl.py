@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check generated WebIDL C99, CST byte roundtrips and AST/CodeYAML agreement."""
+"""Check generated WebIDL declarations and native bindings, CST and AST."""
 import argparse
 import json
 from pathlib import Path
@@ -94,8 +94,9 @@ def main():
     assert ast_node(sexpr(emit('--emit-ast').decode('utf-8'))) == yaml_node(
         emit('--emit-yaml').decode('utf-8'))
 
-    parent = '/tmp/opencode' if Path('/tmp/opencode').is_dir() else None
-    with tempfile.TemporaryDirectory(prefix='webidl-', dir=parent) as tmp:
+    compiler = shlex.split(args.compiler)
+    kernels = Path(__file__).resolve().parent.parent / 'kernels'
+    with tempfile.TemporaryDirectory(prefix='webidl-') as tmp:
         path = Path(tmp) / 'generated.c'
         path.write_bytes(emit('--emit') + b'''
 void webidl_generated_typecheck(void)
@@ -123,9 +124,100 @@ void webidl_generated_typecheck(void)
   (void)object;
 }
 ''')
-        subprocess.run(shlex.split(args.compiler) + [
+        subprocess.run(compiler + [
             '-std=c99', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-c', str(path),
             '-o', str(Path(tmp) / 'generated.o')], check=True)
+        (Path(tmp) / 'native.inc').write_bytes(emit('--emit-microjs'))
+        path.write_text(r'''
+#define MULIB_IMPL_MINIVM
+#define MULIB_IMPL_MICROJS
+#define MULIB_IMPL_WEBIDL_RUNTIME
+#define MULIB_IMPL_BOUNDED_TEXT
+#define MULIB_IMPL_UTF8
+#include "native.inc"
+#include <assert.h>
+#include <string.h>
+
+static unsigned calls;
+int32_t webidl_Local__webidl_keep__call_0(int32_t n) { ++calls; return n; }
+uint32_t webidl_Local__webidl_bits__call_1(uint32_t n) { ++calls; return n; }
+bool webidl_Local__webidl_flip__call_2(bool b) { ++calls; return !b; }
+double webidl_Local__webidl_scale__call_3(double n, bool fail)
+{ ++calls; return fail ? INFINITY : n * 2; }
+void webidl_Local__webidl_note__call_4(void) { ++calls; }
+bool webidl_local_htest__webidl_return__call_0(void) { ++calls; return true; }
+
+static void check(mulib_microjs_t *vm, const char *script,
+                  mulib_microjs_type_t type, double number)
+{
+  mulib_microjs_value_t v = {0};
+  unsigned before = calls;
+  assert(mulib_microjs_eval(vm, script, strlen(script), &v, NULL) == MULIB_MICROJS_OK);
+  assert(calls == before + 1 && v.type == type);
+  if (type == MULIB_MICROJS_NUMBER)
+    assert(v.number == number);
+  if (type == MULIB_MICROJS_BOOLEAN)
+    assert(v.boolean == (int)number);
+  mulib_microjs_value_free(&v);
+}
+
+int main(void)
+{
+  const char *bad[] = {
+    "webidl_Local__webidl_keep__invoke()",
+    "webidl_Local__webidl_keep__invoke(2, 3)",
+    "webidl_Local__webidl_keep__invoke('2')",
+    "webidl_Local__webidl_keep__invoke(1.5)",
+    "webidl_Local__webidl_keep__invoke(2147483648)",
+    "webidl_Local__webidl_keep__invoke(-2147483649)",
+    "webidl_Local__webidl_keep__invoke(1/0)",
+    "webidl_Local__webidl_keep__invoke(0/0)",
+    "webidl_Local__webidl_bits__invoke(-1)",
+    "webidl_Local__webidl_bits__invoke(4294967296)",
+    "webidl_Local__webidl_flip__invoke(1)",
+    "webidl_Local__webidl_scale__invoke(1/0,false)",
+    "webidl_Local__webidl_scale__invoke(1,{})",
+    "webidl_Local__webidl_note__invoke(3)",
+  };
+  mulib_microjs_t *vm = mulib_microjs_create(NULL);
+  mulib_microjs_value_t v = {0};
+  mulib_microjs_error_t error;
+  const char *bad_return = "webidl_Local__webidl_scale__invoke(0,true)";
+  unsigned before;
+  assert(vm);
+  assert(webidl_Local__webidl_keep__install(NULL) == MULIB_MICROJS_INVALID);
+  assert(webidl_Local__webidl_keep__install(vm) == MULIB_MICROJS_OK);
+  assert(webidl_Local__webidl_bits__install(vm) == MULIB_MICROJS_OK);
+  assert(webidl_Local__webidl_flip__install(vm) == MULIB_MICROJS_OK);
+  assert(webidl_Local__webidl_scale__install(vm) == MULIB_MICROJS_OK);
+  assert(webidl_Local__webidl_note__install(vm) == MULIB_MICROJS_OK);
+  assert(webidl_local_htest__webidl_return__install(vm) == MULIB_MICROJS_OK);
+  (void)mulib_microjs_collect(vm);
+  check(vm, "webidl_Local__webidl_keep__invoke(-2147483648)", MULIB_MICROJS_NUMBER, INT32_MIN);
+  check(vm, "webidl_Local__webidl_keep__invoke(2147483647)", MULIB_MICROJS_NUMBER, INT32_MAX);
+  check(vm, "webidl_Local__webidl_bits__invoke(4294967295)", MULIB_MICROJS_NUMBER, UINT32_MAX);
+  check(vm, "webidl_Local__webidl_flip__invoke(false)", MULIB_MICROJS_BOOLEAN, 1);
+  check(vm, "webidl_Local__webidl_scale__invoke(.125,false)", MULIB_MICROJS_NUMBER, .25);
+  check(vm, "webidl_Local__webidl_note__invoke()", MULIB_MICROJS_UNDEFINED, 0);
+  check(vm, "webidl_local_htest__webidl_return__invoke()", MULIB_MICROJS_BOOLEAN, 1);
+  before = calls;
+  for (size_t i = 0; i < sizeof bad / sizeof *bad; ++i) {
+    assert(mulib_microjs_eval(vm, bad[i], strlen(bad[i]), &v, &error) == MULIB_MICROJS_TYPE);
+    assert(error.code == MULIB_MICROJS_TYPE && calls == before);
+    assert(v.type == MULIB_MICROJS_NULL && !v.object && !v.string);
+  }
+  assert(mulib_microjs_eval(vm, bad_return, strlen(bad_return), &v, &error)
+         == MULIB_MICROJS_TYPE);
+  assert(calls == before + 1 && v.type == MULIB_MICROJS_NULL);
+  mulib_microjs_destroy(vm);
+  return 0;
+}
+''')
+        executable = Path(tmp) / 'native'
+        subprocess.run(compiler + [
+            '-std=c11', '-Wall', '-Wextra', '-Wpedantic', '-Werror', '-UNDEBUG', '-I', str(kernels),
+            str(path), '-lm', '-o', str(executable)], check=True)
+        subprocess.run([str(executable)], check=True)
     # Test the vendored inputs without rewriting their dialect or evaluating
     # build conditionals. Unsupported dialect constructs must fail explicitly.
     unsupported = re.compile(
@@ -147,7 +239,7 @@ void webidl_generated_typecheck(void)
         else:
             assert result.returncode == 0, result.stderr or str(file)
             passed += 1
-    print(f'WebIDL: strict C99, CST roundtrip, AST/CodeYAML agreement; '
+    print(f'WebIDL: strict C99, executable MicroJS, CST roundtrip, AST/CodeYAML agreement; '
           f'{passed} corpus inputs parsed, {rejected} diagnosed dialect inputs')
 
 

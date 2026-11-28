@@ -65,7 +65,11 @@ def inventory():
         entries[header] = fields
     headers = set((ROOT / 'kernels').glob('mulib-*.h'))
     if set(entries) != headers:
-        raise ValueError('manifest and mulib header inventory differ')
+        missing = sorted(p.name for p in headers - entries.keys())
+        extra = sorted(p.relative_to(ROOT).as_posix() for p in entries.keys() - headers)
+        raise ValueError(
+            f'manifest and mulib header inventory differ ({len(missing)} unregistered, '
+            f'{len(extra)} manifest-only): unregistered={missing[:12]}, manifest-only={extra[:12]}')
     records = []
     for header in sorted(headers):
         fields = entries.get(header, {})

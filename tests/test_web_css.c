@@ -19,6 +19,63 @@ layout (void *p, size_t index, const mulib_css_box_t *box)
   (*(size_t *)p)++;
   return 1;
 }
+
+static void
+cascade_priority (const mulib_html_tree_node_t *p)
+{
+  const char css[]
+      = "#price { color: red; height: 13px !important; width: 40px }"
+        "* { color: green ! /**/ IMPORTANT; height: 24px !important; }"
+        ".featured { color: pink !important; width: 25px !important;"
+        " display: none !important; display: block; font-size: 30px; }"
+        ".featured { COLOR: blue !\tImPoRtAnT; width: 22px; }"
+        "#price { height: 17px !important; font-size: 32px; color: purple; }"
+        "#unmatched { width: invalid !important; }";
+  mulib_css_parsed_sheet_t sheet = { 0 };
+  mulib_css_computed_t style, parent;
+  assert (mulib_css_computed_defaults (&parent));
+  parent.font_size_px = 99;
+  assert (mulib_css_parse_sheet (css, sizeof css - 1, 6, &sheet));
+  assert (mulib_css_cascade_compute (&sheet, p, &parent, &style));
+  assert (!strcmp (style.color, "blue") && !strcmp (style.display, "none"));
+  assert (style.width_px == 25 && style.height_px == 17
+          && style.font_size_px == 32);
+  mulib_css_sheet_free (&sheet);
+
+  const char invalid[]
+      = "#price { width: 40px !important; color: green; }"
+        "* { width: invalid; }";
+  mulib_css_computed_t expected = style;
+  assert (mulib_css_parse_sheet (invalid, sizeof invalid - 1, 2, &sheet));
+  assert (!mulib_css_cascade_compute (&sheet, p, NULL, &style));
+  assert (!memcmp (&style, &expected, sizeof style));
+  mulib_css_sheet_free (&sheet);
+
+  const char unsupported[] = "p { color: red; } .missing > p { color: blue; }";
+  assert (mulib_css_parse_sheet (unsupported, sizeof unsupported - 1, 2,
+                                 &sheet));
+  assert (!mulib_css_cascade_compute (&sheet, p, NULL, &style));
+  assert (!memcmp (&style, &expected, sizeof style));
+  mulib_css_sheet_free (&sheet);
+
+  const char quoted[] = "color: fn('!important;'); width: 10px !\fIMPORTANT;"
+                        "width: 20px; width: 30px !important";
+  assert (mulib_css_computed_apply (&style, quoted, sizeof quoted - 1));
+  assert (!strcmp (style.color, "fn('!important;')") && style.width_px == 30);
+  assert (mulib_css_computed_apply (&style, "width: 40px", 11));
+  assert (style.width_px == 40); /* No priority is retained across calls. */
+  expected = style;
+  const char *bad[] = { "color: red; width: !important",
+                        "color: red; width: 4px !important !important",
+                        "color: red; width: 4px !important extra",
+                        "color: red; width: 4px !other" };
+  for (size_t i = 0; i < sizeof bad / sizeof *bad; i++)
+    {
+      assert (!mulib_css_computed_apply (&style, bad[i], strlen (bad[i])));
+      assert (!memcmp (&style, &expected, sizeof style));
+    }
+}
+
 int
 main (void)
 {
@@ -61,6 +118,7 @@ main (void)
                                      strlen (declarations))
           && !memcmp (&saved, &computed, sizeof saved));
   assert (!mulib_css_computed_apply (&computed, "width: px", 9));
+  cascade_priority (p);
   mulib_css_sheet_free (&sheet);
   mulib_html_tree_free (root);
   const char *bad[]

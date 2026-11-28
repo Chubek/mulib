@@ -21,7 +21,7 @@ main (void)
   mulib_css_parsed_sheet_t sheet = { 0 };
   mulib_css_computed_t style;
   assert (mulib_html_tree_parse ("<p>x</p>", 8, 10, 5, &root));
-  const char *css = "p { color: red; }";
+  const char *css = "* { color: red !important; } p { color: blue; }";
   assert (mulib_css_parse_sheet (css, strlen (css), 10, &sheet));
   assert (mulib_css_cascade_compute (&sheet, root->first_child, NULL, &style)
           && !strcmp (style.color, "red"));

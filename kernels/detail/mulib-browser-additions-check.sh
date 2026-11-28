@@ -1,15 +1,26 @@
 #!/bin/sh
-# Run from any directory; compile only this isolated staging tree.
+# Run from any directory. The optional argument points to the staging ledger.
 set -eu
 K=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-T=$(mktemp -d)
+ledger=${1:-"$K/../MANIFEST.md.additions"}
+T=$(mktemp -d "${TMPDIR:-/tmp}/mulib-browser-check.XXXXXXXX")
 trap 'rm -rf "$T"' EXIT HUP INT TERM
 CC=${CC:-cc}
-for h in "$K"/mulib-*.h; do
-  name=$(basename "$h")
+sed -n 's/^| `\(mulib-[a-z0-9-]*\.h\)` |.*/\1/p' "$ledger" > "$T/headers"
+count=$(wc -l < "$T/headers")
+unique=$(sort -u "$T/headers" | wc -l)
+if [ "$count" -ne 224 ] || [ "$count" -ne "$unique" ]; then
+  printf '%s\n' "Expected 224 distinct staging headers in $ledger." >&2
+  exit 1
+fi
+while IFS= read -r name; do
+  if [ ! -f "$K/$name" ]; then
+    printf '%s\n' "Missing staging header: $K/$name" >&2
+    exit 1
+  fi
   printf '#include "%s"\nint main(void){return 0;}\n' "$name" | "$CC" -std=c11 -Wall -Wextra -Wpedantic -Werror -I"$K" -x c -fsyntax-only -
   printf '#include "%s"\n' "$name" >> "$T/all.c"
-done
+done < "$T/headers"
 printf 'int main(void){return 0;}\n' >> "$T/all.c"
 "$CC" -std=c11 -Wall -Wextra -Wpedantic -Werror -I"$K" "$T/all.c" -lm -o "$T/all"
 "$T/all"

@@ -78,6 +78,154 @@ body (const unsigned char *code, size_t length, mulib_wask_error_t *error)
   return mulib_wask_load (module, n, error);
 }
 static void
+direct_calls (void)
+{
+  static const unsigned char prefix[]
+      = { 0, 97, 115, 109, 1, 0, 0, 0,
+          1, 14, 3, 0x60, 2, 0x7f, 0x7f, 1, 0x7f, 0x60, 0, 0,
+          0x60, 0, 1, 0x7f,
+          3, 5, 4, 0, 0, 1, 2,
+          7, 7, 1, 3, 'r', 'u', 'n', 0, 0 };
+  /* The first call's padded index proves actual ULEB decoding. */
+  unsigned char root[] = { 0, 0x20, 0, 0x20, 1, 0x10, 0x81, 0, 0x10, 2,
+                           0x10, 3, 0x10, 3, 0x6a, 0x6a, 0x0b };
+  unsigned char subtract[] = { 0, 0x20, 0, 0x20, 1, 0x6b, 0x0b };
+  const unsigned char discard[] = { 0, 0x10, 3, 0x1a, 0x0b };
+  const unsigned char increment_local[]
+      = { 1, 1, 0x7f, 0x20, 0, 0x41, 1, 0x6a, 0x22, 0, 0x0b };
+  unsigned char bytes[sizeof (prefix) + 7 + sizeof (root)
+                      + sizeof (subtract) + sizeof (discard)
+                      + sizeof (increment_local)];
+  size_t n = sizeof (prefix);
+  memcpy (bytes, prefix, n);
+  bytes[n++] = 10;
+  bytes[n++] = (unsigned char)(sizeof (bytes) - sizeof (prefix) - 2);
+  bytes[n++] = 4;
+  const size_t root_start = n + 1;
+  bytes[n++] = sizeof (root);
+  memcpy (bytes + n, root, sizeof (root));
+  n += sizeof (root);
+  const size_t subtract_start = n + 1;
+  bytes[n++] = sizeof (subtract);
+  memcpy (bytes + n, subtract, sizeof (subtract));
+  n += sizeof (subtract);
+  bytes[n++] = sizeof (discard);
+  memcpy (bytes + n, discard, sizeof (discard));
+  n += sizeof (discard);
+  const size_t increment_start = n + 1;
+  bytes[n++] = sizeof (increment_local);
+  memcpy (bytes + n, increment_local, sizeof (increment_local));
+  n += sizeof (increment_local);
+  assert (n == sizeof (bytes));
+
+  mulib_wask_error_t e;
+  uint32_t args[] = { 20, 3 }, out = 777;
+  assert (mulib_wask_supports ("call") && !mulib_wask_supports ("call_indirect"));
+  mulib_wask_t *m = mulib_wask_load (bytes, n, &e);
+  assert (m);
+  assert (mulib_wask_call (m, "run", args, 2, 3, &out, &e) == MULIB_WASK_LIMIT
+          && out == 777 && e.offset == subtract_start + 1);
+  assert (mulib_wask_call (m, "run", args, 2, 30, &out, &e) == MULIB_WASK_LIMIT
+          && out == 777 && e.offset == root_start + sizeof (root) - 1);
+  assert (mulib_wask_call (m, "run", args, 2, 31, &out, &e) == MULIB_WASK_OK
+          && out == 19);
+  mulib_wask_destroy (m);
+
+  bytes[subtract_start + 5] = 0x6d; /* nested division trap */
+  m = mulib_wask_load (bytes, n, &e);
+  assert (m);
+  args[1] = 0;
+  out = 777;
+  assert (mulib_wask_call (m, "run", args, 2, 31, &out, &e) == MULIB_WASK_TRAP
+          && out == 777 && e.offset == subtract_start + 6);
+  mulib_wask_destroy (m);
+
+  bytes[root_start + 6] = 0x84; /* call nonexistent function 4 */
+  rejected (bytes, n, MULIB_WASK_INVALID);
+  bytes[root_start + 6] = 0x81;
+  bytes[root_start + 1] = 0x01; /* remove one argument without shifting offsets */
+  bytes[root_start + 2] = 0x01;
+  rejected (bytes, n, MULIB_WASK_INVALID);
+  bytes[root_start + 1] = 0x20;
+  bytes[root_start + 2] = 0;
+  bytes[root_start + 5] = 0x11;
+  rejected (bytes, n, MULIB_WASK_UNSUPPORTED);
+  bytes[root_start + 5] = 0x10;
+  bytes[increment_start + sizeof (increment_local) - 1] = 0x10;
+  rejected (bytes, n, MULIB_WASK_INVALID); /* immediate can't escape its body */
+
+  /* A zero-arity value call cannot push onto an already full stack. */
+  unsigned char full[520];
+  size_t p = 0;
+  full[p++] = 0;
+  for (unsigned i = 0; i < 256; ++i)
+    {
+      full[p++] = 0x41;
+      full[p++] = 0;
+    }
+  full[p++] = 0x10;
+  full[p++] = 0; /* use a zero-arity () -> i32 fixture below */
+  full[p++] = 0x0b;
+  const unsigned char full_prefix[]
+      = { 0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 0x60, 0, 1, 0x7f,
+          3, 2, 1, 0 };
+  unsigned char module[sizeof (full_prefix) + sizeof (full) + 6];
+  memcpy (module, full_prefix, sizeof (full_prefix));
+  n = sizeof (full_prefix);
+  module[n++] = 10;
+  n += leb (module + n, p + 3);
+  module[n++] = 1;
+  n += leb (module + n, p);
+  memcpy (module + n, full, p);
+  rejected (module, n + p, MULIB_WASK_LIMIT);
+}
+
+static void
+frame_limit (void)
+{
+  /* A chain of 16 functions fits exactly; replacing the leaf with a
+   * self-call attempts a seventeenth frame before SIZE_MAX fuel runs out. */
+  const unsigned char prefix[]
+      = { 0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 0x60, 0, 1, 0x7f };
+  unsigned char bytes[128];
+  size_t n = sizeof (prefix);
+  memcpy (bytes, prefix, n);
+  bytes[n++] = 3;
+  bytes[n++] = 17;
+  bytes[n++] = 16;
+  memset (bytes + n, 0, 16);
+  n += 16;
+  const unsigned char sections[] = { 7, 5, 1, 1, 'f', 0, 0, 10, 81, 16 };
+  memcpy (bytes + n, sections, sizeof (sections));
+  n += sizeof (sections);
+  for (unsigned i = 0; i < 16; ++i)
+    {
+      bytes[n++] = 4;
+      bytes[n++] = 0;
+      bytes[n++] = i < 15 ? 0x10 : 0x41;
+      bytes[n++] = (unsigned char)(i < 15 ? i + 1 : 42);
+      bytes[n++] = 0x0b;
+    }
+  mulib_wask_error_t e;
+  uint32_t out = 777;
+  mulib_wask_t *m = mulib_wask_load (bytes, n, &e);
+  assert (m);
+  assert (mulib_wask_call (m, "f", NULL, 0, 32, &out, &e) == MULIB_WASK_OK
+          && out == 42);
+  mulib_wask_destroy (m);
+  bytes[n - 3] = 0x10;
+  bytes[n - 2] = 15;
+  m = mulib_wask_load (bytes, n, &e);
+  assert (m);
+  out = 777;
+  assert (mulib_wask_call (m, "f", NULL, 0, 15, &out, &e) == MULIB_WASK_LIMIT
+          && out == 777 && !strcmp (e.message, "instruction fuel exhausted"));
+  assert (mulib_wask_call (m, "f", NULL, 0, SIZE_MAX, &out, &e) == MULIB_WASK_LIMIT
+          && out == 777 && !strcmp (e.message, "call frame limit"));
+  mulib_wask_destroy (m);
+}
+
+static void
 operations (void)
 {
   const unsigned char binary[] = { 0x6a, 0x6b, 0x6c, 0x6d, 0x71, 0x72, 0x73 };
@@ -159,6 +307,8 @@ int
 main (void)
 {
   operations ();
+  direct_calls ();
+  frame_limit ();
   for (int failure = 0; failure < 12; ++failure)
     {
       mulib_wask_error_t error;
@@ -260,17 +410,14 @@ main (void)
       else
         assert (e.code != MULIB_WASK_OK && e.offset <= n);
     }
-  /* Bounded mutations cover section framing, types, indices and bytecode. */
+  /* Validate only; never execute the mutated binaries. */
   for (size_t i = 0; i < sizeof (add); ++i)
     {
       memcpy (bytes, add, sizeof (add));
       bytes[i] ^= 0x80;
       m = mulib_wask_load (bytes, sizeof (add), &e);
       if (m)
-        {
-          (void)mulib_wask_call (m, "add", args, 2, 100, &out, &e);
-          mulib_wask_destroy (m);
-        }
+        mulib_wask_destroy (m);
       else
         assert (e.code != MULIB_WASK_OK && e.offset <= sizeof (add));
     }

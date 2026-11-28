@@ -11,9 +11,14 @@ no userinfo. Schemes/DNS hosts fold to lowercase, one DNS trailing dot is remove
 strict IPv4 is required for numeric hosts, IPv6 is parsed/canonically formatted,
 and absent ports become 80/443. DNS labels are 1..63 alphanumeric/hyphen bytes,
 without leading/trailing hyphen; numeric shorthand/hex IP spellings and invalid
-ports are rejected. Output is unchanged on failure. Equal compares initialized
-canonical records. No IDNA, percent-decoded hostnames, opaque/file origins or
-public-suffix/site relationship is supplied.
+ports are rejected. A decimal or hexadecimal-looking last label is accepted
+only as part of a strict four-octet decimal IPv4 address. As before, a name
+beginning with `0x` is unsupported. Output is unchanged on failure. Equal
+compares canonical records and rejects malformed or noncanonical tuples even
+if their text matches. This is a strict MuLIB profile, not WHATWG origin
+semantics (in particular, trailing-dot normalization is retained).
+No IDNA, percent-decoded hostnames, opaque/file origins or public-suffix/site
+relationship is supplied.
 
 ## Integration and ownership
 

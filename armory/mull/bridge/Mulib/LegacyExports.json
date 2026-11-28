@@ -1,7 +1,7 @@
 {
   "snapshot": "ca60216",
   "surface_sha256": "e65cc3bed8d94420d0f580989ce5236133336ae9e5a7ae0529e154ac6436a5ee",
-  "inactive_implementation_macros": ["MULIB_IMPL_HTTP3_CLIENT", "MULIB_IMPL_QUIC_CLIENT"],
+  "inactive_implementation_macros": ["MULIB_IMPL_HTML_DOMBRIDGE_NATIVE", "MULIB_IMPL_HTTP3_CLIENT", "MULIB_IMPL_QUIC_CLIENT"],
   "record_fields": {
     "mulib_elvi_scrape_program_t": ["name", "host", "home", "search_template", "anchor_tag", "excluded_hosts", "excluded_count", "max_results", "anchor_mode", "rewrite", "format", "anchor_class", "json_results", "json_title", "json_url"]
   },

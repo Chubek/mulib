@@ -56,6 +56,8 @@ def render():
              'All dependencies outside a group must be in a lower stratum.',
              'These are integration layers, not standards-conformance or security ratings.', '',
              f'Inventory: {len(texts)} headers, {sum(len(d) for d in deps.values())} direct dependency edges.', '',
+             'Headers without a manifest manual entry are shown without links; inclusion here',
+             'does not register a header for release or for foreign-language bindings.', '',
              'Define implementation switches for the full dependency closure in one translation',
              'unit. Headers never enable dependency implementations implicitly.', '']
     cycles = sorted(set(g for g in groups.values() if len(g) > 1))
@@ -67,8 +69,8 @@ def render():
                   '| Module | Direct dependencies |', '| --- | --- |']
         for name in names:
             dependencies = ', '.join('`' + d + '`' for d in deps[name]) or 'none'
-            manual = manuals.get(name, f'mulib-{name}.md')
-            lines.append(f'| [{name}]({manual}) | {dependencies} |')
+            module = f'[{name}]({manuals[name]})' if name in manuals else f'`{name}`'
+            lines.append(f'| {module} | {dependencies} |')
         lines.append('')
     return '\n'.join(lines)
 

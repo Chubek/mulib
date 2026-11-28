@@ -14,6 +14,10 @@ embedded NUL; it does not produce UTF-16 or preserve unpaired surrogates. Intege
 and buffer outputs remain unchanged on failure. These conservative primitives
 are not the full WebIDL/ECMAScript ToNumber or modulo conversion algorithms.
 
+The [WebIDL compiler's MicroJS mode](mulib-webidl.md#microjs-native-bindings)
+uses the existing non-clamping integer conversions after checking the VM
+value tag. It does not use the DOMString helper or expose clamping.
+
 ## Integration and ownership
 
 Include `kernels/mulib-webidl-runtime.h`. Define the following switches in exactly one C11

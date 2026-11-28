@@ -32,12 +32,7 @@ extern "C"
 #ifdef MULIB_IMPL_CSS_COMPUTED
 #ifndef MULIB_IMPL_CSS_COMPUTED_ONCE
 #define MULIB_IMPL_CSS_COMPUTED_ONCE
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "detail/mulib-css-declarations.h"
 #include <string.h>
 
 int
@@ -56,110 +51,12 @@ mulib_css_computed_defaults (mulib_css_computed_t *s)
 int
 mulib_css_computed_apply (mulib_css_computed_t *s, const char *d, size_t n)
 {
-  if (!s || (!d && n) || (n && memchr (d, 0, n)))
+  if (!s)
     return 0;
   mulib_css_computed_t result = *s;
-  for (size_t i = 0; i < n;)
-    {
-      while (i < n && (isspace ((unsigned char)d[i]) || d[i] == ';'))
-        i++;
-      if (i == n)
-        break;
-      size_t start = i;
-      while (i < n && d[i] != ':' && d[i] != ';')
-        i++;
-      if (i == n || d[i] != ':')
-        return 0;
-      size_t end = i++;
-      while (end > start && isspace ((unsigned char)d[end - 1]))
-        end--;
-      char key[64];
-      if (end - start >= sizeof key || end == start)
-        return 0;
-      for (size_t j = 0; j < end - start; j++)
-        key[j] = (char)tolower ((unsigned char)d[start + j]);
-      key[end - start] = 0;
-      while (i < n && isspace ((unsigned char)d[i]))
-        i++;
-      size_t from = i;
-      char quote = 0;
-      unsigned parens = 0;
-      for (; i < n; i++)
-        {
-          char c = d[i];
-          if (quote)
-            {
-              if (c == '\\')
-                {
-                  if (++i == n)
-                    return 0;
-                }
-              else if (c == quote)
-                quote = 0;
-            }
-          else if (c == '"' || c == '\'')
-            quote = c;
-          else if (c == '(')
-            parens++;
-          else if (c == ')')
-            {
-              if (!parens)
-                return 0;
-              parens--;
-            }
-          else if (c == ';' && !parens)
-            break;
-        }
-      if (quote || parens)
-        return 0;
-      size_t last = i;
-      while (last > from && isspace ((unsigned char)d[last - 1]))
-        last--;
-      if (last == from)
-        return 0;
-      int display = !strcmp (key, "display"), color = !strcmp (key, "color"),
-          width = !strcmp (key, "width"), height = !strcmp (key, "height"),
-          font = !strcmp (key, "font-size");
-      if (!display && !color && !width && !height && !font)
-        continue;
-      size_t size = last - from;
-      char value[64];
-      if (size >= sizeof value)
-        return 0;
-      memcpy (value, d + from, size);
-      value[size] = 0;
-      if (strchr (value, '!'))
-        return 0;
-      if (display)
-        {
-          if (strcmp (value, "block") && strcmp (value, "inline")
-              && strcmp (value, "none") && strcmp (value, "flex")
-              && strcmp (value, "grid"))
-            return 0;
-          mulib_bounded_text_copy (result.display, sizeof result.display, value);
-        }
-      else if (color)
-        mulib_bounded_text_copy (result.color, sizeof result.color, value);
-      else
-        {
-          double x;
-          if (!font && !strcmp (value, "auto"))
-            x = -1;
-          else
-            {
-              if (size >= 2 && !strcmp (value + size - 2, "px"))
-                value[size - 2] = 0;
-              if (!mulib_bounded_text_parse_decimal (value, &x) || x < 0)
-                return 0;
-            }
-          if (width)
-            result.width_px = x;
-          else if (height)
-            result.height_px = x;
-          else
-            result.font_size_px = x;
-        }
-    }
+  int ranks[MULIB_CSS_DECL_COUNT_] = { 0 };
+  if (!mulib_css_declarations_apply_ (&result, ranks, 0, d, n))
+    return 0;
   *s = result;
   return 1;
 }

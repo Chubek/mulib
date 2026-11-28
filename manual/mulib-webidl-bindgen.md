@@ -15,6 +15,11 @@ Inheritance, partial interfaces, dictionaries, mixins and top-level extensions
 are rejected. Input<=4 MiB, no embedded NUL; max_interfaces is an explicit count
 budget (zero allows only empty input). Output appends atomically.
 
+This compatibility generator is unchanged. Use the
+[WebIDL compiler's MicroJS mode](mulib-webidl.md#microjs-native-bindings) for
+executable primitive operation thunks rather than interpreting the skipped
+member text.
+
 ## Integration and ownership
 
 Include `kernels/mulib-webidl-bindgen.h`. Define the following switches in exactly one C11

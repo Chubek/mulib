@@ -21,13 +21,16 @@ In particular:
 | `Node`, `Document`, `DocumentFragment`, `DocumentType` | Node types and names, ownerDocument, root/parent/sibling access, document element, contains, document position, insertion/removal/replacement, fragment splicing, adoption, import, cloning, equality, textContent, normalize |
 | `Element`, `Attr`, `NamedNodeMap` | Namespace/local/prefix names, attribute ownership, namespace-aware get/set/remove, insertion-order indexed attributes |
 | `CharacterData`, `Text`, `Comment`, `CDATASection`, `ProcessingInstruction` | UTF-16 data, substring/replace, Text splitting, creation-time delimiter checks |
-| `NodeList`, `ParentNode`, `NonElementParentNode` | Live indexed childNodes, descendant element snapshots, getElementById |
+| `NodeList`, `ParentNode`, `NonElementParentNode` | Live indexed childNodes, descendant element snapshots, getElementById, bounded simple native selector lookup |
+| `Range`, `AbstractRange` | Native live start/end boundaries with UTF-16 offsets, adjustment on tree and CharacterData edits, bounded read-only range text |
 | `Event`, `EventTarget`, `CustomEvent` | Capture/target/bubble phases, cancellation and propagation control, listener identity/options, stable event paths, borrowed detail payload |
 
 This is a defined native core, not the full browser API surface represented by
-the corpus. There are no HTML document rules/case folding, parsers/serializers,
-CSS selectors, DOMTokenList, Range, mutation observers, shadow trees, custom
-element reactions, abort signals, layout, navigation, or ECMAScript bindings.
+the corpus. There are no specialized HTML element interfaces, general CSS
+selectors, DOMTokenList, range cloning/deletion/extraction, mutation observers,
+shadow trees, custom element reactions, abort signals, layout, navigation, or
+ECMAScript bindings. The separate opt-in [native HTML profile](html-native-dom-profile.md)
+constructs these nodes directly for bounded HTML input.
 The separate [XML](mulib-xml.md) and [HTML](mulib-html.md) modules provide their
 own parser/serializer document models. They cannot be cast to DOM nodes: this
 model requires document ownership, detached-node identity, namespaces, and
@@ -127,6 +130,14 @@ the output buffer. It excludes the receiver, and supports `"*"` independently
 for namespace and local name. A snapshot remains unchanged after later edits.
 `get_element_by_id` likewise searches descendants only, matching the nonempty,
 no-namespace `id` attribute exactly as UTF-16; it returns the first match.
+`query_native_first` accepts only `*` or one ASCII type, `#id` or `.class`
+selector (an unescaped ASCII identifier of at most 63 characters). It matches
+HTML namespace names ASCII case-insensitively and other local names exactly,
+and compares no-namespace `id` and `class` values case-sensitively against
+the current UTF-16 attribute contents. Class separators are HTML whitespace.
+It examines descendants in preorder up to `max_nodes`, counting non-elements.
+A successful miss writes NULL; invalid, unsupported, or exhausted queries
+leave the caller's pointer untouched.
 
 `set_attribute` preserves an existing Attr's identity and position, even when
 the prefix changes. `set_attribute_node` replaces by namespace/local name and
@@ -142,6 +153,54 @@ children with one Text node (none for empty input), changes CharacterData/Attr
 values, and does nothing for documents/doctypes. `normalize` recursively removes
 empty Text nodes and merges adjacent Text nodes into the first nonempty Text;
 CDATA forms a boundary. Detached nodes retain their identities and ownership.
+
+## Live ranges
+
+`mulib_dom_live_range_new(node, offset, error)` creates a collapsed range in
+the native tree. Destroy the caller-owned range with
+`mulib_dom_live_range_destroy()` (NULL is harmless). Its boundaries borrow the
+actual nodes, not copies or integer handles. Use `mulib_dom_live_range_get()`
+to read either or both boundaries. Copied boundary values are snapshots;
+read them again after editing the tree.
+
+CharacterData offsets count UTF-16 code units, even inside surrogate pairs
+and across embedded NUL. Other offsets count children (so only zero is valid
+for an Attr). A doctype is not a valid boundary container. Setting either end
+in a different root or past the opposite end collapses both to the new point.
+Invalid setters do not change the range and use the same optional error
+convention as tree edits.
+
+Inserting before a child shifts offsets strictly after the insertion index.
+Removing a node relocates boundaries in its subtree to the former parent
+and index, and shifts later offsets in that parent back. Ordinary insertion
+of an existing node still removes it from its former parent: node identity
+is preserved, but boundaries inside the moved subtree follow the removal
+rule. Offsets for insertion are computed after removals, including a
+same-parent reorder. Boundaries inside a detached subtree being adopted
+remain on their nodes and become registered with the destination document. An Attr is a
+separate tree root, and any boundary on it follows its storage on adoption.
+
+CharacterData replacement clamps boundaries inside the changed interval
+to its start and shifts later boundaries by the length difference. Splitting
+an attached Text or CDATA moves boundaries after the split point into the new
+Text and preserves the boundary immediately after the old node on the parent
+side. Splitting a detached node instead clamps its boundaries. Normalization
+maps positions in merged Text nodes and at their preceding sibling gaps into
+the retained node. Failed tree and data edits leave the ranges unchanged.
+
+Ranges do not keep documents alive. Destroying a document invalidates its
+remaining ranges; reads then fail without writing outputs and setters report
+`INVALID_STATE_ERR`. Callers must still destroy those range objects. Use the
+same external synchronization as the tree.
+`mulib_dom_live_range_text()` appends the selected Text/CDATA units (including
+partial endpoints) to a caller-owned buffer as native-endian UTF-16 bytes, no
+terminator. Comments and other node types contribute no text. The traversal
+counts each visited node against `max_nodes` after locating the boundary
+children, and caps appended units at `max_units` and `MULIB_DOM_STRING_LIMIT`.
+Exhaustion is `LIMIT_ERR`; failures leave the buffer unchanged.
+This subset does not implement range extraction/cloning, selection, shadow-tree traversal,
+state-preserving `moveBefore`, or JS lifetime semantics. The separate
+[dom-range](mulib-dom-range.md) byte-offset API is unchanged.
 
 ## Events
 
@@ -181,12 +240,18 @@ constants in the header describe fixed implementation limits. Tree queries use
 linear traversals; child/attribute lookup is linear. Cloning and equality can
 take quadratic time in the number of attributes on a single element. Insertion checks
 subtree depth before mutation. No filesystem or network access occurs.
+Live range creation allocates once; mutation adjustment does not allocate.
+Tree edits with live ranges can scan the owning document's range list per
+affected node, with ancestor and sibling scans where needed. There is no
+separate range-count limit; hosts should bound the ranges they retain.
 
 [`examples/modules/dom.c`](../examples/modules/dom.c) builds a document, dispatches
 an event, and prints UTF-8 text. [`tests/test_dom.c`](../tests/test_dom.c) exercises
 hierarchy failures, fragment rollback, moving/adopting/cloning nodes, attribute
 identity, UTF-16 offsets and surrogate splitting, namespace lookup, normalization,
 listener mutation/reentrancy, depth limits, and allocation-failure rollback.
+It also covers live boundary validation, UTF-16 edits, subtree moves,
+fragment splicing, adoption, invalidation, and range rollback on failed edits.
 
 <!-- manual-reference -->
 ## Source and build reference

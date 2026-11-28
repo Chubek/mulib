@@ -8,7 +8,10 @@ dependent compatibility headers form one group in a shared stratum.
 All dependencies outside a group must be in a lower stratum.
 These are integration layers, not standards-conformance or security ratings.
 
-Inventory: 2059 headers, 2755 direct dependency edges.
+Inventory: 2283 headers, 2790 direct dependency edges.
+
+Headers without a manifest manual entry are shown without links; inclusion here
+does not register a header for release or for foreign-language bindings.
 
 Define implementation switches for the full dependency closure in one translation
 unit. Headers never enable dependency implementations implicitly.
@@ -17,7 +20,7 @@ Compatibility group: `immgtk-drawlist`, `immgtk-drawlist-bridge`.
 
 Compatibility group: `parsec`, `peg`.
 
-## Stratum 0 (421 modules)
+## Stratum 0 (613 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -39,6 +42,7 @@ Compatibility group: `parsec`, `peg`.
 | [base64](mulib-base64.md) | none |
 | [baysian_ranking](mulib-baysian_ranking.md) | none |
 | [bcj](mulib-bcj.md) | none |
+| `bigint` | none |
 | [binfile](mulib-binfile.md) | none |
 | [bios](mulib-bios.md) | none |
 | [bitmap](mulib-bitmap.md) | none |
@@ -51,9 +55,33 @@ Compatibility group: `parsec`, `peg`.
 | [bounds](mulib-bounds.md) | none |
 | [bpf-kernel](mulib-bpf-kernel.md) | none |
 | [branch-layout](mulib-branch-layout.md) | none |
+| `brotli` | none |
+| `browser-activation` | none |
+| `browser-broker` | none |
+| `browser-context` | none |
+| `browser-diff` | none |
+| `browser-documentstate` | none |
+| `browser-download` | none |
+| `browser-environment` | none |
+| `browser-frameclock` | none |
+| `browser-geometryquery` | none |
+| `browser-global` | none |
+| `browser-history` | none |
+| `browser-journal` | none |
+| `browser-lifecycle` | none |
 | [browser-limits](mulib-browser-limits.md) | none |
+| `browser-modulemap` | none |
+| `browser-nodeid` | none |
+| `browser-observer` | none |
 | [browser-permissions](mulib-browser-permissions.md) | none |
+| `browser-process` | none |
+| `browser-profile` | none |
+| `browser-protocolhandler` | none |
+| `browser-scriptload` | none |
 | [browser-stream](mulib-browser-stream.md) | none |
+| `browser-subresource` | none |
+| `browser-window` | none |
+| `browser-wire` | none |
 | [browsercontext](mulib-browsercontext.md) | none |
 | [browserlocator](mulib-browserlocator.md) | none |
 | [browserscreenshot](mulib-browserscreenshot.md) | none |
@@ -92,8 +120,32 @@ Compatibility group: `parsec`, `peg`.
 | [crc](mulib-crc.md) | none |
 | [crc32](mulib-crc32.md) | none |
 | [cron](mulib-cron.md) | none |
+| `css-animation` | none |
+| `css-block` | none |
 | [css-box](mulib-css-box.md) | none |
+| `css-containerquery` | none |
+| `css-customprops` | none |
+| `css-fontface` | none |
+| `css-functions` | none |
+| `css-hittest` | none |
+| `css-inline` | none |
+| `css-intrinsic` | none |
+| `css-invalidation` | none |
+| `css-mediaquery` | none |
+| `css-overflow` | none |
+| `css-position` | none |
+| `css-properties` | none |
+| `css-pseudoelement` | none |
+| `css-shorthand` | none |
+| `css-stacking` | none |
+| `css-supports` | none |
 | [css-tokenizer](mulib-css-tokenizer.md) | none |
+| `css-transform` | none |
+| `css-transition` | none |
+| `css-units` | none |
+| `cssom-style` | none |
+| `cssom-typed` | none |
+| `cssom` | none |
 | [csv](mulib-csv.md) | none |
 | [datalog](mulib-datalog.md) | none |
 | [date](mulib-date.md) | none |
@@ -114,8 +166,19 @@ Compatibility group: `parsec`, `peg`.
 | [dns-manager](mulib-dns-manager.md) | none |
 | [dns](mulib-dns.md) | none |
 | [docid](mulib-docid.md) | none |
+| `dom-collection` | none |
+| `dom-eventpath` | none |
+| `dom-handle` | none |
+| `dom-implementation` | none |
+| `dom-lifetime` | none |
 | [dom-mutation](mulib-dom-mutation.md) | none |
+| `dom-observer` | none |
 | [dom-range](mulib-dom-range.md) | none |
+| `dom-selection` | none |
+| `dom-shadow` | none |
+| `dom-slot` | none |
+| `dom-tokenlist` | none |
+| `dom-traversal` | none |
 | [domserialize](mulib-domserialize.md) | none |
 | [drm-kms](mulib-gfx-drm.md) | none |
 | [drm](mulib-drm.md) | none |
@@ -159,9 +222,21 @@ Compatibility group: `parsec`, `peg`.
 | [evtsched](mulib-evtsched.md) | none |
 | [ezjni](mulib-ezjni.md) | none |
 | [fca](mulib-fca.md) | none |
+| `fetch-body` | none |
+| `fetch-cors` | none |
+| `fetch-credentials` | none |
+| `fetch-headers` | none |
+| `fetch-integrity` | none |
+| `fetch-preflight-cache` | none |
+| `fetch-redirect` | none |
+| `fetch-referrer` | none |
+| `fetch-request` | none |
+| `fetch-response` | none |
 | [field-poisson](mulib-field-poisson.md) | none |
 | [field-thermal](mulib-field-thermal.md) | none |
 | [filectl](mulib-filectl.md) | none |
+| `floatformat` | none |
+| `floatparse` | none |
 | [flow-graph](mulib-flow-graph.md) | none |
 | [formal-cnf](mulib-formal-cnf.md) | none |
 | [fpga-route](mulib-fpga-route.md) | none |
@@ -190,15 +265,33 @@ Compatibility group: `parsec`, `peg`.
 | [histogram](mulib-histogram.md) | none |
 | [hll](mulib-hll.md) | none |
 | [hls-schedule](mulib-hls-schedule.md) | none |
+| `hpack` | none |
+| `html-attributes` | none |
+| `html-custom-element` | none |
+| `html-editing` | none |
+| `html-elements` | none |
+| `html-encoding` | none |
+| `html-entities` | none |
+| `html-form` | none |
+| `html-iframe` | none |
+| `html-parser` | none |
+| `html-script` | none |
+| `html-serialize` | none |
+| `html-template` | none |
 | [html-textstream](mulib-html-textstream.md) | none |
+| `http2-session` | none |
 | [hwil-types](mulib-hwil-types.md) | none |
 | [hwinfo](mulib-hwinfo.md) | none |
 | [hybridsearch](mulib-hybridsearch.md) | none |
 | [icmp](mulib-icmp.md) | none |
+| `idna` | none |
 | [imapserver](mulib-imapserver.md) | none |
 | [immgtk-canvas](mulib-immgtk-canvas.md) | none |
 | [immgtk-plot](mulib-immgtk-plot.md) | none |
 | [importgraph](mulib-importgraph.md) | none |
+| `indexeddb-key` | none |
+| `indexeddb-request` | none |
+| `indexeddb-transaction` | none |
 | [ingest-stream](mulib-ingest-stream.md) | none |
 | [ini](mulib-ini.md) | none |
 | [initproc](mulib-initproc.md) | none |
@@ -226,6 +319,11 @@ Compatibility group: `parsec`, `peg`.
 | [list](mulib-list.md) | none |
 | [liveintervals](mulib-liveintervals.md) | none |
 | [lldp](mulib-lldp.md) | none |
+| `locale-collation` | none |
+| `locale-datetime` | none |
+| `locale-number` | none |
+| `locale-plural` | none |
+| `locale-segment` | none |
 | [logger](mulib-logger.md) | none |
 | [lprowse](mulib-lprowse.md) | none |
 | [lsh](mulib-lsh.md) | none |
@@ -242,8 +340,24 @@ Compatibility group: `parsec`, `peg`.
 | [memtest](mulib-memtest.md) | none |
 | [metrics](mulib-metrics.md) | none |
 | [microaudio](mulib-microaudio.md) | none |
+| `microjs-agent` | none |
+| `microjs-async` | none |
+| `microjs-atomics` | none |
+| `microjs-buffer` | none |
+| `microjs-coercion` | none |
+| `microjs-debug` | none |
+| `microjs-exception` | none |
+| `microjs-generator` | none |
+| `microjs-intrinsics` | none |
+| `microjs-iterator` | none |
+| `microjs-object` | none |
 | [microjs-promise](mulib-microjs-promise.md) | none |
+| `microjs-realm` | none |
+| `microjs-regexp` | none |
+| `microjs-symbol` | none |
+| `microjs-weakref` | none |
 | [microtcl](mulib-microtcl.md) | none |
+| `mime-sniff` | none |
 | [minhash](mulib-minhash.md) | none |
 | [minincat](mulib-minincat.md) | none |
 | [minivm](mulib-minivm.md) | none |
@@ -306,6 +420,8 @@ Compatibility group: `parsec`, `peg`.
 | [probability](mulib-probability.md) | none |
 | [process](mulib-process.md) | none |
 | [pty](notebook-desktop.md) | none |
+| `publicsuffix` | none |
+| `punycode` | none |
 | [qa-corpus](mulib-qa-corpus.md) | none |
 | [qa-repro](mulib-qa-repro.md) | none |
 | [queryaggregate](mulib-queryaggregate.md) | none |
@@ -387,6 +503,7 @@ Compatibility group: `parsec`, `peg`.
 | [timer](mulib-timer.md) | none |
 | [timerfd](mulib-timerfd.md) | none |
 | [timeseries](mulib-timeseries.md) | none |
+| `timezone` | none |
 | [tokenizer](mulib-tokenizer.md) | none |
 | [topk](mulib-topk.md) | none |
 | [tracepath](mulib-tracepath.md) | none |
@@ -407,10 +524,13 @@ Compatibility group: `parsec`, `peg`.
 | [uip-route](mulib-uip-route.md) | none |
 | [uip-tcp-state](mulib-uip-tcp-state.md) | none |
 | [uip-timer](mulib-uip-timer.md) | none |
+| `unicode-ident` | none |
 | [unidiff](mulib-unidiff.md) | none |
 | [upstream](mulib-upstream.md) | none |
 | [url](mulib-url.md) | none |
 | [urlcanon](mulib-urlcanon.md) | none |
+| `urlsearchparams` | none |
+| `utf16` | none |
 | [utf8](mulib-utf8.md) | none |
 | [uuid](mulib-uuid.md) | none |
 | [vangage_point_trees](mulib-vangage_point_trees.md) | none |
@@ -422,15 +542,90 @@ Compatibility group: `parsec`, `peg`.
 | [vgabuffer](mulib-vgabuffer.md) | none |
 | [vm-host](mulib-vm-host.md) | none |
 | [vm-value](mulib-vm-value.md) | none |
+| `wasm-decode` | none |
+| `wasm-exec` | none |
+| `wasm-link` | none |
+| `wasm-memory` | none |
+| `wasm-table` | none |
+| `wasm-types` | none |
 | [wave-signal](mulib-wave-signal.md) | none |
+| `web-abort` | none |
+| `web-accessibility` | none |
+| `web-agentcluster` | none |
+| `web-audio` | none |
+| `web-beacon` | none |
+| `web-blob` | none |
+| `web-bloburl` | none |
+| `web-cachestorage` | none |
+| `web-canvas2d` | none |
+| `web-clipboard` | none |
+| `web-coep` | none |
+| `web-compressionstream` | none |
+| `web-console` | none |
+| `web-coop` | none |
+| `web-corp` | none |
+| `web-crypto` | none |
+| `web-csp` | none |
+| `web-device` | none |
+| `web-encoding` | none |
+| `web-eventsource` | none |
+| `web-formdata` | none |
+| `web-geolocation` | none |
+| `web-hsts` | none |
+| `web-imagebitmap` | none |
+| `web-input` | none |
+| `web-locks` | none |
+| `web-mediacap` | none |
+| `web-mediacodec` | none |
+| `web-mediaelement` | none |
+| `web-mediastream` | none |
+| `web-messageport` | none |
+| `web-mixedcontent` | none |
+| `web-notification` | none |
+| `web-offscreen-canvas` | none |
+| `web-opfs` | none |
+| `web-performance` | none |
+| `web-permissions-policy` | none |
+| `web-readablestream` | none |
+| `web-reporting` | none |
+| `web-sandboxflags` | none |
+| `web-securecontext` | none |
+| `web-serviceworker` | none |
+| `web-site` | none |
+| `web-storagekey` | none |
+| `web-storagequota` | none |
+| `web-streamqueue` | none |
+| `web-taskqueue` | none |
+| `web-transformstream` | none |
+| `web-trustedtypes` | none |
+| `web-webgl` | none |
+| `web-webgpu` | none |
+| `web-webrtc` | none |
+| `web-worker` | none |
+| `web-workerclient` | none |
+| `web-workerglobal` | none |
+| `web-worklet` | none |
+| `web-writablestream` | none |
+| `web-xhr` | none |
 | [webarchive](mulib-webarchive.md) | none |
 | [webextract-reconcile](mulib-webextract-reconcile.md) | none |
 | [webextract](mulib-webextract.md) | none |
+| `webidl-callback` | none |
+| `webidl-convert` | none |
+| `webidl-dictionary` | none |
+| `webidl-exception` | none |
+| `webidl-exposure` | none |
+| `webidl-install` | none |
+| `webidl-overload` | none |
+| `webidl-platformobject` | none |
+| `webidl-union` | none |
+| `webidl-wrappercache` | none |
 | [webratelimit](mulib-webratelimit.md) | none |
 | [websearch](mulib-websearch.md) | none |
 | [webstorage](mulib-webstorage.md) | none |
 | [webtimers](mulib-webtimers.md) | none |
 | [weighed_edit_distane](mulib-weighed_edit_distane.md) | none |
+| `whatwg-url` | none |
 | [wifi-rfkill](mulib-wifi-rfkill.md) | none |
 | [wifi-security](mulib-wifi-security.md) | none |
 | [workspace-fs](mulib-workspace-fs.md) | none |
@@ -443,7 +638,7 @@ Compatibility group: `parsec`, `peg`.
 | [zoneindex](mulib-zoneindex.md) | none |
 | [zorder](mulib-zorder.md) | none |
 
-## Stratum 1 (521 modules)
+## Stratum 1 (549 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -469,13 +664,25 @@ Compatibility group: `parsec`, `peg`.
 | [booknav](mulib-booknav.md) | `typecore` |
 | [booleanquery](mulib-booleanquery.md) | `postings` |
 | [bounded-text](mulib-bounded-text.md) | `utf8` |
+| `browser-accessibilitystream` | `browser-journal` |
+| `browser-checkpoint` | `browser-journal` |
 | [browser-domstream](mulib-browser-domstream.md) | `browser-stream` |
-| [browser-eventloop](mulib-browser-eventloop.md) | `microjs-promise` |
+| `browser-eventstream` | `browser-journal` |
 | [browser-executionstream](mulib-browser-executionstream.md) | `browser-stream` |
+| `browser-input` | `web-input` |
 | [browser-layoutstream](mulib-browser-layoutstream.md) | `browser-stream` |
 | [browser-networkstream](mulib-browser-networkstream.md) | `browser-stream` |
+| `browser-paintstream` | `browser-journal` |
+| `browser-renderer` | `browser-wire` |
+| `browser-replay` | `browser-journal` |
+| `browser-resourcestream` | `browser-journal` |
 | [browser-sandbox](mulib-browser-sandbox.md) | `browser-limits` |
+| `browser-scriptqueue` | `html-script` |
+| `browser-storagestream` | `browser-journal` |
+| `browser-stylestream` | `browser-journal` |
+| `browser-subscription` | `browser-journal` |
 | [browser-tokenstream](mulib-browser-tokenstream.md) | `browser-stream` |
+| `browser-viewport` | `css-overflow` |
 | [buildgraph](mulib-buildgraph.md) | `artifact` |
 | [buildparse](mulib-buildparse.md) | `buildplan` |
 | [buildstate](mulib-buildstate.md) | `sha` |
@@ -522,6 +729,7 @@ Compatibility group: `parsec`, `peg`.
 | [css-flex](mulib-css-flex.md) | `css-box` |
 | [css-grid](mulib-css-grid.md) | `css-box` |
 | [css-layoutstream](mulib-css-layoutstream.md) | `css-box` |
+| `css-values` | `floatparse` |
 | [csswriter](mulib-csswriter.md) | `typecore` |
 | [datagram](mulib-datagram.md) | `filectl` |
 | [dbindex](mulib-dbindex.md) | `bycutils`, `memtable` |
@@ -667,6 +875,7 @@ Compatibility group: `parsec`, `peg`.
 | [heaptable](mulib-heaptable.md) | `memtable` |
 | [histprice](mulib-histprice.md) | `statsproc` |
 | [hkdf](mulib-hkdf.md) | `entropy`, `sha` |
+| `html-fragment` | `html-parser` |
 | [html-tokenizer](mulib-html-tokenizer.md) | `html-textstream` |
 | [htmlwriter](mulib-htmlwriter.md) | `typecore` |
 | [http2](mulib-http2.md) | `buffer` |
@@ -680,6 +889,8 @@ Compatibility group: `parsec`, `peg`.
 | [immgtk-plot-stream](mulib-gfx-immgtk.md) | `glx-core` |
 | [impaclient](mulib-impaclient.md) | `imapserver` |
 | [index](mulib-index.md) | `b+tree` |
+| `indexeddb-index` | `indexeddb-key` |
+| `indexeddb-store` | `indexeddb-key` |
 | [indexer](mulib-indexer.md) | `typecore` |
 | [initsysutils](mulib-initsysutils.md) | `cpio` |
 | [input-compose](mulib-gfx-input.md) | `glx-core` |
@@ -728,6 +939,8 @@ Compatibility group: `parsec`, `peg`.
 | [mathspacing](mulib-mathspacing.md) | `typecore` |
 | [mathspeech](mulib-mathspeech.md) | `typecore` |
 | [media-core](mulib-media-core.md) | `fraction` |
+| `microjs-bigint` | `bigint` |
+| `microjs-proxy` | `microjs-object` |
 | [microjs](mulib-microjs.md) | `minivm` |
 | [microtype](mulib-microtype.md) | `typecore` |
 | [mime](mulib-mime.md) | `seurity` |
@@ -950,12 +1163,21 @@ Compatibility group: `parsec`, `peg`.
 | [vmmdev](mulib-vmmdev.md) | `endian` |
 | [vterm](mulib-vterm.md) | `grid`, `utf8` |
 | [wal](mulib-wal.md) | `buffer`, `bycutils`, `crc32` |
+| `wasm-jsbridge` | `webidl-convert` |
+| `wasm-validate` | `wasm-decode` |
 | [wave-decimate](mulib-wave-decimate.md) | `wave-signal` |
 | [wave-fst](engineering-kernels.md) | `storage-core` |
 | [wave-measure](mulib-wave-measure.md) | `wave-signal` |
 | [wave-vcd](mulib-wave-vcd.md) | `dsim-logic4` |
 | [wayland-wire](mulib-gfx-wire.md) | `glx-core` |
 | [wayland](mulib-wayland.md) | `dynload` |
+| `web-broadcast` | `web-storagekey` |
+| `web-file` | `web-blob` |
+| `web-filereader` | `web-blob` |
+| `web-sharedworker` | `web-storagekey` |
+| `web-storageevent` | `web-storagekey` |
+| `web-structuredclone` | `microjs-buffer` |
+| `web-textcodec` | `utf16` |
 | [weblocation](mulib-weblocation.md) | `urlcanon` |
 | [weighted-edit-distance](mulib-weighted-edit-distance.md) | `weighed_edit_distane` |
 | [wifi-monitor](mulib-wifi-monitor.md) | `netlink` |
@@ -964,12 +1186,13 @@ Compatibility group: `parsec`, `peg`.
 | [woff](mulib-woff.md) | `typecore` |
 | [woff2](mulib-woff2.md) | `typecore` |
 | [workspace-edit](mulib-workspace-edit.md) | `unidiff`, `workspace-fs` |
+| `wtf8` | `utf16` |
 | [x11-wire](mulib-gfx-wire.md) | `glx-core` |
 | [x25519](mulib-x25519.md) | `entropy` |
 | [xlib](mulib-xlib.md) | `dynload` |
 | [xml](mulib-xml.md) | `strbuf`, `utf8` |
 
-## Stratum 2 (411 modules)
+## Stratum 2 (414 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -983,6 +1206,7 @@ Compatibility group: `parsec`, `peg`.
 | [bktree](mulib-bktree.md) | `bk-trees` |
 | [browser-cache](mulib-browser-cache.md) | `bounded-text` |
 | [browser-cookiejar](mulib-browser-cookiejar.md) | `bounded-text` |
+| [browser-eventloop](mulib-browser-eventloop.md) | `microjs`, `microjs-promise` |
 | [browser-navigation](mulib-browser-navigation.md) | `bounded-text` |
 | [browser-resource](mulib-browser-resource.md) | `bounded-text` |
 | [browser-snapshot](mulib-browser-snapshot.md) | `bounded-text` |
@@ -1119,6 +1343,7 @@ Compatibility group: `parsec`, `peg`.
 | [imgformat](mulib-imgformat.md) | `container`, `crc32` |
 | [imtui-core](mulib-imtui-core.md) | `termkey`, `vterm` |
 | [imtui-terminal](mulib-imtui-terminal.md) | `terminfo`, `termkey`, `termutils` |
+| `indexeddb-cursor` | `indexeddb-store` |
 | [inet-diag](mulib-inet-diag.md) | `sock-diag` |
 | [initsys](mulib-initsys.md) | `process`, `taskdag` |
 | [input-gesture](mulib-gfx-input.md) | `input-touch` |
@@ -1338,6 +1563,7 @@ Compatibility group: `parsec`, `peg`.
 | [vm-module](mulib-vm-module.md) | `bytecode`, `bytecode-verify` |
 | [vmm-memory](mulib-vmm-memory.md) | `vmmdev` |
 | [vmweave](mulib-vmweave.md) | `mir`, `rewrite` |
+| `wasm-module` | `wasm-decode`, `wasm-validate` |
 | [wave-correlation](engineering-kernels.md) | `num-core` |
 | [wave-expression](engineering-kernels.md) | `num-core` |
 | [wave-eye](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core` |
@@ -1385,7 +1611,7 @@ Compatibility group: `parsec`, `peg`.
 | [zip](mulib-zip.md) | `crc32`, `deflate`, `utf8` |
 | [zstd](mulib-zstd.md) | `codec-core`, `container-core` |
 
-## Stratum 3 (275 modules)
+## Stratum 3 (276 modules)
 
 | Module | Direct dependencies |
 | --- | --- |
@@ -1500,7 +1726,7 @@ Compatibility group: `parsec`, `peg`.
 | [glx-text](mulib-gfx-font-image.md) | `glx-font` |
 | [glx-textatlas](mulib-gfx-font-image.md) | `glx-atlas`, `glx-font` |
 | [gvizz](mulib-gvizz.md) | `dsdom` |
-| [html-dombridge](mulib-html-dombridge.md) | `html-treebuilder` |
+| [html-dombridge](mulib-html-dombridge.md) | `dom`, `html-treebuilder` |
 | [hwil-flatten](engineering-kernels.md) | `hwil-elaborate`, `storage-core` |
 | [hwil-instance](engineering-kernels.md) | `hwil-port`, `storage-core` |
 | [hwil-lower](engineering-kernels.md) | `hwil-builder`, `storage-core` |
@@ -1644,6 +1870,7 @@ Compatibility group: `parsec`, `peg`.
 | [virtio-os](mulib-virtio-os.md) | `virtio` |
 | [viterbi_decoding](mulib-viterbi_decoding.md) | `hidden_markov_chain` |
 | [vmm-host](mulib-vmm-host.md) | `virtio` |
+| `wasm-instance` | `wasm-module` |
 | [wave-psd](engineering-kernels.md) | `graph-core`, `num-core`, `storage-core`, `wave-spectrum` |
 | [wave-stream](engineering-kernels.md) | `storage-core`, `wave-store` |
 | [wifi-ap](mulib-wifi-ap.md) | `nl80211` |
